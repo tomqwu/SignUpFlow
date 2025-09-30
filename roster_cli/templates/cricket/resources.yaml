@@ -1,0 +1,9 @@
+resources:
+  - id: ground_1
+    type: ground
+    capacity: 22
+    location: Main Field
+  - id: ground_2
+    type: ground
+    capacity: 22
+    location: North Field

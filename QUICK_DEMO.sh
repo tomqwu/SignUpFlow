@@ -1,0 +1,50 @@
+#!/bin/bash
+# Quick Demo of Roster MVP
+
+echo "============================================================"
+echo "ROSTER MVP - QUICK DEMO"
+echo "============================================================"
+echo ""
+echo "This script demonstrates the complete Roster system:"
+echo "  1. API validation tests (3 templates)"
+echo "  2. Sample roster generation (church volunteers)"
+echo ""
+echo "Press Enter to start..."
+read
+
+echo ""
+echo "============================================================"
+echo "STEP 1: Running API Tests"
+echo "============================================================"
+echo ""
+poetry run python test_api.py
+
+echo ""
+echo ""
+echo "============================================================"
+echo "STEP 2: Generating Sample Church Roster"
+echo "============================================================"
+echo ""
+poetry run python sample_roster_test.py
+
+echo ""
+echo ""
+echo "============================================================"
+echo "DEMO COMPLETE!"
+echo "============================================================"
+echo ""
+echo "Generated files are in:"
+echo "  - /tmp/test_cricket/out/"
+echo "  - /tmp/test_church/out/"
+echo "  - /tmp/test_oncall/out/"
+echo "  - /tmp/sample_church_roster/out/"
+echo ""
+echo "View sample output:"
+echo "  cat /tmp/sample_church_roster/out/assignments.csv"
+echo ""
+echo "Check documentation:"
+echo "  cat START_HERE.md"
+echo "  cat TEST_REPORT.md"
+echo ""
+echo "Thank you for using Roster!"
+echo "============================================================"

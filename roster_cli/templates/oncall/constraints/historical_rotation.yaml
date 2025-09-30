@@ -1,0 +1,11 @@
+key: historical_rotation
+scope: person
+applies_to: [oncall_shift]
+severity: soft
+weight: 30
+params:
+  lookback_days: 30
+then:
+  penalize_if:
+    type: recent_rotation
+    lookback_days: 30

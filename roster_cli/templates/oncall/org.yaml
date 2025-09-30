@@ -1,0 +1,6 @@
+org_id: ops_oncall_2025
+region: CA-ON
+defaults:
+  change_min_weight: 150
+  fairness_weight: 100
+  cooldown_days: 7

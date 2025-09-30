@@ -1,0 +1,81 @@
+events:
+  - id: service_2025_09_07
+    type: shift
+    start: 2025-09-07T09:00:00
+    end: 2025-09-07T12:00:00
+    resource_id: main_hall
+    required_roles:
+      - {role: kitchen, count: 2}
+      - {role: reception, count: 2}
+      - {role: childcare, count: 2}
+      - {role: av_tech, count: 1}
+  - id: service_2025_09_14
+    type: shift
+    start: 2025-09-14T09:00:00
+    end: 2025-09-14T12:00:00
+    resource_id: main_hall
+    required_roles:
+      - {role: kitchen, count: 2}
+      - {role: reception, count: 2}
+      - {role: childcare, count: 2}
+      - {role: av_tech, count: 1}
+  - id: service_2025_09_21
+    type: shift
+    start: 2025-09-21T09:00:00
+    end: 2025-09-21T12:00:00
+    resource_id: main_hall
+    required_roles:
+      - {role: kitchen, count: 2}
+      - {role: reception, count: 2}
+      - {role: childcare, count: 2}
+      - {role: av_tech, count: 1}
+  - id: service_2025_09_28
+    type: shift
+    start: 2025-09-28T09:00:00
+    end: 2025-09-28T12:00:00
+    resource_id: main_hall
+    required_roles:
+      - {role: kitchen, count: 2}
+      - {role: reception, count: 2}
+      - {role: childcare, count: 2}
+      - {role: av_tech, count: 1}
+  - id: service_2025_10_05
+    type: shift
+    start: 2025-10-05T09:00:00
+    end: 2025-10-05T12:00:00
+    resource_id: main_hall
+    required_roles:
+      - {role: kitchen, count: 2}
+      - {role: reception, count: 2}
+      - {role: childcare, count: 2}
+      - {role: av_tech, count: 1}
+  - id: service_2025_10_12
+    type: shift
+    start: 2025-10-12T09:00:00
+    end: 2025-10-12T12:00:00
+    resource_id: main_hall
+    required_roles:
+      - {role: kitchen, count: 2}
+      - {role: reception, count: 2}
+      - {role: childcare, count: 2}
+      - {role: av_tech, count: 1}
+  - id: service_2025_10_19
+    type: shift
+    start: 2025-10-19T09:00:00
+    end: 2025-10-19T12:00:00
+    resource_id: main_hall
+    required_roles:
+      - {role: kitchen, count: 2}
+      - {role: reception, count: 2}
+      - {role: childcare, count: 2}
+      - {role: av_tech, count: 1}
+  - id: service_2025_10_26
+    type: shift
+    start: 2025-10-26T09:00:00
+    end: 2025-10-26T12:00:00
+    resource_id: main_hall
+    required_roles:
+      - {role: kitchen, count: 2}
+      - {role: reception, count: 2}
+      - {role: childcare, count: 2}
+      - {role: av_tech, count: 1}

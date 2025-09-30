@@ -1,0 +1,13 @@
+key: role_cooldown
+scope: person
+applies_to: [shift]
+severity: soft
+weight: 20
+params:
+  roles: [kitchen, reception, childcare, av_tech]
+  cooldown_days: 14
+  grace_on_publish: true
+then:
+  penalize_if:
+    type: cooldown
+    cooldown_days: 14

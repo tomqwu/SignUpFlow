@@ -1,0 +1,77 @@
+# Player availability for cricket league
+# Vacations: Multi-day periods when unavailable
+# Exceptions: Specific single dates when unavailable
+
+availability:
+  # Thunder team
+  - person_id: 8ae10dfc9a69  # Alice Smith (Captain)
+    vacations:
+      - start: 2025-09-05
+        end: 2025-09-07  # Family vacation
+    exceptions:
+      - 2025-09-20  # Wedding to attend
+
+  - person_id: 1130063a9ca2  # Bob Jones
+    vacations:
+      - start: 2025-09-13
+        end: 2025-09-14  # Work trip
+    exceptions:
+      - 2025-09-04  # Dentist appointment
+
+  - person_id: 2bba1d047eb0  # Carol White
+    exceptions:
+      - 2025-09-09  # Child's school event
+      - 2025-09-23  # Evening class
+
+  # Lightning team
+  - person_id: 69498db2f2c1  # Frank Wilson (Captain)
+    vacations:
+      - start: 2025-09-10
+        end: 2025-09-10  # Medical appointment
+    exceptions:
+      - 2025-09-25  # Night shift at work
+
+  - person_id: 4950cb55603f  # Grace Lee
+    exceptions:
+      - 2025-09-03  # Birthday celebration
+      - 2025-09-17  # Training session
+
+  # Storm team
+  - person_id: bec186035b57  # Kate Anderson (Captain)
+    vacations:
+      - start: 2025-09-16
+        end: 2025-09-18  # Out of town
+
+  - person_id: 8582419398fc  # Leo Thomas
+    exceptions:
+      - 2025-09-08  # Moving day
+      - 2025-09-22  # Family dinner
+
+  # Cyclone team
+  - person_id: d0d48534eb26  # Paul Thompson (Captain)
+    vacations:
+      - start: 2025-09-02
+        end: 2025-09-03  # Conference
+
+  - person_id: f4c505aca88a  # Quinn Garcia
+    exceptions:
+      - 2025-09-15  # Car repair appointment
+
+  # Hurricane team
+  - person_id: 8f692bd1eb0a  # Uma Walker (Captain)
+    vacations:
+      - start: 2025-09-11
+        end: 2025-09-12  # Personal day
+    exceptions:
+      - 2025-09-24  # Volunteer work
+
+  # Tornado team
+  - person_id: f53c56333bdc  # Zach Wright (Captain)
+    exceptions:
+      - 2025-09-01  # Labor Day family gathering
+      - 2025-09-19  # Anniversary dinner
+
+  # Typhoon team
+  - person_id: 070cd028a6a9  # Emma Nelson (Captain)
+    exceptions:
+      - 2025-09-06  # Weekend getaway prep

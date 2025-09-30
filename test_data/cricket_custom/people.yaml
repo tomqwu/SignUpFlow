@@ -1,0 +1,56 @@
+people:
+  # Thunder team
+  - {id: 8ae10dfc9a69, name: Alice Smith, roles: [player, captain]}
+  - {id: 1130063a9ca2, name: Bob Jones, roles: [player]}
+  - {id: 2bba1d047eb0, name: Carol White, roles: [player]}
+  - {id: 6247446b7b54, name: Dave Brown, roles: [player]}
+  - {id: f102ef8b6e0e, name: Eve Davis, roles: [player]}
+
+  # Lightning team
+  - {id: 69498db2f2c1, name: Frank Wilson, roles: [player, captain]}
+  - {id: 4950cb55603f, name: Grace Lee, roles: [player]}
+  - {id: cc1ca6f4d506, name: Henry Clark, roles: [player]}
+  - {id: e5b1839983f7, name: Ivy Martinez, roles: [player]}
+  - {id: b7596c6eef59, name: Jack Taylor, roles: [player]}
+
+  # Storm team
+  - {id: bec186035b57, name: Kate Anderson, roles: [player, captain]}
+  - {id: 8582419398fc, name: Leo Thomas, roles: [player]}
+  - {id: da9bd7cdcdc7, name: Mia Jackson, roles: [player]}
+  - {id: ec7a627cc1da, name: Noah Harris, roles: [player]}
+  - {id: 5fafb774ec2d, name: Olivia Martin, roles: [player]}
+
+  # Cyclone team
+  - {id: d0d48534eb26, name: Paul Thompson, roles: [player, captain]}
+  - {id: f4c505aca88a, name: Quinn Garcia, roles: [player]}
+  - {id: c6332a8e83de, name: Rachel Robinson, roles: [player]}
+  - {id: 186e2578067b, name: Sam Clark, roles: [player]}
+  - {id: d2aa605a3068, name: Tina Lewis, roles: [player]}
+
+  # Hurricane team
+  - {id: 8f692bd1eb0a, name: Uma Walker, roles: [player, captain]}
+  - {id: 1dfe426a6b85, name: Victor Hall, roles: [player]}
+  - {id: d84cf1d63bcf, name: Wendy Allen, roles: [player]}
+  - {id: 23acdbd43981, name: Xavier Young, roles: [player]}
+  - {id: 6cd8136fdac2, name: Yara King, roles: [player]}
+
+  # Tornado team
+  - {id: f53c56333bdc, name: Zach Wright, roles: [player, captain]}
+  - {id: a8ca062f85c2, name: Amy Scott, roles: [player]}
+  - {id: 5de58cc9ab94, name: Ben Green, roles: [player]}
+  - {id: d41cf42b813e, name: Chloe Adams, roles: [player]}
+  - {id: 9567608a83a0, name: Dan Baker, roles: [player]}
+
+  # Typhoon team
+  - {id: 070cd028a6a9, name: Emma Nelson, roles: [player, captain]}
+  - {id: 454027faa175, name: Felix Carter, roles: [player]}
+  - {id: f2eff6c86cf7, name: Gina Mitchell, roles: [player]}
+  - {id: f4064b4c9c80, name: Hugo Perez, roles: [player]}
+  - {id: 795f5eb7e139, name: Iris Roberts, roles: [player]}
+
+  # Monsoon team
+  - {id: 0d16d02956ca, name: Jake Turner, roles: [player, captain]}
+  - {id: 0101f25cc95d, name: Kelly Phillips, roles: [player]}
+  - {id: b52c48aa918b, name: Liam Campbell, roles: [player]}
+  - {id: 3d540f68d857, name: Maya Parker, roles: [player]}
+  - {id: 1d7c2c618e66, name: Nate Evans, roles: [player]}

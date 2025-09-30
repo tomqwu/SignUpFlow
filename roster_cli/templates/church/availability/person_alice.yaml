@@ -1,0 +1,6 @@
+person_id: alice
+rrule: FREQ=WEEKLY;BYDAY=SU
+exceptions: []
+vacations:
+  - start: 2025-10-15
+    end: 2025-10-22

@@ -1,0 +1,32 @@
+teams:
+  - id: team_a
+    name: Thunder
+    members: [8ae10dfc9a69, 1130063a9ca2, 2bba1d047eb0, 6247446b7b54, f102ef8b6e0e]
+
+  - id: team_b
+    name: Lightning
+    members: [69498db2f2c1, 4950cb55603f, cc1ca6f4d506, e5b1839983f7, b7596c6eef59]
+
+  - id: team_c
+    name: Storm
+    members: [bec186035b57, 8582419398fc, da9bd7cdcdc7, ec7a627cc1da, 5fafb774ec2d]
+
+  - id: team_d
+    name: Cyclone
+    members: [d0d48534eb26, f4c505aca88a, c6332a8e83de, 186e2578067b, d2aa605a3068]
+
+  - id: team_e
+    name: Hurricane
+    members: [8f692bd1eb0a, 1dfe426a6b85, d84cf1d63bcf, 23acdbd43981, 6cd8136fdac2]
+
+  - id: team_f
+    name: Tornado
+    members: [f53c56333bdc, a8ca062f85c2, 5de58cc9ab94, d41cf42b813e, 9567608a83a0]
+
+  - id: team_g
+    name: Typhoon
+    members: [070cd028a6a9, 454027faa175, f2eff6c86cf7, f4064b4c9c80, 795f5eb7e139]
+
+  - id: team_h
+    name: Monsoon
+    members: [0d16d02956ca, 0101f25cc95d, b52c48aa918b, 3d540f68d857, 1d7c2c618e66]

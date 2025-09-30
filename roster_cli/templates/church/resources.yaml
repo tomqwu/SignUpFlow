@@ -1,0 +1,9 @@
+resources:
+  - id: main_hall
+    type: room
+    capacity: 200
+    location: Main Building
+  - id: kids_room
+    type: room
+    capacity: 30
+    location: West Wing

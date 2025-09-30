@@ -1,0 +1,8 @@
+key: no_long_weekend_fri_mon
+scope: event
+applies_to: [match]
+severity: hard
+when:
+  predicate: is_long_weekend
+then:
+  forbid_if: is_friday_or_monday

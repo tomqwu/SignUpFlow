@@ -1,0 +1,6 @@
+key: require_role_coverage
+scope: event
+applies_to: [shift]
+severity: hard
+then:
+  require_roles: []  # Dynamically filled from event.required_roles

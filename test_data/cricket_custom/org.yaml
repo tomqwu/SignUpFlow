@@ -1,0 +1,6 @@
+org_id: cricket_league_2025
+region: CA-ON
+defaults:
+  change_min_weight: 100
+  fairness_weight: 50
+  cooldown_days: 7

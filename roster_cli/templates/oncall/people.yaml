@@ -1,0 +1,13 @@
+people:
+  - {id: eng1, name: Sarah Chen, roles: [L1, L2]}
+  - {id: eng2, name: Mike Rodriguez, roles: [L1, L2, L3]}
+  - {id: eng3, name: Emily Park, roles: [L1]}
+  - {id: eng4, name: James Wilson, roles: [L2, L3]}
+  - {id: eng5, name: Lisa Kumar, roles: [L1, L2]}
+  - {id: eng6, name: David Lee, roles: [L2, L3]}
+  - {id: eng7, name: Anna Martinez, roles: [L1]}
+  - {id: eng8, name: Chris Taylor, roles: [L1, L2]}
+  - {id: eng9, name: Jessica Brown, roles: [L2, L3]}
+  - {id: eng10, name: Ryan Anderson, roles: [L1, L2]}
+  - {id: eng11, name: Michelle Garcia, roles: [L1]}
+  - {id: eng12, name: Kevin Thompson, roles: [L3]}

@@ -1,0 +1,21 @@
+people:
+  - {id: alice, name: Alice Johnson, roles: [kitchen, reception]}
+  - {id: bob, name: Bob Smith, roles: [kitchen, setup]}
+  - {id: carol, name: Carol Williams, roles: [reception, childcare]}
+  - {id: dave, name: Dave Brown, roles: [setup, av_tech]}
+  - {id: eve, name: Eve Davis, roles: [kitchen, childcare]}
+  - {id: frank, name: Frank Wilson, roles: [reception, setup]}
+  - {id: grace, name: Grace Martinez, roles: [kitchen, reception]}
+  - {id: henry, name: Henry Taylor, roles: [av_tech, setup]}
+  - {id: iris, name: Iris Anderson, roles: [childcare, reception]}
+  - {id: jack, name: Jack Thomas, roles: [setup, kitchen]}
+  - {id: kate, name: Kate Harris, roles: [reception, childcare]}
+  - {id: leo, name: Leo Garcia, roles: [av_tech, setup]}
+  - {id: mia, name: Mia Robinson, roles: [kitchen, reception]}
+  - {id: noah, name: Noah Lewis, roles: [setup, av_tech]}
+  - {id: olivia, name: Olivia Walker, roles: [childcare, kitchen]}
+  - {id: paul, name: Paul Hall, roles: [reception, setup]}
+  - {id: quinn, name: Quinn Allen, roles: [kitchen, childcare]}
+  - {id: rachel, name: Rachel Young, roles: [av_tech, reception]}
+  - {id: sam, name: Sam King, roles: [setup, kitchen]}
+  - {id: tina, name: Tina Wright, roles: [childcare, reception]}

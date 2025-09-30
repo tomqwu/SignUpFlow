@@ -1,0 +1,6 @@
+org_id: church_volunteers_2025
+region: CA-ON
+defaults:
+  change_min_weight: 100
+  fairness_weight: 80
+  cooldown_days: 14
