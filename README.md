@@ -6,11 +6,14 @@ A production-ready local file-driven constraint rostering engine for scheduling 
 
 - **Three Built-in Templates**: Cricket league schedules, church volunteer rosters, on-call rotations
 - **Constraint-Based Scheduling**: Hard and soft constraints with pluggable solver architecture
+- **SQLite Database Backend**: Persistent storage with SQLAlchemy ORM for all roster data
+- **Hash-Based Player IDs**: Secure 12-character hexadecimal identifiers for all entities
 - **Change Minimization**: Minimize disruption when re-scheduling with published baselines
 - **Rich CLI**: Beautiful terminal output with progress indicators and clear error messages
 - **Multiple Export Formats**: JSON, CSV, and ICS calendar files
 - **Fairness Tracking**: Automatic load balancing and fairness metrics
 - **Simulation**: Test schedule changes before applying them
+- **Database Viewer**: Interactive and quick SQL query tools included
 
 ## Installation
 
@@ -207,12 +210,13 @@ roster template apply TEMPLATE --dir PATH [--force]
 ```
 workspace/
   org.yaml                   # Organization config
-  people.yaml                # People definitions
+  people.yaml                # People definitions (hash-based IDs)
   teams.yaml                 # Team definitions (optional)
   resources.yaml             # Resources like grounds/rooms (optional)
   events.yaml                # Events to schedule
   holidays.yaml              # Holiday definitions (optional)
-  availability/              # Per-person availability rules
+  availability.yaml          # Consolidated availability (vacations + exceptions)
+  availability/              # Per-person availability rules (alternative)
     person_alice.yaml
   constraints/               # Constraint definitions
     require_role_coverage.yaml
@@ -224,6 +228,7 @@ workspace/
     assignments.csv
     calendar.ics
     metrics.json
+  roster.db                  # SQLite database (when using DB backend)
 ```
 
 ## Constraint DSL
@@ -412,8 +417,64 @@ Contributions welcome! Please:
 3. Add tests for new features
 4. Update documentation
 
+## Database Backend
+
+The roster system now includes a SQLite database backend for persistent storage.
+
+### Migrate YAML to Database
+
+```bash
+poetry run python -m roster_cli.db.migrate test_data/cricket_custom sqlite:///roster.db
+```
+
+### View Database
+
+Quick summary:
+```bash
+poetry run python show_db.py
+```
+
+View specific table:
+```bash
+poetry run python show_db.py -t people -l 10
+poetry run python show_db.py -t teams
+```
+
+Run custom SQL queries:
+```bash
+poetry run python show_db.py -q "SELECT * FROM people WHERE roles LIKE '%captain%'"
+poetry run python show_db.py -q "SELECT t.name, COUNT(tm.person_id) as members FROM teams t LEFT JOIN team_members tm ON t.id = tm.team_id GROUP BY t.id"
+```
+
+Interactive viewer:
+```bash
+poetry run python view_db.py
+```
+
+### Database Schema
+
+- **organizations** - League/church/company info
+- **people** - Players/volunteers with hash-based IDs
+- **teams** - Team definitions
+- **team_members** - Team membership junction table
+- **resources** - Venues/grounds/rooms
+- **events** - Matches/shifts/meetings
+- **event_teams** - Event-team links
+- **availability** - Person availability rules
+- **vacation_periods** - Multi-day unavailable periods
+- **availability_exceptions** - Single-day unavailable dates
+- **holidays** - Organization-wide holidays
+- **constraints** - Scheduling constraints
+- **solutions** - Generated schedules
+- **assignments** - Person-to-event assignments
+
 ## Roadmap
 
+- [x] SQLite database backend with SQLAlchemy ORM
+- [x] Hash-based player IDs for security
+- [x] Consolidated availability (vacations + exceptions)
+- [x] Database migration tools
+- [x] Interactive database viewer
 - [ ] OR-Tools CP-SAT solver implementation
 - [ ] Web UI for schedule visualization
 - [ ] Email notifications for assignments
