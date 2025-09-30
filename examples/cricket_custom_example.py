@@ -37,7 +37,7 @@ def generate_cricket_league_roster():
     print("="*70)
 
     # Use custom test data
-    custom_data = Path(__file__).parent / "test_data" / "cricket_custom"
+    custom_data = Path(__file__).parent.parent / "test_data" / "cricket_custom"
 
     if not custom_data.exists():
         print(f"\n❌ Error: Custom data directory not found: {custom_data}")

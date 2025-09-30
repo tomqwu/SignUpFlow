@@ -37,7 +37,7 @@ def generate_cricket_league_roster():
     if workspace.exists():
         shutil.rmtree(workspace)
 
-    template_src = Path(__file__).parent / "roster_cli" / "templates" / "cricket"
+    template_src = Path(__file__).parent.parent / "roster_cli" / "templates" / "cricket"
     shutil.copytree(template_src, workspace)
     print(f"\n📁 Workspace: {workspace}")
 

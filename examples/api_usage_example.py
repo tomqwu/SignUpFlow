@@ -35,7 +35,7 @@ def test_cricket_template():
         shutil.rmtree(workspace)
 
     # Copy cricket template
-    template_src = Path(__file__).parent / "roster_cli" / "templates" / "cricket"
+    template_src = Path(__file__).parent.parent / "roster_cli" / "templates" / "cricket"
     shutil.copytree(template_src, workspace)
     print(f"✓ Workspace created at {workspace}")
 
@@ -125,7 +125,7 @@ def test_church_template():
     if workspace.exists():
         shutil.rmtree(workspace)
 
-    template_src = Path(__file__).parent / "roster_cli" / "templates" / "church"
+    template_src = Path(__file__).parent.parent / "roster_cli" / "templates" / "church"
     shutil.copytree(template_src, workspace)
     print(f"✓ Workspace created at {workspace}")
 
@@ -215,7 +215,7 @@ def test_oncall_template():
     if workspace.exists():
         shutil.rmtree(workspace)
 
-    template_src = Path(__file__).parent / "roster_cli" / "templates" / "oncall"
+    template_src = Path(__file__).parent.parent / "roster_cli" / "templates" / "oncall"
     shutil.copytree(template_src, workspace)
     print(f"✓ Workspace created at {workspace}")
 
