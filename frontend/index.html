@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Roster Scheduler</title>
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header>
+            <h1>🗓️ Roster Scheduler</h1>
+            <p class="subtitle">Constraint-based scheduling for teams, events, and resources</p>
+            <div class="api-status">
+                <span id="api-status" class="status-badge">Checking API...</span>
+            </div>
+        </header>
+
+        <!-- Navigation Tabs -->
+        <nav class="tabs">
+            <button class="tab-btn active" data-tab="organizations">Organizations</button>
+            <button class="tab-btn" data-tab="people">People</button>
+            <button class="tab-btn" data-tab="teams">Teams</button>
+            <button class="tab-btn" data-tab="events">Events</button>
+            <button class="tab-btn" data-tab="solver">Solve</button>
+            <button class="tab-btn" data-tab="solutions">Solutions</button>
+        </nav>
+
+        <!-- Content Sections -->
+        <main>
+            <!-- Organizations Tab -->
+            <section id="organizations-tab" class="tab-content active">
+                <div class="section-header">
+                    <h2>Organizations</h2>
+                    <button class="btn btn-primary" onclick="showCreateOrgForm()">+ New Organization</button>
+                </div>
+
+                <div id="create-org-form" class="form-card hidden">
+                    <h3>Create Organization</h3>
+                    <form onsubmit="createOrganization(event)">
+                        <input type="text" id="org-id" placeholder="ID (e.g., my_league)" required>
+                        <input type="text" id="org-name" placeholder="Name" required>
+                        <input type="text" id="org-region" placeholder="Region (e.g., US-CA)">
+                        <div class="form-actions">
+                            <button type="submit" class="btn btn-primary">Create</button>
+                            <button type="button" class="btn btn-secondary" onclick="hideCreateOrgForm()">Cancel</button>
+                        </div>
+                    </form>
+                </div>
+
+                <div id="organizations-list" class="data-list">
+                    <div class="loading">Loading organizations...</div>
+                </div>
+            </section>
+
+            <!-- People Tab -->
+            <section id="people-tab" class="tab-content">
+                <div class="section-header">
+                    <h2>People</h2>
+                    <button class="btn btn-primary" onclick="showCreatePersonForm()">+ New Person</button>
+                </div>
+
+                <div id="create-person-form" class="form-card hidden">
+                    <h3>Create Person</h3>
+                    <form onsubmit="createPerson(event)">
+                        <select id="person-org-id" required>
+                            <option value="">Select Organization</option>
+                        </select>
+                        <input type="text" id="person-id" placeholder="ID" required>
+                        <input type="text" id="person-name" placeholder="Name" required>
+                        <input type="email" id="person-email" placeholder="Email (optional)">
+                        <input type="text" id="person-roles" placeholder="Roles (comma-separated)">
+                        <div class="form-actions">
+                            <button type="submit" class="btn btn-primary">Create</button>
+                            <button type="button" class="btn btn-secondary" onclick="hideCreatePersonForm()">Cancel</button>
+                        </div>
+                    </form>
+                </div>
+
+                <div class="filter-bar">
+                    <select id="people-org-filter" onchange="loadPeople()">
+                        <option value="">All Organizations</option>
+                    </select>
+                </div>
+
+                <div id="people-list" class="data-list">
+                    <div class="loading">Select an organization to view people</div>
+                </div>
+            </section>
+
+            <!-- Teams Tab -->
+            <section id="teams-tab" class="tab-content">
+                <div class="section-header">
+                    <h2>Teams</h2>
+                    <button class="btn btn-primary" onclick="showCreateTeamForm()">+ New Team</button>
+                </div>
+
+                <div id="create-team-form" class="form-card hidden">
+                    <h3>Create Team</h3>
+                    <form onsubmit="createTeam(event)">
+                        <select id="team-org-id" required>
+                            <option value="">Select Organization</option>
+                        </select>
+                        <input type="text" id="team-id" placeholder="ID" required>
+                        <input type="text" id="team-name" placeholder="Name" required>
+                        <textarea id="team-description" placeholder="Description (optional)" rows="3"></textarea>
+                        <div class="form-actions">
+                            <button type="submit" class="btn btn-primary">Create</button>
+                            <button type="button" class="btn btn-secondary" onclick="hideCreateTeamForm()">Cancel</button>
+                        </div>
+                    </form>
+                </div>
+
+                <div class="filter-bar">
+                    <select id="teams-org-filter" onchange="loadTeams()">
+                        <option value="">All Organizations</option>
+                    </select>
+                </div>
+
+                <div id="teams-list" class="data-list">
+                    <div class="loading">Select an organization to view teams</div>
+                </div>
+            </section>
+
+            <!-- Events Tab -->
+            <section id="events-tab" class="tab-content">
+                <div class="section-header">
+                    <h2>Events</h2>
+                    <button class="btn btn-primary" onclick="showCreateEventForm()">+ New Event</button>
+                </div>
+
+                <div id="create-event-form" class="form-card hidden">
+                    <h3>Create Event</h3>
+                    <form onsubmit="createEvent(event)">
+                        <select id="event-org-id" required>
+                            <option value="">Select Organization</option>
+                        </select>
+                        <input type="text" id="event-id" placeholder="ID" required>
+                        <input type="text" id="event-type" placeholder="Type (e.g., match, shift)" required>
+                        <input type="datetime-local" id="event-start" required>
+                        <input type="datetime-local" id="event-end" required>
+                        <div class="form-actions">
+                            <button type="submit" class="btn btn-primary">Create</button>
+                            <button type="button" class="btn btn-secondary" onclick="hideCreateEventForm()">Cancel</button>
+                        </div>
+                    </form>
+                </div>
+
+                <div class="filter-bar">
+                    <select id="events-org-filter" onchange="loadEvents()">
+                        <option value="">All Organizations</option>
+                    </select>
+                </div>
+
+                <div id="events-list" class="data-list">
+                    <div class="loading">Select an organization to view events</div>
+                </div>
+            </section>
+
+            <!-- Solver Tab -->
+            <section id="solver-tab" class="tab-content">
+                <div class="section-header">
+                    <h2>Generate Schedule</h2>
+                </div>
+
+                <div class="form-card">
+                    <h3>Solve Parameters</h3>
+                    <form onsubmit="solveSchedule(event)">
+                        <select id="solve-org-id" required>
+                            <option value="">Select Organization</option>
+                        </select>
+                        <input type="date" id="solve-from-date" placeholder="From Date" required>
+                        <input type="date" id="solve-to-date" placeholder="To Date" required>
+                        <select id="solve-mode">
+                            <option value="strict">Strict</option>
+                            <option value="relaxed">Relaxed</option>
+                        </select>
+                        <div class="form-actions">
+                            <button type="submit" class="btn btn-primary btn-large">🚀 Generate Schedule</button>
+                        </div>
+                    </form>
+                </div>
+
+                <div id="solve-results" class="hidden">
+                    <div class="results-card">
+                        <h3>Solution Results</h3>
+                        <div id="solution-metrics"></div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Solutions Tab -->
+            <section id="solutions-tab" class="tab-content">
+                <div class="section-header">
+                    <h2>Solutions</h2>
+                    <button class="btn btn-secondary" onclick="loadSolutions()">🔄 Refresh</button>
+                </div>
+
+                <div class="filter-bar">
+                    <select id="solutions-org-filter" onchange="loadSolutions()">
+                        <option value="">All Organizations</option>
+                    </select>
+                </div>
+
+                <div id="solutions-list" class="data-list">
+                    <div class="loading">Loading solutions...</div>
+                </div>
+            </section>
+        </main>
+
+        <!-- Footer -->
+        <footer>
+            <p>Roster API v0.2.0 | <a href="http://localhost:8000/docs" target="_blank">API Docs</a></p>
+        </footer>
+    </div>
+
+    <script src="js/app.js"></script>
+</body>
+</html>
