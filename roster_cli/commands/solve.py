@@ -33,7 +33,7 @@ def solve_command(
     from_date: str = typer.Option(..., help="Start date (YYYY-MM-DD)"),
     to_date: str = typer.Option(..., help="End date (YYYY-MM-DD)"),
     mode: str = typer.Option("strict", help="Mode: strict|relaxed"),
-    change_min: bool = typer.Option(True, help="Enable change minimization"),
+    change_min: bool = typer.Option(True, "--change-min/--no-change-min", help="Enable change minimization"),
     out: Path = typer.Option(None, help="Output directory (default: <dir>/out)"),
 ) -> None:
     """Solve and generate schedule."""

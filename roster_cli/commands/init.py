@@ -12,7 +12,7 @@ console = Console()
 def init_command(
     dir: Path = typer.Option(..., help="Workspace directory"),
     template: str = typer.Option(..., help="Template name (cricket|church|oncall)"),
-    force: bool = typer.Option(False, help="Overwrite existing files"),
+    force: bool = typer.Option(False, "--force", help="Overwrite existing files"),
 ) -> None:
     """Initialize a new workspace from template."""
     if dir.exists() and not force:

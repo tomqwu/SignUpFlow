@@ -33,7 +33,7 @@ def list_templates() -> None:
 def apply_template(
     template: str = typer.Argument(..., help="Template name"),
     dir: Path = typer.Option(..., help="Target directory"),
-    force: bool = typer.Option(False, help="Overwrite existing files"),
+    force: bool = typer.Option(False, "--force", help="Overwrite existing files"),
 ) -> None:
     """Apply template to directory."""
     if template not in TEMPLATES:
