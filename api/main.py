@@ -1,12 +1,15 @@
 """FastAPI application entry point."""
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
+from fastapi.responses import JSONResponse
 import uvicorn
 import os
+import traceback
 
 from api.database import init_db
+from api.logging_config import logger
 from api.routers import (
     auth,
     organizations,
@@ -28,6 +31,20 @@ app = FastAPI(
     docs_url="/docs",
     redoc_url="/redoc",
 )
+
+# Error handling middleware
+@app.middleware("http")
+async def error_logging_middleware(request: Request, call_next):
+    """Log all errors and return user-friendly messages."""
+    try:
+        response = await call_next(request)
+        return response
+    except Exception as e:
+        logger.error(f"Unhandled error: {str(e)}\n{traceback.format_exc()}")
+        return JSONResponse(
+            status_code=500,
+            content={"detail": "Internal server error. Please try again later."}
+        )
 
 # CORS middleware
 app.add_middleware(
@@ -89,6 +106,8 @@ if os.path.exists(frontend_path):
 def on_startup():
     """Initialize database on startup."""
     init_db()
+    logger.info("🚀 Rostio API started")
+    logger.info("📖 API docs available at http://localhost:8000/docs")
     print("🚀 Rostio API started")
     print("📖 API docs available at http://localhost:8000/docs")
 
