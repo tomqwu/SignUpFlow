@@ -18,7 +18,8 @@ async function loadOrgRoles() {
         const response = await fetch(`${API_BASE_URL}/organizations/${currentOrg.id}`);
         if (response.ok) {
             const data = await response.json();
-            const roles = data.config?.custom_roles || DEFAULT_ROLES;
+            // Try custom_roles first, then roles, then default
+            const roles = data.config?.custom_roles || data.config?.roles || DEFAULT_ROLES;
             currentOrg.customRoles = roles;
             return roles;
         }

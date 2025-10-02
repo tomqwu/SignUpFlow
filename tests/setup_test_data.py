@@ -19,18 +19,24 @@ def setup_test_data():
     resp = requests.post(f"{API_BASE}/organizations/", json=org_data)
     if resp.status_code in [200, 201]:
         print("✅ Organization created")
+    elif resp.status_code == 400:
+        print("ℹ️  Organization already exists")
 
-    # Create test people
-    people = [
-        {"id": "sarah", "name": "Sarah Johnson", "email": "sarah@test.com", "org_id": "test_org"},
-        {"id": "john", "name": "John Doe", "email": "john@test.com", "org_id": "test_org"},
-        {"id": "jane", "name": "Jane Smith", "email": "jane@test.com", "org_id": "test_org"},
+    # Create test users via signup (creates Person with password)
+    users = [
+        {"name": "Sarah Johnson", "email": "sarah@test.com", "password": "password", "org_id": "test_org", "roles": ["volunteer"]},
+        {"name": "John Doe", "email": "john@test.com", "password": "password", "org_id": "test_org", "roles": ["volunteer"]},
+        {"name": "Jane Smith", "email": "jane@test.com", "password": "password", "org_id": "test_org", "roles": ["admin"]},
     ]
 
-    for person in people:
-        resp = requests.post(f"{API_BASE}/people/", json=person)
+    for user in users:
+        resp = requests.post(f"{API_BASE}/auth/signup", json=user)
         if resp.status_code in [200, 201]:
-            print(f"✅ Created person: {person['name']}")
+            print(f"✅ Created user: {user['name']}")
+        elif resp.status_code == 400 and "already registered" in resp.text:
+            print(f"ℹ️  User already exists: {user['name']}")
+        else:
+            print(f"⚠️  Failed to create {user['name']}: {resp.text}")
 
     # Create test events
     now = datetime.now()

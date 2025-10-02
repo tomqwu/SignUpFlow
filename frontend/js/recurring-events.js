@@ -39,9 +39,17 @@ window.createEvent = async function(event) {
             });
             if (response.ok) {
                 closeCreateEventForm();
-                loadAdminEvents();
-                alert('Event created!');
+                showToast('Event created successfully!', 'success');
                 document.getElementById('create-event-form').reset();
+                // Reload admin page to show new event
+                if (typeof loadAdminEvents === 'function') {
+                    loadAdminEvents();
+                } else if (typeof loadUserData === 'function') {
+                    loadUserData();
+                }
+            } else {
+                const error = await response.json();
+                showToast(`Failed to create event: ${error.detail || 'Unknown error'}`, 'error');
             }
         } else {
             const events = [];
@@ -77,12 +85,17 @@ window.createEvent = async function(event) {
             }
 
             closeCreateEventForm();
-            loadAdminEvents();
-            alert('Created ' + successCount + ' recurring events!');
+            showToast(`Created ${successCount} recurring events!`, 'success');
             document.getElementById('create-event-form').reset();
+            if (typeof loadAdminEvents === 'function') {
+                loadAdminEvents();
+            } else if (typeof loadUserData === 'function') {
+                loadUserData();
+            }
         }
     } catch (error) {
-        alert('Error: ' + error.message);
+        console.error('Event creation error:', error);
+        showToast(`Error creating event: ${error.message}`, 'error');
     }
 };
 
