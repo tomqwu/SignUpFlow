@@ -72,6 +72,7 @@ class Person(Base):
     org_id = Column(String, ForeignKey("organizations.id"), nullable=False)
     name = Column(String, nullable=False)
     email = Column(String, nullable=True)
+    password_hash = Column(String, nullable=True)  # Hashed password for login
     roles = Column(JSONType, nullable=True)  # Array of role strings
     extra_data = Column(JSONType, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)

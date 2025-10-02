@@ -3,218 +3,478 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Roster Scheduler</title>
+    <title>My Schedule - Roster</title>
     <link rel="stylesheet" href="css/styles.css">
 </head>
 <body>
     <div class="container">
-        <!-- Header -->
-        <header>
-            <h1>🗓️ Roster Scheduler</h1>
-            <p class="subtitle">Constraint-based scheduling for teams, events, and resources</p>
-            <div class="api-status">
-                <span id="api-status" class="status-badge">Checking API...</span>
-            </div>
-        </header>
+        <!-- Onboarding Screen -->
+        <div id="onboarding-screen" class="screen">
+            <div class="welcome-card">
+                <h1>🗓️ Welcome to Roster</h1>
+                <p class="welcome-text">Join your organization and manage your schedule effortlessly</p>
 
-        <!-- Navigation Tabs -->
-        <nav class="tabs">
-            <button class="tab-btn active" data-tab="organizations">Organizations</button>
-            <button class="tab-btn" data-tab="people">People</button>
-            <button class="tab-btn" data-tab="teams">Teams</button>
-            <button class="tab-btn" data-tab="events">Events</button>
-            <button class="tab-btn" data-tab="solver">Solve</button>
-            <button class="tab-btn" data-tab="solutions">Solutions</button>
-        </nav>
-
-        <!-- Content Sections -->
-        <main>
-            <!-- Organizations Tab -->
-            <section id="organizations-tab" class="tab-content active">
-                <div class="section-header">
-                    <h2>Organizations</h2>
-                    <button class="btn btn-primary" onclick="showCreateOrgForm()">+ New Organization</button>
-                </div>
-
-                <div id="create-org-form" class="form-card hidden">
-                    <h3>Create Organization</h3>
-                    <form onsubmit="createOrganization(event)">
-                        <input type="text" id="org-id" placeholder="ID (e.g., my_league)" required>
-                        <input type="text" id="org-name" placeholder="Name" required>
-                        <input type="text" id="org-region" placeholder="Region (e.g., US-CA)">
-                        <div class="form-actions">
-                            <button type="submit" class="btn btn-primary">Create</button>
-                            <button type="button" class="btn btn-secondary" onclick="hideCreateOrgForm()">Cancel</button>
-                        </div>
-                    </form>
-                </div>
-
-                <div id="organizations-list" class="data-list">
-                    <div class="loading">Loading organizations...</div>
-                </div>
-            </section>
-
-            <!-- People Tab -->
-            <section id="people-tab" class="tab-content">
-                <div class="section-header">
-                    <h2>People</h2>
-                    <button class="btn btn-primary" onclick="showCreatePersonForm()">+ New Person</button>
-                </div>
-
-                <div id="create-person-form" class="form-card hidden">
-                    <h3>Create Person</h3>
-                    <form onsubmit="createPerson(event)">
-                        <select id="person-org-id" required>
-                            <option value="">Select Organization</option>
-                        </select>
-                        <input type="text" id="person-id" placeholder="ID" required>
-                        <input type="text" id="person-name" placeholder="Name" required>
-                        <input type="email" id="person-email" placeholder="Email (optional)">
-                        <input type="text" id="person-roles" placeholder="Roles (comma-separated)">
-                        <div class="form-actions">
-                            <button type="submit" class="btn btn-primary">Create</button>
-                            <button type="button" class="btn btn-secondary" onclick="hideCreatePersonForm()">Cancel</button>
-                        </div>
-                    </form>
-                </div>
-
-                <div class="filter-bar">
-                    <select id="people-org-filter" onchange="loadPeople()">
-                        <option value="">All Organizations</option>
-                    </select>
-                </div>
-
-                <div id="people-list" class="data-list">
-                    <div class="loading">Select an organization to view people</div>
-                </div>
-            </section>
-
-            <!-- Teams Tab -->
-            <section id="teams-tab" class="tab-content">
-                <div class="section-header">
-                    <h2>Teams</h2>
-                    <button class="btn btn-primary" onclick="showCreateTeamForm()">+ New Team</button>
-                </div>
-
-                <div id="create-team-form" class="form-card hidden">
-                    <h3>Create Team</h3>
-                    <form onsubmit="createTeam(event)">
-                        <select id="team-org-id" required>
-                            <option value="">Select Organization</option>
-                        </select>
-                        <input type="text" id="team-id" placeholder="ID" required>
-                        <input type="text" id="team-name" placeholder="Name" required>
-                        <textarea id="team-description" placeholder="Description (optional)" rows="3"></textarea>
-                        <div class="form-actions">
-                            <button type="submit" class="btn btn-primary">Create</button>
-                            <button type="button" class="btn btn-secondary" onclick="hideCreateTeamForm()">Cancel</button>
-                        </div>
-                    </form>
-                </div>
-
-                <div class="filter-bar">
-                    <select id="teams-org-filter" onchange="loadTeams()">
-                        <option value="">All Organizations</option>
-                    </select>
-                </div>
-
-                <div id="teams-list" class="data-list">
-                    <div class="loading">Select an organization to view teams</div>
-                </div>
-            </section>
-
-            <!-- Events Tab -->
-            <section id="events-tab" class="tab-content">
-                <div class="section-header">
-                    <h2>Events</h2>
-                    <button class="btn btn-primary" onclick="showCreateEventForm()">+ New Event</button>
-                </div>
-
-                <div id="create-event-form" class="form-card hidden">
-                    <h3>Create Event</h3>
-                    <form onsubmit="createEvent(event)">
-                        <select id="event-org-id" required>
-                            <option value="">Select Organization</option>
-                        </select>
-                        <input type="text" id="event-id" placeholder="ID" required>
-                        <input type="text" id="event-type" placeholder="Type (e.g., match, shift)" required>
-                        <input type="datetime-local" id="event-start" required>
-                        <input type="datetime-local" id="event-end" required>
-                        <div class="form-actions">
-                            <button type="submit" class="btn btn-primary">Create</button>
-                            <button type="button" class="btn btn-secondary" onclick="hideCreateEventForm()">Cancel</button>
-                        </div>
-                    </form>
-                </div>
-
-                <div class="filter-bar">
-                    <select id="events-org-filter" onchange="loadEvents()">
-                        <option value="">All Organizations</option>
-                    </select>
-                </div>
-
-                <div id="events-list" class="data-list">
-                    <div class="loading">Select an organization to view events</div>
-                </div>
-            </section>
-
-            <!-- Solver Tab -->
-            <section id="solver-tab" class="tab-content">
-                <div class="section-header">
-                    <h2>Generate Schedule</h2>
-                </div>
-
-                <div class="form-card">
-                    <h3>Solve Parameters</h3>
-                    <form onsubmit="solveSchedule(event)">
-                        <select id="solve-org-id" required>
-                            <option value="">Select Organization</option>
-                        </select>
-                        <input type="date" id="solve-from-date" placeholder="From Date" required>
-                        <input type="date" id="solve-to-date" placeholder="To Date" required>
-                        <select id="solve-mode">
-                            <option value="strict">Strict</option>
-                            <option value="relaxed">Relaxed</option>
-                        </select>
-                        <div class="form-actions">
-                            <button type="submit" class="btn btn-primary btn-large">🚀 Generate Schedule</button>
-                        </div>
-                    </form>
-                </div>
-
-                <div id="solve-results" class="hidden">
-                    <div class="results-card">
-                        <h3>Solution Results</h3>
-                        <div id="solution-metrics"></div>
+                <div class="onboarding-steps">
+                    <div class="step">
+                        <div class="step-number">1</div>
+                        <h3>Join an Organization</h3>
+                        <p>Find your church, league, or team</p>
+                    </div>
+                    <div class="step">
+                        <div class="step-number">2</div>
+                        <h3>Set Your Availability</h3>
+                        <p>Block off times when you're unavailable</p>
+                    </div>
+                    <div class="step">
+                        <div class="step-number">3</div>
+                        <h3>View Your Schedule</h3>
+                        <p>See your assignments and export to calendar</p>
                     </div>
                 </div>
-            </section>
 
-            <!-- Solutions Tab -->
-            <section id="solutions-tab" class="tab-content">
-                <div class="section-header">
-                    <h2>Solutions</h2>
-                    <button class="btn btn-secondary" onclick="loadSolutions()">🔄 Refresh</button>
+                <button class="btn btn-primary btn-large" onclick="startOnboarding()">Get Started →</button>
+                <p class="help-text">Already have an account? <a href="#" onclick="showLogin(); return false;">Sign in</a></p>
+            </div>
+        </div>
+
+        <!-- Login Screen -->
+        <div id="login-screen" class="screen hidden">
+            <div class="form-container">
+                <h2>Sign In</h2>
+                <p class="subtitle">Welcome back! Sign in to access your schedule</p>
+
+                <form onsubmit="handleLogin(event)">
+                    <div class="form-group">
+                        <label>Email Address</label>
+                        <input type="email" id="login-email" placeholder="your@email.com" required autofocus>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Password</label>
+                        <input type="password" id="login-password" placeholder="Enter your password" required>
+                    </div>
+
+                    <div id="login-error" class="error-message hidden"></div>
+
+                    <div class="form-actions">
+                        <button type="submit" class="btn btn-primary btn-large">Sign In →</button>
+                    </div>
+                </form>
+
+                <p class="help-text">Don't have an account? <a href="#" onclick="startOnboarding(); return false;">Sign up</a></p>
+            </div>
+        </div>
+
+        <!-- Join Organization -->
+        <div id="join-screen" class="screen hidden">
+            <div class="form-container">
+                <h2>Join Your Organization</h2>
+                <p class="subtitle">First, let's find your organization</p>
+
+                <div id="org-list" class="org-selection">
+                    <div class="loading">Loading organizations...</div>
                 </div>
 
-                <div class="filter-bar">
-                    <select id="solutions-org-filter" onchange="loadSolutions()">
-                        <option value="">All Organizations</option>
-                    </select>
+                <div class="divider">
+                    <span>or</span>
                 </div>
 
-                <div id="solutions-list" class="data-list">
-                    <div class="loading">Loading solutions...</div>
-                </div>
-            </section>
-        </main>
+                <button class="btn btn-secondary" onclick="showCreateOrg()">Create New Organization</button>
 
-        <!-- Footer -->
-        <footer>
-            <p>Roster API v0.2.0 | <a href="http://localhost:8000/docs" target="_blank">API Docs</a></p>
-        </footer>
+                <div id="create-org-section" class="hidden">
+                    <h3>Create Your Organization</h3>
+                    <form onsubmit="createAndJoinOrg(event)">
+                        <input type="text" id="new-org-name" placeholder="Organization Name (e.g., Grace Community Church)" required>
+                        <input type="text" id="new-org-region" placeholder="Location (optional)">
+                        <div class="form-actions">
+                            <button type="submit" class="btn btn-primary">Create & Continue</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- User Profile Setup -->
+        <div id="profile-screen" class="screen hidden">
+            <div class="form-container">
+                <h2>Tell Us About Yourself</h2>
+                <p class="subtitle">This helps us assign you appropriately</p>
+
+                <form onsubmit="createProfile(event)">
+                    <input type="text" id="user-name" placeholder="Your Full Name" required>
+                    <input type="email" id="user-email" placeholder="Email Address" required>
+                    <input type="password" id="user-password" placeholder="Create Password (min 6 characters)" minlength="6" required>
+                    <input type="tel" id="user-phone" placeholder="Phone Number (optional)">
+
+                    <label>What roles can you help with?</label>
+                    <div class="role-selector" id="role-selector">
+                        <label class="role-option">
+                            <input type="checkbox" value="volunteer"> Volunteer
+                        </label>
+                        <label class="role-option">
+                            <input type="checkbox" value="leader"> Leader/Coordinator
+                        </label>
+                        <label class="role-option">
+                            <input type="checkbox" value="musician"> Musician
+                        </label>
+                        <label class="role-option">
+                            <input type="checkbox" value="tech"> Tech/AV
+                        </label>
+                        <label class="role-option">
+                            <input type="checkbox" value="childcare"> Childcare
+                        </label>
+                        <label class="role-option">
+                            <input type="checkbox" value="hospitality"> Hospitality
+                        </label>
+                        <label class="role-option admin-role">
+                            <input type="checkbox" value="admin"> Administrator
+                        </label>
+                    </div>
+
+                    <div class="form-actions">
+                        <button type="submit" class="btn btn-primary btn-large">Continue →</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Main App -->
+        <div id="main-app" class="screen hidden">
+            <header class="app-header">
+                <div class="header-content">
+                    <div class="header-left">
+                        <h1>My Schedule</h1>
+                        <div class="org-selector">
+                            <select id="org-dropdown" onchange="switchOrganization()" style="display: none;">
+                                <!-- Organizations will be loaded here -->
+                            </select>
+                            <span id="org-name-display" class="org-badge"></span>
+                        </div>
+                    </div>
+                    <div class="user-info">
+                        <span id="user-name-display"></span>
+                        <button class="btn-icon" onclick="showSettings()">⚙️</button>
+                    </div>
+                </div>
+            </header>
+
+            <nav class="main-nav">
+                <button class="nav-btn active" data-view="calendar" onclick="switchView('calendar')">
+                    📅 My Calendar
+                </button>
+                <button class="nav-btn" data-view="availability" onclick="switchView('availability')">
+                    ⏰ Availability
+                </button>
+                <button class="nav-btn" data-view="schedule" onclick="switchView('schedule')">
+                    📊 My Schedule
+                </button>
+                <button class="nav-btn admin-only hidden" data-view="admin" onclick="switchView('admin')">
+                    👑 Admin Dashboard
+                </button>
+            </nav>
+
+            <!-- Calendar View -->
+            <div id="calendar-view" class="view-content active">
+                <div class="view-header">
+                    <h2>My Calendar</h2>
+                    <div class="calendar-controls">
+                        <select id="month-selector" onchange="loadCalendar()">
+                            <option value="current">This Month</option>
+                            <option value="next">Next Month</option>
+                            <option value="all">Next 3 Months</option>
+                        </select>
+                        <button class="btn btn-primary" onclick="exportMyCalendar()">📥 Export to Calendar</button>
+                    </div>
+                </div>
+
+                <div id="calendar-grid" class="calendar-container">
+                    <div class="loading">Loading your calendar...</div>
+                </div>
+            </div>
+
+            <!-- Availability View -->
+            <div id="availability-view" class="view-content">
+                <div class="view-header">
+                    <h2>Set Your Availability</h2>
+                    <p class="help-text">Block off times when you can't serve</p>
+                </div>
+
+                <div class="availability-form">
+                    <h3>Add Time Off</h3>
+                    <form onsubmit="addTimeOff(event)">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>From Date</label>
+                                <input type="date" id="timeoff-start" required>
+                            </div>
+                            <div class="form-group">
+                                <label>To Date</label>
+                                <input type="date" id="timeoff-end" required>
+                            </div>
+                        </div>
+                        <input type="text" id="timeoff-reason" placeholder="Reason (optional, e.g., Vacation, Family event)">
+                        <button type="submit" class="btn btn-primary">Add Time Off</button>
+                    </form>
+
+                    <div id="timeoff-list" class="timeoff-list">
+                        <h3>Your Blocked Dates</h3>
+                        <div class="loading">Loading...</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Schedule View -->
+            <div id="schedule-view" class="view-content">
+                <div class="view-header">
+                    <h2>My Upcoming Schedule</h2>
+                    <div class="schedule-stats">
+                        <div class="stat-card">
+                            <div class="stat-value" id="upcoming-count">0</div>
+                            <div class="stat-label">Upcoming</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value" id="this-month-count">0</div>
+                            <div class="stat-label">This Month</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="schedule-list" class="schedule-timeline">
+                    <div class="loading">Loading your schedule...</div>
+                </div>
+            </div>
+
+            <!-- Admin Dashboard View -->
+            <div id="admin-view" class="view-content">
+                <div class="view-header">
+                    <h2>Admin Dashboard</h2>
+                    <p class="help-text">Manage schedules, events, and people for your organization</p>
+                </div>
+
+                <div class="admin-dashboard">
+                    <!-- Quick Stats -->
+                    <div class="admin-stats">
+                        <div class="stat-card">
+                            <div class="stat-value" id="admin-people-count">0</div>
+                            <div class="stat-label">People</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value" id="admin-events-count">0</div>
+                            <div class="stat-label">Events</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value" id="admin-solutions-count">0</div>
+                            <div class="stat-label">Schedules</div>
+                        </div>
+                    </div>
+
+                    <!-- Role Management -->
+                    <div class="admin-section">
+                        <h3>Role Management</h3>
+                        <p class="help-text">Define custom roles for your organization</p>
+                        <div class="admin-controls">
+                            <button class="btn btn-primary" onclick="showAddRoleForm()">+ Add Role</button>
+                        </div>
+                        <div id="admin-roles-list" class="roles-list">
+                            <div class="loading">Loading roles...</div>
+                        </div>
+                    </div>
+
+                    <!-- Event Management -->
+                    <div class="admin-section">
+                        <h3>Event Management</h3>
+                        <div class="admin-controls">
+                            <button class="btn btn-primary" onclick="showCreateEventForm()">+ Create Event</button>
+                            <button class="btn btn-secondary" onclick="loadAdminEvents()">🔄 Refresh</button>
+                        </div>
+                        <div id="admin-events-list" class="admin-list">
+                            <div class="loading">Loading events...</div>
+                        </div>
+                    </div>
+
+                    <!-- Schedule Generation -->
+                    <div class="admin-section">
+                        <h3>Schedule Generation</h3>
+                        <div class="solver-controls">
+                            <button class="btn btn-primary btn-large" onclick="generateSchedule()">
+                                🔄 Generate Schedule
+                            </button>
+                            <p class="help-text">This will create assignments for all upcoming events</p>
+                        </div>
+                        <div id="solver-status" class="solver-status"></div>
+                    </div>
+
+                    <!-- People & Availability -->
+                    <div class="admin-section">
+                        <h3>People & Availability</h3>
+                        <div id="admin-people-list" class="admin-list">
+                            <div class="loading">Loading people...</div>
+                        </div>
+                    </div>
+
+                    <!-- Generated Schedules -->
+                    <div class="admin-section">
+                        <h3>Generated Schedules</h3>
+                        <div id="admin-solutions-list" class="admin-list">
+                            <div class="loading">Loading schedules...</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Create Event Modal -->
+        <div id="create-event-modal" class="modal hidden">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3>Create Event</h3>
+                    <button class="btn-close" onclick="closeCreateEventForm()">×</button>
+                </div>
+                <div class="modal-body">
+                    <form id="create-event-form" onsubmit="createEvent(event)">
+                        <div class="form-group">
+                            <label>Event Type</label>
+                            <select id="event-type" required>
+                                <option value="">Select type...</option>
+                                <option value="Sunday Service">Sunday Service</option>
+                                <option value="Worship Service">Worship Service</option>
+                                <option value="Bible Study">Bible Study</option>
+                                <option value="Prayer Meeting">Prayer Meeting</option>
+                                <option value="Youth Group">Youth Group</option>
+                                <option value="Board Meeting">Board Meeting</option>
+                                <option value="Special Event">Special Event</option>
+                                <option value="Other">Other (specify in title)</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Title (optional, override type name)</label>
+                            <input type="text" id="event-title" placeholder="e.g., Christmas Service, Easter Celebration">
+                        </div>
+                        <div class="form-group">
+                            <label>Date & Time</label>
+                            <input type="datetime-local" id="event-start" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Duration (hours)</label>
+                            <input type="number" id="event-duration" value="2" min="0.5" step="0.5" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Occurs</label>
+                            <select id="event-occurs" onchange="toggleRecurrenceOptions()">
+                                <option value="once">Once</option>
+                                <option value="daily">Daily</option>
+                                <option value="weekly">Weekly</option>
+                                <option value="monthly">Monthly</option>
+                            </select>
+                        </div>
+                        <div id="recurrence-options" class="form-group" style="display: none;">
+                            <label>End Date</label>
+                            <input type="date" id="event-end-date">
+                            <small style="color: var(--text-light); display: block; margin-top: 5px;">Leave blank for 1 year from start</small>
+                        </div>
+                        <div class="form-group">
+                            <label>Location</label>
+                            <input type="text" id="event-location" placeholder="Main Sanctuary, Fellowship Hall">
+                        </div>
+                        <div class="form-group">
+                            <label>Roles Needed - Select all that apply</label>
+                            <div class="role-selector" id="event-role-selector">
+                                <!-- Roles will be loaded dynamically from org config -->
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" onclick="closeCreateEventForm()">Cancel</button>
+                            <button type="submit" class="btn btn-primary">Create Event</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Settings Modal -->
+        <div id="settings-modal" class="modal hidden">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3>Settings</h3>
+                    <button class="btn-close" onclick="closeSettings()">×</button>
+                </div>
+                <div class="modal-body">
+                    <div class="setting-item">
+                        <label>Your Name</label>
+                        <input type="text" id="settings-name" readonly>
+                    </div>
+                    <div class="setting-item">
+                        <label>Email</label>
+                        <input type="email" id="settings-email" readonly>
+                    </div>
+                    <div class="setting-item">
+                        <label>Organization</label>
+                        <input type="text" id="settings-org" readonly>
+                    </div>
+                    <div class="setting-item">
+                        <label>Roles - Select all that apply</label>
+                        <div class="role-selector" id="settings-role-selector">
+                            <label class="role-option">
+                                <input type="checkbox" value="volunteer"> Volunteer
+                            </label>
+                            <label class="role-option">
+                                <input type="checkbox" value="leader"> Leader/Coordinator
+                            </label>
+                            <label class="role-option">
+                                <input type="checkbox" value="musician"> Musician
+                            </label>
+                            <label class="role-option">
+                                <input type="checkbox" value="tech"> Tech/AV
+                            </label>
+                            <label class="role-option">
+                                <input type="checkbox" value="childcare"> Childcare
+                            </label>
+                            <label class="role-option">
+                                <input type="checkbox" value="hospitality"> Hospitality
+                            </label>
+                            <label class="role-option">
+                                <input type="checkbox" value="admin"> Admin
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" onclick="logout()">Sign Out</button>
+                    <button class="btn btn-primary" onclick="saveSettings()">Save Changes</button>
+                    <button class="btn btn-secondary" onclick="closeSettings()">Cancel</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Add Role Modal -->
+        <div id="add-role-modal" class="modal hidden">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3>Add Custom Role</h3>
+                    <button class="btn-close" onclick="closeAddRoleForm()">×</button>
+                </div>
+                <div class="modal-body">
+                    <form onsubmit="addCustomRole(event)">
+                        <div class="form-group">
+                            <label>Role Name</label>
+                            <input type="text" id="role-name" placeholder="e.g., Usher, Greeter, Sound Tech" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Description (optional)</label>
+                            <textarea id="role-description" rows="3" placeholder="Brief description of this role"></textarea>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" onclick="closeAddRoleForm()">Cancel</button>
+                            <button type="submit" class="btn btn-primary">Add Role</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
     </div>
 
-    <script src="js/app.js"></script>
+    <script src="js/role-management.js"></script>
+    <script src="js/recurring-events.js"></script>
+    <script src="js/app-user.js"></script>
 </body>
 </html>

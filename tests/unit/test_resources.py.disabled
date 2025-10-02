@@ -1,0 +1,228 @@
+"""Unit tests for resource endpoints."""
+
+import pytest
+from fastapi.testclient import TestClient
+from api.main import app
+
+client = TestClient(app)
+API_BASE = "http://localhost:8000"
+
+
+class TestResourceCreate:
+    """Test resource creation."""
+
+    def test_create_resource_success(self):
+        """Test successful resource creation with type, location, and capacity."""
+        # Create org first
+        client.post(
+            f"{API_BASE}/organizations/",
+            json={"id": "resource_test_org_001", "name": "Resource Test Org 1"}
+        )
+        # Create resource
+        response = client.post(
+            f"{API_BASE}/resources/",
+            json={
+                "id": "resource_001",
+                "org_id": "resource_test_org_001",
+                "type": "venue",
+                "location": "Main Building",
+                "capacity": 100
+            }
+        )
+        assert response.status_code in [200, 201]
+        data = response.json()
+        assert data["id"] == "resource_001"
+        assert data["type"] == "venue"
+        assert data["location"] == "Main Building"
+        assert data["capacity"] == 100
+
+    def test_create_resource_duplicate_id(self):
+        """Test creating resource with duplicate ID fails."""
+        client.post(
+            f"{API_BASE}/organizations/",
+            json={"id": "resource_test_org_002", "name": "Resource Test Org 2"}
+        )
+        # Create first resource
+        client.post(
+            f"{API_BASE}/resources/",
+            json={
+                "id": "resource_002",
+                "org_id": "resource_test_org_002",
+                "type": "equipment",
+                "location": "Storage Room"
+            }
+        )
+        # Try to create duplicate
+        response = client.post(
+            f"{API_BASE}/resources/",
+            json={
+                "id": "resource_002",
+                "org_id": "resource_test_org_002",
+                "type": "venue",
+                "location": "Another Location"
+            }
+        )
+        assert response.status_code == 409  # Conflict
+
+    def test_create_resource_invalid_org(self):
+        """Test creating resource with invalid org fails."""
+        response = client.post(
+            f"{API_BASE}/resources/",
+            json={
+                "id": "resource_003",
+                "org_id": "nonexistent_org",
+                "type": "venue",
+                "location": "Test Location"
+            }
+        )
+        assert response.status_code == 404
+
+    def test_create_resource_minimal(self):
+        """Test creating resource with just type and location (minimal fields)."""
+        client.post(
+            f"{API_BASE}/organizations/",
+            json={"id": "resource_test_org_003", "name": "Resource Test Org 3"}
+        )
+        response = client.post(
+            f"{API_BASE}/resources/",
+            json={
+                "id": "resource_004",
+                "org_id": "resource_test_org_003",
+                "type": "equipment",
+                "location": "Office"
+            }
+        )
+        assert response.status_code in [200, 201]
+        data = response.json()
+        assert data["id"] == "resource_004"
+        assert data["type"] == "equipment"
+        assert data["location"] == "Office"
+
+
+class TestResourceRead:
+    """Test resource retrieval."""
+
+    def test_get_resource_success(self):
+        """Test successful resource retrieval."""
+        client.post(
+            f"{API_BASE}/organizations/",
+            json={"id": "resource_test_org_004", "name": "Resource Test Org 4"}
+        )
+        client.post(
+            f"{API_BASE}/resources/",
+            json={
+                "id": "resource_005",
+                "org_id": "resource_test_org_004",
+                "type": "venue",
+                "location": "Conference Room"
+            }
+        )
+        response = client.get(f"{API_BASE}/resources/resource_005")
+        assert response.status_code == 200
+        data = response.json()
+        assert data["id"] == "resource_005"
+        assert data["type"] == "venue"
+        assert data["location"] == "Conference Room"
+
+    def test_get_resource_not_found(self):
+        """Test retrieving non-existent resource returns 404."""
+        response = client.get(f"{API_BASE}/resources/nonexistent_resource")
+        assert response.status_code == 404
+
+    def test_list_resources_by_org(self):
+        """Test listing resources filtered by organization."""
+        client.post(
+            f"{API_BASE}/organizations/",
+            json={"id": "resource_test_org_005", "name": "Resource Test Org 5"}
+        )
+        # Create multiple resources
+        for i in range(6, 9):
+            client.post(
+                f"{API_BASE}/resources/",
+                json={
+                    "id": f"resource_{i:03d}",
+                    "org_id": "resource_test_org_005",
+                    "type": "equipment",
+                    "location": f"Location {i}"
+                }
+            )
+        response = client.get(f"{API_BASE}/resources/?org_id=resource_test_org_005")
+        assert response.status_code == 200
+        data = response.json()
+        assert "resources" in data
+        assert len(data["resources"]) >= 3
+
+
+class TestResourceUpdate:
+    """Test resource updates."""
+
+    def test_update_resource_success(self):
+        """Test successful resource update."""
+        client.post(
+            f"{API_BASE}/organizations/",
+            json={"id": "resource_test_org_006", "name": "Resource Test Org 6"}
+        )
+        client.post(
+            f"{API_BASE}/resources/",
+            json={
+                "id": "resource_009",
+                "org_id": "resource_test_org_006",
+                "type": "venue",
+                "location": "Original Location",
+                "capacity": 50
+            }
+        )
+        response = client.put(
+            f"{API_BASE}/resources/resource_009",
+            json={
+                "type": "equipment",
+                "location": "Updated Location",
+                "capacity": 75
+            }
+        )
+        assert response.status_code == 200
+        data = response.json()
+        assert data["type"] == "equipment"
+        assert data["location"] == "Updated Location"
+        assert data["capacity"] == 75
+
+    def test_update_resource_not_found(self):
+        """Test updating non-existent resource returns 404."""
+        response = client.put(
+            f"{API_BASE}/resources/nonexistent_resource",
+            json={
+                "type": "venue",
+                "location": "Updated Location"
+            }
+        )
+        assert response.status_code == 404
+
+
+class TestResourceDelete:
+    """Test resource deletion."""
+
+    def test_delete_resource_success(self):
+        """Test successful resource deletion."""
+        client.post(
+            f"{API_BASE}/organizations/",
+            json={"id": "resource_test_org_007", "name": "Resource Test Org 7"}
+        )
+        client.post(
+            f"{API_BASE}/resources/",
+            json={
+                "id": "resource_010",
+                "org_id": "resource_test_org_007",
+                "type": "venue",
+                "location": "To Be Deleted"
+            }
+        )
+        response = client.delete(f"{API_BASE}/resources/resource_010")
+        assert response.status_code in [200, 204]  # OK or No Content
+        # Verify deletion
+        response = client.get(f"{API_BASE}/resources/resource_010")
+        assert response.status_code == 404
+
+    def test_delete_resource_not_found(self):
+        """Test deleting non-existent resource returns 404."""
+        response = client.delete(f"{API_BASE}/resources/nonexistent_resource")
+        assert response.status_code == 404

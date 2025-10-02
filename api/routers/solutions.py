@@ -153,21 +153,32 @@ def export_solution(
     ]
 
     # Create a minimal solution object for export
-    from roster_cli.core.models import SolutionModel, Metrics, Violations, Fairness
+    from roster_cli.core.models import (
+        SolutionBundle, Metrics, Violations, FairnessMetrics, StabilityMetrics,
+        SolutionMeta, SolverMeta
+    )
+    from datetime import date
 
-    solution_obj = SolutionModel(
+    solution_obj = SolutionBundle(
+        meta=SolutionMeta(
+            generated_at=solution.created_at,
+            range_start=date.today(),
+            range_end=date.today(),
+            mode="greedy",
+            change_min=False,
+            solver=SolverMeta(name="greedy-solver", version="1.0", strategy="greedy")
+        ),
         assignments=assignments,
         metrics=Metrics(
             hard_violations=solution.hard_violations,
             soft_score=solution.soft_score,
             health_score=solution.health_score,
             solve_ms=solution.solve_ms,
-            fairness=Fairness(
-                mean=solution.metrics.get("fairness", {}).get("mean", 0.0) if solution.metrics else 0.0,
+            fairness=FairnessMetrics(
                 stdev=solution.metrics.get("fairness", {}).get("stdev", 0.0) if solution.metrics else 0.0,
-                min_count=solution.metrics.get("fairness", {}).get("min_count", 0) if solution.metrics else 0,
-                max_count=solution.metrics.get("fairness", {}).get("max_count", 0) if solution.metrics else 0,
+                per_person_counts=solution.metrics.get("fairness", {}).get("per_person_counts", {}) if solution.metrics else {},
             ),
+            stability=StabilityMetrics(moves_from_published=0, affected_persons=0),
         ),
         violations=Violations(hard=[], soft=[]),
     )

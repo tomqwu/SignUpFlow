@@ -2,10 +2,13 @@
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 import uvicorn
+import os
 
 from api.database import init_db
 from api.routers import (
+    auth,
     organizations,
     people,
     teams,
@@ -13,6 +16,7 @@ from api.routers import (
     constraints,
     solver,
     solutions,
+    availability,
 )
 
 # Create FastAPI app
@@ -41,10 +45,21 @@ def health_check():
     return {"status": "healthy", "service": "roster-api", "version": "0.2.0"}
 
 
-# Root endpoint
-@app.get("/", tags=["root"])
-def root():
-    """Root endpoint with API information."""
+# Register routers with /api prefix
+app.include_router(auth.router, prefix="/api")
+app.include_router(organizations.router, prefix="/api")
+app.include_router(people.router, prefix="/api")
+app.include_router(teams.router, prefix="/api")
+app.include_router(events.router, prefix="/api")
+app.include_router(constraints.router, prefix="/api")
+app.include_router(solver.router, prefix="/api")
+app.include_router(solutions.router, prefix="/api")
+app.include_router(availability.router, prefix="/api")
+
+# API Info endpoint
+@app.get("/api", tags=["root"])
+def api_info():
+    """API information endpoint."""
     return {
         "service": "Roster API",
         "version": "0.2.0",
@@ -52,26 +67,20 @@ def root():
         "docs": "/docs",
         "redoc": "/redoc",
         "endpoints": {
-            "organizations": "/organizations",
-            "people": "/people",
-            "teams": "/teams",
-            "events": "/events",
-            "constraints": "/constraints",
-            "solver": "/solver/solve",
-            "solutions": "/solutions",
+            "organizations": "/api/organizations",
+            "people": "/api/people",
+            "teams": "/api/teams",
+            "events": "/api/events",
+            "constraints": "/api/constraints",
+            "solver": "/api/solver/solve",
+            "solutions": "/api/solutions",
         },
     }
 
-
-# Register routers
-app.include_router(organizations.router)
-app.include_router(people.router)
-app.include_router(teams.router)
-app.include_router(events.router)
-app.include_router(constraints.router)
-app.include_router(solver.router)
-app.include_router(solutions.router)
-
+# Mount static files (frontend) at root
+frontend_path = os.path.join(os.path.dirname(__file__), "..", "frontend")
+if os.path.exists(frontend_path):
+    app.mount("/", StaticFiles(directory=frontend_path, html=True), name="frontend")
 
 # Startup event
 @app.on_event("startup")
