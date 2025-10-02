@@ -100,18 +100,27 @@ def solve_schedule(solve_request: SolveRequest, db: Session = Depends(get_db)):
         member_ids = [tm.person_id for tm in t.members]
         teams.append(TeamModel(id=t.id, name=t.name, members=member_ids))
 
-    events = [
-        EventModel(
-            id=e.id,
-            type=e.type,
-            start=e.start_time,
-            end=e.end_time,
-            resource_id=e.resource_id,
-            team_ids=[et.team_id for et in e.event_teams],
-            required_roles=[],
+    # Convert events to core model format
+    events = []
+    for e in events_db:
+        # Extract role requirements from extra_data
+        role_counts = (e.extra_data or {}).get("role_counts", {})
+        required_roles = [
+            {"role": role_name, "count": count}
+            for role_name, count in role_counts.items()
+        ]
+
+        events.append(
+            EventModel(
+                id=e.id,
+                type=e.type,
+                start=e.start_time,
+                end=e.end_time,
+                resource_id=e.resource_id,
+                team_ids=[et.team_id for et in e.event_teams],
+                required_roles=required_roles,
+            )
         )
-        for e in events_db
-    ]
 
     # For now, we'll pass an empty constraints list since the API stores constraints
     # differently than the solver expects (ConstraintBinding vs simple params).
