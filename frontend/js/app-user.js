@@ -643,35 +643,37 @@ async function addTimeOff(event) {
 }
 
 async function editTimeOff(timeoffId, startDate, endDate) {
-    const newStart = prompt('Edit start date (YYYY-MM-DD):', startDate);
-    if (!newStart) return;
+    showInputDialog('Edit start date (YYYY-MM-DD):', startDate, (newStart) => {
+        if (!newStart) return;
 
-    const newEnd = prompt('Edit end date (YYYY-MM-DD):', endDate);
-    if (!newEnd) return;
+        showInputDialog('Edit end date (YYYY-MM-DD):', endDate, async (newEnd) => {
+            if (!newEnd) return;
 
-    try {
-        const response = await fetch(
-            `${API_BASE_URL}/availability/${currentUser.id}/timeoff/${timeoffId}`,
-            {
-                method: 'PATCH',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    start_date: newStart,
-                    end_date: newEnd
-                })
+            try {
+                const response = await fetch(
+                    `${API_BASE_URL}/availability/${currentUser.id}/timeoff/${timeoffId}`,
+                    {
+                        method: 'PATCH',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            start_date: newStart,
+                            end_date: newEnd
+                        })
+                    }
+                );
+
+                if (response.ok) {
+                    loadTimeOff();
+                    showToast('Time-off period updated successfully!', 'success');
+                } else {
+                    const error = await response.json();
+                    showToast(error.detail || 'Error updating time-off', 'error');
+                }
+            } catch (error) {
+                showToast(error.message, 'error');
             }
-        );
-
-        if (response.ok) {
-            loadTimeOff();
-            alert('Time-off period updated successfully!');
-        } else {
-            const error = await response.json();
-            alert(`Error: ${error.detail}`);
-        }
-    } catch (error) {
-        alert(`Error: ${error.message}`);
-    }
+        });
+    });
 }
 
 async function removeTimeOff(timeoffId) {
@@ -714,7 +716,7 @@ async function saveSettings() {
         const roles = Array.from(roleCheckboxes).map(cb => cb.value);
 
         if (roles.length === 0) {
-            alert('Please select at least one role');
+            showToast('Please select at least one role', 'warning');
             return;
         }
 
@@ -727,19 +729,19 @@ async function saveSettings() {
         if (response.ok) {
             currentUser.roles = roles;
             saveSession();
-            alert('Settings saved successfully!');
+            showToast('Settings saved successfully!', 'success');
             closeSettings();
 
             // Refresh admin UI if roles changed
             if (currentUser.roles.includes('admin')) {
-                location.reload();
+                setTimeout(() => location.reload(), 1000);
             }
         } else {
             const error = await response.json();
-            alert(`Error: ${error.detail}`);
+            showToast(error.detail || 'Error saving settings', 'error');
         }
     } catch (error) {
-        alert(`Error: ${error.message}`);
+        showToast(error.message, 'error');
     }
 }
 
