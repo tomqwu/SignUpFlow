@@ -79,6 +79,7 @@ poetry run pytest tests/
 ## 📖 Documentation
 
 - [User Stories & Workflows](docs/USER_STORIES.md) - Complete user journey documentation
+- [Gaps Analysis & Roadmap](docs/GAPS_ANALYSIS.md) - Missing features and priority roadmap
 - [Session Summary (2025-10-02)](docs/SESSION_2025-10-02_SUMMARY.md) - Latest development session
 - [API Documentation](docs/API_README.md) - REST API reference
 - [Test Documentation](tests/README.md) - Testing guide
