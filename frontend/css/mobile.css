@@ -1,0 +1,202 @@
+/**
+ * Mobile Responsive Styles for Rostio
+ * Makes the app work great on phones and tablets
+ */
+
+/* Tablet and smaller */
+@media (max-width: 768px) {
+    /* Container adjustments */
+    .container {
+        padding: 10px;
+        max-width: 100%;
+    }
+
+    /* Buttons - make them larger and touch-friendly */
+    .btn {
+        padding: 12px 20px;
+        font-size: 16px;
+        min-height: 44px; /* iOS recommended touch target */
+    }
+
+    /* Form inputs - larger for mobile */
+    input[type="text"],
+    input[type="email"],
+    input[type="password"],
+    input[type="date"],
+    input[type="time"],
+    select,
+    textarea {
+        font-size: 16px; /* Prevents iOS zoom on focus */
+        padding: 12px;
+        min-height: 44px;
+    }
+
+    /* Modal dialogs - full screen on mobile */
+    .modal-content {
+        width: 95%;
+        max-width: 95%;
+        margin: 20px auto;
+        max-height: 90vh;
+        overflow-y: auto;
+    }
+
+    /* Admin dashboard - stack columns */
+    .admin-grid {
+        display: block !important;
+    }
+
+    .admin-section {
+        margin-bottom: 20px;
+    }
+
+    /* Calendar - single column */
+    .calendar-view {
+        padding: 10px;
+    }
+
+    .assignment-item {
+        padding: 12px;
+        margin-bottom: 10px;
+    }
+
+    /* Hide desktop-only elements */
+    .desktop-only {
+        display: none !important;
+    }
+
+    /* Navigation - hamburger menu */
+    .nav-menu {
+        flex-direction: column;
+        width: 100%;
+    }
+
+    .nav-menu button {
+        width: 100%;
+        margin: 5px 0;
+    }
+
+    /* Cards - full width on mobile */
+    .card,
+    .event-card,
+    .person-card {
+        width: 100%;
+        margin: 10px 0;
+    }
+
+    /* Forms - full width */
+    .form-group {
+        margin-bottom: 15px;
+    }
+
+    .form-row {
+        flex-direction: column;
+    }
+
+    .form-row .form-group {
+        width: 100%;
+    }
+
+    /* Tables - make scrollable */
+    .table-responsive {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    table {
+        font-size: 14px;
+    }
+
+    /* Toast notifications - adjust position */
+    #toast-container {
+        top: 10px;
+        right: 10px;
+        left: 10px;
+        width: auto;
+    }
+
+    .toast {
+        margin-bottom: 10px;
+    }
+}
+
+/* Phone only (small screens) */
+@media (max-width: 480px) {
+    /* Even larger touch targets */
+    .btn {
+        padding: 14px 24px;
+        font-size: 18px;
+    }
+
+    /* Smaller text to fit */
+    h1 {
+        font-size: 24px;
+    }
+
+    h2 {
+        font-size: 20px;
+    }
+
+    h3 {
+        font-size: 18px;
+    }
+
+    /* Modal - nearly full screen */
+    .modal-content {
+        width: 98%;
+        margin: 10px auto;
+    }
+
+    /* Hide less critical info on tiny screens */
+    .mobile-hide {
+        display: none !important;
+    }
+
+    /* Stack everything */
+    .flex-row {
+        flex-direction: column;
+    }
+}
+
+/* Landscape phone */
+@media (max-width: 768px) and (orientation: landscape) {
+    .modal-content {
+        max-height: 85vh;
+    }
+}
+
+/* Touch-specific enhancements */
+@media (hover: none) and (pointer: coarse) {
+    /* Increase spacing for touch */
+    .clickable,
+    button,
+    a {
+        padding: 12px;
+        margin: 4px;
+    }
+
+    /* Remove hover effects on touch devices */
+    .btn:hover {
+        transform: none;
+    }
+
+    /* Better touch feedback */
+    .btn:active {
+        transform: scale(0.98);
+        opacity: 0.9;
+    }
+}
+
+/* Print styles */
+@media print {
+    .no-print {
+        display: none !important;
+    }
+
+    .modal-overlay {
+        display: none !important;
+    }
+
+    body {
+        background: white;
+    }
+}

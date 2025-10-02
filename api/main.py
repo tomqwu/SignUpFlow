@@ -11,6 +11,8 @@ import traceback
 from api.database import init_db
 from api.logging_config import logger
 from api.routers import (
+    password_reset,
+    analytics,
     auth,
     organizations,
     people,
@@ -74,6 +76,8 @@ app.include_router(solver.router, prefix="/api")
 app.include_router(solutions.router, prefix="/api")
 app.include_router(availability.router, prefix="/api")
 app.include_router(conflicts.router, prefix="/api")
+app.include_router(password_reset.router, prefix="/api")
+app.include_router(analytics.router, prefix="/api")
 
 # API Info endpoint
 @app.get("/api", tags=["root"])
