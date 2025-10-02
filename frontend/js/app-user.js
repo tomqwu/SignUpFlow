@@ -586,7 +586,10 @@ async function loadTimeOff() {
                         ${new Date(timeoff.end_date).toLocaleDateString()}
                     </div>
                 </div>
-                <button class="btn-remove" onclick="removeTimeOff(${timeoff.id})">Remove</button>
+                <div class="timeoff-actions">
+                    <button class="btn btn-small btn-secondary" onclick="editTimeOff(${timeoff.id}, '${timeoff.start_date}', '${timeoff.end_date}')">Edit</button>
+                    <button class="btn btn-small btn-remove" onclick="removeTimeOff(${timeoff.id})">Remove</button>
+                </div>
             </div>
         `).join('');
 
@@ -615,6 +618,38 @@ async function addTimeOff(event) {
             event.target.reset();
             loadTimeOff();
             alert('Time-off period added successfully!');
+        } else {
+            const error = await response.json();
+            alert(`Error: ${error.detail}`);
+        }
+    } catch (error) {
+        alert(`Error: ${error.message}`);
+    }
+}
+
+async function editTimeOff(timeoffId, startDate, endDate) {
+    const newStart = prompt('Edit start date (YYYY-MM-DD):', startDate);
+    if (!newStart) return;
+
+    const newEnd = prompt('Edit end date (YYYY-MM-DD):', endDate);
+    if (!newEnd) return;
+
+    try {
+        const response = await fetch(
+            `${API_BASE_URL}/availability/${currentUser.id}/timeoff/${timeoffId}`,
+            {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    start_date: newStart,
+                    end_date: newEnd
+                })
+            }
+        );
+
+        if (response.ok) {
+            loadTimeOff();
+            alert('Time-off period updated successfully!');
         } else {
             const error = await response.json();
             alert(`Error: ${error.detail}`);

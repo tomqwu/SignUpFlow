@@ -128,6 +128,60 @@ def add_timeoff(
     }
 
 
+@router.patch("/{person_id}/timeoff/{timeoff_id}")
+def update_timeoff(
+    person_id: str,
+    timeoff_id: int,
+    timeoff_data: TimeOffCreate,
+    db: Session = Depends(get_db),
+):
+    """Update a time-off period."""
+    # Get availability
+    availability = db.query(Availability).filter(Availability.person_id == person_id).first()
+
+    if not availability:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"No availability found for person '{person_id}'",
+        )
+
+    # Get vacation period
+    vacation = (
+        db.query(VacationPeriod)
+        .filter(
+            VacationPeriod.id == timeoff_id,
+            VacationPeriod.availability_id == availability.id,
+        )
+        .first()
+    )
+
+    if not vacation:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Time-off period {timeoff_id} not found",
+        )
+
+    # Validate dates
+    if timeoff_data.end_date < timeoff_data.start_date:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="End date must be after start date",
+        )
+
+    # Update vacation period
+    vacation.start_date = timeoff_data.start_date
+    vacation.end_date = timeoff_data.end_date
+    db.commit()
+    db.refresh(vacation)
+
+    return {
+        "id": vacation.id,
+        "start_date": vacation.start_date.isoformat(),
+        "end_date": vacation.end_date.isoformat(),
+        "message": "Time-off period updated successfully",
+    }
+
+
 @router.delete("/{person_id}/timeoff/{timeoff_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_timeoff(person_id: str, timeoff_id: int, db: Session = Depends(get_db)):
     """Delete a time-off period."""
