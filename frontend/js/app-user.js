@@ -252,10 +252,25 @@ async function loadUserOrganizations() {
 
         // Filter organizations where user is a member
         // For now, we'll assume user belongs to the org they signed up with
-        // In a real system, we'd query which orgs this person_id belongs to
-        const userOrgs = data.organizations.filter(org => org.id === currentOrg.id);
+        // Find all organizations where this user's email exists as a Person
+        const userEmail = currentUser.email;
+        const userOrgsResponse = await fetch(`${API_BASE_URL}/people/?org_id=*`);
+        const allPeople = await userOrgsResponse.json();
 
-        // If user potentially belongs to multiple orgs, show dropdown
+        // Get unique org IDs where this email exists
+        const userOrgIds = new Set();
+        if (allPeople.people) {
+            allPeople.people.forEach(person => {
+                if (person.email === userEmail) {
+                    userOrgIds.add(person.org_id);
+                }
+            });
+        }
+
+        // Filter to orgs user belongs to
+        const userOrgs = data.organizations.filter(org => userOrgIds.has(org.id));
+
+        // If user belongs to multiple orgs, show dropdown
         if (userOrgs.length > 1) {
             const dropdown = document.getElementById('org-dropdown');
             dropdown.innerHTML = userOrgs.map(org =>
