@@ -21,8 +21,8 @@ from api.routers import (
 
 # Create FastAPI app
 app = FastAPI(
-    title="Roster API",
-    description="Microservice API for constraint-based roster scheduling",
+    title="Rostio API",
+    description="Team scheduling made simple - constraint-based roster scheduling",
     version="0.2.0",
     docs_url="/docs",
     redoc_url="/redoc",
@@ -42,7 +42,7 @@ app.add_middleware(
 @app.get("/health", tags=["health"])
 def health_check():
     """Health check endpoint."""
-    return {"status": "healthy", "service": "roster-api", "version": "0.2.0"}
+    return {"status": "healthy", "service": "rostio-api", "version": "0.2.0"}
 
 
 # Register routers with /api prefix
@@ -61,7 +61,7 @@ app.include_router(availability.router, prefix="/api")
 def api_info():
     """API information endpoint."""
     return {
-        "service": "Roster API",
+        "service": "Rostio API",
         "version": "0.2.0",
         "description": "Constraint-based scheduling for teams, events, and resources",
         "docs": "/docs",
@@ -87,7 +87,7 @@ if os.path.exists(frontend_path):
 def on_startup():
     """Initialize database on startup."""
     init_db()
-    print("🚀 Roster API started")
+    print("🚀 Rostio API started")
     print("📖 API docs available at http://localhost:8000/docs")
 
 
@@ -95,7 +95,7 @@ def on_startup():
 @app.on_event("shutdown")
 def on_shutdown():
     """Cleanup on shutdown."""
-    print("👋 Roster API shutting down")
+    print("👋 Rostio API shutting down")
 
 
 def start():
