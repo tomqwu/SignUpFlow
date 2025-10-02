@@ -816,8 +816,8 @@ async function loadAdminSolutions() {
                     <h4>Schedule ${solution.id}</h4>
                     <div class="admin-item-meta">
                         Created: ${new Date(solution.created_at).toLocaleString()}
-                        <br>Health Score: ${solution.metrics?.health_score?.toFixed(1) || 'N/A'}/100
-                        <br>Assignments: ${solution.metrics?.assignment_count || 0}
+                        <br>Health Score: ${solution.health_score?.toFixed(1) || 'N/A'}/100
+                        <br>Assignments: ${solution.assignment_count || 0}
                     </div>
                 </div>
                 <div class="admin-item-actions">
