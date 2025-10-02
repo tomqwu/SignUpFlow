@@ -17,6 +17,7 @@ from api.routers import (
     solver,
     solutions,
     availability,
+    conflicts,
 )
 
 # Create FastAPI app
@@ -55,6 +56,7 @@ app.include_router(constraints.router, prefix="/api")
 app.include_router(solver.router, prefix="/api")
 app.include_router(solutions.router, prefix="/api")
 app.include_router(availability.router, prefix="/api")
+app.include_router(conflicts.router, prefix="/api")
 
 # API Info endpoint
 @app.get("/api", tags=["root"])
