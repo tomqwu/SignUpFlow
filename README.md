@@ -2,6 +2,13 @@
 
 A modern web-based roster scheduling system for churches, sports leagues, and volunteer organizations.
 
+## 📸 Screenshots
+
+<p align="center">
+  <img src="docs/screenshots/01-welcome.png" alt="Welcome Screen" width="400">
+  <img src="docs/screenshots/03-calendar.png" alt="Calendar View" width="400">
+</p>
+
 ## ✨ Features
 
 - 📅 **Web-based interface** - No command line needed

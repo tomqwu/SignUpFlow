@@ -193,10 +193,9 @@ def export_solution(
 
     # Generate export
     if export_format.format == "json":
-        # Use StringIO for JSON
-        output = StringIO()
-        write_solution_json(solution_obj, output)
-        content = output.getvalue()
+        # Return solution as JSON directly
+        import json
+        content = json.dumps(solution_obj.model_dump(), indent=2, default=str)
         return Response(
             content=content,
             media_type="application/json",
