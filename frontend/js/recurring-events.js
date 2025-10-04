@@ -7,6 +7,7 @@ function toggleRecurrenceOptions() {
 }
 
 window.createEvent = async function(event) {
+    console.log('[recurring-events.js createEvent] Function called!');
     event.preventDefault();
     const type = document.getElementById('event-type').value;
     const title = document.getElementById('event-title').value;
@@ -30,7 +31,7 @@ window.createEvent = async function(event) {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    id: eventId, org_id: currentOrg.id, type: eventName,
+                    id: eventId, org_id: currentUser.org_id, type: eventName,
                     start_time: startDate.toISOString(),
                     end_time: eventEndDate.toISOString(),
                     resource_id: location || null,
@@ -61,7 +62,7 @@ window.createEvent = async function(event) {
                 const eventEndTime = new Date(current.getTime() + duration * 60 * 60 * 1000);
                 events.push({
                     id: type.toLowerCase().replace(/\s+/g, '_') + '_' + current.getTime(),
-                    org_id: currentOrg.id, type: eventName,
+                    org_id: currentUser.org_id, type: eventName,
                     start_time: current.toISOString(),
                     end_time: eventEndTime.toISOString(),
                     resource_id: location || null,

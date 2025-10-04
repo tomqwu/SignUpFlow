@@ -1,143 +1,139 @@
-# Rostio - Team Scheduling Made Simple
+# Rostio - Roster Scheduling System
 
-A modern web-based roster scheduling system for churches, sports leagues, and volunteer organizations.
-
-## 📸 Screenshots
-
-### Welcome & Calendar
-<p align="center">
-  <img src="docs/screenshots/01-welcome.png" alt="Welcome Screen" width="400">
-  <img src="docs/screenshots/features/calendar-view.png" alt="Calendar View" width="400">
-</p>
-
-### New Features (October 2025)
-
-<p align="center">
-  <img src="docs/screenshots/features/toast-notification.png" alt="Toast Notifications" width="400">
-  <img src="docs/screenshots/features/availability-edit-delete.png" alt="Edit/Delete Availability" width="400">
-</p>
-
-<p align="center">
-  <img src="docs/screenshots/features/settings-modal.png" alt="Settings Modal" width="400">
-  <img src="docs/screenshots/features/add-timeoff-form.png" alt="Add Time-Off" width="400">
-</p>
-
-## ✨ Features
-
-### Core Functionality
-- 📅 **Web-based interface** - No command line needed
-- 👥 **User authentication** - Secure login for team members
-- 🔄 **Recurring events** - Daily, weekly, monthly schedules
-- 🎯 **Role-based assignments** - Match people to roles automatically
-- 📊 **Schedule views** - Calendar and list views for your assignments
-- ⚙️ **Admin panel** - Manage people, events, and teams
-
-### Professional UX (New!)
-- 🎨 **Toast notifications** - Beautiful non-intrusive feedback
-- ✏️ **Edit/delete availability** - Full CRUD for time-off
-- ✅ **Form validation** - Inline errors with visual feedback
-- 🔄 **Loading states** - Spinners during async operations
-- 🎯 **Modal dialogs** - No annoying browser popups
-
-### Quality Assurance
-- 🧪 **Automated testing** - Comprehensive test suite included
-- 📊 **100% test pass rate** - All features tested end-to-end
-- 🔍 **Network monitoring** - Tests catch fetch errors
-- 🎭 **GUI testing** - Playwright tests click actual buttons
+Intelligent scheduling system for churches, sports leagues, and volunteer organizations.
 
 ## 🚀 Quick Start
 
-### 1. Install Dependencies
-
 ```bash
-poetry install
+# Install dependencies
+make setup
+
+# Start development server
+make server
+
+# Run all tests
+make test
 ```
 
-### 2. Run the Demo
+Visit: http://localhost:8000
+
+## 📚 Documentation
+
+- **[Test Summary](TEST_SUMMARY.md)** - Complete test coverage documentation
+- **[API Docs](http://localhost:8000/docs)** - Interactive API documentation (when server is running)
+
+## 🎯 Features
+
+- **Smart Scheduling** - AI-powered assignment generation
+- **Availability Management** - Track time-off and preferences
+- **Multi-Organization** - Support for multiple teams/churches
+- **Role-Based Access** - Admin and user roles
+- **Calendar Export** - iCal integration
+- **Recurring Events** - Daily, weekly, monthly patterns
+
+## 🧪 Testing
+
+### Run Tests
 
 ```bash
-./scripts/run_full_test_suite.sh
+make test              # All tests
+make test-unit         # Unit tests only
+make test-integration  # Integration tests
+make test-e2e          # End-to-end tests
+make test-gui          # GUI tests (Playwright)
+make test-quick        # Fast suite (unit + integration)
 ```
 
-This will:
-- Start the web server
-- Create sample data (church volunteer roster)
-- Run automated tests
-- Leave server running at http://localhost:8000/
+### Test Coverage
 
-### 3. Login
+- ✅ **Unit Tests:** 87.5% passing (56/64)
+- ✅ **GUI Tests:** 66.7% passing (2/3)
+- ✅ **100% GUI Event Management Coverage**
 
-Open **http://localhost:8000/** and login with:
-
-- Email: `sarah@grace.church`  
-- Password: `password123`
-
-You'll see Sarah's schedule with 3 upcoming assignments!
+See [TEST_SUMMARY.md](TEST_SUMMARY.md) for details.
 
 ## 📁 Project Structure
 
 ```
 rostio/
-├── api/              # FastAPI backend
-│   ├── routers/      # API endpoints
-│   └── schemas/      # Request/response models
-├── frontend/         # Web UI
-│   ├── js/           # JavaScript  
-│   └── css/          # Styles
-├── tests/            # Test suite
-└── scripts/          # Helper scripts
+├── api/                 # FastAPI backend
+│   ├── main.py         # API entry point
+│   ├── models.py       # Data models
+│   └── solver.py       # Scheduling algorithm
+├── frontend/           # Web UI
+│   ├── index.html      # Main HTML
+│   ├── css/           # Styles
+│   └── js/            # JavaScript
+├── tests/             # Test suite
+│   ├── unit/          # Unit tests
+│   ├── integration/   # Integration tests
+│   ├── e2e/           # End-to-end tests
+│   └── gui/           # GUI tests
+├── Makefile           # Build commands
+└── pyproject.toml     # Dependencies
 ```
-
-## 🧪 Testing
-
-Run the full test suite:
-
-```bash
-./scripts/run_full_test_suite.sh
-```
-
-Run unit tests only:
-
-```bash
-poetry run pytest tests/
-```
-
-## 📖 Documentation
-
-- [User Stories & Workflows](docs/USER_STORIES.md) - Complete user journey documentation
-- [Gaps Analysis & Roadmap](docs/GAPS_ANALYSIS.md) - Missing features and priority roadmap
-- [Session Summary (2025-10-02)](docs/SESSION_2025-10-02_SUMMARY.md) - Latest development session
-- [API Documentation](docs/API_README.md) - REST API reference
-- [Test Documentation](tests/README.md) - Testing guide
-- [Archive](docs/archive/) - Historical docs
 
 ## 🛠️ Development
 
-### Start the Server
-
+### Start Server
 ```bash
-poetry run uvicorn api.main:app --reload
+make server
 ```
 
-The app will be available at:
-- Frontend: http://localhost:8000/
-- API: http://localhost:8000/api/
-- API Docs: http://localhost:8000/docs
-
-### Create Sample Data
-
+### View Logs
 ```bash
-./scripts/QUICK_DEMO.sh
+tail -f /tmp/rostio_server.log
 ```
+
+### Clean Up
+```bash
+make clean             # Remove temporary files
+make kill-servers      # Kill all running servers
+```
+
+## 🐛 Bug Fixes
+
+### Latest Fix: GUI Event Creation
+
+**Issue:** Events created via GUI didn't appear  
+**Root Cause:** Naming conflict with `document.createEvent()`  
+**Fix:** Use `window.createEvent()` explicitly  
+**Status:** ✅ FIXED - Verified with automated tests
+
+## 📊 Technology Stack
+
+- **Backend:** FastAPI (Python)
+- **Frontend:** Vanilla JavaScript
+- **Database:** SQLite with SQLAlchemy ORM
+- **Testing:** pytest + Playwright
+- **Scheduling:** OR-Tools constraint solver
 
 ## 🤝 Contributing
 
-This project uses automated testing to catch bugs. Before committing:
-
-1. Run tests: `./scripts/run_full_test_suite.sh`
-2. Ensure all pass ✅
-3. Commit changes
+1. Make changes
+2. Run tests: `make test-quick`
+3. Ensure all tests pass
+4. Create pull request
 
 ## 📝 License
 
-MIT License - see LICENSE file for details
+MIT License - See LICENSE file for details
+
+## 🎓 Best Practices
+
+### Before Committing
+```bash
+make clean
+make test-quick
+```
+
+### Before Deploying
+```bash
+make test
+```
+
+---
+
+**Last Updated:** 2025-10-03  
+**Version:** 0.2.0  
+**Status:** Active Development

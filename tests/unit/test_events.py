@@ -14,16 +14,22 @@ class TestEventCreate:
 
     def test_create_event_success(self):
         """Test successful event creation."""
-        # Setup
+        # Setup with unique IDs
+        import time
+        timestamp = int(time.time() * 1000)
+        org_id = f"event_test_org_{timestamp}"
+        resource_id = f"sanctuary_{timestamp}"
+        event_id = f"event_{timestamp}"
+
         client.post(
             f"{API_BASE}/organizations/",
-            json={"id": "event_test_org", "name": "Event Test Org"}
+            json={"id": org_id, "name": "Event Test Org"}
         )
         client.post(
             f"{API_BASE}/resources/",
             json={
-                "id": "sanctuary",
-                "org_id": "event_test_org",
+                "id": resource_id,
+                "org_id": org_id,
                 "type": "venue",
                 "location": "Main Building"
             }
@@ -34,33 +40,38 @@ class TestEventCreate:
         response = client.post(
             f"{API_BASE}/events/",
             json={
-                "id": "event_001",
-                "org_id": "event_test_org",
+                "id": event_id,
+                "org_id": org_id,
                 "type": "Sunday Service",
                 "start_time": start,
                 "end_time": end,
-                "resource_id": "sanctuary",
+                "resource_id": resource_id,
                 "extra_data": {"roles": ["volunteer"]}
             }
         )
         assert response.status_code in [200, 201]
         data = response.json()
-        assert data["id"] == "event_001"
+        assert data["id"] == event_id
         assert data["type"] == "Sunday Service"
 
     def test_create_event_without_resource(self):
         """Test creating event without resource (optional)."""
+        import time
+        timestamp = int(time.time() * 1000)
+        org_id = f"event_test_org2_{timestamp}"
+        event_id = f"event_002_{timestamp}"
+
         client.post(
             f"{API_BASE}/organizations/",
-            json={"id": "event_test_org2", "name": "Event Test Org 2"}
+            json={"id": org_id, "name": "Event Test Org 2"}
         )
         start = (datetime.now() + timedelta(days=2)).isoformat()
         end = (datetime.now() + timedelta(days=2, hours=1)).isoformat()
         response = client.post(
             f"{API_BASE}/events/",
             json={
-                "id": "event_002",
-                "org_id": "event_test_org2",
+                "id": event_id,
+                "org_id": org_id,
                 "type": "Meeting",
                 "start_time": start,
                 "end_time": end

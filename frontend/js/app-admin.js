@@ -1,5 +1,5 @@
 // API Configuration
-const API_BASE_URL = '/api';
+const API_BASE_URL = window.API_BASE_URL || '/api';
 
 // State
 let currentOrg = null;
@@ -141,7 +141,7 @@ async function createOrganization(event) {
         if (response.ok) {
             hideCreateOrgForm();
             loadOrganizations();
-            alert('Organization created successfully!');
+            showToast('Organization created successfully!', 'success');
         } else {
             const error = await response.json();
             alert(`Error: ${error.detail}`);
@@ -223,7 +223,7 @@ async function createPerson(event) {
         if (response.ok) {
             hideCreatePersonForm();
             loadPeople();
-            alert('Person created successfully!');
+            showToast('Person created successfully!', 'success');
         } else {
             const error = await response.json();
             alert(`Error: ${error.detail}`);
@@ -300,7 +300,7 @@ async function createTeam(event) {
         if (response.ok) {
             hideCreateTeamForm();
             loadTeams();
-            alert('Team created successfully!');
+            showToast('Team created successfully!', 'success');
         } else {
             const error = await response.json();
             alert(`Error: ${error.detail}`);
@@ -312,7 +312,7 @@ async function createTeam(event) {
 
 // Events
 async function loadEvents() {
-    const listEl = document.getElementById('events-list');
+    const listEl = document.getElementById('admin-events-list');
     const orgId = document.getElementById('events-org-filter').value;
 
     if (!orgId) {
@@ -379,7 +379,7 @@ async function createEvent(event) {
         if (response.ok) {
             hideCreateEventForm();
             loadEvents();
-            alert('Event created successfully!');
+            showToast('Event created successfully!', 'success');
         } else {
             const error = await response.json();
             alert(`Error: ${error.detail}`);
@@ -510,7 +510,7 @@ async function viewSolutionDetails(solutionId) {
     try {
         const response = await fetch(`${API_BASE_URL}/solutions/${solutionId}/assignments`);
         const data = await response.json();
-        alert(`Solution has ${data.total} assignments.\n\nView full details at: ${API_BASE_URL}/solutions/${solutionId}`);
+        showToast(`Solution generated with ${data.total} assignments`, 'success');
     } catch (error) {
         alert(`Error: ${error.message}`);
     }
@@ -532,7 +532,7 @@ async function exportSolution(solutionId, format) {
             a.download = `solution_${solutionId}.${format}`;
             a.click();
         } else {
-            alert('Export failed');
+            showToast('Export failed', 'error');
         }
     } catch (error) {
         alert(`Error: ${error.message}`);

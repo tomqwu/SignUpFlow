@@ -1,0 +1,25 @@
+<svg width="180" height="50" viewBox="0 0 180 50" xmlns="http://www.w3.org/2000/svg">
+  <!-- Simple calendar icon - white version -->
+  <rect x="4" y="12" width="24" height="24" rx="3" fill="white" opacity="0.95"/>
+  <rect x="4" y="12" width="24" height="6" rx="3" fill="white"/>
+  <circle cx="10" cy="10" r="1.5" fill="white"/>
+  <circle cx="22" cy="10" r="1.5" fill="white"/>
+
+  <!-- Calendar grid -->
+  <circle cx="10" cy="22" r="1.5" fill="#3b82f6" opacity="0.8"/>
+  <circle cx="16" cy="22" r="1.5" fill="#3b82f6" opacity="0.8"/>
+  <circle cx="22" cy="22" r="1.5" fill="#3b82f6" opacity="0.8"/>
+  <circle cx="10" cy="28" r="1.5" fill="#3b82f6" opacity="0.8"/>
+  <circle cx="16" cy="28" r="1.5" fill="#3b82f6" opacity="0.8"/>
+  <circle cx="22" cy="28" r="2" fill="#fbbf24"/>
+
+  <!-- Text -->
+  <text x="36" y="28" font-family="'Segoe UI', Arial, sans-serif" font-size="22" font-weight="600" fill="white">
+    Rostio
+  </text>
+
+  <!-- Slogan -->
+  <text x="36" y="40" font-family="'Segoe UI', Arial, sans-serif" font-size="10" font-weight="400" fill="white" opacity="0.9">
+    Simplify Your Scheduling
+  </text>
+</svg>

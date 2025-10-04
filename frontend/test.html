@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test - Event Display</title>
+    <script>
+        const API_BASE_URL = '/api';
+
+        async function testEventLoading() {
+            const output = document.getElementById('output');
+            output.innerHTML = '<h2>Testing Event Loading...</h2>';
+
+            // Get from localStorage what org you're using
+            const savedUser = localStorage.getItem('roster_user');
+            output.innerHTML += `<p>Saved user: <pre>${savedUser}</pre></p>`;
+
+            if (savedUser) {
+                const user = JSON.parse(savedUser);
+                output.innerHTML += `<p>User org_id: ${user.org_id}</p>`;
+
+                // Try to load events
+                const response = await fetch(`${API_BASE_URL}/events/?org_id=${user.org_id}`);
+                const data = await response.json();
+
+                output.innerHTML += `<h3>Events for ${user.org_id}:</h3>`;
+                output.innerHTML += `<p>Total: ${data.total}</p>`;
+                output.innerHTML += `<pre>${JSON.stringify(data.events, null, 2)}</pre>`;
+            } else {
+                output.innerHTML += `<p style="color: red;">No saved user - you need to login first</p>`;
+            }
+        }
+    </script>
+</head>
+<body onload="testEventLoading()">
+    <h1>Event Loading Test</h1>
+    <div id="output"></div>
+</body>
+</html>

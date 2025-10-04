@@ -1,29 +1,18 @@
-/* Clean Web 2.0 Theme */
+/* User-Friendly Design */
 :root {
-    /* Primary Colors */
     --primary: #3b82f6;
     --primary-dark: #2563eb;
-    --primary-light: #60a5fa;
     --secondary: #64748b;
     --success: #10b981;
     --danger: #ef4444;
     --warning: #f59e0b;
-
-    /* Light Backgrounds */
     --bg: #f8fafc;
-    --bg-elevated: #ffffff;
     --surface: #ffffff;
-
-    /* Text Colors */
     --text: #1e293b;
     --text-light: #64748b;
-    --text-dim: #94a3b8;
-
-    /* Borders & Effects */
     --border: #e2e8f0;
-    --border-dark: #cbd5e1;
     --shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-    --shadow-lg: 0 10px 25px rgba(0, 0, 0, 0.1);
+    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
 }
 
 * {
@@ -33,8 +22,8 @@
 }
 
 body {
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    background: var(--bg);
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     min-height: 100vh;
     color: var(--text);
     line-height: 1.6;
@@ -62,16 +51,14 @@ body {
     to { opacity: 1; transform: translateY(0); }
 }
 
-
 .hidden {
     display: none !important;
 }
 
-/* Welcome/Onboarding - Web 2.0 */
+/* Welcome/Onboarding */
 .welcome-card {
     background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 12px;
+    border-radius: 20px;
     padding: 60px 40px;
     text-align: center;
     box-shadow: var(--shadow-lg);
@@ -80,10 +67,9 @@ body {
 }
 
 .welcome-card h1 {
-    font-size: 2.5rem;
+    font-size: 3rem;
     margin-bottom: 20px;
     color: var(--primary);
-    font-weight: 600;
 }
 
 .welcome-text {
@@ -138,11 +124,10 @@ body {
     font-weight: 600;
 }
 
-/* Form Container - Web 2.0 */
+/* Form Container */
 .form-container {
     background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 12px;
+    border-radius: 20px;
     padding: 40px;
     box-shadow: var(--shadow-lg);
     max-width: 600px;
@@ -221,24 +206,18 @@ body {
     position: relative;
 }
 
-/* Forms - Web 2.0 */
+/* Forms */
 form input,
 form select,
 form textarea {
     width: 100%;
-    padding: 12px;
+    padding: 14px;
     margin-bottom: 15px;
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 8px;
+    border: 2px solid var(--border);
+    border-radius: 10px;
     font-size: 1rem;
     font-family: inherit;
-    color: var(--text);
-    transition: all 0.2s ease;
-}
-
-form input::placeholder {
-    color: var(--text-dim);
+    transition: border-color 0.2s;
 }
 
 form input:focus,
@@ -246,7 +225,6 @@ form select:focus,
 form textarea:focus {
     outline: none;
     border-color: var(--primary);
-    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
 }
 
 form label {
@@ -303,34 +281,25 @@ form label {
     background: #eff6ff;
 }
 
-/* Buttons - Web 2.0 */
+/* Buttons */
 .btn {
     padding: 12px 24px;
     border: none;
-    border-radius: 8px;
+    border-radius: 10px;
     font-size: 1rem;
     font-weight: 600;
     cursor: pointer;
-    transition: all 0.2s ease;
-    background: var(--bg);
-    color: var(--text);
-    border: 1px solid var(--border);
-}
-
-.btn:hover {
-    background: var(--border);
+    transition: all 0.2s;
 }
 
 .btn-primary {
     background: var(--primary);
-    border: 1px solid var(--primary);
     color: white;
 }
 
 .btn-primary:hover {
     background: var(--primary-dark);
-    border-color: var(--primary-dark);
-    transform: translateY(-1px);
+    transform: translateY(-2px);
     box-shadow: var(--shadow);
 }
 
@@ -356,21 +325,19 @@ form label {
     padding: 8px;
 }
 
-/* Main App - Web 2.0 */
+/* Main App */
 #main-app {
     background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 12px;
+    border-radius: 20px;
     box-shadow: var(--shadow-lg);
     overflow: hidden;
     margin-top: 20px;
 }
 
 .app-header {
-    background: var(--primary);
-    border-bottom: 1px solid var(--border);
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     color: white;
-    padding: 24px 30px;
+    padding: 30px;
 }
 
 .header-content {
@@ -597,7 +564,7 @@ form label {
     font-size: 0.85rem;
 }
 
-/* Modal - Web 2.0 */
+/* Modal */
 .modal {
     position: fixed;
     top: 0;
@@ -613,13 +580,11 @@ form label {
 
 .modal-content {
     background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 12px;
+    border-radius: 20px;
     width: 90%;
     max-width: 500px;
     max-height: 80vh;
     overflow: auto;
-    box-shadow: var(--shadow-lg);
 }
 
 .modal-header {
@@ -938,13 +903,14 @@ form label {
 }
 
 
-/* Profile & Context Panel - Web 2.0 */
+/* Profile & Context Panel - Prominent display of roles and organization */
 .profile-context-panel {
     background: linear-gradient(to right, #f0f9ff, #e0f2fe);
-    border: 1px solid #0ea5e9;
+    border: 2px solid #0ea5e9;
     border-radius: 12px;
     padding: 20px;
     margin: 20px 0;
+    box-shadow: 0 4px 6px rgba(14, 165, 233, 0.1);
 }
 
 .context-card {
@@ -976,11 +942,10 @@ form label {
 }
 
 .context-item {
-    background: var(--bg);
+    background: #f8fafc;
     padding: 16px;
     border-radius: 8px;
-    border: 1px solid var(--border);
-    border-left: 3px solid var(--primary);
+    border-left: 4px solid var(--primary);
 }
 
 .context-label {
@@ -1035,9 +1000,9 @@ form label {
     padding: 6px 12px;
     background: linear-gradient(135deg, var(--primary), #60a5fa);
     color: white;
-    border-radius: 16px;
+    border-radius: 20px;
     font-size: 0.85rem;
-    font-weight: 600;
+    font-weight: 500;
     box-shadow: 0 2px 4px rgba(59, 130, 246, 0.2);
 }
 

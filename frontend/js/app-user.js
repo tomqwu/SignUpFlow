@@ -89,6 +89,7 @@ async function handleLogin(event) {
                 id: data.person_id,
                 name: data.name,
                 email: data.email,
+                org_id: data.org_id,
                 roles: data.roles,
                 token: data.token
             };
@@ -108,7 +109,7 @@ async function handleLogin(event) {
 }
 
 function showLogin_old() {
-    alert('Login functionality coming soon!\n\nFor now, go through the onboarding to create your profile.');
+    showToast('Login functionality coming soon! Go through onboarding to create your profile.', 'info');
 }
 
 // Organization Selection
@@ -166,10 +167,10 @@ async function createAndJoinOrg(event) {
             currentOrg = { id: orgId, name: orgName };
             showScreen('profile-screen');
         } else {
-            alert('Error creating organization. Please try again.');
+            showToast('Error creating organization. Please try again.', 'error');
         }
     } catch (error) {
-        alert(`Error: ${error.message}`);
+        showToast(`Error: ${error.message}`, 'error');
     }
 }
 
@@ -206,19 +207,20 @@ async function createProfile(event) {
                 id: data.person_id,
                 name: data.name,
                 email: data.email,
+                org_id: data.org_id,
                 roles: data.roles,
                 token: data.token
             };
             saveSession();
             showMainApp();
         } else if (response.status === 409) {
-            alert('This email is already registered. Please use the login page instead.');
+            showToast('This email is already registered. Please use the login page instead.', 'error');
         } else {
             const error = await response.json();
-            alert(`Error creating profile: ${error.detail}`);
+            showToast(`Error creating profile: ${error.detail}`, 'error');
         }
     } catch (error) {
-        alert(`Error: ${error.message}`);
+        showToast(`Error: ${error.message}`, 'error');
     }
 }
 
@@ -250,21 +252,25 @@ async function loadUserOrganizations() {
         const response = await fetch(`${API_BASE_URL}/organizations/`);
         const data = await response.json();
 
-        // Filter organizations where user is a member
-        // For now, we'll assume user belongs to the org they signed up with
-        // Find all organizations where this user's email exists as a Person
+        // Get unique org IDs where this user exists by checking each org
         const userEmail = currentUser.email;
-        const userOrgsResponse = await fetch(`${API_BASE_URL}/people/?org_id=*`);
-        const allPeople = await userOrgsResponse.json();
-
-        // Get unique org IDs where this email exists
         const userOrgIds = new Set();
-        if (allPeople.people) {
-            allPeople.people.forEach(person => {
-                if (person.email === userEmail) {
-                    userOrgIds.add(person.org_id);
+
+        // Query each organization to find where user exists
+        for (const org of data.organizations) {
+            try {
+                const peopleResponse = await fetch(`${API_BASE_URL}/people/?org_id=${org.id}`);
+                const peopleData = await peopleResponse.json();
+
+                if (peopleData.people) {
+                    const userExists = peopleData.people.some(person => person.email === userEmail);
+                    if (userExists) {
+                        userOrgIds.add(org.id);
+                    }
                 }
-            });
+            } catch (err) {
+                console.error(`Error checking org ${org.id}:`, err);
+            }
         }
 
         // Filter to orgs user belongs to
@@ -273,13 +279,31 @@ async function loadUserOrganizations() {
         // If user belongs to multiple orgs, show dropdown
         if (userOrgs.length > 1) {
             const dropdown = document.getElementById('org-dropdown');
-            dropdown.innerHTML = userOrgs.map(org =>
+            const visibleDropdown = document.getElementById('org-dropdown-visible');
+
+            const optionsHTML = userOrgs.map(org =>
                 `<option value="${org.id}" ${org.id === currentOrg.id ? 'selected' : ''}>${org.name}</option>`
             ).join('');
+
+            // Populate both dropdowns
+            dropdown.innerHTML = optionsHTML;
+            if (visibleDropdown) {
+                visibleDropdown.innerHTML = optionsHTML;
+            }
+
             dropdown.style.display = 'block';
             document.getElementById('org-name-display').style.display = 'none';
         } else {
-            // Single org - just show badge
+            // Single org - just show badge and populate dropdowns with single option
+            const dropdown = document.getElementById('org-dropdown');
+            const visibleDropdown = document.getElementById('org-dropdown-visible');
+
+            const singleOrgHTML = `<option value="${currentOrg.id}" selected>${currentOrg.name}</option>`;
+            dropdown.innerHTML = singleOrgHTML;
+            if (visibleDropdown) {
+                visibleDropdown.innerHTML = singleOrgHTML;
+            }
+
             document.getElementById('org-name-display').textContent = currentOrg.name;
             document.getElementById('org-name-display').style.display = 'inline-block';
             document.getElementById('org-dropdown').style.display = 'none';
@@ -294,8 +318,18 @@ async function loadUserOrganizations() {
 
 // Switch organization when dropdown changes
 async function switchOrganization() {
+    // Check both the old hidden dropdown and the new visible one
     const dropdown = document.getElementById('org-dropdown');
-    const newOrgId = dropdown.value;
+    const visibleDropdown = document.getElementById('org-dropdown-visible');
+
+    // Get value from whichever dropdown was changed
+    const newOrgId = (visibleDropdown && visibleDropdown.value) ? visibleDropdown.value : dropdown.value;
+
+    // Sync both dropdowns
+    if (visibleDropdown && dropdown) {
+        visibleDropdown.value = newOrgId;
+        dropdown.value = newOrgId;
+    }
 
     if (newOrgId !== currentOrg.id) {
         try {
@@ -313,7 +347,7 @@ async function switchOrganization() {
             // Reload the entire app with new org
             location.reload();
         } catch (error) {
-            alert(`Error switching organization: ${error.message}`);
+            showToast(`Error switching organization: ${error.message}`, 'error');
         }
     }
 }
@@ -347,11 +381,11 @@ async function loadCalendar() {
 
     try {
         // Get all events for the organization
-        const eventsResponse = await fetch(`${API_BASE_URL}/events/?org_id=${currentOrg.id}`);
+        const eventsResponse = await fetch(`${API_BASE_URL}/events/?org_id=${currentUser.org_id}`);
         const eventsData = await eventsResponse.json();
 
         // Get solutions to see assignments
-        const solutionsResponse = await fetch(`${API_BASE_URL}/solutions/?org_id=${currentOrg.id}`);
+        const solutionsResponse = await fetch(`${API_BASE_URL}/solutions/?org_id=${currentUser.org_id}`);
         const solutionsData = await solutionsResponse.json();
 
         if (solutionsData.solutions.length === 0) {
@@ -459,11 +493,11 @@ async function loadCalendar() {
 
 async function exportMyCalendar() {
     try {
-        const solutionsResponse = await fetch(`${API_BASE_URL}/solutions/?org_id=${currentOrg.id}`);
+        const solutionsResponse = await fetch(`${API_BASE_URL}/solutions/?org_id=${currentUser.org_id}`);
         const solutionsData = await solutionsResponse.json();
 
         if (solutionsData.solutions.length === 0) {
-            alert('No schedule available to export.');
+            showToast('No schedule available to export.', 'warning');
             return;
         }
 
@@ -485,19 +519,19 @@ async function exportMyCalendar() {
             a.href = url;
             a.download = `my_schedule_${currentUser.name.replace(/\s+/g, '_')}.ics`;
             a.click();
-            alert('Calendar exported! Import this file into Google Calendar, Outlook, or Apple Calendar.');
+            showToast('Calendar exported successfully!', 'success');
         } else {
             const errorData = await response.json().catch(() => ({ detail: 'Unknown error' }));
             const errorMsg = errorData.detail || 'Export failed';
 
             if (errorMsg.includes('no assignments')) {
-                alert('No schedule to export yet.\n\nYou haven\'t been assigned to any events. This happens when:\n• The admin hasn\'t generated a schedule yet\n• You\'re not available during any events\n• Your roles don\'t match any event needs\n\nContact your admin if you think this is an error.');
+                showToast('No schedule to export yet. Contact your admin if you think this is an error.', 'warning', 5000);
             } else {
-                alert(`Export failed: ${errorMsg}`);
+                showToast(`Export failed: ${errorMsg}`, 'error');
             }
         }
     } catch (error) {
-        alert(`Error: ${error.message}`);
+        showToast(`Error: ${error.message}`, 'error');
     }
 }
 
@@ -507,7 +541,7 @@ async function loadMySchedule() {
     scheduleEl.innerHTML = '<div class="loading">Loading your schedule...</div>';
 
     try {
-        const solutionsResponse = await fetch(`${API_BASE_URL}/solutions/?org_id=${currentOrg.id}`);
+        const solutionsResponse = await fetch(`${API_BASE_URL}/solutions/?org_id=${currentUser.org_id}`);
         const solutionsData = await solutionsResponse.json();
 
         if (solutionsData.solutions.length === 0) {
@@ -632,13 +666,13 @@ async function addTimeOff(event) {
         if (response.ok) {
             event.target.reset();
             loadTimeOff();
-            alert('Time-off period added successfully!');
+            showToast('Time-off added successfully!', 'success');
         } else {
             const error = await response.json();
-            alert(`Error: ${error.detail}`);
+            showToast(`Error: ${error.detail}`, 'error');
         }
     } catch (error) {
-        alert(`Error: ${error.message}`);
+        showToast(`Error: ${error.message}`, 'error');
     }
 }
 
@@ -677,22 +711,25 @@ async function editTimeOff(timeoffId, startDate, endDate) {
 }
 
 async function removeTimeOff(timeoffId) {
-    if (!confirm('Remove this time-off period?')) return;
+    showConfirmDialog('Remove this time-off period?', async (confirmed) => {
+        if (!confirmed) return;
 
-    try {
-        const response = await fetch(
-            `${API_BASE_URL}/availability/${currentUser.id}/timeoff/${timeoffId}`,
-            { method: 'DELETE' }
-        );
+        try {
+            const response = await fetch(
+                `${API_BASE_URL}/availability/${currentUser.id}/timeoff/${timeoffId}`,
+                { method: 'DELETE' }
+            );
 
-        if (response.ok || response.status === 204) {
-            loadTimeOff();
-        } else {
-            alert('Error removing time-off');
+            if (response.ok || response.status === 204) {
+                loadTimeOff();
+                showToast('Time-off removed successfully!', 'success');
+            } else {
+                showToast('Error removing time-off', 'error');
+            }
+        } catch (error) {
+            showToast(`Error: ${error.message}`, 'error');
         }
-    } catch (error) {
-        alert(`Error: ${error.message}`);
-    }
+    });
 }
 
 // Settings
@@ -763,10 +800,11 @@ async function loadAdminDashboard() {
 
 async function loadAdminStats() {
     try {
+        const orgId = currentUser.org_id;
         const [peopleRes, eventsRes, solutionsRes] = await Promise.all([
-            fetch(`${API_BASE_URL}/people/?org_id=${currentOrg.id}`),
-            fetch(`${API_BASE_URL}/events/?org_id=${currentOrg.id}`),
-            fetch(`${API_BASE_URL}/solutions/?org_id=${currentOrg.id}`)
+            fetch(`${API_BASE_URL}/people/?org_id=${orgId}`),
+            fetch(`${API_BASE_URL}/events/?org_id=${orgId}`),
+            fetch(`${API_BASE_URL}/solutions/?org_id=${orgId}`)
         ]);
 
         const peopleData = await peopleRes.json();
@@ -786,13 +824,21 @@ async function loadAdminEvents() {
     listEl.innerHTML = '<div class="loading">Loading events...</div>';
 
     try {
-        const response = await fetch(`${API_BASE_URL}/events/?org_id=${currentOrg.id}`);
+        const orgId = currentUser.org_id;
+        console.log('[loadAdminEvents] currentUser:', currentUser);
+        console.log('[loadAdminEvents] orgId:', orgId);
+        const response = await fetch(`${API_BASE_URL}/events/?org_id=${orgId}`);
         const data = await response.json();
+        console.log('[loadAdminEvents] API response:', data);
+        console.log('[loadAdminEvents] Total events:', data.total);
 
         if (data.total === 0) {
+            console.log('[loadAdminEvents] No events found, showing message');
             listEl.innerHTML = '<p class="help-text">No events yet. Create one to get started!</p>';
             return;
         }
+
+        console.log('[loadAdminEvents] Rendering', data.events.length, 'events');
 
         listEl.innerHTML = data.events.map(event => `
             <div class="admin-item">
@@ -825,7 +871,8 @@ async function loadAdminPeople() {
     listEl.innerHTML = '<div class="loading">Loading people...</div>';
 
     try {
-        const response = await fetch(`${API_BASE_URL}/people/?org_id=${currentOrg.id}`);
+        const orgId = currentUser.org_id;
+        const response = await fetch(`${API_BASE_URL}/people/?org_id=${orgId}`);
         const data = await response.json();
 
         if (data.total === 0) {
@@ -854,7 +901,8 @@ async function loadAdminSolutions() {
     listEl.innerHTML = '<div class="loading">Loading schedules...</div>';
 
     try {
-        const response = await fetch(`${API_BASE_URL}/solutions/?org_id=${currentOrg.id}`);
+        const orgId = currentUser.org_id;
+        const response = await fetch(`${API_BASE_URL}/solutions/?org_id=${orgId}`);
         const data = await response.json();
 
         if (data.total === 0) {
@@ -883,80 +931,29 @@ async function loadAdminSolutions() {
 }
 
 // Event Management
-function showCreateEventForm() {
-    document.getElementById('create-event-modal').classList.remove('hidden');
-}
-
-function closeCreateEventForm() {
-    document.getElementById('create-event-modal').classList.add('hidden');
-    document.getElementById('create-event-form').reset();
-}
-
-async function createEvent(event) {
-    event.preventDefault();
-
-    const type = document.getElementById('event-type').value;
-    const start = document.getElementById('event-start').value;
-    const duration = parseFloat(document.getElementById('event-duration').value);
-    const location = document.getElementById('event-location').value;
-    const rolesInput = document.getElementById('event-roles').value;
-
-    const roles = rolesInput.split(',').map(r => r.trim()).filter(r => r);
-
-    // Calculate end time
-    const startDate = new Date(start);
-    const endDate = new Date(startDate.getTime() + duration * 60 * 60 * 1000);
-
-    // Generate event ID
-    const eventId = `${type.toLowerCase().replace(/\s+/g, '_')}_${Date.now()}`;
-
-    try {
-        const response = await fetch(`${API_BASE_URL}/events/`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                id: eventId,
-                org_id: currentOrg.id,
-                type: type,
-                start_time: startDate.toISOString(),
-                end_time: endDate.toISOString(),
-                resource_id: location || null,
-                extra_data: { roles: roles.length > 0 ? roles : [] }
-            })
-        });
-
-        if (response.ok) {
-            closeCreateEventForm();
-            loadAdminEvents();
-            loadAdminStats();
-            alert('Event created successfully!');
-        } else {
-            const error = await response.json();
-            alert(`Error creating event: ${error.detail}`);
-        }
-    } catch (error) {
-        alert(`Error: ${error.message}`);
-    }
-}
+// Note: showCreateEventForm(), closeCreateEventForm(), and createEvent()
+// are all defined in recurring-events.js
 
 async function deleteEvent(eventId) {
-    if (!confirm('Delete this event? This cannot be undone.')) return;
+    showConfirmDialog('Delete this event? This cannot be undone.', async (confirmed) => {
+        if (!confirmed) return;
 
-    try {
-        const response = await fetch(`${API_BASE_URL}/events/${eventId}`, {
-            method: 'DELETE'
-        });
+        try {
+            const response = await fetch(`${API_BASE_URL}/events/${eventId}`, {
+                method: 'DELETE'
+            });
 
-        if (response.ok || response.status === 204) {
-            loadAdminEvents();
-            loadAdminStats();
-            alert('Event deleted successfully!');
-        } else {
-            alert('Error deleting event');
+            if (response.ok || response.status === 204) {
+                loadAdminEvents();
+                loadAdminStats();
+                showToast('Event deleted successfully!', 'success');
+            } else {
+                showToast('Error deleting event', 'error');
+            }
+        } catch (error) {
+            showToast(`Error: ${error.message}`, 'error');
         }
-    } catch (error) {
-        alert(`Error: ${error.message}`);
-    }
+    });
 }
 
 // Schedule Generation
@@ -1027,19 +1024,139 @@ async function viewSolution(solutionId) {
             a.href = url;
             a.download = `schedule_${solutionId}.csv`;
             a.click();
-            alert('Schedule downloaded! Open in spreadsheet software to view.');
+            showToast('Schedule downloaded successfully!', 'success');
         } else {
             // Get detailed error message
             const errorData = await response.json().catch(() => ({ detail: 'Unknown error' }));
             const errorMsg = errorData.detail || errorData.message || 'Error exporting schedule';
 
             if (errorMsg.includes('no assignments')) {
-                alert('Cannot export schedule: No assignments were generated.\n\nThis usually means:\n• Not enough people are available\n• People don\'t have matching roles for events\n• People are blocked during event times\n\nTry adding more people or adjusting availability settings.');
+                showToast('Cannot export schedule: No assignments were generated.', 'warning', 5000);
             } else {
-                alert(`Error exporting schedule: ${errorMsg}`);
+                showToast(`Error exporting schedule: ${errorMsg}`, 'error');
             }
         }
     } catch (error) {
-        alert(`Error: ${error.message}`);
+        showToast(`Error: ${error.message}`, 'error');
+    }
+}
+
+// ========================================
+// Profile Context Panel Functions
+// ========================================
+
+/**
+ * Update the role badges display in the profile context panel
+ */
+function updateRoleBadgesDisplay() {
+    const rolesDisplay = document.getElementById('active-roles-display');
+    if (!rolesDisplay || !currentUser) return;
+
+    // Clear existing badges
+    rolesDisplay.innerHTML = '';
+
+    // Get user's roles
+    const roles = currentUser.roles || [];
+    
+    if (roles.length === 0) {
+        rolesDisplay.innerHTML = '<span class="role-badge" style="background: #9ca3af;">No roles set</span>';
+        // Show setup hint for users without roles
+        showSetupHint();
+    } else {
+        // Create badge for each role
+        roles.forEach(role => {
+            const badge = document.createElement('span');
+            badge.className = 'role-badge';
+            badge.textContent = role;
+            rolesDisplay.appendChild(badge);
+        });
+    }
+}
+
+/**
+ * Populate the visible organization dropdown in the profile context panel
+ */
+function updateOrgDropdownDisplay() {
+    const orgDropdown = document.getElementById('org-dropdown-visible');
+    const oldOrgDropdown = document.getElementById('org-dropdown');
+    
+    if (!orgDropdown || !oldOrgDropdown) return;
+
+    // Copy options from the old hidden dropdown to the new visible one
+    orgDropdown.innerHTML = oldOrgDropdown.innerHTML;
+    orgDropdown.value = oldOrgDropdown.value;
+}
+
+/**
+ * Show setup hint for first-time users
+ */
+function showSetupHint() {
+    const hint = document.getElementById('setup-hint');
+    if (!hint) return;
+
+    // Check if user has dismissed the hint before
+    const dismissed = localStorage.getItem('setup_hint_dismissed');
+    if (dismissed) return;
+
+    // Show hint if user has no roles or no availability set
+    const hasRoles = currentUser && currentUser.roles && currentUser.roles.length > 0;
+    
+    if (!hasRoles) {
+        hint.classList.remove('hidden');
+    }
+}
+
+/**
+ * Dismiss the setup hint
+ */
+function dismissSetupHint() {
+    const hint = document.getElementById('setup-hint');
+    if (hint) {
+        hint.classList.add('hidden');
+        localStorage.setItem('setup_hint_dismissed', 'true');
+    }
+}
+
+
+// Hook into existing functions to update the profile panel
+const originalLoadOrganizations = window.loadOrganizations;
+if (typeof loadOrganizations === 'function') {
+    window.loadOrganizations = async function() {
+        await originalLoadOrganizations();
+        updateOrgDropdownDisplay();
+    };
+}
+
+// Update profile panel when settings are saved
+const originalSaveSettings = window.saveSettings;
+if (typeof saveSettings === 'function') {
+    window.saveSettings = async function() {
+        await originalSaveSettings();
+        updateRoleBadgesDisplay();
+        updateOrgDropdownDisplay();
+    };
+}
+
+// Initialize profile context panel when main app loads
+window.addEventListener('DOMContentLoaded', () => {
+    // Wait a bit for currentUser to be loaded
+    setTimeout(() => {
+        updateRoleBadgesDisplay();
+        updateOrgDropdownDisplay();
+        showSetupHint();
+    }, 500);
+});
+
+console.log('Profile context panel functions loaded');
+
+// Update help text based on number of organizations
+function updateOrgHelpText(orgCount) {
+    const helpText = document.querySelector('.context-item .context-help');
+    if (helpText && orgCount !== undefined) {
+        if (orgCount > 1) {
+            helpText.textContent = `Switch between your ${orgCount} organizations`;
+        } else {
+            helpText.textContent = 'Your current organization';
+        }
     }
 }

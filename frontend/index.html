@@ -16,7 +16,7 @@
         <!-- Onboarding Screen -->
         <div id="onboarding-screen" class="screen">
             <div class="welcome-card">
-                <h1>🗓️ Welcome to Rostio</h1>
+                <h1><img src="images/rostio-logo-simple.svg" alt="Rostio" style="height: 60px; vertical-align: middle; margin-right: 20px;"> Welcome to Rostio</h1>
                 <p class="welcome-text">Join your organization and manage your schedule effortlessly</p>
 
                 <div class="onboarding-steps">
@@ -148,7 +148,7 @@
             <header class="app-header">
                 <div class="header-content">
                     <div class="header-left">
-                        <h1>My Schedule</h1>
+                        <div class="logo-container"><img src="images/rostio-logo-white.svg" alt="Rostio" class="header-logo"></div>
                         <div class="org-selector">
                             <select id="org-dropdown" onchange="switchOrganization()" style="display: none;">
                                 <!-- Organizations will be loaded here -->
@@ -162,6 +162,67 @@
                     </div>
                 </div>
             </header>
+
+            <!-- Quick Profile & Context Panel -->
+            <div class="profile-context-panel">
+                <div class="context-card">
+                    <div class="context-header">
+                        <h3>📍 Your Context</h3>
+                        <button class="btn-link" onclick="showSettings()">Edit Profile →</button>
+                    </div>
+
+                    <div class="context-grid">
+                        <!-- Organization Section -->
+                        <div class="context-item">
+                            <label class="context-label">Organization</label>
+                            <select id="org-dropdown-visible" onchange="switchOrganization()" class="org-select">
+                                <option value="">Loading...</option>
+                            </select>
+                            <p class="context-help">Your current organization</p>
+                        </div>
+
+                        <!-- Roles Section -->
+                        <div class="context-item">
+                            <label class="context-label">Your Active Roles</label>
+                            <div id="active-roles-display" class="role-badges">
+                                <span class="role-badge">volunteer</span>
+                            </div>
+                            <button class="btn-link btn-sm" onclick="showSettings()">+ Add/Edit Roles</button>
+                            <p class="context-help">These determine which events you'll be scheduled for</p>
+                        </div>
+
+                        <!-- Quick Actions -->
+                        <div class="context-item">
+                            <label class="context-label">Quick Actions</label>
+                            <div class="quick-actions">
+                                <button class="btn btn-sm btn-secondary" onclick="switchView('availability')">
+                                    ⏰ Set Availability
+                                </button>
+                                <button class="btn btn-sm btn-secondary" onclick="exportMyCalendar()">
+                                    📥 Export Calendar
+                                </button>
+                            </div>
+                            <p class="context-help">Manage your schedule preferences</p>
+                        </div>
+                    </div>
+
+                    <!-- First-time user hint -->
+                    <div id="setup-hint" class="setup-hint hidden">
+                        <div class="hint-content">
+                            <span class="hint-icon">💡</span>
+                            <div>
+                                <strong>New here?</strong> Make sure to:
+                                <ol>
+                                    <li>Select your roles above</li>
+                                    <li>Set your availability (click "Set Availability")</li>
+                                    <li>Check your upcoming schedule</li>
+                                </ol>
+                            </div>
+                            <button class="btn-close" onclick="dismissSetupHint()">×</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
 
             <nav class="main-nav">
                 <button class="nav-btn active" data-view="calendar" onclick="switchView('calendar')">
@@ -336,7 +397,7 @@
                     <button class="btn-close" onclick="closeCreateEventForm()">×</button>
                 </div>
                 <div class="modal-body">
-                    <form id="create-event-form" onsubmit="createEvent(event)">
+                    <form id="create-event-form" onsubmit="window.createEvent(event); return false;">
                         <div class="form-group">
                             <label>Event Type</label>
                             <select id="event-type" required>
@@ -478,8 +539,8 @@
         </div>
     </div>
 
-    <script src="js/role-management.js"></script>
-    <script src="js/recurring-events.js"></script>
-    <script src="js/app-user.js"></script>
+    <script src="js/role-management.js?v=6"></script>
+    <script src="js/recurring-events.js?v=6"></script>
+    <script src="js/app-user.js?v=10"></script>
 </body>
 </html>
