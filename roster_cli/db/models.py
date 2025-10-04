@@ -61,6 +61,7 @@ class Organization(Base):
     holidays = relationship("Holiday", back_populates="organization", cascade="all, delete-orphan")
     constraints = relationship("Constraint", back_populates="organization", cascade="all, delete-orphan")
     solutions = relationship("Solution", back_populates="organization", cascade="all, delete-orphan")
+    invitations = relationship("Invitation", back_populates="organization", cascade="all, delete-orphan")
 
 
 class Person(Base):
@@ -74,6 +75,11 @@ class Person(Base):
     email = Column(String, nullable=True)
     password_hash = Column(String, nullable=True)  # Hashed password for login
     roles = Column(JSONType, nullable=True)  # Array of role strings
+    timezone = Column(String, default="UTC", nullable=False)  # User's timezone preference
+    status = Column(String, default="active", nullable=False)  # active, inactive, invited
+    invited_by = Column(String, ForeignKey("people.id"), nullable=True)  # Who invited this person
+    last_login = Column(DateTime, nullable=True)  # Last login timestamp
+    calendar_token = Column(String, unique=True, nullable=True)  # Unique token for calendar subscription
     extra_data = Column(JSONType, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
@@ -83,10 +89,15 @@ class Person(Base):
     team_memberships = relationship("TeamMember", back_populates="person", cascade="all, delete-orphan")
     availability = relationship("Availability", back_populates="person", cascade="all, delete-orphan")
     assignments = relationship("Assignment", back_populates="person", cascade="all, delete-orphan")
+    invitations_sent = relationship("Invitation", foreign_keys="Invitation.invited_by", back_populates="inviter", cascade="all, delete-orphan")
+    invited_by_person = relationship("Person", remote_side="Person.id", foreign_keys=[invited_by])
 
     # Indexes
     __table_args__ = (
         Index("idx_people_org_id", "org_id"),
+        Index("idx_people_email", "email"),
+        Index("idx_people_status", "status"),
+        Index("idx_people_calendar_token", "calendar_token"),
     )
 
 
@@ -239,6 +250,7 @@ class VacationPeriod(Base):
     availability_id = Column(Integer, ForeignKey("availability.id"), nullable=False)
     start_date = Column(Date, nullable=False)
     end_date = Column(Date, nullable=False)
+    reason = Column(String, nullable=True)
 
     # Relationships
     availability = relationship("Availability", back_populates="vacations")
@@ -341,13 +353,43 @@ class Solution(Base):
     )
 
 
+class Invitation(Base):
+    """Invitation for new users to join an organization."""
+
+    __tablename__ = "invitations"
+
+    id = Column(String, primary_key=True)
+    org_id = Column(String, ForeignKey("organizations.id"), nullable=False)
+    email = Column(String, nullable=False)
+    name = Column(String, nullable=False)
+    roles = Column(JSONType, nullable=False)  # Array of role strings
+    invited_by = Column(String, ForeignKey("people.id"), nullable=False)
+    token = Column(String, unique=True, nullable=False)
+    status = Column(String, default="pending", nullable=False)  # pending, accepted, expired, cancelled
+    expires_at = Column(DateTime, nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    accepted_at = Column(DateTime, nullable=True)
+
+    # Relationships
+    organization = relationship("Organization", back_populates="invitations")
+    inviter = relationship("Person", foreign_keys=[invited_by], back_populates="invitations_sent")
+
+    # Indexes
+    __table_args__ = (
+        Index("idx_invitations_org_id", "org_id"),
+        Index("idx_invitations_email", "email"),
+        Index("idx_invitations_token", "token"),
+        Index("idx_invitations_status", "status"),
+    )
+
+
 class Assignment(Base):
     """Assignment of person to event."""
 
     __tablename__ = "assignments"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
-    solution_id = Column(Integer, ForeignKey("solutions.id"), nullable=False)
+    solution_id = Column(Integer, ForeignKey("solutions.id"), nullable=True)  # Nullable for manual assignments
     event_id = Column(String, ForeignKey("events.id"), nullable=False)
     person_id = Column(String, ForeignKey("people.id"), nullable=False)
     assigned_at = Column(DateTime, default=datetime.utcnow)

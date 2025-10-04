@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Force Refresh - Rostio</title>
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+</head>
+<body>
+    <h1>Clearing Cache...</h1>
+    <p>Your browser cache is being cleared. You will be redirected in 2 seconds.</p>
+    <script>
+        // Clear localStorage and sessionStorage
+        localStorage.clear();
+        sessionStorage.clear();
+        
+        // Force reload from server
+        setTimeout(() => {
+            window.location.href = '/?nocache=' + new Date().getTime();
+        }, 2000);
+    </script>
+</body>
+</html>

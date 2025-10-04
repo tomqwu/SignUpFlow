@@ -9,6 +9,11 @@ function toggleRecurrenceOptions() {
 window.createEvent = async function(event) {
     console.log('[recurring-events.js createEvent] Function called!');
     event.preventDefault();
+
+    // Check if we're editing an existing event
+    const form = document.getElementById('create-event-form');
+    const editingEventId = form.dataset.editingEventId;
+
     const type = document.getElementById('event-type').value;
     const title = document.getElementById('event-title').value;
     const start = document.getElementById('event-start').value;
@@ -21,10 +26,54 @@ window.createEvent = async function(event) {
 
     const eventName = title || type;
     const roles = Array.from(roleCheckboxes).map(cb => cb.value);
+
+    // Collect role counts from number inputs
+    const role_counts = {};
+    roles.forEach(role => {
+        const countInput = document.getElementById(`count-${role}`);
+        role_counts[role] = countInput ? parseInt(countInput.value) || 1 : 1;
+    });
+
     const startDate = new Date(start);
     const eventEndDate = new Date(startDate.getTime() + duration * 60 * 60 * 1000);
 
     try {
+        // Handle UPDATE mode
+        if (editingEventId) {
+            const response = await fetch(`${API_BASE_URL}/events/${editingEventId}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    type: eventName,
+                    start_time: startDate.toISOString(),
+                    end_time: eventEndDate.toISOString(),
+                    resource_id: location || null,
+                    extra_data: { roles: roles, role_counts: role_counts, event_type: type }
+                })
+            });
+
+            if (response.ok) {
+                closeCreateEventForm();
+                showToast('Event updated successfully!', 'success');
+                delete form.dataset.editingEventId; // Clear edit mode
+                document.getElementById('create-event-form').reset();
+                // Reset modal title and button
+                document.querySelector('#create-event-modal h3').textContent = 'Create New Event';
+                document.querySelector('#create-event-form button[type="submit"]').textContent = 'Create Event';
+
+                if (typeof loadAdminEvents === 'function') {
+                    loadAdminEvents();
+                } else if (typeof loadUserData === 'function') {
+                    loadUserData();
+                }
+            } else {
+                const error = await response.json();
+                showToast(`Failed to update event: ${error.detail || 'Unknown error'}`, 'error');
+            }
+            return;
+        }
+
+        // Handle CREATE mode
         if (occurs === 'once') {
             const eventId = type.toLowerCase().replace(/\s+/g, '_') + '_' + Date.now();
             const response = await fetch(API_BASE_URL + '/events/', {
@@ -35,7 +84,7 @@ window.createEvent = async function(event) {
                     start_time: startDate.toISOString(),
                     end_time: eventEndDate.toISOString(),
                     resource_id: location || null,
-                    extra_data: { roles: roles, occurs: 'once', event_type: type }
+                    extra_data: { roles: roles, role_counts: role_counts, occurs: 'once', event_type: type }
                 })
             });
             if (response.ok) {
@@ -66,7 +115,7 @@ window.createEvent = async function(event) {
                     start_time: current.toISOString(),
                     end_time: eventEndTime.toISOString(),
                     resource_id: location || null,
-                    extra_data: { roles: roles, occurs: occurs, event_type: type }
+                    extra_data: { roles: roles, role_counts: role_counts, occurs: occurs, event_type: type }
                 });
 
                 if (occurs === 'daily') current.setDate(current.getDate() + 1);
@@ -104,9 +153,9 @@ window.createEvent = async function(event) {
 async function showCreateEventForm() {
     document.getElementById('create-event-modal').classList.remove('hidden');
     document.getElementById('create-event-form').reset();
-    
-    // Load org roles into the role selector
-    await renderRoleSelector('event-role-selector');
+
+    // Load org roles into the role selector with count inputs
+    await renderRoleSelector('event-role-selector', true);
 }
 
 function closeCreateEventForm() {

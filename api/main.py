@@ -23,6 +23,8 @@ from api.routers import (
     solutions,
     availability,
     conflicts,
+    invitations,
+    calendar,
 )
 
 # Create FastAPI app
@@ -78,6 +80,8 @@ app.include_router(availability.router, prefix="/api")
 app.include_router(conflicts.router, prefix="/api")
 app.include_router(password_reset.router, prefix="/api")
 app.include_router(analytics.router, prefix="/api")
+app.include_router(invitations.router, prefix="/api")
+app.include_router(calendar.router, prefix="/api")
 
 # API Info endpoint
 @app.get("/api", tags=["root"])

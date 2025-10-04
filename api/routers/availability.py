@@ -115,6 +115,7 @@ def add_timeoff(
         availability_id=availability.id,
         start_date=timeoff_data.start_date,
         end_date=timeoff_data.end_date,
+        reason=timeoff_data.reason,
     )
     db.add(vacation)
     db.commit()
@@ -171,6 +172,7 @@ def update_timeoff(
     # Update vacation period
     vacation.start_date = timeoff_data.start_date
     vacation.end_date = timeoff_data.end_date
+    vacation.reason = timeoff_data.reason
     db.commit()
     db.refresh(vacation)
 

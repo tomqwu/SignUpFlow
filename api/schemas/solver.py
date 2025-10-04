@@ -87,5 +87,5 @@ class SolutionList(BaseModel):
 class ExportFormat(BaseModel):
     """Schema for export format request."""
 
-    format: str = Field(..., description="Export format: json, csv, or ics")
+    format: str = Field(..., description="Export format: json, csv, pdf, or ics")
     scope: str = Field("org", description="Export scope: org, person:{id}, or team:{id}")

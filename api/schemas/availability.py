@@ -41,6 +41,7 @@ class TimeOffResponse(BaseModel):
     id: int
     start_date: date
     end_date: date
+    reason: Optional[str] = None
 
     class Config:
         from_attributes = True

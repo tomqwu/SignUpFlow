@@ -1,10 +1,13 @@
 """Solver router - schedule generation endpoint."""
 
+import logging
 from datetime import datetime
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from api.database import get_db
+
+logger = logging.getLogger("rostio")
 from api.schemas.solver import SolveRequest, SolveResponse, ViolationInfo, FairnessMetrics, SolutionMetrics
 from roster_cli.db.models import (
     Organization,
@@ -109,6 +112,9 @@ def solve_schedule(solve_request: SolveRequest, db: Session = Depends(get_db)):
             {"role": role_name, "count": count}
             for role_name, count in role_counts.items()
         ]
+
+        # Debug logging
+        logger.info(f"Event {e.id}: role_counts={role_counts}, required_roles={required_roles}")
 
         events.append(
             EventModel(

@@ -293,14 +293,20 @@
             <div id="schedule-view" class="view-content">
                 <div class="view-header">
                     <h2>My Upcoming Schedule</h2>
-                    <div class="schedule-stats">
-                        <div class="stat-card">
-                            <div class="stat-value" id="upcoming-count">0</div>
-                            <div class="stat-label">Upcoming</div>
+                    <div class="schedule-controls">
+                        <div class="schedule-stats">
+                            <div class="stat-card">
+                                <div class="stat-value" id="upcoming-count">0</div>
+                                <div class="stat-label">Upcoming</div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-value" id="this-month-count">0</div>
+                                <div class="stat-label">This Month</div>
+                            </div>
                         </div>
-                        <div class="stat-card">
-                            <div class="stat-value" id="this-month-count">0</div>
-                            <div class="stat-label">This Month</div>
+                        <div class="schedule-actions">
+                            <button class="btn btn-secondary" onclick="showCalendarSubscription()">🔗 Subscribe</button>
+                            <button class="btn btn-primary" onclick="exportMyCalendar()">📥 Export ICS</button>
                         </div>
                     </div>
                 </div>
@@ -313,76 +319,187 @@
             <!-- Admin Dashboard View -->
             <div id="admin-view" class="view-content">
                 <div class="view-header">
-                    <h2>Admin Dashboard</h2>
-                    <p class="help-text">Manage schedules, events, and people for your organization</p>
+                    <h2>Admin Console</h2>
+                    <p class="help-text">Manage your organization</p>
+                </div>
+
+                <!-- Admin Tabs Navigation -->
+                <div class="admin-tabs">
+                    <button class="admin-tab-btn active" data-tab="events" onclick="switchAdminTab('events')">
+                        Events
+                    </button>
+                    <button class="admin-tab-btn" data-tab="roles" onclick="switchAdminTab('roles')">
+                        Roles
+                    </button>
+                    <button class="admin-tab-btn" data-tab="schedule" onclick="switchAdminTab('schedule')">
+                        Schedule
+                    </button>
+                    <button class="admin-tab-btn" data-tab="people" onclick="switchAdminTab('people')">
+                        People
+                    </button>
+                    <button class="admin-tab-btn" data-tab="reports" onclick="switchAdminTab('reports')">
+                        Reports
+                    </button>
                 </div>
 
                 <div class="admin-dashboard">
-                    <!-- Quick Stats -->
-                    <div class="admin-stats">
-                        <div class="stat-card">
-                            <div class="stat-value" id="admin-people-count">0</div>
-                            <div class="stat-label">People</div>
-                        </div>
-                        <div class="stat-card">
-                            <div class="stat-value" id="admin-events-count">0</div>
-                            <div class="stat-label">Events</div>
-                        </div>
-                        <div class="stat-card">
-                            <div class="stat-value" id="admin-solutions-count">0</div>
-                            <div class="stat-label">Schedules</div>
-                        </div>
-                    </div>
-
-                    <!-- Role Management -->
-                    <div class="admin-section">
-                        <h3>Role Management</h3>
-                        <p class="help-text">Define custom roles for your organization</p>
-                        <div class="admin-controls">
-                            <button class="btn btn-primary" onclick="showAddRoleForm()">+ Add Role</button>
-                        </div>
-                        <div id="admin-roles-list" class="roles-list">
-                            <div class="loading">Loading roles...</div>
+                    <!-- Events Tab -->
+                    <div id="admin-tab-events" class="admin-tab-content active">
+                        <div class="admin-section">
+                            <div class="admin-section-header">
+                                <h3>Event Management</h3>
+                                <div class="admin-controls">
+                                    <button class="btn btn-primary" onclick="showCreateEventForm()">+ Create Event</button>
+                                    <button class="btn btn-secondary" onclick="loadAdminEvents()">🔄 Refresh</button>
+                                </div>
+                            </div>
+                            <div class="admin-stats-inline">
+                                <div class="stat-card-inline">
+                                    <span class="stat-label-inline">Total Events:</span>
+                                    <span class="stat-value-inline" id="admin-events-count">0</span>
+                                </div>
+                            </div>
+                            <div id="admin-events-list" class="admin-list">
+                                <div class="loading">Loading events...</div>
+                            </div>
                         </div>
                     </div>
 
-                    <!-- Event Management -->
-                    <div class="admin-section">
-                        <h3>Event Management</h3>
-                        <div class="admin-controls">
-                            <button class="btn btn-primary" onclick="showCreateEventForm()">+ Create Event</button>
-                            <button class="btn btn-secondary" onclick="loadAdminEvents()">🔄 Refresh</button>
-                        </div>
-                        <div id="admin-events-list" class="admin-list">
-                            <div class="loading">Loading events...</div>
-                        </div>
-                    </div>
-
-                    <!-- Schedule Generation -->
-                    <div class="admin-section">
-                        <h3>Schedule Generation</h3>
-                        <div class="solver-controls">
-                            <button class="btn btn-primary btn-large" onclick="generateSchedule()">
-                                🔄 Generate Schedule
-                            </button>
-                            <p class="help-text">This will create assignments for all upcoming events</p>
-                        </div>
-                        <div id="solver-status" class="solver-status"></div>
-                    </div>
-
-                    <!-- People & Availability -->
-                    <div class="admin-section">
-                        <h3>People & Availability</h3>
-                        <div id="admin-people-list" class="admin-list">
-                            <div class="loading">Loading people...</div>
+                    <!-- Roles Tab -->
+                    <div id="admin-tab-roles" class="admin-tab-content">
+                        <div class="admin-section">
+                            <div class="admin-section-header">
+                                <h3>Role Management</h3>
+                                <div class="admin-controls">
+                                    <button class="btn btn-primary" onclick="showAddRoleForm()">+ Add Role</button>
+                                </div>
+                            </div>
+                            <p class="help-text">Define custom roles for your organization</p>
+                            <div id="admin-roles-list" class="roles-list">
+                                <div class="loading">Loading roles...</div>
+                            </div>
                         </div>
                     </div>
 
-                    <!-- Generated Schedules -->
-                    <div class="admin-section">
-                        <h3>Generated Schedules</h3>
-                        <div id="admin-solutions-list" class="admin-list">
-                            <div class="loading">Loading schedules...</div>
+                    <!-- Schedule Tab -->
+                    <div id="admin-tab-schedule" class="admin-tab-content">
+                        <div class="admin-section">
+                            <div class="admin-section-header">
+                                <h3>Schedule Generation</h3>
+                            </div>
+                            <div class="solver-controls">
+                                <button class="btn btn-primary btn-large" onclick="generateSchedule()">
+                                    🔄 Generate Schedule
+                                </button>
+                                <p class="help-text">This will create assignments for all upcoming events</p>
+                            </div>
+                            <div id="solver-status" class="solver-status"></div>
+
+                            <!-- Calendar View -->
+                            <div class="admin-calendar-section">
+                                <h4>Schedule Calendar</h4>
+                                <div id="admin-calendar-view" class="admin-calendar">
+                                    <div class="loading">Generate a schedule to see the calendar</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Generated Schedules List -->
+                        <div class="admin-section">
+                            <div class="admin-section-header">
+                                <h3>Generated Schedules</h3>
+                            </div>
+                            <div class="admin-stats-inline">
+                                <div class="stat-card-inline">
+                                    <span class="stat-label-inline">Total Schedules:</span>
+                                    <span class="stat-value-inline" id="admin-solutions-count">0</span>
+                                </div>
+                            </div>
+                            <div id="admin-solutions-list" class="admin-list">
+                                <div class="loading">Loading schedules...</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- People Tab -->
+                    <div id="admin-tab-people" class="admin-tab-content">
+                        <div class="admin-section">
+                            <div class="admin-section-header">
+                                <h3>People & Invitations</h3>
+                                <div class="admin-controls">
+                                    <button class="btn btn-primary" onclick="showInviteUserModal()">+ Invite User</button>
+                                </div>
+                            </div>
+                            <div class="admin-stats-inline">
+                                <div class="stat-card-inline">
+                                    <span class="stat-label-inline">Total People:</span>
+                                    <span class="stat-value-inline" id="admin-people-count">0</span>
+                                </div>
+                            </div>
+
+                            <!-- Invitation Status Dashboard -->
+                            <div class="invitations-dashboard">
+                                <h4>Invitation Status</h4>
+                                <div id="invitations-summary" class="invitations-summary">
+                                    <div class="invitation-stat">
+                                        <span class="invitation-count" id="pending-invitations">0</span>
+                                        <span class="invitation-label">Pending</span>
+                                    </div>
+                                    <div class="invitation-stat">
+                                        <span class="invitation-count" id="accepted-invitations">0</span>
+                                        <span class="invitation-label">Accepted</span>
+                                    </div>
+                                    <div class="invitation-stat">
+                                        <span class="invitation-count" id="expired-invitations">0</span>
+                                        <span class="invitation-label">Expired</span>
+                                    </div>
+                                </div>
+                                <div id="invitations-list" class="invitations-list">
+                                    <div class="loading">Loading invitations...</div>
+                                </div>
+                            </div>
+
+                            <!-- People List -->
+                            <h4>Team Members</h4>
+                            <div id="admin-people-list" class="admin-list">
+                                <div class="loading">Loading people...</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Reports Tab -->
+                    <div id="admin-tab-reports" class="admin-tab-content">
+                        <div class="admin-section">
+                            <div class="admin-section-header">
+                                <h3>Reports & Export</h3>
+                            </div>
+                            <p class="help-text">Export schedules and generate reports</p>
+
+                            <div class="reports-grid">
+                                <div class="report-card">
+                                    <h4>PDF Schedule Export</h4>
+                                    <p>Download a printable schedule for distribution</p>
+                                    <button class="btn btn-primary" onclick="exportLatestSchedulePDF()">📥 Export PDF</button>
+                                </div>
+                                <div class="report-card">
+                                    <h4>Calendar Export (ICS)</h4>
+                                    <p>Export all organization events to calendar</p>
+                                    <button class="btn btn-primary" onclick="exportOrgCalendar()">📅 Export ICS</button>
+                                </div>
+                                <div class="report-card">
+                                    <h4>Schedule Statistics</h4>
+                                    <p>View assignment distribution and metrics</p>
+                                    <button class="btn btn-secondary" onclick="showScheduleStats()">📊 View Stats</button>
+                                </div>
+                            </div>
+
+                            <!-- Statistics Display -->
+                            <div id="schedule-stats-display" class="stats-display hidden">
+                                <h4>Schedule Statistics</h4>
+                                <div id="stats-content" class="stats-content">
+                                    <div class="loading">Loading statistics...</div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -478,6 +595,24 @@
                         <input type="text" id="settings-org" readonly>
                     </div>
                     <div class="setting-item">
+                        <label>Timezone</label>
+                        <select id="settings-timezone">
+                            <option value="UTC">UTC</option>
+                            <option value="America/New_York">Eastern Time</option>
+                            <option value="America/Chicago">Central Time</option>
+                            <option value="America/Denver">Mountain Time</option>
+                            <option value="America/Los_Angeles">Pacific Time</option>
+                            <option value="America/Anchorage">Alaska Time</option>
+                            <option value="Pacific/Honolulu">Hawaii Time</option>
+                            <option value="Europe/London">London</option>
+                            <option value="Europe/Paris">Paris</option>
+                            <option value="Asia/Tokyo">Tokyo</option>
+                            <option value="Asia/Shanghai">Shanghai</option>
+                            <option value="Asia/Dubai">Dubai</option>
+                            <option value="Australia/Sydney">Sydney</option>
+                        </select>
+                    </div>
+                    <div class="setting-item">
                         <label>Roles - Select all that apply</label>
                         <div class="role-selector" id="settings-role-selector">
                             <label class="role-option">
@@ -537,10 +672,119 @@
                 </div>
             </div>
         </div>
+
+        <!-- Assignment Modal -->
+        <div id="assignment-modal" class="modal hidden">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3>Assign People to Event</h3>
+                    <button class="btn-close" onclick="closeAssignmentModal()">×</button>
+                </div>
+                <div class="modal-body">
+                    <div id="assignment-people-list"></div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" onclick="closeAssignmentModal()">Done</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Invite User Modal -->
+        <div id="invite-user-modal" class="modal hidden">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3>Invite User</h3>
+                    <button class="btn-close" onclick="closeInviteUserModal()">×</button>
+                </div>
+                <div class="modal-body">
+                    <form id="invite-user-form" onsubmit="sendInvitation(event)">
+                        <div class="form-group">
+                            <label>Email Address</label>
+                            <input type="email" id="invite-email" placeholder="user@example.com" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Full Name</label>
+                            <input type="text" id="invite-name" placeholder="John Doe" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Assign Roles</label>
+                            <div class="role-selector" id="invite-role-selector">
+                                <label class="role-option">
+                                    <input type="checkbox" value="volunteer"> Volunteer
+                                </label>
+                                <label class="role-option">
+                                    <input type="checkbox" value="admin"> Admin
+                                </label>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" onclick="closeInviteUserModal()">Cancel</button>
+                            <button type="submit" class="btn btn-primary">Send Invitation</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Calendar Subscription Modal -->
+        <div id="calendar-subscription-modal" class="modal hidden">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3>Subscribe to Calendar</h3>
+                    <button class="close-btn" onclick="closeCalendarSubscriptionModal()">×</button>
+                </div>
+                <div class="modal-body">
+                    <p class="help-text">
+                        Subscribe to your schedule in Google Calendar, Apple Calendar, Outlook, or any other calendar app.
+                        Your calendar will automatically update when your schedule changes.
+                    </p>
+
+                    <div class="form-group">
+                        <label>Subscription URL (webcal://)</label>
+                        <div class="input-group">
+                            <input type="text" id="webcal-url" readonly class="subscription-url">
+                            <button class="btn btn-secondary" onclick="copyToClipboard('webcal-url')">Copy</button>
+                        </div>
+                        <small class="help-text">Use this URL in most calendar apps</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Alternative URL (https://)</label>
+                        <div class="input-group">
+                            <input type="text" id="https-url" readonly class="subscription-url">
+                            <button class="btn btn-secondary" onclick="copyToClipboard('https-url')">Copy</button>
+                        </div>
+                        <small class="help-text">Use this if webcal:// doesn't work</small>
+                    </div>
+
+                    <div class="calendar-instructions">
+                        <h4>How to subscribe:</h4>
+                        <ul>
+                            <li><strong>Google Calendar:</strong> Settings → Add calendar → From URL</li>
+                            <li><strong>Apple Calendar:</strong> File → New Calendar Subscription</li>
+                            <li><strong>Outlook:</strong> Calendar → Add calendar → Subscribe from web</li>
+                        </ul>
+                    </div>
+
+                    <div class="alert alert-warning">
+                        <strong>Security Note:</strong> Keep this URL private. Anyone with this URL can view your schedule.
+                        <button class="btn btn-link" onclick="resetCalendarToken()">Reset URL</button> if compromised.
+                    </div>
+
+                    <div class="modal-footer">
+                        <button class="btn btn-secondary" onclick="closeCalendarSubscriptionModal()">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 
-    <script src="js/role-management.js?v=6"></script>
-    <script src="js/recurring-events.js?v=6"></script>
-    <script src="js/app-user.js?v=10"></script>
+    <script>
+        // Timestamp-based cache busting
+        const cacheBust = Date.now();
+        document.write('<script src="js/role-management.js?t=' + cacheBust + '"><\/script>');
+        document.write('<script src="js/recurring-events.js?t=' + cacheBust + '"><\/script>');
+        document.write('<script src="js/app-user.js?t=' + cacheBust + '"><\/script>');
+    </script>
 </body>
 </html>

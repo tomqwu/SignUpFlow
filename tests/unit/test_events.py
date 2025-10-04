@@ -283,3 +283,206 @@ class TestEventDelete:
         """Test deleting non-existent event returns 404."""
         response = client.delete(f"{API_BASE}/events/nonexistent_event")
         assert response.status_code == 404
+
+
+class TestEventAssignments:
+    """Test dynamic event assignment features."""
+
+    def test_get_available_people_for_event(self):
+        """Test getting available people for an event based on roles."""
+        import time
+        timestamp = int(time.time() * 1000)
+        org_id = f"assign_test_org_{timestamp}"
+        event_id = f"assign_event_{timestamp}"
+
+        # Create organization with roles
+        client.post(
+            f"{API_BASE}/organizations/",
+            json={"id": org_id, "name": "Assignment Test Org", "config": {"roles": ["volunteer", "leader"]}}
+        )
+
+        # Create people directly via people endpoint
+        alice_id = f"person_alice_{timestamp}"
+        bob_id = f"person_bob_{timestamp}"
+        charlie_id = f"person_charlie_{timestamp}"
+
+        client.post(
+            f"{API_BASE}/people/",
+            json={"id": alice_id, "org_id": org_id, "name": "Alice", "email": f"alice_{timestamp}@test.com", "roles": ["volunteer"]}
+        )
+        client.post(
+            f"{API_BASE}/people/",
+            json={"id": bob_id, "org_id": org_id, "name": "Bob", "email": f"bob_{timestamp}@test.com", "roles": ["leader"]}
+        )
+        client.post(
+            f"{API_BASE}/people/",
+            json={"id": charlie_id, "org_id": org_id, "name": "Charlie", "email": f"charlie_{timestamp}@test.com", "roles": ["volunteer", "leader"]}
+        )
+
+        # Create event with role requirements
+        start = (datetime.now() + timedelta(days=1)).isoformat()
+        end = (datetime.now() + timedelta(days=1, hours=2)).isoformat()
+        client.post(
+            f"{API_BASE}/events/",
+            json={
+                "id": event_id,
+                "org_id": org_id,
+                "type": "Service",
+                "start_time": start,
+                "end_time": end,
+                "extra_data": {"role_counts": {"volunteer": 2, "leader": 1}}
+            }
+        )
+
+        # Get available people
+        response = client.get(f"{API_BASE}/events/{event_id}/available-people")
+        assert response.status_code == 200
+        people = response.json()
+
+        # Should return people with matching roles
+        assert len(people) >= 2
+        assert all("is_assigned" in p for p in people)
+        assert all("roles" in p for p in people)
+
+    def test_assign_person_to_event(self):
+        """Test assigning a person to an event."""
+        import time
+        timestamp = int(time.time() * 1000)
+        org_id = f"assign_test_org2_{timestamp}"
+        event_id = f"assign_event2_{timestamp}"
+        person_id = f"person_alice2_{timestamp}"
+
+        # Setup
+        client.post(f"{API_BASE}/organizations/", json={"id": org_id, "name": "Test Org"})
+        client.post(
+            f"{API_BASE}/people/",
+            json={"id": person_id, "org_id": org_id, "name": "Alice", "email": f"alice2_{timestamp}@test.com", "roles": ["volunteer"]}
+        )
+
+        start = (datetime.now() + timedelta(days=1)).isoformat()
+        end = (datetime.now() + timedelta(days=1, hours=2)).isoformat()
+        client.post(
+            f"{API_BASE}/events/",
+            json={"id": event_id, "org_id": org_id, "type": "Event", "start_time": start, "end_time": end}
+        )
+
+        # Assign person
+        response = client.post(
+            f"{API_BASE}/events/{event_id}/assignments",
+            json={"person_id": person_id, "action": "assign"}
+        )
+        assert response.status_code == 200
+        data = response.json()
+        assert "assignment_id" in data
+        assert "Assigned" in data["message"]
+
+    def test_unassign_person_from_event(self):
+        """Test unassigning a person from an event."""
+        import time
+        timestamp = int(time.time() * 1000)
+        org_id = f"assign_test_org3_{timestamp}"
+        event_id = f"assign_event3_{timestamp}"
+        person_id = f"person_bob2_{timestamp}"
+
+        # Setup
+        client.post(f"{API_BASE}/organizations/", json={"id": org_id, "name": "Test Org"})
+        client.post(
+            f"{API_BASE}/people/",
+            json={"id": person_id, "org_id": org_id, "name": "Bob", "email": f"bob2_{timestamp}@test.com", "roles": ["volunteer"]}
+        )
+
+        start = (datetime.now() + timedelta(days=1)).isoformat()
+        end = (datetime.now() + timedelta(days=1, hours=2)).isoformat()
+        client.post(
+            f"{API_BASE}/events/",
+            json={"id": event_id, "org_id": org_id, "type": "Event", "start_time": start, "end_time": end}
+        )
+
+        # Assign first
+        client.post(
+            f"{API_BASE}/events/{event_id}/assignments",
+            json={"person_id": person_id, "action": "assign"}
+        )
+
+        # Then unassign
+        response = client.post(
+            f"{API_BASE}/events/{event_id}/assignments",
+            json={"person_id": person_id, "action": "unassign"}
+        )
+        assert response.status_code == 200
+        data = response.json()
+        assert "Unassigned" in data["message"]
+
+    def test_assign_already_assigned_person_fails(self):
+        """Test that assigning an already assigned person returns error."""
+        import time
+        timestamp = int(time.time() * 1000)
+        org_id = f"assign_test_org4_{timestamp}"
+        event_id = f"assign_event4_{timestamp}"
+        person_id = f"person_charlie2_{timestamp}"
+
+        client.post(f"{API_BASE}/organizations/", json={"id": org_id, "name": "Test Org"})
+        client.post(
+            f"{API_BASE}/people/",
+            json={"id": person_id, "org_id": org_id, "name": "Charlie", "email": f"charlie2_{timestamp}@test.com", "roles": ["volunteer"]}
+        )
+
+        start = (datetime.now() + timedelta(days=1)).isoformat()
+        end = (datetime.now() + timedelta(days=1, hours=2)).isoformat()
+        client.post(
+            f"{API_BASE}/events/",
+            json={"id": event_id, "org_id": org_id, "type": "Event", "start_time": start, "end_time": end}
+        )
+
+        # Assign once
+        client.post(
+            f"{API_BASE}/events/{event_id}/assignments",
+            json={"person_id": person_id, "action": "assign"}
+        )
+
+        # Try to assign again
+        response = client.post(
+            f"{API_BASE}/events/{event_id}/assignments",
+            json={"person_id": person_id, "action": "assign"}
+        )
+        assert response.status_code == 400
+
+    def test_assignment_shows_in_available_people(self):
+        """Test that assignments are reflected in available people endpoint."""
+        import time
+        timestamp = int(time.time() * 1000)
+        org_id = f"assign_test_org5_{timestamp}"
+        event_id = f"assign_event5_{timestamp}"
+        person_id = f"person_david_{timestamp}"
+
+        client.post(f"{API_BASE}/organizations/", json={"id": org_id, "name": "Test Org"})
+        client.post(
+            f"{API_BASE}/people/",
+            json={"id": person_id, "org_id": org_id, "name": "David", "email": f"david_{timestamp}@test.com", "roles": ["volunteer"]}
+        )
+
+        start = (datetime.now() + timedelta(days=1)).isoformat()
+        end = (datetime.now() + timedelta(days=1, hours=2)).isoformat()
+        client.post(
+            f"{API_BASE}/events/",
+            json={"id": event_id, "org_id": org_id, "type": "Event", "start_time": start, "end_time": end, "extra_data": {"role_counts": {"volunteer": 1}}}
+        )
+
+        # Check before assignment
+        response = client.get(f"{API_BASE}/events/{event_id}/available-people")
+        people = response.json()
+        assert len(people) >= 1
+        assert people[0]["is_assigned"] == False
+
+        # Assign
+        client.post(
+            f"{API_BASE}/events/{event_id}/assignments",
+            json={"person_id": person_id, "action": "assign"}
+        )
+
+        # Check after assignment
+        response = client.get(f"{API_BASE}/events/{event_id}/available-people")
+        people = response.json()
+        assigned_person = next((p for p in people if p["id"] == person_id), None)
+        assert assigned_person is not None
+        assert assigned_person["is_assigned"] == True

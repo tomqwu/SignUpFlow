@@ -131,3 +131,53 @@ def pytest_configure(config):
     config.addinivalue_line("markers", "gui: GUI tests with Playwright")
     config.addinivalue_line("markers", "api: API tests")
     config.addinivalue_line("markers", "slow: Slow running tests")
+
+
+# Database test fixtures
+import os
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
+from roster_cli.db.models import Base
+
+TEST_DATABASE_URL = "sqlite:///./test_roster.db"
+
+
+@pytest.fixture(scope="session", autouse=True)
+def setup_test_database():
+    """Setup test database once per test session."""
+    # Remove existing test database
+    if os.path.exists("test_roster.db"):
+        os.remove("test_roster.db")
+
+    # Create test database
+    engine = create_engine(TEST_DATABASE_URL, connect_args={"check_same_thread": False})
+    Base.metadata.create_all(bind=engine)
+
+    yield
+
+    # Cleanup after all tests
+    if os.path.exists("test_roster.db"):
+        os.remove("test_roster.db")
+
+
+@pytest.fixture(scope="function", autouse=True)
+def override_get_db():
+    """Override database dependency to use test database for unit tests."""
+    from api.main import app
+    from api.database import get_db
+
+    engine = create_engine(TEST_DATABASE_URL, connect_args={"check_same_thread": False})
+    TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+
+    def override_get_db_dependency():
+        try:
+            db = TestingSessionLocal()
+            yield db
+        finally:
+            db.close()
+
+    app.dependency_overrides[get_db] = override_get_db_dependency
+
+    yield
+
+    app.dependency_overrides.clear()

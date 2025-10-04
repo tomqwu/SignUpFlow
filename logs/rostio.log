@@ -14,3 +14,327 @@
 2025-10-04 00:08:33,163 - rostio - INFO - 📖 API docs available at http://localhost:8000/docs
 2025-10-04 00:09:01,289 - rostio - INFO - 🚀 Rostio API started
 2025-10-04 00:09:01,289 - rostio - INFO - 📖 API docs available at http://localhost:8000/docs
+2025-10-04 00:35:23,644 - rostio - INFO - 🚀 Rostio API started
+2025-10-04 00:35:23,644 - rostio - INFO - 📖 API docs available at http://localhost:8000/docs
+2025-10-04 00:39:31,165 - rostio - INFO - 🚀 Rostio API started
+2025-10-04 00:39:31,165 - rostio - INFO - 📖 API docs available at http://localhost:8000/docs
+2025-10-04 01:10:18,387 - rostio - INFO - 🚀 Rostio API started
+2025-10-04 01:10:18,388 - rostio - INFO - 📖 API docs available at http://localhost:8000/docs
+2025-10-04 01:21:07,459 - rostio - INFO - 🚀 Rostio API started
+2025-10-04 01:21:07,459 - rostio - INFO - 📖 API docs available at http://localhost:8000/docs
+2025-10-04 01:21:47,648 - rostio - ERROR - Unhandled error: name 'logger' is not defined
+Traceback (most recent call last):
+  File "/home/ubuntu/rostio/.venv/lib/python3.11/site-packages/starlette/middleware/base.py", line 159, in call_next
+    message = await recv_stream.receive()
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/rostio/.venv/lib/python3.11/site-packages/anyio/streams/memory.py", line 126, in receive
+    raise EndOfStream from None
+anyio.EndOfStream
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/ubuntu/rostio/api/main.py", line 42, in error_logging_middleware
+    response = await call_next(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/rostio/.venv/lib/python3.11/site-packages/starlette/middleware/base.py", line 165, in call_next
+    raise app_exc
+  File "/home/ubuntu/rostio/.venv/lib/python3.11/site-packages/starlette/middleware/base.py", line 151, in coro
+    await self.app(scope, receive_or_disconnect, send_no_error)
+  File "/home/ubuntu/rostio/.venv/lib/python3.11/site-packages/starlette/middleware/exceptions.py", line 62, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "/home/ubuntu/rostio/.venv/lib/python3.11/site-packages/starlette/_exception_handler.py", line 64, in wrapped_app
+    raise exc
+  File "/home/ubuntu/rostio/.venv/lib/python3.11/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    await app(scope, receive, sender)
+  File "/home/ubuntu/rostio/.venv/lib/python3.11/site-packages/starlette/routing.py", line 758, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/home/ubuntu/rostio/.venv/lib/python3.11/site-packages/starlette/routing.py", line 778, in app
+    await route.handle(scope, receive, send)
+  File "/home/ubuntu/rostio/.venv/lib/python3.11/site-packages/starlette/routing.py", line 299, in handle
+    await self.app(scope, receive, send)
+  File "/home/ubuntu/rostio/.venv/lib/python3.11/site-packages/starlette/routing.py", line 79, in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+  File "/home/ubuntu/rostio/.venv/lib/python3.11/site-packages/starlette/_exception_handler.py", line 64, in wrapped_app
+    raise exc
+  File "/home/ubuntu/rostio/.venv/lib/python3.11/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    await app(scope, receive, sender)
+  File "/home/ubuntu/rostio/.venv/lib/python3.11/site-packages/starlette/routing.py", line 74, in app
+    response = await func(request)
+               ^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.11/contextlib.py", line 222, in __aexit__
+    await self.gen.athrow(typ, value, traceback)
+  File "/home/ubuntu/rostio/.venv/lib/python3.11/site-packages/fastapi/concurrency.py", line 35, in contextmanager_in_threadpool
+    raise e
+NameError: name 'logger' is not defined
+
+2025-10-04 01:21:57,870 - rostio - INFO - 🚀 Rostio API started
+2025-10-04 01:21:57,870 - rostio - INFO - 📖 API docs available at http://localhost:8000/docs
+2025-10-04 01:22:05,298 - rostio - INFO - Event worship_service_1759552545242: role_counts={'volunteer': 1, 'leader': 1}, required_roles=[{'role': 'volunteer', 'count': 1}, {'role': 'leader', 'count': 1}]
+2025-10-04 01:22:05,300 - rostio - INFO - Event event_001: role_counts={}, required_roles=[]
+2025-10-04 01:22:05,300 - rostio - INFO - Event event_002: role_counts={}, required_roles=[]
+2025-10-04 01:25:50,665 - rostio - INFO - 🚀 Rostio API started
+2025-10-04 01:25:50,665 - rostio - INFO - 📖 API docs available at http://localhost:8000/docs
+2025-10-04 01:25:58,619 - rostio - INFO - 🚀 Rostio API started
+2025-10-04 01:25:58,620 - rostio - INFO - 📖 API docs available at http://localhost:8000/docs
+2025-10-04 01:26:19,765 - rostio - INFO - 🚀 Rostio API started
+2025-10-04 01:26:19,765 - rostio - INFO - 📖 API docs available at http://localhost:8000/docs
+2025-10-04 01:29:23,246 - rostio - INFO - 🚀 Rostio API started
+2025-10-04 01:29:23,246 - rostio - INFO - 📖 API docs available at http://localhost:8000/docs
+2025-10-04 01:30:54,386 - rostio - ERROR - Unhandled error: (sqlite3.IntegrityError) NOT NULL constraint failed: assignments.solution_id
+[SQL: INSERT INTO assignments (solution_id, event_id, person_id, assigned_at) VALUES (?, ?, ?, ?)]
+[parameters: (None, 'event_001', 'person_sarah_1759550943', '2025-10-04 05:30:54.380220')]
+(Background on this error at: https://sqlalche.me/e/20/gkpj)
+Traceback (most recent call last):
+  File "/home/ubuntu/rostio/.venv/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 1967, in _exec_single_context
+    self.dialect.do_execute(
+  File "/home/ubuntu/rostio/.venv/lib/python3.11/site-packages/sqlalchemy/engine/default.py", line 951, in do_execute
+    cursor.execute(statement, parameters)
+sqlite3.IntegrityError: NOT NULL constraint failed: assignments.solution_id
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/home/ubuntu/rostio/api/main.py", line 42, in error_logging_middleware
+    response = await call_next(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/rostio/.venv/lib/python3.11/site-packages/starlette/middleware/base.py", line 165, in call_next
+    raise app_exc
+  File "/home/ubuntu/rostio/.venv/lib/python3.11/site-packages/starlette/middleware/base.py", line 151, in coro
+    await self.app(scope, receive_or_disconnect, send_no_error)
+  File "/home/ubuntu/rostio/.venv/lib/python3.11/site-packages/starlette/middleware/exceptions.py", line 62, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "/home/ubuntu/rostio/.venv/lib/python3.11/site-packages/starlette/_exception_handler.py", line 64, in wrapped_app
+    raise exc
+  File "/home/ubuntu/rostio/.venv/lib/python3.11/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    await app(scope, receive, sender)
+  File "/home/ubuntu/rostio/.venv/lib/python3.11/site-packages/starlette/routing.py", line 758, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/home/ubuntu/rostio/.venv/lib/python3.11/site-packages/starlette/routing.py", line 778, in app
+    await route.handle(scope, receive, send)
+  File "/home/ubuntu/rostio/.venv/lib/python3.11/site-packages/starlette/routing.py", line 299, in handle
+    await self.app(scope, receive, send)
+  File "/home/ubuntu/rostio/.venv/lib/python3.11/site-packages/starlette/routing.py", line 79, in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+  File "/home/ubuntu/rostio/.venv/lib/python3.11/site-packages/starlette/_exception_handler.py", line 64, in wrapped_app
+    raise exc
+  File "/home/ubuntu/rostio/.venv/lib/python3.11/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    await app(scope, receive, sender)
+  File "/home/ubuntu/rostio/.venv/lib/python3.11/site-packages/starlette/routing.py", line 74, in app
+    response = await func(request)
+               ^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.11/contextlib.py", line 222, in __aexit__
+    await self.gen.athrow(typ, value, traceback)
+  File "/home/ubuntu/rostio/.venv/lib/python3.11/site-packages/fastapi/concurrency.py", line 35, in contextmanager_in_threadpool
+    raise e
+sqlalchemy.exc.IntegrityError: (sqlite3.IntegrityError) NOT NULL constraint failed: assignments.solution_id
+[SQL: INSERT INTO assignments (solution_id, event_id, person_id, assigned_at) VALUES (?, ?, ?, ?)]
+[parameters: (None, 'event_001', 'person_sarah_1759550943', '2025-10-04 05:30:54.380220')]
+(Background on this error at: https://sqlalche.me/e/20/gkpj)
+
+2025-10-04 01:31:20,410 - rostio - ERROR - Unhandled error: (sqlite3.IntegrityError) NOT NULL constraint failed: assignments.solution_id
+[SQL: INSERT INTO assignments (solution_id, event_id, person_id, assigned_at) VALUES (?, ?, ?, ?)]
+[parameters: (None, 'worship_service_1759552545242', 'person_john_1759550943', '2025-10-04 05:31:20.409834')]
+(Background on this error at: https://sqlalche.me/e/20/gkpj)
+Traceback (most recent call last):
+  File "/home/ubuntu/rostio/.venv/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 1967, in _exec_single_context
+    self.dialect.do_execute(
+  File "/home/ubuntu/rostio/.venv/lib/python3.11/site-packages/sqlalchemy/engine/default.py", line 951, in do_execute
+    cursor.execute(statement, parameters)
+sqlite3.IntegrityError: NOT NULL constraint failed: assignments.solution_id
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/home/ubuntu/rostio/api/main.py", line 42, in error_logging_middleware
+    response = await call_next(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/rostio/.venv/lib/python3.11/site-packages/starlette/middleware/base.py", line 165, in call_next
+    raise app_exc
+  File "/home/ubuntu/rostio/.venv/lib/python3.11/site-packages/starlette/middleware/base.py", line 151, in coro
+    await self.app(scope, receive_or_disconnect, send_no_error)
+  File "/home/ubuntu/rostio/.venv/lib/python3.11/site-packages/starlette/middleware/exceptions.py", line 62, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "/home/ubuntu/rostio/.venv/lib/python3.11/site-packages/starlette/_exception_handler.py", line 64, in wrapped_app
+    raise exc
+  File "/home/ubuntu/rostio/.venv/lib/python3.11/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    await app(scope, receive, sender)
+  File "/home/ubuntu/rostio/.venv/lib/python3.11/site-packages/starlette/routing.py", line 758, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/home/ubuntu/rostio/.venv/lib/python3.11/site-packages/starlette/routing.py", line 778, in app
+    await route.handle(scope, receive, send)
+  File "/home/ubuntu/rostio/.venv/lib/python3.11/site-packages/starlette/routing.py", line 299, in handle
+    await self.app(scope, receive, send)
+  File "/home/ubuntu/rostio/.venv/lib/python3.11/site-packages/starlette/routing.py", line 79, in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+  File "/home/ubuntu/rostio/.venv/lib/python3.11/site-packages/starlette/_exception_handler.py", line 64, in wrapped_app
+    raise exc
+  File "/home/ubuntu/rostio/.venv/lib/python3.11/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    await app(scope, receive, sender)
+  File "/home/ubuntu/rostio/.venv/lib/python3.11/site-packages/starlette/routing.py", line 74, in app
+    response = await func(request)
+               ^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.11/contextlib.py", line 222, in __aexit__
+    await self.gen.athrow(typ, value, traceback)
+  File "/home/ubuntu/rostio/.venv/lib/python3.11/site-packages/fastapi/concurrency.py", line 35, in contextmanager_in_threadpool
+    raise e
+sqlalchemy.exc.IntegrityError: (sqlite3.IntegrityError) NOT NULL constraint failed: assignments.solution_id
+[SQL: INSERT INTO assignments (solution_id, event_id, person_id, assigned_at) VALUES (?, ?, ?, ?)]
+[parameters: (None, 'worship_service_1759552545242', 'person_john_1759550943', '2025-10-04 05:31:20.409834')]
+(Background on this error at: https://sqlalche.me/e/20/gkpj)
+
+2025-10-04 01:31:37,950 - rostio - INFO - 🚀 Rostio API started
+2025-10-04 01:31:37,950 - rostio - INFO - 📖 API docs available at http://localhost:8000/docs
+2025-10-04 01:34:01,476 - rostio - INFO - Event worship_service_1759552545242: role_counts={'volunteer': 1, 'leader': 1}, required_roles=[{'role': 'volunteer', 'count': 1}, {'role': 'leader', 'count': 1}]
+2025-10-04 01:34:01,476 - rostio - INFO - Event event_001: role_counts={}, required_roles=[]
+2025-10-04 01:34:01,477 - rostio - INFO - Event event_002: role_counts={}, required_roles=[]
+2025-10-04 01:36:28,016 - rostio - INFO - 🚀 Rostio API started
+2025-10-04 01:36:28,016 - rostio - INFO - 📖 API docs available at http://localhost:8000/docs
+2025-10-04 01:37:07,144 - rostio - INFO - 🚀 Rostio API started
+2025-10-04 01:37:07,144 - rostio - INFO - 📖 API docs available at http://localhost:8000/docs
+2025-10-04 01:39:24,163 - rostio - INFO - 🚀 Rostio API started
+2025-10-04 01:39:24,163 - rostio - INFO - 📖 API docs available at http://localhost:8000/docs
+2025-10-04 01:41:10,549 - rostio - INFO - 🚀 Rostio API started
+2025-10-04 01:41:10,549 - rostio - INFO - 📖 API docs available at http://localhost:8000/docs
+2025-10-04 01:41:12,969 - rostio - INFO - Event worship_service_1759552545242: role_counts={'volunteer': 1, 'leader': 1}, required_roles=[{'role': 'volunteer', 'count': 1}, {'role': 'leader', 'count': 1}]
+2025-10-04 01:41:12,971 - rostio - INFO - Event event_001: role_counts={}, required_roles=[]
+2025-10-04 01:41:12,971 - rostio - INFO - Event event_002: role_counts={}, required_roles=[]
+2025-10-04 01:41:24,693 - rostio - INFO - 🚀 Rostio API started
+2025-10-04 01:41:24,694 - rostio - INFO - 📖 API docs available at http://localhost:8000/docs
+2025-10-04 01:41:55,359 - rostio - INFO - 🚀 Rostio API started
+2025-10-04 01:41:55,359 - rostio - INFO - 📖 API docs available at http://localhost:8000/docs
+2025-10-04 01:44:59,733 - rostio - INFO - Event worship_service_1759552545242: role_counts={'volunteer': 1, 'leader': 1}, required_roles=[{'role': 'volunteer', 'count': 1}, {'role': 'leader', 'count': 1}]
+2025-10-04 01:44:59,734 - rostio - INFO - Event event_001: role_counts={}, required_roles=[]
+2025-10-04 01:44:59,734 - rostio - INFO - Event event_002: role_counts={}, required_roles=[]
+2025-10-04 01:47:54,567 - rostio - INFO - Event worship_service_1759552545242: role_counts={'volunteer': 1, 'leader': 1}, required_roles=[{'role': 'volunteer', 'count': 1}, {'role': 'leader', 'count': 1}]
+2025-10-04 01:47:54,568 - rostio - INFO - Event event_001: role_counts={'volunteer': 2, 'leader': 1}, required_roles=[{'role': 'volunteer', 'count': 2}, {'role': 'leader', 'count': 1}]
+2025-10-04 01:47:54,568 - rostio - INFO - Event event_002: role_counts={'volunteer': 1}, required_roles=[{'role': 'volunteer', 'count': 1}]
+2025-10-04 01:49:30,307 - rostio - INFO - 🚀 Rostio API started
+2025-10-04 01:49:30,307 - rostio - INFO - 📖 API docs available at http://localhost:8000/docs
+2025-10-04 01:52:54,128 - rostio - INFO - 🚀 Rostio API started
+2025-10-04 01:52:54,128 - rostio - INFO - 📖 API docs available at http://localhost:8000/docs
+2025-10-04 01:53:34,847 - rostio - INFO - 🚀 Rostio API started
+2025-10-04 01:53:34,847 - rostio - INFO - 📖 API docs available at http://localhost:8000/docs
+2025-10-04 01:55:55,420 - rostio - INFO - 🚀 Rostio API started
+2025-10-04 01:55:55,420 - rostio - INFO - 📖 API docs available at http://localhost:8000/docs
+2025-10-04 01:56:07,063 - rostio - INFO - 🚀 Rostio API started
+2025-10-04 01:56:07,063 - rostio - INFO - 📖 API docs available at http://localhost:8000/docs
+2025-10-04 01:56:12,951 - rostio - INFO - 🚀 Rostio API started
+2025-10-04 01:56:12,951 - rostio - INFO - 📖 API docs available at http://localhost:8000/docs
+2025-10-04 01:58:35,927 - rostio - INFO - Event worship_service_1759552545242: role_counts={'volunteer': 1, 'leader': 1}, required_roles=[{'role': 'volunteer', 'count': 1}, {'role': 'leader', 'count': 1}]
+2025-10-04 01:58:35,928 - rostio - INFO - Event event_001: role_counts={'volunteer': 2, 'leader': 1}, required_roles=[{'role': 'volunteer', 'count': 2}, {'role': 'leader', 'count': 1}]
+2025-10-04 01:58:35,928 - rostio - INFO - Event event_002: role_counts={'volunteer': 1}, required_roles=[{'role': 'volunteer', 'count': 1}]
+2025-10-04 01:58:59,365 - rostio - INFO - 🚀 Rostio API started
+2025-10-04 01:58:59,366 - rostio - INFO - 📖 API docs available at http://localhost:8000/docs
+2025-10-04 01:59:10,586 - rostio - INFO - 🚀 Rostio API started
+2025-10-04 01:59:10,586 - rostio - INFO - 📖 API docs available at http://localhost:8000/docs
+2025-10-04 01:59:25,310 - rostio - INFO - 🚀 Rostio API started
+2025-10-04 01:59:25,310 - rostio - INFO - 📖 API docs available at http://localhost:8000/docs
+2025-10-04 02:00:21,572 - rostio - INFO - 🚀 Rostio API started
+2025-10-04 02:00:21,572 - rostio - INFO - 📖 API docs available at http://localhost:8000/docs
+2025-10-04 02:00:31,784 - rostio - INFO - 🚀 Rostio API started
+2025-10-04 02:00:31,784 - rostio - INFO - 📖 API docs available at http://localhost:8000/docs
+2025-10-04 02:02:39,856 - rostio - INFO - 🚀 Rostio API started
+2025-10-04 02:02:39,856 - rostio - INFO - 📖 API docs available at http://localhost:8000/docs
+2025-10-04 02:02:47,411 - rostio - INFO - 🚀 Rostio API started
+2025-10-04 02:02:47,411 - rostio - INFO - 📖 API docs available at http://localhost:8000/docs
+2025-10-04 02:03:00,864 - rostio - INFO - 🚀 Rostio API started
+2025-10-04 02:03:00,864 - rostio - INFO - 📖 API docs available at http://localhost:8000/docs
+2025-10-04 02:04:10,962 - rostio - INFO - Event worship_service_1759552545242: role_counts={'volunteer': 1, 'leader': 1}, required_roles=[{'role': 'volunteer', 'count': 1}, {'role': 'leader', 'count': 1}]
+2025-10-04 02:04:10,963 - rostio - INFO - Event event_001: role_counts={'volunteer': 2, 'leader': 1}, required_roles=[{'role': 'volunteer', 'count': 2}, {'role': 'leader', 'count': 1}]
+2025-10-04 02:04:10,963 - rostio - INFO - Event event_002: role_counts={'volunteer': 1}, required_roles=[{'role': 'volunteer', 'count': 1}]
+2025-10-04 02:05:19,331 - rostio - INFO - 🚀 Rostio API started
+2025-10-04 02:05:19,332 - rostio - INFO - 📖 API docs available at http://localhost:8000/docs
+2025-10-04 02:05:40,977 - rostio - INFO - Event worship_service_1759552545242: role_counts={'volunteer': 1, 'leader': 1}, required_roles=[{'role': 'volunteer', 'count': 1}, {'role': 'leader', 'count': 1}]
+2025-10-04 02:05:40,978 - rostio - INFO - Event event_001: role_counts={'volunteer': 2, 'leader': 1}, required_roles=[{'role': 'volunteer', 'count': 2}, {'role': 'leader', 'count': 1}]
+2025-10-04 02:05:40,978 - rostio - INFO - Event event_002: role_counts={'volunteer': 1}, required_roles=[{'role': 'volunteer', 'count': 1}]
+2025-10-04 02:18:08,954 - rostio - INFO - 🚀 Rostio API started
+2025-10-04 02:18:08,954 - rostio - INFO - 📖 API docs available at http://localhost:8000/docs
+2025-10-04 02:18:26,178 - rostio - INFO - 🚀 Rostio API started
+2025-10-04 02:18:26,178 - rostio - INFO - 📖 API docs available at http://localhost:8000/docs
+2025-10-04 02:22:26,441 - rostio - INFO - 🚀 Rostio API started
+2025-10-04 02:22:26,441 - rostio - INFO - 📖 API docs available at http://localhost:8000/docs
+2025-10-04 02:24:58,586 - rostio - INFO - 🚀 Rostio API started
+2025-10-04 02:24:58,586 - rostio - INFO - 📖 API docs available at http://localhost:8000/docs
+2025-10-04 02:25:04,893 - rostio - ERROR - Unhandled error: type object 'VacationPeriod' has no attribute 'person_id'
+Traceback (most recent call last):
+  File "/home/ubuntu/rostio/.venv/lib/python3.11/site-packages/starlette/middleware/base.py", line 159, in call_next
+    message = await recv_stream.receive()
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/rostio/.venv/lib/python3.11/site-packages/anyio/streams/memory.py", line 126, in receive
+    raise EndOfStream from None
+anyio.EndOfStream
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/ubuntu/rostio/api/main.py", line 42, in error_logging_middleware
+    response = await call_next(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/rostio/.venv/lib/python3.11/site-packages/starlette/middleware/base.py", line 165, in call_next
+    raise app_exc
+  File "/home/ubuntu/rostio/.venv/lib/python3.11/site-packages/starlette/middleware/base.py", line 151, in coro
+    await self.app(scope, receive_or_disconnect, send_no_error)
+  File "/home/ubuntu/rostio/.venv/lib/python3.11/site-packages/starlette/middleware/exceptions.py", line 62, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "/home/ubuntu/rostio/.venv/lib/python3.11/site-packages/starlette/_exception_handler.py", line 64, in wrapped_app
+    raise exc
+  File "/home/ubuntu/rostio/.venv/lib/python3.11/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    await app(scope, receive, sender)
+  File "/home/ubuntu/rostio/.venv/lib/python3.11/site-packages/starlette/routing.py", line 758, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/home/ubuntu/rostio/.venv/lib/python3.11/site-packages/starlette/routing.py", line 778, in app
+    await route.handle(scope, receive, send)
+  File "/home/ubuntu/rostio/.venv/lib/python3.11/site-packages/starlette/routing.py", line 299, in handle
+    await self.app(scope, receive, send)
+  File "/home/ubuntu/rostio/.venv/lib/python3.11/site-packages/starlette/routing.py", line 79, in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+  File "/home/ubuntu/rostio/.venv/lib/python3.11/site-packages/starlette/_exception_handler.py", line 64, in wrapped_app
+    raise exc
+  File "/home/ubuntu/rostio/.venv/lib/python3.11/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    await app(scope, receive, sender)
+  File "/home/ubuntu/rostio/.venv/lib/python3.11/site-packages/starlette/routing.py", line 74, in app
+    response = await func(request)
+               ^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.11/contextlib.py", line 222, in __aexit__
+    await self.gen.athrow(typ, value, traceback)
+  File "/home/ubuntu/rostio/.venv/lib/python3.11/site-packages/fastapi/concurrency.py", line 35, in contextmanager_in_threadpool
+    raise e
+AttributeError: type object 'VacationPeriod' has no attribute 'person_id'
+
+2025-10-04 02:25:29,716 - rostio - INFO - 🚀 Rostio API started
+2025-10-04 02:25:29,716 - rostio - INFO - 📖 API docs available at http://localhost:8000/docs
+2025-10-04 02:25:37,920 - rostio - INFO - 🚀 Rostio API started
+2025-10-04 02:25:37,921 - rostio - INFO - 📖 API docs available at http://localhost:8000/docs
+2025-10-04 02:29:28,684 - rostio - INFO - 🚀 Rostio API started
+2025-10-04 02:29:28,684 - rostio - INFO - 📖 API docs available at http://localhost:8000/docs
+2025-10-04 08:52:10,926 - rostio - INFO - 🚀 Rostio API started
+2025-10-04 08:52:10,927 - rostio - INFO - 📖 API docs available at http://localhost:8000/docs
+2025-10-04 08:52:20,406 - rostio - INFO - 🚀 Rostio API started
+2025-10-04 08:52:20,406 - rostio - INFO - 📖 API docs available at http://localhost:8000/docs
+2025-10-04 08:52:37,488 - rostio - INFO - 🚀 Rostio API started
+2025-10-04 08:52:37,488 - rostio - INFO - 📖 API docs available at http://localhost:8000/docs
+2025-10-04 08:52:46,885 - rostio - INFO - 🚀 Rostio API started
+2025-10-04 08:52:46,885 - rostio - INFO - 📖 API docs available at http://localhost:8000/docs
+2025-10-04 08:55:00,261 - rostio - INFO - 🚀 Rostio API started
+2025-10-04 08:55:00,261 - rostio - INFO - 📖 API docs available at http://localhost:8000/docs
+2025-10-04 08:56:33,984 - rostio - INFO - Event worship_service_1759552545242: role_counts={'volunteer': 1, 'leader': 1}, required_roles=[{'role': 'volunteer', 'count': 1}, {'role': 'leader', 'count': 1}]
+2025-10-04 08:56:33,985 - rostio - INFO - Event event_001: role_counts={'volunteer': 2, 'leader': 1}, required_roles=[{'role': 'volunteer', 'count': 2}, {'role': 'leader', 'count': 1}]
+2025-10-04 08:56:33,985 - rostio - INFO - Event event_002: role_counts={'volunteer': 1}, required_roles=[{'role': 'volunteer', 'count': 1}]
+2025-10-04 08:56:33,985 - rostio - INFO - Event event_oct11_test: role_counts={'admin': 1, 'volunteer': 1}, required_roles=[{'role': 'admin', 'count': 1}, {'role': 'volunteer', 'count': 1}]
+2025-10-04 08:57:46,823 - rostio - INFO - 🚀 Rostio API started
+2025-10-04 08:57:46,823 - rostio - INFO - 📖 API docs available at http://localhost:8000/docs
+2025-10-04 08:57:55,331 - rostio - INFO - 🚀 Rostio API started
+2025-10-04 08:57:55,331 - rostio - INFO - 📖 API docs available at http://localhost:8000/docs
+2025-10-04 08:58:02,555 - rostio - INFO - 🚀 Rostio API started
+2025-10-04 08:58:02,555 - rostio - INFO - 📖 API docs available at http://localhost:8000/docs
+2025-10-04 08:59:27,999 - rostio - INFO - Event worship_service_1759552545242: role_counts={'volunteer': 1, 'leader': 1}, required_roles=[{'role': 'volunteer', 'count': 1}, {'role': 'leader', 'count': 1}]
+2025-10-04 08:59:28,000 - rostio - INFO - Event event_001: role_counts={'volunteer': 2, 'leader': 1}, required_roles=[{'role': 'volunteer', 'count': 2}, {'role': 'leader', 'count': 1}]
+2025-10-04 08:59:28,000 - rostio - INFO - Event event_002: role_counts={'volunteer': 1}, required_roles=[{'role': 'volunteer', 'count': 1}]
+2025-10-04 08:59:28,000 - rostio - INFO - Event event_oct11_test: role_counts={'admin': 1, 'volunteer': 1}, required_roles=[{'role': 'admin', 'count': 1}, {'role': 'volunteer', 'count': 1}]
+2025-10-04 10:02:53,296 - rostio - INFO - 🚀 Rostio API started
+2025-10-04 10:02:53,296 - rostio - INFO - 📖 API docs available at http://localhost:8000/docs
+2025-10-04 10:03:26,250 - rostio - INFO - 🚀 Rostio API started
+2025-10-04 10:03:26,250 - rostio - INFO - 📖 API docs available at http://localhost:8000/docs
+2025-10-04 10:03:39,664 - rostio - INFO - 🚀 Rostio API started
+2025-10-04 10:03:39,664 - rostio - INFO - 📖 API docs available at http://localhost:8000/docs

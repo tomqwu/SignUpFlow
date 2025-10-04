@@ -1,0 +1,69 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+    <title>Test Blocked Dates</title>
+    <style>
+        body { font-family: Arial; padding: 20px; }
+        .blocked { background: #fee2e2; border-left: 4px solid #dc2626; padding: 10px; margin: 10px 0; }
+        .available { background: #f0fdf4; border-left: 4px solid #059669; padding: 10px; margin: 10px 0; }
+    </style>
+</head>
+<body>
+    <h1>Blocked Date Test</h1>
+    <div id="results"></div>
+    
+    <script>
+        const API_BASE_URL = 'http://localhost:8000/api';
+        
+        async function test() {
+            const resultsEl = document.getElementById('results');
+            
+            // Test data
+            const eventDate = '2025-10-11';
+            const personId = 'person_jane_1759550943';
+            
+            resultsEl.innerHTML = '<p>Loading...</p>';
+            
+            try {
+                // Get Jane's blocked dates
+                const response = await fetch(`${API_BASE_URL}/availability/${personId}/timeoff`);
+                const data = await response.json();
+                
+                const blockedDates = data.timeoff || [];
+                
+                let html = `<h2>Person: ${personId}</h2>`;
+                html += `<h3>Event Date: ${eventDate}</h3>`;
+                html += `<h3>Blocked Dates:</h3>`;
+                
+                if (blockedDates.length === 0) {
+                    html += '<p>No blocked dates found</p>';
+                } else {
+                    blockedDates.forEach(b => {
+                        html += `<div>Start: ${b.start_date}, End: ${b.end_date}, Reason: ${b.reason || 'none'}</div>`;
+                    });
+                }
+                
+                // Check if event date is blocked
+                const isBlocked = blockedDates.some(b => {
+                    const start = b.start_date.split('T')[0];
+                    const end = b.end_date.split('T')[0];
+                    return eventDate >= start && eventDate <= end;
+                });
+                
+                html += `<h3>Result:</h3>`;
+                if (isBlocked) {
+                    html += `<div class="blocked">⚠️ BLOCKED - Event on ${eventDate} conflicts with blocked dates</div>`;
+                } else {
+                    html += `<div class="available">✅ AVAILABLE - No conflict on ${eventDate}</div>`;
+                }
+                
+                resultsEl.innerHTML = html;
+            } catch (error) {
+                resultsEl.innerHTML = `<p style="color: red;">Error: ${error.message}</p>`;
+            }
+        }
+        
+        test();
+    </script>
+</body>
+</html>

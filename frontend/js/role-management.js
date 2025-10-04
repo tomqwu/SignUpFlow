@@ -30,16 +30,39 @@ async function loadOrgRoles() {
 }
 
 // Render role checkboxes dynamically
-async function renderRoleSelector(containerId) {
+async function renderRoleSelector(containerId, includeCount = false) {
     const roles = await loadOrgRoles();
     const container = document.getElementById(containerId);
 
-    container.innerHTML = roles.map(role => `
-        <label class="role-option">
-            <input type="checkbox" value="${role}">
-            ${capitalizeRole(role)}
-        </label>
-    `).join('');
+    if (includeCount) {
+        // For event creation - include count input
+        container.innerHTML = roles.map(role => `
+            <label class="role-option role-option-with-count">
+                <input type="checkbox" value="${role}" onchange="toggleRoleCount('${role}')">
+                ${capitalizeRole(role)}
+                <input type="number" id="count-${role}" min="1" max="10" value="1"
+                       style="width: 50px; margin-left: 10px; display: none;"
+                       placeholder="# needed">
+            </label>
+        `).join('');
+    } else {
+        // For settings/people - just checkboxes
+        container.innerHTML = roles.map(role => `
+            <label class="role-option">
+                <input type="checkbox" value="${role}">
+                ${capitalizeRole(role)}
+            </label>
+        `).join('');
+    }
+}
+
+// Toggle role count input visibility
+function toggleRoleCount(role) {
+    const checkbox = document.querySelector(`input[type="checkbox"][value="${role}"]`);
+    const countInput = document.getElementById(`count-${role}`);
+    if (countInput) {
+        countInput.style.display = checkbox.checked ? 'inline-block' : 'none';
+    }
 }
 
 // Capitalize role names for display
@@ -129,15 +152,47 @@ async function loadAdminRoles() {
         const orgData = await orgResponse.json();
         const descriptions = orgData.config?.role_descriptions || {};
 
-        listEl.innerHTML = roles.map(role => `
+        // Fetch people to count role assignments
+        const peopleResponse = await fetch(`${API_BASE_URL}/people/?org_id=${currentOrg.id}`);
+        const peopleData = await peopleResponse.json();
+        const people = peopleData.people || [];
+
+        // Count people per role
+        const roleStats = {};
+        roles.forEach(role => {
+            roleStats[role] = people.filter(p => p.roles && p.roles.includes(role)).length;
+        });
+
+        // Define role colors for visual identification
+        const roleColors = {
+            'volunteer': '#3b82f6',
+            'admin': '#f59e0b',
+            'leader': '#8b5cf6',
+            'musician': '#ec4899',
+            'tech': '#10b981',
+            'childcare': '#f97316',
+            'hospitality': '#06b6d4'
+        };
+
+        listEl.innerHTML = roles.map(role => {
+            const color = roleColors[role] || '#64748b';
+            const count = roleStats[role] || 0;
+
+            return `
             <div class="role-item">
                 <div class="role-info">
-                    <h4>${capitalizeRole(role)}</h4>
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <div style="width: 12px; height: 12px; border-radius: 50%; background: ${color};"></div>
+                        <h4>${capitalizeRole(role)}</h4>
+                    </div>
                     <p class="role-description">${descriptions[role] || 'No description'}</p>
+                    <div style="margin-top: 8px; font-size: 0.9rem; color: var(--text-light);">
+                        ${count} ${count === 1 ? 'person has' : 'people have'} this role
+                    </div>
                 </div>
                 <button class="btn btn-danger btn-sm" onclick="deleteRole('${role}')">Delete</button>
             </div>
-        `).join('');
+        `}).join('');
     } catch (error) {
         listEl.innerHTML = `<div class="loading">Error: ${error.message}</div>`;
     }

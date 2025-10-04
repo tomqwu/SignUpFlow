@@ -37,6 +37,7 @@ def create_person(person_data: PersonCreate, db: Session = Depends(get_db)):
         name=person_data.name,
         email=person_data.email,
         roles=person_data.roles or [],
+        timezone=person_data.timezone,
         extra_data=person_data.extra_data or {},
     )
     db.add(person)
@@ -99,6 +100,8 @@ def update_person(person_id: str, person_data: PersonUpdate, db: Session = Depen
         person.email = person_data.email
     if person_data.roles is not None:
         person.roles = person_data.roles
+    if person_data.timezone is not None:
+        person.timezone = person_data.timezone
     if person_data.extra_data is not None:
         person.extra_data = person_data.extra_data
 

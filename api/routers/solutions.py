@@ -8,7 +8,8 @@ from datetime import datetime
 
 from api.database import get_db
 from api.schemas.solver import SolutionResponse, SolutionList, ExportFormat
-from roster_cli.db.models import Solution, Assignment, Event, Person
+from api.utils.pdf_export import generate_schedule_pdf
+from roster_cli.db.models import Solution, Assignment, Event, Person, Organization
 from roster_cli.core.models import Assignment as AssignmentModel, Event as EventModel, Person as PersonModel
 from roster_cli.core.csv_writer import write_assignments_csv
 from roster_cli.core.ics_writer import write_calendar_ics
@@ -239,10 +240,54 @@ def export_solution(
             detail="ICS export not yet implemented"
         )
 
+    elif export_format.format == "pdf":
+        # Get organization name
+        org = db.query(Organization).filter(Organization.id == solution.org_id).first()
+        org_name = org.name if org else solution.org_id
+
+        # Prepare data for PDF generation
+        pdf_events = []
+        for event in events:
+            pdf_events.append({
+                'id': event.id,
+                'type': event.type,
+                'start_time': event.start,
+                'end_time': event.end
+            })
+
+        # Create people mapping (id -> {name, roles})
+        people_map = {p.id: {'name': p.name, 'roles': p.roles or []} for p in people}
+
+        # Create assignments mapping (event_id -> [person_ids])
+        assignments_map = {a.event_id: a.assignees for a in assignments}
+
+        # Get event role requirements
+        events_db_map = {e.id: e for e in events_db}
+
+        # Get blocked dates for all people
+        from roster_cli.db.models import VacationPeriod, Availability
+        blocked_dates_map = {}  # person_id -> list of {start, end}
+        for person in people:
+            vacations = db.query(VacationPeriod).join(
+                Availability, VacationPeriod.availability_id == Availability.id
+            ).filter(Availability.person_id == person.id).all()
+            blocked_dates_map[person.id] = [
+                {'start': v.start_date, 'end': v.end_date} for v in vacations
+            ]
+
+        # Generate PDF
+        pdf_buffer = generate_schedule_pdf(org_name, pdf_events, people_map, assignments_map, events_db_map, blocked_dates_map)
+
+        return Response(
+            content=pdf_buffer.getvalue(),
+            media_type="application/pdf",
+            headers={"Content-Disposition": f"attachment; filename=schedule_{solution_id}.pdf"},
+        )
+
     else:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Unknown format: {export_format.format}. Must be json, csv, or ics",
+            detail=f"Unknown format: {export_format.format}. Must be json, csv, ics, or pdf",
         )
 
 

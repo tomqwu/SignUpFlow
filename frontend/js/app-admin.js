@@ -321,15 +321,77 @@ async function loadEvents() {
     }
 
     try {
-        const response = await fetch(`${API_BASE_URL}/events/?org_id=${orgId}`);
-        const data = await response.json();
+        const [eventsResponse, peopleResponse, solutionsResponse] = await Promise.all([
+            fetch(`${API_BASE_URL}/events/?org_id=${orgId}`),
+            fetch(`${API_BASE_URL}/people/?org_id=${orgId}`),
+            fetch(`${API_BASE_URL}/solutions/?org_id=${orgId}`)
+        ]);
 
-        if (data.events.length === 0) {
+        const eventsData = await eventsResponse.json();
+        const peopleData = await peopleResponse.json();
+        const solutionsData = await solutionsResponse.json();
+
+        if (eventsData.events.length === 0) {
             listEl.innerHTML = '<div class="empty-state"><h3>No Events</h3><p>Create events for this organization</p></div>';
             return;
         }
 
-        listEl.innerHTML = data.events.map(event => `
+        // Get latest solution with assignments
+        const latestSolution = solutionsData.solutions.find(s => s.assignment_count > 0);
+        let assignments = {};
+
+        if (latestSolution) {
+            const assignmentsResponse = await fetch(`${API_BASE_URL}/solutions/${latestSolution.id}/assignments`);
+            const assignmentsData = await assignmentsResponse.json();
+
+            // Group assignments by event
+            assignmentsData.assignments.forEach(a => {
+                if (!assignments[a.event_id]) {
+                    assignments[a.event_id] = [];
+                }
+                assignments[a.event_id].push(a);
+            });
+        }
+
+        // Load all people's blocked dates
+        const blockedDatesMap = {};
+        await Promise.all(peopleData.people.map(async (person) => {
+            try {
+                const timeoffResponse = await fetch(`${API_BASE_URL}/availability/${person.id}/timeoff`);
+                const timeoffData = await timeoffResponse.json();
+                blockedDatesMap[person.id] = timeoffData.timeoff || [];
+            } catch (e) {
+                blockedDatesMap[person.id] = [];
+            }
+        }));
+
+        // Check if person is blocked on event date
+        const isPersonBlocked = (personId, eventDate) => {
+            const eventDateStr = eventDate.toISOString().split('T')[0];
+            const blocked = blockedDatesMap[personId] || [];
+            return blocked.some(b => {
+                const startDate = b.start_date.split('T')[0];
+                const endDate = b.end_date.split('T')[0];
+                return eventDateStr >= startDate && eventDateStr <= endDate;
+            });
+        };
+
+        listEl.innerHTML = eventsData.events.map(event => {
+            const eventAssignments = assignments[event.id] || [];
+            const eventDate = new Date(event.start_time);
+
+            let assignmentsHtml = '';
+            if (eventAssignments.length > 0) {
+                const assignmentsList = eventAssignments.map(a => {
+                    const blocked = isPersonBlocked(a.person_id, eventDate);
+                    const style = blocked ? 'color: #dc2626; font-weight: bold;' : '';
+                    const warning = blocked ? ' ⚠️ BLOCKED' : '';
+                    return `<div style="${style}">${a.person_name}${warning}</div>`;
+                }).join('');
+                assignmentsHtml = `<div class="data-card-meta"><strong>Assigned:</strong><br>${assignmentsList}</div>`;
+            }
+
+            return `
             <div class="data-card">
                 <div class="data-card-header">
                     <div>
@@ -339,11 +401,13 @@ async function loadEvents() {
                     <span class="badge badge-primary">${event.type}</span>
                 </div>
                 <div class="data-card-meta">
-                    📅 ${new Date(event.start_time).toLocaleString()}<br>
+                    📅 ${eventDate.toLocaleString()}<br>
                     ⏱️ ${new Date(event.end_time).toLocaleString()}
                 </div>
+                ${assignmentsHtml}
             </div>
-        `).join('');
+            `;
+        }).join('');
     } catch (error) {
         listEl.innerHTML = `<div class="loading">Error: ${error.message}</div>`;
     }
@@ -495,7 +559,7 @@ async function loadSolutions() {
                     </div>
                     <div class="data-card-actions">
                         <button class="btn btn-small btn-primary" onclick="viewSolutionDetails(${sol.id})">View Details</button>
-                        <button class="btn btn-small btn-secondary" onclick="exportSolution(${sol.id}, 'csv')">Export CSV</button>
+                        <button class="btn btn-small btn-secondary" onclick="exportSolution(${sol.id}, 'pdf')">Export PDF</button>
                         <button class="btn btn-small btn-secondary" onclick="exportSolution(${sol.id}, 'json')">Export JSON</button>
                     </div>
                 </div>

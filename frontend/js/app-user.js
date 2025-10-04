@@ -451,6 +451,21 @@ async function loadCalendar() {
             return;
         }
 
+        // Load blocked dates
+        const timeoffResponse = await fetch(`${API_BASE_URL}/availability/${currentUser.id}/timeoff`);
+        const timeoffData = await timeoffResponse.json();
+        const blockedDates = timeoffData.timeoff || [];
+
+        // Check if date is blocked
+        const isBlocked = (eventDate) => {
+            const eventDateStr = eventDate.toISOString().split('T')[0];
+            return blockedDates.some(blocked => {
+                const startDate = blocked.start_date.split('T')[0];
+                const endDate = blocked.end_date.split('T')[0];
+                return eventDateStr >= startDate && eventDateStr <= endDate;
+            });
+        };
+
         // Group by date
         const byDate = {};
         myAssignments.forEach(assignment => {
@@ -464,15 +479,20 @@ async function loadCalendar() {
             .sort((a, b) => new Date(a) - new Date(b))
             .map(date => {
                 const assignments = byDate[date];
+                const dateObj = new Date(date);
+                const hasBlockedEvents = assignments.some(a => isBlocked(new Date(a.event_start)));
+
                 return `
-                    <div class="calendar-day has-event">
-                        <div class="calendar-date">${new Date(date).toLocaleDateString('en-US', {
+                    <div class="calendar-day has-event ${hasBlockedEvents ? 'has-blocked' : ''}">
+                        <div class="calendar-date">${dateObj.toLocaleDateString('en-US', {
                             weekday: 'long',
                             month: 'long',
                             day: 'numeric'
                         })}</div>
-                        ${assignments.map(a => `
-                            <div class="calendar-event">
+                        ${assignments.map(a => {
+                            const blocked = isBlocked(new Date(a.event_start));
+                            return `
+                            <div class="calendar-event ${blocked ? 'calendar-event-blocked' : ''}">
                                 <div class="event-time">
                                     ${new Date(a.event_start).toLocaleTimeString('en-US', {
                                         hour: 'numeric',
@@ -480,8 +500,10 @@ async function loadCalendar() {
                                     })}
                                 </div>
                                 <div class="event-title">${a.event_type}</div>
+                                ${blocked ? '<div class="event-blocked-badge">⚠️ BLOCKED</div>' : ''}
                             </div>
-                        `).join('')}
+                            `;
+                        }).join('')}
                     </div>
                 `;
             }).join('');
@@ -493,42 +515,86 @@ async function loadCalendar() {
 
 async function exportMyCalendar() {
     try {
-        const solutionsResponse = await fetch(`${API_BASE_URL}/solutions/?org_id=${currentUser.org_id}`);
-        const solutionsData = await solutionsResponse.json();
-
-        if (solutionsData.solutions.length === 0) {
-            showToast('No schedule available to export.', 'warning');
-            return;
-        }
-
-        const latestSolution = solutionsData.solutions[0];
-
-        const response = await fetch(`${API_BASE_URL}/solutions/${latestSolution.id}/export`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                format: 'ics',
-                scope: `person:${currentUser.id}`
-            })
-        });
+        const response = await fetch(`${API_BASE_URL}/calendar/export?person_id=${currentUser.id}`);
 
         if (response.ok) {
             const blob = await response.blob();
             const url = window.URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            a.download = `my_schedule_${currentUser.name.replace(/\s+/g, '_')}.ics`;
+            a.download = `${currentUser.id}_schedule.ics`;
             a.click();
             showToast('Calendar exported successfully!', 'success');
         } else {
             const errorData = await response.json().catch(() => ({ detail: 'Unknown error' }));
             const errorMsg = errorData.detail || 'Export failed';
 
-            if (errorMsg.includes('no assignments')) {
+            if (errorMsg.includes('No assignments found')) {
                 showToast('No schedule to export yet. Contact your admin if you think this is an error.', 'warning', 5000);
             } else {
                 showToast(`Export failed: ${errorMsg}`, 'error');
             }
+        }
+    } catch (error) {
+        showToast(`Error exporting calendar: ${error.message}`, 'error');
+    }
+}
+
+async function showCalendarSubscription() {
+    try {
+        const response = await fetch(`${API_BASE_URL}/calendar/subscribe?person_id=${currentUser.id}`);
+
+        if (response.ok) {
+            const data = await response.json();
+
+            // Populate the modal with subscription URLs
+            document.getElementById('webcal-url').value = data.webcal_url;
+            document.getElementById('https-url').value = data.https_url;
+
+            // Show the modal
+            document.getElementById('calendar-subscription-modal').classList.remove('hidden');
+            showToast('Subscription URL generated!', 'success');
+        } else {
+            const errorData = await response.json().catch(() => ({ detail: 'Unknown error' }));
+            showToast(`Error: ${errorData.detail}`, 'error');
+        }
+    } catch (error) {
+        showToast(`Error: ${error.message}`, 'error');
+    }
+}
+
+function closeCalendarSubscriptionModal() {
+    document.getElementById('calendar-subscription-modal').classList.add('hidden');
+}
+
+function copyToClipboard(elementId) {
+    const input = document.getElementById(elementId);
+    input.select();
+    document.execCommand('copy');
+    showToast('URL copied to clipboard!', 'success');
+}
+
+async function resetCalendarToken() {
+    if (!confirm('Are you sure you want to reset your calendar subscription URL? Your existing subscription will stop working.')) {
+        return;
+    }
+
+    try {
+        const response = await fetch(`${API_BASE_URL}/calendar/reset-token?person_id=${currentUser.id}`, {
+            method: 'POST'
+        });
+
+        if (response.ok) {
+            const data = await response.json();
+
+            // Update the modal with new URLs
+            document.getElementById('webcal-url').value = data.webcal_url;
+            document.getElementById('https-url').value = data.https_url;
+
+            showToast('Calendar subscription URL has been reset!', 'success');
+        } else {
+            const errorData = await response.json().catch(() => ({ detail: 'Unknown error' }));
+            showToast(`Error: ${errorData.detail}`, 'error');
         }
     } catch (error) {
         showToast(`Error: ${error.message}`, 'error');
@@ -541,6 +607,11 @@ async function loadMySchedule() {
     scheduleEl.innerHTML = '<div class="loading">Loading your schedule...</div>';
 
     try {
+        // Load blocked dates
+        const timeoffResponse = await fetch(`${API_BASE_URL}/availability/${currentUser.id}/timeoff`);
+        const timeoffData = await timeoffResponse.json();
+        const blockedDates = timeoffData.timeoff || [];
+
         const solutionsResponse = await fetch(`${API_BASE_URL}/solutions/?org_id=${currentUser.org_id}`);
         const solutionsData = await solutionsResponse.json();
 
@@ -566,15 +637,26 @@ async function loadMySchedule() {
             .filter(a => a.person_id === currentUser.id)
             .sort((a, b) => new Date(a.event_start) - new Date(b.event_start));
 
+        // Check if date falls within blocked dates
+        const isBlocked = (eventDate) => {
+            const eventDateStr = eventDate.toISOString().split('T')[0];
+            return blockedDates.some(blocked => {
+                const startDate = blocked.start_date.split('T')[0];
+                const endDate = blocked.end_date.split('T')[0];
+                return eventDateStr >= startDate && eventDateStr <= endDate;
+            });
+        };
+
         // Update stats
         const now = new Date();
         const upcoming = myAssignments.filter(a => new Date(a.event_start) > now);
-        const thisMonth = upcoming.filter(a => {
+        const confirmedUpcoming = upcoming.filter(a => !isBlocked(new Date(a.event_start)));
+        const thisMonth = confirmedUpcoming.filter(a => {
             const eventDate = new Date(a.event_start);
             return eventDate.getMonth() === now.getMonth();
         });
 
-        document.getElementById('upcoming-count').textContent = upcoming.length;
+        document.getElementById('upcoming-count').textContent = confirmedUpcoming.length;
         document.getElementById('this-month-count').textContent = thisMonth.length;
 
         // Render schedule
@@ -583,19 +665,26 @@ async function loadMySchedule() {
             return;
         }
 
-        scheduleEl.innerHTML = upcoming.map(a => `
-            <div class="schedule-item">
+        scheduleEl.innerHTML = upcoming.map(a => {
+            const eventDate = new Date(a.event_start);
+            const blocked = isBlocked(eventDate);
+            const badge = blocked ?
+                '<span class="schedule-badge schedule-badge-blocked">Blocked</span>' :
+                '<span class="schedule-badge">Confirmed</span>';
+
+            return `
+            <div class="schedule-item ${blocked ? 'schedule-item-blocked' : ''}">
                 <div class="schedule-info">
                     <h3>${a.event_type}</h3>
                     <div class="schedule-meta">
-                        📅 ${new Date(a.event_start).toLocaleDateString('en-US', {
+                        📅 ${eventDate.toLocaleDateString('en-US', {
                             weekday: 'long',
                             month: 'long',
                             day: 'numeric',
                             year: 'numeric'
                         })}
                         <br>
-                        ⏰ ${new Date(a.event_start).toLocaleTimeString('en-US', {
+                        ⏰ ${eventDate.toLocaleTimeString('en-US', {
                             hour: 'numeric',
                             minute: '2-digit'
                         })} - ${new Date(a.event_end).toLocaleTimeString('en-US', {
@@ -604,9 +693,10 @@ async function loadMySchedule() {
                         })}
                     </div>
                 </div>
-                <span class="schedule-badge">Confirmed</span>
+                ${badge}
             </div>
-        `).join('');
+            `;
+        }).join('');
 
     } catch (error) {
         scheduleEl.innerHTML = `<div class="loading">Error: ${error.message}</div>`;
@@ -627,20 +717,33 @@ async function loadTimeOff() {
             return;
         }
 
-        listEl.innerHTML = '<h3>Your Blocked Dates</h3>' + data.timeoff.map(timeoff => `
+        listEl.innerHTML = '<h3>Your Blocked Dates</h3>' + data.timeoff.map(timeoff => {
+            // Parse dates without timezone conversion (just take the date part)
+            const startDate = timeoff.start_date.split('T')[0];
+            const endDate = timeoff.end_date.split('T')[0];
+            const reason = timeoff.reason || '';
+            const escapedReason = reason.replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+
+            return `
             <div class="timeoff-item">
                 <div>
                     <div class="timeoff-dates">
-                        ${new Date(timeoff.start_date).toLocaleDateString()} -
-                        ${new Date(timeoff.end_date).toLocaleDateString()}
+                        ${startDate} - ${endDate}
                     </div>
+                    ${reason ? `<div class="timeoff-reason">${reason}</div>` : ''}
                 </div>
                 <div class="timeoff-actions">
-                    <button class="btn btn-small btn-secondary" onclick="editTimeOff(${timeoff.id}, '${timeoff.start_date}', '${timeoff.end_date}')">Edit</button>
+                    <button class="btn btn-small btn-secondary"
+                            data-timeoff-id="${timeoff.id}"
+                            data-start="${startDate}"
+                            data-end="${endDate}"
+                            data-reason="${escapedReason}"
+                            onclick="editTimeOffFromButton(this)">Edit</button>
                     <button class="btn btn-small btn-remove" onclick="removeTimeOff(${timeoff.id})">Remove</button>
                 </div>
             </div>
-        `).join('');
+            `;
+        }).join('');
 
     } catch (error) {
         listEl.innerHTML = `<p class="help-text">Error loading time-off: ${error.message}</p>`;
@@ -652,6 +755,7 @@ async function addTimeOff(event) {
 
     const start = document.getElementById('timeoff-start').value;
     const end = document.getElementById('timeoff-end').value;
+    const reason = document.getElementById('timeoff-reason').value;
 
     try {
         const response = await fetch(`${API_BASE_URL}/availability/${currentUser.id}/timeoff`, {
@@ -659,7 +763,8 @@ async function addTimeOff(event) {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 start_date: start,
-                end_date: end
+                end_date: end,
+                reason: reason || null
             })
         });
 
@@ -676,36 +781,47 @@ async function addTimeOff(event) {
     }
 }
 
-async function editTimeOff(timeoffId, startDate, endDate) {
+function editTimeOffFromButton(button) {
+    const timeoffId = button.dataset.timeoffId;
+    const startDate = button.dataset.start;
+    const endDate = button.dataset.end;
+    const reason = button.dataset.reason || '';
+    editTimeOff(timeoffId, startDate, endDate, reason);
+}
+
+async function editTimeOff(timeoffId, startDate, endDate, reason = '') {
     showInputDialog('Edit start date (YYYY-MM-DD):', startDate, (newStart) => {
         if (!newStart) return;
 
-        showInputDialog('Edit end date (YYYY-MM-DD):', endDate, async (newEnd) => {
+        showInputDialog('Edit end date (YYYY-MM-DD):', endDate, (newEnd) => {
             if (!newEnd) return;
 
-            try {
-                const response = await fetch(
-                    `${API_BASE_URL}/availability/${currentUser.id}/timeoff/${timeoffId}`,
-                    {
-                        method: 'PATCH',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            start_date: newStart,
-                            end_date: newEnd
-                        })
-                    }
-                );
+            showInputDialog('Edit reason (optional):', reason, async (newReason) => {
+                try {
+                    const response = await fetch(
+                        `${API_BASE_URL}/availability/${currentUser.id}/timeoff/${timeoffId}`,
+                        {
+                            method: 'PATCH',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                start_date: newStart,
+                                end_date: newEnd,
+                                reason: newReason || null
+                            })
+                        }
+                    );
 
-                if (response.ok) {
-                    loadTimeOff();
-                    showToast('Time-off period updated successfully!', 'success');
-                } else {
-                    const error = await response.json();
-                    showToast(error.detail || 'Error updating time-off', 'error');
+                    if (response.ok) {
+                        loadTimeOff();
+                        showToast('Time-off period updated successfully!', 'success');
+                    } else {
+                        const error = await response.json();
+                        showToast(error.detail || 'Error updating time-off', 'error');
+                    }
+                } catch (error) {
+                    showToast(error.message, 'error');
                 }
-            } catch (error) {
-                showToast(error.message, 'error');
-            }
+            });
         });
     });
 }
@@ -733,11 +849,17 @@ async function removeTimeOff(timeoffId) {
 }
 
 // Settings
-function showSettings() {
+async function showSettings() {
     document.getElementById('settings-modal').classList.remove('hidden');
     document.getElementById('settings-name').value = currentUser.name;
     document.getElementById('settings-email').value = currentUser.email || '';
     document.getElementById('settings-org').value = currentOrg.name;
+    document.getElementById('settings-timezone').value = currentUser.timezone || 'UTC';
+
+    // Render role selector with current user's roles
+    if (typeof renderRoleSelector === 'function') {
+        await renderRoleSelector('settings-role-selector');
+    }
 
     // Check the appropriate role checkboxes
     const roleCheckboxes = document.querySelectorAll('#settings-role-selector input[type="checkbox"]');
@@ -751,6 +873,7 @@ async function saveSettings() {
         // Collect checked roles
         const roleCheckboxes = document.querySelectorAll('#settings-role-selector input[type="checkbox"]:checked');
         const roles = Array.from(roleCheckboxes).map(cb => cb.value);
+        const timezone = document.getElementById('settings-timezone').value;
 
         if (roles.length === 0) {
             showToast('Please select at least one role', 'warning');
@@ -760,11 +883,12 @@ async function saveSettings() {
         const response = await fetch(`${API_BASE_URL}/people/${currentUser.id}`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ roles })
+            body: JSON.stringify({ roles, timezone })
         });
 
         if (response.ok) {
             currentUser.roles = roles;
+            currentUser.timezone = timezone;
             saveSession();
             showToast('Settings saved successfully!', 'success');
             closeSettings();
@@ -791,11 +915,55 @@ function closeSettings() {
 // ============================================================================
 
 async function loadAdminDashboard() {
-    loadAdminStats();
-    loadAdminRoles();
-    loadAdminEvents();
-    loadAdminPeople();
-    loadAdminSolutions();
+    // Load the current tab from URL hash or default to 'events'
+    const hash = window.location.hash.slice(1); // Remove #
+    const currentTab = hash.startsWith('admin-') ? hash.replace('admin-', '') : 'events';
+
+    switchAdminTab(currentTab);
+}
+
+// Switch between admin tabs
+function switchAdminTab(tabName) {
+    // Update URL hash for bookmarking
+    window.location.hash = `admin-${tabName}`;
+
+    // Save current admin tab
+    localStorage.setItem('roster_admin_tab', tabName);
+
+    // Update tab buttons
+    document.querySelectorAll('.admin-tab-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.tab === tabName);
+    });
+
+    // Update tab content
+    document.querySelectorAll('.admin-tab-content').forEach(content => {
+        content.classList.remove('active');
+    });
+    document.getElementById(`admin-tab-${tabName}`).classList.add('active');
+
+    // Load content for the tab
+    switch(tabName) {
+        case 'events':
+            loadAdminEvents();
+            loadAdminStats();
+            break;
+        case 'roles':
+            loadAdminRoles();
+            break;
+        case 'schedule':
+            loadAdminSolutions();
+            loadAdminStats();
+            loadAdminCalendarView();
+            break;
+        case 'people':
+            loadAdminPeople();
+            loadAdminStats();
+            loadInvitations();
+            break;
+        case 'reports':
+            // Reports tab is static, no loading needed
+            break;
+    }
 }
 
 async function loadAdminStats() {
@@ -841,7 +1009,7 @@ async function loadAdminEvents() {
         console.log('[loadAdminEvents] Rendering', data.events.length, 'events');
 
         listEl.innerHTML = data.events.map(event => `
-            <div class="admin-item">
+            <div class="admin-item" id="event-${event.id}">
                 <div class="admin-item-info">
                     <h4>${event.type}</h4>
                     <div class="admin-item-meta">
@@ -852,15 +1020,21 @@ async function loadAdminEvents() {
                             hour: 'numeric',
                             minute: '2-digit'
                         })}
-                        ${event.extra_data && event.extra_data.roles && event.extra_data.roles.length > 0 ?
-                          `<br>Roles: ${event.extra_data.roles.join(', ')}` : ''}
+                        ${event.extra_data && event.extra_data.role_counts ?
+                          `<br>📋 Needs: ${Object.entries(event.extra_data.role_counts).map(([role, count]) => `${role} (${count})`).join(', ')}` : ''}
                     </div>
+                    <div id="assignments-${event.id}" class="event-assignments"></div>
                 </div>
                 <div class="admin-item-actions">
+                    <button class="btn btn-small" onclick="showAssignments('${event.id}')">Assign People</button>
+                    <button class="btn btn-small" onclick="editEvent('${event.id}')">Edit</button>
                     <button class="btn btn-small btn-remove" onclick="deleteEvent('${event.id}')">Delete</button>
                 </div>
             </div>
         `).join('');
+
+        // Load assignments for each event
+        data.events.forEach(event => loadEventAssignments(event.id));
     } catch (error) {
         listEl.innerHTML = `<p class="help-text">Error loading events: ${error.message}</p>`;
     }
@@ -880,17 +1054,70 @@ async function loadAdminPeople() {
             return;
         }
 
-        listEl.innerHTML = data.people.map(person => `
-            <div class="admin-item">
-                <div class="admin-item-info">
-                    <h4>${person.name}</h4>
-                    <div class="admin-item-meta">
-                        ${person.email || 'No email'}
-                        ${person.roles && person.roles.length > 0 ? `<br>Roles: ${person.roles.join(', ')}` : ''}
+        // Fetch blocked dates for each person
+        const peopleWithAvailability = await Promise.all(data.people.map(async (person) => {
+            try {
+                const timeoffResp = await fetch(`${API_BASE_URL}/availability/${person.id}/timeoff`);
+                const timeoffData = await timeoffResp.json();
+                return {
+                    ...person,
+                    blockedDates: timeoffData.timeoff || []
+                };
+            } catch (e) {
+                return {
+                    ...person,
+                    blockedDates: []
+                };
+            }
+        }));
+
+        listEl.innerHTML = peopleWithAvailability.map(person => {
+            const today = new Date();
+            const upcomingBlocked = person.blockedDates.filter(b => {
+                const endDate = new Date(b.end_date);
+                return endDate >= today;
+            }).sort((a, b) => new Date(a.start_date) - new Date(b.start_date));
+
+            let blockedHtml = '';
+            if (upcomingBlocked.length > 0) {
+                const blockedList = upcomingBlocked.slice(0, 3).map(b => {
+                    // Use string splitting to avoid timezone conversion
+                    const startStr = b.start_date.split('T')[0]; // YYYY-MM-DD
+                    const endStr = b.end_date.split('T')[0];
+
+                    // Format as "Oct 11"
+                    const formatDate = (dateStr) => {
+                        const [year, month, day] = dateStr.split('-');
+                        const date = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+                        return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+                    };
+
+                    const start = formatDate(startStr);
+                    const end = formatDate(endStr);
+                    const dateRange = startStr === endStr ? start : `${start} - ${end}`;
+                    const reason = b.reason ? `: ${b.reason}` : '';
+                    return `${dateRange}${reason}`;
+                }).join('<br>');
+
+                const moreCount = upcomingBlocked.length > 3 ? ` (+${upcomingBlocked.length - 3} more)` : '';
+                blockedHtml = `<br><div style="margin-top: 8px; color: #dc2626; font-size: 0.9rem;">
+                    <strong>Blocked Dates:</strong><br>${blockedList}${moreCount}
+                </div>`;
+            }
+
+            return `
+                <div class="admin-item">
+                    <div class="admin-item-info">
+                        <h4>${person.name}</h4>
+                        <div class="admin-item-meta">
+                            ${person.email || 'No email'}
+                            ${person.roles && person.roles.length > 0 ? `<br>Roles: ${person.roles.join(', ')}` : ''}
+                            ${blockedHtml}
+                        </div>
                     </div>
                 </div>
-            </div>
-        `).join('');
+            `;
+        }).join('');
     } catch (error) {
         listEl.innerHTML = `<p class="help-text">Error loading people: ${error.message}</p>`;
     }
@@ -922,6 +1149,7 @@ async function loadAdminSolutions() {
                 </div>
                 <div class="admin-item-actions">
                     <button class="btn btn-small btn-secondary" onclick="viewSolution(${solution.id})">View</button>
+                    <button class="btn btn-small btn-remove" onclick="deleteSolution(${solution.id})">Delete</button>
                 </div>
             </div>
         `).join('');
@@ -933,6 +1161,58 @@ async function loadAdminSolutions() {
 // Event Management
 // Note: showCreateEventForm(), closeCreateEventForm(), and createEvent()
 // are all defined in recurring-events.js
+
+async function editEvent(eventId) {
+    try {
+        // Fetch event details
+        const response = await fetch(`${API_BASE_URL}/events/${eventId}`);
+        const event = await response.json();
+
+        // Load role selector first
+        if (typeof renderRoleSelector === 'function') {
+            await renderRoleSelector('event-role-selector', true);
+        }
+
+        // Populate the create event modal with existing data
+        document.getElementById('event-type').value = event.type;
+
+        // Convert ISO datetime to local datetime-local format
+        const startDate = new Date(event.start_time);
+        const localStart = new Date(startDate.getTime() - (startDate.getTimezoneOffset() * 60000))
+            .toISOString().slice(0, 16);
+        document.getElementById('event-start').value = localStart;
+
+        // Calculate duration in hours
+        const endDate = new Date(event.end_time);
+        const durationHours = (endDate - startDate) / (1000 * 60 * 60);
+        document.getElementById('event-duration').value = durationHours;
+
+        // Set custom title if exists
+        if (event.extra_data && event.extra_data.custom_title) {
+            document.getElementById('event-custom-title').value = event.extra_data.custom_title;
+        }
+
+        // Check the role checkboxes that are assigned to this event
+        if (event.extra_data && event.extra_data.roles) {
+            const roleCheckboxes = document.querySelectorAll('#event-role-selector input[type="checkbox"]');
+            roleCheckboxes.forEach(checkbox => {
+                checkbox.checked = event.extra_data.roles.includes(checkbox.value);
+            });
+        }
+
+        // Store event ID for update
+        document.getElementById('create-event-form').dataset.editingEventId = eventId;
+
+        // Change modal title and button text
+        document.querySelector('#create-event-modal h3').textContent = 'Edit Event';
+        document.querySelector('#create-event-form button[type="submit"]').textContent = 'Update Event';
+
+        // Show modal
+        document.getElementById('create-event-modal').classList.remove('hidden');
+    } catch (error) {
+        showToast(`Error loading event: ${error.message}`, 'error');
+    }
+}
 
 async function deleteEvent(eventId) {
     showConfirmDialog('Delete this event? This cannot be undone.', async (confirmed) => {
@@ -949,6 +1229,219 @@ async function deleteEvent(eventId) {
                 showToast('Event deleted successfully!', 'success');
             } else {
                 showToast('Error deleting event', 'error');
+            }
+        } catch (error) {
+            showToast(`Error: ${error.message}`, 'error');
+        }
+    });
+}
+
+// Load and display current assignments for an event
+async function loadEventAssignments(eventId) {
+    try {
+        const [peopleResp, validationResp, eventResp] = await Promise.all([
+            fetch(`${API_BASE_URL}/events/${eventId}/available-people`),
+            fetch(`${API_BASE_URL}/events/${eventId}/validation`),
+            fetch(`${API_BASE_URL}/events/${eventId}`)
+        ]);
+
+        const people = await peopleResp.json();
+        const validation = await validationResp.json();
+        const event = await eventResp.json();
+
+        const assignedPeople = people.filter(p => p.is_assigned);
+        const container = document.getElementById(`assignments-${eventId}`);
+
+        let html = '';
+
+        // Show validation warnings
+        if (!validation.is_valid && validation.warnings.length > 0) {
+            html += '<div class="event-warnings">';
+            validation.warnings.forEach(w => {
+                if (w.type === 'missing_config') {
+                    html += `<div class="warning">⚠️ ${w.message}</div>`;
+                } else if (w.type === 'insufficient_people') {
+                    html += `<div class="warning">⚠️ ${w.message}</div>`;
+                } else if (w.type === 'blocked_assignments') {
+                    html += `<div class="warning">⚠️ ${w.message}</div>`;
+                }
+            });
+            html += '</div>';
+        } else if (validation.is_valid) {
+            html += '<div class="event-status-ok">✓ Properly configured</div>';
+        }
+
+        // Show assignments with blocked status
+        if (assignedPeople.length > 0) {
+            const blockedPeople = assignedPeople.filter(p => p.is_blocked);
+            const availablePeople = assignedPeople.filter(p => !p.is_blocked);
+
+            html += '<div class="event-assignments-summary">';
+
+            // Show available people first
+            if (availablePeople.length > 0) {
+                html += `<div class="assigned-ok">✓ ${availablePeople.map(p => p.name).join(', ')}</div>`;
+            }
+
+            // Show blocked warnings
+            if (blockedPeople.length > 0) {
+                html += `<div class="assigned-blocked">⚠️ ${blockedPeople.map(p => p.name).join(', ')} (blocked)</div>`;
+            }
+
+            html += '</div>';
+        } else {
+            html += `<div class="help-text">No assignments</div>`;
+        }
+
+        container.innerHTML = html;
+    } catch (error) {
+        console.error('Error loading assignments:', error);
+    }
+}
+
+// Show assignment modal for an event
+async function showAssignments(eventId) {
+    try {
+        const [peopleResponse, eventResponse] = await Promise.all([
+            fetch(`${API_BASE_URL}/events/${eventId}/available-people`),
+            fetch(`${API_BASE_URL}/events/${eventId}`)
+        ]);
+
+        const people = await peopleResponse.json();
+        const event = await eventResponse.json();
+
+        const modal = document.getElementById('assignment-modal');
+        const listEl = document.getElementById('assignment-people-list');
+
+        if (people.length === 0) {
+            listEl.innerHTML = '<p class="help-text">No people with matching roles found</p>';
+        } else {
+            // Get required roles from event
+            const roleCount = event.extra_data?.role_counts || {};
+            const requiredRoles = Object.keys(roleCount);
+
+            // If event has no role requirements, show all people in a single group
+            if (requiredRoles.length === 0) {
+                listEl.innerHTML = `
+                    <div class="role-group">
+                        <h4 class="role-header">All People</h4>
+                        <div class="role-people">
+                            ${people.map(person => `
+                                <div class="person-assignment-item ${person.is_blocked ? 'person-blocked' : ''}">
+                                    <div class="person-info">
+                                        <strong>${person.name}</strong>
+                                        ${person.is_blocked ? '<span class="schedule-badge-blocked">BLOCKED</span>' : ''}
+                                        <span class="person-roles">${person.roles.join(', ')}</span>
+                                    </div>
+                                    <button
+                                        class="btn btn-small ${person.is_assigned ? 'btn-remove' : ''}"
+                                        onclick="toggleAssignment('${eventId}', '${person.id}', ${person.is_assigned})"
+                                    >
+                                        ${person.is_assigned ? 'Unassign' : 'Assign'}
+                                    </button>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                `;
+            } else {
+                // Group people by role
+                const roleGroups = {};
+                requiredRoles.forEach(role => {
+                    roleGroups[role] = people.filter(p => p.roles.includes(role));
+                });
+
+                // Build HTML grouped by role
+                let html = '';
+                for (const [role, rolePeople] of Object.entries(roleGroups)) {
+                    const needed = roleCount[role] || 0;
+                    const assigned = rolePeople.filter(p => p.is_assigned).length;
+
+                    html += `
+                        <div class="role-group">
+                            <h4 class="role-header">
+                                ${role.charAt(0).toUpperCase() + role.slice(1)}
+                                <span class="role-count">(${assigned}/${needed} assigned)</span>
+                            </h4>
+                            <div class="role-people">
+                                ${rolePeople.length === 0 ?
+                                    '<p class="help-text">No one has this role</p>' :
+                                    rolePeople.map(person => `
+                                        <div class="person-assignment-item ${person.is_blocked ? 'person-blocked' : ''}">
+                                            <div class="person-info">
+                                                <strong>${person.name}</strong>
+                                                ${person.is_blocked ? '<span class="schedule-badge-blocked">BLOCKED</span>' : ''}
+                                            </div>
+                                            <button
+                                                class="btn btn-small ${person.is_assigned ? 'btn-remove' : ''}"
+                                                onclick="toggleAssignment('${eventId}', '${person.id}', ${person.is_assigned})"
+                                            >
+                                                ${person.is_assigned ? 'Unassign' : 'Assign'}
+                                            </button>
+                                        </div>
+                                    `).join('')
+                                }
+                            </div>
+                        </div>
+                    `;
+                }
+
+                listEl.innerHTML = html;
+            }
+        }
+
+        modal.dataset.eventId = eventId;
+        modal.classList.remove('hidden');
+    } catch (error) {
+        showToast(`Error loading people: ${error.message}`, 'error');
+    }
+}
+
+// Toggle assignment for a person
+async function toggleAssignment(eventId, personId, isCurrentlyAssigned) {
+    try {
+        const action = isCurrentlyAssigned ? 'unassign' : 'assign';
+        const response = await fetch(`${API_BASE_URL}/events/${eventId}/assignments`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ person_id: personId, action })
+        });
+
+        if (response.ok) {
+            const result = await response.json();
+            showToast(result.message, 'success');
+
+            // Refresh the modal and the event card
+            showAssignments(eventId);
+            loadEventAssignments(eventId);
+        } else {
+            const error = await response.json();
+            showToast(error.detail || 'Error updating assignment', 'error');
+        }
+    } catch (error) {
+        showToast(`Error: ${error.message}`, 'error');
+    }
+}
+
+function closeAssignmentModal() {
+    document.getElementById('assignment-modal').classList.add('hidden');
+}
+
+async function deleteSolution(solutionId) {
+    showConfirmDialog('Delete this schedule? This cannot be undone.', async (confirmed) => {
+        if (!confirmed) return;
+
+        try {
+            const response = await fetch(`${API_BASE_URL}/solutions/${solutionId}`, {
+                method: 'DELETE'
+            });
+
+            if (response.ok || response.status === 204) {
+                loadAdminSolutions();
+                loadAdminStats();
+                showToast('Schedule deleted successfully!', 'success');
+            } else {
+                showToast('Error deleting schedule', 'error');
             }
         } catch (error) {
             showToast(`Error: ${error.message}`, 'error');
@@ -979,14 +1472,41 @@ async function generateSchedule() {
         const data = await response.json();
 
         if (response.ok) {
+            // Get assignment count from either metrics.assignment_count or assignment_count field
+            const assignmentCount = data.assignment_count || data.metrics?.assignment_count || 0;
+
+            // Check if solver generated 0 assignments - this is a problem!
+            if (assignmentCount === 0) {
+                statusEl.innerHTML = `
+                    <div class="solver-status error">
+                        ⚠️ Schedule generated but no assignments were made!<br>
+                        <br><strong>Possible issues:</strong>
+                        <ul style="text-align: left; margin: 10px 20px;">
+                            <li>Events don't specify how many people are needed for each role</li>
+                            <li>No people have the required roles</li>
+                            <li>People are unavailable during event times</li>
+                        </ul>
+                        <strong>To fix:</strong>
+                        <ol style="text-align: left; margin: 10px 20px;">
+                            <li>Edit your events and check roles with counts (e.g., "Volunteer: 2")</li>
+                            <li>Make sure people have matching roles in their profiles</li>
+                            <li>Check people's availability/time-off settings</li>
+                        </ol>
+                    </div>
+                `;
+                showToast('No assignments created - check events and people setup', 'error');
+                return;
+            }
+
             statusEl.innerHTML = `
                 <div class="solver-status success">
                     ✓ Schedule generated successfully!<br>
                     Solution ID: ${data.solution_id}<br>
-                    Assignments: ${data.metrics?.assignment_count || 0}<br>
+                    Assignments: ${assignmentCount}<br>
                     Health Score: ${data.metrics?.health_score?.toFixed(1) || 'N/A'}/100
                 </div>
             `;
+            showToast(`Schedule created with ${assignmentCount} assignments!`, 'success');
             loadAdminSolutions();
             loadAdminStats();
 
@@ -1014,7 +1534,7 @@ async function viewSolution(solutionId) {
         const response = await fetch(`${API_BASE_URL}/solutions/${solutionId}/export`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ format: 'csv' })
+            body: JSON.stringify({ format: 'pdf' })
         });
 
         if (response.ok) {
@@ -1022,7 +1542,7 @@ async function viewSolution(solutionId) {
             const url = window.URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            a.download = `schedule_${solutionId}.csv`;
+            a.download = `schedule_${solutionId}.pdf`;
             a.click();
             showToast('Schedule downloaded successfully!', 'success');
         } else {
@@ -1148,6 +1668,356 @@ window.addEventListener('DOMContentLoaded', () => {
 });
 
 console.log('Profile context panel functions loaded');
+
+// ============================================================================
+// INVITATIONS MANAGEMENT (People Tab)
+// ============================================================================
+
+function showInviteUserModal() {
+    document.getElementById('invite-user-modal').classList.remove('hidden');
+}
+
+function closeInviteUserModal() {
+    document.getElementById('invite-user-modal').classList.add('hidden');
+    document.getElementById('invite-user-form').reset();
+}
+
+async function sendInvitation(event) {
+    event.preventDefault();
+
+    const email = document.getElementById('invite-email').value;
+    const name = document.getElementById('invite-name').value;
+    const roleCheckboxes = document.querySelectorAll('#invite-role-selector input:checked');
+    const roles = Array.from(roleCheckboxes).map(cb => cb.value);
+
+    if (roles.length === 0) {
+        showToast('Please select at least one role', 'warning');
+        return;
+    }
+
+    try {
+        const response = await fetch(`${API_BASE_URL}/invitations`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                org_id: currentUser.org_id,
+                email: email,
+                name: name,
+                roles: roles,
+                invited_by: currentUser.id
+            })
+        });
+
+        if (response.ok) {
+            const data = await response.json();
+            showToast('Invitation sent successfully!', 'success');
+            closeInviteUserModal();
+            loadInvitations();
+        } else {
+            const error = await response.json();
+            showToast(error.detail || 'Error sending invitation', 'error');
+        }
+    } catch (error) {
+        showToast(`Error: ${error.message}`, 'error');
+    }
+}
+
+async function loadInvitations() {
+    const listEl = document.getElementById('invitations-list');
+    listEl.innerHTML = '<div class="loading">Loading invitations...</div>';
+
+    try {
+        const response = await fetch(`${API_BASE_URL}/invitations?org_id=${currentUser.org_id}`);
+
+        if (response.status === 404) {
+            // Invitations feature not implemented yet
+            listEl.innerHTML = '<p class="help-text">Invitations feature coming soon!</p>';
+            document.getElementById('pending-invitations').textContent = '-';
+            document.getElementById('accepted-invitations').textContent = '-';
+            document.getElementById('expired-invitations').textContent = '-';
+            return;
+        }
+
+        const data = await response.json();
+        const invitations = data.invitations || [];
+
+        // Update summary counts
+        const pending = invitations.filter(inv => inv.status === 'pending').length;
+        const accepted = invitations.filter(inv => inv.status === 'accepted').length;
+        const expired = invitations.filter(inv => inv.status === 'expired').length;
+
+        document.getElementById('pending-invitations').textContent = pending;
+        document.getElementById('accepted-invitations').textContent = accepted;
+        document.getElementById('expired-invitations').textContent = expired;
+
+        if (invitations.length === 0) {
+            listEl.innerHTML = '<p class="help-text">No invitations sent yet. Click "Invite User" to get started!</p>';
+            return;
+        }
+
+        // Render invitations list
+        listEl.innerHTML = invitations.map(inv => `
+            <div class="invitation-item">
+                <div class="invitation-info">
+                    <h5>${inv.name}</h5>
+                    <div class="invitation-meta">
+                        ${inv.email} • Roles: ${inv.roles.join(', ')}<br>
+                        Sent: ${new Date(inv.created_at).toLocaleDateString()}
+                        ${inv.status === 'pending' ? ` • Expires: ${new Date(inv.expires_at).toLocaleDateString()}` : ''}
+                    </div>
+                </div>
+                <div style="display: flex; gap: 10px; align-items: center;">
+                    <span class="invitation-status ${inv.status}">${inv.status}</span>
+                    ${inv.status === 'pending' ? `
+                        <button class="btn btn-small btn-secondary" onclick="resendInvitation('${inv.id}')">Resend</button>
+                        <button class="btn btn-small btn-remove" onclick="cancelInvitation('${inv.id}')">Cancel</button>
+                    ` : ''}
+                </div>
+            </div>
+        `).join('');
+    } catch (error) {
+        listEl.innerHTML = `<p class="help-text">Error loading invitations: ${error.message}</p>`;
+        document.getElementById('pending-invitations').textContent = '0';
+        document.getElementById('accepted-invitations').textContent = '0';
+        document.getElementById('expired-invitations').textContent = '0';
+    }
+}
+
+async function resendInvitation(invitationId) {
+    try {
+        const response = await fetch(`${API_BASE_URL}/invitations/${invitationId}/resend`, {
+            method: 'POST'
+        });
+
+        if (response.ok) {
+            showToast('Invitation resent successfully!', 'success');
+            loadInvitations();
+        } else {
+            const error = await response.json();
+            showToast(error.detail || 'Error resending invitation', 'error');
+        }
+    } catch (error) {
+        showToast(`Error: ${error.message}`, 'error');
+    }
+}
+
+async function cancelInvitation(invitationId) {
+    showConfirmDialog('Cancel this invitation?', async (confirmed) => {
+        if (!confirmed) return;
+
+        try {
+            const response = await fetch(`${API_BASE_URL}/invitations/${invitationId}`, {
+                method: 'DELETE'
+            });
+
+            if (response.ok || response.status === 204) {
+                showToast('Invitation cancelled successfully!', 'success');
+                loadInvitations();
+            } else {
+                const error = await response.json();
+                showToast(error.detail || 'Error cancelling invitation', 'error');
+            }
+        } catch (error) {
+            showToast(`Error: ${error.message}`, 'error');
+        }
+    });
+}
+
+// ============================================================================
+// REPORTS TAB FUNCTIONS
+// ============================================================================
+
+async function exportLatestSchedulePDF() {
+    try {
+        const solutionsResponse = await fetch(`${API_BASE_URL}/solutions/?org_id=${currentUser.org_id}`);
+        const solutionsData = await solutionsResponse.json();
+
+        if (solutionsData.solutions.length === 0) {
+            showToast('No schedule available to export.', 'warning');
+            return;
+        }
+
+        const latestSolution = solutionsData.solutions[0];
+        viewSolution(latestSolution.id);
+    } catch (error) {
+        showToast(`Error: ${error.message}`, 'error');
+    }
+}
+
+async function exportOrgCalendar() {
+    try {
+        const solutionsResponse = await fetch(`${API_BASE_URL}/solutions/?org_id=${currentUser.org_id}`);
+        const solutionsData = await solutionsResponse.json();
+
+        if (solutionsData.solutions.length === 0) {
+            showToast('No schedule available to export.', 'warning');
+            return;
+        }
+
+        const latestSolution = solutionsData.solutions[0];
+
+        const response = await fetch(`${API_BASE_URL}/solutions/${latestSolution.id}/export`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                format: 'ics',
+                scope: 'organization'
+            })
+        });
+
+        if (response.ok) {
+            const blob = await response.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `${currentOrg.name.replace(/\s+/g, '_')}_schedule.ics`;
+            a.click();
+            showToast('Calendar exported successfully!', 'success');
+        } else {
+            const errorData = await response.json().catch(() => ({ detail: 'Unknown error' }));
+            showToast(`Export failed: ${errorData.detail}`, 'error');
+        }
+    } catch (error) {
+        showToast(`Error: ${error.message}`, 'error');
+    }
+}
+
+async function showScheduleStats() {
+    const statsDisplay = document.getElementById('schedule-stats-display');
+    const statsContent = document.getElementById('stats-content');
+
+    statsDisplay.classList.remove('hidden');
+    statsContent.innerHTML = '<div class="loading">Loading statistics...</div>';
+
+    try {
+        const solutionsResponse = await fetch(`${API_BASE_URL}/solutions/?org_id=${currentUser.org_id}`);
+        const solutionsData = await solutionsResponse.json();
+
+        if (solutionsData.solutions.length === 0) {
+            statsContent.innerHTML = '<p class="help-text">No schedule data available.</p>';
+            return;
+        }
+
+        const latestSolution = solutionsData.solutions[0];
+        const assignmentsResponse = await fetch(`${API_BASE_URL}/solutions/${latestSolution.id}/assignments`);
+        const assignmentsData = await assignmentsResponse.json();
+
+        // Calculate statistics
+        const assignments = assignmentsData.assignments;
+        const peopleCount = new Set(assignments.map(a => a.person_id)).size;
+        const eventCount = new Set(assignments.map(a => a.event_id)).size;
+
+        // Count assignments per person
+        const assignmentsPerPerson = {};
+        assignments.forEach(a => {
+            assignmentsPerPerson[a.person_name] = (assignmentsPerPerson[a.person_name] || 0) + 1;
+        });
+
+        const sortedPeople = Object.entries(assignmentsPerPerson)
+            .sort((a, b) => b[1] - a[1])
+            .slice(0, 10);
+
+        statsContent.innerHTML = `
+            <div class="stats-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin-bottom: 25px;">
+                <div class="stat-card">
+                    <div class="stat-value">${assignments.length}</div>
+                    <div class="stat-label">Total Assignments</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">${peopleCount}</div>
+                    <div class="stat-label">People Assigned</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">${eventCount}</div>
+                    <div class="stat-label">Events Covered</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">${(assignments.length / peopleCount).toFixed(1)}</div>
+                    <div class="stat-label">Avg Assignments/Person</div>
+                </div>
+            </div>
+
+            <h5 style="margin: 20px 0 15px 0;">Top 10 Most Assigned People</h5>
+            <div style="background: white; border-radius: 8px; padding: 15px;">
+                ${sortedPeople.map(([name, count], index) => `
+                    <div style="display: flex; justify-content: space-between; padding: 10px; border-bottom: 1px solid var(--border);">
+                        <span>${index + 1}. ${name}</span>
+                        <span style="font-weight: 600; color: var(--primary);">${count} assignments</span>
+                    </div>
+                `).join('')}
+            </div>
+        `;
+    } catch (error) {
+        statsContent.innerHTML = `<p class="help-text">Error loading statistics: ${error.message}</p>`;
+    }
+}
+
+async function loadAdminCalendarView() {
+    const calendarEl = document.getElementById('admin-calendar-view');
+    calendarEl.innerHTML = '<div class="loading">Loading calendar...</div>';
+
+    try {
+        const solutionsResponse = await fetch(`${API_BASE_URL}/solutions/?org_id=${currentUser.org_id}`);
+        const solutionsData = await solutionsResponse.json();
+
+        if (solutionsData.solutions.length === 0) {
+            calendarEl.innerHTML = '<div class="loading">No schedule generated yet. Click "Generate Schedule" above.</div>';
+            return;
+        }
+
+        const latestSolution = solutionsData.solutions.find(s => s.assignment_count > 0);
+        if (!latestSolution) {
+            calendarEl.innerHTML = '<div class="loading">No assignments in schedule.</div>';
+            return;
+        }
+
+        const assignmentsResponse = await fetch(`${API_BASE_URL}/solutions/${latestSolution.id}/assignments`);
+        const assignmentsData = await assignmentsResponse.json();
+
+        // Group by date
+        const byDate = {};
+        assignmentsData.assignments.forEach(assignment => {
+            const date = new Date(assignment.event_start).toDateString();
+            if (!byDate[date]) byDate[date] = [];
+            byDate[date].push(assignment);
+        });
+
+        // Render calendar
+        calendarEl.innerHTML = Object.keys(byDate)
+            .sort((a, b) => new Date(a) - new Date(b))
+            .slice(0, 10) // Show next 10 days
+            .map(date => {
+                const assignments = byDate[date];
+                const dateObj = new Date(date);
+
+                return `
+                    <div class="calendar-day has-event" style="margin-bottom: 15px;">
+                        <div class="calendar-date">${dateObj.toLocaleDateString('en-US', {
+                            weekday: 'long',
+                            month: 'long',
+                            day: 'numeric'
+                        })}</div>
+                        ${assignments.map(a => `
+                            <div class="calendar-event" style="margin-top: 10px;">
+                                <div class="event-time">
+                                    ${new Date(a.event_start).toLocaleTimeString('en-US', {
+                                        hour: 'numeric',
+                                        minute: '2-digit'
+                                    })}
+                                </div>
+                                <div class="event-title">${a.event_type}</div>
+                                <div style="font-size: 0.85rem; color: var(--text-light); margin-top: 5px;">
+                                    ${a.person_name}
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                `;
+            }).join('');
+    } catch (error) {
+        calendarEl.innerHTML = `<div class="loading">Error loading calendar: ${error.message}</div>`;
+    }
+}
 
 // Update help text based on number of organizations
 function updateOrgHelpText(orgCount) {
