@@ -363,3 +363,36 @@ def manage_assignment(event_id: str, request: AssignmentRequest, db: Session = D
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"Invalid action '{request.action}'. Must be 'assign' or 'unassign'"
         )
+
+
+@router.get("/assignments/all")
+def get_all_assignments(org_id: str = Query(..., description="Organization ID"), db: Session = Depends(get_db)):
+    """Get all assignments for an organization (both from solutions and manual)."""
+    # Verify organization exists
+    org = db.query(Organization).filter(Organization.id == org_id).first()
+    if not org:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Organization '{org_id}' not found"
+        )
+
+    # Get all assignments joined with events to filter by organization
+    assignments = db.query(Assignment).join(Event).filter(Event.org_id == org_id).all()
+
+    result = []
+    for assignment in assignments:
+        event = db.query(Event).filter(Event.id == assignment.event_id).first()
+        person = db.query(Person).filter(Person.id == assignment.person_id).first()
+
+        result.append({
+            "assignment_id": assignment.id,
+            "event_id": assignment.event_id,
+            "event_type": event.type if event else None,
+            "event_start": event.start_time if event else None,
+            "person_id": assignment.person_id,
+            "person_name": person.name if person else None,
+            "solution_id": assignment.solution_id,
+            "is_manual": assignment.solution_id is None
+        })
+
+    return {"assignments": result, "total": len(result)}

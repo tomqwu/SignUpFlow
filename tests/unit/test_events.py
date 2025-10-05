@@ -486,3 +486,51 @@ class TestEventAssignments:
         assigned_person = next((p for p in people if p["id"] == person_id), None)
         assert assigned_person is not None
         assert assigned_person["is_assigned"] == True
+
+    def test_get_all_assignments_for_org(self):
+        """Test getting all assignments (both from solutions and manual) for an organization."""
+        import time
+        timestamp = int(time.time() * 1000)
+        org_id = f"all_assign_org_{timestamp}"
+        event_id = f"all_assign_event_{timestamp}"
+        person_id = f"person_all_{timestamp}"
+
+        # Create org, person, and event
+        client.post(f"{API_BASE}/organizations/", json={"id": org_id, "name": "Test Org"})
+        client.post(
+            f"{API_BASE}/people/",
+            json={"id": person_id, "org_id": org_id, "name": "Test Person", "email": f"test_{timestamp}@test.com", "roles": ["volunteer"]}
+        )
+
+        start = (datetime.now() + timedelta(days=1)).isoformat()
+        end = (datetime.now() + timedelta(days=1, hours=2)).isoformat()
+        client.post(
+            f"{API_BASE}/events/",
+            json={"id": event_id, "org_id": org_id, "type": "Test Event", "start_time": start, "end_time": end}
+        )
+
+        # Manually assign person to event
+        response = client.post(
+            f"{API_BASE}/events/{event_id}/assignments",
+            json={"person_id": person_id, "action": "assign"}
+        )
+        assert response.status_code == 200
+
+        # Get all assignments for org
+        response = client.get(f"{API_BASE}/events/assignments/all?org_id={org_id}")
+        assert response.status_code == 200
+        data = response.json()
+        assert "assignments" in data
+        assert "total" in data
+
+        # Should have at least our manual assignment
+        assignments = data["assignments"]
+        assert len(assignments) >= 1
+
+        # Find our assignment
+        our_assignment = next((a for a in assignments if a["person_id"] == person_id and a["event_id"] == event_id), None)
+        assert our_assignment is not None
+        assert our_assignment["is_manual"] == True
+        assert our_assignment["solution_id"] is None
+        assert our_assignment["person_name"] == "Test Person"
+        assert our_assignment["event_type"] == "Test Event"

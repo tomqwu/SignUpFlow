@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Rostio - My Schedule</title>
+    <link rel="icon" type="image/svg+xml" href="favicon.svg">
     <link rel="stylesheet" href="css/styles.css">
     <link rel="stylesheet" href="css/mobile.css">
     <script src="js/toast.js"></script>
@@ -148,7 +149,7 @@
             <header class="app-header">
                 <div class="header-content">
                     <div class="header-left">
-                        <div class="logo-container"><img src="images/rostio-logo-white.svg" alt="Rostio" class="header-logo"></div>
+                        <div class="logo-container" onclick="goToHome()" style="cursor: pointer;"><img src="images/rostio-logo-white.svg" alt="Rostio" class="header-logo"></div>
                         <div class="org-selector">
                             <select id="org-dropdown" onchange="switchOrganization()" style="display: none;">
                                 <!-- Organizations will be loaded here -->
@@ -225,36 +226,64 @@
             </div>
 
             <nav class="main-nav">
-                <button class="nav-btn active" data-view="calendar" onclick="switchView('calendar')">
-                    📅 My Calendar
+                <button class="nav-btn active" data-view="schedule" onclick="switchView('schedule')">
+                    📅 My Schedule
+                </button>
+                <button class="nav-btn" data-view="events" onclick="switchView('events')">
+                    📆 All Events
                 </button>
                 <button class="nav-btn" data-view="availability" onclick="switchView('availability')">
                     ⏰ Availability
-                </button>
-                <button class="nav-btn" data-view="schedule" onclick="switchView('schedule')">
-                    📊 My Schedule
                 </button>
                 <button class="nav-btn admin-only hidden" data-view="admin" onclick="switchView('admin')">
                     👑 Admin Dashboard
                 </button>
             </nav>
 
-            <!-- Calendar View -->
-            <div id="calendar-view" class="view-content active">
+            <!-- My Schedule View -->
+            <div id="schedule-view" class="view-content active">
                 <div class="view-header">
-                    <h2>My Calendar</h2>
-                    <div class="calendar-controls">
-                        <select id="month-selector" onchange="loadCalendar()">
-                            <option value="current">This Month</option>
-                            <option value="next">Next Month</option>
-                            <option value="all">Next 3 Months</option>
-                        </select>
-                        <button class="btn btn-primary" onclick="exportMyCalendar()">📥 Export to Calendar</button>
+                    <h2>My Schedule</h2>
+                    <div class="schedule-controls">
+                        <div class="schedule-stats">
+                            <div class="stat-card">
+                                <div class="stat-value" id="upcoming-count">0</div>
+                                <div class="stat-label">Upcoming</div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-value" id="this-month-count">0</div>
+                                <div class="stat-label">This Month</div>
+                            </div>
+                        </div>
+                        <div class="schedule-actions">
+                            <button class="btn btn-secondary" onclick="showCalendarSubscription()">🔗 Subscribe</button>
+                            <button class="btn btn-primary" onclick="exportMyCalendar()">📥 Export ICS</button>
+                        </div>
                     </div>
                 </div>
 
-                <div id="calendar-grid" class="calendar-container">
-                    <div class="loading">Loading your calendar...</div>
+                <div id="schedule-list" class="schedule-timeline">
+                    <div class="loading">Loading your schedule...</div>
+                </div>
+            </div>
+
+            <!-- All Events View -->
+            <div id="events-view" class="view-content">
+                <div class="view-header">
+                    <h2>All Organization Events</h2>
+                    <p class="help-text">See all upcoming events and who's scheduled</p>
+                </div>
+
+                <div class="events-filter">
+                    <select id="events-month-filter" onchange="loadAllEvents()">
+                        <option value="current">This Month</option>
+                        <option value="next">Next Month</option>
+                        <option value="all">All Upcoming</option>
+                    </select>
+                </div>
+
+                <div id="all-events-list" class="events-list">
+                    <div class="loading">Loading events...</div>
                 </div>
             </div>
 
@@ -317,33 +346,6 @@
                             </div>
                         </form>
                     </div>
-                </div>
-            </div>
-
-            <!-- Schedule View -->
-            <div id="schedule-view" class="view-content">
-                <div class="view-header">
-                    <h2>My Upcoming Schedule</h2>
-                    <div class="schedule-controls">
-                        <div class="schedule-stats">
-                            <div class="stat-card">
-                                <div class="stat-value" id="upcoming-count">0</div>
-                                <div class="stat-label">Upcoming</div>
-                            </div>
-                            <div class="stat-card">
-                                <div class="stat-value" id="this-month-count">0</div>
-                                <div class="stat-label">This Month</div>
-                            </div>
-                        </div>
-                        <div class="schedule-actions">
-                            <button class="btn btn-secondary" onclick="showCalendarSubscription()">🔗 Subscribe</button>
-                            <button class="btn btn-primary" onclick="exportMyCalendar()">📥 Export ICS</button>
-                        </div>
-                    </div>
-                </div>
-
-                <div id="schedule-list" class="schedule-timeline">
-                    <div class="loading">Loading your schedule...</div>
                 </div>
             </div>
 

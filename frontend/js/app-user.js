@@ -43,6 +43,13 @@ function logout() {
     location.reload();
 }
 
+function goToHome() {
+    localStorage.clear();
+    currentUser = null;
+    currentOrg = null;
+    location.reload();
+}
+
 // Screen Navigation
 function showScreen(screenId) {
     document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden'));
@@ -240,7 +247,6 @@ async function showMainApp() {
         });
     }
 
-    loadCalendar();
     loadMySchedule();
     loadTimeOff();
 }
@@ -368,10 +374,100 @@ function switchView(viewName) {
     document.getElementById(`${viewName}-view`).classList.add('active');
 
     // Load data
-    if (viewName === 'calendar') loadCalendar();
     if (viewName === 'schedule') loadMySchedule();
+    if (viewName === 'events') loadAllEvents();
     if (viewName === 'availability') loadTimeOff();
     if (viewName === 'admin') loadAdminDashboard();
+}
+
+// All Events View
+async function loadAllEvents() {
+    const eventsEl = document.getElementById('all-events-list');
+    eventsEl.innerHTML = '<div class="loading">Loading events...</div>';
+
+    try {
+        // Get all events
+        const eventsResponse = await fetch(`${API_BASE_URL}/events/?org_id=${currentUser.org_id}`);
+        const eventsData = await eventsResponse.json();
+
+        // Get ALL assignments (both from solutions and manual)
+        const assignmentsResponse = await fetch(`${API_BASE_URL}/events/assignments/all?org_id=${currentUser.org_id}`);
+        const assignmentsData = await assignmentsResponse.json();
+        const assignments = assignmentsData.assignments;
+
+        // Get all people to show names
+        const peopleResponse = await fetch(`${API_BASE_URL}/people/?org_id=${currentUser.org_id}`);
+        const peopleData = await peopleResponse.json();
+        const peopleMap = {};
+        peopleData.people.forEach(p => peopleMap[p.id] = p.name);
+
+        // Filter and sort events
+        const now = new Date();
+        const upcomingEvents = eventsData.events
+            .filter(e => new Date(e.start_time) > now)
+            .sort((a, b) => new Date(a.start_time) - new Date(b.start_time));
+
+        if (upcomingEvents.length === 0) {
+            eventsEl.innerHTML = '<div class="loading">No upcoming events</div>';
+            return;
+        }
+
+        // Render events with participants
+        eventsEl.innerHTML = upcomingEvents.map(event => {
+            const eventDate = new Date(event.start_time);
+            const eventAssignments = assignments.filter(a => a.event_id === event.id);
+            const isUserAssigned = eventAssignments.some(a => a.person_id === currentUser.id);
+
+            return `
+            <div class="event-card ${isUserAssigned ? 'event-card-assigned' : ''}">
+                <div class="event-header">
+                    <h3>${event.type}</h3>
+                    <div class="event-actions">
+                        ${isUserAssigned ?
+                            `<button class="btn btn-small btn-remove" onclick="leaveEvent('${event.id}')">Leave Event</button>` :
+                            `<button class="btn btn-small btn-primary" onclick="joinEvent('${event.id}')">Join Event</button>`
+                        }
+                    </div>
+                </div>
+                <div class="event-details">
+                    <div class="event-time">
+                        📅 ${eventDate.toLocaleDateString('en-US', {
+                            weekday: 'long',
+                            month: 'long',
+                            day: 'numeric',
+                            year: 'numeric'
+                        })}
+                        <br>
+                        ⏰ ${eventDate.toLocaleTimeString('en-US', {
+                            hour: 'numeric',
+                            minute: '2-digit'
+                        })} - ${new Date(event.end_time).toLocaleTimeString('en-US', {
+                            hour: 'numeric',
+                            minute: '2-digit'
+                        })}
+                    </div>
+                    ${event.location ? `<div class="event-location">📍 ${event.location}</div>` : ''}
+                </div>
+                <div class="event-participants">
+                    <h4>Volunteers (${eventAssignments.length}):</h4>
+                    ${eventAssignments.length > 0 ? `
+                        <ul class="participants-list">
+                            ${eventAssignments.map(a => `
+                                <li class="${a.person_id === currentUser.id ? 'participant-me' : ''}">
+                                    ${peopleMap[a.person_id] || a.person_id}
+                                    ${a.person_id === currentUser.id ? ' (You)' : ''}
+                                </li>
+                            `).join('')}
+                        </ul>
+                    ` : '<p class="help-text">No volunteers yet - be the first!</p>'}
+                </div>
+            </div>
+            `;
+        }).join('');
+
+    } catch (error) {
+        eventsEl.innerHTML = `<div class="loading">Error: ${error.message}</div>`;
+    }
 }
 
 // Calendar View
@@ -1521,8 +1617,7 @@ async function generateSchedule() {
             loadAdminSolutions();
             loadAdminStats();
 
-            // Refresh user's calendar if they're viewing it
-            loadCalendar();
+            // Refresh user's schedule if they're viewing it
             loadMySchedule();
         } else {
             statusEl.innerHTML = `
@@ -2101,4 +2196,57 @@ async function updatePersonRoles(event) {
     } catch (error) {
         showToast(`Error: ${error.message}`, 'error');
     }
+}
+
+// Event Signup Functions
+async function joinEvent(eventId) {
+    try {
+        const response = await fetch(`${API_BASE_URL}/events/${eventId}/assignments`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                person_id: currentUser.id,
+                action: 'assign'
+            })
+        });
+
+        if (response.ok) {
+            showToast('Successfully joined the event!', 'success');
+            loadAllEvents(); // Reload to show updated participant list
+            loadMySchedule(); // Refresh user's schedule
+        } else {
+            const error = await response.json();
+            showToast(`Error: ${error.detail}`, 'error');
+        }
+    } catch (error) {
+        showToast(`Error joining event: ${error.message}`, 'error');
+    }
+}
+
+async function leaveEvent(eventId) {
+    showConfirmDialog('Are you sure you want to leave this event?', async (confirmed) => {
+        if (!confirmed) return;
+
+        try {
+            const response = await fetch(`${API_BASE_URL}/events/${eventId}/assignments`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    person_id: currentUser.id,
+                    action: 'unassign'
+                })
+            });
+
+            if (response.ok) {
+                showToast('Successfully left the event', 'success');
+                loadAllEvents(); // Reload to show updated participant list
+                loadMySchedule(); // Refresh user's schedule
+            } else {
+                const error = await response.json();
+                showToast(`Error: ${error.detail}`, 'error');
+            }
+        } catch (error) {
+            showToast(`Error leaving event: ${error.message}`, 'error');
+        }
+    });
 }
