@@ -5,7 +5,7 @@ from playwright.sync_api import sync_playwright, TimeoutError as PlaywrightTimeo
 import os
 
 APP_URL = "http://localhost:8000"
-SCREENSHOTS_DIR = "screenshots"
+SCREENSHOTS_DIR = "docs/screenshots"
 
 def take_screenshot_safe(page, path, description):
     """Take a screenshot with error handling."""
@@ -52,8 +52,8 @@ def take_screenshots():
             page.wait_for_timeout(500)
 
         # Fill login form
-        page.fill('input[type="email"]', "jane@test.com")
-        page.fill('input[type="password"]', "password")
+        page.fill('input[type="email"]', "pastor@grace.church")
+        page.fill('input[type="password"]', "password123")
         page.get_by_role("button", name="Sign In").click()
         page.wait_for_timeout(3000)
 
@@ -63,60 +63,76 @@ def take_screenshots():
             screenshots_taken.append(path)
 
         # 2. My Schedule Page
-        if click_safe(page, 'button[data-view="schedule"]'):
-            page.wait_for_timeout(1000)
+        if click_safe(page, 'button:has-text("My Schedule")'):
+            page.wait_for_timeout(1500)
             path = f"{SCREENSHOTS_DIR}/02-my-schedule.png"
             if take_screenshot_safe(page, path, "My Schedule Page"):
                 screenshots_taken.append(path)
 
         # 3. Admin Dashboard - Navigate to Admin view first
-        if click_safe(page, 'button[data-view="admin"]'):
+        if click_safe(page, 'button:has-text("Admin Dashboard")'):
             page.wait_for_timeout(1500)
 
             # Events Tab (default/active)
-            path = f"{SCREENSHOTS_DIR}/03-admin-events.png"
-            if take_screenshot_safe(page, path, "Admin Dashboard - Events Tab"):
-                screenshots_taken.append(path)
+            if click_safe(page, 'button.tab-btn:has-text("Events")'):
+                page.wait_for_timeout(1000)
+                path = f"{SCREENSHOTS_DIR}/03-admin-events.png"
+                if take_screenshot_safe(page, path, "Admin Dashboard - Events Tab"):
+                    screenshots_taken.append(path)
 
             # 4. Admin Dashboard - Roles Tab
-            if click_safe(page, 'button.admin-tab-btn[data-tab="roles"]'):
+            if click_safe(page, 'button.tab-btn:has-text("Roles")'):
                 page.wait_for_timeout(1000)
                 path = f"{SCREENSHOTS_DIR}/04-admin-roles.png"
                 if take_screenshot_safe(page, path, "Admin Dashboard - Roles Tab"):
                     screenshots_taken.append(path)
 
             # 5. Admin Dashboard - Schedule Tab
-            if click_safe(page, 'button.admin-tab-btn[data-tab="schedule"]'):
+            if click_safe(page, 'button.tab-btn:has-text("Schedule")'):
                 page.wait_for_timeout(1000)
                 path = f"{SCREENSHOTS_DIR}/05-admin-schedule.png"
                 if take_screenshot_safe(page, path, "Admin Dashboard - Schedule Tab"):
                     screenshots_taken.append(path)
 
             # 6. Admin Dashboard - People Tab
-            if click_safe(page, 'button.admin-tab-btn[data-tab="people"]'):
-                page.wait_for_timeout(1000)
+            if click_safe(page, 'button.tab-btn:has-text("People")'):
+                page.wait_for_timeout(1500)
                 path = f"{SCREENSHOTS_DIR}/06-admin-people.png"
                 if take_screenshot_safe(page, path, "Admin Dashboard - People Tab"):
                     screenshots_taken.append(path)
 
-                # 9. Invite User Modal (if visible)
+                # 9. Edit Roles Modal (if visible)
+                try:
+                    if page.locator('button:has-text("Edit Roles")').count() > 0:
+                        page.locator('button:has-text("Edit Roles")').first.click(timeout=2000)
+                        page.wait_for_timeout(1000)
+                        path = f"{SCREENSHOTS_DIR}/09-edit-roles-modal.png"
+                        if take_screenshot_safe(page, path, "Edit Roles Modal"):
+                            screenshots_taken.append(path)
+
+                        # Close modal
+                        page.locator('#edit-person-modal .btn-close').click()
+                        page.wait_for_timeout(500)
+                except Exception as e:
+                    print(f"  ⚠ Edit Roles modal error: {e}")
+
+                # 10. Invite User Modal (if visible)
                 try:
                     if page.locator('button:has-text("Invite User")').count() > 0:
                         page.click('button:has-text("Invite User")', timeout=2000)
                         page.wait_for_timeout(500)
-                        path = f"{SCREENSHOTS_DIR}/09-invite-user-modal.png"
+                        path = f"{SCREENSHOTS_DIR}/10-invite-user-modal.png"
                         if take_screenshot_safe(page, path, "Invite User Modal"):
                             screenshots_taken.append(path)
 
-                        # Close modal using JavaScript to ensure it's properly closed
+                        # Close modal
                         page.evaluate("closeInviteUserModal()")
                         page.wait_for_timeout(500)
                 except Exception as e:
                     print(f"  ⚠ Invite User modal error: {e}")
 
             # 7. Admin Dashboard - Reports Tab
-            # Ensure we're back on the admin view and any modals are closed
-            if click_safe(page, 'button.admin-tab-btn[data-tab="reports"]'):
+            if click_safe(page, 'button.tab-btn:has-text("Reports")'):
                 page.wait_for_timeout(1000)
                 path = f"{SCREENSHOTS_DIR}/07-admin-reports.png"
                 if take_screenshot_safe(page, path, "Admin Dashboard - Reports Tab"):

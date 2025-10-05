@@ -206,6 +206,112 @@ class TestPersonUpdate:
         )
         assert response.status_code == 404
 
+    def test_update_person_remove_role(self):
+        """Test removing a role from person."""
+        client.post(
+            f"{API_BASE}/organizations/",
+            json={"id": "people_test_org_remove", "name": "People Test Org Remove"}
+        )
+        client.post(
+            f"{API_BASE}/people/",
+            json={
+                "id": "person_012",
+                "org_id": "people_test_org_remove",
+                "name": "Role Remove Person",
+                "roles": ["volunteer", "admin", "leader"]
+            }
+        )
+        # Remove one role
+        response = client.put(
+            f"{API_BASE}/people/person_012",
+            json={"roles": ["volunteer", "leader"]}
+        )
+        assert response.status_code == 200
+        data = response.json()
+        assert len(data["roles"]) == 2
+        assert "admin" not in data["roles"]
+        assert "volunteer" in data["roles"]
+        assert "leader" in data["roles"]
+
+    def test_update_person_clear_all_roles(self):
+        """Test clearing all roles from person."""
+        client.post(
+            f"{API_BASE}/organizations/",
+            json={"id": "people_test_org_clear", "name": "People Test Org Clear"}
+        )
+        client.post(
+            f"{API_BASE}/people/",
+            json={
+                "id": "person_013",
+                "org_id": "people_test_org_clear",
+                "name": "Clear Roles Person",
+                "roles": ["volunteer", "admin"]
+            }
+        )
+        # Clear all roles
+        response = client.put(
+            f"{API_BASE}/people/person_013",
+            json={"roles": []}
+        )
+        assert response.status_code == 200
+        data = response.json()
+        assert len(data["roles"]) == 0
+
+    def test_update_person_add_multiple_roles(self):
+        """Test adding multiple roles at once."""
+        client.post(
+            f"{API_BASE}/organizations/",
+            json={"id": "people_test_org_multi", "name": "People Test Org Multi"}
+        )
+        client.post(
+            f"{API_BASE}/people/",
+            json={
+                "id": "person_014",
+                "org_id": "people_test_org_multi",
+                "name": "Multi Role Add Person",
+                "roles": []
+            }
+        )
+        # Add multiple roles
+        response = client.put(
+            f"{API_BASE}/people/person_014",
+            json={"roles": ["volunteer", "admin", "leader", "super_admin"]}
+        )
+        assert response.status_code == 200
+        data = response.json()
+        assert len(data["roles"]) == 4
+        assert "super_admin" in data["roles"]
+        assert "volunteer" in data["roles"]
+
+    def test_update_person_roles_persisted(self):
+        """Test that role updates persist across GET requests."""
+        client.post(
+            f"{API_BASE}/organizations/",
+            json={"id": "people_test_org_persist", "name": "People Test Org Persist"}
+        )
+        client.post(
+            f"{API_BASE}/people/",
+            json={
+                "id": "person_015",
+                "org_id": "people_test_org_persist",
+                "name": "Persist Role Person",
+                "roles": ["volunteer"]
+            }
+        )
+        # Update roles
+        client.put(
+            f"{API_BASE}/people/person_015",
+            json={"roles": ["admin", "leader"]}
+        )
+        # Verify roles persisted by getting the person
+        response = client.get(f"{API_BASE}/people/person_015")
+        assert response.status_code == 200
+        data = response.json()
+        assert len(data["roles"]) == 2
+        assert "admin" in data["roles"]
+        assert "leader" in data["roles"]
+        assert "volunteer" not in data["roles"]
+
 
 class TestPersonDelete:
     """Test person deletion."""

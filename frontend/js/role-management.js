@@ -190,7 +190,11 @@ async function loadAdminRoles() {
                         ${count} ${count === 1 ? 'person has' : 'people have'} this role
                     </div>
                 </div>
-                <button class="btn btn-danger btn-sm" onclick="deleteRole('${role}')">Delete</button>
+                <div style="display: flex; gap: 8px;">
+                    <button class="btn btn-secondary btn-sm" onclick="showEditRoleModal('${role}', '${(descriptions[role] || '').replace(/'/g, "\\'")}')">Edit</button>
+                    <button class="btn btn-secondary btn-sm" onclick="showManageRolePeopleModal('${role}')">Manage People</button>
+                    <button class="btn btn-danger btn-sm" onclick="deleteRole('${role}')">Delete</button>
+                </div>
             </div>
         `}).join('');
     } catch (error) {
@@ -269,3 +273,91 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     }, 500);
 });
+
+// Manage People for a specific Role
+async function showManageRolePeopleModal(roleName) {
+    // Set role info
+    document.getElementById('manage-role-id').value = roleName;
+    document.getElementById('manage-role-name').textContent = capitalizeRole(roleName);
+
+    // Load all people in the organization
+    const peopleResponse = await fetch(`${API_BASE_URL}/people/?org_id=${currentOrg.id}`);
+    const peopleData = await peopleResponse.json();
+    const people = peopleData.people || [];
+
+    const container = document.getElementById('manage-role-people-checkboxes');
+
+    // Create checkboxes for each person
+    container.innerHTML = people.map(person => {
+        const hasRole = person.roles && person.roles.includes(roleName);
+        return `
+            <label class="role-option">
+                <input type="checkbox" value="${person.id}" ${hasRole ? 'checked' : ''}>
+                ${person.name}${person.email ? ` (${person.email})` : ''}
+            </label>
+        `;
+    }).join('');
+
+    // Show modal
+    document.getElementById('manage-role-people-modal').classList.remove('hidden');
+}
+
+function closeManageRolePeopleModal() {
+    document.getElementById('manage-role-people-modal').classList.add('hidden');
+    document.getElementById('manage-role-people-form').reset();
+}
+
+async function saveRolePeople(event) {
+    event.preventDefault();
+
+    const roleName = document.getElementById('manage-role-id').value;
+    const checkboxes = document.querySelectorAll('#manage-role-people-checkboxes input[type="checkbox"]');
+    
+    // Get all people IDs that should have this role
+    const selectedPeopleIds = Array.from(checkboxes)
+        .filter(cb => cb.checked)
+        .map(cb => cb.value);
+
+    try {
+        // Fetch all people to update their roles
+        const peopleResponse = await fetch(`${API_BASE_URL}/people/?org_id=${currentOrg.id}`);
+        const peopleData = await peopleResponse.json();
+        const people = peopleData.people || [];
+
+        // Update each person's roles
+        const updates = people.map(async (person) => {
+            const shouldHaveRole = selectedPeopleIds.includes(person.id);
+            const currentlyHasRole = person.roles && person.roles.includes(roleName);
+
+            // Only update if there's a change
+            if (shouldHaveRole !== currentlyHasRole) {
+                let newRoles;
+                if (shouldHaveRole) {
+                    // Add role
+                    newRoles = [...(person.roles || []), roleName];
+                } else {
+                    // Remove role
+                    newRoles = (person.roles || []).filter(r => r !== roleName);
+                }
+
+                const response = await fetch(`${API_BASE_URL}/people/${person.id}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ roles: newRoles })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`Failed to update ${person.name}`);
+                }
+            }
+        });
+
+        await Promise.all(updates);
+
+        closeManageRolePeopleModal();
+        loadAdminRoles(); // Refresh the roles list to show updated counts
+        showToast('Role assignments updated successfully!', 'success');
+    } catch (error) {
+        showToast(`Error: ${error.message}`, 'error');
+    }
+}

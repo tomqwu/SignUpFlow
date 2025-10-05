@@ -709,7 +709,8 @@ async function loadTimeOff() {
     listEl.innerHTML = '<div class="loading">Loading...</div>';
 
     try {
-        const response = await fetch(`${API_BASE_URL}/availability/${currentUser.id}/timeoff`);
+        // Add cache-busting timestamp to prevent browser caching
+        const response = await fetch(`${API_BASE_URL}/availability/${currentUser.id}/timeoff?_=${Date.now()}`);
         const data = await response.json();
 
         if (data.total === 0) {
@@ -730,7 +731,7 @@ async function loadTimeOff() {
                     <div class="timeoff-dates">
                         ${startDate} - ${endDate}
                     </div>
-                    ${reason ? `<div class="timeoff-reason">${reason}</div>` : ''}
+                    <div class="timeoff-reason">${reason || '(no reason specified)'}</div>
                 </div>
                 <div class="timeoff-actions">
                     <button class="btn btn-small btn-secondary"
@@ -786,44 +787,53 @@ function editTimeOffFromButton(button) {
     const startDate = button.dataset.start;
     const endDate = button.dataset.end;
     const reason = button.dataset.reason || '';
-    editTimeOff(timeoffId, startDate, endDate, reason);
+
+    // Show modal with current values
+    document.getElementById('edit-timeoff-modal').classList.remove('hidden');
+    document.getElementById('edit-timeoff-id').value = timeoffId;
+    document.getElementById('edit-timeoff-start').value = startDate;
+    document.getElementById('edit-timeoff-end').value = endDate;
+    document.getElementById('edit-timeoff-reason').value = reason;
 }
 
-async function editTimeOff(timeoffId, startDate, endDate, reason = '') {
-    showInputDialog('Edit start date (YYYY-MM-DD):', startDate, (newStart) => {
-        if (!newStart) return;
+function closeEditTimeOffModal() {
+    document.getElementById('edit-timeoff-modal').classList.add('hidden');
+    document.getElementById('edit-timeoff-form').reset();
+}
 
-        showInputDialog('Edit end date (YYYY-MM-DD):', endDate, (newEnd) => {
-            if (!newEnd) return;
+async function saveEditedTimeOff(event) {
+    event.preventDefault();
 
-            showInputDialog('Edit reason (optional):', reason, async (newReason) => {
-                try {
-                    const response = await fetch(
-                        `${API_BASE_URL}/availability/${currentUser.id}/timeoff/${timeoffId}`,
-                        {
-                            method: 'PATCH',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({
-                                start_date: newStart,
-                                end_date: newEnd,
-                                reason: newReason || null
-                            })
-                        }
-                    );
+    const timeoffId = document.getElementById('edit-timeoff-id').value;
+    const startDate = document.getElementById('edit-timeoff-start').value;
+    const endDate = document.getElementById('edit-timeoff-end').value;
+    const reason = document.getElementById('edit-timeoff-reason').value;
 
-                    if (response.ok) {
-                        loadTimeOff();
-                        showToast('Time-off period updated successfully!', 'success');
-                    } else {
-                        const error = await response.json();
-                        showToast(error.detail || 'Error updating time-off', 'error');
-                    }
-                } catch (error) {
-                    showToast(error.message, 'error');
-                }
-            });
-        });
-    });
+    try {
+        const response = await fetch(
+            `${API_BASE_URL}/availability/${currentUser.id}/timeoff/${timeoffId}`,
+            {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    start_date: startDate,
+                    end_date: endDate,
+                    reason: reason || null
+                })
+            }
+        );
+
+        if (response.ok) {
+            closeEditTimeOffModal();
+            loadTimeOff();
+            showToast('Time-off period updated successfully!', 'success');
+        } else {
+            const error = await response.json();
+            showToast(error.detail || 'Error updating time-off', 'error');
+        }
+    } catch (error) {
+        showToast(error.message, 'error');
+    }
 }
 
 async function removeTimeOff(timeoffId) {
@@ -1115,6 +1125,7 @@ async function loadAdminPeople() {
                             ${blockedHtml}
                         </div>
                     </div>
+                    <button class="btn btn-secondary btn-sm" onclick='showEditPersonModal(${JSON.stringify(person)})'>Edit Roles</button>
                 </div>
             `;
         }).join('');
@@ -2028,5 +2039,66 @@ function updateOrgHelpText(orgCount) {
         } else {
             helpText.textContent = 'Your current organization';
         }
+    }
+}
+
+// Edit Person Roles Modal Functions
+async function showEditPersonModal(person) {
+    // Set person info
+    document.getElementById('edit-person-id').value = person.id;
+    document.getElementById('edit-person-name').textContent = person.name;
+
+    // Load available roles
+    const roles = await loadOrgRoles();
+    const container = document.getElementById('edit-person-roles-checkboxes');
+
+    // Create checkboxes for each role
+    container.innerHTML = roles.map(role => {
+        const isChecked = person.roles && person.roles.includes(role) ? 'checked' : '';
+        return `
+            <label class="role-option">
+                <input type="checkbox" value="${role}" ${isChecked}>
+                ${capitalizeRole(role)}
+            </label>
+        `;
+    }).join('');
+
+    // Show modal
+    document.getElementById('edit-person-modal').classList.remove('hidden');
+}
+
+function closeEditPersonModal() {
+    document.getElementById('edit-person-modal').classList.add('hidden');
+    document.getElementById('edit-person-form').reset();
+}
+
+async function updatePersonRoles(event) {
+    event.preventDefault();
+
+    const personId = document.getElementById('edit-person-id').value;
+    const checkboxes = document.querySelectorAll('#edit-person-roles-checkboxes input[type="checkbox"]');
+    const selectedRoles = Array.from(checkboxes)
+        .filter(cb => cb.checked)
+        .map(cb => cb.value);
+
+    try {
+        const response = await fetch(`${API_BASE_URL}/people/${personId}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                roles: selectedRoles
+            })
+        });
+
+        if (response.ok) {
+            closeEditPersonModal();
+            loadAdminPeople();
+            showToast('Roles updated successfully!', 'success');
+        } else {
+            const error = await response.json();
+            showToast(`Error: ${error.detail}`, 'error');
+        }
+    } catch (error) {
+        showToast(`Error: ${error.message}`, 'error');
     }
 }

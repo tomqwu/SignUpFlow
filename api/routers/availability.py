@@ -73,6 +73,7 @@ def get_timeoff(person_id: str, db: Session = Depends(get_db)):
                 "id": v.id,
                 "start_date": v.start_date.isoformat(),
                 "end_date": v.end_date.isoformat(),
+                "reason": v.reason,
             }
             for v in vacations
         ],
@@ -125,6 +126,7 @@ def add_timeoff(
         "id": vacation.id,
         "start_date": vacation.start_date.isoformat(),
         "end_date": vacation.end_date.isoformat(),
+        "reason": vacation.reason,
         "message": "Time-off period added successfully",
     }
 
@@ -180,6 +182,7 @@ def update_timeoff(
         "id": vacation.id,
         "start_date": vacation.start_date.isoformat(),
         "end_date": vacation.end_date.isoformat(),
+        "reason": vacation.reason,
         "message": "Time-off period updated successfully",
     }
 

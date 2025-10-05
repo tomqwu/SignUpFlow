@@ -289,6 +289,37 @@
                 </div>
             </div>
 
+            <!-- Edit Time Off Modal -->
+            <div id="edit-timeoff-modal" class="modal hidden">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h3>Edit Blocked Date</h3>
+                        <button class="btn-close" onclick="closeEditTimeOffModal()">×</button>
+                    </div>
+                    <div class="modal-body">
+                        <form id="edit-timeoff-form" onsubmit="saveEditedTimeOff(event)">
+                            <input type="hidden" id="edit-timeoff-id">
+                            <div class="form-group">
+                                <label>From Date</label>
+                                <input type="date" id="edit-timeoff-start" required>
+                            </div>
+                            <div class="form-group">
+                                <label>To Date</label>
+                                <input type="date" id="edit-timeoff-end" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Reason (optional)</label>
+                                <input type="text" id="edit-timeoff-reason" placeholder="e.g., Vacation, Family event">
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" onclick="closeEditTimeOffModal()">Cancel</button>
+                                <button type="submit" class="btn btn-primary">Save Changes</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
             <!-- Schedule View -->
             <div id="schedule-view" class="view-content">
                 <div class="view-header">
@@ -673,6 +704,84 @@
             </div>
         </div>
 
+        <!-- Edit Person Roles Modal -->
+        <div id="edit-person-modal" class="modal hidden">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3>Edit Roles for <span id="edit-person-name"></span></h3>
+                    <button class="btn-close" onclick="closeEditPersonModal()">×</button>
+                </div>
+                <div class="modal-body">
+                    <form id="edit-person-form" onsubmit="updatePersonRoles(event)">
+                        <input type="hidden" id="edit-person-id">
+                        <div class="form-group">
+                            <label>Roles</label>
+                            <div id="edit-person-roles-checkboxes" class="role-selector">
+                                <!-- Role checkboxes will be dynamically populated -->
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" onclick="closeEditPersonModal()">Cancel</button>
+                            <button type="submit" class="btn btn-primary">Save Changes</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Edit Role Modal -->
+        <div id="edit-role-modal" class="modal hidden">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3>Edit Role</h3>
+                    <button class="btn-close" onclick="closeEditRoleModal()">×</button>
+                </div>
+                <div class="modal-body">
+                    <form id="edit-role-form" onsubmit="saveEditRole(event)">
+                        <input type="hidden" id="edit-role-old-name">
+                        <div class="form-group">
+                            <label for="edit-role-name">Role Name</label>
+                            <input type="text" id="edit-role-name" class="form-control" required>
+                            <small class="form-help">Use lowercase with underscores (e.g., worship_leader)</small>
+                        </div>
+                        <div class="form-group">
+                            <label for="edit-role-description">Description</label>
+                            <textarea id="edit-role-description" class="form-control" rows="3" placeholder="Optional description"></textarea>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" onclick="closeEditRoleModal()">Cancel</button>
+                            <button type="submit" class="btn btn-primary">Save Changes</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Manage Role People Modal -->
+        <div id="manage-role-people-modal" class="modal hidden">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3>Manage People for <span id="manage-role-name"></span></h3>
+                    <button class="btn-close" onclick="closeManageRolePeopleModal()">×</button>
+                </div>
+                <div class="modal-body">
+                    <form id="manage-role-people-form" onsubmit="saveRolePeople(event)">
+                        <input type="hidden" id="manage-role-id">
+                        <div class="form-group">
+                            <label>Select people who should have this role:</label>
+                            <div id="manage-role-people-checkboxes" class="role-selector">
+                                <!-- People checkboxes will be dynamically populated -->
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" onclick="closeManageRolePeopleModal()">Cancel</button>
+                            <button type="submit" class="btn btn-primary">Save Changes</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
         <!-- Assignment Modal -->
         <div id="assignment-modal" class="modal hidden">
             <div class="modal-content">
@@ -783,6 +892,7 @@
         // Timestamp-based cache busting
         const cacheBust = Date.now();
         document.write('<script src="js/role-management.js?t=' + cacheBust + '"><\/script>');
+        document.write('<script src="js/edit-role-functions.js?t=' + cacheBust + '"><\/script>');
         document.write('<script src="js/recurring-events.js?t=' + cacheBust + '"><\/script>');
         document.write('<script src="js/app-user.js?t=' + cacheBust + '"><\/script>');
     </script>

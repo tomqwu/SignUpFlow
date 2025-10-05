@@ -18,9 +18,11 @@ A comprehensive SaaS platform for managing volunteer schedules, events, and team
 - ✅ **User Invitation System** - Invite volunteers via email with secure tokens
 - ✅ **ICS Calendar Export** - Export schedules to Google Calendar, Apple Calendar, Outlook
 - ✅ **Live Calendar Subscription** - Auto-updating calendar feeds (webcal://)
-- ✅ **Tabbed Admin Console** - Organized management interface
+- ✅ **Tabbed Admin Console** - Organized management interface with 5 tabs
 - ✅ **Timezone Support** - User-specific timezone preferences
 - ✅ **Enhanced RBAC** - Granular permissions and invitation workflows
+- ✅ **Role Management** - Edit roles, manage people assignments, and edit individual roles
+- ✅ **Blocked Dates with Reasons** - Track time-off with optional reasons
 
 ---
 

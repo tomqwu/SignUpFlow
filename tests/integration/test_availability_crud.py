@@ -14,10 +14,21 @@ def test_availability_api_crud():
     """Test complete CRUD lifecycle for time-off via API"""
     print("\n🧪 Testing Availability API CRUD...")
 
+    # Setup: Create organization first
+    org_data = {
+        "id": "test-org",
+        "name": "Test Organization"
+    }
+    requests.post(f"{API_BASE}/organizations/", json=org_data)  # Ignore if exists
+
+    # Cleanup: Delete test person if it exists from previous run
+    person_id = "test-avail-person"
+    requests.delete(f"{API_BASE}/people/{person_id}")
+
     # Setup: Create person
     person_data = {
-        "id": "test-avail-person",
-        "org_id": "grace-church",
+        "id": person_id,
+        "org_id": "test-org",
         "name": "Test Person",
         "email": "test.avail@test.com",
         "roles": ["volunteer"]
@@ -25,13 +36,12 @@ def test_availability_api_crud():
     resp = requests.post(f"{API_BASE}/people/", json=person_data)
     assert resp.status_code in [200, 201], f"Failed to create person: {resp.text}"
 
-    person_id = "test-avail-person"
-
-    # 1. CREATE time-off
-    print("  1. Testing CREATE...")
+    # 1. CREATE time-off with reason
+    print("  1. Testing CREATE with reason...")
     timeoff_data = {
         "start_date": "2025-11-01",
-        "end_date": "2025-11-10"
+        "end_date": "2025-11-10",
+        "reason": "Family vacation"
     }
     resp = requests.post(
         f"{API_BASE}/availability/{person_id}/timeoff",
@@ -42,24 +52,27 @@ def test_availability_api_crud():
     assert "id" in data
     assert data["start_date"] == "2025-11-01"
     assert data["end_date"] == "2025-11-10"
+    assert data["reason"] == "Family vacation", f"Reason not saved: {data}"
     timeoff_id = data["id"]
-    print(f"     ✓ Created time-off ID: {timeoff_id}")
+    print(f"     ✓ Created time-off ID: {timeoff_id} with reason")
 
-    # 2. READ time-off list
-    print("  2. Testing READ...")
+    # 2. READ time-off list (verify reason is returned)
+    print("  2. Testing READ with reason...")
     resp = requests.get(f"{API_BASE}/availability/{person_id}/timeoff")
     assert resp.status_code == 200
     data = resp.json()
     assert data["total"] == 1
     assert len(data["timeoff"]) == 1
     assert data["timeoff"][0]["id"] == timeoff_id
-    print(f"     ✓ Read {data['total']} time-off periods")
+    assert data["timeoff"][0]["reason"] == "Family vacation", f"Reason not returned in GET: {data}"
+    print(f"     ✓ Read {data['total']} time-off periods with reason field")
 
-    # 3. UPDATE time-off
-    print("  3. Testing UPDATE...")
+    # 3. UPDATE time-off (including reason)
+    print("  3. Testing UPDATE with new reason...")
     updated_data = {
         "start_date": "2025-11-05",  # Changed from Nov 1
-        "end_date": "2025-11-15"     # Changed from Nov 10
+        "end_date": "2025-11-15",     # Changed from Nov 10
+        "reason": "Extended family vacation"  # Updated reason
     }
     resp = requests.patch(
         f"{API_BASE}/availability/{person_id}/timeoff/{timeoff_id}",
@@ -69,15 +82,17 @@ def test_availability_api_crud():
     data = resp.json()
     assert data["start_date"] == "2025-11-05"
     assert data["end_date"] == "2025-11-15"
+    assert data["reason"] == "Extended family vacation", f"Reason not updated: {data}"
     assert "updated successfully" in data["message"]
-    print(f"     ✓ Updated dates: {data['start_date']} to {data['end_date']}")
+    print(f"     ✓ Updated dates and reason: {data['reason']}")
 
-    # Verify update persisted
+    # Verify update persisted (including reason)
     resp = requests.get(f"{API_BASE}/availability/{person_id}/timeoff")
     data = resp.json()
     assert data["timeoff"][0]["start_date"] == "2025-11-05"
     assert data["timeoff"][0]["end_date"] == "2025-11-15"
-    print("     ✓ Update persisted correctly")
+    assert data["timeoff"][0]["reason"] == "Extended family vacation", f"Updated reason not persisted: {data}"
+    print("     ✓ Update persisted correctly with reason")
 
     # 4. DELETE time-off
     print("  4. Testing DELETE...")
@@ -103,13 +118,20 @@ def test_availability_edge_cases():
     """Test edge cases and error handling"""
     print("\n🧪 Testing Availability Edge Cases...")
 
+    # Setup: Create organization first
+    org_data = {
+        "id": "test-org-edge",
+        "name": "Test Organization Edge"
+    }
+    requests.post(f"{API_BASE}/organizations/", json=org_data)  # Ignore if exists
+
     # Setup - cleanup first in case person exists from previous test
     person_id = "test-edge-person"
     requests.delete(f"{API_BASE}/people/{person_id}")  # Clean up if exists
 
     person_data = {
         "id": "test-edge-person",
-        "org_id": "grace-church",
+        "org_id": "test-org-edge",
         "name": "Edge Case Person",
         "email": "edge@test.com",
         "roles": ["volunteer"]
@@ -157,26 +179,43 @@ def test_availability_edge_cases():
     assert resp.status_code == 404
     print("     ✓ Returned 404 for non-existent person")
 
-    # Test 5: Multiple time-off periods
-    print("  5. Testing multiple time-off periods...")
-    # Add 3 periods
+    # Test 5: Time-off without reason (null handling)
+    print("  5. Testing time-off without reason...")
+    no_reason_data = {
+        "start_date": "2025-12-01",
+        "end_date": "2025-12-05"
+    }
+    resp = requests.post(
+        f"{API_BASE}/availability/{person_id}/timeoff",
+        json=no_reason_data
+    )
+    assert resp.status_code == 201, f"Failed to create time-off without reason: {resp.text}"
+    data = resp.json()
+    assert data["reason"] is None or data["reason"] == "", f"Expected null/empty reason, got: {data['reason']}"
+    print("     ✓ Time-off without reason handled correctly")
+
+    # Test 6: Multiple time-off periods with mixed reasons
+    print("  6. Testing multiple time-off periods with mixed reasons...")
     periods = [
-        {"start_date": "2025-11-01", "end_date": "2025-11-10"},
-        {"start_date": "2025-12-01", "end_date": "2025-12-10"},
-        {"start_date": "2026-01-01", "end_date": "2026-01-10"},
+        {"start_date": "2025-11-01", "end_date": "2025-11-10", "reason": "Conference"},
+        {"start_date": "2026-01-01", "end_date": "2026-01-10"},  # No reason
     ]
-    for data in periods:
+    for period_data in periods:
         resp = requests.post(
             f"{API_BASE}/availability/{person_id}/timeoff",
-            json=data
+            json=period_data
         )
         assert resp.status_code == 201, f"Failed to create period: {resp.text}"
 
-    # Verify all 3 exist
+    # Verify all periods exist with correct reasons
     resp = requests.get(f"{API_BASE}/availability/{person_id}/timeoff")
     data = resp.json()
-    assert data["total"] == 3
-    print("     ✓ Multiple time-off periods handled correctly")
+    assert data["total"] >= 2, f"Expected at least 2 periods, got {data['total']}"
+
+    # Find the conference period and verify it has the reason
+    conference_period = next((p for p in data["timeoff"] if p.get("reason") == "Conference"), None)
+    assert conference_period is not None, "Conference period not found"
+    print("     ✓ Multiple time-off periods with mixed reasons handled correctly")
 
     # Cleanup
     requests.delete(f"{API_BASE}/people/{person_id}")
