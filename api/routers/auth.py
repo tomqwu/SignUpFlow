@@ -4,11 +4,11 @@ from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from pydantic import BaseModel, EmailStr, Field
-import hashlib
-import secrets
 import time
 
 from api.database import get_db
+from api.dependencies import get_organization_by_id
+from api.utils.security import hash_password, verify_password, generate_auth_token
 from roster_cli.db.models import Person, Organization
 
 router = APIRouter(prefix="/auth", tags=["auth"])
@@ -41,22 +41,6 @@ class AuthResponse(BaseModel):
     token: str
 
 
-# Helper functions
-def hash_password(password: str) -> str:
-    """Hash password using SHA-256."""
-    return hashlib.sha256(password.encode()).hexdigest()
-
-
-def verify_password(password: str, password_hash: str) -> bool:
-    """Verify password against hash."""
-    return hash_password(password) == password_hash
-
-
-def generate_token() -> str:
-    """Generate a simple session token."""
-    return secrets.token_urlsafe(32)
-
-
 # Endpoints
 @router.post("/signup", response_model=AuthResponse, status_code=status.HTTP_201_CREATED)
 def signup(request: SignupRequest, db: Session = Depends(get_db)):
@@ -71,12 +55,7 @@ def signup(request: SignupRequest, db: Session = Depends(get_db)):
         )
 
     # Verify organization exists
-    org = db.query(Organization).filter(Organization.id == request.org_id).first()
-    if not org:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Organization not found"
-        )
+    org = get_organization_by_id(request.org_id, db)
 
     # Create person ID from email
     person_id = f"person_{request.email.split('@')[0]}_{int(time.time())}"
@@ -100,7 +79,7 @@ def signup(request: SignupRequest, db: Session = Depends(get_db)):
     db.refresh(person)
 
     # Generate token
-    token = generate_token()
+    token = generate_auth_token()
 
     return AuthResponse(
         person_id=person.id,
@@ -133,7 +112,7 @@ def login(request: LoginRequest, db: Session = Depends(get_db)):
         )
 
     # Generate token
-    token = generate_token()
+    token = generate_auth_token()
 
     return AuthResponse(
         person_id=person.id,

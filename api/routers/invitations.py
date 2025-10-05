@@ -1,14 +1,16 @@
 """Invitation endpoints for user onboarding."""
 
-from typing import List, Optional
+from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.orm import Session
 from datetime import datetime, timedelta
 import secrets
 import time
-import hashlib
 
 from api.database import get_db
+from api.dependencies import verify_admin_access, verify_org_member, get_organization_by_id
+from api.utils.security import generate_invitation_token, generate_auth_token, hash_password
+from api.utils.db_helpers import check_email_exists
 from api.schemas.invitation import (
     InvitationCreate,
     InvitationResponse,
@@ -22,35 +24,12 @@ from roster_cli.db.models import Invitation, Person, Organization
 router = APIRouter(prefix="/invitations", tags=["invitations"])
 
 
-# Helper functions
-def generate_invitation_token() -> str:
-    """Generate a unique invitation token."""
-    return secrets.token_urlsafe(32)
-
-
-def generate_auth_token() -> str:
-    """Generate a simple session token."""
-    return secrets.token_urlsafe(32)
-
-
-def hash_password(password: str) -> str:
-    """Hash password using SHA-256."""
-    return hashlib.sha256(password.encode()).hexdigest()
-
-
-def check_admin_permission(person: Person) -> bool:
-    """Check if person has admin or super_admin role."""
-    if not person or not person.roles:
-        return False
-    return "admin" in person.roles or "super_admin" in person.roles
-
-
 # Endpoints
 @router.post("", response_model=InvitationResponse, status_code=status.HTTP_201_CREATED)
 def create_invitation(
     request: InvitationCreate,
     org_id: str = Query(..., description="Organization ID"),
-    invited_by_id: str = Query(..., description="Person ID of the inviter"),
+    inviter: Person = Depends(verify_admin_access),
     db: Session = Depends(get_db),
 ):
     """
@@ -58,41 +37,14 @@ def create_invitation(
 
     Sends an invitation email to a new user to join the organization.
     """
-    # Verify inviter exists and has admin permissions
-    inviter = db.query(Person).filter(Person.id == invited_by_id).first()
-    if not inviter:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Inviter not found"
-        )
-
-    if not check_admin_permission(inviter):
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Only admins can send invitations"
-        )
-
     # Verify organization exists
-    org = db.query(Organization).filter(Organization.id == org_id).first()
-    if not org:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Organization not found"
-        )
+    org = get_organization_by_id(org_id, db)
 
     # Verify inviter belongs to the organization
-    if inviter.org_id != org_id:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Cannot invite users to a different organization"
-        )
+    verify_org_member(inviter, org_id)
 
     # Check if email already exists
-    existing_person = db.query(Person).filter(
-        Person.email == request.email,
-        Person.org_id == org_id
-    ).first()
-    if existing_person:
+    if check_email_exists(db, request.email, org_id):
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
             detail="A user with this email already exists in this organization"
@@ -121,7 +73,7 @@ def create_invitation(
         email=request.email,
         name=request.name,
         roles=request.roles,
-        invited_by=invited_by_id,
+        invited_by=inviter.id,
         token=token,
         status="pending",
         expires_at=expires_at,
@@ -141,33 +93,15 @@ def create_invitation(
 @router.get("", response_model=InvitationList)
 def list_invitations(
     org_id: str = Query(..., description="Organization ID"),
-    person_id: str = Query(..., description="Person ID requesting the list"),
+    admin: Person = Depends(verify_admin_access),
     status_filter: Optional[str] = Query(None, description="Filter by status (pending, accepted, expired, cancelled)"),
     db: Session = Depends(get_db),
 ):
     """
     List all invitations for an organization (admin only).
     """
-    # Verify person exists and has admin permissions
-    person = db.query(Person).filter(Person.id == person_id).first()
-    if not person:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Person not found"
-        )
-
-    if not check_admin_permission(person):
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Only admins can view invitations"
-        )
-
-    # Verify person belongs to the organization
-    if person.org_id != org_id:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Cannot view invitations for a different organization"
-        )
+    # Verify admin belongs to the organization
+    verify_org_member(admin, org_id)
 
     # Build query
     query = db.query(Invitation).filter(Invitation.org_id == org_id)
@@ -323,26 +257,12 @@ def accept_invitation(
 @router.delete("/{invitation_id}", status_code=status.HTTP_204_NO_CONTENT)
 def cancel_invitation(
     invitation_id: str,
-    person_id: str = Query(..., description="Person ID requesting cancellation"),
+    admin: Person = Depends(verify_admin_access),
     db: Session = Depends(get_db),
 ):
     """
     Cancel a pending invitation (admin only).
     """
-    # Verify person exists and has admin permissions
-    person = db.query(Person).filter(Person.id == person_id).first()
-    if not person:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Person not found"
-        )
-
-    if not check_admin_permission(person):
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Only admins can cancel invitations"
-        )
-
     # Get invitation
     invitation = db.query(Invitation).filter(Invitation.id == invitation_id).first()
     if not invitation:
@@ -351,12 +271,8 @@ def cancel_invitation(
             detail="Invitation not found"
         )
 
-    # Verify person belongs to the same organization
-    if person.org_id != invitation.org_id:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Cannot cancel invitations for a different organization"
-        )
+    # Verify admin belongs to the same organization
+    verify_org_member(admin, invitation.org_id)
 
     # Cancel invitation
     if invitation.status == "pending":
@@ -369,7 +285,7 @@ def cancel_invitation(
 @router.post("/{invitation_id}/resend", response_model=InvitationResponse)
 def resend_invitation(
     invitation_id: str,
-    person_id: str = Query(..., description="Person ID requesting resend"),
+    admin: Person = Depends(verify_admin_access),
     db: Session = Depends(get_db),
 ):
     """
@@ -377,20 +293,6 @@ def resend_invitation(
 
     Generates a new token and extends the expiry date.
     """
-    # Verify person exists and has admin permissions
-    person = db.query(Person).filter(Person.id == person_id).first()
-    if not person:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Person not found"
-        )
-
-    if not check_admin_permission(person):
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Only admins can resend invitations"
-        )
-
     # Get invitation
     invitation = db.query(Invitation).filter(Invitation.id == invitation_id).first()
     if not invitation:
@@ -399,12 +301,8 @@ def resend_invitation(
             detail="Invitation not found"
         )
 
-    # Verify person belongs to the same organization
-    if person.org_id != invitation.org_id:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Cannot resend invitations for a different organization"
-        )
+    # Verify admin belongs to the same organization
+    verify_org_member(admin, invitation.org_id)
 
     # Can only resend pending or expired invitations
     if invitation.status not in ["pending", "expired"]:

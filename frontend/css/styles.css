@@ -1549,3 +1549,166 @@ form label {
     border: 1px solid #f59e0b;
     color: #92400e;
 }
+
+/* View Toggle Buttons */
+.view-toggle {
+    display: flex;
+    gap: 10px;
+    margin: 20px 0;
+    justify-content: center;
+}
+
+.toggle-btn {
+    padding: 10px 24px;
+    border: 2px solid var(--border-color);
+    background: white;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    transition: all 0.2s;
+    color: var(--text-color);
+}
+
+.toggle-btn:hover {
+    border-color: var(--primary-color);
+    background: var(--bg-light);
+}
+
+.toggle-btn.active {
+    background: var(--primary-color);
+    border-color: var(--primary-color);
+    color: white;
+}
+
+.schedule-section {
+    margin-top: 20px;
+}
+
+.schedule-section.hidden {
+    display: none;
+}
+
+/* All Events View */
+.events-filter {
+    margin: 20px 0;
+}
+
+.events-filter select {
+    padding: 10px;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    font-size: 14px;
+}
+
+.events-list {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.event-card {
+    background: white;
+    border: 2px solid var(--border-color);
+    border-radius: 12px;
+    padding: 20px;
+    transition: all 0.2s;
+}
+
+.event-card:hover {
+    border-color: var(--primary-color);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.event-card-assigned {
+    border-color: var(--primary-color);
+    background: linear-gradient(135deg, #ffffff 0%, #f0f4ff 100%);
+}
+
+.event-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+}
+
+.event-header h3 {
+    margin: 0;
+    color: var(--text-color);
+}
+
+.event-badge {
+    background: var(--primary-color);
+    color: white;
+    padding: 4px 12px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.event-details {
+    margin: 15px 0;
+    color: var(--text-light);
+}
+
+.event-time {
+    margin-bottom: 8px;
+}
+
+.event-location {
+    margin-top: 8px;
+    color: var(--text-light);
+}
+
+.event-participants {
+    margin-top: 20px;
+    padding-top: 20px;
+    border-top: 1px solid var(--border-color);
+}
+
+.event-participants h4 {
+    margin: 0 0 10px 0;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-color);
+}
+
+.participants-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.participants-list li {
+    background: var(--bg-light);
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-size: 14px;
+    color: var(--text-color);
+}
+
+.participant-me {
+    background: var(--primary-light) !important;
+    color: var(--primary-color) !important;
+    font-weight: 500;
+}
+
+/* Event Actions */
+.event-actions {
+    display: flex;
+    gap: 10px;
+}
+
+.event-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+}
+
+.btn-small {
+    padding: 6px 16px;
+    font-size: 13px;
+}

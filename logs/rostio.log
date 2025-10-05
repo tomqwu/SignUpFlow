@@ -368,3 +368,45 @@ AttributeError: type object 'VacationPeriod' has no attribute 'person_id'
 2025-10-05 01:06:53,520 - rostio - INFO - 📖 API docs available at http://localhost:8000/docs
 2025-10-05 01:21:47,421 - rostio - INFO - 🚀 Rostio API started
 2025-10-05 01:21:47,421 - rostio - INFO - 📖 API docs available at http://localhost:8000/docs
+2025-10-05 01:38:11,355 - rostio - INFO - 🚀 Rostio API started
+2025-10-05 01:38:11,355 - rostio - INFO - 📖 API docs available at http://localhost:8000/docs
+2025-10-05 11:25:43,563 - rostio - INFO - 🚀 Rostio API started
+2025-10-05 11:25:43,564 - rostio - INFO - 📖 API docs available at http://localhost:8000/docs
+2025-10-05 11:27:58,298 - rostio - INFO - 🚀 Rostio API started
+2025-10-05 11:27:58,298 - rostio - INFO - 📖 API docs available at http://localhost:8000/docs
+2025-10-05 13:31:46,153 - rostio - INFO - 🚀 Rostio API started
+2025-10-05 13:31:46,153 - rostio - INFO - 📖 API docs available at http://localhost:8000/docs
+2025-10-05 18:32:05,961 - rostio - INFO - 🚀 Rostio API started
+2025-10-05 18:32:05,962 - rostio - INFO - 📖 API docs available at http://localhost:8000/docs
+2025-10-05 18:37:43,690 - rostio - INFO - 🚀 Rostio API started
+2025-10-05 18:37:43,690 - rostio - INFO - 📖 API docs available at http://localhost:8000/docs
+2025-10-05 18:37:57,037 - rostio - INFO - 🚀 Rostio API started
+2025-10-05 18:37:57,037 - rostio - INFO - 📖 API docs available at http://localhost:8000/docs
+2025-10-05 18:38:22,309 - rostio - INFO - 🚀 Rostio API started
+2025-10-05 18:38:22,310 - rostio - INFO - 📖 API docs available at http://localhost:8000/docs
+2025-10-05 18:38:32,960 - rostio - INFO - 🚀 Rostio API started
+2025-10-05 18:38:32,961 - rostio - INFO - 📖 API docs available at http://localhost:8000/docs
+2025-10-05 19:05:50,301 - rostio - INFO - 🚀 Rostio API started
+2025-10-05 19:05:50,302 - rostio - INFO - 📖 API docs available at http://localhost:8000/docs
+2025-10-05 19:22:53,218 - rostio - INFO - 🚀 Rostio API started
+2025-10-05 19:22:53,219 - rostio - INFO - 📖 API docs available at http://localhost:8000/docs
+2025-10-05 19:32:03,139 - rostio - INFO - 🚀 Rostio API started
+2025-10-05 19:32:03,139 - rostio - INFO - 📖 API docs available at http://localhost:8000/docs
+2025-10-05 19:32:52,194 - rostio - INFO - 🚀 Rostio API started
+2025-10-05 19:32:52,195 - rostio - INFO - 📖 API docs available at http://localhost:8000/docs
+2025-10-05 19:33:21,475 - rostio - INFO - 🚀 Rostio API started
+2025-10-05 19:33:21,475 - rostio - INFO - 📖 API docs available at http://localhost:8000/docs
+2025-10-05 19:33:55,254 - rostio - INFO - 🚀 Rostio API started
+2025-10-05 19:33:55,254 - rostio - INFO - 📖 API docs available at http://localhost:8000/docs
+2025-10-05 19:34:13,626 - rostio - INFO - 🚀 Rostio API started
+2025-10-05 19:34:13,626 - rostio - INFO - 📖 API docs available at http://localhost:8000/docs
+2025-10-05 19:34:44,213 - rostio - INFO - 🚀 Rostio API started
+2025-10-05 19:34:44,213 - rostio - INFO - 📖 API docs available at http://localhost:8000/docs
+2025-10-05 19:35:17,774 - rostio - INFO - 🚀 Rostio API started
+2025-10-05 19:35:17,775 - rostio - INFO - 📖 API docs available at http://localhost:8000/docs
+2025-10-05 19:35:25,774 - rostio - INFO - 🚀 Rostio API started
+2025-10-05 19:35:25,774 - rostio - INFO - 📖 API docs available at http://localhost:8000/docs
+2025-10-05 19:35:34,406 - rostio - INFO - 🚀 Rostio API started
+2025-10-05 19:35:34,406 - rostio - INFO - 📖 API docs available at http://localhost:8000/docs
+2025-10-05 19:35:47,996 - rostio - INFO - 🚀 Rostio API started
+2025-10-05 19:35:47,996 - rostio - INFO - 📖 API docs available at http://localhost:8000/docs

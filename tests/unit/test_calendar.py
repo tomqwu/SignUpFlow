@@ -24,8 +24,9 @@ class TestCalendarUtils:
         token1 = generate_calendar_token()
         token2 = generate_calendar_token()
 
-        assert len(token1) == 64  # 32 bytes hex = 64 characters
-        assert len(token2) == 64
+        # URL-safe base64 encoding of 32 bytes = ~43 characters
+        assert len(token1) >= 40
+        assert len(token2) >= 40
         assert token1 != token2  # Tokens should be unique
 
     def test_generate_webcal_url(self):
@@ -223,7 +224,7 @@ class TestCalendarExportAPI:
 
         # Tokens should be different
         assert token1 != token2
-        assert len(token2) == 64
+        assert len(token2) >= 40  # URL-safe base64 encoding
 
     def test_calendar_feed_invalid_token(self):
         """Test calendar feed with invalid token."""

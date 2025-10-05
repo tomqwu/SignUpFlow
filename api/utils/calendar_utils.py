@@ -7,7 +7,6 @@ This module handles:
 - Building webcal:// subscription URLs
 """
 
-import secrets
 from datetime import datetime
 from typing import List, Optional
 from zoneinfo import ZoneInfo
@@ -15,15 +14,7 @@ from zoneinfo import ZoneInfo
 from icalendar import Calendar, Event as ICalEvent, vText
 from icalendar import vCalAddress, vDatetime
 
-
-def generate_calendar_token() -> str:
-    """
-    Generate a unique, secure token for calendar subscriptions.
-
-    Returns:
-        A 32-character hexadecimal token
-    """
-    return secrets.token_hex(32)
+from api.utils.security import generate_calendar_token
 
 
 def generate_ics_from_assignments(
