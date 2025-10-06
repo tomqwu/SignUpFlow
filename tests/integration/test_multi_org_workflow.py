@@ -5,30 +5,33 @@ Tests user story: "Member of Multiple Organizations"
 import requests
 from playwright.sync_api import sync_playwright
 import pytest
+import time
 
 BASE_URL = "http://localhost:8000"
 API_BASE = f"{BASE_URL}/api"
 
 
-@pytest.mark.skip(reason="Multi-org UI feature not fully implemented - dropdown is hidden in current version")
+@pytest.mark.skip(reason="Multi-org login not implemented - login.first() only returns one person per email, needs org selection during login")
 def test_multi_org_setup_and_switching(api_server):
     """Test user belonging to multiple orgs can switch between them"""
     print("\n🧪 Testing Multi-Organization Workflow...")
 
-    # Cleanup first in case they exist from previous run
-    requests.delete(f"{API_BASE}/people/alice-church")
-    requests.delete(f"{API_BASE}/people/alice-school")
-    requests.delete(f"{API_BASE}/organizations/test-church")
-    requests.delete(f"{API_BASE}/organizations/test-school")
+    # Use unique IDs to avoid conflicts
+    timestamp = int(time.time() * 1000)
+    org1_id = f"test-church-{timestamp}"
+    org2_id = f"test-school-{timestamp}"
+    person1_id = f"alice-church-{timestamp}"
+    person2_id = f"alice-school-{timestamp}"
+    email = f"alice-{timestamp}@multiorg.com"
 
     # Setup: Create 2 organizations
     org1_data = {
-        "id": "test-church",
+        "id": org1_id,
         "name": "Test Church",
         "region": "City A"
     }
     org2_data = {
-        "id": "test-school",
+        "id": org2_id,
         "name": "Test School",
         "region": "City B"
     }
@@ -42,18 +45,18 @@ def test_multi_org_setup_and_switching(api_server):
 
     # Create same user in both orgs (same email, different IDs)
     person1_data = {
-        "id": "alice-church",
-        "org_id": "test-church",
+        "id": person1_id,
+        "org_id": org1_id,
         "name": "Alice Multi",
-        "email": "alice@multiorg.com",
+        "email": email,
         "password": "test123",
         "roles": ["volunteer"]
     }
     person2_data = {
-        "id": "alice-school",
-        "org_id": "test-school",
+        "id": person2_id,
+        "org_id": org2_id,
         "name": "Alice Multi",
-        "email": "alice@multiorg.com",  # Same email!
+        "email": email,  # Same email!
         "password": "test123",
         "roles": ["volunteer"]
     }
@@ -78,7 +81,7 @@ def test_multi_org_setup_and_switching(api_server):
         page.wait_for_load_state('networkidle')
         page.locator('a:has-text("Sign in")').click()
         page.wait_for_timeout(500)
-        page.fill('#login-email', 'alice@multiorg.com')
+        page.fill('#login-email', email)
         page.fill('#login-password', 'test123')
         page.click('button:has-text("Sign In")')
         page.wait_for_selector('#main-app:not(.hidden)', timeout=10000)
@@ -105,19 +108,19 @@ def test_multi_org_setup_and_switching(api_server):
 
             # Verify both orgs are in dropdown
             html = dropdown.inner_html()
-            assert "test-church" in html or "Test Church" in html
-            assert "test-school" in html or "Test School" in html
+            assert org1_id in html or "Test Church" in html
+            assert org2_id in html or "Test School" in html
             print("     ✓ Both organizations in dropdown")
 
             # Test switching
             print("  3. Testing organization switch...")
             # Select second org
-            dropdown.select_option(value="test-school")
+            dropdown.select_option(value=org2_id)
             page.wait_for_timeout(2000)
 
             # Verify context switched
             current_val = dropdown.input_value()
-            assert current_val == "test-school"
+            assert current_val == org2_id
             print("     ✓ Successfully switched to test-school")
         else:
             print("     ⚠️  Dropdown not visible - may need frontend fix")
@@ -126,32 +129,34 @@ def test_multi_org_setup_and_switching(api_server):
         browser.close()
 
     # Cleanup
-    requests.delete(f"{API_BASE}/organizations/test-church")
-    requests.delete(f"{API_BASE}/organizations/test-school")
+    requests.delete(f"{API_BASE}/organizations/{org1_id}")
+    requests.delete(f"{API_BASE}/organizations/{org2_id}")
 
     print("\n✅ Multi-org workflow test complete!")
 
 
-@pytest.mark.skip(reason="Multi-org UI feature not fully implemented - test user creation fails")
+@pytest.mark.skip(reason="Test creates dynamic user/org which causes login issues - needs refactor to use test fixtures")
 def test_single_org_shows_badge(api_server):
     """Test that single-org users see badge, not dropdown"""
     print("\n🧪 Testing Single-Org User (Should Show Badge)...")
 
-    # Cleanup first in case they exist from previous run
-    requests.delete(f"{API_BASE}/people/bob-single")
-    requests.delete(f"{API_BASE}/organizations/single-org-test")
+    # Use unique IDs to avoid conflicts
+    timestamp = int(time.time() * 1000)
+    org_id = f"single-org-{timestamp}"
+    person_id = f"bob-single-{timestamp}"
+    email = f"bob-{timestamp}@single.com"
 
     # Create org and user
     org_data = {
-        "id": "single-org-test",
+        "id": org_id,
         "name": "Single Org",
         "region": "Test"
     }
     person_data = {
-        "id": "bob-single",
-        "org_id": "single-org-test",
+        "id": person_id,
+        "org_id": org_id,
         "name": "Bob Single",
-        "email": "bob@single.com",
+        "email": email,
         "password": "test123",
         "roles": ["volunteer"]
     }
@@ -172,7 +177,7 @@ def test_single_org_shows_badge(api_server):
         page.wait_for_load_state('networkidle')
         page.locator('a:has-text("Sign in")').click()
         page.wait_for_timeout(500)
-        page.fill('#login-email', 'bob@single.com')
+        page.fill('#login-email', email)
         page.fill('#login-password', 'test123')
         page.click('button:has-text("Sign In")')
 
@@ -211,7 +216,7 @@ def test_single_org_shows_badge(api_server):
         browser.close()
 
     # Cleanup
-    requests.delete(f"{API_BASE}/organizations/single-org-test")
+    requests.delete(f"{API_BASE}/organizations/{org_id}")
 
     print("\n✅ Single-org badge test passed!")
 
