@@ -20,8 +20,9 @@ API_BASE = "http://localhost:8000/api"
 
 
 @pytest.fixture
-def setup_test_org():
+def setup_test_org(api_server):
     """Create a test organization with an admin user."""
+    # api_server ensures the server is running
     client = httpx.Client()
     timestamp = int(time.time() * 1000)  # Use milliseconds for uniqueness
 
@@ -75,7 +76,7 @@ class TestCreateInvitation:
             f"{API_BASE}/invitations",
             params={
                 "org_id": data["org_id"],
-                "invited_by_id": data["admin_id"]
+                "person_id": data["admin_id"]  # Changed from person_id to person_id
             },
             json={
                 "email": invitee_email,
@@ -103,7 +104,7 @@ class TestCreateInvitation:
             f"{API_BASE}/invitations",
             params={
                 "org_id": data["org_id"],
-                "invited_by_id": data["admin_id"]
+                "person_id": data["admin_id"]
             },
             json={
                 "email": data["admin_email"],
@@ -136,7 +137,7 @@ class TestCreateInvitation:
             f"{API_BASE}/invitations",
             params={
                 "org_id": data["org_id"],
-                "invited_by_id": volunteer_id
+                "person_id": volunteer_id
             },
             json={
                 "email": f"new_{int(time.time())}@test.com",
@@ -160,7 +161,7 @@ class TestCreateInvitation:
             f"{API_BASE}/invitations",
             params={
                 "org_id": data["org_id"],
-                "invited_by_id": data["admin_id"]
+                "person_id": data["admin_id"]
             },
             json={
                 "email": invitee_email,
@@ -174,7 +175,7 @@ class TestCreateInvitation:
             f"{API_BASE}/invitations",
             params={
                 "org_id": data["org_id"],
-                "invited_by_id": data["admin_id"]
+                "person_id": data["admin_id"]
             },
             json={
                 "email": invitee_email,
@@ -201,7 +202,7 @@ class TestListInvitations:
                 f"{API_BASE}/invitations",
                 params={
                     "org_id": data["org_id"],
-                    "invited_by_id": data["admin_id"]
+                    "person_id": data["admin_id"]
                 },
                 json={
                     "email": f"user{i}_{int(time.time())}@test.com",
@@ -234,7 +235,7 @@ class TestListInvitations:
             f"{API_BASE}/invitations",
             params={
                 "org_id": data["org_id"],
-                "invited_by_id": data["admin_id"]
+                "person_id": data["admin_id"]
             },
             json={
                 "email": f"filter_{int(time.time())}@test.com",
@@ -278,7 +279,7 @@ class TestVerifyInvitation:
             f"{API_BASE}/invitations",
             params={
                 "org_id": data["org_id"],
-                "invited_by_id": data["admin_id"]
+                "person_id": data["admin_id"]
             },
             json={
                 "email": f"verify_{int(time.time())}@test.com",
@@ -319,7 +320,7 @@ class TestVerifyInvitation:
             f"{API_BASE}/invitations",
             params={
                 "org_id": data["org_id"],
-                "invited_by_id": data["admin_id"]
+                "person_id": data["admin_id"]
             },
             json={
                 "email": f"cancelled_{int(time.time())}@test.com",
@@ -359,7 +360,7 @@ class TestAcceptInvitation:
             f"{API_BASE}/invitations",
             params={
                 "org_id": data["org_id"],
-                "invited_by_id": data["admin_id"]
+                "person_id": data["admin_id"]
             },
             json={
                 "email": invitee_email,
@@ -419,7 +420,7 @@ class TestAcceptInvitation:
             f"{API_BASE}/invitations",
             params={
                 "org_id": data["org_id"],
-                "invited_by_id": data["admin_id"]
+                "person_id": data["admin_id"]
             },
             json={
                 "email": f"twice_{int(time.time())}@test.com",
@@ -458,7 +459,7 @@ class TestCancelInvitation:
             f"{API_BASE}/invitations",
             params={
                 "org_id": data["org_id"],
-                "invited_by_id": data["admin_id"]
+                "person_id": data["admin_id"]
             },
             json={
                 "email": f"cancel_{int(time.time())}@test.com",
@@ -494,7 +495,7 @@ class TestResendInvitation:
             f"{API_BASE}/invitations",
             params={
                 "org_id": data["org_id"],
-                "invited_by_id": data["admin_id"]
+                "person_id": data["admin_id"]
             },
             json={
                 "email": f"resend_{int(time.time())}@test.com",
@@ -532,7 +533,7 @@ class TestResendInvitation:
             f"{API_BASE}/invitations",
             params={
                 "org_id": data["org_id"],
-                "invited_by_id": data["admin_id"]
+                "person_id": data["admin_id"]
             },
             json={
                 "email": f"resend_accepted_{int(time.time())}@test.com",
@@ -572,7 +573,7 @@ class TestInvitationWorkflow:
             f"{API_BASE}/invitations",
             params={
                 "org_id": data["org_id"],
-                "invited_by_id": data["admin_id"]
+                "person_id": data["admin_id"]
             },
             json={
                 "email": invitee_email,

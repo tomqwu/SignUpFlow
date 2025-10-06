@@ -410,3 +410,9 @@ AttributeError: type object 'VacationPeriod' has no attribute 'person_id'
 2025-10-05 19:35:34,406 - rostio - INFO - 📖 API docs available at http://localhost:8000/docs
 2025-10-05 19:35:47,996 - rostio - INFO - 🚀 Rostio API started
 2025-10-05 19:35:47,996 - rostio - INFO - 📖 API docs available at http://localhost:8000/docs
+2025-10-06 10:12:09,581 - rostio - INFO - 🚀 Rostio API started
+2025-10-06 10:12:09,581 - rostio - INFO - 📖 API docs available at http://localhost:8000/docs
+2025-10-06 10:12:24,708 - rostio - INFO - 🚀 Rostio API started
+2025-10-06 10:12:24,708 - rostio - INFO - 📖 API docs available at http://localhost:8000/docs
+2025-10-06 10:12:35,306 - rostio - INFO - 🚀 Rostio API started
+2025-10-06 10:12:35,306 - rostio - INFO - 📖 API docs available at http://localhost:8000/docs
