@@ -18,7 +18,7 @@ API_BASE = "http://localhost:8000/api"
 class TestAuthSignup:
     """Test signup endpoint."""
 
-    def test_signup_success(self):
+    def test_signup_success(self, api_server):
         """Test successful signup with valid data."""
         client = httpx.Client()
 
@@ -48,7 +48,7 @@ class TestAuthSignup:
         assert data["email"] == email
         assert "volunteer" in data["roles"]
 
-    def test_signup_duplicate_email(self):
+    def test_signup_duplicate_email(self, api_server):
         """Test signup rejects duplicate email."""
         client = httpx.Client()
 
@@ -82,7 +82,7 @@ class TestAuthSignup:
 
         assert response.status_code == 409
 
-    def test_signup_invalid_org(self):
+    def test_signup_invalid_org(self, api_server):
         """Test signup fails with nonexistent organization."""
         client = httpx.Client()
 
@@ -100,7 +100,7 @@ class TestAuthSignup:
 class TestAuthLogin:
     """Test login endpoint."""
 
-    def test_login_success(self):
+    def test_login_success(self, api_server):
         """Test successful login with correct credentials."""
         client = httpx.Client()
 
@@ -136,7 +136,7 @@ class TestAuthLogin:
         assert data["email"] == email
         assert "admin" in data["roles"]
 
-    def test_login_wrong_password(self):
+    def test_login_wrong_password(self, api_server):
         """Test login fails with wrong password."""
         client = httpx.Client()
 
@@ -166,7 +166,7 @@ class TestAuthLogin:
 
         assert response.status_code == 401
 
-    def test_login_nonexistent_user(self):
+    def test_login_nonexistent_user(self, api_server):
         """Test login fails with nonexistent email."""
         client = httpx.Client()
 
