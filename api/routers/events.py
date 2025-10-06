@@ -27,6 +27,7 @@ class AssignmentRequest(BaseModel):
     """Request to assign/unassign a person."""
     person_id: str
     action: str  # "assign" or "unassign"
+    role: Optional[str] = None  # Event-specific role (e.g., "usher", "greeter", "sound_tech")
 
 
 @router.post("/", response_model=EventResponse, status_code=status.HTTP_201_CREATED)
@@ -335,11 +336,13 @@ def manage_assignment(event_id: str, request: AssignmentRequest, db: Session = D
         assignment = Assignment(
             event_id=event_id,
             person_id=request.person_id,
+            role=request.role,  # Event-specific role
             solution_id=None
         )
         db.add(assignment)
         db.commit()
-        return {"message": f"Assigned {person.name} to event", "assignment_id": assignment.id}
+        role_info = f" as {request.role}" if request.role else ""
+        return {"message": f"Assigned {person.name} to event{role_info}", "assignment_id": assignment.id, "role": request.role}
 
     elif request.action == "unassign":
         # Find and delete assignment
@@ -391,6 +394,7 @@ def get_all_assignments(org_id: str = Query(..., description="Organization ID"),
             "event_start": event.start_time if event else None,
             "person_id": assignment.person_id,
             "person_name": person.name if person else None,
+            "role": assignment.role,  # Event-specific role
             "solution_id": assignment.solution_id,
             "is_manual": assignment.solution_id is None
         })

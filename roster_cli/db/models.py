@@ -384,7 +384,7 @@ class Invitation(Base):
 
 
 class Assignment(Base):
-    """Assignment of person to event."""
+    """Assignment of person to event with specific role."""
 
     __tablename__ = "assignments"
 
@@ -392,6 +392,7 @@ class Assignment(Base):
     solution_id = Column(Integer, ForeignKey("solutions.id"), nullable=True)  # Nullable for manual assignments
     event_id = Column(String, ForeignKey("events.id"), nullable=False)
     person_id = Column(String, ForeignKey("people.id"), nullable=False)
+    role = Column(String, nullable=True)  # Event-specific role (e.g., "usher", "greeter", "sound_tech")
     assigned_at = Column(DateTime, default=datetime.utcnow)
 
     # Relationships

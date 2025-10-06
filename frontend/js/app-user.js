@@ -2200,18 +2200,75 @@ async function updatePersonRoles(event) {
 
 // Event Signup Functions
 async function joinEvent(eventId) {
+    // Show role selection modal
+    document.getElementById('role-event-id').value = eventId;
+    document.getElementById('select-role-modal').classList.remove('hidden');
+
+    // Reset form
+    document.getElementById('event-role-select').value = '';
+    document.getElementById('custom-role-group').style.display = 'none';
+    document.getElementById('custom-role-input').value = '';
+}
+
+function closeSelectRoleModal() {
+    document.getElementById('select-role-modal').classList.add('hidden');
+}
+
+// Handle role select change to show/hide custom role input
+function initRoleSelectHandler() {
+    const roleSelect = document.getElementById('event-role-select');
+    if (roleSelect && !roleSelect.hasEventListener) {
+        roleSelect.addEventListener('change', function() {
+            const customRoleGroup = document.getElementById('custom-role-group');
+            if (this.value === 'other') {
+                customRoleGroup.style.display = 'block';
+                document.getElementById('custom-role-input').required = true;
+            } else {
+                customRoleGroup.style.display = 'none';
+                document.getElementById('custom-role-input').required = false;
+            }
+        });
+        roleSelect.hasEventListener = true;
+    }
+}
+
+// Initialize role select handler when DOM is ready
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initRoleSelectHandler);
+} else {
+    initRoleSelectHandler();
+}
+
+async function submitEventRole(event) {
+    event.preventDefault();
+
+    const eventId = document.getElementById('role-event-id').value;
+    let role = document.getElementById('event-role-select').value;
+
+    // If "other" is selected, use custom role name
+    if (role === 'other') {
+        role = document.getElementById('custom-role-input').value.trim();
+        if (!role) {
+            showToast('Please enter a custom role name', 'error');
+            return;
+        }
+    }
+
     try {
         const response = await fetch(`${API_BASE_URL}/events/${eventId}/assignments`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 person_id: currentUser.id,
-                action: 'assign'
+                action: 'assign',
+                role: role
             })
         });
 
         if (response.ok) {
-            showToast('Successfully joined the event!', 'success');
+            const data = await response.json();
+            closeSelectRoleModal();
+            showToast(`Successfully joined as ${role}!`, 'success');
             loadAllEvents(); // Reload to show updated participant list
             loadMySchedule(); // Refresh user's schedule
         } else {

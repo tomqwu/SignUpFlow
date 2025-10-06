@@ -888,6 +888,46 @@
                 </div>
             </div>
         </div>
+
+        <!-- Select Role for Event Modal -->
+        <div id="select-role-modal" class="modal hidden">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3>Select Your Role</h3>
+                    <button class="btn-close" onclick="closeSelectRoleModal()">×</button>
+                </div>
+                <div class="modal-body">
+                    <p class="help-text">What role will you fulfill for this event?</p>
+                    <form id="select-role-form" onsubmit="submitEventRole(event)">
+                        <input type="hidden" id="role-event-id">
+                        <div class="form-group">
+                            <label for="event-role-select">Role</label>
+                            <select id="event-role-select" class="form-control" required>
+                                <option value="">-- Select a role --</option>
+                                <option value="usher">Usher</option>
+                                <option value="greeter">Greeter</option>
+                                <option value="sound_tech">Sound Tech</option>
+                                <option value="video_tech">Video Tech</option>
+                                <option value="worship_leader">Worship Leader</option>
+                                <option value="speaker">Speaker</option>
+                                <option value="nursery">Nursery</option>
+                                <option value="parking">Parking</option>
+                                <option value="security">Security</option>
+                                <option value="other">Other</option>
+                            </select>
+                        </div>
+                        <div class="form-group" id="custom-role-group" style="display: none;">
+                            <label for="custom-role-input">Custom Role Name</label>
+                            <input type="text" id="custom-role-input" class="form-control" placeholder="Enter custom role">
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" onclick="closeSelectRoleModal()">Cancel</button>
+                            <button type="submit" class="btn btn-primary">Join Event</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
     </div>
 
     <script>
