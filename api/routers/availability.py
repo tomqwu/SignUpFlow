@@ -111,6 +111,19 @@ def add_timeoff(
             detail="End date must be after start date",
         )
 
+    # Check for overlapping vacation periods
+    overlapping = db.query(VacationPeriod).filter(
+        VacationPeriod.availability_id == availability.id,
+        VacationPeriod.start_date <= timeoff_data.end_date,
+        VacationPeriod.end_date >= timeoff_data.start_date
+    ).first()
+
+    if overlapping:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=f"Time-off period overlaps with existing period ({overlapping.start_date} to {overlapping.end_date})",
+        )
+
     # Create vacation period
     vacation = VacationPeriod(
         availability_id=availability.id,

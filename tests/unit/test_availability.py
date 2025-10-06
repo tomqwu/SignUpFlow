@@ -66,40 +66,47 @@ class TestAvailabilityCreate:
         )
         assert response.status_code == 404
 
-    @pytest.mark.skip(reason="Overlapping validation not yet implemented")
     def test_add_availability_overlapping(self):
-        """Test adding overlapping availability periods (complex case)."""
+        """Test adding overlapping availability periods returns conflict error."""
+        import time
+        timestamp = int(time.time() * 1000)
+        org_id = f"avail_test_org_{timestamp}"
+        person_id = f"avail_person_{timestamp}"
+
         # Setup: Create org and person
         client.post(
             f"{API_BASE}/organizations/",
-            json={"id": "avail_test_org2", "name": "Availability Test Org 2"}
+            json={"id": org_id, "name": "Availability Test Org"}
         )
         client.post(
             f"{API_BASE}/people/",
             json={
-                "id": "avail_person_002",
-                "org_id": "avail_test_org2",
-                "name": "Test Person 2"
+                "id": person_id,
+                "org_id": org_id,
+                "name": "Test Person",
+                "email": f"{person_id}@test.com"
             }
         )
 
         # Add first timeoff period
         start1 = (datetime.now() + timedelta(days=15)).strftime("%Y-%m-%d")
         end1 = (datetime.now() + timedelta(days=20)).strftime("%Y-%m-%d")
-        client.post(
-            f"{API_BASE}/availability/avail_person_002/timeoff",
+        response1 = client.post(
+            f"{API_BASE}/availability/{person_id}/timeoff",
             json={"start_date": start1, "end_date": end1}
         )
+        assert response1.status_code == 201
 
-        # Try to add overlapping period
+        # Try to add overlapping period (overlaps days 18-20)
         start2 = (datetime.now() + timedelta(days=18)).strftime("%Y-%m-%d")
         end2 = (datetime.now() + timedelta(days=25)).strftime("%Y-%m-%d")
-        response = client.post(
-            f"{API_BASE}/availability/avail_person_002/timeoff",
+        response2 = client.post(
+            f"{API_BASE}/availability/{person_id}/timeoff",
             json={"start_date": start2, "end_date": end2}
         )
-        # Should fail with conflict or validation error
-        assert response.status_code in [400, 409, 422]
+        # Should fail with conflict error
+        assert response2.status_code == 409
+        assert "overlap" in response2.json()["detail"].lower()
 
     def test_add_availability_invalid_date_range(self):
         """Test adding availability with end_date before start_date fails."""

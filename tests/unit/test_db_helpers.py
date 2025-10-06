@@ -277,15 +277,55 @@ class TestGetPersonAssignments:
 class TestIsPersonBlockedOnDate:
     """Test is_person_blocked_on_date function."""
 
-    @pytest.mark.skip("VacationPeriod model uses availability_id not person_id")
     def test_person_on_vacation_returns_blocked(self, db_session: Session, test_org: Organization):
         """Test that person on vacation is blocked."""
-        pass
+        pid = _unique_id("p")
+        person = Person(id=pid, org_id=test_org.id, name="John", email=f"{pid}@test.com", roles=[])
 
-    @pytest.mark.skip("Availability model uses rrule not start_date/end_date")
-    def test_person_with_availability_unavailable(self, db_session: Session, test_org: Organization):
-        """Test that person with unavailable availability is blocked."""
-        pass
+        # Create availability record first
+        availability = Availability(person_id=pid, rrule=None, extra_data={})
+        db_session.add_all([person, availability])
+        db_session.flush()  # Flush to get availability.id
+
+        # Create vacation period through the availability
+        vacation = VacationPeriod(
+            availability_id=availability.id,
+            start_date=datetime(2025, 1, 1).date(),
+            end_date=datetime(2025, 1, 7).date(),
+            reason="Vacation"
+        )
+        db_session.add(vacation)
+        db_session.commit()
+
+        # Check if person is blocked on a date within vacation period
+        is_blocked, reason = is_person_blocked_on_date(db_session, pid, datetime(2025, 1, 3))
+        assert is_blocked is True
+        assert reason == "Vacation"
+
+    def test_person_on_vacation_not_blocked_outside_period(self, db_session: Session, test_org: Organization):
+        """Test that person is not blocked outside vacation period."""
+        pid = _unique_id("p")
+        person = Person(id=pid, org_id=test_org.id, name="John", email=f"{pid}@test.com", roles=[])
+
+        # Create availability record
+        availability = Availability(person_id=pid, rrule=None, extra_data={})
+        db_session.add_all([person, availability])
+        db_session.flush()
+
+        # Create vacation period
+        vacation = VacationPeriod(
+            availability_id=availability.id,
+            start_date=datetime(2025, 1, 1).date(),
+            end_date=datetime(2025, 1, 7).date(),
+            reason="Vacation"
+        )
+        db_session.add(vacation)
+        db_session.commit()
+
+        # Check if person is blocked on a date AFTER vacation period
+        is_blocked, reason = is_person_blocked_on_date(db_session, pid, datetime(2025, 1, 10))
+        assert is_blocked is False
+        assert reason is None
 
     def test_person_not_blocked_returns_false(self, db_session: Session, test_org: Organization):
         """Test that person not blocked returns False."""
