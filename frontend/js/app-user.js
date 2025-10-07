@@ -1057,7 +1057,9 @@ async function showSettings() {
     const roles = currentUser.roles || [];
     if (roles.length > 0) {
         permissionDisplay.innerHTML = roles.map(role => {
-            const roleLabel = role === 'admin' ? '👑 Administrator' : role === 'volunteer' ? '✓ Volunteer' : role;
+            // Handle both string roles and object roles
+            const roleStr = typeof role === 'string' ? role : (role.name || JSON.stringify(role));
+            const roleLabel = roleStr === 'admin' ? '👑 Administrator' : roleStr === 'volunteer' ? '✓ Volunteer' : roleStr;
             return `<span style="display: inline-block; margin: 5px; padding: 5px 10px; background: var(--primary); color: white; border-radius: 4px;">${roleLabel}</span>`;
         }).join('');
     } else {
