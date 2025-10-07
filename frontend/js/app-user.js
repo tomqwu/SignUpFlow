@@ -768,6 +768,8 @@ async function loadMySchedule() {
                 '<span class="schedule-badge schedule-badge-blocked">Blocked</span>' :
                 '<span class="schedule-badge">Confirmed</span>';
 
+            const roleDisplay = a.role ? `<br>📋 Role: <strong>${a.role}</strong>` : '';
+
             return `
             <div class="schedule-item ${blocked ? 'schedule-item-blocked' : ''}">
                 <div class="schedule-info">
@@ -787,6 +789,7 @@ async function loadMySchedule() {
                             hour: 'numeric',
                             minute: '2-digit'
                         })}
+                        ${roleDisplay}
                     </div>
                 </div>
                 ${badge}

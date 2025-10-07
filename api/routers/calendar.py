@@ -98,7 +98,7 @@ def export_personal_schedule(
                     "location": resource.location if resource else "TBD",
                 } if resource else None,
             },
-            "role": None,  # Could be extracted from extra_data if stored
+            "role": assignment.role,  # Event-specific role (usher, greeter, etc.)
         })
 
     # Generate ICS file
@@ -343,7 +343,7 @@ def calendar_feed(token: str, db: Session = Depends(get_db)):
                     "location": resource.location if resource else "TBD",
                 } if resource else None,
             },
-            "role": None,
+            "role": assignment.role,  # Event-specific role (usher, greeter, etc.)
         })
 
     # Generate ICS file
