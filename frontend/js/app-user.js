@@ -1333,7 +1333,7 @@ async function loadAdminPeople() {
                         <h4>${person.name}</h4>
                         <div class="admin-item-meta">
                             ${person.email || 'No email'}
-                            ${person.roles && person.roles.length > 0 ? `<br>Roles: ${person.roles.join(', ')}` : ''}
+                            ${person.roles && person.roles.length > 0 ? `<br>Roles: ${person.roles.map(r => typeof r === 'string' ? r : (r.name || r.role || '[unknown]')).join(', ')}` : ''}
                             ${blockedHtml}
                         </div>
                     </div>
@@ -1554,7 +1554,7 @@ async function showAssignments(eventId) {
                                     <div class="person-info">
                                         <strong>${person.name}</strong>
                                         ${person.is_blocked ? '<span class="schedule-badge-blocked">BLOCKED</span>' : ''}
-                                        <span class="person-roles">${person.roles.join(', ')}</span>
+                                        <span class="person-roles">${person.roles.map(r => typeof r === 'string' ? r : (r.name || r.role || '[unknown]')).join(', ')}</span>
                                     </div>
                                     <button
                                         class="btn btn-small ${person.is_assigned ? 'btn-remove' : ''}"
@@ -1812,8 +1812,20 @@ function updateRoleBadgesDisplay() {
         roles.forEach(role => {
             const badge = document.createElement('span');
             badge.className = 'role-badge';
+
             // Handle both string and object roles
-            badge.textContent = typeof role === 'string' ? role : (role.name || JSON.stringify(role));
+            let roleStr = typeof role === 'string' ? role : (role.name || role.role || '');
+
+            // If still an object at this point, show error instead of [object Object]
+            if (typeof roleStr === 'object') {
+                console.error('Role is still an object after extraction:', role);
+                roleStr = JSON.stringify(role);
+            }
+
+            // Convert kebab-case to Title Case (worship-leader → Worship Leader)
+            const roleLabel = roleStr.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+
+            badge.textContent = roleLabel;
             rolesDisplay.appendChild(badge);
         });
     }
@@ -1987,7 +1999,7 @@ async function loadInvitations() {
                 <div class="invitation-info">
                     <h5>${inv.name}</h5>
                     <div class="invitation-meta">
-                        ${inv.email} • Roles: ${inv.roles.join(', ')}<br>
+                        ${inv.email} • Roles: ${inv.roles.map(r => typeof r === 'string' ? r : (r.name || r.role || '[unknown]')).join(', ')}<br>
                         Sent: ${new Date(inv.created_at).toLocaleDateString()}
                         ${inv.status === 'pending' ? ` • Expires: ${new Date(inv.expires_at).toLocaleDateString()}` : ''}
                     </div>
