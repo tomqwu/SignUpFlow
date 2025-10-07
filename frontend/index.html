@@ -104,7 +104,7 @@
         <div id="profile-screen" class="screen hidden">
             <div class="form-container">
                 <h2>Tell Us About Yourself</h2>
-                <p class="subtitle">This helps us assign you appropriately</p>
+                <p class="subtitle">Create your account to get started</p>
 
                 <form onsubmit="createProfile(event)">
                     <input type="text" id="user-name" placeholder="Your Full Name" required>
@@ -112,30 +112,20 @@
                     <input type="password" id="user-password" placeholder="Create Password (min 6 characters)" minlength="6" required>
                     <input type="tel" id="user-phone" placeholder="Phone Number (optional)">
 
-                    <label>What roles can you help with?</label>
+                    <label>Permission Level</label>
                     <div class="role-selector" id="role-selector">
                         <label class="role-option">
-                            <input type="checkbox" value="volunteer"> Volunteer
-                        </label>
-                        <label class="role-option">
-                            <input type="checkbox" value="leader"> Leader/Coordinator
-                        </label>
-                        <label class="role-option">
-                            <input type="checkbox" value="musician"> Musician
-                        </label>
-                        <label class="role-option">
-                            <input type="checkbox" value="tech"> Tech/AV
-                        </label>
-                        <label class="role-option">
-                            <input type="checkbox" value="childcare"> Childcare
-                        </label>
-                        <label class="role-option">
-                            <input type="checkbox" value="hospitality"> Hospitality
+                            <input type="checkbox" value="volunteer" checked> Volunteer
+                            <small class="form-help">Regular member</small>
                         </label>
                         <label class="role-option admin-role">
                             <input type="checkbox" value="admin"> Administrator
+                            <small class="form-help">Can manage organization and create events</small>
                         </label>
                     </div>
+                    <p class="help-text">
+                        <strong>Note:</strong> You'll choose specific event roles (usher, greeter, etc.) when you join events.
+                    </p>
 
                     <div class="form-actions">
                         <button type="submit" class="btn btn-primary btn-large">Continue →</button>
@@ -646,30 +636,20 @@
                         </select>
                     </div>
                     <div class="setting-item">
-                        <label>Roles - Select all that apply</label>
+                        <label>Permission Level</label>
                         <div class="role-selector" id="settings-role-selector">
                             <label class="role-option">
                                 <input type="checkbox" value="volunteer"> Volunteer
+                                <small class="form-help">Regular member - can view and join events</small>
                             </label>
                             <label class="role-option">
-                                <input type="checkbox" value="leader"> Leader/Coordinator
-                            </label>
-                            <label class="role-option">
-                                <input type="checkbox" value="musician"> Musician
-                            </label>
-                            <label class="role-option">
-                                <input type="checkbox" value="tech"> Tech/AV
-                            </label>
-                            <label class="role-option">
-                                <input type="checkbox" value="childcare"> Childcare
-                            </label>
-                            <label class="role-option">
-                                <input type="checkbox" value="hospitality"> Hospitality
-                            </label>
-                            <label class="role-option">
-                                <input type="checkbox" value="admin"> Admin
+                                <input type="checkbox" value="admin"> Administrator
+                                <small class="form-help">Can manage organization, create events, invite users</small>
                             </label>
                         </div>
+                        <p class="help-text">
+                            <strong>Note:</strong> Event-specific roles (usher, greeter, sound tech, etc.) are selected when you join individual events, not here.
+                        </p>
                     </div>
                 </div>
                 <div class="modal-footer">

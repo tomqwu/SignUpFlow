@@ -33,20 +33,58 @@ Person → Event Assignment
   └─ Role: null (backward compatible)
 ```
 
+### Two Types of Roles
+
+**IMPORTANT:** Rostio has two distinct types of roles:
+
+#### 1. Person-Level Roles (Permission Roles)
+**Purpose:** Control what users can DO in the system
+
+**Available Roles:**
+- `volunteer` - Regular member (can view and join events)
+- `admin` - Administrator (can manage organization, create events, invite users)
+
+**Usage:**
+```javascript
+// Check permissions
+if (currentUser.roles.includes('admin')) {
+    // Show admin features
+}
+```
+
+#### 2. Event-Level Roles (Assignment Roles)
+**Purpose:** Specify what users are assigned to do at specific events
+
+**Available Roles:**
+- `usher`, `greeter`, `sound_tech`, `video_tech`, `worship_leader`
+- `speaker`, `nursery`, `parking`, `security`
+- Custom roles (any string)
+
+**Usage:**
+```javascript
+// Different roles for different events
+POST /events/sunday_service/assignments { "person_id": "john", "role": "usher" }
+POST /events/wednesday_service/assignments { "person_id": "john", "role": "greeter" }
+```
+
 ### Key Design Decisions
 
-1. **Event-level roles**, not person-level
-   - Person has org-level roles: `["volunteer", "admin"]`
-   - Assignment has event-specific role: `"usher"`
+1. **Separation of Concerns**
+   - Person roles = **Permissions** (what you can do in the system)
+   - Event roles = **Assignments** (what you're doing at this event)
 
-2. **Role is optional** (nullable field)
-   - Backward compatible with existing assignments
-   - Can assign without specifying role
+2. **Person-level roles are minimal**
+   - Only `volunteer` and `admin` for permissions
+   - Simplified from previous confusing list
 
-3. **No role validation**
-   - Roles are free-form strings
-   - No predefined list enforced at API level
-   - Frontend provides suggestions, but any role works
+3. **Event-level roles are flexible**
+   - Different role per event
+   - Free-form strings (no validation)
+   - Frontend suggests common roles
+
+4. **Role is optional** (nullable field)
+   - Backward compatible
+   - Can assign without role
 
 ---
 
