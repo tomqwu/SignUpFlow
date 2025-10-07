@@ -14,11 +14,17 @@ APP_URL = "http://localhost:8000"
 @pytest.fixture(scope="session")
 def api_server():
     """Start API server for testing session."""
-    # Start server
+    import os
+    # Set test database URL environment variable
+    test_env = os.environ.copy()
+    test_env["DATABASE_URL"] = "sqlite:///./test_roster.db"
+
+    # Start server with test database
     process = subprocess.Popen(
         ["poetry", "run", "uvicorn", "api.main:app", "--host", "0.0.0.0", "--port", "8000"],
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
+        env=test_env,
     )
 
     # Wait for server to be ready
@@ -29,6 +35,10 @@ def api_server():
                 break
         except:
             time.sleep(0.5)
+
+    # Setup test data
+    from tests.setup_test_data import setup_test_data
+    setup_test_data()
 
     yield process
 
