@@ -159,11 +159,11 @@
                     <label data-i18n="auth.permission_level">Permission Level</label>
                     <div class="role-selector" id="role-selector">
                         <label class="role-option">
-                            <input type="checkbox" value="volunteer" checked> Volunteer
+                            <input type="checkbox" value="volunteer" checked> <span data-i18n="common.volunteer">Volunteer</span>
                             <small class="form-help"><span data-i18n="auth.regular_member">Regular member</span></small>
                         </label>
                         <label class="role-option admin-role">
-                            <input type="checkbox" value="admin"> Administrator
+                            <input type="checkbox" value="admin"> <span data-i18n="common.administrator">Administrator</span>
                             <small class="form-help"><span data-i18n="auth.can_manage_org">Can manage organization and create events</span></small>
                         </label>
                     </div>
@@ -231,10 +231,10 @@
                             <label class="context-label"><span data-i18n="common.quick_actions">Quick Actions</span></label>
                             <div class="quick-actions">
                                 <button class="btn btn-sm btn-secondary" onclick="switchView('availability')">
-                                    ⏰ Set Availability
+                                    <span data-i18n="common.set_availability">⏰ Set Availability</span>
                                 </button>
                                 <button class="btn btn-sm btn-secondary" onclick="exportMyCalendar()">
-                                    📥 Export Calendar
+                                    <span data-i18n="common.export_calendar">📥 Export Calendar</span>
                                 </button>
                             </div>
                             <p class="context-help"><span data-i18n="common.manage_schedule_prefs">Manage your schedule preferences</span></p>
@@ -852,10 +852,10 @@
                             <label data-i18n="admin.assign_roles">Assign Roles</label>
                             <div class="role-selector" id="invite-role-selector">
                                 <label class="role-option">
-                                    <input type="checkbox" value="volunteer"> Volunteer
+                                    <input type="checkbox" value="volunteer"> <span data-i18n="common.volunteer">Volunteer</span>
                                 </label>
                                 <label class="role-option">
-                                    <input type="checkbox" value="admin"> Admin
+                                    <input type="checkbox" value="admin"> <span data-i18n="common.admin">Admin</span>
                                 </label>
                             </div>
                         </div>

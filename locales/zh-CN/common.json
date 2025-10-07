@@ -84,5 +84,10 @@
   "next_month": "下个月",
   "all_upcoming": "全部即将到来",
   "current_organization": "您当前的组织",
-  "switch_organizations": "在您的 {count} 个组织之间切换"
+  "switch_organizations": "在您的 {count} 个组织之间切换",
+  "set_availability": "⏰ 设置可用性",
+  "export_calendar": "📥 导出日历",
+  "volunteer": "志愿者",
+  "administrator": "管理员",
+  "admin": "管理"
 }

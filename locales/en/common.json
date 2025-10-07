@@ -84,5 +84,10 @@
   "next_month": "Next Month",
   "all_upcoming": "All Upcoming",
   "current_organization": "Your current organization",
-  "switch_organizations": "Switch between your {count} organizations"
+  "switch_organizations": "Switch between your {count} organizations",
+  "set_availability": "⏰ Set Availability",
+  "export_calendar": "📥 Export Calendar",
+  "volunteer": "Volunteer",
+  "administrator": "Administrator",
+  "admin": "Admin"
 }

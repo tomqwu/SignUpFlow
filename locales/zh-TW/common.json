@@ -84,5 +84,10 @@
   "next_month": "下個月",
   "all_upcoming": "全部即將到來",
   "current_organization": "您當前的組織",
-  "switch_organizations": "在您的 {count} 個組織之間切換"
+  "switch_organizations": "在您的 {count} 個組織之間切換",
+  "set_availability": "⏰ 設定可用性",
+  "export_calendar": "📥 匯出行事曆",
+  "volunteer": "志願者",
+  "administrator": "管理員",
+  "admin": "管理"
 }
