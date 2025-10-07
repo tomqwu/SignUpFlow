@@ -951,6 +951,10 @@ async function showSettings() {
     document.getElementById('settings-org').value = currentOrg.name;
     document.getElementById('settings-timezone').value = currentUser.timezone || 'UTC';
 
+    // Set current language
+    const currentLocale = i18n.getLocale();
+    document.getElementById('settings-language').value = currentLocale;
+
     // Display user's permission roles (read-only)
     const permissionDisplay = document.getElementById('settings-permission-display');
     const roles = currentUser.roles || [];
@@ -962,6 +966,14 @@ async function showSettings() {
     } else {
         permissionDisplay.innerHTML = '<em>No permissions assigned</em>';
     }
+}
+
+// Change language
+async function changeLanguage(locale) {
+    await i18n.setLocale(locale);
+    showToast('Language changed successfully! Refreshing...', 'success');
+    // Reload page to apply translations
+    setTimeout(() => location.reload(), 1000);
 }
 
 async function saveSettings() {

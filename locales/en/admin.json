@@ -1,0 +1,38 @@
+{
+  "title": "Admin Console",
+  "tabs": {
+    "people": "People",
+    "events": "Events",
+    "solver": "Scheduler",
+    "invitations": "Invitations",
+    "reports": "Reports"
+  },
+  "people": {
+    "title": "Manage People",
+    "add_button": "Add Person",
+    "invite_button": "Invite User",
+    "total": "Total People",
+    "search_placeholder": "Search by name or email...",
+    "no_results": "No people found"
+  },
+  "solver": {
+    "title": "Schedule Generator",
+    "run_button": "Generate Schedule",
+    "running": "Generating schedule...",
+    "success": "Schedule generated successfully!",
+    "error": "Error generating schedule",
+    "solutions": "Solutions Generated",
+    "assignments": "Assignments Created"
+  },
+  "invitations": {
+    "title": "User Invitations",
+    "send_button": "Send Invitation",
+    "email_label": "Email Address",
+    "role_label": "Role",
+    "success": "Invitation sent to {email}",
+    "error": "Error sending invitation",
+    "pending": "Pending",
+    "accepted": "Accepted",
+    "expired": "Expired"
+  }
+}

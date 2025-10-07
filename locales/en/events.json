@@ -1,0 +1,66 @@
+{
+  "title": "Events",
+  "all_events": "All Events",
+  "upcoming": "Upcoming Events",
+  "past": "Past Events",
+  "create": {
+    "button": "Create Event",
+    "title": "Create New Event",
+    "success": "Event created successfully!",
+    "error": "Error creating event"
+  },
+  "edit": {
+    "button": "Edit Event",
+    "title": "Edit Event",
+    "success": "Event updated successfully!",
+    "error": "Error updating event"
+  },
+  "delete": {
+    "button": "Delete Event",
+    "confirm": "Are you sure you want to delete this event?",
+    "success": "Event deleted successfully!",
+    "error": "Error deleting event"
+  },
+  "fields": {
+    "type": "Event Type",
+    "start_time": "Start Time",
+    "end_time": "End Time",
+    "location": "Location",
+    "resource": "Resource",
+    "requirements": "Requirements",
+    "volunteers_needed": "Volunteers Needed"
+  },
+  "types": {
+    "sunday_service": "Sunday Worship Service",
+    "prayer_meeting": "Prayer Meeting",
+    "bible_study": "Bible Study",
+    "youth_group": "Youth Group",
+    "outreach": "Outreach Event",
+    "other": "Other"
+  },
+  "assignment": {
+    "join_button": "Join Event",
+    "leave_button": "Leave Event",
+    "select_role": "Select Your Role",
+    "volunteers": "Volunteers",
+    "no_volunteers": "No volunteers yet - be the first!",
+    "you": "You",
+    "assigned": "Assigned {name} to event as {role}",
+    "unassigned": "Unassigned {name} from event",
+    "success": "Successfully joined as {role}!",
+    "error": "Error joining event"
+  },
+  "roles": {
+    "usher": "Usher",
+    "greeter": "Greeter",
+    "sound_tech": "Sound Tech",
+    "video_tech": "Video Tech",
+    "worship_leader": "Worship Leader",
+    "speaker": "Speaker",
+    "nursery": "Nursery",
+    "parking": "Parking",
+    "security": "Security",
+    "other": "Other",
+    "custom_prompt": "Enter custom role name"
+  }
+}

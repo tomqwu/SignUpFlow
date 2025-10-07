@@ -1,0 +1,62 @@
+{
+  "app_name": "Rostio",
+  "buttons": {
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "confirm": "Confirm",
+    "edit": "Edit",
+    "add": "Add",
+    "remove": "Remove",
+    "close": "Close",
+    "back": "Back",
+    "next": "Next",
+    "submit": "Submit",
+    "create": "Create",
+    "update": "Update",
+    "search": "Search",
+    "filter": "Filter",
+    "export": "Export",
+    "import": "Import",
+    "download": "Download",
+    "upload": "Upload"
+  },
+  "actions": {
+    "loading": "Loading...",
+    "saving": "Saving...",
+    "deleting": "Deleting...",
+    "processing": "Processing..."
+  },
+  "labels": {
+    "yes": "Yes",
+    "no": "No",
+    "name": "Name",
+    "email": "Email",
+    "phone": "Phone",
+    "date": "Date",
+    "time": "Time",
+    "location": "Location",
+    "description": "Description",
+    "notes": "Notes",
+    "status": "Status",
+    "type": "Type",
+    "role": "Role",
+    "organization": "Organization"
+  },
+  "time": {
+    "today": "Today",
+    "tomorrow": "Tomorrow",
+    "yesterday": "Yesterday",
+    "this_week": "This Week",
+    "next_week": "Next Week",
+    "this_month": "This Month",
+    "next_month": "Next Month"
+  },
+  "errors": {
+    "required_field": "This field is required",
+    "invalid_email": "Invalid email address",
+    "invalid_date": "Invalid date",
+    "network_error": "Network error. Please try again.",
+    "unknown_error": "An unknown error occurred"
+  }
+}

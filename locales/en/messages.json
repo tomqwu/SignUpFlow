@@ -1,0 +1,32 @@
+{
+  "success": {
+    "generic": "Operation completed successfully!",
+    "saved": "Saved successfully!",
+    "deleted": "Deleted successfully!",
+    "created": "Created successfully!",
+    "updated": "Updated successfully!"
+  },
+  "errors": {
+    "generic": "An error occurred. Please try again.",
+    "network": "Network error. Please check your connection.",
+    "unauthorized": "You don't have permission to perform this action.",
+    "not_found": "Resource not found.",
+    "validation": "Please check your input and try again.",
+    "server": "Server error. Please try again later."
+  },
+  "confirm": {
+    "delete": "Are you sure you want to delete {item}?",
+    "leave": "Are you sure you want to leave?",
+    "discard": "Discard unsaved changes?"
+  },
+  "availability": {
+    "add_timeoff": "Add Time Off",
+    "blocked_dates": "Your Blocked Dates",
+    "start_date": "Start Date",
+    "end_date": "End Date",
+    "reason": "Reason (optional)",
+    "success_add": "Time off added successfully!",
+    "success_delete": "Time off deleted successfully!",
+    "error": "Error managing availability"
+  }
+}

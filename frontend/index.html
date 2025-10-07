@@ -636,6 +636,18 @@
                         </select>
                     </div>
                     <div class="setting-item">
+                        <label>Language / Idioma / Langue</label>
+                        <select id="settings-language" onchange="changeLanguage(this.value)">
+                            <option value="en">English</option>
+                            <option value="es">Español</option>
+                            <option value="pt">Português</option>
+                            <option value="fr">Français</option>
+                        </select>
+                        <p class="help-text">
+                            Changes take effect immediately
+                        </p>
+                    </div>
+                    <div class="setting-item">
                         <label>Permission Level</label>
                         <div id="settings-permission-display" style="padding: 10px; background: var(--surface); border-radius: 4px; color: var(--text-light);">
                             <!-- Permissions are set by administrators -->
@@ -906,6 +918,7 @@
     <script>
         // Timestamp-based cache busting
         const cacheBust = Date.now();
+        document.write('<script src="js/i18n.js?t=' + cacheBust + '"><\/script>');
         document.write('<script src="js/role-management.js?t=' + cacheBust + '"><\/script>');
         document.write('<script src="js/edit-role-functions.js?t=' + cacheBust + '"><\/script>');
         document.write('<script src="js/recurring-events.js?t=' + cacheBust + '"><\/script>');

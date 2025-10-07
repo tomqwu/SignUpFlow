@@ -1,0 +1,13 @@
+{
+  "title": "My Schedule",
+  "upcoming_count": "Upcoming Assignments",
+  "this_month_count": "This Month",
+  "no_assignments": "No upcoming assignments.",
+  "no_schedule": "No schedule available yet.",
+  "scheduler_not_run": "The scheduler hasn't run yet.",
+  "badges": {
+    "confirmed": "Confirmed",
+    "blocked": "Blocked"
+  },
+  "role_label": "Role"
+}

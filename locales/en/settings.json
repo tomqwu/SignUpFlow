@@ -1,0 +1,37 @@
+{
+  "title": "Settings",
+  "sections": {
+    "profile": "Profile Information",
+    "preferences": "Preferences",
+    "permissions": "Permissions"
+  },
+  "fields": {
+    "name": "Full Name",
+    "email": "Email Address",
+    "organization": "Organization",
+    "timezone": "Timezone",
+    "language": "Language",
+    "permission_level": "Permission Level"
+  },
+  "permissions": {
+    "admin": "Administrator",
+    "admin_description": "Can manage organization, create events, invite users",
+    "volunteer": "Volunteer",
+    "volunteer_description": "Regular member - can view and join events",
+    "note": "Your permission level is set by an administrator. Event-specific roles (usher, greeter, sound tech, etc.) are selected when you join individual events."
+  },
+  "save": {
+    "button": "Save Changes",
+    "success": "Settings saved successfully!",
+    "error": "Error saving settings"
+  },
+  "languages": {
+    "en": "English",
+    "es": "Español",
+    "pt": "Português",
+    "fr": "Français",
+    "de": "Deutsch",
+    "zh": "中文",
+    "ar": "العربية"
+  }
+}
