@@ -392,6 +392,7 @@ def get_all_assignments(org_id: str = Query(..., description="Organization ID"),
             "event_id": assignment.event_id,
             "event_type": event.type if event else None,
             "event_start": event.start_time if event else None,
+            "event_end": event.end_time if event else None,
             "person_id": assignment.person_id,
             "person_name": person.name if person else None,
             "role": assignment.role,  # Event-specific role
