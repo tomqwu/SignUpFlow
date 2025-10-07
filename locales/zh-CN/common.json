@@ -1,0 +1,62 @@
+{
+  "app_name": "Rostio",
+  "buttons": {
+    "save": "保存",
+    "cancel": "取消",
+    "delete": "删除",
+    "confirm": "确认",
+    "edit": "编辑",
+    "add": "添加",
+    "remove": "移除",
+    "close": "关闭",
+    "back": "返回",
+    "next": "下一步",
+    "submit": "提交",
+    "create": "创建",
+    "update": "更新",
+    "search": "搜索",
+    "filter": "筛选",
+    "export": "导出",
+    "import": "导入",
+    "download": "下载",
+    "upload": "上传"
+  },
+  "actions": {
+    "loading": "加载中...",
+    "saving": "保存中...",
+    "deleting": "删除中...",
+    "processing": "处理中..."
+  },
+  "labels": {
+    "yes": "是",
+    "no": "否",
+    "name": "姓名",
+    "email": "电子邮件",
+    "phone": "电话",
+    "date": "日期",
+    "time": "时间",
+    "location": "地点",
+    "description": "描述",
+    "notes": "备注",
+    "status": "状态",
+    "type": "类型",
+    "role": "角色",
+    "organization": "组织"
+  },
+  "time": {
+    "today": "今天",
+    "tomorrow": "明天",
+    "yesterday": "昨天",
+    "this_week": "本周",
+    "next_week": "下周",
+    "this_month": "本月",
+    "next_month": "下月"
+  },
+  "errors": {
+    "required_field": "此字段为必填项",
+    "invalid_email": "电子邮件地址无效",
+    "invalid_date": "日期无效",
+    "network_error": "网络错误。请重试。",
+    "unknown_error": "发生未知错误"
+  }
+}

@@ -1,0 +1,32 @@
+{
+  "success": {
+    "generic": "操作成功完成！",
+    "saved": "保存成功！",
+    "deleted": "删除成功！",
+    "created": "创建成功！",
+    "updated": "更新成功！"
+  },
+  "errors": {
+    "generic": "发生错误。请重试。",
+    "network": "网络错误。请检查您的连接。",
+    "unauthorized": "您没有权限执行此操作。",
+    "not_found": "未找到资源。",
+    "validation": "请检查您的输入并重试。",
+    "server": "服务器错误。请稍后重试。"
+  },
+  "confirm": {
+    "delete": "确定要删除 {item} 吗？",
+    "leave": "确定要离开吗？",
+    "discard": "放弃未保存的更改？"
+  },
+  "availability": {
+    "add_timeoff": "添加休假",
+    "blocked_dates": "您的阻止日期",
+    "start_date": "开始日期",
+    "end_date": "结束日期",
+    "reason": "原因（可选）",
+    "success_add": "休假添加成功！",
+    "success_delete": "休假删除成功！",
+    "error": "管理可用性时出错"
+  }
+}

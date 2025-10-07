@@ -371,7 +371,10 @@ function switchView(viewName) {
     document.querySelectorAll('.view-content').forEach(content => {
         content.classList.remove('active');
     });
-    document.getElementById(`${viewName}-view`).classList.add('active');
+    const targetView = document.getElementById(`${viewName}-view`);
+    if (targetView) {
+        targetView.classList.add('active');
+    }
 
     // Load data
     if (viewName === 'schedule') loadMySchedule();

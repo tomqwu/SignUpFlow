@@ -37,10 +37,23 @@ class I18n {
             return stored;
         }
 
-        // 2. Check browser language
-        const browserLang = navigator.language.split('-')[0]; // 'en-US' -> 'en'
+        // 2. Check browser language (try full locale first, then base language)
+        const browserLang = navigator.language; // 'zh-CN', 'en-US', etc.
+
+        // Try exact match first (for Chinese variants)
         if (this.supportedLocales.includes(browserLang)) {
             return browserLang;
+        }
+
+        // Try base language (en-US -> en)
+        const baseLang = browserLang.split('-')[0];
+        if (this.supportedLocales.includes(baseLang)) {
+            return baseLang;
+        }
+
+        // For Chinese, default to Simplified if base is 'zh'
+        if (baseLang === 'zh') {
+            return 'zh-CN';
         }
 
         // 3. Fallback
