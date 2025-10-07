@@ -1,0 +1,22 @@
+{
+  "title": "Configurações",
+  "profile": "Perfil",
+  "account": "Conta",
+  "preferences": "Preferências",
+  "organization": "Organização",
+  "name": "Nome",
+  "email": "Email",
+  "timezone": "Fuso Horário",
+  "language": "Idioma",
+  "permissions": "Permissões",
+  "roles": "Funções",
+  "admin": "Administrador",
+  "volunteer": "Voluntário",
+  "change_password": "Alterar Senha",
+  "current_password": "Senha Atual",
+  "new_password": "Nova Senha",
+  "confirm_password": "Confirmar Senha",
+  "logout": "Sair",
+  "save_changes": "Salvar Alterações",
+  "cancel": "Cancelar"
+}

@@ -1,0 +1,19 @@
+{
+  "title": "Administração",
+  "dashboard": "Painel",
+  "people": "Pessoas",
+  "events": "Eventos",
+  "resources": "Recursos",
+  "settings": "Configurações",
+  "invite_people": "Convidar Pessoas",
+  "manage_roles": "Gerenciar Funções",
+  "event_roles": "Funções de Evento",
+  "permission_roles": "Funções de Permissão",
+  "create_resource": "Criar Recurso",
+  "edit_resource": "Editar Recurso",
+  "delete_resource": "Excluir Recurso",
+  "export_data": "Exportar Dados",
+  "import_data": "Importar Dados",
+  "statistics": "Estatísticas",
+  "reports": "Relatórios"
+}

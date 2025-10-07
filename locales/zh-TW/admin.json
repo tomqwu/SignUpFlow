@@ -1,0 +1,19 @@
+{
+  "title": "管理",
+  "dashboard": "儀表板",
+  "people": "人員",
+  "events": "活動",
+  "resources": "資源",
+  "settings": "設定",
+  "invite_people": "邀請人員",
+  "manage_roles": "管理角色",
+  "event_roles": "活動角色",
+  "permission_roles": "權限角色",
+  "create_resource": "建立資源",
+  "edit_resource": "編輯資源",
+  "delete_resource": "刪除資源",
+  "export_data": "匯出資料",
+  "import_data": "匯入資料",
+  "statistics": "統計",
+  "reports": "報告"
+}

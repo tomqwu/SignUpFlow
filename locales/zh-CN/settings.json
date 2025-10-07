@@ -1,0 +1,22 @@
+{
+  "title": "设置",
+  "profile": "个人资料",
+  "account": "账户",
+  "preferences": "偏好设置",
+  "organization": "组织",
+  "name": "姓名",
+  "email": "电子邮件",
+  "timezone": "时区",
+  "language": "语言",
+  "permissions": "权限",
+  "roles": "角色",
+  "admin": "管理员",
+  "volunteer": "志愿者",
+  "change_password": "更改密码",
+  "current_password": "当前密码",
+  "new_password": "新密码",
+  "confirm_password": "确认密码",
+  "logout": "登出",
+  "save_changes": "保存更改",
+  "cancel": "取消"
+}

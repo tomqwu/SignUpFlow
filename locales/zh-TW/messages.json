@@ -1,0 +1,36 @@
+{
+  "success": {
+    "saved": "儲存成功！",
+    "created": "建立成功！",
+    "updated": "更新成功！",
+    "deleted": "刪除成功！",
+    "joined": "加入成功！",
+    "left": "退出成功！",
+    "invited": "邀請已發送！",
+    "logged_in": "登入成功！",
+    "logged_out": "登出成功！"
+  },
+  "errors": {
+    "generic": "發生錯誤，請重試。",
+    "network": "網路錯誤，請檢查您的連線。",
+    "unauthorized": "未授權，請重新登入。",
+    "not_found": "找不到。",
+    "validation": "驗證錯誤，請檢查欄位。",
+    "server": "伺服器錯誤，請稍後再試。",
+    "load_failed": "載入資料失敗。",
+    "save_failed": "儲存失敗。"
+  },
+  "confirmations": {
+    "delete": "您確定要刪除嗎？",
+    "leave": "您確定要退出嗎？",
+    "cancel": "您確定要取消嗎？",
+    "discard": "放棄變更？"
+  },
+  "info": {
+    "no_data": "沒有可用資料。",
+    "empty_list": "清單為空。",
+    "loading": "載入中...",
+    "saving": "儲存中...",
+    "processing": "處理中..."
+  }
+}

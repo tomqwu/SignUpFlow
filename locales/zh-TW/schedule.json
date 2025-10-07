@@ -1,0 +1,20 @@
+{
+  "title": "我的日程",
+  "my_schedule": "我的日程",
+  "upcoming": "即將到來",
+  "past": "過去",
+  "today": "今天",
+  "this_week": "本週",
+  "next_week": "下週",
+  "this_month": "本月",
+  "no_events": "沒有計劃的活動",
+  "no_upcoming_events": "沒有即將到來的活動",
+  "view_details": "查看詳情",
+  "export_calendar": "匯出行事曆",
+  "subscribe": "訂閱行事曆",
+  "download_ics": "下載 ICS",
+  "copy_link": "複製連結",
+  "calendar_subscription": "行事曆訂閱",
+  "ical_link": "iCal 連結",
+  "webcal_link": "Webcal 連結"
+}

@@ -1,0 +1,20 @@
+{
+  "title": "Minha Agenda",
+  "my_schedule": "Minha Agenda",
+  "upcoming": "Próximos",
+  "past": "Passados",
+  "today": "Hoje",
+  "this_week": "Esta Semana",
+  "next_week": "Próxima Semana",
+  "this_month": "Este Mês",
+  "no_events": "Nenhum evento agendado",
+  "no_upcoming_events": "Nenhum evento próximo",
+  "view_details": "Ver Detalhes",
+  "export_calendar": "Exportar Calendário",
+  "subscribe": "Assinar Calendário",
+  "download_ics": "Baixar ICS",
+  "copy_link": "Copiar Link",
+  "calendar_subscription": "Assinatura de Calendário",
+  "ical_link": "Link iCal",
+  "webcal_link": "Link Webcal"
+}

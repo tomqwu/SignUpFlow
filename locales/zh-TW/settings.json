@@ -1,0 +1,22 @@
+{
+  "title": "設定",
+  "profile": "個人資料",
+  "account": "帳戶",
+  "preferences": "偏好設定",
+  "organization": "組織",
+  "name": "姓名",
+  "email": "電子郵件",
+  "timezone": "時區",
+  "language": "語言",
+  "permissions": "權限",
+  "roles": "角色",
+  "admin": "管理員",
+  "volunteer": "志願者",
+  "change_password": "變更密碼",
+  "current_password": "目前密碼",
+  "new_password": "新密碼",
+  "confirm_password": "確認密碼",
+  "logout": "登出",
+  "save_changes": "儲存變更",
+  "cancel": "取消"
+}

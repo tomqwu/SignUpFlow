@@ -1,0 +1,36 @@
+{
+  "success": {
+    "saved": "Salvo com sucesso!",
+    "created": "Criado com sucesso!",
+    "updated": "Atualizado com sucesso!",
+    "deleted": "Excluído com sucesso!",
+    "joined": "Inscrito com sucesso!",
+    "left": "Saiu com sucesso!",
+    "invited": "Convite enviado com sucesso!",
+    "logged_in": "Login realizado com sucesso!",
+    "logged_out": "Logout realizado com sucesso!"
+  },
+  "errors": {
+    "generic": "Ocorreu um erro. Tente novamente.",
+    "network": "Erro de rede. Verifique sua conexão.",
+    "unauthorized": "Não autorizado. Faça login novamente.",
+    "not_found": "Não encontrado.",
+    "validation": "Erro de validação. Verifique os campos.",
+    "server": "Erro do servidor. Tente mais tarde.",
+    "load_failed": "Falha ao carregar dados.",
+    "save_failed": "Falha ao salvar."
+  },
+  "confirmations": {
+    "delete": "Tem certeza que deseja excluir?",
+    "leave": "Tem certeza que deseja sair?",
+    "cancel": "Tem certeza que deseja cancelar?",
+    "discard": "Descartar alterações?"
+  },
+  "info": {
+    "no_data": "Nenhum dado disponível.",
+    "empty_list": "Lista vazia.",
+    "loading": "Carregando...",
+    "saving": "Salvando...",
+    "processing": "Processando..."
+  }
+}

@@ -1,0 +1,63 @@
+{
+  "app_name": "Rostio",
+  "buttons": {
+    "save": "儲存",
+    "cancel": "取消",
+    "delete": "刪除",
+    "edit": "編輯",
+    "add": "新增",
+    "create": "建立",
+    "update": "更新",
+    "remove": "移除",
+    "close": "關閉",
+    "back": "返回",
+    "next": "下一步",
+    "previous": "上一步",
+    "submit": "提交",
+    "confirm": "確認",
+    "yes": "是",
+    "no": "否",
+    "ok": "確定",
+    "apply": "應用"
+  },
+  "actions": {
+    "loading": "載入中...",
+    "saving": "儲存中...",
+    "deleting": "刪除中...",
+    "processing": "處理中...",
+    "searching": "搜尋中..."
+  },
+  "labels": {
+    "name": "名稱",
+    "email": "電子郵件",
+    "phone": "電話",
+    "address": "地址",
+    "date": "日期",
+    "time": "時間",
+    "description": "描述",
+    "status": "狀態",
+    "type": "類型",
+    "category": "類別"
+  },
+  "time": {
+    "today": "今天",
+    "tomorrow": "明天",
+    "yesterday": "昨天",
+    "this_week": "本週",
+    "next_week": "下週",
+    "last_week": "上週",
+    "this_month": "本月",
+    "next_month": "下月",
+    "last_month": "上月"
+  },
+  "errors": {
+    "required_field": "此欄位為必填",
+    "invalid_email": "無效的電子郵件地址",
+    "invalid_format": "格式無效",
+    "network_error": "網路錯誤",
+    "server_error": "伺服器錯誤",
+    "not_found": "找不到",
+    "unauthorized": "未授權",
+    "forbidden": "禁止存取"
+  }
+}

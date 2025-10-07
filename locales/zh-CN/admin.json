@@ -1,0 +1,19 @@
+{
+  "title": "管理",
+  "dashboard": "仪表板",
+  "people": "人员",
+  "events": "活动",
+  "resources": "资源",
+  "settings": "设置",
+  "invite_people": "邀请人员",
+  "manage_roles": "管理角色",
+  "event_roles": "活动角色",
+  "permission_roles": "权限角色",
+  "create_resource": "创建资源",
+  "edit_resource": "编辑资源",
+  "delete_resource": "删除资源",
+  "export_data": "导出数据",
+  "import_data": "导入数据",
+  "statistics": "统计",
+  "reports": "报告"
+}
