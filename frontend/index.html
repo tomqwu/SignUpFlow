@@ -216,16 +216,16 @@
             </div>
 
             <nav class="main-nav">
-                <button class="nav-btn active" data-view="schedule" onclick="switchView('schedule')">
+                <button class="nav-btn active" data-view="schedule" onclick="switchView('schedule')" data-i18n="schedule.my_schedule">
                     📅 My Schedule
                 </button>
-                <button class="nav-btn" data-view="events" onclick="switchView('events')">
+                <button class="nav-btn" data-view="events" onclick="switchView('events')" data-i18n="events.events">
                     📆 All Events
                 </button>
-                <button class="nav-btn" data-view="availability" onclick="switchView('availability')">
+                <button class="nav-btn" data-view="availability" onclick="switchView('availability')" data-i18n="schedule.availability">
                     ⏰ Availability
                 </button>
-                <button class="nav-btn admin-only hidden" data-view="admin" onclick="switchView('admin')">
+                <button class="nav-btn admin-only hidden" data-view="admin" onclick="switchView('admin')" data-i18n="admin.dashboard">
                     👑 Admin Dashboard
                 </button>
             </nav>
@@ -233,7 +233,7 @@
             <!-- My Schedule View -->
             <div id="schedule-view" class="view-content active">
                 <div class="view-header">
-                    <h2>My Schedule</h2>
+                    <h2 data-i18n="schedule.my_schedule">My Schedule</h2>
                     <div class="schedule-controls">
                         <div class="schedule-stats">
                             <div class="stat-card">
@@ -260,7 +260,7 @@
             <!-- All Events View -->
             <div id="events-view" class="view-content">
                 <div class="view-header">
-                    <h2>All Organization Events</h2>
+                    <h2 data-i18n="events.title">All Organization Events</h2>
                     <p class="help-text">See all upcoming events and who's scheduled</p>
                 </div>
 
@@ -280,7 +280,7 @@
             <!-- Availability View -->
             <div id="availability-view" class="view-content">
                 <div class="view-header">
-                    <h2>Set Your Availability</h2>
+                    <h2 data-i18n="schedule.availability">Set Your Availability</h2>
                     <p class="help-text">Block off times when you can't serve</p>
                 </div>
 
@@ -601,24 +601,24 @@
         <div id="settings-modal" class="modal hidden">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h3>Settings</h3>
+                    <h3 data-i18n="settings.title">Settings</h3>
                     <button class="btn-close" onclick="closeSettings()">×</button>
                 </div>
                 <div class="modal-body">
                     <div class="setting-item">
-                        <label>Your Name</label>
+                        <label data-i18n="settings.name">Your Name</label>
                         <input type="text" id="settings-name" readonly>
                     </div>
                     <div class="setting-item">
-                        <label>Email</label>
+                        <label data-i18n="settings.email">Email</label>
                         <input type="email" id="settings-email" readonly>
                     </div>
                     <div class="setting-item">
-                        <label>Organization</label>
+                        <label data-i18n="settings.organization">Organization</label>
                         <input type="text" id="settings-org" readonly>
                     </div>
                     <div class="setting-item">
-                        <label>Timezone</label>
+                        <label data-i18n="settings.timezone">Timezone</label>
                         <select id="settings-timezone">
                             <option value="UTC">UTC</option>
                             <option value="America/New_York">Eastern Time</option>
@@ -650,7 +650,7 @@
                         </p>
                     </div>
                     <div class="setting-item">
-                        <label>Permission Level</label>
+                        <label data-i18n="settings.permissions">Permission Level</label>
                         <div id="settings-permission-display" style="padding: 10px; background: var(--surface); border-radius: 4px; color: var(--text-light);">
                             <!-- Permissions are set by administrators -->
                         </div>
@@ -660,9 +660,9 @@
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button class="btn btn-secondary" onclick="logout()">Sign Out</button>
-                    <button class="btn btn-primary" onclick="saveSettings()">Save Changes</button>
-                    <button class="btn btn-secondary" onclick="closeSettings()">Cancel</button>
+                    <button class="btn btn-secondary" onclick="logout()" data-i18n="settings.logout">Sign Out</button>
+                    <button class="btn btn-primary" onclick="saveSettings()" data-i18n="settings.save_changes">Save Changes</button>
+                    <button class="btn btn-secondary" onclick="closeSettings()" data-i18n="common.buttons.cancel">Cancel</button>
                 </div>
             </div>
         </div>

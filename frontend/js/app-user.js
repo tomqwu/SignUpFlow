@@ -19,8 +19,28 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     }
 
+    // Translate the page
+    translatePage();
+
     checkExistingSession();
 });
+
+// Translate all elements with data-i18n attribute
+function translatePage() {
+    document.querySelectorAll('[data-i18n]').forEach(el => {
+        const key = el.getAttribute('data-i18n');
+        const translated = i18n.t(key);
+
+        // Handle placeholders
+        if (el.hasAttribute('placeholder')) {
+            el.setAttribute('placeholder', translated);
+        } else if (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') {
+            // Don't change value, only placeholder
+        } else {
+            el.textContent = translated;
+        }
+    });
+}
 
 // Session Management
 function checkExistingSession() {
@@ -1013,13 +1033,13 @@ async function saveSettings() {
             // Set language in i18n
             await i18n.setLocale(language);
 
-            showToast('Settings saved successfully!', 'success');
-            closeSettings();
-
-            // Reload if language changed
+            // Re-translate the page immediately
             if (needsReload) {
-                setTimeout(() => location.reload(), 1000);
+                translatePage();
             }
+
+            showToast(i18n.t('messages.success.saved'), 'success');
+            closeSettings();
         } else {
             const error = await response.json();
             showToast(error.detail || 'Error saving settings', 'error');
