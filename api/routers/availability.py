@@ -13,7 +13,7 @@ from api.schemas.availability import (
     TimeOffCreate,
     TimeOffResponse,
 )
-from roster_cli.db.models import (
+from api.models import (
     Availability,
     VacationPeriod,
     Person,

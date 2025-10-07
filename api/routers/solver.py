@@ -9,7 +9,7 @@ from api.database import get_db
 
 logger = logging.getLogger("rostio")
 from api.schemas.solver import SolveRequest, SolveResponse, ViolationInfo, FairnessMetrics, SolutionMetrics
-from roster_cli.db.models import (
+from api.models import (
     Organization,
     Person,
     Team,
@@ -19,7 +19,7 @@ from roster_cli.db.models import (
     Solution as DBSolution,
     Assignment as DBAssignment,
 )
-from roster_cli.core.models import (
+from api.core.models import (
     Org,
     Event as EventModel,
     Person as PersonModel,
@@ -28,8 +28,8 @@ from roster_cli.core.models import (
     Holiday as HolidayModel,
     OrgDefaults,
 )
-from roster_cli.core.solver.adapter import SolveContext
-from roster_cli.core.solver.heuristics import GreedyHeuristicSolver
+from api.core.solver.adapter import SolveContext
+from api.core.solver.heuristics import GreedyHeuristicSolver
 
 router = APIRouter(prefix="/solver", tags=["solver"])
 

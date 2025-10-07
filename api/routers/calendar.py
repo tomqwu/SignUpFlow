@@ -13,7 +13,7 @@ from api.utils.calendar_utils import (
     generate_webcal_url,
     generate_https_feed_url,
 )
-from roster_cli.db.models import Person, Assignment, Event, Resource, Organization
+from api.models import Person, Assignment, Event, Resource, Organization
 
 router = APIRouter(prefix="/calendar", tags=["calendar"])
 

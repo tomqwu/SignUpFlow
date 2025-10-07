@@ -2,13 +2,13 @@
 
 from typing import Any
 
-from roster_cli.core.constraints.dsl import ConstraintResult, EvalContext
-from roster_cli.core.constraints.predicates import (
+from api.core.constraints.dsl import ConstraintResult, EvalContext
+from api.core.constraints.predicates import (
     is_day_of_week,
     is_friday_or_monday,
     is_long_weekend,
 )
-from roster_cli.core.models import ConstraintBinding, PredicateNode
+from api.core.models import ConstraintBinding, PredicateNode
 
 
 def evaluate_predicate(node: PredicateNode, ctx: EvalContext) -> bool:
@@ -75,7 +75,7 @@ def evaluate_constraint(binding: ConstraintBinding, ctx: EvalContext) -> Constra
                 )
 
     if action.enforce_min_gap_hours is not None and ctx.person:
-        from roster_cli.core.constraints.predicates import min_gap_hours_satisfied
+        from api.core.constraints.predicates import min_gap_hours_satisfied
 
         if not min_gap_hours_satisfied(ctx, ctx.person.id, action.enforce_min_gap_hours):
             return ConstraintResult(
@@ -87,7 +87,7 @@ def evaluate_constraint(binding: ConstraintBinding, ctx: EvalContext) -> Constra
     if action.enforce_cap and ctx.person:
         from datetime import timedelta
 
-        from roster_cli.core.constraints.predicates import count_assignments_in_period
+        from api.core.constraints.predicates import count_assignments_in_period
 
         period = action.enforce_cap.get("period", "P1M")
         max_count = action.enforce_cap.get("max_count", 999)
@@ -109,7 +109,7 @@ def evaluate_constraint(binding: ConstraintBinding, ctx: EvalContext) -> Constra
         penalty_type = action.penalize_if.get("type")
 
         if penalty_type == "cooldown" and ctx.person and ctx.date:
-            from roster_cli.core.constraints.predicates import last_assignment_days_ago
+            from api.core.constraints.predicates import last_assignment_days_ago
 
             cooldown_days = action.penalize_if.get("cooldown_days", 14)
             days_ago = last_assignment_days_ago(ctx, ctx.person.id, ctx.date)
@@ -122,7 +122,7 @@ def evaluate_constraint(binding: ConstraintBinding, ctx: EvalContext) -> Constra
                 )
 
         if penalty_type == "recent_rotation" and ctx.person and ctx.date:
-            from roster_cli.core.constraints.predicates import last_assignment_days_ago
+            from api.core.constraints.predicates import last_assignment_days_ago
 
             lookback = action.penalize_if.get("lookback_days", 30)
             days_ago = last_assignment_days_ago(ctx, ctx.person.id, ctx.date)

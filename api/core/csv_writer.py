@@ -3,8 +3,8 @@
 from pathlib import Path
 from typing import Any
 
-from roster_cli.core.loader import save_csv
-from roster_cli.core.models import Event, Person, SolutionBundle
+from api.core.loader import save_csv
+from api.core.models import Event, Person, SolutionBundle
 
 
 def write_assignments_csv(

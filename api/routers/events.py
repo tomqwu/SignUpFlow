@@ -8,7 +8,7 @@ from pydantic import BaseModel
 
 from api.database import get_db
 from api.schemas.event import EventCreate, EventUpdate, EventResponse, EventList
-from roster_cli.db.models import Event, EventTeam, Organization, Team, Person, Assignment, VacationPeriod, Availability
+from api.models import Event, EventTeam, Organization, Team, Person, Assignment, VacationPeriod, Availability
 
 router = APIRouter(prefix="/events", tags=["events"])
 

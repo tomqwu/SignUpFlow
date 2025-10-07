@@ -2,8 +2,8 @@
 
 from pathlib import Path
 
-from roster_cli.core.loader import save_json
-from roster_cli.core.models import SolutionBundle
+from api.core.loader import save_json
+from api.core.models import SolutionBundle
 
 
 def write_solution_json(solution: SolutionBundle, output_path: Path) -> None:

@@ -6,7 +6,7 @@ from dataclasses import dataclass
 from datetime import date, datetime
 from typing import Any
 
-from roster_cli.core.models import Event, Person, Team
+from api.core.models import Event, Person, Team
 
 
 @dataclass

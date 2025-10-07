@@ -147,7 +147,7 @@ def pytest_configure(config):
 import os
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-from roster_cli.db.models import Base
+from api.models import Base
 
 TEST_DATABASE_URL = "sqlite:///./test_roster.db"
 

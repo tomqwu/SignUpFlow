@@ -19,7 +19,7 @@ from api.schemas.invitation import (
     InvitationAccept,
     InvitationAcceptResponse,
 )
-from roster_cli.db.models import Invitation, Person, Organization
+from api.models import Invitation, Person, Organization
 
 router = APIRouter(prefix="/invitations", tags=["invitations"])
 

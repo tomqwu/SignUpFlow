@@ -8,7 +8,7 @@ Tests the ability to assign people to events with specific roles
 import pytest
 from fastapi.testclient import TestClient
 from api.main import app
-from roster_cli.db.models import Organization, Person, Event, Assignment
+from api.models import Organization, Person, Event, Assignment
 from api.database import Base, engine
 import time
 

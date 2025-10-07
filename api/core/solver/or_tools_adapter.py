@@ -1,7 +1,7 @@
 """OR-Tools solver adapter (stub for future implementation)."""
 
-from roster_cli.core.models import Patch, SolutionBundle
-from roster_cli.core.solver.adapter import SolveContext, SolverAdapter
+from api.core.models import Patch, SolutionBundle
+from api.core.solver.adapter import SolveContext, SolverAdapter
 
 
 class ORToolsSolver(SolverAdapter):

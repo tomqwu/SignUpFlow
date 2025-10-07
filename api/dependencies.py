@@ -5,7 +5,7 @@ from fastapi import Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
 from api.database import get_db
-from roster_cli.db.models import Person, Organization
+from api.models import Person, Organization
 
 
 def check_admin_permission(person: Person) -> bool:

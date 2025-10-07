@@ -4,7 +4,7 @@ from datetime import date
 from pathlib import Path
 from typing import Any
 
-from roster_cli.core.loader import (
+from api.core.loader import (
     load_availability_files,
     load_constraint_files,
     load_events,

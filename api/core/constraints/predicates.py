@@ -2,7 +2,7 @@
 
 from datetime import date, datetime, timedelta
 
-from roster_cli.core.constraints.dsl import EvalContext
+from api.core.constraints.dsl import EvalContext
 
 
 def is_day_of_week(ctx: EvalContext, day: str) -> bool:

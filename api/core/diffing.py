@@ -2,7 +2,7 @@
 
 from dataclasses import dataclass
 
-from roster_cli.core.models import SolutionBundle
+from api.core.models import SolutionBundle
 
 
 @dataclass

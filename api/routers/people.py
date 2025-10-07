@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session
 
 from api.database import get_db
 from api.schemas.person import PersonCreate, PersonUpdate, PersonResponse, PersonList
-from roster_cli.db.models import Person, Organization
+from api.models import Person, Organization
 
 router = APIRouter(prefix="/people", tags=["people"])
 

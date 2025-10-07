@@ -7,7 +7,7 @@ from datetime import datetime, timedelta
 from typing import Optional
 
 from api.database import get_db
-from roster_cli.db.models import Person, Assignment, Event, Solution
+from api.models import Person, Assignment, Event, Solution
 
 router = APIRouter(prefix="/analytics", tags=["analytics"])
 

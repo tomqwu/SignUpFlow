@@ -812,3 +812,13 @@ sqlalchemy.exc.OperationalError: (sqlite3.OperationalError) attempt to write a r
 2025-10-07 19:19:04,926 - watchfiles.main - INFO - 5 changes detected
 2025-10-07 19:19:13,596 - watchfiles.main - INFO - 2 changes detected
 2025-10-07 19:19:13,947 - watchfiles.main - INFO - 1 change detected
+2025-10-07 19:25:22,606 - rostio - INFO - 🚀 Rostio API started
+2025-10-07 19:25:22,606 - rostio - INFO - 📖 API docs available at http://localhost:8000/docs
+2025-10-07 19:25:34,667 - rostio - INFO - 🚀 Rostio API started
+2025-10-07 19:25:34,667 - rostio - INFO - 📖 API docs available at http://localhost:8000/docs
+2025-10-07 19:25:41,906 - rostio - INFO - 🚀 Rostio API started
+2025-10-07 19:25:41,906 - rostio - INFO - 📖 API docs available at http://localhost:8000/docs
+2025-10-07 19:25:48,964 - rostio - INFO - 🚀 Rostio API started
+2025-10-07 19:25:48,964 - rostio - INFO - 📖 API docs available at http://localhost:8000/docs
+2025-10-07 19:26:26,889 - rostio - INFO - 🚀 Rostio API started
+2025-10-07 19:26:26,889 - rostio - INFO - 📖 API docs available at http://localhost:8000/docs

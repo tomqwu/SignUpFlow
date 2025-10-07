@@ -5,9 +5,9 @@ from collections import defaultdict
 from datetime import datetime
 from typing import Any
 
-from roster_cli.core.constraints.dsl import EvalContext
-from roster_cli.core.constraints.eval import evaluate_constraint
-from roster_cli.core.models import (
+from api.core.constraints.dsl import EvalContext
+from api.core.constraints.eval import evaluate_constraint
+from api.core.models import (
     Assignment,
     Event,
     FairnessMetrics,
@@ -21,7 +21,7 @@ from roster_cli.core.models import (
     Violation,
     Violations,
 )
-from roster_cli.core.solver.adapter import SolveContext, SolverAdapter
+from api.core.solver.adapter import SolveContext, SolverAdapter
 
 
 class GreedyHeuristicSolver(SolverAdapter):

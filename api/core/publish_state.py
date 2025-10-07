@@ -2,8 +2,8 @@
 
 from pathlib import Path
 
-from roster_cli.core.loader import load_json, save_json
-from roster_cli.core.models import SolutionBundle
+from api.core.loader import load_json, save_json
+from api.core.models import SolutionBundle
 
 
 def publish_solution(solution: SolutionBundle, workspace: Path, tag: str) -> Path:

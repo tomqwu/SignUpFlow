@@ -4,7 +4,7 @@ from pathlib import Path
 
 from ics import Calendar, Event as ICSEvent
 
-from roster_cli.core.models import Event, Person, SolutionBundle
+from api.core.models import Event, Person, SolutionBundle
 
 
 def write_calendar_ics(

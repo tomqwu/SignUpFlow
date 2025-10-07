@@ -11,7 +11,7 @@ from api.schemas.organization import (
     OrganizationResponse,
     OrganizationList,
 )
-from roster_cli.db.models import Organization
+from api.models import Organization
 
 router = APIRouter(prefix="/organizations", tags=["organizations"])
 

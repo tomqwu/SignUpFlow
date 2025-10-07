@@ -7,7 +7,7 @@ from typing import Any
 
 import yaml
 
-from roster_cli.core.models import (
+from api.core.models import (
     Availability,
     ConstraintBinding,
     EventsFile,

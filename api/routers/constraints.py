@@ -11,7 +11,7 @@ from api.schemas.constraint import (
     ConstraintResponse,
     ConstraintList,
 )
-from roster_cli.db.models import Constraint, Organization
+from api.models import Constraint, Organization
 
 router = APIRouter(prefix="/constraints", tags=["constraints"])
 

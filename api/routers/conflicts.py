@@ -11,7 +11,7 @@ from api.schemas.conflicts import (
     ConflictCheckResponse,
     ConflictType,
 )
-from roster_cli.db.models import (
+from api.models import (
     Person,
     Event,
     Assignment,

@@ -9,7 +9,7 @@ import time
 from api.database import get_db
 from api.dependencies import get_organization_by_id
 from api.utils.security import hash_password, verify_password, generate_auth_token
-from roster_cli.db.models import Person, Organization
+from api.models import Person, Organization
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 

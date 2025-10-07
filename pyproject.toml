@@ -4,7 +4,7 @@ version = "0.2.0"
 description = "Microservice API for constraint-based roster scheduling (cricket, church, on-call)"
 authors = ["Roster Team"]
 readme = "README.md"
-packages = [{include = "roster_cli"}, {include = "api"}]
+packages = [{include = "api"}]
 
 [tool.poetry.dependencies]
 python = ">=3.11,<3.13"

@@ -15,7 +15,7 @@ from api.utils.db_helpers import (
     get_organization_events,
     get_available_people_for_event,
 )
-from roster_cli.db.models import (
+from api.models import (
     Person,
     Organization,
     Team,

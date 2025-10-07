@@ -5,7 +5,7 @@ from datetime import datetime
 from sqlalchemy.orm import Session
 from sqlalchemy import and_, or_
 
-from roster_cli.db.models import (
+from api.models import (
     Person,
     Organization,
     Team,

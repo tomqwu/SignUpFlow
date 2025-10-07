@@ -13,7 +13,7 @@ from api.schemas.team import (
     TeamMemberAdd,
     TeamMemberRemove,
 )
-from roster_cli.db.models import Team, TeamMember, Organization, Person
+from api.models import Team, TeamMember, Organization, Person
 
 router = APIRouter(prefix="/teams", tags=["teams"])
 

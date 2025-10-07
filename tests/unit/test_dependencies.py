@@ -11,7 +11,7 @@ from api.dependencies import (
     verify_admin_access,
     verify_org_member,
 )
-from roster_cli.db.models import Person, Organization
+from api.models import Person, Organization
 
 
 class TestCheckAdminPermission:

@@ -8,7 +8,7 @@ import hashlib
 from datetime import datetime, timedelta
 
 from api.database import get_db
-from roster_cli.db.models import Person
+from api.models import Person
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 

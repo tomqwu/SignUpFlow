@@ -4,7 +4,7 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from datetime import date
 
-from roster_cli.core.models import (
+from api.core.models import (
     Availability,
     ConstraintBinding,
     Event,

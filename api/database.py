@@ -4,7 +4,7 @@ import os
 from typing import Generator
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, Session
-from roster_cli.db.models import Base
+from api.models import Base
 
 # Database URL - can be configured via environment variable
 DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./roster.db")

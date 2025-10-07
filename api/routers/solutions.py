@@ -9,11 +9,11 @@ from datetime import datetime
 from api.database import get_db
 from api.schemas.solver import SolutionResponse, SolutionList, ExportFormat
 from api.utils.pdf_export import generate_schedule_pdf
-from roster_cli.db.models import Solution, Assignment, Event, Person, Organization
-from roster_cli.core.models import Assignment as AssignmentModel, Event as EventModel, Person as PersonModel
-from roster_cli.core.csv_writer import write_assignments_csv
-from roster_cli.core.ics_writer import write_calendar_ics
-from roster_cli.core.json_writer import write_solution_json
+from api.models import Solution, Assignment, Event, Person, Organization
+from api.core.models import Assignment as AssignmentModel, Event as EventModel, Person as PersonModel
+from api.core.csv_writer import write_assignments_csv
+from api.core.ics_writer import write_calendar_ics
+from api.core.json_writer import write_solution_json
 import json
 
 router = APIRouter(prefix="/solutions", tags=["solutions"])
@@ -154,7 +154,7 @@ def export_solution(
     ]
 
     # Create a minimal solution object for export
-    from roster_cli.core.models import (
+    from api.core.models import (
         SolutionBundle, Metrics, Violations, FairnessMetrics, StabilityMetrics,
         SolutionMeta, SolverMeta
     )
@@ -265,7 +265,7 @@ def export_solution(
         events_db_map = {e.id: e for e in events_db}
 
         # Get blocked dates for all people
-        from roster_cli.db.models import VacationPeriod, Availability
+        from api.models import VacationPeriod, Availability
         blocked_dates_map = {}  # person_id -> list of {start, end}
         for person in people:
             vacations = db.query(VacationPeriod).join(
