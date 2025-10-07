@@ -104,6 +104,11 @@ def api_info():
         },
     }
 
+# Mount locales directory for i18n
+locales_path = os.path.join(os.path.dirname(__file__), "..", "locales")
+if os.path.exists(locales_path):
+    app.mount("/locales", StaticFiles(directory=locales_path), name="locales")
+
 # Mount static files (frontend) at root
 frontend_path = os.path.join(os.path.dirname(__file__), "..", "frontend")
 if os.path.exists(frontend_path):
