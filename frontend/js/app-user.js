@@ -1,9 +1,13 @@
 // User-Friendly Roster App
 const API_BASE_URL = '/api';
 
-// User State
+// User State - attach to window so router can access it
 let currentUser = null;
 let currentOrg = null;
+
+// Expose to window for router access
+window.currentUser = currentUser;
+window.currentOrg = currentOrg;
 
 // Initialize
 document.addEventListener('DOMContentLoaded', async () => {
@@ -62,6 +66,8 @@ function checkExistingSession() {
     if (savedUser && savedOrg) {
         currentUser = JSON.parse(savedUser);
         currentOrg = JSON.parse(savedOrg);
+        window.currentUser = currentUser;
+        window.currentOrg = currentOrg;
 
         // If on a protected /app route, handle it with router
         if (currentPath.startsWith('/app')) {
@@ -106,6 +112,8 @@ function logout() {
     localStorage.clear();
     currentUser = null;
     currentOrg = null;
+    window.currentUser = null;
+    window.currentOrg = null;
     router.navigate('/', true);
     location.reload();
 }
@@ -114,6 +122,8 @@ function goToHome() {
     localStorage.clear();
     currentUser = null;
     currentOrg = null;
+    window.currentUser = null;
+    window.currentOrg = null;
     location.reload();
 }
 
@@ -174,6 +184,8 @@ async function handleLogin(event) {
                 token: data.token
             };
             currentOrg = orgData;
+            window.currentUser = currentUser;
+            window.currentOrg = currentOrg;
 
             console.log('👤 handleLogin - Created currentUser:', { id: currentUser.id, name: currentUser.name, timezone: currentUser.timezone, language: currentUser.language });
 
@@ -304,6 +316,7 @@ async function createProfile(event) {
                 roles: data.roles,
                 token: data.token
             };
+            window.currentUser = currentUser;
             saveSession();
             showMainApp();
         } else if (response.status === 409) {
