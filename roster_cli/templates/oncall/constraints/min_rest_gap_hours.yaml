@@ -1,8 +1,0 @@
-key: min_rest_gap_hours_oncall
-scope: person
-applies_to: [oncall_shift]
-severity: hard
-params:
-  hours: 24
-then:
-  enforce_min_gap_hours: 24
