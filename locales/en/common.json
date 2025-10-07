@@ -19,7 +19,9 @@
     "export": "Export",
     "import": "Import",
     "download": "Download",
-    "upload": "Upload"
+    "upload": "Upload",
+    "copy": "Copy",
+    "done": "Done"
   },
   "actions": {
     "loading": "Loading...",
@@ -30,6 +32,7 @@
   "labels": {
     "yes": "Yes",
     "no": "No",
+    "all": "All",
     "name": "Name",
     "email": "Email",
     "phone": "Phone",
@@ -41,8 +44,26 @@
     "status": "Status",
     "type": "Type",
     "role": "Role",
-    "organization": "Organization"
+    "organization": "Organization",
+    "from_date": "From Date",
+    "to_date": "To Date",
+    "full_name": "Full Name"
   },
+  "your_context": "📍 Your Context",
+  "edit_profile": "Edit Profile →",
+  "loading": "Loading...",
+  "loading_orgs": "Loading organizations...",
+  "or": "or",
+  "your_current_org": "Your current organization",
+  "your_active_roles": "Your Active Roles",
+  "add_edit_roles": "+ Add/Edit Roles",
+  "roles_determine_events": "These determine which events you'll be scheduled for",
+  "quick_actions": "Quick Actions",
+  "manage_schedule_prefs": "Manage your schedule preferences",
+  "refresh": "🔄 Refresh",
+  "placeholder_full_name": "Your Full Name",
+  "placeholder_email": "Email Address",
+  "placeholder_phone": "Phone Number (optional)",
   "time": {
     "today": "Today",
     "tomorrow": "Tomorrow",
@@ -58,5 +79,10 @@
     "invalid_date": "Invalid date",
     "network_error": "Network error. Please try again.",
     "unknown_error": "An unknown error occurred"
-  }
+  },
+  "note": "Note",
+  "next_month": "Next Month",
+  "all_upcoming": "All Upcoming",
+  "current_organization": "Your current organization",
+  "switch_organizations": "Switch between your {count} organizations"
 }

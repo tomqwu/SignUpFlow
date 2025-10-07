@@ -19,7 +19,9 @@
     "export": "导出",
     "import": "导入",
     "download": "下载",
-    "upload": "上传"
+    "upload": "上传",
+    "copy": "复制",
+    "done": "完成"
   },
   "actions": {
     "loading": "加载中...",
@@ -30,6 +32,7 @@
   "labels": {
     "yes": "是",
     "no": "否",
+    "all": "全部",
     "name": "姓名",
     "email": "电子邮件",
     "phone": "电话",
@@ -41,8 +44,26 @@
     "status": "状态",
     "type": "类型",
     "role": "角色",
-    "organization": "组织"
+    "organization": "组织",
+    "from_date": "开始日期",
+    "to_date": "结束日期",
+    "full_name": "全名"
   },
+  "your_context": "📍 您的上下文",
+  "edit_profile": "编辑个人资料 →",
+  "loading": "加载中...",
+  "loading_orgs": "正在加载组织...",
+  "or": "或",
+  "your_current_org": "您当前的组织",
+  "your_active_roles": "您的活跃角色",
+  "add_edit_roles": "+ 添加/编辑角色",
+  "roles_determine_events": "这些决定了您将被安排参加哪些活动",
+  "quick_actions": "快速操作",
+  "manage_schedule_prefs": "管理您的日程偏好",
+  "refresh": "🔄 刷新",
+  "placeholder_full_name": "您的全名",
+  "placeholder_email": "电子邮件地址",
+  "placeholder_phone": "电话号码（可选）",
   "time": {
     "today": "今天",
     "tomorrow": "明天",
@@ -58,5 +79,10 @@
     "invalid_date": "日期无效",
     "network_error": "网络错误。请重试。",
     "unknown_error": "发生未知错误"
-  }
+  },
+  "note": "注意",
+  "next_month": "下个月",
+  "all_upcoming": "全部即将到来",
+  "current_organization": "您当前的组织",
+  "switch_organizations": "在您的 {count} 个组织之间切换"
 }

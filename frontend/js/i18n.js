@@ -21,8 +21,8 @@ class I18n {
         // Detect locale from: 1) localStorage, 2) browser, 3) fallback
         this.locale = this.detectLocale();
 
-        // Load core namespaces
-        await this.loadNamespaces(['common', 'auth', 'messages']);
+        // Load all namespaces
+        await this.loadNamespaces(['common', 'auth', 'events', 'schedule', 'settings', 'admin', 'solver', 'messages']);
 
         return this.locale;
     }
@@ -130,7 +130,7 @@ class I18n {
         } else if (parts.length === 2) {
             // Could be 'namespace.key' or 'section.key' in common
             // Check if first part is a known namespace
-            const knownNamespaces = ['common', 'auth', 'events', 'schedule', 'settings', 'admin', 'messages'];
+            const knownNamespaces = ['common', 'auth', 'events', 'schedule', 'settings', 'admin', 'solver', 'messages'];
             if (knownNamespaces.includes(parts[0])) {
                 namespace = parts[0];
                 path = [parts[1]];

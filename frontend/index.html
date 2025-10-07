@@ -3,97 +3,141 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Rostio - My Schedule</title>
+    <meta name="description" content="Rostio - Team scheduling made simple. Manage schedules, availability, and events for your church, league, or organization.">
+    <meta name="keywords" content="team scheduling, volunteer management, church scheduling, roster management, availability tracker">
+    <meta name="author" content="Rostio">
+
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://rostio.com/">
+    <meta property="og:title" content="Rostio - Team Scheduling Made Simple">
+    <meta property="og:description" content="Manage your team schedule, availability, and events effortlessly.">
+    <meta property="og:image" content="/images/rostio-logo-simple.svg">
+
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image">
+    <meta property="twitter:url" content="https://rostio.com/">
+    <meta property="twitter:title" content="Rostio - Team Scheduling Made Simple">
+    <meta property="twitter:description" content="Manage your team schedule, availability, and events effortlessly.">
+
+    <title data-i18n="schedule.title">Rostio - My Schedule</title>
     <link rel="icon" type="image/svg+xml" href="favicon.svg">
+    <link rel="canonical" href="https://rostio.com/">
     <link rel="stylesheet" href="css/styles.css">
     <link rel="stylesheet" href="css/mobile.css">
     <script src="js/toast.js"></script>
     <script src="js/form-validation.js"></script>
     <script src="js/conflict-detection.js"></script>
     <script src="js/search-filter.js"></script>
+    <script src="js/router.js"></script>
+
+    <!-- Structured Data for SEO -->
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "WebApplication",
+        "name": "Rostio",
+        "description": "Team scheduling made simple. Manage schedules, availability, and events for your church, league, or organization.",
+        "url": "https://rostio.com",
+        "applicationCategory": "BusinessApplication",
+        "operatingSystem": "Web",
+        "offers": {
+            "@type": "Offer",
+            "price": "0",
+            "priceCurrency": "USD"
+        },
+        "featureList": [
+            "Team scheduling",
+            "Availability management",
+            "Event management",
+            "Calendar export",
+            "Multi-language support"
+        ]
+    }
+    </script>
 </head>
 <body>
     <div class="container">
         <!-- Onboarding Screen -->
         <div id="onboarding-screen" class="screen">
             <div class="welcome-card">
-                <h1><img src="images/rostio-logo-simple.svg" alt="Rostio" style="height: 60px; vertical-align: middle; margin-right: 20px;"> Welcome to Rostio</h1>
-                <p class="welcome-text">Join your organization and manage your schedule effortlessly</p>
+                <h1><img src="images/rostio-logo-simple.svg" alt="Rostio" style="height: 60px; vertical-align: middle; margin-right: 20px;"> <span data-i18n="auth.welcome_to_rostio">Welcome to Rostio</span></h1>
+                <p class="welcome-text" data-i18n="auth.welcome_subtitle">Join your organization and manage your schedule effortlessly</p>
 
                 <div class="onboarding-steps">
                     <div class="step">
                         <div class="step-number">1</div>
-                        <h3>Join an Organization</h3>
-                        <p>Find your church, league, or team</p>
+                        <h3 data-i18n="auth.join_organization">Join an Organization</h3>
+                        <p data-i18n="auth.join_organization_desc">Find your church, league, or team</p>
                     </div>
                     <div class="step">
                         <div class="step-number">2</div>
-                        <h3>Set Your Availability</h3>
-                        <p>Block off times when you're unavailable</p>
+                        <h3 data-i18n="schedule.availability">Set Your Availability</h3>
+                        <p data-i18n="schedule.availability_desc">Block off times when you're unavailable</p>
                     </div>
                     <div class="step">
                         <div class="step-number">3</div>
-                        <h3>View Your Schedule</h3>
-                        <p>See your assignments and export to calendar</p>
+                        <h3 data-i18n="schedule.view_schedule">View Your Schedule</h3>
+                        <p data-i18n="schedule.view_schedule_desc">See your assignments and export to calendar</p>
                     </div>
                 </div>
 
-                <button class="btn btn-primary btn-large" onclick="startOnboarding()">Get Started →</button>
-                <p class="help-text">Already have an account? <a href="#" onclick="showLogin(); return false;">Sign in</a></p>
+                <button class="btn btn-primary btn-large" onclick="startOnboarding()" data-i18n="auth.get_started">Get Started →</button>
+                <p class="help-text"><span data-i18n="auth.already_have_account">Already have an account?</span> <a href="#" onclick="showLogin(); return false;" data-i18n="auth.sign_in_link">Sign in</a></p>
             </div>
         </div>
 
         <!-- Login Screen -->
         <div id="login-screen" class="screen hidden">
             <div class="form-container">
-                <h2>Sign In</h2>
-                <p class="subtitle">Welcome back! Sign in to access your schedule</p>
+                <h2 data-i18n="auth.sign_in_title">Sign In</h2>
+                <p class="subtitle" data-i18n="auth.welcome_back_subtitle">Welcome back! Sign in to access your schedule</p>
 
                 <form onsubmit="handleLogin(event)">
                     <div class="form-group">
-                        <label>Email Address</label>
-                        <input type="email" id="login-email" placeholder="your@email.com" required autofocus>
+                        <label data-i18n="common.labels.email">Email Address</label>
+                        <input type="email" id="login-email" data-i18n-placeholder="auth.placeholder_email" placeholder="your@email.com" required autofocus>
                     </div>
 
                     <div class="form-group">
-                        <label>Password</label>
-                        <input type="password" id="login-password" placeholder="Enter your password" required>
+                        <label data-i18n="auth.password">Password</label>
+                        <input type="password" id="login-password" data-i18n-placeholder="auth.placeholder_password" placeholder="Enter your password" required>
                     </div>
 
                     <div id="login-error" class="error-message hidden"></div>
 
                     <div class="form-actions">
-                        <button type="submit" class="btn btn-primary btn-large">Sign In →</button>
+                        <button type="submit" class="btn btn-primary btn-large" data-i18n="auth.sign_in">Sign In →</button>
                     </div>
                 </form>
 
-                <p class="help-text">Don't have an account? <a href="#" onclick="startOnboarding(); return false;">Sign up</a></p>
+                <p class="help-text"><span data-i18n="auth.no_account">Don't have an account?</span> <a href="#" onclick="startOnboarding(); return false;"><span data-i18n="auth.signup_link">Sign up</span></a></p>
             </div>
         </div>
 
         <!-- Join Organization -->
         <div id="join-screen" class="screen hidden">
             <div class="form-container">
-                <h2>Join Your Organization</h2>
-                <p class="subtitle">First, let's find your organization</p>
+                <h2 data-i18n="auth.join_org">Join Your Organization</h2>
+                <p class="subtitle" data-i18n="auth.find_your_organization">First, let's find your organization</p>
 
                 <div id="org-list" class="org-selection">
-                    <div class="loading">Loading organizations...</div>
+                    <div class="loading"data-i18n="common.loading_orgs">Loading organizations...</div>
                 </div>
 
                 <div class="divider">
-                    <span>or</span>
+                    <span data-i18n="common.or">or</span>
                 </div>
 
-                <button class="btn btn-secondary" onclick="showCreateOrg()">Create New Organization</button>
+                <button class="btn btn-secondary" onclick="showCreateOrg()"><span data-i18n="auth.create_new_organization">Create New Organization</span></button>
 
                 <div id="create-org-section" class="hidden">
-                    <h3>Create Your Organization</h3>
+                    <h3 data-i18n="auth.create_org">Create Your Organization</h3>
                     <form onsubmit="createAndJoinOrg(event)">
-                        <input type="text" id="new-org-name" placeholder="Organization Name (e.g., Grace Community Church)" required>
-                        <input type="text" id="new-org-region" placeholder="Location (optional)">
+                        <input type="text" id="new-org-name" data-i18n-placeholder="auth.placeholder_org_name" placeholder="Organization Name" required>
+                        <input type="text" id="new-org-region" data-i18n-placeholder="auth.placeholder_location" placeholder="Location (optional)">
                         <div class="form-actions">
-                            <button type="submit" class="btn btn-primary">Create & Continue</button>
+                            <button type="submit" class="btn btn-primary" data-i18n="common.buttons.create">Create & Continue</button>
                         </div>
                     </form>
                 </div>
@@ -103,32 +147,32 @@
         <!-- User Profile Setup -->
         <div id="profile-screen" class="screen hidden">
             <div class="form-container">
-                <h2>Tell Us About Yourself</h2>
-                <p class="subtitle">Create your account to get started</p>
+                <h2 data-i18n="auth.about_you">Tell Us About Yourself</h2>
+                <p class="subtitle" data-i18n="auth.create_account_subtitle">Create your account to get started</p>
 
                 <form onsubmit="createProfile(event)">
-                    <input type="text" id="user-name" placeholder="Your Full Name" required>
-                    <input type="email" id="user-email" placeholder="Email Address" required>
-                    <input type="password" id="user-password" placeholder="Create Password (min 6 characters)" minlength="6" required>
-                    <input type="tel" id="user-phone" placeholder="Phone Number (optional)">
+                    <input type="text" id="user-name" data-i18n-placeholder="common.placeholder_full_name" placeholder="Your Full Name" required>
+                    <input type="email" id="user-email" data-i18n-placeholder="common.placeholder_email" placeholder="Email Address" required>
+                    <input type="password" id="user-password" data-i18n-placeholder="auth.placeholder_create_password" placeholder="Create Password (min 6 characters)" minlength="6" required>
+                    <input type="tel" id="user-phone" data-i18n-placeholder="common.placeholder_phone" placeholder="Phone Number (optional)">
 
-                    <label>Permission Level</label>
+                    <label data-i18n="auth.permission_level">Permission Level</label>
                     <div class="role-selector" id="role-selector">
                         <label class="role-option">
                             <input type="checkbox" value="volunteer" checked> Volunteer
-                            <small class="form-help">Regular member</small>
+                            <small class="form-help"><span data-i18n="auth.regular_member">Regular member</span></small>
                         </label>
                         <label class="role-option admin-role">
                             <input type="checkbox" value="admin"> Administrator
-                            <small class="form-help">Can manage organization and create events</small>
+                            <small class="form-help"><span data-i18n="auth.can_manage_org">Can manage organization and create events</span></small>
                         </label>
                     </div>
                     <p class="help-text">
-                        <strong>Note:</strong> You'll choose specific event roles (usher, greeter, etc.) when you join events.
+                        <strong data-i18n="common.note">Note:</strong> You'll choose specific event roles (usher, greeter, etc.) when you join events.
                     </p>
 
                     <div class="form-actions">
-                        <button type="submit" class="btn btn-primary btn-large">Continue →</button>
+                        <button type="submit" class="btn btn-primary btn-large" data-i18n="common.buttons.next">Continue →</button>
                     </div>
                 </form>
             </div>
@@ -158,33 +202,33 @@
             <div class="profile-context-panel">
                 <div class="context-card">
                     <div class="context-header">
-                        <h3>📍 Your Context</h3>
-                        <button class="btn-link" onclick="showSettings()">Edit Profile →</button>
+                        <h3><span data-i18n="common.your_context">📍 Your Context</span></h3>
+                        <button class="btn-link" onclick="showSettings()"><span data-i18n="common.edit_profile">Edit Profile →</span></button>
                     </div>
 
                     <div class="context-grid">
                         <!-- Organization Section -->
                         <div class="context-item">
-                            <label class="context-label">Organization</label>
+                            <label class="context-label" data-i18n="common.labels.organization">Organization</label>
                             <select id="org-dropdown-visible" onchange="switchOrganization()" class="org-select">
-                                <option value="">Loading...</option>
+                                <option value="" data-i18n="common.loading">Loading...</option>
                             </select>
-                            <p class="context-help">Your current organization</p>
+                            <p class="context-help"><span data-i18n="common.your_current_org">Your current organization</span></p>
                         </div>
 
                         <!-- Roles Section -->
                         <div class="context-item">
-                            <label class="context-label">Your Active Roles</label>
+                            <label class="context-label"><span data-i18n="common.your_active_roles">Your Active Roles</span></label>
                             <div id="active-roles-display" class="role-badges">
-                                <span class="role-badge">volunteer</span>
+                                <!-- Roles will be populated dynamically -->
                             </div>
-                            <button class="btn-link btn-sm" onclick="showSettings()">+ Add/Edit Roles</button>
-                            <p class="context-help">These determine which events you'll be scheduled for</p>
+                            <button class="btn-link btn-sm" onclick="showSettings()"><span data-i18n="common.add_edit_roles">+ Add/Edit Roles</span></button>
+                            <p class="context-help"><span data-i18n="common.roles_determine_events">These determine which events you'll be scheduled for</p>
                         </div>
 
-                        <!-- Quick Actions -->
+                        <!-- <span data-i18n="common.quick_actions">Quick Actions</span> -->
                         <div class="context-item">
-                            <label class="context-label">Quick Actions</label>
+                            <label class="context-label"><span data-i18n="common.quick_actions">Quick Actions</span></label>
                             <div class="quick-actions">
                                 <button class="btn btn-sm btn-secondary" onclick="switchView('availability')">
                                     ⏰ Set Availability
@@ -193,7 +237,7 @@
                                     📥 Export Calendar
                                 </button>
                             </div>
-                            <p class="context-help">Manage your schedule preferences</p>
+                            <p class="context-help"><span data-i18n="common.manage_schedule_prefs">Manage your schedule preferences</span></p>
                         </div>
                     </div>
 
@@ -202,11 +246,11 @@
                         <div class="hint-content">
                             <span class="hint-icon">💡</span>
                             <div>
-                                <strong>New here?</strong> Make sure to:
+                                <strong data-i18n="auth.new_here">New here?</strong> <span data-i18n="auth.make_sure_to">Make sure to:</span>
                                 <ol>
-                                    <li>Select your roles above</li>
-                                    <li>Set your availability (click "Set Availability")</li>
-                                    <li>Check your upcoming schedule</li>
+                                    <li data-i18n="auth.select_roles_above">Select your roles above</li>
+                                    <li data-i18n="auth.set_availability_hint">Set your availability (click "Set Availability")</li>
+                                    <li data-i18n="auth.check_schedule">Check your upcoming schedule</li>
                                 </ol>
                             </div>
                             <button class="btn-close" onclick="dismissSetupHint()">×</button>
@@ -238,22 +282,22 @@
                         <div class="schedule-stats">
                             <div class="stat-card">
                                 <div class="stat-value" id="upcoming-count">0</div>
-                                <div class="stat-label">Upcoming</div>
+                                <div class="stat-label" data-i18n="schedule.upcoming">Upcoming</div>
                             </div>
                             <div class="stat-card">
                                 <div class="stat-value" id="this-month-count">0</div>
-                                <div class="stat-label">This Month</div>
+                                <div class="stat-label" data-i18n="schedule.this_month">This Month</div>
                             </div>
                         </div>
                         <div class="schedule-actions">
-                            <button class="btn btn-secondary" onclick="showCalendarSubscription()">🔗 Subscribe</button>
-                            <button class="btn btn-primary" onclick="exportMyCalendar()">📥 Export ICS</button>
+                            <button class="btn btn-secondary" onclick="showCalendarSubscription()" data-i18n="schedule.subscribe">🔗 Subscribe</button>
+                            <button class="btn btn-primary" onclick="exportMyCalendar()" data-i18n="schedule.download_ics">📥 Export ICS</button>
                         </div>
                     </div>
                 </div>
 
                 <div id="schedule-list" class="schedule-timeline">
-                    <div class="loading">Loading your schedule...</div>
+                    <div class="loading"><span data-i18n="schedule.loading_schedule">Loading your schedule...</span></div>
                 </div>
             </div>
 
@@ -261,19 +305,19 @@
             <div id="events-view" class="view-content">
                 <div class="view-header">
                     <h2 data-i18n="events.title">All Organization Events</h2>
-                    <p class="help-text">See all upcoming events and who's scheduled</p>
+                    <p class="help-text"><span data-i18n="events.see_all_upcoming">See all upcoming events and who's scheduled</p>
                 </div>
 
                 <div class="events-filter">
                     <select id="events-month-filter" onchange="loadAllEvents()">
-                        <option value="current">This Month</option>
-                        <option value="next">Next Month</option>
-                        <option value="all">All Upcoming</option>
+                        <option value="current" data-i18n="schedule.this_month">This Month</option>
+                        <option value="next" data-i18n="schedule.next_month">Next Month</option>
+                        <option value="all" data-i18n="schedule.all_upcoming">All Upcoming</option>
                     </select>
                 </div>
 
                 <div id="all-events-list" class="events-list">
-                    <div class="loading">Loading events...</div>
+                    <div class="loading"><span data-i18n="events.loading_events">Loading events...</span></div>
                 </div>
             </div>
 
@@ -281,29 +325,29 @@
             <div id="availability-view" class="view-content">
                 <div class="view-header">
                     <h2 data-i18n="schedule.availability">Set Your Availability</h2>
-                    <p class="help-text">Block off times when you can't serve</p>
+                    <p class="help-text" data-i18n="schedule.block_off_times">Block off times when you can't serve</p>
                 </div>
 
                 <div class="availability-form">
-                    <h3>Add Time Off</h3>
+                    <h3 data-i18n="schedule.add_time_off">Add Time Off</h3>
                     <form onsubmit="addTimeOff(event)">
                         <div class="form-row">
                             <div class="form-group">
-                                <label>From Date</label>
+                                <label data-i18n="common.labels.from_date">From Date</label>
                                 <input type="date" id="timeoff-start" required>
                             </div>
                             <div class="form-group">
-                                <label>To Date</label>
+                                <label data-i18n="common.labels.to_date">To Date</label>
                                 <input type="date" id="timeoff-end" required>
                             </div>
                         </div>
-                        <input type="text" id="timeoff-reason" placeholder="Reason (optional, e.g., Vacation, Family event)">
-                        <button type="submit" class="btn btn-primary">Add Time Off</button>
+                        <input type="text" id="timeoff-reason" data-i18n-placeholder="schedule.placeholder_reason" placeholder="Reason (optional)">
+                        <button type="submit" class="btn btn-primary" data-i18n="schedule.add_time_off">Add Time Off</button>
                     </form>
 
                     <div id="timeoff-list" class="timeoff-list">
-                        <h3>Your Blocked Dates</h3>
-                        <div class="loading">Loading...</div>
+                        <h3 data-i18n="schedule.blocked_dates">Your Blocked Dates</h3>
+                        <div class="loading" data-i18n="common.loading">Loading...</div>
                     </div>
                 </div>
             </div>
@@ -312,27 +356,27 @@
             <div id="edit-timeoff-modal" class="modal hidden">
                 <div class="modal-content">
                     <div class="modal-header">
-                        <h3>Edit Blocked Date</h3>
+                        <h3 data-i18n="schedule.edit_timeoff">Edit Blocked Date</h3>
                         <button class="btn-close" onclick="closeEditTimeOffModal()">×</button>
                     </div>
                     <div class="modal-body">
                         <form id="edit-timeoff-form" onsubmit="saveEditedTimeOff(event)">
                             <input type="hidden" id="edit-timeoff-id">
                             <div class="form-group">
-                                <label>From Date</label>
+                                <label data-i18n="common.labels.from_date">From Date</label>
                                 <input type="date" id="edit-timeoff-start" required>
                             </div>
                             <div class="form-group">
-                                <label>To Date</label>
+                                <label data-i18n="common.labels.to_date">To Date</label>
                                 <input type="date" id="edit-timeoff-end" required>
                             </div>
                             <div class="form-group">
-                                <label>Reason (optional)</label>
-                                <input type="text" id="edit-timeoff-reason" placeholder="e.g., Vacation, Family event">
+                                <label data-i18n="schedule.reason_optional">Reason (optional)</label>
+                                <input type="text" id="edit-timeoff-reason" data-i18n-placeholder="schedule.placeholder_reason_example" placeholder="e.g., Vacation, Family event">
                             </div>
                             <div class="modal-footer">
-                                <button type="button" class="btn btn-secondary" onclick="closeEditTimeOffModal()">Cancel</button>
-                                <button type="submit" class="btn btn-primary">Save Changes</button>
+                                <button type="button" class="btn btn-secondary" onclick="closeEditTimeOffModal()" data-i18n="common.buttons.cancel">Cancel</button>
+                                <button type="submit" class="btn btn-primary" data-i18n="common.buttons.save">Save Changes</button>
                             </div>
                         </form>
                     </div>
@@ -342,8 +386,8 @@
             <!-- Admin Dashboard View -->
             <div id="admin-view" class="view-content">
                 <div class="view-header">
-                    <h2>Admin Console</h2>
-                    <p class="help-text">Manage your organization</p>
+                    <h2 data-i18n="admin.admin_console">Admin Console</h2>
+                    <p class="help-text"><span data-i18n="admin.manage_your_org">Manage your organization</span></p>
                 </div>
 
                 <!-- Admin Tabs Navigation -->
@@ -370,20 +414,20 @@
                     <div id="admin-tab-events" class="admin-tab-content active">
                         <div class="admin-section">
                             <div class="admin-section-header">
-                                <h3>Event Management</h3>
+                                <h3><span data-i18n="admin.event_management">Event Management</span></h3>
                                 <div class="admin-controls">
-                                    <button class="btn btn-primary" onclick="showCreateEventForm()">+ Create Event</button>
-                                    <button class="btn btn-secondary" onclick="loadAdminEvents()">🔄 Refresh</button>
+                                    <button class="btn btn-primary" onclick="showCreateEventForm()"><span data-i18n="admin.create_event_button">+ Create Event</span></button>
+                                    <button class="btn btn-secondary" onclick="loadAdminEvents()"><span data-i18n="common.refresh">🔄 Refresh</span></button>
                                 </div>
                             </div>
                             <div class="admin-stats-inline">
                                 <div class="stat-card-inline">
-                                    <span class="stat-label-inline">Total Events:</span>
+                                    <span class="stat-label-inline"><span data-i18n="admin.total_events">Total Events:</span></span>
                                     <span class="stat-value-inline" id="admin-events-count">0</span>
                                 </div>
                             </div>
                             <div id="admin-events-list" class="admin-list">
-                                <div class="loading">Loading events...</div>
+                                <div class="loading"><span data-i18n="events.loading_events">Loading events...</span></div>
                             </div>
                         </div>
                     </div>
@@ -392,14 +436,14 @@
                     <div id="admin-tab-roles" class="admin-tab-content">
                         <div class="admin-section">
                             <div class="admin-section-header">
-                                <h3>Role Management</h3>
+                                <h3><span data-i18n="admin.role_management">Role Management</span></h3>
                                 <div class="admin-controls">
                                     <button class="btn btn-primary" onclick="showAddRoleForm()">+ Add Role</button>
                                 </div>
                             </div>
-                            <p class="help-text">Define custom roles for your organization</p>
+                            <p class="help-text"><span data-i18n="admin.define_custom_roles">Define custom roles for your organization</span></p>
                             <div id="admin-roles-list" class="roles-list">
-                                <div class="loading">Loading roles...</div>
+                                <div class="loading"><span data-i18n="admin.loading_roles">Loading roles...</span></div>
                             </div>
                         </div>
                     </div>
@@ -408,21 +452,21 @@
                     <div id="admin-tab-schedule" class="admin-tab-content">
                         <div class="admin-section">
                             <div class="admin-section-header">
-                                <h3>Schedule Generation</h3>
+                                <h3 data-i18n="solver.schedule_generation">Schedule Generation</h3>
                             </div>
                             <div class="solver-controls">
                                 <button class="btn btn-primary btn-large" onclick="generateSchedule()">
                                     🔄 Generate Schedule
                                 </button>
-                                <p class="help-text">This will create assignments for all upcoming events</p>
+                                <p class="help-text" data-i18n="solver.create_assignments_desc">This will create assignments for all upcoming events</p>
                             </div>
                             <div id="solver-status" class="solver-status"></div>
 
                             <!-- Calendar View -->
                             <div class="admin-calendar-section">
-                                <h4>Schedule Calendar</h4>
+                                <h4 data-i18n="solver.schedule_calendar">Schedule Calendar</h4>
                                 <div id="admin-calendar-view" class="admin-calendar">
-                                    <div class="loading">Generate a schedule to see the calendar</div>
+                                    <div class="loading" data-i18n="solver.generate_first">Generate a schedule to see the calendar</div>
                                 </div>
                             </div>
                         </div>
@@ -430,16 +474,16 @@
                         <!-- Generated Schedules List -->
                         <div class="admin-section">
                             <div class="admin-section-header">
-                                <h3>Generated Schedules</h3>
+                                <h3 data-i18n="solver.generated_schedules">Generated Schedules</h3>
                             </div>
                             <div class="admin-stats-inline">
                                 <div class="stat-card-inline">
-                                    <span class="stat-label-inline">Total Schedules:</span>
+                                    <span class="stat-label-inline" data-i18n="solver.total_schedules">Total Schedules:</span>
                                     <span class="stat-value-inline" id="admin-solutions-count">0</span>
                                 </div>
                             </div>
                             <div id="admin-solutions-list" class="admin-list">
-                                <div class="loading">Loading schedules...</div>
+                                <div class="loading" data-i18n="solver.loading_schedules">Loading schedules...</div>
                             </div>
                         </div>
                     </div>
@@ -448,44 +492,44 @@
                     <div id="admin-tab-people" class="admin-tab-content">
                         <div class="admin-section">
                             <div class="admin-section-header">
-                                <h3>People & Invitations</h3>
+                                <h3 data-i18n="admin.people_invitations">People <h3>People & Invitations</h3> Invitations</h3>
                                 <div class="admin-controls">
                                     <button class="btn btn-primary" onclick="showInviteUserModal()">+ Invite User</button>
                                 </div>
                             </div>
                             <div class="admin-stats-inline">
                                 <div class="stat-card-inline">
-                                    <span class="stat-label-inline">Total People:</span>
+                                    <span class="stat-label-inline" data-i18n="admin.total_people">Total People:</span>
                                     <span class="stat-value-inline" id="admin-people-count">0</span>
                                 </div>
                             </div>
 
                             <!-- Invitation Status Dashboard -->
                             <div class="invitations-dashboard">
-                                <h4>Invitation Status</h4>
+                                <h4 data-i18n="admin.invitation_status">Invitation Status</h4>
                                 <div id="invitations-summary" class="invitations-summary">
                                     <div class="invitation-stat">
                                         <span class="invitation-count" id="pending-invitations">0</span>
-                                        <span class="invitation-label">Pending</span>
+                                        <span class="invitation-label" data-i18n="admin.pending">Pending</span>
                                     </div>
                                     <div class="invitation-stat">
                                         <span class="invitation-count" id="accepted-invitations">0</span>
-                                        <span class="invitation-label">Accepted</span>
+                                        <span class="invitation-label" data-i18n="admin.accepted">Accepted</span>
                                     </div>
                                     <div class="invitation-stat">
                                         <span class="invitation-count" id="expired-invitations">0</span>
-                                        <span class="invitation-label">Expired</span>
+                                        <span class="invitation-label" data-i18n="admin.expired">Expired</span>
                                     </div>
                                 </div>
                                 <div id="invitations-list" class="invitations-list">
-                                    <div class="loading">Loading invitations...</div>
+                                    <div class="loading" data-i18n="admin.loading_invitations">Loading invitations...</div>
                                 </div>
                             </div>
 
                             <!-- People List -->
-                            <h4>Team Members</h4>
+                            <h4 data-i18n="admin.team_members">Team Members</h4>
                             <div id="admin-people-list" class="admin-list">
-                                <div class="loading">Loading people...</div>
+                                <div class="loading" data-i18n="admin.loading_people">Loading people...</div>
                             </div>
                         </div>
                     </div>
@@ -494,33 +538,33 @@
                     <div id="admin-tab-reports" class="admin-tab-content">
                         <div class="admin-section">
                             <div class="admin-section-header">
-                                <h3>Reports & Export</h3>
+                                <h3 data-i18n="admin.reports_export">Reports <h3>Reports & Export</h3> Export</h3>
                             </div>
-                            <p class="help-text">Export schedules and generate reports</p>
+                            <p class="help-text" data-i18n="admin.export_schedules_desc">Export schedules and generate reports</p>
 
                             <div class="reports-grid">
                                 <div class="report-card">
-                                    <h4>PDF Schedule Export</h4>
-                                    <p>Download a printable schedule for distribution</p>
+                                    <h4 data-i18n="admin.pdf_schedule_export">PDF Schedule Export</h4>
+                                    <p data-i18n="admin.download_printable">Download a printable schedule for distribution</p>
                                     <button class="btn btn-primary" onclick="exportLatestSchedulePDF()">📥 Export PDF</button>
                                 </div>
                                 <div class="report-card">
-                                    <h4>Calendar Export (ICS)</h4>
-                                    <p>Export all organization events to calendar</p>
+                                    <h4 data-i18n="admin.calendar_export_ics">Calendar Export (ICS)</h4>
+                                    <p data-i18n="admin.export_all_events">Export all organization events to calendar</p>
                                     <button class="btn btn-primary" onclick="exportOrgCalendar()">📅 Export ICS</button>
                                 </div>
                                 <div class="report-card">
-                                    <h4>Schedule Statistics</h4>
-                                    <p>View assignment distribution and metrics</p>
+                                    <h4 data-i18n="admin.schedule_statistics">Schedule Statistics</h4>
+                                    <p data-i18n="admin.view_distribution">View assignment distribution and metrics</p>
                                     <button class="btn btn-secondary" onclick="showScheduleStats()">📊 View Stats</button>
                                 </div>
                             </div>
 
                             <!-- Statistics Display -->
                             <div id="schedule-stats-display" class="stats-display hidden">
-                                <h4>Schedule Statistics</h4>
+                                <h4 data-i18n="admin.schedule_statistics">Schedule Statistics</h4>
                                 <div id="stats-content" class="stats-content">
-                                    <div class="loading">Loading statistics...</div>
+                                    <div class="loading" data-i18n="admin.loading_statistics">Loading statistics...</div>
                                 </div>
                             </div>
                         </div>
@@ -533,64 +577,64 @@
         <div id="create-event-modal" class="modal hidden">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h3>Create Event</h3>
+                    <h3 data-i18n="events.create_event">Create Event</h3>
                     <button class="btn-close" onclick="closeCreateEventForm()">×</button>
                 </div>
                 <div class="modal-body">
                     <form id="create-event-form" onsubmit="window.createEvent(event); return false;">
                         <div class="form-group">
-                            <label>Event Type</label>
+                            <label data-i18n="events.event_type">Event Type</label>
                             <select id="event-type" required>
-                                <option value="">Select type...</option>
-                                <option value="Sunday Service">Sunday Service</option>
-                                <option value="Worship Service">Worship Service</option>
-                                <option value="Bible Study">Bible Study</option>
-                                <option value="Prayer Meeting">Prayer Meeting</option>
-                                <option value="Youth Group">Youth Group</option>
-                                <option value="Board Meeting">Board Meeting</option>
-                                <option value="Special Event">Special Event</option>
-                                <option value="Other">Other (specify in title)</option>
+                                <option value="" data-i18n="events.select_type">Select type...</option>
+                                <option value="Sunday Service" data-i18n="events.type_sunday_service">Sunday Service</option>
+                                <option value="Worship Service" data-i18n="events.type_worship_service">Worship Service</option>
+                                <option value="Bible Study" data-i18n="events.type_bible_study">Bible Study</option>
+                                <option value="Prayer Meeting" data-i18n="events.type_prayer_meeting">Prayer Meeting</option>
+                                <option value="Youth Group" data-i18n="events.type_youth_group">Youth Group</option>
+                                <option value="Board Meeting" data-i18n="events.type_board_meeting">Board Meeting</option>
+                                <option value="Special Event" data-i18n="events.type_special_event">Special Event</option>
+                                <option value="Other" data-i18n="events.type_other_specify">Other (specify in title)</option>
                             </select>
                         </div>
                         <div class="form-group">
-                            <label>Title (optional, override type name)</label>
-                            <input type="text" id="event-title" placeholder="e.g., Christmas Service, Easter Celebration">
+                            <label data-i18n="events.title_optional">Title (optional, override type name)</label>
+                            <input type="text" id="event-title" data-i18n-placeholder="events.placeholder_title" placeholder="e.g., Christmas Service">
                         </div>
                         <div class="form-group">
-                            <label>Date & Time</label>
+                            <label data-i18n="events.date_time">Date & Time</label>
                             <input type="datetime-local" id="event-start" required>
                         </div>
                         <div class="form-group">
-                            <label>Duration (hours)</label>
+                            <label data-i18n="events.duration">Duration (hours)</label>
                             <input type="number" id="event-duration" value="2" min="0.5" step="0.5" required>
                         </div>
                         <div class="form-group">
-                            <label>Occurs</label>
+                            <label data-i18n="events.occurs">Occurs</label>
                             <select id="event-occurs" onchange="toggleRecurrenceOptions()">
-                                <option value="once">Once</option>
-                                <option value="daily">Daily</option>
-                                <option value="weekly">Weekly</option>
-                                <option value="monthly">Monthly</option>
+                                <option value="once" data-i18n="events.once">Once</option>
+                                <option value="daily" data-i18n="events.daily">Daily</option>
+                                <option value="weekly" data-i18n="events.weekly">Weekly</option>
+                                <option value="monthly" data-i18n="events.monthly">Monthly</option>
                             </select>
                         </div>
                         <div id="recurrence-options" class="form-group" style="display: none;">
-                            <label>End Date</label>
+                            <label data-i18n="events.end_date">End Date</label>
                             <input type="date" id="event-end-date">
-                            <small style="color: var(--text-light); display: block; margin-top: 5px;">Leave blank for 1 year from start</small>
+                            <small style="color: var(--text-light); display: block; margin-top: 5px;" data-i18n="events.end_date_hint">Leave blank for 1 year from start</small>
                         </div>
                         <div class="form-group">
-                            <label>Location</label>
-                            <input type="text" id="event-location" placeholder="Main Sanctuary, Fellowship Hall">
+                            <label data-i18n="events.location">Location</label>
+                            <input type="text" id="event-location" data-i18n-placeholder="events.placeholder_location" placeholder="Main Sanctuary, Fellowship Hall">
                         </div>
                         <div class="form-group">
-                            <label>Roles Needed - Select all that apply</label>
+                            <label data-i18n="events.roles_needed">Roles Needed - Select all that apply</label>
                             <div class="role-selector" id="event-role-selector">
                                 <!-- Roles will be loaded dynamically from org config -->
                             </div>
                         </div>
                         <div class="modal-footer">
-                            <button type="button" class="btn btn-secondary" onclick="closeCreateEventForm()">Cancel</button>
-                            <button type="submit" class="btn btn-primary">Create Event</button>
+                            <button type="button" class="btn btn-secondary" onclick="closeCreateEventForm()" data-i18n="common.buttons.cancel">Cancel</button>
+                            <button type="submit" class="btn btn-primary" data-i18n="events.create_event">Create Event</button>
                         </div>
                     </form>
                 </div>
@@ -621,32 +665,32 @@
                         <label data-i18n="settings.timezone">Timezone</label>
                         <select id="settings-timezone">
                             <option value="UTC">UTC</option>
-                            <option value="America/New_York">Eastern Time</option>
-                            <option value="America/Chicago">Central Time</option>
-                            <option value="America/Denver">Mountain Time</option>
-                            <option value="America/Los_Angeles">Pacific Time</option>
-                            <option value="America/Anchorage">Alaska Time</option>
-                            <option value="Pacific/Honolulu">Hawaii Time</option>
-                            <option value="Europe/London">London</option>
-                            <option value="Europe/Paris">Paris</option>
-                            <option value="Asia/Tokyo">Tokyo</option>
-                            <option value="Asia/Shanghai">Shanghai</option>
-                            <option value="Asia/Dubai">Dubai</option>
-                            <option value="Australia/Sydney">Sydney</option>
+                            <option value="America/New_York" data-i18n="settings.tz_eastern">Eastern Time</option>
+                            <option value="America/Chicago" data-i18n="settings.tz_central">Central Time</option>
+                            <option value="America/Denver" data-i18n="settings.tz_mountain">Mountain Time</option>
+                            <option value="America/Los_Angeles" data-i18n="settings.tz_pacific">Pacific Time</option>
+                            <option value="America/Anchorage" data-i18n="settings.tz_alaska">Alaska Time</option>
+                            <option value="Pacific/Honolulu" data-i18n="settings.tz_hawaii">Hawaii Time</option>
+                            <option value="Europe/London" data-i18n="settings.tz_london">London</option>
+                            <option value="Europe/Paris" data-i18n="settings.tz_paris">Paris</option>
+                            <option value="Asia/Tokyo" data-i18n="settings.tz_tokyo">Tokyo</option>
+                            <option value="Asia/Shanghai" data-i18n="settings.tz_shanghai">Shanghai</option>
+                            <option value="Asia/Dubai" data-i18n="settings.tz_dubai">Dubai</option>
+                            <option value="Australia/Sydney" data-i18n="settings.tz_sydney">Sydney</option>
                         </select>
                     </div>
                     <div class="setting-item">
-                        <label>Language / Idioma / Langue / 语言</label>
+                        <label data-i18n="settings.language">Language</label>
                         <select id="settings-language" onchange="changeLanguage(this.value)">
-                            <option value="en">English</option>
-                            <option value="es">Español</option>
-                            <option value="pt">Português</option>
-                            <option value="fr">Français</option>
+                            <option value="en" data-i18n="settings.lang_english">English</option>
+                            <option value="es" data-i18n="settings.lang_spanish">Español</option>
+                            <option value="pt" data-i18n="settings.lang_portuguese">Português</option>
+                            <option value="fr" data-i18n="settings.lang_french">Français</option>
                             <option value="zh-CN">中文 (简体)</option>
                             <option value="zh-TW">中文 (繁體)</option>
                         </select>
                         <p class="help-text">
-                            Changes take effect immediately
+                            <span data-i18n="settings.language_change_note">Changes take effect immediately</span>
                         </p>
                     </div>
                     <div class="setting-item">
@@ -655,7 +699,7 @@
                             <!-- Permissions are set by administrators -->
                         </div>
                         <p class="help-text">
-                            <strong>Note:</strong> Your permission level is set by an administrator. Event-specific roles (usher, greeter, sound tech, etc.) are selected when you join individual events.
+                            <span data-i18n="settings.permission_note">Your permission level is set by an administrator. Event-specific roles are selected when you join individual events.</span>
                         </p>
                     </div>
                 </div>
@@ -671,22 +715,22 @@
         <div id="add-role-modal" class="modal hidden">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h3>Add Custom Role</h3>
+                    <h3 data-i18n="admin.add_custom_role">Add Custom Role</h3>
                     <button class="btn-close" onclick="closeAddRoleForm()">×</button>
                 </div>
                 <div class="modal-body">
                     <form onsubmit="addCustomRole(event)">
                         <div class="form-group">
-                            <label>Role Name</label>
-                            <input type="text" id="role-name" placeholder="e.g., Usher, Greeter, Sound Tech" required>
+                            <label data-i18n="admin.role_name">Role Name</label>
+                            <input type="text" id="role-name" data-i18n-placeholder="admin.placeholder_role_name" placeholder="e.g., Usher, Greeter" required>
                         </div>
                         <div class="form-group">
-                            <label>Description (optional)</label>
-                            <textarea id="role-description" rows="3" placeholder="Brief description of this role"></textarea>
+                            <label data-i18n="admin.description_optional">Description (optional)</label>
+                            <textarea id="role-description" rows="3" data-i18n-placeholder="admin.placeholder_role_desc" placeholder="Brief description of this role"></textarea>
                         </div>
                         <div class="modal-footer">
-                            <button type="button" class="btn btn-secondary" onclick="closeAddRoleForm()">Cancel</button>
-                            <button type="submit" class="btn btn-primary">Add Role</button>
+                            <button type="button" class="btn btn-secondary" onclick="closeAddRoleForm()" data-i18n="common.buttons.cancel">Cancel</button>
+                            <button type="submit" class="btn btn-primary" data-i18n="admin.add_role">Add Role</button>
                         </div>
                     </form>
                 </div>
@@ -697,21 +741,21 @@
         <div id="edit-person-modal" class="modal hidden">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h3>Edit Roles for <span id="edit-person-name"></span></h3>
+                    <h3 data-i18n="admin.edit_roles_for">Edit Roles for <span id="edit-person-name"></span></h3>
                     <button class="btn-close" onclick="closeEditPersonModal()">×</button>
                 </div>
                 <div class="modal-body">
                     <form id="edit-person-form" onsubmit="updatePersonRoles(event)">
                         <input type="hidden" id="edit-person-id">
                         <div class="form-group">
-                            <label>Roles</label>
+                            <label data-i18n="admin.roles">Roles</label>
                             <div id="edit-person-roles-checkboxes" class="role-selector">
                                 <!-- Role checkboxes will be dynamically populated -->
                             </div>
                         </div>
                         <div class="modal-footer">
-                            <button type="button" class="btn btn-secondary" onclick="closeEditPersonModal()">Cancel</button>
-                            <button type="submit" class="btn btn-primary">Save Changes</button>
+                            <button type="button" class="btn btn-secondary" onclick="closeEditPersonModal()" data-i18n="common.buttons.cancel">Cancel</button>
+                            <button type="submit" class="btn btn-primary" data-i18n="common.buttons.save">Save Changes</button>
                         </div>
                     </form>
                 </div>
@@ -722,24 +766,24 @@
         <div id="edit-role-modal" class="modal hidden">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h3>Edit Role</h3>
+                    <h3 data-i18n="admin.edit_role">Edit Role</h3>
                     <button class="btn-close" onclick="closeEditRoleModal()">×</button>
                 </div>
                 <div class="modal-body">
                     <form id="edit-role-form" onsubmit="saveEditRole(event)">
                         <input type="hidden" id="edit-role-old-name">
                         <div class="form-group">
-                            <label for="edit-role-name">Role Name</label>
+                            <label for="edit-role-name" data-i18n="admin.role_name">Role Name</label>
                             <input type="text" id="edit-role-name" class="form-control" required>
-                            <small class="form-help">Use lowercase with underscores (e.g., worship_leader)</small>
+                            <small class="form-help" data-i18n="admin.role_name_hint">Use lowercase with underscores (e.g., worship_leader)</small>
                         </div>
                         <div class="form-group">
-                            <label for="edit-role-description">Description</label>
-                            <textarea id="edit-role-description" class="form-control" rows="3" placeholder="Optional description"></textarea>
+                            <label for="edit-role-description" data-i18n="admin.description">Description</label>
+                            <textarea id="edit-role-description" class="form-control" rows="3" data-i18n-placeholder="admin.placeholder_optional_desc" placeholder="Optional description"></textarea>
                         </div>
                         <div class="modal-footer">
-                            <button type="button" class="btn btn-secondary" onclick="closeEditRoleModal()">Cancel</button>
-                            <button type="submit" class="btn btn-primary">Save Changes</button>
+                            <button type="button" class="btn btn-secondary" onclick="closeEditRoleModal()" data-i18n="common.buttons.cancel">Cancel</button>
+                            <button type="submit" class="btn btn-primary" data-i18n="common.buttons.save">Save Changes</button>
                         </div>
                     </form>
                 </div>
@@ -750,21 +794,21 @@
         <div id="manage-role-people-modal" class="modal hidden">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h3>Manage People for <span id="manage-role-name"></span></h3>
+                    <h3 data-i18n="admin.manage_people_for">Manage People for <span id="manage-role-name"></span></h3>
                     <button class="btn-close" onclick="closeManageRolePeopleModal()">×</button>
                 </div>
                 <div class="modal-body">
                     <form id="manage-role-people-form" onsubmit="saveRolePeople(event)">
                         <input type="hidden" id="manage-role-id">
                         <div class="form-group">
-                            <label>Select people who should have this role:</label>
+                            <label data-i18n="admin.select_people_with_role">Select people who should have this role:</label>
                             <div id="manage-role-people-checkboxes" class="role-selector">
                                 <!-- People checkboxes will be dynamically populated -->
                             </div>
                         </div>
                         <div class="modal-footer">
-                            <button type="button" class="btn btn-secondary" onclick="closeManageRolePeopleModal()">Cancel</button>
-                            <button type="submit" class="btn btn-primary">Save Changes</button>
+                            <button type="button" class="btn btn-secondary" onclick="closeManageRolePeopleModal()" data-i18n="common.buttons.cancel">Cancel</button>
+                            <button type="submit" class="btn btn-primary" data-i18n="common.buttons.save">Save Changes</button>
                         </div>
                     </form>
                 </div>
@@ -775,14 +819,14 @@
         <div id="assignment-modal" class="modal hidden">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h3>Assign People to Event</h3>
+                    <h3 data-i18n="events.assign_people">Assign People to Event</h3>
                     <button class="btn-close" onclick="closeAssignmentModal()">×</button>
                 </div>
                 <div class="modal-body">
                     <div id="assignment-people-list"></div>
                 </div>
                 <div class="modal-footer">
-                    <button class="btn btn-secondary" onclick="closeAssignmentModal()">Done</button>
+                    <button class="btn btn-secondary" onclick="closeAssignmentModal()" data-i18n="common.buttons.done">Done</button>
                 </div>
             </div>
         </div>
@@ -791,21 +835,21 @@
         <div id="invite-user-modal" class="modal hidden">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h3>Invite User</h3>
+                    <h3 data-i18n="admin.invite_user">Invite User</h3>
                     <button class="btn-close" onclick="closeInviteUserModal()">×</button>
                 </div>
                 <div class="modal-body">
                     <form id="invite-user-form" onsubmit="sendInvitation(event)">
                         <div class="form-group">
-                            <label>Email Address</label>
-                            <input type="email" id="invite-email" placeholder="user@example.com" required>
+                            <label data-i18n="common.labels.email">Email Address</label>
+                            <input type="email" id="invite-email" data-i18n-placeholder="admin.placeholder_email" placeholder="user@example.com" required>
                         </div>
                         <div class="form-group">
-                            <label>Full Name</label>
-                            <input type="text" id="invite-name" placeholder="John Doe" required>
+                            <label data-i18n="common.labels.full_name">Full Name</label>
+                            <input type="text" id="invite-name" data-i18n-placeholder="admin.placeholder_name" placeholder="John Doe" required>
                         </div>
                         <div class="form-group">
-                            <label>Assign Roles</label>
+                            <label data-i18n="admin.assign_roles">Assign Roles</label>
                             <div class="role-selector" id="invite-role-selector">
                                 <label class="role-option">
                                     <input type="checkbox" value="volunteer"> Volunteer
@@ -816,8 +860,8 @@
                             </div>
                         </div>
                         <div class="modal-footer">
-                            <button type="button" class="btn btn-secondary" onclick="closeInviteUserModal()">Cancel</button>
-                            <button type="submit" class="btn btn-primary">Send Invitation</button>
+                            <button type="button" class="btn btn-secondary" onclick="closeInviteUserModal()" data-i18n="common.buttons.cancel">Cancel</button>
+                            <button type="submit" class="btn btn-primary" data-i18n="admin.send_invitation">Send Invitation</button>
                         </div>
                     </form>
                 </div>
@@ -828,49 +872,49 @@
         <div id="calendar-subscription-modal" class="modal hidden">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h3>Subscribe to Calendar</h3>
+                    <h3 data-i18n="schedule.subscribe_to_calendar">Subscribe to Calendar</h3>
                     <button class="close-btn" onclick="closeCalendarSubscriptionModal()">×</button>
                 </div>
                 <div class="modal-body">
-                    <p class="help-text">
+                    <p class="help-text" data-i18n="schedule.subscription_help">
                         Subscribe to your schedule in Google Calendar, Apple Calendar, Outlook, or any other calendar app.
                         Your calendar will automatically update when your schedule changes.
                     </p>
 
                     <div class="form-group">
-                        <label>Subscription URL (webcal://)</label>
+                        <label data-i18n="schedule.subscription_url_webcal">Subscription URL (webcal://)</label>
                         <div class="input-group">
                             <input type="text" id="webcal-url" readonly class="subscription-url">
-                            <button class="btn btn-secondary" onclick="copyToClipboard('webcal-url')">Copy</button>
+                            <button class="btn btn-secondary" onclick="copyToClipboard('webcal-url')" data-i18n="common.buttons.copy">Copy</button>
                         </div>
-                        <small class="help-text">Use this URL in most calendar apps</small>
+                        <small class="help-text" data-i18n="schedule.webcal_hint">Use this URL in most calendar apps</small>
                     </div>
 
                     <div class="form-group">
-                        <label>Alternative URL (https://)</label>
+                        <label data-i18n="schedule.alternative_url_https">Alternative URL (https://)</label>
                         <div class="input-group">
                             <input type="text" id="https-url" readonly class="subscription-url">
-                            <button class="btn btn-secondary" onclick="copyToClipboard('https-url')">Copy</button>
+                            <button class="btn btn-secondary" onclick="copyToClipboard('https-url')" data-i18n="common.buttons.copy">Copy</button>
                         </div>
-                        <small class="help-text">Use this if webcal:// doesn't work</small>
+                        <small class="help-text" data-i18n="schedule.https_hint">Use this if webcal:// doesn't work</small>
                     </div>
 
                     <div class="calendar-instructions">
-                        <h4>How to subscribe:</h4>
+                        <h4 data-i18n="schedule.how_to_subscribe">How to subscribe:</h4>
                         <ul>
-                            <li><strong>Google Calendar:</strong> Settings → Add calendar → From URL</li>
-                            <li><strong>Apple Calendar:</strong> File → New Calendar Subscription</li>
-                            <li><strong>Outlook:</strong> Calendar → Add calendar → Subscribe from web</li>
+                            <li><strong data-i18n="schedule.google_calendar">Google Calendar:</strong> Settings → Add calendar → From URL</li>
+                            <li><strong data-i18n="schedule.apple_calendar">Apple Calendar:</strong> File → New Calendar Subscription</li>
+                            <li><strong data-i18n="schedule.outlook">Outlook:</strong> Calendar → Add calendar → Subscribe from web</li>
                         </ul>
                     </div>
 
                     <div class="alert alert-warning">
-                        <strong>Security Note:</strong> Keep this URL private. Anyone with this URL can view your schedule.
-                        <button class="btn btn-link" onclick="resetCalendarToken()">Reset URL</button> if compromised.
+                        <strong data-i18n="schedule.security_note_title">Security Note:</strong> <span data-i18n="schedule.security_note_text">Keep this URL private. Anyone with this URL can view your schedule.</span>
+                        <button class="btn btn-link" onclick="resetCalendarToken()" data-i18n="schedule.reset_url">Reset URL</button> <span data-i18n="schedule.if_compromised">if compromised.</span>
                     </div>
 
                     <div class="modal-footer">
-                        <button class="btn btn-secondary" onclick="closeCalendarSubscriptionModal()">Close</button>
+                        <button class="btn btn-secondary" onclick="closeCalendarSubscriptionModal()" data-i18n="common.buttons.close">Close</button>
                     </div>
                 </div>
             </div>
@@ -880,36 +924,36 @@
         <div id="select-role-modal" class="modal hidden">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h3>Select Your Role</h3>
+                    <h3 data-i18n="events.select_your_role">Select Your Role</h3>
                     <button class="btn-close" onclick="closeSelectRoleModal()">×</button>
                 </div>
                 <div class="modal-body">
-                    <p class="help-text">What role will you fulfill for this event?</p>
+                    <p class="help-text" data-i18n="events.role_question">What role will you fulfill for this event?</p>
                     <form id="select-role-form" onsubmit="submitEventRole(event)">
                         <input type="hidden" id="role-event-id">
                         <div class="form-group">
-                            <label for="event-role-select">Role</label>
+                            <label for="event-role-select" data-i18n="admin.role">Role</label>
                             <select id="event-role-select" class="form-control" required>
                                 <option value="">-- Select a role --</option>
-                                <option value="usher">Usher</option>
-                                <option value="greeter">Greeter</option>
-                                <option value="sound_tech">Sound Tech</option>
-                                <option value="video_tech">Video Tech</option>
-                                <option value="worship_leader">Worship Leader</option>
-                                <option value="speaker">Speaker</option>
-                                <option value="nursery">Nursery</option>
-                                <option value="parking">Parking</option>
-                                <option value="security">Security</option>
-                                <option value="other">Other</option>
+                                <option value="usher" data-i18n="events.role_usher">Usher</option>
+                                <option value="greeter" data-i18n="events.role_greeter">Greeter</option>
+                                <option value="sound_tech"><span data-i18n="events.role_sound_tech">Sound Tech</span></option>
+                                <option value="video_tech"><span data-i18n="events.role_video_tech">Video Tech</span></option>
+                                <option value="worship_leader"><span data-i18n="events.role_worship_leader">Worship Leader</span></option>
+                                <option value="speaker" data-i18n="events.role_speaker">Speaker</option>
+                                <option value="nursery" data-i18n="events.role_nursery">Nursery</option>
+                                <option value="parking" data-i18n="events.role_parking">Parking</option>
+                                <option value="security" data-i18n="events.role_security">Security</option>
+                                <option value="other" data-i18n="events.role_other">Other</option>
                             </select>
                         </div>
                         <div class="form-group" id="custom-role-group" style="display: none;">
-                            <label for="custom-role-input">Custom Role Name</label>
-                            <input type="text" id="custom-role-input" class="form-control" placeholder="Enter custom role">
+                            <label for="custom-role-input" data-i18n="events.custom_role_name">Custom Role Name</label>
+                            <input type="text" id="custom-role-input" class="form-control" data-i18n-placeholder="events.placeholder_custom_role" placeholder="Enter custom role">
                         </div>
                         <div class="modal-footer">
-                            <button type="button" class="btn btn-secondary" onclick="closeSelectRoleModal()">Cancel</button>
-                            <button type="submit" class="btn btn-primary">Join Event</button>
+                            <button type="button" class="btn btn-secondary" onclick="closeSelectRoleModal()" data-i18n="common.buttons.cancel">Cancel</button>
+                            <button type="submit" class="btn btn-primary" data-i18n="events.join_event">Join Event</button>
                         </div>
                     </form>
                 </div>

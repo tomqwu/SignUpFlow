@@ -12,9 +12,12 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // Check if user has a saved language preference
     const savedUser = localStorage.getItem('roster_user');
+    console.log('🔄 DOMContentLoaded - localStorage roster_user:', savedUser ? JSON.parse(savedUser) : null);
     if (savedUser) {
         const user = JSON.parse(savedUser);
+        console.log('🌐 DOMContentLoaded - User language from localStorage:', user.language, 'Current i18n locale:', i18n.getLocale());
         if (user.language && user.language !== i18n.getLocale()) {
+            console.log('🔧 DOMContentLoaded - Setting locale to:', user.language);
             await i18n.setLocale(user.language);
         }
     }
@@ -27,6 +30,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 // Translate all elements with data-i18n attribute
 function translatePage() {
+    // Translate text content
     document.querySelectorAll('[data-i18n]').forEach(el => {
         const key = el.getAttribute('data-i18n');
         const translated = i18n.t(key);
@@ -40,26 +44,56 @@ function translatePage() {
             el.textContent = translated;
         }
     });
+
+    // Translate placeholders separately
+    document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+        const key = el.getAttribute('data-i18n-placeholder');
+        const translated = i18n.t(key);
+        el.setAttribute('placeholder', translated);
+    });
 }
 
 // Session Management
 function checkExistingSession() {
     const savedUser = localStorage.getItem('roster_user');
     const savedOrg = localStorage.getItem('roster_org');
-    const savedView = localStorage.getItem('roster_current_view') || 'calendar';
+    const currentPath = window.location.pathname;
 
     if (savedUser && savedOrg) {
         currentUser = JSON.parse(savedUser);
         currentOrg = JSON.parse(savedOrg);
-        showMainApp();
-        // Restore the last viewed tab
-        setTimeout(() => switchView(savedView), 100);
+
+        // If on a protected /app route, handle it with router
+        if (currentPath.startsWith('/app')) {
+            router.handleRoute(currentPath, false);
+        } else {
+            // Default to schedule view if logged in but on root/login page
+            router.navigate('/app/schedule', true);
+            showMainApp();
+        }
     } else {
-        showScreen('onboarding-screen');
+        // Not logged in - check if trying to access protected route
+        if (currentPath.startsWith('/app')) {
+            // Redirect to login if trying to access app without session
+            router.navigate('/login', true);
+        } else if (currentPath === '/login') {
+            showScreen('login-screen');
+        } else if (currentPath === '/join') {
+            showScreen('join-screen');
+            loadOrganizations();
+        } else {
+            // Default to onboarding
+            router.navigate('/', false);
+            showScreen('onboarding-screen');
+        }
     }
 }
 
 function saveSession() {
+    console.log('💿 saveSession - Saving to localStorage:', {
+        user: { id: currentUser.id, name: currentUser.name, timezone: currentUser.timezone, language: currentUser.language },
+        org: currentOrg.name
+    });
     localStorage.setItem('roster_user', JSON.stringify(currentUser));
     localStorage.setItem('roster_org', JSON.stringify(currentOrg));
 }
@@ -72,6 +106,7 @@ function logout() {
     localStorage.clear();
     currentUser = null;
     currentOrg = null;
+    router.navigate('/', true);
     location.reload();
 }
 
@@ -89,11 +124,13 @@ function showScreen(screenId) {
 }
 
 function startOnboarding() {
+    router.navigate('/join');
     showScreen('join-screen');
     loadOrganizations();
 }
 
 function showLogin() {
+    router.navigate('/login');
     showScreen('login-screen');
 }
 
@@ -124,6 +161,8 @@ async function handleLogin(event) {
             const orgResponse = await fetch(`${API_BASE_URL}/organizations/${data.org_id}`);
             const orgData = await orgResponse.json();
 
+            console.log('🔐 handleLogin - Backend response data:', data);
+
             currentUser = {
                 id: data.person_id,
                 name: data.name,
@@ -136,21 +175,34 @@ async function handleLogin(event) {
             };
             currentOrg = orgData;
 
+            console.log('👤 handleLogin - Created currentUser:', { id: currentUser.id, name: currentUser.name, timezone: currentUser.timezone, language: currentUser.language });
+
+            // Debug: Log roles to check structure
+            console.log('Login - currentUser.roles:', currentUser.roles, 'Type:', typeof currentUser.roles);
+
+            // Set user's language preference
+            if (currentUser.language && currentUser.language !== i18n.getLocale()) {
+                console.log('🌐 handleLogin - Setting language to:', currentUser.language);
+                await i18n.setLocale(currentUser.language);
+                translatePage();
+            }
+
             saveSession();
+            router.navigate('/app/schedule', true);
             showMainApp();
         } else {
             const error = await response.json();
-            errorEl.textContent = error.detail || 'Invalid email or password';
+            errorEl.textContent = error.detail || i18n.t('auth.login.error');
             errorEl.classList.remove('hidden');
         }
     } catch (error) {
-        errorEl.textContent = 'Connection error. Please try again.';
+        errorEl.textContent = i18n.t('messages.errors.connection_error');
         errorEl.classList.remove('hidden');
     }
 }
 
 function showLogin_old() {
-    showToast('Login functionality coming soon! Go through onboarding to create your profile.', 'info');
+    showToast(i18n.t('messages.info.login_coming_soon'), 'info');
 }
 
 // Organization Selection
@@ -208,10 +260,10 @@ async function createAndJoinOrg(event) {
             currentOrg = { id: orgId, name: orgName };
             showScreen('profile-screen');
         } else {
-            showToast('Error creating organization. Please try again.', 'error');
+            showToast(i18n.t('messages.errors.create_org_failed'), 'error');
         }
     } catch (error) {
-        showToast(`Error: ${error.message}`, 'error');
+        showToast(i18n.t('messages.errors.generic') + ': ' + error.message, 'error');
     }
 }
 
@@ -255,13 +307,13 @@ async function createProfile(event) {
             saveSession();
             showMainApp();
         } else if (response.status === 409) {
-            showToast('This email is already registered. Please use the login page instead.', 'error');
+            showToast(i18n.t('messages.errors.email_already_registered'), 'error');
         } else {
             const error = await response.json();
-            showToast(`Error creating profile: ${error.detail}`, 'error');
+            showToast(i18n.t('messages.errors.create_profile_failed', { detail: error.detail }), 'error');
         }
     } catch (error) {
-        showToast(`Error: ${error.message}`, 'error');
+        showToast(i18n.t('messages.errors.generic') + ': ' + error.message, 'error');
     }
 }
 
@@ -272,6 +324,9 @@ async function showMainApp() {
 
     // Load and display organization(s)
     await loadUserOrganizations();
+
+    // Update role badges display
+    updateRoleBadgesDisplay();
 
     // Show admin features if user is admin
     if (currentUser.roles && currentUser.roles.includes('admin')) {
@@ -387,12 +442,17 @@ async function switchOrganization() {
             // Reload the entire app with new org
             location.reload();
         } catch (error) {
-            showToast(`Error switching organization: ${error.message}`, 'error');
+            showToast(i18n.t('messages.errors.switch_org_failed', { message: error.message }), 'error');
         }
     }
 }
 
-function switchView(viewName) {
+function switchView(viewName, skipUrlUpdate = false) {
+    // Update URL (unless called from router to avoid double navigation)
+    if (!skipUrlUpdate) {
+        router.navigate(`/app/${viewName}`, true);
+    }
+
     // Save current view to remember on refresh
     saveCurrentView(viewName);
 
@@ -660,19 +720,19 @@ async function exportMyCalendar() {
             a.href = url;
             a.download = `${currentUser.id}_schedule.ics`;
             a.click();
-            showToast('Calendar exported successfully!', 'success');
+            showToast(i18n.t('messages.success.calendar_exported'), 'success');
         } else {
             const errorData = await response.json().catch(() => ({ detail: 'Unknown error' }));
             const errorMsg = errorData.detail || 'Export failed';
 
             if (errorMsg.includes('No assignments found')) {
-                showToast('No schedule to export yet. Contact your admin if you think this is an error.', 'warning', 5000);
+                showToast(i18n.t('messages.warnings.no_schedule_export'), 'warning', 5000);
             } else {
-                showToast(`Export failed: ${errorMsg}`, 'error');
+                showToast(i18n.t('messages.errors.export_failed', { message: errorMsg }), 'error');
             }
         }
     } catch (error) {
-        showToast(`Error exporting calendar: ${error.message}`, 'error');
+        showToast(i18n.t('messages.errors.error_exporting_calendar', { message: error.message }), 'error');
     }
 }
 
@@ -689,13 +749,13 @@ async function showCalendarSubscription() {
 
             // Show the modal
             document.getElementById('calendar-subscription-modal').classList.remove('hidden');
-            showToast('Subscription URL generated!', 'success');
+            showToast(i18n.t('messages.success.subscription_generated'), 'success');
         } else {
             const errorData = await response.json().catch(() => ({ detail: 'Unknown error' }));
-            showToast(`Error: ${errorData.detail}`, 'error');
+            showToast(i18n.t('messages.errors.error_subscription_url', { message: errorData.detail }), 'error');
         }
     } catch (error) {
-        showToast(`Error: ${error.message}`, 'error');
+        showToast(i18n.t('messages.errors.generic') + ': ' + error.message, 'error');
     }
 }
 
@@ -707,11 +767,11 @@ function copyToClipboard(elementId) {
     const input = document.getElementById(elementId);
     input.select();
     document.execCommand('copy');
-    showToast('URL copied to clipboard!', 'success');
+    showToast(i18n.t('messages.success.url_copied'), 'success');
 }
 
 async function resetCalendarToken() {
-    if (!confirm('Are you sure you want to reset your calendar subscription URL? Your existing subscription will stop working.')) {
+    if (!confirm(i18n.t('messages.confirm.reset_calendar_token'))) {
         return;
     }
 
@@ -727,13 +787,13 @@ async function resetCalendarToken() {
             document.getElementById('webcal-url').value = data.webcal_url;
             document.getElementById('https-url').value = data.https_url;
 
-            showToast('Calendar subscription URL has been reset!', 'success');
+            showToast(i18n.t('messages.success.subscription_reset'), 'success');
         } else {
             const errorData = await response.json().catch(() => ({ detail: 'Unknown error' }));
-            showToast(`Error: ${errorData.detail}`, 'error');
+            showToast(i18n.t('messages.errors.error_reset_subscription', { message: errorData.detail }), 'error');
         }
     } catch (error) {
-        showToast(`Error: ${error.message}`, 'error');
+        showToast(i18n.t('messages.errors.generic') + ': ' + error.message, 'error');
     }
 }
 
@@ -894,13 +954,13 @@ async function addTimeOff(event) {
         if (response.ok) {
             event.target.reset();
             loadTimeOff();
-            showToast('Time-off added successfully!', 'success');
+            showToast(i18n.t('messages.success.timeoff_added'), 'success');
         } else {
             const error = await response.json();
-            showToast(`Error: ${error.detail}`, 'error');
+            showToast(i18n.t('messages.errors.error_adding_timeoff', { message: error.detail }), 'error');
         }
     } catch (error) {
-        showToast(`Error: ${error.message}`, 'error');
+        showToast(i18n.t('messages.errors.generic') + ': ' + error.message, 'error');
     }
 }
 
@@ -948,13 +1008,13 @@ async function saveEditedTimeOff(event) {
         if (response.ok) {
             closeEditTimeOffModal();
             loadTimeOff();
-            showToast('Time-off period updated successfully!', 'success');
+            showToast(i18n.t('messages.success.timeoff_updated'), 'success');
         } else {
             const error = await response.json();
-            showToast(error.detail || 'Error updating time-off', 'error');
+            showToast(error.detail || i18n.t('messages.errors.error_updating_timeoff'), 'error');
         }
     } catch (error) {
-        showToast(error.message, 'error');
+        showToast(i18n.t('messages.errors.generic') + ': ' + error.message, 'error');
     }
 }
 
@@ -970,12 +1030,12 @@ async function removeTimeOff(timeoffId) {
 
             if (response.ok || response.status === 204) {
                 loadTimeOff();
-                showToast('Time-off removed successfully!', 'success');
+                showToast(i18n.t('messages.success.timeoff_removed'), 'success');
             } else {
-                showToast('Error removing time-off', 'error');
+                showToast(i18n.t('messages.errors.error_removing_timeoff'), 'error');
             }
         } catch (error) {
-            showToast(`Error: ${error.message}`, 'error');
+            showToast(i18n.t('messages.errors.generic') + ': ' + error.message, 'error');
         }
     });
 }
@@ -1017,6 +1077,8 @@ async function saveSettings() {
         const timezone = document.getElementById('settings-timezone').value;
         const language = document.getElementById('settings-language').value;
 
+        console.log('💾 saveSettings - Saving timezone:', timezone, 'language:', language);
+
         // Save both timezone and language
         const response = await fetch(`${API_BASE_URL}/people/${currentUser.id}`, {
             method: 'PUT',
@@ -1025,9 +1087,13 @@ async function saveSettings() {
         });
 
         if (response.ok) {
+            const updatedData = await response.json();
+            console.log('✅ saveSettings - Backend response:', updatedData);
+
             const needsReload = currentUser.language !== language;
             currentUser.timezone = timezone;
             currentUser.language = language;
+            console.log('📝 saveSettings - Updated currentUser:', { timezone: currentUser.timezone, language: currentUser.language });
             saveSession();
 
             // Set language in i18n
@@ -1042,10 +1108,10 @@ async function saveSettings() {
             closeSettings();
         } else {
             const error = await response.json();
-            showToast(error.detail || 'Error saving settings', 'error');
+            showToast(error.detail || i18n.t('messages.errors.error_saving_settings'), 'error');
         }
     } catch (error) {
-        showToast(error.message, 'error');
+        showToast(i18n.t('messages.errors.generic') + ': ' + error.message, 'error');
     }
 }
 
@@ -1348,13 +1414,13 @@ async function editEvent(eventId) {
         document.getElementById('create-event-form').dataset.editingEventId = eventId;
 
         // Change modal title and button text
-        document.querySelector('#create-event-modal h3').textContent = 'Edit Event';
-        document.querySelector('#create-event-form button[type="submit"]').textContent = 'Update Event';
+        document.querySelector('#create-event-modal h3').textContent = i18n.t('events.edit_event');
+        document.querySelector('#create-event-form button[type="submit"]').textContent = i18n.t('events.update_event');
 
         // Show modal
         document.getElementById('create-event-modal').classList.remove('hidden');
     } catch (error) {
-        showToast(`Error loading event: ${error.message}`, 'error');
+        showToast(i18n.t('messages.errors.error_loading_event', { message: error.message }), 'error');
     }
 }
 
@@ -1370,12 +1436,12 @@ async function deleteEvent(eventId) {
             if (response.ok || response.status === 204) {
                 loadAdminEvents();
                 loadAdminStats();
-                showToast('Event deleted successfully!', 'success');
+                showToast(i18n.t('messages.success.event_deleted'), 'success');
             } else {
-                showToast('Error deleting event', 'error');
+                showToast(i18n.t('messages.errors.error_deleting_event'), 'error');
             }
         } catch (error) {
-            showToast(`Error: ${error.message}`, 'error');
+            showToast(i18n.t('messages.errors.generic') + ': ' + error.message, 'error');
         }
     });
 }
@@ -1537,7 +1603,7 @@ async function showAssignments(eventId) {
         modal.dataset.eventId = eventId;
         modal.classList.remove('hidden');
     } catch (error) {
-        showToast(`Error loading people: ${error.message}`, 'error');
+        showToast(i18n.t('messages.errors.error_loading_people', { message: error.message }), 'error');
     }
 }
 
@@ -1553,17 +1619,17 @@ async function toggleAssignment(eventId, personId, isCurrentlyAssigned) {
 
         if (response.ok) {
             const result = await response.json();
-            showToast(result.message, 'success');
+            showToast(i18n.t('messages.success.assignment_updated'), 'success');
 
             // Refresh the modal and the event card
             showAssignments(eventId);
             loadEventAssignments(eventId);
         } else {
             const error = await response.json();
-            showToast(error.detail || 'Error updating assignment', 'error');
+            showToast(error.detail || i18n.t('messages.errors.error_updating_assignment'), 'error');
         }
     } catch (error) {
-        showToast(`Error: ${error.message}`, 'error');
+        showToast(i18n.t('messages.errors.generic') + ': ' + error.message, 'error');
     }
 }
 
@@ -1583,12 +1649,12 @@ async function deleteSolution(solutionId) {
             if (response.ok || response.status === 204) {
                 loadAdminSolutions();
                 loadAdminStats();
-                showToast('Schedule deleted successfully!', 'success');
+                showToast(i18n.t('messages.success.schedule_deleted'), 'success');
             } else {
-                showToast('Error deleting schedule', 'error');
+                showToast(i18n.t('messages.errors.error_deleting_schedule'), 'error');
             }
         } catch (error) {
-            showToast(`Error: ${error.message}`, 'error');
+            showToast(i18n.t('messages.errors.generic') + ': ' + error.message, 'error');
         }
     });
 }
@@ -1638,7 +1704,7 @@ async function generateSchedule() {
                         </ol>
                     </div>
                 `;
-                showToast('No assignments created - check events and people setup', 'error');
+                showToast(i18n.t('messages.errors.no_assignments_created'), 'error');
                 return;
             }
 
@@ -1650,7 +1716,7 @@ async function generateSchedule() {
                     Health Score: ${data.metrics?.health_score?.toFixed(1) || 'N/A'}/100
                 </div>
             `;
-            showToast(`Schedule created with ${assignmentCount} assignments!`, 'success');
+            showToast(i18n.t('messages.success.schedule_created', { count: assignmentCount }), 'success');
             loadAdminSolutions();
             loadAdminStats();
 
@@ -1687,20 +1753,20 @@ async function viewSolution(solutionId) {
             a.href = url;
             a.download = `schedule_${solutionId}.pdf`;
             a.click();
-            showToast('Schedule downloaded successfully!', 'success');
+            showToast(i18n.t('messages.success.schedule_downloaded'), 'success');
         } else {
             // Get detailed error message
             const errorData = await response.json().catch(() => ({ detail: 'Unknown error' }));
             const errorMsg = errorData.detail || errorData.message || 'Error exporting schedule';
 
             if (errorMsg.includes('no assignments')) {
-                showToast('Cannot export schedule: No assignments were generated.', 'warning', 5000);
+                showToast(i18n.t('messages.warnings.cannot_export_no_assignments'), 'warning', 5000);
             } else {
-                showToast(`Error exporting schedule: ${errorMsg}`, 'error');
+                showToast(i18n.t('messages.errors.error_exporting_schedule', { message: errorMsg }), 'error');
             }
         }
     } catch (error) {
-        showToast(`Error: ${error.message}`, 'error');
+        showToast(i18n.t('messages.errors.generic') + ': ' + error.message, 'error');
     }
 }
 
@@ -1720,6 +1786,9 @@ function updateRoleBadgesDisplay() {
 
     // Get user's roles
     const roles = currentUser.roles || [];
+
+    // Debug: Log roles structure
+    console.log('updateRoleBadgesDisplay - roles:', roles, 'Type:', typeof roles, 'IsArray:', Array.isArray(roles));
     
     if (roles.length === 0) {
         rolesDisplay.innerHTML = '<span class="role-badge" style="background: #9ca3af;">No roles set</span>';
@@ -1730,7 +1799,8 @@ function updateRoleBadgesDisplay() {
         roles.forEach(role => {
             const badge = document.createElement('span');
             badge.className = 'role-badge';
-            badge.textContent = role;
+            // Handle both string and object roles
+            badge.textContent = typeof role === 'string' ? role : (role.name || JSON.stringify(role));
             rolesDisplay.appendChild(badge);
         });
     }
@@ -1834,7 +1904,7 @@ async function sendInvitation(event) {
     const roles = Array.from(roleCheckboxes).map(cb => cb.value);
 
     if (roles.length === 0) {
-        showToast('Please select at least one role', 'warning');
+        showToast(i18n.t('messages.errors.select_at_least_one_role'), 'warning');
         return;
     }
 
@@ -1853,15 +1923,15 @@ async function sendInvitation(event) {
 
         if (response.ok) {
             const data = await response.json();
-            showToast('Invitation sent successfully!', 'success');
+            showToast(i18n.t('messages.success.invitation_sent'), 'success');
             closeInviteUserModal();
             loadInvitations();
         } else {
             const error = await response.json();
-            showToast(error.detail || 'Error sending invitation', 'error');
+            showToast(error.detail || i18n.t('messages.errors.error_sending_invitation'), 'error');
         }
     } catch (error) {
-        showToast(`Error: ${error.message}`, 'error');
+        showToast(i18n.t('messages.errors.generic') + ': ' + error.message, 'error');
     }
 }
 
@@ -1933,14 +2003,14 @@ async function resendInvitation(invitationId) {
         });
 
         if (response.ok) {
-            showToast('Invitation resent successfully!', 'success');
+            showToast(i18n.t('messages.success.invitation_resent'), 'success');
             loadInvitations();
         } else {
             const error = await response.json();
-            showToast(error.detail || 'Error resending invitation', 'error');
+            showToast(error.detail || i18n.t('messages.errors.error_resending_invitation'), 'error');
         }
     } catch (error) {
-        showToast(`Error: ${error.message}`, 'error');
+        showToast(i18n.t('messages.errors.generic') + ': ' + error.message, 'error');
     }
 }
 
@@ -1954,14 +2024,14 @@ async function cancelInvitation(invitationId) {
             });
 
             if (response.ok || response.status === 204) {
-                showToast('Invitation cancelled successfully!', 'success');
+                showToast(i18n.t('messages.success.invitation_cancelled'), 'success');
                 loadInvitations();
             } else {
                 const error = await response.json();
-                showToast(error.detail || 'Error cancelling invitation', 'error');
+                showToast(error.detail || i18n.t('messages.errors.error_cancelling_invitation'), 'error');
             }
         } catch (error) {
-            showToast(`Error: ${error.message}`, 'error');
+            showToast(i18n.t('messages.errors.generic') + ': ' + error.message, 'error');
         }
     });
 }
@@ -1976,14 +2046,14 @@ async function exportLatestSchedulePDF() {
         const solutionsData = await solutionsResponse.json();
 
         if (solutionsData.solutions.length === 0) {
-            showToast('No schedule available to export.', 'warning');
+            showToast(i18n.t('messages.warnings.no_schedule_available'), 'warning');
             return;
         }
 
         const latestSolution = solutionsData.solutions[0];
         viewSolution(latestSolution.id);
     } catch (error) {
-        showToast(`Error: ${error.message}`, 'error');
+        showToast(i18n.t('messages.errors.generic') + ': ' + error.message, 'error');
     }
 }
 
@@ -1993,7 +2063,7 @@ async function exportOrgCalendar() {
         const solutionsData = await solutionsResponse.json();
 
         if (solutionsData.solutions.length === 0) {
-            showToast('No schedule available to export.', 'warning');
+            showToast(i18n.t('messages.warnings.no_schedule_available'), 'warning');
             return;
         }
 
@@ -2015,13 +2085,13 @@ async function exportOrgCalendar() {
             a.href = url;
             a.download = `${currentOrg.name.replace(/\s+/g, '_')}_schedule.ics`;
             a.click();
-            showToast('Calendar exported successfully!', 'success');
+            showToast(i18n.t('messages.success.calendar_exported'), 'success');
         } else {
             const errorData = await response.json().catch(() => ({ detail: 'Unknown error' }));
-            showToast(`Export failed: ${errorData.detail}`, 'error');
+            showToast(i18n.t('messages.errors.export_failed', { message: errorData.detail }), 'error');
         }
     } catch (error) {
-        showToast(`Error: ${error.message}`, 'error');
+        showToast(i18n.t('messages.errors.generic') + ': ' + error.message, 'error');
     }
 }
 
@@ -2167,9 +2237,9 @@ function updateOrgHelpText(orgCount) {
     const helpText = document.querySelector('.context-item .context-help');
     if (helpText && orgCount !== undefined) {
         if (orgCount > 1) {
-            helpText.textContent = `Switch between your ${orgCount} organizations`;
+            helpText.textContent = i18n.t('common.switch_organizations', { count: orgCount });
         } else {
-            helpText.textContent = 'Your current organization';
+            helpText.textContent = i18n.t('common.current_organization');
         }
     }
 }
@@ -2225,13 +2295,13 @@ async function updatePersonRoles(event) {
         if (response.ok) {
             closeEditPersonModal();
             loadAdminPeople();
-            showToast('Roles updated successfully!', 'success');
+            showToast(i18n.t('messages.success.roles_updated'), 'success');
         } else {
             const error = await response.json();
-            showToast(`Error: ${error.detail}`, 'error');
+            showToast(i18n.t('messages.errors.error_updating_roles', { message: error.detail }), 'error');
         }
     } catch (error) {
-        showToast(`Error: ${error.message}`, 'error');
+        showToast(i18n.t('messages.errors.generic') + ': ' + error.message, 'error');
     }
 }
 
@@ -2286,7 +2356,7 @@ async function submitEventRole(event) {
     if (role === 'other') {
         role = document.getElementById('custom-role-input').value.trim();
         if (!role) {
-            showToast('Please enter a custom role name', 'error');
+            showToast(i18n.t('messages.errors.enter_custom_role_name'), 'error');
             return;
         }
     }
@@ -2305,15 +2375,15 @@ async function submitEventRole(event) {
         if (response.ok) {
             const data = await response.json();
             closeSelectRoleModal();
-            showToast(`Successfully joined as ${role}!`, 'success');
+            showToast(i18n.t('messages.success.joined_event', { role: role }), 'success');
             loadAllEvents(); // Reload to show updated participant list
             loadMySchedule(); // Refresh user's schedule
         } else {
             const error = await response.json();
-            showToast(`Error: ${error.detail}`, 'error');
+            showToast(i18n.t('messages.errors.error_joining_event', { message: error.detail }), 'error');
         }
     } catch (error) {
-        showToast(`Error joining event: ${error.message}`, 'error');
+        showToast(i18n.t('messages.errors.error_joining_event', { message: error.message }), 'error');
     }
 }
 
@@ -2332,15 +2402,15 @@ async function leaveEvent(eventId) {
             });
 
             if (response.ok) {
-                showToast('Successfully left the event', 'success');
+                showToast(i18n.t('messages.success.left_event'), 'success');
                 loadAllEvents(); // Reload to show updated participant list
                 loadMySchedule(); // Refresh user's schedule
             } else {
                 const error = await response.json();
-                showToast(`Error: ${error.detail}`, 'error');
+                showToast(i18n.t('messages.errors.error_leaving_event', { message: error.detail }), 'error');
             }
         } catch (error) {
-            showToast(`Error leaving event: ${error.message}`, 'error');
+            showToast(i18n.t('messages.errors.error_leaving_event', { message: error.message }), 'error');
         }
     });
 }

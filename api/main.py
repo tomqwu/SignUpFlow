@@ -1,9 +1,9 @@
 """FastAPI application entry point."""
 
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, FileResponse
 import uvicorn
 import os
 import traceback
@@ -109,10 +109,27 @@ locales_path = os.path.join(os.path.dirname(__file__), "..", "locales")
 if os.path.exists(locales_path):
     app.mount("/locales", StaticFiles(directory=locales_path), name="locales")
 
-# Mount static files (frontend) at root
+# SPA fallback - serve index.html for all frontend routes
 frontend_path = os.path.join(os.path.dirname(__file__), "..", "frontend")
-if os.path.exists(frontend_path):
-    app.mount("/", StaticFiles(directory=frontend_path, html=True), name="frontend")
+
+@app.get("/{full_path:path}")
+async def serve_spa(full_path: str):
+    """Serve SPA - return index.html for all non-API routes."""
+    # Skip API routes and special paths
+    if full_path.startswith("api/") or full_path.startswith("docs") or full_path.startswith("redoc") or full_path.startswith("locales/"):
+        raise HTTPException(status_code=404, detail="Not Found")
+
+    # Try to serve the specific file first (for assets like CSS, JS, images)
+    file_path = os.path.join(frontend_path, full_path)
+    if os.path.isfile(file_path):
+        return FileResponse(file_path)
+
+    # Otherwise serve index.html (SPA fallback)
+    index_path = os.path.join(frontend_path, "index.html")
+    if os.path.exists(index_path):
+        return FileResponse(index_path)
+
+    raise HTTPException(status_code=404, detail="Frontend not found")
 
 # Startup event
 @app.on_event("startup")

@@ -226,7 +226,7 @@ function createFilterDropdown(containerId, options, onFilterCallback, label = 'F
     // Add options
     const allOption = document.createElement('option');
     allOption.value = '';
-    allOption.textContent = 'All';
+    allOption.textContent = i18n ? i18n.t('common.labels.all') : 'All';
     select.appendChild(allOption);
 
     options.forEach(opt => {

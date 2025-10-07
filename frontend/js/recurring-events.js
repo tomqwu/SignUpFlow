@@ -58,8 +58,8 @@ window.createEvent = async function(event) {
                 delete form.dataset.editingEventId; // Clear edit mode
                 document.getElementById('create-event-form').reset();
                 // Reset modal title and button
-                document.querySelector('#create-event-modal h3').textContent = 'Create New Event';
-                document.querySelector('#create-event-form button[type="submit"]').textContent = 'Create Event';
+                document.querySelector('#create-event-modal h3').textContent = i18n.t('events.create.title');
+                document.querySelector('#create-event-form button[type="submit"]').textContent = i18n.t('events.create.button');
 
                 if (typeof loadAdminEvents === 'function') {
                     loadAdminEvents();

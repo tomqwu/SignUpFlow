@@ -1,0 +1,9 @@
+{
+  "schedule_generation": "日程生成",
+  "schedule_calendar": "日程日历",
+  "generated_schedules": "已生成的日程",
+  "generate_first": "生成日程以查看日历",
+  "loading_schedules": "正在加载日程...",
+  "create_assignments_desc": "这将为所有即将到来的活动创建分配",
+  "total_schedules": "日程总数："
+}
