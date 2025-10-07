@@ -1,0 +1,13 @@
+{
+  "title": "Mi horario",
+  "upcoming_count": "Asignaciones próximas",
+  "this_month_count": "Este mes",
+  "no_assignments": "No hay asignaciones próximas.",
+  "no_schedule": "Aún no hay horario disponible.",
+  "scheduler_not_run": "El programador aún no se ha ejecutado.",
+  "badges": {
+    "confirmed": "Confirmado",
+    "blocked": "Bloqueado"
+  },
+  "role_label": "Rol"
+}

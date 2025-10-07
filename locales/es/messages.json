@@ -1,0 +1,32 @@
+{
+  "success": {
+    "generic": "¡Operación completada correctamente!",
+    "saved": "¡Guardado correctamente!",
+    "deleted": "¡Eliminado correctamente!",
+    "created": "¡Creado correctamente!",
+    "updated": "¡Actualizado correctamente!"
+  },
+  "errors": {
+    "generic": "Ocurrió un error. Por favor, inténtelo de nuevo.",
+    "network": "Error de red. Por favor, verifica tu conexión.",
+    "unauthorized": "No tienes permiso para realizar esta acción.",
+    "not_found": "Recurso no encontrado.",
+    "validation": "Por favor, verifica tu entrada e inténtalo de nuevo.",
+    "server": "Error del servidor. Por favor, inténtalo más tarde."
+  },
+  "confirm": {
+    "delete": "¿Estás seguro de que quieres eliminar {item}?",
+    "leave": "¿Estás seguro de que quieres salir?",
+    "discard": "¿Descartar cambios sin guardar?"
+  },
+  "availability": {
+    "add_timeoff": "Agregar tiempo libre",
+    "blocked_dates": "Tus fechas bloqueadas",
+    "start_date": "Fecha de inicio",
+    "end_date": "Fecha de finalización",
+    "reason": "Motivo (opcional)",
+    "success_add": "¡Tiempo libre agregado correctamente!",
+    "success_delete": "¡Tiempo libre eliminado correctamente!",
+    "error": "Error al gestionar la disponibilidad"
+  }
+}

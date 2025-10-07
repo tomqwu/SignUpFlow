@@ -1,0 +1,66 @@
+{
+  "title": "Eventos",
+  "all_events": "Todos los eventos",
+  "upcoming": "Próximos eventos",
+  "past": "Eventos pasados",
+  "create": {
+    "button": "Crear evento",
+    "title": "Crear nuevo evento",
+    "success": "¡Evento creado correctamente!",
+    "error": "Error al crear el evento"
+  },
+  "edit": {
+    "button": "Editar evento",
+    "title": "Editar evento",
+    "success": "¡Evento actualizado correctamente!",
+    "error": "Error al actualizar el evento"
+  },
+  "delete": {
+    "button": "Eliminar evento",
+    "confirm": "¿Estás seguro de que quieres eliminar este evento?",
+    "success": "¡Evento eliminado correctamente!",
+    "error": "Error al eliminar el evento"
+  },
+  "fields": {
+    "type": "Tipo de evento",
+    "start_time": "Hora de inicio",
+    "end_time": "Hora de finalización",
+    "location": "Ubicación",
+    "resource": "Recurso",
+    "requirements": "Requisitos",
+    "volunteers_needed": "Voluntarios necesarios"
+  },
+  "types": {
+    "sunday_service": "Servicio dominical",
+    "prayer_meeting": "Reunión de oración",
+    "bible_study": "Estudio bíblico",
+    "youth_group": "Grupo de jóvenes",
+    "outreach": "Evento de extensión",
+    "other": "Otro"
+  },
+  "assignment": {
+    "join_button": "Unirse al evento",
+    "leave_button": "Salir del evento",
+    "select_role": "Selecciona tu rol",
+    "volunteers": "Voluntarios",
+    "no_volunteers": "Aún no hay voluntarios - ¡sé el primero!",
+    "you": "Tú",
+    "assigned": "Asignado {name} al evento como {role}",
+    "unassigned": "Desasignado {name} del evento",
+    "success": "¡Te has unido correctamente como {role}!",
+    "error": "Error al unirse al evento"
+  },
+  "roles": {
+    "usher": "Ujier",
+    "greeter": "Recepcionista",
+    "sound_tech": "Técnico de sonido",
+    "video_tech": "Técnico de video",
+    "worship_leader": "Líder de alabanza",
+    "speaker": "Orador",
+    "nursery": "Guardería",
+    "parking": "Estacionamiento",
+    "security": "Seguridad",
+    "other": "Otro",
+    "custom_prompt": "Ingresa un nombre de rol personalizado"
+  }
+}

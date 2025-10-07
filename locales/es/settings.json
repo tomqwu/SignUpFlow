@@ -1,0 +1,37 @@
+{
+  "title": "Configuración",
+  "sections": {
+    "profile": "Información del perfil",
+    "preferences": "Preferencias",
+    "permissions": "Permisos"
+  },
+  "fields": {
+    "name": "Nombre completo",
+    "email": "Correo electrónico",
+    "organization": "Organización",
+    "timezone": "Zona horaria",
+    "language": "Idioma",
+    "permission_level": "Nivel de permisos"
+  },
+  "permissions": {
+    "admin": "Administrador",
+    "admin_description": "Puede gestionar la organización, crear eventos e invitar usuarios",
+    "volunteer": "Voluntario",
+    "volunteer_description": "Miembro regular - puede ver y unirse a eventos",
+    "note": "Tu nivel de permisos es establecido por un administrador. Los roles específicos de eventos (ujier, recepcionista, técnico de sonido, etc.) se seleccionan cuando te unes a eventos individuales."
+  },
+  "save": {
+    "button": "Guardar cambios",
+    "success": "¡Configuración guardada correctamente!",
+    "error": "Error al guardar la configuración"
+  },
+  "languages": {
+    "en": "Inglés",
+    "es": "Español",
+    "pt": "Portugués",
+    "fr": "Francés",
+    "de": "Alemán",
+    "zh": "Chino",
+    "ar": "Árabe"
+  }
+}

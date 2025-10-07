@@ -1,0 +1,62 @@
+{
+  "app_name": "Rostio",
+  "buttons": {
+    "save": "Guardar",
+    "cancel": "Cancelar",
+    "delete": "Eliminar",
+    "confirm": "Confirmar",
+    "edit": "Editar",
+    "add": "Agregar",
+    "remove": "Quitar",
+    "close": "Cerrar",
+    "back": "Atrás",
+    "next": "Siguiente",
+    "submit": "Enviar",
+    "create": "Crear",
+    "update": "Actualizar",
+    "search": "Buscar",
+    "filter": "Filtrar",
+    "export": "Exportar",
+    "import": "Importar",
+    "download": "Descargar",
+    "upload": "Subir"
+  },
+  "actions": {
+    "loading": "Cargando...",
+    "saving": "Guardando...",
+    "deleting": "Eliminando...",
+    "processing": "Procesando..."
+  },
+  "labels": {
+    "yes": "Sí",
+    "no": "No",
+    "name": "Nombre",
+    "email": "Correo electrónico",
+    "phone": "Teléfono",
+    "date": "Fecha",
+    "time": "Hora",
+    "location": "Ubicación",
+    "description": "Descripción",
+    "notes": "Notas",
+    "status": "Estado",
+    "type": "Tipo",
+    "role": "Rol",
+    "organization": "Organización"
+  },
+  "time": {
+    "today": "Hoy",
+    "tomorrow": "Mañana",
+    "yesterday": "Ayer",
+    "this_week": "Esta semana",
+    "next_week": "Próxima semana",
+    "this_month": "Este mes",
+    "next_month": "Próximo mes"
+  },
+  "errors": {
+    "required_field": "Este campo es obligatorio",
+    "invalid_email": "Dirección de correo electrónico inválida",
+    "invalid_date": "Fecha inválida",
+    "network_error": "Error de red. Por favor, inténtelo de nuevo.",
+    "unknown_error": "Ocurrió un error desconocido"
+  }
+}

@@ -11,7 +11,7 @@ class I18n {
         this.fallbackLocale = 'en';
         this.translations = {};
         this.loadedNamespaces = new Set();
-        this.supportedLocales = ['en', 'es', 'pt', 'fr'];
+        this.supportedLocales = ['en', 'es', 'pt', 'fr', 'zh-CN', 'zh-TW'];
     }
 
     /**

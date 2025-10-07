@@ -1,0 +1,38 @@
+{
+  "title": "Consola de administración",
+  "tabs": {
+    "people": "Personas",
+    "events": "Eventos",
+    "solver": "Programador",
+    "invitations": "Invitaciones",
+    "reports": "Informes"
+  },
+  "people": {
+    "title": "Gestionar personas",
+    "add_button": "Agregar persona",
+    "invite_button": "Invitar usuario",
+    "total": "Total de personas",
+    "search_placeholder": "Buscar por nombre o correo...",
+    "no_results": "No se encontraron personas"
+  },
+  "solver": {
+    "title": "Generador de horarios",
+    "run_button": "Generar horario",
+    "running": "Generando horario...",
+    "success": "¡Horario generado correctamente!",
+    "error": "Error al generar el horario",
+    "solutions": "Soluciones generadas",
+    "assignments": "Asignaciones creadas"
+  },
+  "invitations": {
+    "title": "Invitaciones de usuarios",
+    "send_button": "Enviar invitación",
+    "email_label": "Correo electrónico",
+    "role_label": "Rol",
+    "success": "Invitación enviada a {email}",
+    "error": "Error al enviar la invitación",
+    "pending": "Pendiente",
+    "accepted": "Aceptada",
+    "expired": "Caducada"
+  }
+}
