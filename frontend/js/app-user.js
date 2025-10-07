@@ -1058,8 +1058,19 @@ async function showSettings() {
     if (roles.length > 0) {
         permissionDisplay.innerHTML = roles.map(role => {
             // Handle both string roles and object roles
-            const roleStr = typeof role === 'string' ? role : (role.name || JSON.stringify(role));
-            const roleLabel = roleStr === 'admin' ? '👑 Administrator' : roleStr === 'volunteer' ? '✓ Volunteer' : roleStr;
+            let roleStr = typeof role === 'string' ? role : (role.name || role.role || '');
+
+            // If still an object at this point, something is wrong - show error instead of [object Object]
+            if (typeof roleStr === 'object') {
+                console.error('Role is still an object after extraction:', role);
+                roleStr = JSON.stringify(role);
+            }
+
+            // Map common role names to friendly labels
+            const roleLabel = roleStr === 'admin' ? '👑 Administrator'
+                : roleStr === 'volunteer' ? '✓ Volunteer'
+                : roleStr.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase()); // Convert kebab-case to Title Case
+
             return `<span style="display: inline-block; margin: 5px; padding: 5px 10px; background: var(--primary); color: white; border-radius: 4px;">${roleLabel}</span>`;
         }).join('');
     } else {
