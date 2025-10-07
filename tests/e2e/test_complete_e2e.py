@@ -22,7 +22,7 @@ def test_complete_user_journey():
         # Track dialogs and toasts
         toasts = []
         page.on("console", lambda msg:
-            toasts.append(msg.text()) if "toast" in msg.text().lower() else None)
+            toasts.append(msg.text) if "toast" in msg.text.lower() else None)
 
         print("\n" + "=" * 70)
         print("🧪 COMPLETE END-TO-END TEST")
@@ -36,11 +36,11 @@ def test_complete_user_journey():
         page.goto(APP_URL)
         page.wait_for_load_state("networkidle")
 
-        # Should see onboarding screen
-        expect(page.locator("text=Welcome to Rostio")).to_be_visible()
+        # Should see onboarding screen (i18n-enabled)
+        expect(page.locator('[data-i18n="auth.welcome_to_rostio"]')).to_be_visible()
 
-        # Click "Get Started"
-        page.get_by_text("Get Started").click()
+        # Click "Get Started" button (use data-i18n for reliable selector)
+        page.locator('[data-i18n="auth.get_started"]').click()
         page.wait_for_timeout(500)
 
         # Fill signup form

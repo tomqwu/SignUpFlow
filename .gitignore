@@ -38,6 +38,14 @@ ENV/
 .coverage
 htmlcov/
 .tox/
+coverage/
+test-reports/
+
+# Node.js
+node_modules/
+npm-debug.log
+yarn-error.log
+package-lock.json
 
 # Type checking
 .mypy_cache/
@@ -50,6 +58,13 @@ dmypy.json
 # Local workspaces
 /examples/*/out/
 /examples/*/history/
+
+# Logs
+logs/
+*.log
+
+# Backups
+backups/
 
 # OS
 .DS_Store
