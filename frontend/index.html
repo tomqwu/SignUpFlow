@@ -637,18 +637,11 @@
                     </div>
                     <div class="setting-item">
                         <label>Permission Level</label>
-                        <div class="role-selector" id="settings-role-selector">
-                            <label class="role-option">
-                                <input type="checkbox" value="volunteer"> Volunteer
-                                <small class="form-help">Regular member - can view and join events</small>
-                            </label>
-                            <label class="role-option">
-                                <input type="checkbox" value="admin"> Administrator
-                                <small class="form-help">Can manage organization, create events, invite users</small>
-                            </label>
+                        <div id="settings-permission-display" style="padding: 10px; background: var(--surface); border-radius: 4px; color: var(--text-light);">
+                            <!-- Permissions are set by administrators -->
                         </div>
                         <p class="help-text">
-                            <strong>Note:</strong> Event-specific roles (usher, greeter, sound tech, etc.) are selected when you join individual events, not here.
+                            <strong>Note:</strong> Your permission level is set by an administrator. Event-specific roles (usher, greeter, sound tech, etc.) are selected when you join individual events.
                         </p>
                     </div>
                 </div>

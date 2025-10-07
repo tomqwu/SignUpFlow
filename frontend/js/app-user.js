@@ -452,12 +452,15 @@ async function loadAllEvents() {
                     <h4>Volunteers (${eventAssignments.length}):</h4>
                     ${eventAssignments.length > 0 ? `
                         <ul class="participants-list">
-                            ${eventAssignments.map(a => `
-                                <li class="${a.person_id === currentUser.id ? 'participant-me' : ''}">
-                                    ${peopleMap[a.person_id] || a.person_id}
-                                    ${a.person_id === currentUser.id ? ' (You)' : ''}
-                                </li>
-                            `).join('')}
+                            ${eventAssignments.map(a => {
+                                const roleBadge = a.role ? ` <span class="role-badge">${a.role}</span>` : '';
+                                return `
+                                    <li class="${a.person_id === currentUser.id ? 'participant-me' : ''}">
+                                        ${peopleMap[a.person_id] || a.person_id}${roleBadge}
+                                        ${a.person_id === currentUser.id ? ' (You)' : ''}
+                                    </li>
+                                `;
+                            }).join('')}
                         </ul>
                     ` : '<p class="help-text">No volunteers yet - be the first!</p>'}
                 </div>
@@ -708,25 +711,8 @@ async function loadMySchedule() {
         const timeoffData = await timeoffResponse.json();
         const blockedDates = timeoffData.timeoff || [];
 
-        const solutionsResponse = await fetch(`${API_BASE_URL}/solutions/?org_id=${currentUser.org_id}`);
-        const solutionsData = await solutionsResponse.json();
-
-        if (solutionsData.solutions.length === 0) {
-            scheduleEl.innerHTML = '<div class="loading">No schedule available yet.</div>';
-            return;
-        }
-
-        // Find solution with assignments (use the one with actual assignments, not just latest)
-        const solutionWithAssignments = solutionsData.solutions.find(s => s.assignment_count > 0);
-
-        if (!solutionWithAssignments) {
-            scheduleEl.innerHTML = '<div class="loading">⚠️ No assignments found. The scheduler hasn\'t run yet.</div>';
-            return;
-        }
-
-        const assignmentsResponse = await fetch(
-            `${API_BASE_URL}/solutions/${solutionWithAssignments.id}/assignments`
-        );
+        // Get ALL assignments (both from solutions and manual) for the user
+        const assignmentsResponse = await fetch(`${API_BASE_URL}/events/assignments/all?org_id=${currentUser.org_id}`);
         const assignmentsData = await assignmentsResponse.json();
 
         const myAssignments = assignmentsData.assignments
@@ -965,47 +951,35 @@ async function showSettings() {
     document.getElementById('settings-org').value = currentOrg.name;
     document.getElementById('settings-timezone').value = currentUser.timezone || 'UTC';
 
-    // Render role selector with current user's roles
-    if (typeof renderRoleSelector === 'function') {
-        await renderRoleSelector('settings-role-selector');
+    // Display user's permission roles (read-only)
+    const permissionDisplay = document.getElementById('settings-permission-display');
+    const roles = currentUser.roles || [];
+    if (roles.length > 0) {
+        permissionDisplay.innerHTML = roles.map(role => {
+            const roleLabel = role === 'admin' ? '👑 Administrator' : role === 'volunteer' ? '✓ Volunteer' : role;
+            return `<span style="display: inline-block; margin: 5px; padding: 5px 10px; background: var(--primary); color: white; border-radius: 4px;">${roleLabel}</span>`;
+        }).join('');
+    } else {
+        permissionDisplay.innerHTML = '<em>No permissions assigned</em>';
     }
-
-    // Check the appropriate role checkboxes
-    const roleCheckboxes = document.querySelectorAll('#settings-role-selector input[type="checkbox"]');
-    roleCheckboxes.forEach(checkbox => {
-        checkbox.checked = (currentUser.roles || []).includes(checkbox.value);
-    });
 }
 
 async function saveSettings() {
     try {
-        // Collect checked roles
-        const roleCheckboxes = document.querySelectorAll('#settings-role-selector input[type="checkbox"]:checked');
-        const roles = Array.from(roleCheckboxes).map(cb => cb.value);
         const timezone = document.getElementById('settings-timezone').value;
 
-        if (roles.length === 0) {
-            showToast('Please select at least one role', 'warning');
-            return;
-        }
-
+        // Only save timezone (roles are managed by admins)
         const response = await fetch(`${API_BASE_URL}/people/${currentUser.id}`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ roles, timezone })
+            body: JSON.stringify({ timezone })
         });
 
         if (response.ok) {
-            currentUser.roles = roles;
             currentUser.timezone = timezone;
             saveSession();
             showToast('Settings saved successfully!', 'success');
             closeSettings();
-
-            // Refresh admin UI if roles changed
-            if (currentUser.roles.includes('admin')) {
-                setTimeout(() => location.reload(), 1000);
-            }
         } else {
             const error = await response.json();
             showToast(error.detail || 'Error saving settings', 'error');

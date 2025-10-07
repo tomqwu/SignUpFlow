@@ -1696,6 +1696,17 @@ form label {
     font-weight: 500;
 }
 
+.role-badge {
+    display: inline-block;
+    background: var(--primary);
+    color: white;
+    font-size: 12px;
+    padding: 2px 8px;
+    border-radius: 12px;
+    margin-left: 6px;
+    font-weight: 500;
+}
+
 /* Event Actions */
 .event-actions {
     display: flex;
