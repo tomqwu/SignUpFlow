@@ -1,0 +1,204 @@
+2025-10-07 16:48:00,381 - rostio - ERROR - Unhandled error: (sqlite3.OperationalError) attempt to write a readonly database
+[SQL: INSERT INTO organizations (id, name, region, config, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)]
+[parameters: ('gui_assign_org_1759870080297', 'GUI Assignment Test Org', None, '{"roles": ["volunteer", "leader", "admin"]}', '2025-10-07 20:48:00.375168', '2025-10-07 20:48:00.375170')]
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+Traceback (most recent call last):
+  File "/home/ubuntu/rostio/.venv/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 1967, in _exec_single_context
+    self.dialect.do_execute(
+  File "/home/ubuntu/rostio/.venv/lib/python3.11/site-packages/sqlalchemy/engine/default.py", line 951, in do_execute
+    cursor.execute(statement, parameters)
+sqlite3.OperationalError: attempt to write a readonly database
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/home/ubuntu/rostio/api/main.py", line 44, in error_logging_middleware
+    response = await call_next(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/rostio/.venv/lib/python3.11/site-packages/starlette/middleware/base.py", line 165, in call_next
+    raise app_exc
+  File "/home/ubuntu/rostio/.venv/lib/python3.11/site-packages/starlette/middleware/base.py", line 151, in coro
+    await self.app(scope, receive_or_disconnect, send_no_error)
+  File "/home/ubuntu/rostio/.venv/lib/python3.11/site-packages/starlette/middleware/exceptions.py", line 62, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "/home/ubuntu/rostio/.venv/lib/python3.11/site-packages/starlette/_exception_handler.py", line 64, in wrapped_app
+    raise exc
+  File "/home/ubuntu/rostio/.venv/lib/python3.11/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    await app(scope, receive, sender)
+  File "/home/ubuntu/rostio/.venv/lib/python3.11/site-packages/starlette/routing.py", line 758, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/home/ubuntu/rostio/.venv/lib/python3.11/site-packages/starlette/routing.py", line 778, in app
+    await route.handle(scope, receive, send)
+  File "/home/ubuntu/rostio/.venv/lib/python3.11/site-packages/starlette/routing.py", line 299, in handle
+    await self.app(scope, receive, send)
+  File "/home/ubuntu/rostio/.venv/lib/python3.11/site-packages/starlette/routing.py", line 79, in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+  File "/home/ubuntu/rostio/.venv/lib/python3.11/site-packages/starlette/_exception_handler.py", line 64, in wrapped_app
+    raise exc
+  File "/home/ubuntu/rostio/.venv/lib/python3.11/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    await app(scope, receive, sender)
+  File "/home/ubuntu/rostio/.venv/lib/python3.11/site-packages/starlette/routing.py", line 74, in app
+    response = await func(request)
+               ^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.11/contextlib.py", line 222, in __aexit__
+    await self.gen.athrow(typ, value, traceback)
+  File "/home/ubuntu/rostio/.venv/lib/python3.11/site-packages/fastapi/concurrency.py", line 35, in contextmanager_in_threadpool
+    raise e
+sqlalchemy.exc.OperationalError: (sqlite3.OperationalError) attempt to write a readonly database
+[SQL: INSERT INTO organizations (id, name, region, config, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)]
+[parameters: ('gui_assign_org_1759870080297', 'GUI Assignment Test Org', None, '{"roles": ["volunteer", "leader", "admin"]}', '2025-10-07 20:48:00.375168', '2025-10-07 20:48:00.375170')]
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+
+2025-10-07 16:58:44,466 - rostio - ERROR - Unhandled error: (sqlite3.OperationalError) attempt to write a readonly database
+[SQL: INSERT INTO organizations (id, name, region, config, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)]
+[parameters: ('test_org_api', 'Test Organization API', 'Test Region', '{}', '2025-10-07 20:58:44.464939', '2025-10-07 20:58:44.464951')]
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+Traceback (most recent call last):
+  File "/home/ubuntu/rostio/.venv/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 1967, in _exec_single_context
+    self.dialect.do_execute(
+  File "/home/ubuntu/rostio/.venv/lib/python3.11/site-packages/sqlalchemy/engine/default.py", line 951, in do_execute
+    cursor.execute(statement, parameters)
+sqlite3.OperationalError: attempt to write a readonly database
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/home/ubuntu/rostio/api/main.py", line 44, in error_logging_middleware
+    response = await call_next(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/rostio/.venv/lib/python3.11/site-packages/starlette/middleware/base.py", line 165, in call_next
+    raise app_exc
+  File "/home/ubuntu/rostio/.venv/lib/python3.11/site-packages/starlette/middleware/base.py", line 151, in coro
+    await self.app(scope, receive_or_disconnect, send_no_error)
+  File "/home/ubuntu/rostio/.venv/lib/python3.11/site-packages/starlette/middleware/exceptions.py", line 62, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "/home/ubuntu/rostio/.venv/lib/python3.11/site-packages/starlette/_exception_handler.py", line 64, in wrapped_app
+    raise exc
+  File "/home/ubuntu/rostio/.venv/lib/python3.11/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    await app(scope, receive, sender)
+  File "/home/ubuntu/rostio/.venv/lib/python3.11/site-packages/starlette/routing.py", line 758, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/home/ubuntu/rostio/.venv/lib/python3.11/site-packages/starlette/routing.py", line 778, in app
+    await route.handle(scope, receive, send)
+  File "/home/ubuntu/rostio/.venv/lib/python3.11/site-packages/starlette/routing.py", line 299, in handle
+    await self.app(scope, receive, send)
+  File "/home/ubuntu/rostio/.venv/lib/python3.11/site-packages/starlette/routing.py", line 79, in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+  File "/home/ubuntu/rostio/.venv/lib/python3.11/site-packages/starlette/_exception_handler.py", line 64, in wrapped_app
+    raise exc
+  File "/home/ubuntu/rostio/.venv/lib/python3.11/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    await app(scope, receive, sender)
+  File "/home/ubuntu/rostio/.venv/lib/python3.11/site-packages/starlette/routing.py", line 74, in app
+    response = await func(request)
+               ^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.11/contextlib.py", line 222, in __aexit__
+    await self.gen.athrow(typ, value, traceback)
+  File "/home/ubuntu/rostio/.venv/lib/python3.11/site-packages/fastapi/concurrency.py", line 35, in contextmanager_in_threadpool
+    raise e
+sqlalchemy.exc.OperationalError: (sqlite3.OperationalError) attempt to write a readonly database
+[SQL: INSERT INTO organizations (id, name, region, config, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)]
+[parameters: ('test_org_api', 'Test Organization API', 'Test Region', '{}', '2025-10-07 20:58:44.464939', '2025-10-07 20:58:44.464951')]
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+
+2025-10-07 16:58:44,516 - rostio - ERROR - Unhandled error: (sqlite3.OperationalError) attempt to write a readonly database
+[SQL: INSERT INTO people (id, org_id, name, email, password_hash, roles, timezone, language, status, invited_by, last_login, calendar_token, extra_data, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)]
+[parameters: ('test_person_001', 'test_org', 'Test Person', 'test@example.com', None, '["volunteer"]', 'UTC', 'en', 'active', None, None, None, '{}', '2025-10-07 20:58:44.515226', '2025-10-07 20:58:44.515228')]
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+Traceback (most recent call last):
+  File "/home/ubuntu/rostio/.venv/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 1967, in _exec_single_context
+    self.dialect.do_execute(
+  File "/home/ubuntu/rostio/.venv/lib/python3.11/site-packages/sqlalchemy/engine/default.py", line 951, in do_execute
+    cursor.execute(statement, parameters)
+sqlite3.OperationalError: attempt to write a readonly database
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/home/ubuntu/rostio/api/main.py", line 44, in error_logging_middleware
+    response = await call_next(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/rostio/.venv/lib/python3.11/site-packages/starlette/middleware/base.py", line 165, in call_next
+    raise app_exc
+  File "/home/ubuntu/rostio/.venv/lib/python3.11/site-packages/starlette/middleware/base.py", line 151, in coro
+    await self.app(scope, receive_or_disconnect, send_no_error)
+  File "/home/ubuntu/rostio/.venv/lib/python3.11/site-packages/starlette/middleware/exceptions.py", line 62, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "/home/ubuntu/rostio/.venv/lib/python3.11/site-packages/starlette/_exception_handler.py", line 64, in wrapped_app
+    raise exc
+  File "/home/ubuntu/rostio/.venv/lib/python3.11/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    await app(scope, receive, sender)
+  File "/home/ubuntu/rostio/.venv/lib/python3.11/site-packages/starlette/routing.py", line 758, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/home/ubuntu/rostio/.venv/lib/python3.11/site-packages/starlette/routing.py", line 778, in app
+    await route.handle(scope, receive, send)
+  File "/home/ubuntu/rostio/.venv/lib/python3.11/site-packages/starlette/routing.py", line 299, in handle
+    await self.app(scope, receive, send)
+  File "/home/ubuntu/rostio/.venv/lib/python3.11/site-packages/starlette/routing.py", line 79, in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+  File "/home/ubuntu/rostio/.venv/lib/python3.11/site-packages/starlette/_exception_handler.py", line 64, in wrapped_app
+    raise exc
+  File "/home/ubuntu/rostio/.venv/lib/python3.11/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    await app(scope, receive, sender)
+  File "/home/ubuntu/rostio/.venv/lib/python3.11/site-packages/starlette/routing.py", line 74, in app
+    response = await func(request)
+               ^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.11/contextlib.py", line 222, in __aexit__
+    await self.gen.athrow(typ, value, traceback)
+  File "/home/ubuntu/rostio/.venv/lib/python3.11/site-packages/fastapi/concurrency.py", line 35, in contextmanager_in_threadpool
+    raise e
+sqlalchemy.exc.OperationalError: (sqlite3.OperationalError) attempt to write a readonly database
+[SQL: INSERT INTO people (id, org_id, name, email, password_hash, roles, timezone, language, status, invited_by, last_login, calendar_token, extra_data, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)]
+[parameters: ('test_person_001', 'test_org', 'Test Person', 'test@example.com', None, '["volunteer"]', 'UTC', 'en', 'active', None, None, None, '{}', '2025-10-07 20:58:44.515226', '2025-10-07 20:58:44.515228')]
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+
+2025-10-07 16:58:44,537 - rostio - ERROR - Unhandled error: (sqlite3.OperationalError) attempt to write a readonly database
+[SQL: INSERT INTO events (id, org_id, type, start_time, end_time, resource_id, extra_data, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)]
+[parameters: ('test_event_001', 'test_org', 'Test Event', '2025-10-14 16:58:44.533068', '2025-10-14 18:58:44.533080', None, '{"role_counts": {"volunteer": 2, "leader": 1}}', '2025-10-07 20:58:44.535991', '2025-10-07 20:58:44.535994')]
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+Traceback (most recent call last):
+  File "/home/ubuntu/rostio/.venv/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 1967, in _exec_single_context
+    self.dialect.do_execute(
+  File "/home/ubuntu/rostio/.venv/lib/python3.11/site-packages/sqlalchemy/engine/default.py", line 951, in do_execute
+    cursor.execute(statement, parameters)
+sqlite3.OperationalError: attempt to write a readonly database
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/home/ubuntu/rostio/api/main.py", line 44, in error_logging_middleware
+    response = await call_next(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/rostio/.venv/lib/python3.11/site-packages/starlette/middleware/base.py", line 165, in call_next
+    raise app_exc
+  File "/home/ubuntu/rostio/.venv/lib/python3.11/site-packages/starlette/middleware/base.py", line 151, in coro
+    await self.app(scope, receive_or_disconnect, send_no_error)
+  File "/home/ubuntu/rostio/.venv/lib/python3.11/site-packages/starlette/middleware/exceptions.py", line 62, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "/home/ubuntu/rostio/.venv/lib/python3.11/site-packages/starlette/_exception_handler.py", line 64, in wrapped_app
+    raise exc
+  File "/home/ubuntu/rostio/.venv/lib/python3.11/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    await app(scope, receive, sender)
+  File "/home/ubuntu/rostio/.venv/lib/python3.11/site-packages/starlette/routing.py", line 758, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/home/ubuntu/rostio/.venv/lib/python3.11/site-packages/starlette/routing.py", line 778, in app
+    await route.handle(scope, receive, send)
+  File "/home/ubuntu/rostio/.venv/lib/python3.11/site-packages/starlette/routing.py", line 299, in handle
+    await self.app(scope, receive, send)
+  File "/home/ubuntu/rostio/.venv/lib/python3.11/site-packages/starlette/routing.py", line 79, in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+  File "/home/ubuntu/rostio/.venv/lib/python3.11/site-packages/starlette/_exception_handler.py", line 64, in wrapped_app
+    raise exc
+  File "/home/ubuntu/rostio/.venv/lib/python3.11/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    await app(scope, receive, sender)
+  File "/home/ubuntu/rostio/.venv/lib/python3.11/site-packages/starlette/routing.py", line 74, in app
+    response = await func(request)
+               ^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.11/contextlib.py", line 222, in __aexit__
+    await self.gen.athrow(typ, value, traceback)
+  File "/home/ubuntu/rostio/.venv/lib/python3.11/site-packages/fastapi/concurrency.py", line 35, in contextmanager_in_threadpool
+    raise e
+sqlalchemy.exc.OperationalError: (sqlite3.OperationalError) attempt to write a readonly database
+[SQL: INSERT INTO events (id, org_id, type, start_time, end_time, resource_id, extra_data, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)]
+[parameters: ('test_event_001', 'test_org', 'Test Event', '2025-10-14 16:58:44.533068', '2025-10-14 18:58:44.533080', None, '{"role_counts": {"volunteer": 2, "leader": 1}}', '2025-10-07 20:58:44.535991', '2025-10-07 20:58:44.535994')]
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+

@@ -22,3 +22,644 @@
 2025-10-07 09:20:24,726 - rostio - INFO - 📖 API docs available at http://localhost:8000/docs
 2025-10-07 09:23:44,247 - rostio - INFO - 🚀 Rostio API started
 2025-10-07 09:23:44,247 - rostio - INFO - 📖 API docs available at http://localhost:8000/docs
+2025-10-07 16:33:44,318 - rostio - INFO - 🚀 Rostio API started
+2025-10-07 16:33:44,319 - rostio - INFO - 📖 API docs available at http://localhost:8000/docs
+2025-10-07 16:33:44,731 - watchfiles.main - INFO - 1 change detected
+2025-10-07 16:35:16,093 - watchfiles.main - INFO - 2 changes detected
+2025-10-07 16:35:16,444 - watchfiles.main - INFO - 1 change detected
+2025-10-07 16:35:39,999 - watchfiles.main - INFO - 2 changes detected
+2025-10-07 16:35:40,350 - watchfiles.main - INFO - 1 change detected
+2025-10-07 16:35:40,700 - watchfiles.main - INFO - 1 change detected
+2025-10-07 16:35:52,277 - watchfiles.main - INFO - 2 changes detected
+2025-10-07 16:35:52,628 - watchfiles.main - INFO - 1 change detected
+2025-10-07 16:41:04,248 - watchfiles.main - INFO - 2 changes detected
+2025-10-07 16:41:04,598 - watchfiles.main - INFO - 1 change detected
+2025-10-07 16:41:10,211 - watchfiles.main - INFO - 2 changes detected
+2025-10-07 16:41:10,561 - watchfiles.main - INFO - 1 change detected
+2025-10-07 16:41:18,479 - watchfiles.main - INFO - 2 changes detected
+2025-10-07 16:41:18,830 - watchfiles.main - INFO - 1 change detected
+2025-10-07 16:41:27,700 - watchfiles.main - INFO - 2 changes detected
+2025-10-07 16:41:28,050 - watchfiles.main - INFO - 1 change detected
+2025-10-07 16:41:28,401 - watchfiles.main - INFO - 1 change detected
+2025-10-07 16:43:24,878 - watchfiles.main - INFO - 2 changes detected
+2025-10-07 16:43:25,228 - watchfiles.main - INFO - 1 change detected
+2025-10-07 16:43:25,579 - watchfiles.main - INFO - 1 change detected
+2025-10-07 16:44:48,385 - watchfiles.main - INFO - 2 changes detected
+2025-10-07 16:44:48,736 - watchfiles.main - INFO - 1 change detected
+2025-10-07 16:44:49,738 - watchfiles.main - INFO - 2 changes detected
+2025-10-07 16:44:50,089 - watchfiles.main - INFO - 1 change detected
+2025-10-07 16:44:50,439 - watchfiles.main - INFO - 1 change detected
+2025-10-07 16:44:50,790 - watchfiles.main - INFO - 2 changes detected
+2025-10-07 16:44:59,712 - watchfiles.main - INFO - 2 changes detected
+2025-10-07 16:45:00,063 - watchfiles.main - INFO - 1 change detected
+2025-10-07 16:45:00,414 - watchfiles.main - INFO - 1 change detected
+2025-10-07 16:45:07,981 - watchfiles.main - INFO - 2 changes detected
+2025-10-07 16:45:08,332 - watchfiles.main - INFO - 1 change detected
+2025-10-07 16:45:08,683 - watchfiles.main - INFO - 1 change detected
+2025-10-07 16:45:16,602 - watchfiles.main - INFO - 2 changes detected
+2025-10-07 16:45:16,953 - watchfiles.main - INFO - 1 change detected
+2025-10-07 16:45:31,538 - watchfiles.main - INFO - 2 changes detected
+2025-10-07 16:45:31,889 - watchfiles.main - INFO - 1 change detected
+2025-10-07 16:45:42,815 - watchfiles.main - INFO - 2 changes detected
+2025-10-07 16:45:43,166 - watchfiles.main - INFO - 1 change detected
+2025-10-07 16:45:43,516 - watchfiles.main - INFO - 1 change detected
+2025-10-07 16:45:43,867 - watchfiles.main - INFO - 2 changes detected
+2025-10-07 16:45:55,092 - watchfiles.main - INFO - 2 changes detected
+2025-10-07 16:45:55,443 - watchfiles.main - INFO - 1 change detected
+2025-10-07 16:46:02,710 - watchfiles.main - INFO - 2 changes detected
+2025-10-07 16:46:03,061 - watchfiles.main - INFO - 3 changes detected
+2025-10-07 16:46:03,412 - watchfiles.main - INFO - 1 change detected
+2025-10-07 16:46:04,063 - watchfiles.main - INFO - 2 changes detected
+2025-10-07 16:46:04,414 - watchfiles.main - INFO - 1 change detected
+2025-10-07 16:46:29,225 - watchfiles.main - INFO - 2 changes detected
+2025-10-07 16:46:29,576 - watchfiles.main - INFO - 1 change detected
+2025-10-07 16:46:37,797 - watchfiles.main - INFO - 2 changes detected
+2025-10-07 16:46:38,147 - watchfiles.main - INFO - 1 change detected
+2025-10-07 16:46:38,498 - watchfiles.main - INFO - 1 change detected
+2025-10-07 16:46:51,379 - watchfiles.main - INFO - 2 changes detected
+2025-10-07 16:46:51,729 - watchfiles.main - INFO - 1 change detected
+2025-10-07 16:46:52,381 - watchfiles.main - INFO - 2 changes detected
+2025-10-07 16:46:52,731 - watchfiles.main - INFO - 1 change detected
+2025-10-07 16:47:02,955 - watchfiles.main - INFO - 2 changes detected
+2025-10-07 16:47:03,306 - watchfiles.main - INFO - 1 change detected
+2025-10-07 16:47:03,656 - watchfiles.main - INFO - 1 change detected
+2025-10-07 16:47:21,850 - watchfiles.main - INFO - 4 changes detected
+2025-10-07 16:47:22,201 - watchfiles.main - INFO - 2 changes detected
+2025-10-07 16:47:22,551 - watchfiles.main - INFO - 1 change detected
+2025-10-07 16:47:22,902 - watchfiles.main - INFO - 3 changes detected
+2025-10-07 16:47:23,252 - watchfiles.main - INFO - 1 change detected
+2025-10-07 16:47:23,603 - watchfiles.main - INFO - 1 change detected
+2025-10-07 16:47:24,505 - watchfiles.main - INFO - 5 changes detected
+2025-10-07 16:47:24,855 - watchfiles.main - INFO - 2 changes detected
+2025-10-07 16:48:00,381 - rostio - ERROR - Unhandled error: (sqlite3.OperationalError) attempt to write a readonly database
+[SQL: INSERT INTO organizations (id, name, region, config, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)]
+[parameters: ('gui_assign_org_1759870080297', 'GUI Assignment Test Org', None, '{"roles": ["volunteer", "leader", "admin"]}', '2025-10-07 20:48:00.375168', '2025-10-07 20:48:00.375170')]
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+Traceback (most recent call last):
+  File "/home/ubuntu/rostio/.venv/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 1967, in _exec_single_context
+    self.dialect.do_execute(
+  File "/home/ubuntu/rostio/.venv/lib/python3.11/site-packages/sqlalchemy/engine/default.py", line 951, in do_execute
+    cursor.execute(statement, parameters)
+sqlite3.OperationalError: attempt to write a readonly database
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/home/ubuntu/rostio/api/main.py", line 44, in error_logging_middleware
+    response = await call_next(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/rostio/.venv/lib/python3.11/site-packages/starlette/middleware/base.py", line 165, in call_next
+    raise app_exc
+  File "/home/ubuntu/rostio/.venv/lib/python3.11/site-packages/starlette/middleware/base.py", line 151, in coro
+    await self.app(scope, receive_or_disconnect, send_no_error)
+  File "/home/ubuntu/rostio/.venv/lib/python3.11/site-packages/starlette/middleware/exceptions.py", line 62, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "/home/ubuntu/rostio/.venv/lib/python3.11/site-packages/starlette/_exception_handler.py", line 64, in wrapped_app
+    raise exc
+  File "/home/ubuntu/rostio/.venv/lib/python3.11/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    await app(scope, receive, sender)
+  File "/home/ubuntu/rostio/.venv/lib/python3.11/site-packages/starlette/routing.py", line 758, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/home/ubuntu/rostio/.venv/lib/python3.11/site-packages/starlette/routing.py", line 778, in app
+    await route.handle(scope, receive, send)
+  File "/home/ubuntu/rostio/.venv/lib/python3.11/site-packages/starlette/routing.py", line 299, in handle
+    await self.app(scope, receive, send)
+  File "/home/ubuntu/rostio/.venv/lib/python3.11/site-packages/starlette/routing.py", line 79, in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+  File "/home/ubuntu/rostio/.venv/lib/python3.11/site-packages/starlette/_exception_handler.py", line 64, in wrapped_app
+    raise exc
+  File "/home/ubuntu/rostio/.venv/lib/python3.11/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    await app(scope, receive, sender)
+  File "/home/ubuntu/rostio/.venv/lib/python3.11/site-packages/starlette/routing.py", line 74, in app
+    response = await func(request)
+               ^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.11/contextlib.py", line 222, in __aexit__
+    await self.gen.athrow(typ, value, traceback)
+  File "/home/ubuntu/rostio/.venv/lib/python3.11/site-packages/fastapi/concurrency.py", line 35, in contextmanager_in_threadpool
+    raise e
+sqlalchemy.exc.OperationalError: (sqlite3.OperationalError) attempt to write a readonly database
+[SQL: INSERT INTO organizations (id, name, region, config, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)]
+[parameters: ('gui_assign_org_1759870080297', 'GUI Assignment Test Org', None, '{"roles": ["volunteer", "leader", "admin"]}', '2025-10-07 20:48:00.375168', '2025-10-07 20:48:00.375170')]
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+
+2025-10-07 16:48:00,689 - watchfiles.main - INFO - 2 changes detected
+2025-10-07 16:50:56,901 - watchfiles.main - INFO - 2 changes detected
+2025-10-07 16:50:57,253 - watchfiles.main - INFO - 1 change detected
+2025-10-07 16:50:57,604 - watchfiles.main - INFO - 1 change detected
+2025-10-07 16:51:13,789 - watchfiles.main - INFO - 1 change detected
+2025-10-07 16:51:14,140 - watchfiles.main - INFO - 1 change detected
+2025-10-07 16:51:14,490 - watchfiles.main - INFO - 1 change detected
+2025-10-07 16:51:19,401 - watchfiles.main - INFO - 54 changes detected
+2025-10-07 16:51:19,752 - watchfiles.main - INFO - 1 change detected
+2025-10-07 16:51:40,254 - watchfiles.main - INFO - 26 changes detected
+2025-10-07 16:51:40,605 - watchfiles.main - INFO - 1 change detected
+2025-10-07 16:57:04,798 - watchfiles.main - INFO - 1 change detected
+2025-10-07 16:57:05,149 - watchfiles.main - INFO - 1 change detected
+2025-10-07 16:57:05,499 - watchfiles.main - INFO - 1 change detected
+2025-10-07 16:57:09,108 - watchfiles.main - INFO - 7 changes detected
+2025-10-07 16:57:09,459 - watchfiles.main - INFO - 1 change detected
+2025-10-07 16:57:13,469 - watchfiles.main - INFO - 1 change detected
+2025-10-07 16:57:13,820 - watchfiles.main - INFO - 1 change detected
+2025-10-07 16:57:49,154 - watchfiles.main - INFO - 6 changes detected
+2025-10-07 16:57:49,504 - watchfiles.main - INFO - 1 change detected
+2025-10-07 16:57:58,076 - watchfiles.main - INFO - 2 changes detected
+2025-10-07 16:57:58,427 - watchfiles.main - INFO - 1 change detected
+2025-10-07 16:58:44,036 - watchfiles.main - INFO - 6 changes detected
+2025-10-07 16:58:44,387 - watchfiles.main - INFO - 1 change detected
+2025-10-07 16:58:44,466 - rostio - ERROR - Unhandled error: (sqlite3.OperationalError) attempt to write a readonly database
+[SQL: INSERT INTO organizations (id, name, region, config, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)]
+[parameters: ('test_org_api', 'Test Organization API', 'Test Region', '{}', '2025-10-07 20:58:44.464939', '2025-10-07 20:58:44.464951')]
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+Traceback (most recent call last):
+  File "/home/ubuntu/rostio/.venv/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 1967, in _exec_single_context
+    self.dialect.do_execute(
+  File "/home/ubuntu/rostio/.venv/lib/python3.11/site-packages/sqlalchemy/engine/default.py", line 951, in do_execute
+    cursor.execute(statement, parameters)
+sqlite3.OperationalError: attempt to write a readonly database
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/home/ubuntu/rostio/api/main.py", line 44, in error_logging_middleware
+    response = await call_next(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/rostio/.venv/lib/python3.11/site-packages/starlette/middleware/base.py", line 165, in call_next
+    raise app_exc
+  File "/home/ubuntu/rostio/.venv/lib/python3.11/site-packages/starlette/middleware/base.py", line 151, in coro
+    await self.app(scope, receive_or_disconnect, send_no_error)
+  File "/home/ubuntu/rostio/.venv/lib/python3.11/site-packages/starlette/middleware/exceptions.py", line 62, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "/home/ubuntu/rostio/.venv/lib/python3.11/site-packages/starlette/_exception_handler.py", line 64, in wrapped_app
+    raise exc
+  File "/home/ubuntu/rostio/.venv/lib/python3.11/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    await app(scope, receive, sender)
+  File "/home/ubuntu/rostio/.venv/lib/python3.11/site-packages/starlette/routing.py", line 758, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/home/ubuntu/rostio/.venv/lib/python3.11/site-packages/starlette/routing.py", line 778, in app
+    await route.handle(scope, receive, send)
+  File "/home/ubuntu/rostio/.venv/lib/python3.11/site-packages/starlette/routing.py", line 299, in handle
+    await self.app(scope, receive, send)
+  File "/home/ubuntu/rostio/.venv/lib/python3.11/site-packages/starlette/routing.py", line 79, in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+  File "/home/ubuntu/rostio/.venv/lib/python3.11/site-packages/starlette/_exception_handler.py", line 64, in wrapped_app
+    raise exc
+  File "/home/ubuntu/rostio/.venv/lib/python3.11/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    await app(scope, receive, sender)
+  File "/home/ubuntu/rostio/.venv/lib/python3.11/site-packages/starlette/routing.py", line 74, in app
+    response = await func(request)
+               ^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.11/contextlib.py", line 222, in __aexit__
+    await self.gen.athrow(typ, value, traceback)
+  File "/home/ubuntu/rostio/.venv/lib/python3.11/site-packages/fastapi/concurrency.py", line 35, in contextmanager_in_threadpool
+    raise e
+sqlalchemy.exc.OperationalError: (sqlite3.OperationalError) attempt to write a readonly database
+[SQL: INSERT INTO organizations (id, name, region, config, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)]
+[parameters: ('test_org_api', 'Test Organization API', 'Test Region', '{}', '2025-10-07 20:58:44.464939', '2025-10-07 20:58:44.464951')]
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+
+2025-10-07 16:58:44,516 - rostio - ERROR - Unhandled error: (sqlite3.OperationalError) attempt to write a readonly database
+[SQL: INSERT INTO people (id, org_id, name, email, password_hash, roles, timezone, language, status, invited_by, last_login, calendar_token, extra_data, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)]
+[parameters: ('test_person_001', 'test_org', 'Test Person', 'test@example.com', None, '["volunteer"]', 'UTC', 'en', 'active', None, None, None, '{}', '2025-10-07 20:58:44.515226', '2025-10-07 20:58:44.515228')]
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+Traceback (most recent call last):
+  File "/home/ubuntu/rostio/.venv/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 1967, in _exec_single_context
+    self.dialect.do_execute(
+  File "/home/ubuntu/rostio/.venv/lib/python3.11/site-packages/sqlalchemy/engine/default.py", line 951, in do_execute
+    cursor.execute(statement, parameters)
+sqlite3.OperationalError: attempt to write a readonly database
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/home/ubuntu/rostio/api/main.py", line 44, in error_logging_middleware
+    response = await call_next(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/rostio/.venv/lib/python3.11/site-packages/starlette/middleware/base.py", line 165, in call_next
+    raise app_exc
+  File "/home/ubuntu/rostio/.venv/lib/python3.11/site-packages/starlette/middleware/base.py", line 151, in coro
+    await self.app(scope, receive_or_disconnect, send_no_error)
+  File "/home/ubuntu/rostio/.venv/lib/python3.11/site-packages/starlette/middleware/exceptions.py", line 62, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "/home/ubuntu/rostio/.venv/lib/python3.11/site-packages/starlette/_exception_handler.py", line 64, in wrapped_app
+    raise exc
+  File "/home/ubuntu/rostio/.venv/lib/python3.11/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    await app(scope, receive, sender)
+  File "/home/ubuntu/rostio/.venv/lib/python3.11/site-packages/starlette/routing.py", line 758, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/home/ubuntu/rostio/.venv/lib/python3.11/site-packages/starlette/routing.py", line 778, in app
+    await route.handle(scope, receive, send)
+  File "/home/ubuntu/rostio/.venv/lib/python3.11/site-packages/starlette/routing.py", line 299, in handle
+    await self.app(scope, receive, send)
+  File "/home/ubuntu/rostio/.venv/lib/python3.11/site-packages/starlette/routing.py", line 79, in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+  File "/home/ubuntu/rostio/.venv/lib/python3.11/site-packages/starlette/_exception_handler.py", line 64, in wrapped_app
+    raise exc
+  File "/home/ubuntu/rostio/.venv/lib/python3.11/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    await app(scope, receive, sender)
+  File "/home/ubuntu/rostio/.venv/lib/python3.11/site-packages/starlette/routing.py", line 74, in app
+    response = await func(request)
+               ^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.11/contextlib.py", line 222, in __aexit__
+    await self.gen.athrow(typ, value, traceback)
+  File "/home/ubuntu/rostio/.venv/lib/python3.11/site-packages/fastapi/concurrency.py", line 35, in contextmanager_in_threadpool
+    raise e
+sqlalchemy.exc.OperationalError: (sqlite3.OperationalError) attempt to write a readonly database
+[SQL: INSERT INTO people (id, org_id, name, email, password_hash, roles, timezone, language, status, invited_by, last_login, calendar_token, extra_data, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)]
+[parameters: ('test_person_001', 'test_org', 'Test Person', 'test@example.com', None, '["volunteer"]', 'UTC', 'en', 'active', None, None, None, '{}', '2025-10-07 20:58:44.515226', '2025-10-07 20:58:44.515228')]
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+
+2025-10-07 16:58:44,537 - rostio - ERROR - Unhandled error: (sqlite3.OperationalError) attempt to write a readonly database
+[SQL: INSERT INTO events (id, org_id, type, start_time, end_time, resource_id, extra_data, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)]
+[parameters: ('test_event_001', 'test_org', 'Test Event', '2025-10-14 16:58:44.533068', '2025-10-14 18:58:44.533080', None, '{"role_counts": {"volunteer": 2, "leader": 1}}', '2025-10-07 20:58:44.535991', '2025-10-07 20:58:44.535994')]
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+Traceback (most recent call last):
+  File "/home/ubuntu/rostio/.venv/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 1967, in _exec_single_context
+    self.dialect.do_execute(
+  File "/home/ubuntu/rostio/.venv/lib/python3.11/site-packages/sqlalchemy/engine/default.py", line 951, in do_execute
+    cursor.execute(statement, parameters)
+sqlite3.OperationalError: attempt to write a readonly database
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/home/ubuntu/rostio/api/main.py", line 44, in error_logging_middleware
+    response = await call_next(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/rostio/.venv/lib/python3.11/site-packages/starlette/middleware/base.py", line 165, in call_next
+    raise app_exc
+  File "/home/ubuntu/rostio/.venv/lib/python3.11/site-packages/starlette/middleware/base.py", line 151, in coro
+    await self.app(scope, receive_or_disconnect, send_no_error)
+  File "/home/ubuntu/rostio/.venv/lib/python3.11/site-packages/starlette/middleware/exceptions.py", line 62, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "/home/ubuntu/rostio/.venv/lib/python3.11/site-packages/starlette/_exception_handler.py", line 64, in wrapped_app
+    raise exc
+  File "/home/ubuntu/rostio/.venv/lib/python3.11/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    await app(scope, receive, sender)
+  File "/home/ubuntu/rostio/.venv/lib/python3.11/site-packages/starlette/routing.py", line 758, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/home/ubuntu/rostio/.venv/lib/python3.11/site-packages/starlette/routing.py", line 778, in app
+    await route.handle(scope, receive, send)
+  File "/home/ubuntu/rostio/.venv/lib/python3.11/site-packages/starlette/routing.py", line 299, in handle
+    await self.app(scope, receive, send)
+  File "/home/ubuntu/rostio/.venv/lib/python3.11/site-packages/starlette/routing.py", line 79, in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+  File "/home/ubuntu/rostio/.venv/lib/python3.11/site-packages/starlette/_exception_handler.py", line 64, in wrapped_app
+    raise exc
+  File "/home/ubuntu/rostio/.venv/lib/python3.11/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    await app(scope, receive, sender)
+  File "/home/ubuntu/rostio/.venv/lib/python3.11/site-packages/starlette/routing.py", line 74, in app
+    response = await func(request)
+               ^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.11/contextlib.py", line 222, in __aexit__
+    await self.gen.athrow(typ, value, traceback)
+  File "/home/ubuntu/rostio/.venv/lib/python3.11/site-packages/fastapi/concurrency.py", line 35, in contextmanager_in_threadpool
+    raise e
+sqlalchemy.exc.OperationalError: (sqlite3.OperationalError) attempt to write a readonly database
+[SQL: INSERT INTO events (id, org_id, type, start_time, end_time, resource_id, extra_data, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)]
+[parameters: ('test_event_001', 'test_org', 'Test Event', '2025-10-14 16:58:44.533068', '2025-10-14 18:58:44.533080', None, '{"role_counts": {"volunteer": 2, "leader": 1}}', '2025-10-07 20:58:44.535991', '2025-10-07 20:58:44.535994')]
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+
+2025-10-07 16:58:44,738 - watchfiles.main - INFO - 1 change detected
+2025-10-07 17:00:33,899 - watchfiles.main - INFO - 6 changes detected
+2025-10-07 17:00:34,251 - watchfiles.main - INFO - 1 change detected
+2025-10-07 17:00:34,601 - watchfiles.main - INFO - 1 change detected
+2025-10-07 17:02:14,189 - watchfiles.main - INFO - 2 changes detected
+2025-10-07 17:02:14,925 - watchfiles.main - INFO - 1 change detected
+2025-10-07 17:02:15,461 - rostio - INFO - 🚀 Rostio API started
+2025-10-07 17:02:15,461 - rostio - INFO - 📖 API docs available at http://localhost:8000/docs
+2025-10-07 17:02:15,877 - watchfiles.main - INFO - 1 change detected
+2025-10-07 17:02:24,197 - watchfiles.main - INFO - 2 changes detected
+2025-10-07 17:02:24,882 - watchfiles.main - INFO - 3 changes detected
+2025-10-07 17:02:25,090 - rostio - INFO - 🚀 Rostio API started
+2025-10-07 17:02:25,090 - rostio - INFO - 📖 API docs available at http://localhost:8000/docs
+2025-10-07 17:02:25,232 - watchfiles.main - INFO - 1 change detected
+2025-10-07 17:02:34,855 - watchfiles.main - INFO - 2 changes detected
+2025-10-07 17:02:35,495 - watchfiles.main - INFO - 1 change detected
+2025-10-07 17:02:35,638 - rostio - INFO - 🚀 Rostio API started
+2025-10-07 17:02:35,638 - rostio - INFO - 📖 API docs available at http://localhost:8000/docs
+2025-10-07 17:02:35,846 - watchfiles.main - INFO - 1 change detected
+2025-10-07 17:02:52,135 - watchfiles.main - INFO - 2 changes detected
+2025-10-07 17:02:52,783 - watchfiles.main - INFO - 1 change detected
+2025-10-07 17:02:52,981 - rostio - INFO - 🚀 Rostio API started
+2025-10-07 17:02:52,982 - rostio - INFO - 📖 API docs available at http://localhost:8000/docs
+2025-10-07 17:03:12,478 - watchfiles.main - INFO - 2 changes detected
+2025-10-07 17:03:13,141 - watchfiles.main - INFO - 1 change detected
+2025-10-07 17:03:13,398 - rostio - INFO - 🚀 Rostio API started
+2025-10-07 17:03:13,398 - rostio - INFO - 📖 API docs available at http://localhost:8000/docs
+2025-10-07 17:03:13,492 - watchfiles.main - INFO - 1 change detected
+2025-10-07 17:03:34,491 - watchfiles.main - INFO - 2 changes detected
+2025-10-07 17:03:35,156 - watchfiles.main - INFO - 1 change detected
+2025-10-07 17:03:35,434 - rostio - INFO - 🚀 Rostio API started
+2025-10-07 17:03:35,434 - rostio - INFO - 📖 API docs available at http://localhost:8000/docs
+2025-10-07 17:03:35,507 - watchfiles.main - INFO - 1 change detected
+2025-10-07 17:03:47,185 - watchfiles.main - INFO - 2 changes detected
+2025-10-07 17:03:47,846 - watchfiles.main - INFO - 1 change detected
+2025-10-07 17:03:48,013 - rostio - INFO - 🚀 Rostio API started
+2025-10-07 17:03:48,013 - rostio - INFO - 📖 API docs available at http://localhost:8000/docs
+2025-10-07 17:03:48,197 - watchfiles.main - INFO - 1 change detected
+2025-10-07 17:04:03,533 - watchfiles.main - INFO - 2 changes detected
+2025-10-07 17:04:04,162 - watchfiles.main - INFO - 1 change detected
+2025-10-07 17:04:04,384 - rostio - INFO - 🚀 Rostio API started
+2025-10-07 17:04:04,384 - rostio - INFO - 📖 API docs available at http://localhost:8000/docs
+2025-10-07 17:04:04,563 - watchfiles.main - INFO - 1 change detected
+2025-10-07 17:04:24,111 - watchfiles.main - INFO - 2 changes detected
+2025-10-07 17:04:24,750 - watchfiles.main - INFO - 1 change detected
+2025-10-07 17:04:25,214 - rostio - INFO - 🚀 Rostio API started
+2025-10-07 17:04:25,214 - rostio - INFO - 📖 API docs available at http://localhost:8000/docs
+2025-10-07 17:04:25,451 - watchfiles.main - INFO - 1 change detected
+2025-10-07 17:04:36,829 - watchfiles.main - INFO - 2 changes detected
+2025-10-07 17:04:37,479 - watchfiles.main - INFO - 1 change detected
+2025-10-07 17:04:37,751 - rostio - INFO - 🚀 Rostio API started
+2025-10-07 17:04:37,751 - rostio - INFO - 📖 API docs available at http://localhost:8000/docs
+2025-10-07 17:04:37,830 - watchfiles.main - INFO - 1 change detected
+2025-10-07 17:04:56,475 - watchfiles.main - INFO - 2 changes detected
+2025-10-07 17:04:57,102 - watchfiles.main - INFO - 1 change detected
+2025-10-07 17:04:57,304 - rostio - INFO - 🚀 Rostio API started
+2025-10-07 17:04:57,304 - rostio - INFO - 📖 API docs available at http://localhost:8000/docs
+2025-10-07 17:04:57,453 - watchfiles.main - INFO - 1 change detected
+2025-10-07 17:05:08,329 - watchfiles.main - INFO - 2 changes detected
+2025-10-07 17:05:08,944 - watchfiles.main - INFO - 1 change detected
+2025-10-07 17:05:09,135 - rostio - INFO - 🚀 Rostio API started
+2025-10-07 17:05:09,135 - rostio - INFO - 📖 API docs available at http://localhost:8000/docs
+2025-10-07 17:05:09,495 - watchfiles.main - INFO - 1 change detected
+2025-10-07 17:05:19,119 - watchfiles.main - INFO - 2 changes detected
+2025-10-07 17:05:19,768 - watchfiles.main - INFO - 1 change detected
+2025-10-07 17:05:19,976 - rostio - INFO - 🚀 Rostio API started
+2025-10-07 17:05:19,976 - rostio - INFO - 📖 API docs available at http://localhost:8000/docs
+2025-10-07 17:05:32,449 - watchfiles.main - INFO - 3 changes detected
+2025-10-07 17:05:32,800 - watchfiles.main - INFO - 4 changes detected
+2025-10-07 17:05:33,150 - watchfiles.main - INFO - 1 change detected
+2025-10-07 17:05:33,229 - rostio - INFO - Event test_event_001: role_counts={'volunteer': 2, 'leader': 1}, required_roles=[{'role': 'volunteer', 'count': 2}, {'role': 'leader', 'count': 1}]
+2025-10-07 17:05:33,262 - rostio - INFO - Event test_event_001: role_counts={'volunteer': 2, 'leader': 1}, required_roles=[{'role': 'volunteer', 'count': 2}, {'role': 'leader', 'count': 1}]
+2025-10-07 17:05:33,501 - watchfiles.main - INFO - 4 changes detected
+2025-10-07 17:05:34,123 - rostio - INFO - 🚀 Rostio API started
+2025-10-07 17:05:34,123 - rostio - INFO - 📖 API docs available at http://localhost:8000/docs
+2025-10-07 17:05:34,453 - watchfiles.main - INFO - 1 change detected
+2025-10-07 17:07:00,467 - watchfiles.main - INFO - 7 changes detected
+2025-10-07 17:07:00,818 - watchfiles.main - INFO - 1 change detected
+2025-10-07 17:07:10,792 - watchfiles.main - INFO - 2 changes detected
+2025-10-07 17:07:11,481 - watchfiles.main - INFO - 1 change detected
+2025-10-07 17:07:11,832 - watchfiles.main - INFO - 3 changes detected
+2025-10-07 17:07:12,363 - rostio - INFO - 🚀 Rostio API started
+2025-10-07 17:07:12,363 - rostio - INFO - 📖 API docs available at http://localhost:8000/docs
+2025-10-07 17:07:12,489 - watchfiles.main - INFO - 1 change detected
+2025-10-07 17:07:12,839 - watchfiles.main - INFO - 2 changes detected
+2025-10-07 17:07:13,599 - rostio - INFO - 🚀 Rostio API started
+2025-10-07 17:07:13,599 - rostio - INFO - 📖 API docs available at http://localhost:8000/docs
+2025-10-07 17:07:13,807 - watchfiles.main - INFO - 1 change detected
+2025-10-07 17:07:20,124 - watchfiles.main - INFO - 5 changes detected
+2025-10-07 17:07:20,474 - watchfiles.main - INFO - 2 changes detected
+2025-10-07 17:07:20,715 - rostio - INFO - Event test_event_001: role_counts={'volunteer': 2, 'leader': 1}, required_roles=[{'role': 'volunteer', 'count': 2}, {'role': 'leader', 'count': 1}]
+2025-10-07 17:07:20,716 - rostio - INFO - Event event_001: role_counts={}, required_roles=[]
+2025-10-07 17:07:20,716 - rostio - INFO - Event event_002: role_counts={}, required_roles=[]
+2025-10-07 17:07:20,754 - rostio - INFO - Event test_event_001: role_counts={'volunteer': 2, 'leader': 1}, required_roles=[{'role': 'volunteer', 'count': 2}, {'role': 'leader', 'count': 1}]
+2025-10-07 17:07:20,755 - rostio - INFO - Event event_001: role_counts={}, required_roles=[]
+2025-10-07 17:07:20,755 - rostio - INFO - Event event_002: role_counts={}, required_roles=[]
+2025-10-07 17:07:20,825 - watchfiles.main - INFO - 1 change detected
+2025-10-07 17:07:21,647 - rostio - INFO - 🚀 Rostio API started
+2025-10-07 17:07:21,648 - rostio - INFO - 📖 API docs available at http://localhost:8000/docs
+2025-10-07 17:07:21,777 - watchfiles.main - INFO - 1 change detected
+2025-10-07 17:07:25,786 - watchfiles.main - INFO - 6 changes detected
+2025-10-07 17:07:26,137 - watchfiles.main - INFO - 1 change detected
+2025-10-07 17:07:26,488 - watchfiles.main - INFO - 1 change detected
+2025-10-07 17:07:31,450 - watchfiles.main - INFO - 1 change detected
+2025-10-07 17:07:31,801 - watchfiles.main - INFO - 3 changes detected
+2025-10-07 17:07:32,152 - watchfiles.main - INFO - 3 changes detected
+2025-10-07 17:07:32,502 - watchfiles.main - INFO - 1 change detected
+2025-10-07 17:09:50,841 - watchfiles.main - INFO - 2 changes detected
+2025-10-07 17:09:51,192 - watchfiles.main - INFO - 1 change detected
+2025-10-07 17:09:51,543 - watchfiles.main - INFO - 1 change detected
+2025-10-07 17:10:19,810 - watchfiles.main - INFO - 2 changes detected
+2025-10-07 17:10:20,539 - watchfiles.main - INFO - 1 change detected
+2025-10-07 17:10:20,890 - watchfiles.main - INFO - 1 change detected
+2025-10-07 17:10:21,032 - rostio - INFO - 🚀 Rostio API started
+2025-10-07 17:10:21,032 - rostio - INFO - 📖 API docs available at http://localhost:8000/docs
+2025-10-07 17:10:21,241 - watchfiles.main - INFO - 1 change detected
+2025-10-07 17:10:26,854 - watchfiles.main - INFO - 6 changes detected
+2025-10-07 17:10:27,205 - watchfiles.main - INFO - 2 changes detected
+2025-10-07 17:10:27,466 - rostio - INFO - Event test_event_001: role_counts={'volunteer': 2, 'leader': 1}, required_roles=[{'role': 'volunteer', 'count': 2}, {'role': 'leader', 'count': 1}]
+2025-10-07 17:10:27,467 - rostio - INFO - Event event_001: role_counts={}, required_roles=[]
+2025-10-07 17:10:27,467 - rostio - INFO - Event event_002: role_counts={}, required_roles=[]
+2025-10-07 17:10:27,495 - rostio - INFO - Event test_event_001: role_counts={'volunteer': 2, 'leader': 1}, required_roles=[{'role': 'volunteer', 'count': 2}, {'role': 'leader', 'count': 1}]
+2025-10-07 17:10:27,496 - rostio - INFO - Event event_001: role_counts={}, required_roles=[]
+2025-10-07 17:10:27,496 - rostio - INFO - Event event_002: role_counts={}, required_roles=[]
+2025-10-07 17:10:27,555 - watchfiles.main - INFO - 1 change detected
+2025-10-07 17:10:27,906 - watchfiles.main - INFO - 2 changes detected
+2025-10-07 17:10:28,363 - rostio - INFO - 🚀 Rostio API started
+2025-10-07 17:10:28,363 - rostio - INFO - 📖 API docs available at http://localhost:8000/docs
+2025-10-07 17:10:28,507 - watchfiles.main - INFO - 1 change detected
+2025-10-07 17:10:32,867 - watchfiles.main - INFO - 7 changes detected
+2025-10-07 17:10:33,218 - watchfiles.main - INFO - 1 change detected
+2025-10-07 17:10:33,569 - watchfiles.main - INFO - 1 change detected
+2025-10-07 17:10:43,543 - watchfiles.main - INFO - 2 changes detected
+2025-10-07 17:10:44,203 - watchfiles.main - INFO - 1 change detected
+2025-10-07 17:10:44,391 - rostio - INFO - 🚀 Rostio API started
+2025-10-07 17:10:44,391 - rostio - INFO - 📖 API docs available at http://localhost:8000/docs
+2025-10-07 17:10:44,553 - watchfiles.main - INFO - 1 change detected
+2025-10-07 17:10:49,164 - watchfiles.main - INFO - 6 changes detected
+2025-10-07 17:10:49,532 - watchfiles.main - INFO - 2 changes detected
+2025-10-07 17:10:49,839 - rostio - INFO - Event test_event_001: role_counts={'volunteer': 2, 'leader': 1}, required_roles=[{'role': 'volunteer', 'count': 2}, {'role': 'leader', 'count': 1}]
+2025-10-07 17:10:49,840 - rostio - INFO - Event event_001: role_counts={}, required_roles=[]
+2025-10-07 17:10:49,841 - rostio - INFO - Event event_002: role_counts={}, required_roles=[]
+2025-10-07 17:10:49,869 - rostio - INFO - Event test_event_001: role_counts={'volunteer': 2, 'leader': 1}, required_roles=[{'role': 'volunteer', 'count': 2}, {'role': 'leader', 'count': 1}]
+2025-10-07 17:10:49,869 - rostio - INFO - Event event_001: role_counts={}, required_roles=[]
+2025-10-07 17:10:49,870 - rostio - INFO - Event event_002: role_counts={}, required_roles=[]
+2025-10-07 17:10:50,183 - watchfiles.main - INFO - 1 change detected
+2025-10-07 17:10:50,534 - watchfiles.main - INFO - 1 change detected
+2025-10-07 17:10:50,702 - rostio - INFO - 🚀 Rostio API started
+2025-10-07 17:10:50,702 - rostio - INFO - 📖 API docs available at http://localhost:8000/docs
+2025-10-07 17:10:54,894 - watchfiles.main - INFO - 6 changes detected
+2025-10-07 17:10:55,245 - watchfiles.main - INFO - 1 change detected
+2025-10-07 17:10:55,595 - watchfiles.main - INFO - 1 change detected
+2025-10-07 17:11:08,577 - watchfiles.main - INFO - 16 changes detected
+2025-10-07 17:11:08,928 - watchfiles.main - INFO - 1 change detected
+2025-10-07 17:11:12,586 - watchfiles.main - INFO - 2 changes detected
+2025-10-07 17:11:12,937 - watchfiles.main - INFO - 1 change detected
+2025-10-07 17:11:32,535 - watchfiles.main - INFO - 20 changes detected
+2025-10-07 17:11:32,885 - watchfiles.main - INFO - 1 change detected
+2025-10-07 17:53:27,666 - watchfiles.main - INFO - 1 change detected
+2025-10-07 17:53:28,021 - watchfiles.main - INFO - 3 changes detected
+2025-10-07 17:53:28,371 - watchfiles.main - INFO - 1 change detected
+2025-10-07 17:53:28,559 - rostio - INFO - Event test_event_001: role_counts={'volunteer': 2, 'leader': 1}, required_roles=[{'role': 'volunteer', 'count': 2}, {'role': 'leader', 'count': 1}]
+2025-10-07 17:53:28,560 - rostio - INFO - Event event_001: role_counts={}, required_roles=[]
+2025-10-07 17:53:28,561 - rostio - INFO - Event event_002: role_counts={}, required_roles=[]
+2025-10-07 17:53:28,595 - rostio - INFO - Event test_event_001: role_counts={'volunteer': 2, 'leader': 1}, required_roles=[{'role': 'volunteer', 'count': 2}, {'role': 'leader', 'count': 1}]
+2025-10-07 17:53:28,596 - rostio - INFO - Event event_001: role_counts={}, required_roles=[]
+2025-10-07 17:53:28,596 - rostio - INFO - Event event_002: role_counts={}, required_roles=[]
+2025-10-07 17:53:28,722 - watchfiles.main - INFO - 3 changes detected
+2025-10-07 17:53:29,073 - watchfiles.main - INFO - 1 change detected
+2025-10-07 17:53:29,424 - watchfiles.main - INFO - 1 change detected
+2025-10-07 17:53:29,466 - rostio - INFO - 🚀 Rostio API started
+2025-10-07 17:53:29,466 - rostio - INFO - 📖 API docs available at http://localhost:8000/docs
+2025-10-07 17:53:34,034 - watchfiles.main - INFO - 5 changes detected
+2025-10-07 17:53:34,385 - watchfiles.main - INFO - 1 change detected
+2025-10-07 17:54:36,127 - watchfiles.main - INFO - 2 changes detected
+2025-10-07 17:54:36,478 - watchfiles.main - INFO - 1 change detected
+2025-10-07 17:55:27,649 - watchfiles.main - INFO - 2 changes detected
+2025-10-07 17:55:28,505 - watchfiles.main - INFO - 1 change detected
+2025-10-07 17:55:28,856 - watchfiles.main - INFO - 1 change detected
+2025-10-07 17:55:28,942 - rostio - INFO - 🚀 Rostio API started
+2025-10-07 17:55:28,943 - rostio - INFO - 📖 API docs available at http://localhost:8000/docs
+2025-10-07 17:55:34,469 - watchfiles.main - INFO - 6 changes detected
+2025-10-07 17:55:34,820 - watchfiles.main - INFO - 2 changes detected
+2025-10-07 17:55:35,171 - watchfiles.main - INFO - 1 change detected
+2025-10-07 17:55:35,521 - watchfiles.main - INFO - 1 change detected
+2025-10-07 17:55:35,683 - rostio - INFO - 🚀 Rostio API started
+2025-10-07 17:55:35,683 - rostio - INFO - 📖 API docs available at http://localhost:8000/docs
+2025-10-07 17:55:41,685 - watchfiles.main - INFO - 6 changes detected
+2025-10-07 17:55:42,036 - watchfiles.main - INFO - 1 change detected
+2025-10-07 17:55:42,387 - watchfiles.main - INFO - 1 change detected
+2025-10-07 17:55:48,050 - watchfiles.main - INFO - 4 changes detected
+2025-10-07 17:55:48,400 - watchfiles.main - INFO - 2 changes detected
+2025-10-07 17:55:48,829 - rostio - INFO - 🚀 Rostio API started
+2025-10-07 17:55:48,829 - rostio - INFO - 📖 API docs available at http://localhost:8000/docs
+2025-10-07 17:55:49,703 - watchfiles.main - INFO - 5 changes detected
+2025-10-07 17:55:50,054 - watchfiles.main - INFO - 1 change detected
+2025-10-07 17:55:50,405 - watchfiles.main - INFO - 1 change detected
+2025-10-07 17:56:30,651 - watchfiles.main - INFO - 2 changes detected
+2025-10-07 17:56:31,002 - watchfiles.main - INFO - 1 change detected
+2025-10-07 17:56:45,835 - watchfiles.main - INFO - 1 change detected
+2025-10-07 17:56:46,186 - watchfiles.main - INFO - 3 changes detected
+2025-10-07 17:56:46,537 - watchfiles.main - INFO - 1 change detected
+2025-10-07 17:56:46,816 - rostio - INFO - 🚀 Rostio API started
+2025-10-07 17:56:46,816 - rostio - INFO - 📖 API docs available at http://localhost:8000/docs
+2025-10-07 17:56:48,191 - watchfiles.main - INFO - 5 changes detected
+2025-10-07 17:56:48,541 - watchfiles.main - INFO - 1 change detected
+2025-10-07 17:57:09,141 - watchfiles.main - INFO - 3 changes detected
+2025-10-07 17:57:09,492 - watchfiles.main - INFO - 2 changes detected
+2025-10-07 17:57:09,842 - watchfiles.main - INFO - 1 change detected
+2025-10-07 17:57:10,286 - rostio - INFO - 🚀 Rostio API started
+2025-10-07 17:57:10,286 - rostio - INFO - 📖 API docs available at http://localhost:8000/docs
+2025-10-07 17:57:10,494 - watchfiles.main - INFO - 1 change detected
+2025-10-07 17:57:15,855 - watchfiles.main - INFO - 5 changes detected
+2025-10-07 17:57:16,206 - watchfiles.main - INFO - 1 change detected
+2025-10-07 17:57:16,557 - watchfiles.main - INFO - 1 change detected
+2025-10-07 17:57:22,821 - watchfiles.main - INFO - 1 change detected
+2025-10-07 17:57:23,171 - watchfiles.main - INFO - 1 change detected
+2025-10-07 17:57:23,522 - watchfiles.main - INFO - 4 changes detected
+2025-10-07 17:57:23,872 - watchfiles.main - INFO - 2 changes detected
+2025-10-07 17:57:24,337 - rostio - INFO - 🚀 Rostio API started
+2025-10-07 17:57:24,337 - rostio - INFO - 📖 API docs available at http://localhost:8000/docs
+2025-10-07 17:57:24,524 - watchfiles.main - INFO - 1 change detected
+2025-10-07 17:57:28,483 - watchfiles.main - INFO - 5 changes detected
+2025-10-07 17:57:28,834 - watchfiles.main - INFO - 1 change detected
+2025-10-07 17:57:42,214 - watchfiles.main - INFO - 14 changes detected
+2025-10-07 17:57:42,566 - watchfiles.main - INFO - 1 change detected
+2025-10-07 17:57:46,526 - watchfiles.main - INFO - 2 changes detected
+2025-10-07 17:57:46,876 - watchfiles.main - INFO - 1 change detected
+2025-10-07 17:58:04,769 - watchfiles.main - INFO - 24 changes detected
+2025-10-07 17:58:05,121 - watchfiles.main - INFO - 1 change detected
+2025-10-07 17:58:05,471 - watchfiles.main - INFO - 1 change detected
+2025-10-07 17:59:08,174 - watchfiles.main - INFO - 2 changes detected
+2025-10-07 17:59:08,525 - watchfiles.main - INFO - 1 change detected
+2025-10-07 17:59:22,158 - watchfiles.main - INFO - 16 changes detected
+2025-10-07 17:59:22,509 - watchfiles.main - INFO - 1 change detected
+2025-10-07 18:04:26,850 - watchfiles.main - INFO - 2 changes detected
+2025-10-07 18:04:27,201 - watchfiles.main - INFO - 1 change detected
+2025-10-07 18:04:27,552 - watchfiles.main - INFO - 3 changes detected
+2025-10-07 18:08:14,791 - watchfiles.main - INFO - 2 changes detected
+2025-10-07 18:08:15,142 - watchfiles.main - INFO - 1 change detected
+2025-10-07 18:08:15,493 - watchfiles.main - INFO - 1 change detected
+2025-10-07 18:08:21,467 - watchfiles.main - INFO - 652 changes detected
+2025-10-07 18:08:21,857 - watchfiles.main - INFO - 824 changes detected
+2025-10-07 18:08:22,268 - watchfiles.main - INFO - 1243 changes detected
+2025-10-07 18:08:22,637 - watchfiles.main - INFO - 1502 changes detected
+2025-10-07 18:08:23,020 - watchfiles.main - INFO - 1463 changes detected
+2025-10-07 18:08:23,401 - watchfiles.main - INFO - 1723 changes detected
+2025-10-07 18:08:23,772 - watchfiles.main - INFO - 2115 changes detected
+2025-10-07 18:08:24,144 - watchfiles.main - INFO - 223 changes detected
+2025-10-07 18:08:24,496 - watchfiles.main - INFO - 1 change detected
+2025-10-07 18:08:29,861 - watchfiles.main - INFO - 2 changes detected
+2025-10-07 18:08:30,212 - watchfiles.main - INFO - 1 change detected
+2025-10-07 18:08:30,563 - watchfiles.main - INFO - 1 change detected
+2025-10-07 18:08:35,123 - watchfiles.main - INFO - 2 changes detected
+2025-10-07 18:08:35,474 - watchfiles.main - INFO - 1 change detected
+2025-10-07 18:08:43,141 - watchfiles.main - INFO - 2 changes detected
+2025-10-07 18:08:43,492 - watchfiles.main - INFO - 1 change detected
+2025-10-07 18:09:08,247 - watchfiles.main - INFO - 2 changes detected
+2025-10-07 18:09:08,598 - watchfiles.main - INFO - 1 change detected
+2025-10-07 18:09:28,645 - watchfiles.main - INFO - 2 changes detected
+2025-10-07 18:09:28,996 - watchfiles.main - INFO - 1 change detected
+2025-10-07 18:10:01,571 - watchfiles.main - INFO - 2 changes detected
+2025-10-07 18:10:01,922 - watchfiles.main - INFO - 1 change detected
+2025-10-07 18:10:13,098 - watchfiles.main - INFO - 2 changes detected
+2025-10-07 18:10:13,449 - watchfiles.main - INFO - 1 change detected
+2025-10-07 18:10:38,255 - watchfiles.main - INFO - 2 changes detected
+2025-10-07 18:10:38,606 - watchfiles.main - INFO - 1 change detected
+2025-10-07 18:10:44,218 - watchfiles.main - INFO - 73 changes detected
+2025-10-07 18:10:44,572 - watchfiles.main - INFO - 1020 changes detected
+2025-10-07 18:10:44,936 - watchfiles.main - INFO - 1 change detected
+2025-10-07 18:11:13,653 - watchfiles.main - INFO - 2 changes detected
+2025-10-07 18:11:14,004 - watchfiles.main - INFO - 1 change detected
+2025-10-07 18:11:14,355 - watchfiles.main - INFO - 1 change detected
+2025-10-07 18:11:25,230 - watchfiles.main - INFO - 2 changes detected
+2025-10-07 18:11:25,581 - watchfiles.main - INFO - 1 change detected
+2025-10-07 18:13:25,962 - watchfiles.main - INFO - 1 change detected
+2025-10-07 18:13:26,313 - watchfiles.main - INFO - 1 change detected
+2025-10-07 18:13:26,664 - watchfiles.main - INFO - 1 change detected
+2025-10-07 18:14:14,528 - watchfiles.main - INFO - 2 changes detected
+2025-10-07 18:14:14,879 - watchfiles.main - INFO - 1 change detected
+2025-10-07 18:15:41,230 - watchfiles.main - INFO - 1 change detected
+2025-10-07 18:15:41,581 - watchfiles.main - INFO - 1 change detected
+2025-10-07 18:15:44,738 - watchfiles.main - INFO - 18 changes detected
+2025-10-07 18:15:45,089 - watchfiles.main - INFO - 1 change detected
+2025-10-07 18:15:45,440 - watchfiles.main - INFO - 1 change detected
+2025-10-07 18:15:53,461 - watchfiles.main - INFO - 16 changes detected
+2025-10-07 18:15:53,812 - watchfiles.main - INFO - 1 change detected
+2025-10-07 18:15:56,919 - watchfiles.main - INFO - 1 change detected
+2025-10-07 18:15:57,270 - watchfiles.main - INFO - 1 change detected
+2025-10-07 18:15:57,620 - watchfiles.main - INFO - 1 change detected
+2025-10-07 18:16:39,423 - watchfiles.main - INFO - 1 change detected
+2025-10-07 18:16:39,773 - watchfiles.main - INFO - 1 change detected
+2025-10-07 18:17:03,735 - watchfiles.main - INFO - 2 changes detected
+2025-10-07 18:17:04,086 - watchfiles.main - INFO - 1 change detected
+2025-10-07 18:17:04,437 - watchfiles.main - INFO - 2 changes detected
+2025-10-07 18:17:04,788 - watchfiles.main - INFO - 1 change detected
+2025-10-07 18:17:08,647 - watchfiles.main - INFO - 1 change detected
+2025-10-07 18:17:08,998 - watchfiles.main - INFO - 1 change detected
+2025-10-07 18:17:13,910 - watchfiles.main - INFO - 6 changes detected
+2025-10-07 18:17:14,261 - watchfiles.main - INFO - 1 change detected
+2025-10-07 18:17:14,612 - watchfiles.main - INFO - 1 change detected
+2025-10-07 18:17:16,366 - watchfiles.main - INFO - 1 change detected
+2025-10-07 18:17:16,716 - watchfiles.main - INFO - 1 change detected
+2025-10-07 18:17:17,067 - watchfiles.main - INFO - 2 changes detected
+2025-10-07 18:17:17,418 - watchfiles.main - INFO - 1 change detected
+2025-10-07 18:17:18,821 - watchfiles.main - INFO - 6 changes detected
+2025-10-07 18:17:19,171 - watchfiles.main - INFO - 1 change detected
+2025-10-07 18:17:19,522 - watchfiles.main - INFO - 1 change detected
+2025-10-07 18:17:29,595 - watchfiles.main - INFO - 2 changes detected
+2025-10-07 18:17:30,365 - watchfiles.main - INFO - 1 change detected
+2025-10-07 18:17:30,521 - rostio - INFO - 🚀 Rostio API started
+2025-10-07 18:17:30,521 - rostio - INFO - 📖 API docs available at http://localhost:8000/docs
+2025-10-07 18:17:30,716 - watchfiles.main - INFO - 1 change detected
+2025-10-07 18:17:40,039 - watchfiles.main - INFO - 2 changes detected
+2025-10-07 18:17:40,610 - watchfiles.main - INFO - 1 change detected
+2025-10-07 18:17:40,741 - rostio - INFO - 🚀 Rostio API started
+2025-10-07 18:17:40,741 - rostio - INFO - 📖 API docs available at http://localhost:8000/docs
+2025-10-07 18:17:48,377 - watchfiles.main - INFO - 10 changes detected
+2025-10-07 18:17:48,728 - watchfiles.main - INFO - 1 change detected
+2025-10-07 18:17:49,780 - watchfiles.main - INFO - 1 change detected
+2025-10-07 18:17:50,131 - watchfiles.main - INFO - 3 changes detected
+2025-10-07 18:17:50,481 - watchfiles.main - INFO - 4 changes detected
+2025-10-07 18:17:50,832 - watchfiles.main - INFO - 1 change detected
+2025-10-07 18:17:51,884 - watchfiles.main - INFO - 106 changes detected
+2025-10-07 18:17:52,553 - watchfiles.main - INFO - 1 change detected
+2025-10-07 18:17:52,904 - watchfiles.main - INFO - 1 change detected
+2025-10-07 18:17:56,063 - watchfiles.main - INFO - 2 changes detected
+2025-10-07 18:17:56,413 - watchfiles.main - INFO - 1 change detected
+2025-10-07 18:17:58,468 - watchfiles.main - INFO - 2 changes detected
+2025-10-07 18:17:58,820 - watchfiles.main - INFO - 1 change detected
+2025-10-07 18:21:27,661 - watchfiles.main - INFO - 2 changes detected
+2025-10-07 18:21:28,014 - watchfiles.main - INFO - 1 change detected
+2025-10-07 18:21:28,364 - watchfiles.main - INFO - 1 change detected
+2025-10-07 18:21:38,187 - watchfiles.main - INFO - 10 changes detected
+2025-10-07 18:21:38,538 - watchfiles.main - INFO - 1 change detected
+2025-10-07 18:21:45,504 - watchfiles.main - INFO - 24 changes detected
+2025-10-07 18:21:45,855 - watchfiles.main - INFO - 1 change detected
+2025-10-07 18:21:54,227 - watchfiles.main - INFO - 1 change detected
+2025-10-07 18:21:54,577 - watchfiles.main - INFO - 1 change detected
+2025-10-07 18:22:30,864 - watchfiles.main - INFO - 9 changes detected
+2025-10-07 18:22:31,265 - watchfiles.main - INFO - 1 change detected
+2025-10-07 18:22:31,615 - watchfiles.main - INFO - 1 change detected
+2025-10-07 18:29:36,035 - watchfiles.main - INFO - 1 change detected
+2025-10-07 18:29:36,386 - watchfiles.main - INFO - 1 change detected
