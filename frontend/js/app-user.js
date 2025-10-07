@@ -6,7 +6,19 @@ let currentUser = null;
 let currentOrg = null;
 
 // Initialize
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
+    // Initialize i18n first
+    await i18n.init();
+
+    // Check if user has a saved language preference
+    const savedUser = localStorage.getItem('roster_user');
+    if (savedUser) {
+        const user = JSON.parse(savedUser);
+        if (user.language && user.language !== i18n.getLocale()) {
+            await i18n.setLocale(user.language);
+        }
+    }
+
     checkExistingSession();
 });
 
@@ -98,6 +110,8 @@ async function handleLogin(event) {
                 email: data.email,
                 org_id: data.org_id,
                 roles: data.roles,
+                timezone: data.timezone,
+                language: data.language || 'en',
                 token: data.token
             };
             currentOrg = orgData;
@@ -973,28 +987,39 @@ async function showSettings() {
 
 // Change language
 async function changeLanguage(locale) {
-    await i18n.setLocale(locale);
-    showToast('Language changed successfully! Refreshing...', 'success');
-    // Reload page to apply translations
-    setTimeout(() => location.reload(), 1000);
+    // Language will be saved when user clicks "Save" button in Settings
+    // Just update the UI to show selection
+    console.log(`Language selected: ${locale}`);
 }
 
 async function saveSettings() {
     try {
         const timezone = document.getElementById('settings-timezone').value;
+        const language = document.getElementById('settings-language').value;
 
-        // Only save timezone (roles are managed by admins)
+        // Save both timezone and language
         const response = await fetch(`${API_BASE_URL}/people/${currentUser.id}`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ timezone })
+            body: JSON.stringify({ timezone, language })
         });
 
         if (response.ok) {
+            const needsReload = currentUser.language !== language;
             currentUser.timezone = timezone;
+            currentUser.language = language;
             saveSession();
+
+            // Set language in i18n
+            await i18n.setLocale(language);
+
             showToast('Settings saved successfully!', 'success');
             closeSettings();
+
+            // Reload if language changed
+            if (needsReload) {
+                setTimeout(() => location.reload(), 1000);
+            }
         } else {
             const error = await response.json();
             showToast(error.detail || 'Error saving settings', 'error');

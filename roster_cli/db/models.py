@@ -76,6 +76,7 @@ class Person(Base):
     password_hash = Column(String, nullable=True)  # Hashed password for login
     roles = Column(JSONType, nullable=True)  # Array of role strings
     timezone = Column(String, default="UTC", nullable=False)  # User's timezone preference
+    language = Column(String, default="en", nullable=False)  # User's language preference (ISO 639-1 code)
     status = Column(String, default="active", nullable=False)  # active, inactive, invited
     invited_by = Column(String, ForeignKey("people.id"), nullable=True)  # Who invited this person
     last_login = Column(DateTime, nullable=True)  # Last login timestamp

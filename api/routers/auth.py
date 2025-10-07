@@ -38,6 +38,7 @@ class AuthResponse(BaseModel):
     email: str
     roles: list[str]
     timezone: str
+    language: str
     token: str
 
 
@@ -88,6 +89,7 @@ def signup(request: SignupRequest, db: Session = Depends(get_db)):
         email=person.email,
         roles=person.roles or [],
         timezone=person.timezone or "UTC",
+        language=person.language or "en",
         token=token
     )
 
@@ -121,6 +123,7 @@ def login(request: LoginRequest, db: Session = Depends(get_db)):
         email=person.email,
         roles=person.roles or [],
         timezone=person.timezone or "UTC",
+        language=person.language or "en",
         token=token
     )
 

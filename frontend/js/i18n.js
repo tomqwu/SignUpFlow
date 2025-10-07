@@ -269,14 +269,7 @@ class I18n {
 // Create global instance
 const i18n = new I18n();
 
-// Initialize on page load
-if (typeof window !== 'undefined') {
-    window.addEventListener('DOMContentLoaded', () => {
-        i18n.init().then(locale => {
-            console.log(`i18n initialized with locale: ${locale}`);
-        });
-    });
-}
+// Note: i18n.init() is called manually in app-user.js after checking user preferences
 
 // Export for use in other files
 if (typeof module !== 'undefined' && module.exports) {
