@@ -12,6 +12,7 @@ class PersonBase(BaseModel):
     email: Optional[EmailStr] = Field(None, description="Email address")
     roles: Optional[List[str]] = Field(default_factory=list, description="List of roles")
     timezone: str = Field(default="UTC", description="User's timezone preference")
+    language: str = Field(default="en", description="User's language preference (ISO 639-1 code)")
     extra_data: Optional[Dict[str, Any]] = Field(None, description="Additional data")
 
 
@@ -29,6 +30,7 @@ class PersonUpdate(BaseModel):
     email: Optional[EmailStr] = None
     roles: Optional[List[str]] = None
     timezone: Optional[str] = None
+    language: Optional[str] = None
     extra_data: Optional[Dict[str, Any]] = None
 
 
