@@ -2484,4 +2484,25 @@ async function leaveEvent(eventId) {
 window.startOnboarding = startOnboarding;
 window.showLogin = showLogin;
 window.handleLogin = handleLogin;
-window.handleSignup = handleSignup;
+window.createProfile = createProfile;
+
+// Navigation
+window.switchView = switchView;
+window.goToHome = goToHome;
+
+// Settings and profile
+window.showSettings = showSettings;
+window.dismissSetupHint = dismissSetupHint;
+
+// Calendar
+window.exportMyCalendar = exportMyCalendar;
+window.showCalendarSubscription = showCalendarSubscription;
+
+// Time off / blocked dates
+window.closeEditTimeOffModal = closeEditTimeOffModal;
+
+// Admin
+window.switchAdminTab = switchAdminTab;
+
+// Organization
+window.showCreateOrg = showCreateOrg;
