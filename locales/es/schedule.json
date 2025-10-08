@@ -1,5 +1,7 @@
 {
   "title": "Mi horario",
+  "schedule": "Horario",
+  "my_schedule": "Mi horario",
   "upcoming_count": "Asignaciones próximas",
   "this_month_count": "Este mes",
   "no_assignments": "No hay asignaciones próximas.",
