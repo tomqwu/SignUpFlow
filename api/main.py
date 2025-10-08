@@ -119,6 +119,10 @@ async def serve_spa(full_path: str):
     if full_path.startswith("api/") or full_path.startswith("docs") or full_path.startswith("redoc") or full_path.startswith("locales/"):
         raise HTTPException(status_code=404, detail="Not Found")
 
+    # Strip 'frontend/' prefix if present (since frontend_path already points to frontend/)
+    if full_path.startswith("frontend/"):
+        full_path = full_path[9:]  # Remove 'frontend/' prefix
+
     # Try to serve the specific file first (for assets like CSS, JS, images)
     file_path = os.path.join(frontend_path, full_path)
     if os.path.isfile(file_path):
