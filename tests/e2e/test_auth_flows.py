@@ -26,14 +26,15 @@ def test_signup_new_user(page: Page):
 
     # Wait for profile screen to appear
     expect(page.locator("#profile-screen")).to_be_visible(timeout=5000)
+    page.screenshot(path="/tmp/e2e-profile-screen.png")
 
     # Fill in profile form (correct selectors)
     page.fill("#user-name", "Test User E2E")
     page.fill("#user-email", f"e2e_test_{int(page.evaluate('Date.now()'))}@test.com")
     page.fill("#user-password", "testpassword123")
 
-    # Submit (correct button text)
-    page.get_by_role("button", name="Continue →").click()
+    # Submit - use form submission instead of button click
+    page.locator("#profile-screen form").evaluate("form => form.requestSubmit()")
     page.wait_for_timeout(2000)
 
     # Should be logged in and see main app

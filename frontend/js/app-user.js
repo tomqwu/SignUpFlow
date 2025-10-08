@@ -349,6 +349,7 @@ async function createProfile(event) {
 // Main App
 async function showMainApp() {
     showScreen('main-app');
+    router.navigate('/app/schedule', true);  // Update URL to /app/schedule
     document.getElementById('user-name-display').textContent = currentUser.name;
 
     // Load and display organization(s)
