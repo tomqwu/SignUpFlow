@@ -1,5 +1,8 @@
 // User-Friendly Roster App
-const API_BASE_URL = '/api';
+// Only declare API_BASE_URL if not already defined
+if (typeof API_BASE_URL === 'undefined') {
+    var API_BASE_URL = '/api';
+}
 
 // User State - attach to window so router can access it
 let currentUser = null;

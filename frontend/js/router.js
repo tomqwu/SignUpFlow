@@ -55,6 +55,8 @@ class Router {
      * Handle route change
      */
     handleRoute(path, addToHistory = true) {
+        console.log(`🛣️  router.handleRoute called with path: ${path}, addToHistory: ${addToHistory}`);
+
         // Update page title
         const title = this.pageTitles[path] || 'Rostio';
         document.title = title;
@@ -65,6 +67,7 @@ class Router {
         // Handle authentication screens
         if (path === '/' || path === '/login' || path === '/join' || path === '/profile') {
             const screenId = this.routes[path];
+            console.log(`🛣️  Auth screen detected. Path: ${path}, screenId: ${screenId}`);
             if (screenId) {
                 this.showScreen(screenId);
             }
@@ -124,10 +127,14 @@ class Router {
      * Show a screen (for authentication flows)
      */
     showScreen(screenId) {
+        console.log(`🎬 router.showScreen called with: ${screenId}`);
         document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden'));
         const screen = document.getElementById(screenId);
         if (screen) {
             screen.classList.remove('hidden');
+            console.log(`🎬 router.showScreen: ${screenId} is now visible`);
+        } else {
+            console.error(`🎬 router.showScreen: ${screenId} not found!`);
         }
     }
 

@@ -5,7 +5,10 @@
  * JWT Bearer tokens in the Authorization header.
  */
 
-const API_BASE_URL = '/api';
+// Only declare API_BASE_URL if not already defined
+if (typeof API_BASE_URL === 'undefined') {
+    var API_BASE_URL = '/api';
+}
 
 /**
  * Make an authenticated API request with Bearer token.
