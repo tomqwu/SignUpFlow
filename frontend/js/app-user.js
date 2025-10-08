@@ -2485,6 +2485,8 @@ window.startOnboarding = startOnboarding;
 window.showLogin = showLogin;
 window.handleLogin = handleLogin;
 window.createProfile = createProfile;
+window.selectOrganization = selectOrganization;
+window.createAndJoinOrg = createAndJoinOrg;
 
 // Navigation
 window.switchView = switchView;
@@ -2492,17 +2494,61 @@ window.goToHome = goToHome;
 
 // Settings and profile
 window.showSettings = showSettings;
+window.closeSettings = closeSettings;
+window.saveSettings = saveSettings;
 window.dismissSetupHint = dismissSetupHint;
+window.logout = logout;
 
 // Calendar
 window.exportMyCalendar = exportMyCalendar;
 window.showCalendarSubscription = showCalendarSubscription;
+window.closeCalendarSubscriptionModal = closeCalendarSubscriptionModal;
+window.resetCalendarToken = resetCalendarToken;
+window.copyToClipboard = copyToClipboard;
+
+// Events
+window.joinEvent = joinEvent;
+window.leaveEvent = leaveEvent;
+window.showCreateEventForm = showCreateEventForm;
+window.closeCreateEventForm = closeCreateEventForm;
+window.loadAdminEvents = loadAdminEvents;
+window.showAssignments = showAssignments;
+window.editEvent = editEvent;
+window.deleteEvent = deleteEvent;
+window.closeAssignmentModal = closeAssignmentModal;
+window.toggleAssignment = toggleAssignment;
 
 // Time off / blocked dates
 window.closeEditTimeOffModal = closeEditTimeOffModal;
+window.editTimeOffFromButton = editTimeOffFromButton;
+window.removeTimeOff = removeTimeOff;
 
 // Admin
 window.switchAdminTab = switchAdminTab;
+window.generateSchedule = generateSchedule;
+window.exportLatestSchedulePDF = exportLatestSchedulePDF;
+window.exportOrgCalendar = exportOrgCalendar;
+window.showScheduleStats = showScheduleStats;
+window.viewSolution = viewSolution;
+window.deleteSolution = deleteSolution;
 
 // Organization
 window.showCreateOrg = showCreateOrg;
+
+// Roles
+window.showAddRoleForm = showAddRoleForm;
+window.closeAddRoleForm = closeAddRoleForm;
+window.showEditRoleModal = showEditRoleModal;
+window.closeEditRoleModal = closeEditRoleModal;
+window.showManageRolePeopleModal = showManageRolePeopleModal;
+window.closeManageRolePeopleModal = closeManageRolePeopleModal;
+window.deleteRole = deleteRole;
+
+// People
+window.showEditPersonModal = showEditPersonModal;
+window.closeEditPersonModal = closeEditPersonModal;
+window.showInviteUserModal = showInviteUserModal;
+window.closeInviteUserModal = closeInviteUserModal;
+window.resendInvitation = resendInvitation;
+window.cancelInvitation = cancelInvitation;
+window.closeSelectRoleModal = closeSelectRoleModal;

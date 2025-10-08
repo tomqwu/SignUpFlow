@@ -24,13 +24,16 @@ def test_signup_new_user(page: Page):
     org_card.click()
     page.wait_for_timeout(500)
 
-    # Fill in profile form
-    page.fill("#profile-name", "Test User E2E")
-    page.fill("#profile-email", f"e2e_test_{int(page.evaluate('Date.now()'))}@test.com")
-    page.fill("#profile-password", "testpassword123")
+    # Wait for profile screen to appear
+    expect(page.locator("#profile-screen")).to_be_visible(timeout=5000)
 
-    # Submit
-    page.get_by_role("button", name="Create Profile").click()
+    # Fill in profile form (correct selectors)
+    page.fill("#user-name", "Test User E2E")
+    page.fill("#user-email", f"e2e_test_{int(page.evaluate('Date.now()'))}@test.com")
+    page.fill("#user-password", "testpassword123")
+
+    # Submit (correct button text)
+    page.get_by_role("button", name="Continue →").click()
     page.wait_for_timeout(2000)
 
     # Should be logged in and see main app
