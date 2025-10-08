@@ -128,15 +128,25 @@ Send secure invitations to new volunteers with pre-assigned roles.
 
 ### Installation
 
+#### Quick Start (Using Makefile)
+
 ```bash
 # Clone the repository
 git clone https://github.com/yourusername/rostio.git
 cd rostio
 
+# One-command setup (install dependencies + run migrations)
+make setup
+
+# Start the server
+make run
+```
+
+#### Manual Installation
+
+```bash
 # Install dependencies
 poetry install
-
-# Install frontend dependencies
 npm install
 
 # Run database migrations
@@ -148,6 +158,15 @@ poetry run uvicorn api.main:app --host 0.0.0.0 --port 8000 --reload
 ```
 
 Visit `http://localhost:8000` to access the application.
+
+#### Available Make Commands
+
+Run `make` or `make help` to see all available commands:
+- `make setup` - First-time setup (install + migrate)
+- `make run` - Start development server
+- `make test` - Run all tests
+- `make test-coverage` - Generate test coverage reports
+- And more...
 
 ### Default Admin Account
 - **Email:** jane@test.com
