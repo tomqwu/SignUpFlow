@@ -126,7 +126,18 @@ async def serve_spa(full_path: str):
     # Try to serve the specific file first (for assets like CSS, JS, images)
     file_path = os.path.join(frontend_path, full_path)
     if os.path.isfile(file_path):
-        return FileResponse(file_path)
+        # Determine correct MIME type
+        media_type = None
+        if file_path.endswith('.js'):
+            media_type = 'application/javascript'
+        elif file_path.endswith('.css'):
+            media_type = 'text/css'
+        elif file_path.endswith('.json'):
+            media_type = 'application/json'
+        elif file_path.endswith('.html'):
+            media_type = 'text/html'
+
+        return FileResponse(file_path, media_type=media_type)
 
     # Otherwise serve index.html (SPA fallback)
     index_path = os.path.join(frontend_path, "index.html")

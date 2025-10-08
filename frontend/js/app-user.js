@@ -1813,9 +1813,16 @@ function updateRoleBadgesDisplay() {
     // Get user's roles
     const roles = currentUser.roles || [];
 
-    // Debug: Log roles structure
-    console.log('updateRoleBadgesDisplay - roles:', roles, 'Type:', typeof roles, 'IsArray:', Array.isArray(roles));
-    
+    // Debug: Log roles structure with detailed inspection
+    console.log('🔍 DEBUG updateRoleBadgesDisplay:');
+    console.log('  - roles:', roles);
+    console.log('  - Type:', typeof roles);
+    console.log('  - IsArray:', Array.isArray(roles));
+    console.log('  - JSON:', JSON.stringify(roles));
+    if (roles.length > 0) {
+        console.log('  - First role:', roles[0], 'Type:', typeof roles[0]);
+    }
+
     if (roles.length === 0) {
         rolesDisplay.innerHTML = '<span class="role-badge" style="background: #9ca3af;">No roles set</span>';
         // Show setup hint for users without roles
