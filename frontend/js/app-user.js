@@ -2466,3 +2466,13 @@ async function leaveEvent(eventId) {
         }
     });
 }
+
+// ============================================================================
+// EXPOSE FUNCTIONS TO GLOBAL SCOPE FOR ONCLICK HANDLERS
+// ============================================================================
+
+// Onboarding and authentication
+window.startOnboarding = startOnboarding;
+window.showLogin = showLogin;
+window.handleLogin = handleLogin;
+window.handleSignup = handleSignup;
