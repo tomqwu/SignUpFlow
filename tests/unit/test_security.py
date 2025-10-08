@@ -85,12 +85,13 @@ class TestPasswordHashing:
         hashed = hash_password("test123")
         assert isinstance(hashed, str)
 
-    def test_hash_password_consistent(self):
-        """Test that hashing the same password produces same hash."""
+    def test_hash_password_produces_bcrypt_hash(self):
+        """Test that hashing produces bcrypt format hash."""
         password = "test_password_123"
-        hash1 = hash_password(password)
-        hash2 = hash_password(password)
-        assert hash1 == hash2
+        hashed = hash_password(password)
+        # Bcrypt hashes start with $2b$ and are ~60 characters
+        assert hashed.startswith("$2b$")
+        assert len(hashed) >= 59
 
     def test_hash_password_different_for_different_passwords(self):
         """Test that different passwords produce different hashes."""
@@ -98,34 +99,34 @@ class TestPasswordHashing:
         hash2 = hash_password("password2")
         assert hash1 != hash2
 
-    def test_hash_password_length(self):
-        """Test that SHA-256 hash has expected length."""
-        hashed = hash_password("test")
-        # SHA-256 produces 64 hex characters
-        assert len(hashed) == 64
-
-    def test_hash_password_hex_format(self):
-        """Test that hash is in hexadecimal format."""
-        hashed = hash_password("test")
-        assert re.match(r'^[a-f0-9]{64}$', hashed)
+    def test_hash_password_uses_salt(self):
+        """Test that bcrypt generates different hashes for same password (salted)."""
+        password = "test_password"
+        hash1 = hash_password(password)
+        hash2 = hash_password(password)
+        # Bcrypt uses random salt, so same password = different hash
+        assert hash1 != hash2
+        # But both should verify correctly
+        assert verify_password(password, hash1)
+        assert verify_password(password, hash2)
 
     def test_hash_password_empty_string(self):
         """Test hashing empty string."""
         hashed = hash_password("")
         assert isinstance(hashed, str)
-        assert len(hashed) == 64
+        assert hashed.startswith("$2b$")
 
     def test_hash_password_special_characters(self):
         """Test hashing password with special characters."""
         password = "p@ssw0rd!#$%^&*()"
         hashed = hash_password(password)
-        assert len(hashed) == 64
+        assert hashed.startswith("$2b$")
 
     def test_hash_password_unicode(self):
         """Test hashing password with unicode characters."""
         password = "пароль密码🔒"
         hashed = hash_password(password)
-        assert len(hashed) == 64
+        assert hashed.startswith("$2b$")
 
 
 class TestPasswordVerification:
@@ -207,10 +208,9 @@ class TestSecurityProperties:
         # Hashes should be completely different
         assert hash1 != hash2
 
-        # Count different characters (should be many)
-        diff_count = sum(c1 != c2 for c1, c2 in zip(hash1, hash2))
-        # At least 50% of characters should be different
-        assert diff_count >= 32
+        # Verify that wrong password doesn't work
+        assert not verify_password(password1, hash2)
+        assert not verify_password(password2, hash1)
 
     def test_password_length_affects_hash(self):
         """Test that password length affects the hash."""
@@ -218,6 +218,6 @@ class TestSecurityProperties:
         long = hash_password("abc" * 100)
 
         assert short != long
-        # Both should still be 64 characters (SHA-256 property)
-        assert len(short) == 64
-        assert len(long) == 64
+        # Verify each works with correct password
+        assert verify_password("abc", short)
+        assert verify_password("abc" * 100, long)

@@ -1,7 +1,11 @@
-"""Security utilities for token generation and password hashing."""
+"""Security utilities for token generation and password hashing.
+
+DEPRECATED: hash_password and verify_password have been moved to api.security
+with bcrypt implementation. This module is kept for backward compatibility.
+"""
 
 import secrets
-import hashlib
+from api.security import hash_password as _hash_password, verify_password as _verify_password
 
 
 def generate_token(length: int = 32) -> str:
@@ -23,7 +27,7 @@ def generate_invitation_token() -> str:
 
 
 def generate_auth_token() -> str:
-    """Generate a session/authentication token."""
+    """Generate a session/authentication token (for calendar subscriptions)."""
     return generate_token(32)
 
 
@@ -34,28 +38,28 @@ def generate_calendar_token() -> str:
 
 def hash_password(password: str) -> str:
     """
-    Hash password using SHA-256.
-
-    Note: In production, use bcrypt or argon2 instead.
+    Hash password using bcrypt.
 
     Args:
         password: Plain text password
 
     Returns:
-        Hexadecimal hash string
+        Bcrypt hashed password
+
+    Note: This now uses bcrypt from api.security instead of SHA-256
     """
-    return hashlib.sha256(password.encode()).hexdigest()
+    return _hash_password(password)
 
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
     """
-    Verify a password against a hash.
+    Verify a password against a bcrypt hash.
 
     Args:
         plain_password: Plain text password to verify
-        hashed_password: Hash to compare against
+        hashed_password: Bcrypt hash to compare against
 
     Returns:
         True if password matches hash
     """
-    return hash_password(plain_password) == hashed_password
+    return _verify_password(plain_password, hashed_password)

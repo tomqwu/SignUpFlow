@@ -2,10 +2,15 @@
 
 from typing import Optional
 from fastapi import Depends, HTTPException, Query, status
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from sqlalchemy.orm import Session
 
 from api.database import get_db
 from api.models import Person, Organization
+from api.security import verify_token
+
+# HTTP Bearer token security scheme
+security = HTTPBearer()
 
 
 def check_admin_permission(person: Person) -> bool:
@@ -67,3 +72,67 @@ def verify_org_member(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Access denied: not a member of this organization"
         )
+
+
+async def get_current_user(
+    credentials: HTTPAuthorizationCredentials = Depends(security),
+    db: Session = Depends(get_db)
+) -> Person:
+    """
+    Get the current authenticated user from JWT token.
+
+    Args:
+        credentials: HTTP Bearer token from Authorization header
+        db: Database session
+
+    Returns:
+        Person object of the authenticated user
+
+    Raises:
+        HTTPException: If token is invalid or user not found
+    """
+    token = credentials.credentials
+    payload = verify_token(token)
+
+    # Extract person_id from token payload
+    person_id: str = payload.get("sub")
+    if person_id is None:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Could not validate credentials",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
+    # Get person from database
+    person = db.query(Person).filter(Person.id == person_id).first()
+    if person is None:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="User not found",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
+    return person
+
+
+async def get_current_admin_user(
+    current_user: Person = Depends(get_current_user)
+) -> Person:
+    """
+    Get current user and verify they have admin permissions.
+
+    Args:
+        current_user: Current authenticated user
+
+    Returns:
+        Person object if user is admin
+
+    Raises:
+        HTTPException: If user is not an admin
+    """
+    if not check_admin_permission(current_user):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Admin access required"
+        )
+    return current_user

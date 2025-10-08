@@ -109,7 +109,8 @@ function saveCurrentView(viewName) {
 }
 
 function logout() {
-    localStorage.clear();
+    // Clear all session data including auth token
+    localStorage.clear();  // Clears authToken, currentUser, currentOrg
     currentUser = null;
     currentOrg = null;
     window.currentUser = null;
@@ -173,6 +174,9 @@ async function handleLogin(event) {
 
             console.log('🔐 handleLogin - Backend response data:', data);
 
+            // Save JWT token to localStorage
+            localStorage.setItem('authToken', data.token);
+
             currentUser = {
                 id: data.person_id,
                 name: data.name,
@@ -180,14 +184,14 @@ async function handleLogin(event) {
                 org_id: data.org_id,
                 roles: data.roles,
                 timezone: data.timezone,
-                language: data.language || 'en',
-                token: data.token
+                language: data.language || 'en'
             };
             currentOrg = orgData;
             window.currentUser = currentUser;
             window.currentOrg = currentOrg;
 
             console.log('👤 handleLogin - Created currentUser:', { id: currentUser.id, name: currentUser.name, timezone: currentUser.timezone, language: currentUser.language });
+            console.log('🔐 Auth token saved to localStorage');
 
             // Debug: Log roles to check structure
             console.log('Login - currentUser.roles:', currentUser.roles, 'Type:', typeof currentUser.roles);
@@ -308,15 +312,18 @@ async function createProfile(event) {
         if (response.ok) {
             const data = await response.json();
 
+            // Save JWT token to localStorage
+            localStorage.setItem('authToken', data.token);
+
             currentUser = {
                 id: data.person_id,
                 name: data.name,
                 email: data.email,
                 org_id: data.org_id,
-                roles: data.roles,
-                token: data.token
+                roles: data.roles
             };
             window.currentUser = currentUser;
+            console.log('🔐 Auth token saved to localStorage');
             saveSession();
             showMainApp();
         } else if (response.status === 409) {

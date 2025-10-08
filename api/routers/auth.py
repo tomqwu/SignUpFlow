@@ -8,7 +8,7 @@ import time
 
 from api.database import get_db
 from api.dependencies import get_organization_by_id
-from api.utils.security import hash_password, verify_password, generate_auth_token
+from api.security import hash_password, verify_password, create_access_token
 from api.models import Person, Organization
 
 router = APIRouter(prefix="/auth", tags=["auth"])
@@ -79,8 +79,8 @@ def signup(request: SignupRequest, db: Session = Depends(get_db)):
     db.commit()
     db.refresh(person)
 
-    # Generate token
-    token = generate_auth_token()
+    # Generate JWT access token
+    access_token = create_access_token(data={"sub": person.id})
 
     return AuthResponse(
         person_id=person.id,
@@ -90,7 +90,7 @@ def signup(request: SignupRequest, db: Session = Depends(get_db)):
         roles=person.roles or [],
         timezone=person.timezone or "UTC",
         language=person.language or "en",
-        token=token
+        token=access_token
     )
 
 
@@ -113,8 +113,8 @@ def login(request: LoginRequest, db: Session = Depends(get_db)):
             detail="Invalid email or password"
         )
 
-    # Generate token
-    token = generate_auth_token()
+    # Generate JWT access token
+    access_token = create_access_token(data={"sub": person.id})
 
     return AuthResponse(
         person_id=person.id,
@@ -124,7 +124,7 @@ def login(request: LoginRequest, db: Session = Depends(get_db)):
         roles=person.roles or [],
         timezone=person.timezone or "UTC",
         language=person.language or "en",
-        token=token
+        token=access_token
     )
 
 

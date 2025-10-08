@@ -5,10 +5,39 @@ from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.orm import Session
 
 from api.database import get_db
+from api.dependencies import get_current_user, get_current_admin_user
 from api.schemas.person import PersonCreate, PersonUpdate, PersonResponse, PersonList
 from api.models import Person, Organization
 
 router = APIRouter(prefix="/people", tags=["people"])
+
+
+@router.get("/me", response_model=PersonResponse)
+async def get_current_person(current_user: Person = Depends(get_current_user)):
+    """Get the current authenticated user's profile."""
+    return current_user
+
+
+@router.put("/me", response_model=PersonResponse)
+async def update_current_person(
+    person_data: PersonUpdate,
+    current_user: Person = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Update the current authenticated user's profile."""
+    # Update allowed fields
+    if person_data.name is not None:
+        current_user.name = person_data.name
+    if person_data.timezone is not None:
+        current_user.timezone = person_data.timezone
+    if person_data.language is not None:
+        current_user.language = person_data.language
+    if person_data.extra_data is not None:
+        current_user.extra_data = person_data.extra_data
+
+    db.commit()
+    db.refresh(current_user)
+    return current_user
 
 
 @router.post("/", response_model=PersonResponse, status_code=status.HTTP_201_CREATED)
