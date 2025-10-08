@@ -9,8 +9,8 @@ def test_signup_new_user(page: Page):
     page.goto("http://localhost:8000/")
     page.wait_for_load_state("networkidle")
 
-    # Click "Get Started"
-    page.get_by_text("Get Started").click()
+    # Click "Get Started" button
+    page.get_by_role("button", name="Get Started →").click()
     page.wait_for_timeout(500)
 
     # Should navigate to join page
