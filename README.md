@@ -203,13 +203,17 @@ DATABASE_URL=sqlite:///./roster.db  # Default: SQLite
 ### Run All Tests
 
 ```bash
-# Run all tests (294 tests)
-poetry run pytest tests/ -v
+# Quick test (pre-commit)
+make test
+
+# Full backend + frontend + E2E
+make test-all
 
 # Run specific test suites
 poetry run pytest tests/unit/ -v                    # Unit tests (158)
 poetry run pytest tests/integration/ -v             # Integration tests (129)
 poetry run pytest tests/security/ -v                # Security tests (7)
+poetry run pytest tests/e2e/ -v                     # E2E GUI tests (Playwright)
 
 # Frontend tests (50)
 npm test
@@ -218,24 +222,50 @@ npm test
 poetry run pytest tests/security/test_authentication.py -v     # JWT & bcrypt (7)
 poetry run pytest tests/integration/test_invitations.py -v     # Invitations (16)
 poetry run pytest tests/unit/test_calendar.py -v               # Calendar export (18)
-poetry run pytest tests/unit/test_security.py -v               # Password hashing (26)
+poetry run pytest tests/e2e/test_auth_flows.py -v              # E2E authentication (6)
 ```
 
 ### Test Coverage
 
 - **294 backend tests passing** (100% pass rate)
 - **50 frontend tests passing** (100% pass rate)
+- **E2E GUI tests** - Browser automation with Playwright
 - **158 unit tests** - Core API functionality
-- **129 integration tests** - End-to-end workflows
+- **129 integration tests** - API workflows
 - **7 security tests** - JWT authentication & bcrypt
-- **Runtime:** Backend ~10s, Frontend ~0.4s
+- **Runtime:** Backend ~10s, Frontend ~0.4s, E2E ~30s
+
+#### Test Types
+
+| Type | Count | Purpose | Tool |
+|------|-------|---------|------|
+| Unit | 158 | Core logic, models, utilities | pytest |
+| Integration | 129 | API endpoints, workflows | pytest + FastAPI TestClient |
+| Security | 7 | JWT, bcrypt, authentication | pytest |
+| Frontend | 50 | JS logic, i18n, router | Jest |
+| E2E | 15+ | Full user workflows, UI | Playwright |
 
 #### Key Test Files
+- [test_auth_flows.py](tests/e2e/test_auth_flows.py) - E2E login, signup, logout workflows
 - [test_authentication.py](tests/security/test_authentication.py) - JWT token auth, bcrypt hashing
 - [test_invitations.py](tests/integration/test_invitations.py) - Invitation workflows
 - [test_calendar.py](tests/unit/test_calendar.py) - ICS export & webcal subscriptions
-- [test_security.py](tests/unit/test_security.py) - Password hashing & token generation
-- [test_api_complete.py](tests/integration/test_api_complete.py) - Full API coverage
+- [test_admin_console.py](tests/e2e/test_admin_console.py) - E2E admin functionality
+
+### E2E Testing
+
+Full browser automation tests covering all user stories:
+
+```bash
+# Run all E2E tests
+./run_e2e_tests.sh
+
+# Run specific E2E suite
+poetry run pytest tests/e2e/test_auth_flows.py -v
+poetry run pytest tests/e2e/test_admin_console.py -v
+```
+
+See [E2E_TESTING.md](docs/E2E_TESTING.md) for detailed E2E testing guide.
 
 See [TEST_REPORT.md](TEST_REPORT.md) for detailed test results.
 
