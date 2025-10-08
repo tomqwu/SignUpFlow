@@ -162,11 +162,25 @@ Visit `http://localhost:8000` to access the application.
 #### Available Make Commands
 
 Run `make` or `make help` to see all available commands:
+
+**Getting Started:**
 - `make setup` - First-time setup (install + migrate)
 - `make run` - Start development server
+
+**Development:**
+- `make stop` - Stop the server
+- `make restart` - Restart the server
+- `make install` - Install dependencies
+- `make migrate` - Run migrations
+
+**Testing:**
 - `make test` - Run all tests
-- `make test-coverage` - Generate test coverage reports
-- And more...
+- `make test-coverage` - Generate coverage reports
+- `make pre-commit` - Fast tests for pre-commit
+
+**Maintenance:**
+- `make clean` - Clean temp files
+- `make clean-all` - Deep clean (removes dependencies)
 
 ### Default Admin Account
 - **Email:** jane@test.com
