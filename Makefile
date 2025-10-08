@@ -1,4 +1,4 @@
-.PHONY: run dev stop restart setup install migrate test test-frontend test-backend test-integration test-all test-coverage clean clean-all pre-commit help
+.PHONY: run dev stop restart setup install migrate test test-frontend test-backend test-integration test-e2e test-all test-coverage clean clean-all pre-commit help
 
 # Run the development server
 run:
@@ -64,7 +64,12 @@ test-integration:
 	@echo "🧪 Running integration tests..."
 	@poetry run pytest tests/test_i18n_integration.py -v --tb=short
 
-# Run ALL tests (frontend + backend + integration)
+# Run E2E tests (browser automation)
+test-e2e:
+	@echo "🌐 Running E2E browser tests..."
+	@poetry run pytest tests/e2e/ -v --tb=short
+
+# Run ALL tests (frontend + backend + integration + E2E)
 test-all:
 	@echo "🚀 Running complete test suite..."
 	@echo ""
@@ -82,6 +87,11 @@ test-all:
 	@echo "   INTEGRATION TESTS"
 	@echo "================================"
 	@poetry run pytest tests/test_i18n_integration.py -v --tb=short
+	@echo ""
+	@echo "================================"
+	@echo "   E2E BROWSER TESTS"
+	@echo "================================"
+	@poetry run pytest tests/e2e/ -v --tb=short
 
 # Run tests with coverage
 test-coverage:
@@ -139,7 +149,8 @@ help:
 	@echo "  make test-frontend    - Run frontend JavaScript tests only"
 	@echo "  make test-backend     - Run backend Python tests only"
 	@echo "  make test-integration - Run integration tests only"
-	@echo "  make test-all         - Run ALL tests (complete suite)"
+	@echo "  make test-e2e         - Run E2E browser tests (Playwright)"
+	@echo "  make test-all         - Run ALL tests (frontend + backend + E2E)"
 	@echo "  make test-coverage    - Run tests with coverage reports"
 	@echo "  make pre-commit       - Run fast tests for pre-commit hook"
 	@echo ""
