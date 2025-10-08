@@ -337,11 +337,11 @@ def test_conflict_detection_gui():
         page = context.new_page()
 
         # Login as Sarah (has time-off)
-        page.goto("http://localhost:8000")
-        page.get_by_text("Sign in").click()
-        page.fill('input[type="email"]', "sarah@test.com")
-        page.fill('input[type="password"]', "password")
-        page.get_by_role("button", name="Sign In").click()
+        page.goto("http://localhost:8001")
+        page.locator('[data-i18n="auth.sign_in_link"]').click()
+        page.fill('[data-i18n-placeholder="auth.placeholder_email"]', "sarah@test.com")
+        page.fill('[data-i18n-placeholder="auth.placeholder_password"]', "password")
+        page.locator('[data-i18n="auth.sign_in"]').click()
         page.wait_for_timeout(1000)
 
         # Verify conflict detection script is loaded
