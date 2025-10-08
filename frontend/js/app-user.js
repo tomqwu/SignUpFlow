@@ -83,14 +83,13 @@ function checkExistingSession() {
             // Redirect to login if trying to access app without session
             router.navigate('/login', true);
         } else if (currentPath === '/login') {
-            showScreen('login-screen');
+            router.handleRoute('/login', false);
         } else if (currentPath === '/join') {
-            showScreen('join-screen');
+            router.handleRoute('/join', false);
             loadOrganizations();
         } else {
             // Default to onboarding
-            router.navigate('/', false);
-            showScreen('onboarding-screen');
+            router.handleRoute('/', false);
         }
     }
 }
@@ -128,21 +127,28 @@ function goToHome() {
     location.reload();
 }
 
-// Screen Navigation
+// Screen Navigation (Note: router.js also has a showScreen method)
 function showScreen(screenId) {
+    console.log(`📺 showScreen called with: ${screenId}`);
     document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden'));
-    document.getElementById(screenId).classList.remove('hidden');
+    const screen = document.getElementById(screenId);
+    if (screen) {
+        screen.classList.remove('hidden');
+        console.log(`📺 Showing screen: ${screenId}`);
+    } else {
+        console.error(`📺 Screen not found: ${screenId}`);
+    }
 }
 
 function startOnboarding() {
+    console.log('📝 startOnboarding called');
     router.navigate('/join');
-    showScreen('join-screen');
     loadOrganizations();
 }
 
 function showLogin() {
+    console.log('🔐 showLogin called');
     router.navigate('/login');
-    showScreen('login-screen');
 }
 
 // ============================================================================
