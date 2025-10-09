@@ -28,8 +28,8 @@ def test_login_page_loads(page: Page):
     onboarding = page.locator("#onboarding-screen")
     print(f"Onboarding visible: {onboarding.is_visible()}")
 
-    # Look for "Sign in" link
-    sign_in_link = page.get_by_text("Sign in")
+    # Look for "Sign in" link (use role to be specific)
+    sign_in_link = page.get_by_role("link", name="Sign in")
     print(f"Sign in link found: {sign_in_link.count()}")
 
     # Click "Sign in" link
@@ -119,8 +119,8 @@ def test_check_console_logs(page: Page):
     page.goto("http://localhost:8000/")
     page.wait_for_load_state("networkidle")
 
-    # Click sign in
-    sign_in_link = page.get_by_text("Sign in")
+    # Click sign in (use role to be specific)
+    sign_in_link = page.get_by_role("link", name="Sign in")
     if sign_in_link.count() > 0:
         sign_in_link.click()
         page.wait_for_timeout(1000)
