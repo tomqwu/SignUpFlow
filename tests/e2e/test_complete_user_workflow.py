@@ -25,8 +25,9 @@ def test_complete_signup_and_login_workflow(page: Page):
     create_org_btn = page.locator('[data-i18n="auth.create_new_organization"]')
     create_org_btn.click()
 
-    # Fill organization form
-    page.fill('[data-i18n-placeholder="auth.placeholder_org_name"]', "E2E Test Church")
+    # Fill organization form with unique timestamp
+    timestamp = page.evaluate('Date.now()')
+    page.fill('[data-i18n-placeholder="auth.placeholder_org_name"]', f"E2E Test Church {timestamp}")
     page.fill('[data-i18n-placeholder="auth.placeholder_location"]', "Test City")
 
     # Submit organization creation
