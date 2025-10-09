@@ -171,7 +171,7 @@ def test_conflict_detection_already_assigned():
 def test_conflict_detection_time_off():
     """Test conflict detection when person has time-off."""
     org_id = "cricket_league"
-    person_id = "sarah"
+    person_id = "pastor"
 
     # Add time-off period
     time_off_start = date.today() + timedelta(days=14)
@@ -339,7 +339,7 @@ def test_conflict_detection_gui():
         # Login as Sarah (has time-off)
         page.goto("http://localhost:8000")
         page.locator('[data-i18n="auth.sign_in_link"]').click()
-        page.fill('[data-i18n-placeholder="auth.placeholder_email"]', "sarah@test.com")
+        page.fill('[data-i18n-placeholder="auth.placeholder_email"]', "pastor@grace.church")
         page.fill('[data-i18n-placeholder="auth.placeholder_password"]', "password")
         page.locator('[data-i18n="auth.sign_in"]').click()
         page.wait_for_timeout(1000)
@@ -351,7 +351,7 @@ def test_conflict_detection_gui():
         # Test conflict detection function
         result = page.evaluate("""
             async () => {
-                const result = await window.checkConflicts('sarah', 'match_001');
+                const result = await window.checkConflicts('pastor', 'match_001');
                 return result;
             }
         """)

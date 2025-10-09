@@ -280,7 +280,7 @@ def setup_test_data():
             name="Admin User",
             email="admin@rostio.com",
             password_hash=get_password_hash("admin123"),
-            organization_id=test_org.id,
+            org_id=test_org.id,
             roles=["admin", "volunteer"]
         )
         db.add(admin)

@@ -23,29 +23,29 @@ def test_admin_can_send_invitation(page: Page):
         people_tab.click()
         page.wait_for_timeout(500)
 
-        # Click "Invite Person" button
-        invite_button = page.locator("button:has-text('Invite'), button:has-text('+ Invite')")
-        if invite_button.count() > 0:
-            invite_button.first.click()
-            page.wait_for_timeout(500)
+        # Click "+ Invite User" button
+        invite_button = page.locator("button:has-text('+ Invite User')")
+        expect(invite_button).to_be_visible(timeout=5000)
+        invite_button.click()
+        page.wait_for_timeout(500)
 
-            # Fill invitation form
-            email_input = page.locator("#invite-email, input[name='email']")
-            if email_input.count() > 0:
-                timestamp = int(page.evaluate("Date.now()"))
-                email_input.fill(f"invited_{timestamp}@test.com")
+        # Fill invitation form
+        email_input = page.locator("#invite-email, input[name='email']")
+        if email_input.count() > 0:
+            timestamp = int(page.evaluate("Date.now()"))
+            email_input.fill(f"invited_{timestamp}@test.com")
 
-                name_input = page.locator("#invite-name, input[name='name']")
-                if name_input.count() > 0:
-                    name_input.fill(f"Invited User {timestamp}")
+            name_input = page.locator("#invite-name, input[name='name']")
+            if name_input.count() > 0:
+                name_input.fill(f"Invited User {timestamp}")
 
-                # Submit invitation
-                submit_button = page.locator("button:has-text('Send Invitation'), button[type='submit']")
-                submit_button.first.click()
-                page.wait_for_timeout(2000)
+            # Submit invitation
+            submit_button = page.locator("button:has-text('Send Invitation'), button[type='submit']")
+            submit_button.first.click()
+            page.wait_for_timeout(2000)
 
-                # Should show success message or invitation in list
-                page.screenshot(path="/tmp/e2e-invitation-sent.png")
+            # Should show success message or invitation in list
+            page.screenshot(path="/tmp/e2e-invitation-sent.png")
 
 
 def test_invitation_token_validation(page: Page):
@@ -65,5 +65,8 @@ def test_accept_invitation_flow(page: Page):
     page.goto("http://localhost:8000/join")
     page.wait_for_timeout(1000)
 
-    # Should show organization selection
-    expect(page.locator("#join-screen, #profile-screen")).to_be_visible()
+    # Should show either join or profile screen
+    join_screen = page.locator("#join-screen")
+    profile_screen = page.locator("#profile-screen")
+    # Check at least one is visible
+    assert join_screen.is_visible() or profile_screen.is_visible(), "Neither join nor profile screen visible"
