@@ -122,12 +122,12 @@ function logout() {
 }
 
 function goToHome() {
-    localStorage.clear();
-    currentUser = null;
-    currentOrg = null;
-    window.currentUser = null;
-    window.currentOrg = null;
-    location.reload();
+    // Navigate to schedule view if logged in, otherwise go to onboarding
+    if (currentUser && currentOrg) {
+        switchView('schedule');
+    } else {
+        router.navigate('/');
+    }
 }
 
 // Screen Navigation (Note: router.js also has a showScreen method)
