@@ -29,13 +29,13 @@ def test_settings_save_workflow():
         # Track console errors
         console_errors = []
         page.on("console", lambda msg:
-            console_errors.append(msg.text()) if msg.type() == "error" else None
+            console_errors.append(msg.text) if msg.type == "error" else None
         )
 
         # Track network errors
         network_errors = []
         page.on("requestfailed", lambda request:
-            network_errors.append(f"{request.method()} {request.url()}")
+            network_errors.append(f"{request.method} {request.url}")
         )
 
         # Track dialogs (alerts/confirms/prompts)
@@ -44,14 +44,14 @@ def test_settings_save_workflow():
             dialogs.append({"type": dialog.type, "message": dialog.message}) or dialog.accept()
         )
 
-        print("  1. Login as Sarah...")
+        print("  1. Login as pastor...")
         page.goto(BASE_URL)
         page.wait_for_load_state('networkidle')
-        page.locator('a:has-text("Sign in")').click()
+        page.get_by_role("link", name="Sign in").click()
         page.wait_for_timeout(500)
-        page.fill('#login-email', 'sarah@grace.church')
-        page.fill('#login-password', 'password123')
-        page.click('button:has-text("Sign In")')
+        page.fill('#login-email', 'pastor@grace.church')
+        page.fill('#login-password', 'password')
+        page.get_by_role("button", name="Sign In").click()
         page.wait_for_selector('#main-app:not(.hidden)', timeout=10000)
         print("     ✓ Logged in")
 
@@ -132,7 +132,7 @@ def test_settings_save_workflow():
 
         print("  8. Verify settings were persisted...")
         # Check API to verify change was saved
-        response = requests.get(f"{API_BASE}/people/sarah")
+        response = requests.get(f"{API_BASE}/people/pastor")
         if response.status_code == 200:
             person_data = response.json()
             saved_roles = person_data.get('roles', [])
@@ -167,21 +167,21 @@ def test_edit_timeoff_no_popups():
         print("  1. Login and navigate to Availability...")
         page.goto(BASE_URL)
         page.wait_for_load_state('networkidle')
-        page.locator('a:has-text("Sign in")').click()
+        page.get_by_role("link", name="Sign in").click()
         page.wait_for_timeout(500)
-        page.fill('#login-email', 'sarah@grace.church')
-        page.fill('#login-password', 'password123')
-        page.click('button:has-text("Sign In")')
+        page.fill('#login-email', 'pastor@grace.church')
+        page.fill('#login-password', 'password')
+        page.get_by_role("button", name="Sign In").click()
         page.wait_for_selector('#main-app:not(.hidden)', timeout=10000)
 
-        page.locator('button:has-text("Availability")').click()
+        page.locator('[data-i18n="schedule.availability"]').first.click()
         page.wait_for_timeout(1000)
         print("     ✓ On Availability page")
 
         print("  2. Add time-off first...")
         page.fill('#timeoff-start', '2025-12-25')
         page.fill('#timeoff-end', '2025-12-31')
-        page.click('button:has-text("Add Time Off")')
+        page.locator('[data-i18n="schedule.add_time_off"]').click()
         page.wait_for_timeout(2000)
 
         print("  3. Check if Edit button exists...")

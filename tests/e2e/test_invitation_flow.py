@@ -17,10 +17,10 @@ def test_admin_can_send_invitation(page: Page):
     page.goto("http://localhost:8000/app/admin")
     page.wait_for_timeout(1000)
 
-    # Click "People" tab
-    people_tab = page.locator("button:has-text('People'), .tab-button:has-text('People')")
+    # Click "People" tab - use specific data-tab attribute
+    people_tab = page.locator('button.admin-tab-btn[data-tab="people"]')
     if people_tab.count() > 0:
-        people_tab.first.click()
+        people_tab.click()
         page.wait_for_timeout(500)
 
         # Click "Invite Person" button

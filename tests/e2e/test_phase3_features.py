@@ -337,7 +337,7 @@ def test_conflict_detection_gui():
         page = context.new_page()
 
         # Login as Sarah (has time-off)
-        page.goto("http://localhost:8001")
+        page.goto("http://localhost:8000")
         page.locator('[data-i18n="auth.sign_in_link"]').click()
         page.fill('[data-i18n-placeholder="auth.placeholder_email"]', "sarah@test.com")
         page.fill('[data-i18n-placeholder="auth.placeholder_password"]', "password")

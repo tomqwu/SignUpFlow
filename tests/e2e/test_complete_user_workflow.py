@@ -11,7 +11,7 @@ from playwright.sync_api import Page, expect
 
 def test_complete_signup_and_login_workflow(page: Page):
     """Test complete user signup, login, and basic navigation."""
-    page.goto("http://localhost:8001/")
+    page.goto("http://localhost:8000/")
 
     # Should see onboarding screen with i18n selector
     get_started = page.locator('[data-i18n="auth.get_started"]')
@@ -61,7 +61,7 @@ def test_complete_signup_and_login_workflow(page: Page):
 def test_page_reload_preserves_state(page: Page):
     """Test that reloading on different routes works correctly."""
     # First login
-    page.goto("http://localhost:8001/")
+    page.goto("http://localhost:8000/")
 
     # Quick login (assuming we have test data)
     page.locator('[data-i18n="auth.sign_in_link"]').click()
@@ -96,7 +96,7 @@ def test_page_reload_preserves_state(page: Page):
 
 def test_role_display_no_object_object(page: Page):
     """Test that roles are displayed correctly, not as [object Object]."""
-    page.goto("http://localhost:8001/")
+    page.goto("http://localhost:8000/")
 
     # Login as admin
     page.locator('[data-i18n="auth.sign_in_link"]').click()
@@ -126,7 +126,7 @@ def test_role_display_no_object_object(page: Page):
 
 def test_admin_workflow_complete(page: Page):
     """Test complete admin workflow: create event, assign roles, generate schedule."""
-    page.goto("http://localhost:8001/")
+    page.goto("http://localhost:8000/")
 
     # Login as admin
     page.locator('[data-i18n="auth.sign_in_link"]').click()
@@ -174,16 +174,16 @@ def test_admin_workflow_complete(page: Page):
 
 def test_language_switching_works(page: Page):
     """Test that language switching works correctly."""
-    page.goto("http://localhost:8001/")
+    page.goto("http://localhost:8000/")
 
     # Should see onboarding in English
-    expect(page.locator('text="Welcome to Rostio"')).to_be_visible()
+    expect(page.locator('[data-i18n="auth.welcome_to_rostio"]')).to_be_visible()
 
     # Login
-    page.locator('text="Sign in"').click()
-    page.fill('input[type="email"]', "admin@rostio.com")
-    page.fill('input[type="password"]', "admin123")
-    page.locator('button:has-text("Sign In")').click()
+    page.get_by_role("link", name="Sign in").click()
+    page.fill('#login-email', "admin@rostio.com")
+    page.fill('#login-password', "admin123")
+    page.get_by_role("button", name="Sign In").click()
 
     # Wait for main app
     expect(page.locator('[data-i18n="schedule.my_schedule"]')).to_be_visible(timeout=10000)
@@ -210,7 +210,7 @@ def test_language_switching_works(page: Page):
 
 def test_availability_crud_complete(page: Page):
     """Test complete CRUD workflow for availability."""
-    page.goto("http://localhost:8001/")
+    page.goto("http://localhost:8000/")
 
     # Login
     page.locator('[data-i18n="auth.sign_in_link"]').click()
@@ -257,7 +257,6 @@ def setup_test_data():
     """Setup test data before running E2E tests."""
     from api.database import get_db
     from api.models import Person, Organization
-    from api.crud import create_organization, create_person
     from api.security import get_password_hash
 
     db = next(get_db())
@@ -265,19 +264,27 @@ def setup_test_data():
     # Check if test org exists
     test_org = db.query(Organization).filter_by(name="Test Org").first()
     if not test_org:
-        test_org = create_organization(db, "Test Org", "Test Region")
+        test_org = Organization(
+            id="test_org",
+            name="Test Org",
+            config={"region": "Test Region", "roles": ["admin", "volunteer"]}
+        )
+        db.add(test_org)
+        db.commit()
 
     # Check if admin exists
     admin = db.query(Person).filter_by(email="admin@rostio.com").first()
     if not admin:
-        admin = create_person(
-            db=db,
+        admin = Person(
+            id="admin_user",
             name="Admin User",
             email="admin@rostio.com",
             password_hash=get_password_hash("admin123"),
             organization_id=test_org.id,
             roles=["admin", "volunteer"]
         )
+        db.add(admin)
+        db.commit()
 
     db.commit()
 

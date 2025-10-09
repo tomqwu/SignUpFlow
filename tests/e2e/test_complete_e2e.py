@@ -43,18 +43,31 @@ def test_complete_user_journey():
         page.locator('[data-i18n="auth.get_started"]').click()
         page.wait_for_timeout(500)
 
-        # Fill signup form
-        test_email = f"testuser{int(time.time())}@test.com"
-        page.fill('input[type="text"][placeholder*="name"]', "E2E Test User")
-        page.fill('input[type="email"]', test_email)
-        page.fill('input[type="password"]', "password123")
+        # Should see organization list - click "Create new organization"
+        page.locator('[data-i18n="auth.create_new_organization"]').click()
+        page.wait_for_timeout(500)
 
-        # Submit signup
-        page.get_by_role("button", name="Sign Up").click()
+        # Fill organization form
+        test_email = f"testuser{int(time.time())}@test.com"
+        page.fill('[data-i18n-placeholder="auth.placeholder_org_name"]', f"E2E Test Org {int(time.time())}")
+        page.fill('[data-i18n-placeholder="auth.placeholder_location"]', "Test City")
+        page.locator('[data-i18n="common.buttons.create"]').click()
+        page.wait_for_timeout(1000)
+
+        # Fill profile form
+        page.fill('[data-i18n-placeholder="common.placeholder_full_name"]', "E2E Test User")
+        page.fill('[data-i18n-placeholder="common.placeholder_email"]', test_email)
+        page.fill('[data-i18n-placeholder="auth.placeholder_create_password"]', "password123")
+
+        # Select volunteer role
+        page.locator('input[value="volunteer"]').check()
+
+        # Submit profile
+        page.locator('[data-i18n="common.buttons.next"]').click()
         page.wait_for_timeout(2000)
 
-        # Should be logged in
-        expect(page.locator("text=My Schedule")).to_be_visible(timeout=5000)
+        # Should be logged in and see schedule
+        expect(page.locator('[data-i18n="schedule.my_schedule"]')).to_be_visible(timeout=5000)
         print("  ✅ Signup successful")
 
         # =================================================================
@@ -127,9 +140,10 @@ def test_complete_user_journey():
         page.goto(APP_URL)
         page.wait_for_timeout(500)
 
-        # Click sign in
-        if page.locator('a:has-text("Sign in")').count() > 0:
-            page.locator('a:has-text("Sign in")').click()
+        # Click sign in link (use role to be specific)
+        sign_in_link = page.get_by_role("link", name="Sign in")
+        if sign_in_link.count() > 0:
+            sign_in_link.click()
 
         page.wait_for_timeout(500)
         page.fill('input[type="email"]', "jane@test.com")
