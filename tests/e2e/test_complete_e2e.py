@@ -59,15 +59,15 @@ def test_complete_user_journey():
         page.fill('[data-i18n-placeholder="common.placeholder_email"]', test_email)
         page.fill('[data-i18n-placeholder="auth.placeholder_create_password"]', "password123")
 
-        # Select volunteer role
-        page.locator('input[value="volunteer"]').check()
+        # Select volunteer role (scope to profile screen role selector)
+        page.locator('#role-selector input[value="volunteer"]').check()
 
         # Submit profile
         page.locator('[data-i18n="common.buttons.next"]').click()
         page.wait_for_timeout(2000)
 
         # Should be logged in and see schedule
-        expect(page.locator('[data-i18n="schedule.my_schedule"]')).to_be_visible(timeout=5000)
+        expect(page.locator('h2[data-i18n="schedule.my_schedule"]')).to_be_visible(timeout=5000)
         print("  ✅ Signup successful")
 
         # =================================================================

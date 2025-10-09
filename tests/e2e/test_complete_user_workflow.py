@@ -40,14 +40,14 @@ def test_complete_signup_and_login_workflow(page: Page):
     page.fill('[data-i18n-placeholder="common.placeholder_email"]', f"e2e-{page.evaluate('Date.now()')}@test.com")
     page.fill('[data-i18n-placeholder="auth.placeholder_create_password"]', "testpass123")
 
-    # Select volunteer role
-    page.locator('input[value="volunteer"]').check()
+    # Select volunteer role (scope to profile screen role selector)
+    page.locator('#role-selector input[value="volunteer"]').check()
 
     # Submit profile
     page.locator('[data-i18n="common.buttons.next"]').click()
 
     # Should navigate to main app
-    expect(page.locator('[data-i18n="schedule.my_schedule"]')).to_be_visible(timeout=10000)
+    expect(page.locator('h2[data-i18n="schedule.my_schedule"]')).to_be_visible(timeout=10000)
 
     # Verify we can navigate between views
     page.locator('[data-i18n="schedule.availability"]').first.click()
@@ -70,7 +70,7 @@ def test_page_reload_preserves_state(page: Page):
     page.locator('[data-i18n="auth.sign_in"]').click()
 
     # Wait for main app
-    expect(page.locator('[data-i18n="schedule.my_schedule"]')).to_be_visible(timeout=10000)
+    expect(page.locator('h2[data-i18n="schedule.my_schedule"]')).to_be_visible(timeout=10000)
 
     # Navigate to availability
     page.locator('[data-i18n="schedule.availability"]').first.click()
@@ -105,7 +105,7 @@ def test_role_display_no_object_object(page: Page):
     page.locator('[data-i18n="auth.sign_in"]').click()
 
     # Wait for main app
-    expect(page.locator('[data-i18n="schedule.my_schedule"]')).to_be_visible(timeout=10000)
+    expect(page.locator('h2[data-i18n="schedule.my_schedule"]')).to_be_visible(timeout=10000)
 
     # Open settings to check role display
     page.locator('button:has-text("⚙️")').click()
@@ -135,7 +135,7 @@ def test_admin_workflow_complete(page: Page):
     page.locator('[data-i18n="auth.sign_in"]').click()
 
     # Wait for main app
-    expect(page.locator('[data-i18n="schedule.my_schedule"]')).to_be_visible(timeout=10000)
+    expect(page.locator('h2[data-i18n="schedule.my_schedule"]')).to_be_visible(timeout=10000)
 
     # Navigate to admin dashboard
     page.locator('[data-i18n="admin.dashboard"]').click()
@@ -186,7 +186,7 @@ def test_language_switching_works(page: Page):
     page.get_by_role("button", name="Sign In").click()
 
     # Wait for main app
-    expect(page.locator('[data-i18n="schedule.my_schedule"]')).to_be_visible(timeout=10000)
+    expect(page.locator('h2[data-i18n="schedule.my_schedule"]')).to_be_visible(timeout=10000)
 
     # Open settings
     page.locator('button:has-text("⚙️")').click()
@@ -219,7 +219,7 @@ def test_availability_crud_complete(page: Page):
     page.locator('[data-i18n="auth.sign_in"]').click()
 
     # Navigate to availability
-    expect(page.locator('[data-i18n="schedule.my_schedule"]')).to_be_visible(timeout=10000)
+    expect(page.locator('h2[data-i18n="schedule.my_schedule"]')).to_be_visible(timeout=10000)
     page.locator('[data-i18n="schedule.availability"]').first.click()
 
     # Add time off
