@@ -1085,8 +1085,25 @@ async function showSettings() {
     // Display user's permission roles (read-only)
     const permissionDisplay = document.getElementById('settings-permission-display');
     const roles = currentUser.roles || [];
+
+    // Debug: Log roles structure
+    console.log('🔍 DEBUG showSettings - roles:', roles);
+    console.log('  - Type:', typeof roles);
+    console.log('  - IsArray:', Array.isArray(roles));
+    console.log('  - JSON:', JSON.stringify(roles, null, 2));
     if (roles.length > 0) {
-        permissionDisplay.innerHTML = roles.map(role => {
+        console.log('  - First role:', roles[0], 'Type:', typeof roles[0]);
+        if (typeof roles[0] === 'object') {
+            console.log('  - First role keys:', Object.keys(roles[0]));
+            console.log('  - First role values:', Object.values(roles[0]));
+        }
+    }
+
+    if (roles.length > 0) {
+        // Process and filter roles
+        const processedRoles = roles.map((role, index) => {
+            console.log(`  Processing role ${index}:`, role, 'type:', typeof role);
+
             // Handle both string roles and object roles
             let roleStr;
             if (typeof role === 'string') {
@@ -1094,26 +1111,36 @@ async function showSettings() {
             } else if (typeof role === 'object' && role !== null) {
                 // Try multiple properties
                 roleStr = role.name || role.role || role.id || role.type || '';
-                // If we got an object from these properties, stringify it
-                if (typeof roleStr === 'object') {
-                    console.error('Role property is an object:', role, 'roleStr:', roleStr);
-                    roleStr = JSON.stringify(role);
+                console.log(`    Extracted roleStr from object:`, roleStr, 'type:', typeof roleStr);
+
+                // If we got an object from these properties, or empty string, skip this role
+                if (typeof roleStr === 'object' || roleStr === '') {
+                    console.error('⚠️ Skipping malformed role:', role);
+                    return null;  // Mark for filtering
                 }
             } else {
                 console.error('Unexpected role type:', typeof role, role);
-                roleStr = String(role);
+                return null;  // Mark for filtering
             }
 
             // Ensure roleStr is a string
             roleStr = String(roleStr);
+            console.log(`    Final roleStr: "${roleStr}"`);
 
             // Map common role names to friendly labels
             const roleLabel = roleStr === 'admin' ? '👑 Administrator'
                 : roleStr === 'volunteer' ? '✓ Volunteer'
                 : roleStr.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase()); // Convert kebab-case to Title Case
 
+            console.log(`    Final roleLabel: "${roleLabel}"`);
             return `<span style="display: inline-block; margin: 5px; padding: 5px 10px; background: var(--primary); color: white; border-radius: 4px;">${roleLabel}</span>`;
-        }).join('');
+        }).filter(html => html !== null);  // Remove null entries from malformed roles
+
+        if (processedRoles.length > 0) {
+            permissionDisplay.innerHTML = processedRoles.join('');
+        } else {
+            permissionDisplay.innerHTML = '<em>No valid permissions found</em>';
+        }
     } else {
         permissionDisplay.innerHTML = '<em>No permissions assigned</em>';
     }
