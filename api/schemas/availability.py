@@ -2,7 +2,7 @@
 
 from typing import Optional
 from datetime import date
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class AvailabilityCreate(BaseModel):
@@ -20,11 +20,10 @@ class AvailabilityUpdate(BaseModel):
 class AvailabilityResponse(BaseModel):
     """Schema for availability response."""
 
+    model_config = ConfigDict(from_attributes=True)
+
     id: int
     person_id: str
-
-    class Config:
-        from_attributes = True
 
 
 class TimeOffCreate(BaseModel):
@@ -38,10 +37,9 @@ class TimeOffCreate(BaseModel):
 class TimeOffResponse(BaseModel):
     """Schema for time-off response."""
 
+    model_config = ConfigDict(from_attributes=True)
+
     id: int
     start_date: date
     end_date: date
     reason: Optional[str] = None
-
-    class Config:
-        from_attributes = True

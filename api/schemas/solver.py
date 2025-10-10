@@ -2,7 +2,7 @@
 
 from typing import Optional, List, Dict, Any
 from datetime import date, datetime
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class SolveRequest(BaseModel):
@@ -67,14 +67,13 @@ class SolutionResponse(BaseModel):
     org_id: str
     solve_ms: float
     hard_violations: int
+    model_config = ConfigDict(from_attributes=True)
+
     soft_score: float
     health_score: float
     metrics: Optional[Dict[str, Any]]
     created_at: datetime
     assignment_count: int = 0
-
-    class Config:
-        from_attributes = True
 
 
 class SolutionList(BaseModel):

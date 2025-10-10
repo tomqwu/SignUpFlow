@@ -2,7 +2,7 @@
 
 from typing import Optional, List, Dict, Any
 from datetime import datetime
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class EventBase(BaseModel):
@@ -36,13 +36,12 @@ class EventUpdate(BaseModel):
 class EventResponse(EventBase):
     """Schema for event response."""
 
+    model_config = ConfigDict(from_attributes=True)
+
     id: str
     org_id: str
     created_at: datetime
     updated_at: datetime
-
-    class Config:
-        from_attributes = True
 
 
 class EventList(BaseModel):

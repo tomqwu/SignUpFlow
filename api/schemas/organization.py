@@ -2,7 +2,7 @@
 
 from typing import Optional, Dict, Any
 from datetime import datetime
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 
 
 class OrganizationBase(BaseModel):
@@ -30,12 +30,11 @@ class OrganizationUpdate(BaseModel):
 class OrganizationResponse(OrganizationBase):
     """Schema for organization response."""
 
+    model_config = ConfigDict(from_attributes=True)
+
     id: str
     created_at: datetime
     updated_at: datetime
-
-    class Config:
-        from_attributes = True
 
 
 class OrganizationList(BaseModel):

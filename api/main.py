@@ -1,5 +1,6 @@
 """FastAPI application entry point."""
 
+from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
@@ -27,13 +28,32 @@ from api.routers import (
     calendar,
 )
 
-# Create FastAPI app
+
+# Application lifespan context manager
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Handle application startup and shutdown."""
+    # Startup
+    init_db()
+    logger.info("🚀 Rostio API started")
+    logger.info("📖 API docs available at http://localhost:8000/docs")
+    print("🚀 Rostio API started")
+    print("📖 API docs available at http://localhost:8000/docs")
+
+    yield
+
+    # Shutdown
+    print("👋 Rostio API shutting down")
+
+
+# Create FastAPI app with lifespan handler
 app = FastAPI(
     title="Rostio API",
     description="Team scheduling made simple - constraint-based roster scheduling",
     version="0.2.0",
     docs_url="/docs",
     redoc_url="/redoc",
+    lifespan=lifespan,
 )
 
 # Error handling middleware
@@ -145,23 +165,6 @@ async def serve_spa(full_path: str):
         return FileResponse(index_path)
 
     raise HTTPException(status_code=404, detail="Frontend not found")
-
-# Startup event
-@app.on_event("startup")
-def on_startup():
-    """Initialize database on startup."""
-    init_db()
-    logger.info("🚀 Rostio API started")
-    logger.info("📖 API docs available at http://localhost:8000/docs")
-    print("🚀 Rostio API started")
-    print("📖 API docs available at http://localhost:8000/docs")
-
-
-# Shutdown event
-@app.on_event("shutdown")
-def on_shutdown():
-    """Cleanup on shutdown."""
-    print("👋 Rostio API shutting down")
 
 
 def start():

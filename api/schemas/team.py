@@ -2,7 +2,7 @@
 
 from typing import Optional, List, Dict, Any
 from datetime import datetime
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class TeamBase(BaseModel):
@@ -44,14 +44,13 @@ class TeamMemberRemove(BaseModel):
 class TeamResponse(TeamBase):
     """Schema for team response."""
 
+    model_config = ConfigDict(from_attributes=True)
+
     id: str
     org_id: str
     created_at: datetime
     updated_at: datetime
     member_count: int = Field(0, description="Number of members")
-
-    class Config:
-        from_attributes = True
 
 
 class TeamList(BaseModel):

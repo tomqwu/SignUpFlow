@@ -2,7 +2,7 @@
 
 from typing import List, Optional
 from datetime import datetime
-from pydantic import BaseModel, Field, EmailStr
+from pydantic import BaseModel, ConfigDict, Field, EmailStr
 
 
 class InvitationCreate(BaseModel):
@@ -22,14 +22,13 @@ class InvitationResponse(BaseModel):
     name: str
     roles: List[str]
     invited_by: str
+    model_config = ConfigDict(from_attributes=True)
+
     token: str
     status: str  # pending, accepted, expired, cancelled
     expires_at: datetime
     created_at: datetime
     accepted_at: Optional[datetime] = None
-
-    class Config:
-        from_attributes = True
 
 
 class InvitationList(BaseModel):
