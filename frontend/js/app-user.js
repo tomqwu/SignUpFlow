@@ -1088,13 +1088,24 @@ async function showSettings() {
     if (roles.length > 0) {
         permissionDisplay.innerHTML = roles.map(role => {
             // Handle both string roles and object roles
-            let roleStr = typeof role === 'string' ? role : (role.name || role.role || '');
-
-            // If still an object at this point, something is wrong - show error instead of [object Object]
-            if (typeof roleStr === 'object') {
-                console.error('Role is still an object after extraction:', role);
-                roleStr = JSON.stringify(role);
+            let roleStr;
+            if (typeof role === 'string') {
+                roleStr = role;
+            } else if (typeof role === 'object' && role !== null) {
+                // Try multiple properties
+                roleStr = role.name || role.role || role.id || role.type || '';
+                // If we got an object from these properties, stringify it
+                if (typeof roleStr === 'object') {
+                    console.error('Role property is an object:', role, 'roleStr:', roleStr);
+                    roleStr = JSON.stringify(role);
+                }
+            } else {
+                console.error('Unexpected role type:', typeof role, role);
+                roleStr = String(role);
             }
+
+            // Ensure roleStr is a string
+            roleStr = String(roleStr);
 
             // Map common role names to friendly labels
             const roleLabel = roleStr === 'admin' ? '👑 Administrator'
