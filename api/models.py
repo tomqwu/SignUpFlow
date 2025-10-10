@@ -17,8 +17,7 @@ from sqlalchemy import (
     ForeignKey,
     Index,
 )
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import relationship, sessionmaker
+from sqlalchemy.orm import declarative_base, relationship, sessionmaker
 from sqlalchemy.types import TypeDecorator
 
 Base = declarative_base()
