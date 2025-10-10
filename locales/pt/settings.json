@@ -1,23 +1,63 @@
 {
   "title": "Configurações",
-  "profile": "Perfil",
-  "account": "Conta",
-  "preferences": "Preferências",
-  "organization": "Organização",
   "name": "Nome",
   "email": "Email",
+  "organization": "Organização",
   "timezone": "Fuso Horário",
-  "language": "Idioma",
-  "permission_level": "Nível de Permissão",
-  "permissions": "Permissões",
-  "roles": "Funções",
-  "admin": "Administrador",
-  "volunteer": "Voluntário",
-  "change_password": "Alterar Senha",
-  "current_password": "Senha Atual",
-  "new_password": "Nova Senha",
-  "confirm_password": "Confirmar Senha",
   "logout": "Sair",
   "save_changes": "Salvar Alterações",
-  "cancel": "Cancelar"
+  "language_change_note": "As alterações têm efeito imediato",
+  "permission_level": "Nível de Permissão",
+  "permission_note": "Seu nível de permissão é definido por um administrador. Funções específicas de eventos são selecionadas quando você participa de eventos individuais.",
+  "sections": {
+    "profile": "Informações do Perfil",
+    "preferences": "Preferências",
+    "permissions": "Permissões"
+  },
+  "fields": {
+    "name": "Nome completo",
+    "email": "Endereço de email",
+    "organization": "Organização",
+    "timezone": "Fuso horário",
+    "language": "Idioma",
+    "permission_level": "Nível de Permissão"
+  },
+  "permissions": {
+    "admin": "Administrador",
+    "admin_description": "Pode gerenciar organização, criar eventos, convidar usuários",
+    "volunteer": "Voluntário",
+    "volunteer_description": "Membro regular - pode visualizar e participar de eventos",
+    "note": "Seu nível de permissão é definido por um administrador. Funções específicas de eventos (recepcionista, porteiro, técnico de som, etc.) são selecionadas quando você participa de eventos individuais."
+  },
+  "save": {
+    "button": "Salvar Alterações",
+    "success": "Configurações salvas com sucesso!",
+    "error": "Erro ao salvar configurações"
+  },
+  "languages": {
+    "en": "Inglês",
+    "es": "Espanhol",
+    "pt": "Português",
+    "fr": "Francês",
+    "de": "Alemão",
+    "zh": "Chinês",
+    "ar": "Árabe"
+  },
+  "tz_eastern": "Horário do Leste",
+  "tz_central": "Horário Central",
+  "tz_mountain": "Horário da Montanha",
+  "tz_pacific": "Horário do Pacífico",
+  "tz_alaska": "Horário do Alasca",
+  "tz_hawaii": "Horário do Havaí",
+  "tz_london": "Londres",
+  "tz_paris": "Paris",
+  "tz_tokyo": "Tóquio",
+  "tz_shanghai": "Xangai",
+  "tz_dubai": "Dubai",
+  "tz_sydney": "Sydney",
+  "lang_english": "Inglês",
+  "language": "Idioma",
+  "lang_spanish": "Espanhol",
+  "lang_portuguese": "Português",
+  "lang_french": "Francês"
 }

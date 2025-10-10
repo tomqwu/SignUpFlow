@@ -1,6 +1,14 @@
 {
   "title": "Configuración",
+  "name": "Nombre",
+  "email": "Correo electrónico",
+  "organization": "Organización",
+  "timezone": "Zona horaria",
+  "logout": "Cerrar sesión",
+  "save_changes": "Guardar cambios",
+  "language_change_note": "Los cambios surten efecto inmediatamente",
   "permission_level": "Nivel de permisos",
+  "permission_note": "Tu nivel de permisos es establecido por un administrador. Los roles específicos de eventos se seleccionan cuando te unes a eventos individuales.",
   "sections": {
     "profile": "Información del perfil",
     "preferences": "Preferencias",
@@ -34,5 +42,22 @@
     "de": "Alemán",
     "zh": "Chino",
     "ar": "Árabe"
-  }
+  },
+  "tz_eastern": "Hora del Este",
+  "tz_central": "Hora Central",
+  "tz_mountain": "Hora de la Montaña",
+  "tz_pacific": "Hora del Pacífico",
+  "tz_alaska": "Hora de Alaska",
+  "tz_hawaii": "Hora de Hawái",
+  "tz_london": "Londres",
+  "tz_paris": "París",
+  "tz_tokyo": "Tokio",
+  "tz_shanghai": "Shanghái",
+  "tz_dubai": "Dubái",
+  "tz_sydney": "Sídney",
+  "lang_english": "Inglés",
+  "language": "Idioma",
+  "lang_spanish": "Español",
+  "lang_portuguese": "Portugués",
+  "lang_french": "Francés"
 }
