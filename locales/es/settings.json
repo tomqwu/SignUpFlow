@@ -1,5 +1,6 @@
 {
   "title": "Configuración",
+  "permission_level": "Nivel de permisos",
   "sections": {
     "profile": "Información del perfil",
     "preferences": "Preferencias",

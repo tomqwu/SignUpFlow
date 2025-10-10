@@ -7,6 +7,7 @@
   "logout": "退出登录",
   "save_changes": "保存更改",
   "language_change_note": "更改立即生效",
+  "permission_level": "权限级别",
   "permission_note": "您的权限级别由管理员设置。活动特定角色在您加入各个活动时选择。",
   "sections": {
     "profile": "个人资料信息",
