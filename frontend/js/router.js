@@ -92,6 +92,14 @@ class Router {
 
                 if (window.updateRoleBadgesDisplay) window.updateRoleBadgesDisplay();
                 if (window.loadUserOrganizations) window.loadUserOrganizations();
+
+                // Show admin features if user is admin (critical for page refresh)
+                if (window.currentUser.roles && window.currentUser.roles.includes('admin')) {
+                    document.querySelectorAll('.admin-only').forEach(el => {
+                        el.classList.remove('hidden');
+                        el.classList.add('visible');
+                    });
+                }
             }
 
             // Switch to specific view
