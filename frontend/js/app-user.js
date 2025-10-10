@@ -1861,6 +1861,53 @@ async function viewSolution(solutionId) {
 // ========================================
 
 /**
+ * Translate a role ID to localized display name.
+ *
+ * Translation priority:
+ * 1. Organization-specific role translations (future: org.config.roles[roleId].translations[lang])
+ * 2. Global i18n translations (locales/{lang}/common.json roles.*)
+ * 3. Fallback: Convert kebab-case to Title Case (e.g., "worship-leader" → "Worship Leader")
+ *
+ * @param {string} roleId - Role identifier (e.g., "admin", "worship-leader")
+ * @param {string|null} locale - Optional locale override (defaults to current locale)
+ * @returns {string} Translated role name
+ */
+function translateRole(roleId, locale = null) {
+    if (!roleId) return '';
+
+    const lang = locale || i18n.getLocale();
+
+    // 1. Check organization config for role definition (future enhancement)
+    // if (currentOrg && currentOrg.config && currentOrg.config.roles) {
+    //     const roleDef = currentOrg.config.roles[roleId];
+    //     if (roleDef && roleDef.translations && roleDef.translations[lang]) {
+    //         return roleDef.translations[lang];
+    //     }
+    //     // Fallback to English if current language not available
+    //     if (roleDef && roleDef.translations && roleDef.translations.en) {
+    //         return roleDef.translations.en;
+    //     }
+    // }
+
+    // 2. Check global translations for common roles
+    // Try exact match first (e.g., "admin" → common.admin)
+    let translation = i18n.t(`common.${roleId}`);
+    if (translation && translation !== `common.${roleId}`) {
+        return translation;
+    }
+
+    // Try with 'role_' prefix (e.g., "worship-leader" → common.role_worship_leader)
+    translation = i18n.t(`common.role_${roleId.replace(/-/g, '_')}`);
+    if (translation && translation !== `common.role_${roleId.replace(/-/g, '_')}`) {
+        return translation;
+    }
+
+    // 3. Fallback: Convert kebab-case to Title Case
+    // "worship-leader" → "Worship Leader"
+    return roleId.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+}
+
+/**
  * Update the role badges display in the profile context panel
  */
 function updateRoleBadgesDisplay() {
@@ -1902,8 +1949,8 @@ function updateRoleBadgesDisplay() {
                 roleStr = JSON.stringify(role);
             }
 
-            // Convert kebab-case to Title Case (worship-leader → Worship Leader)
-            const roleLabel = roleStr.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+            // Translate role (checks global translations first, then falls back to title case)
+            const roleLabel = translateRole(roleStr);
 
             badge.textContent = roleLabel;
             rolesDisplay.appendChild(badge);

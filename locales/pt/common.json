@@ -89,5 +89,13 @@
   "export_calendar": "📥 Export Calendar",
   "volunteer": "Volunteer",
   "administrator": "Administrator",
-  "admin": "Admin"
+  "admin": "Admin",
+  "role_worship_leader": "Líder de Adoração",
+  "role_vocalist": "Vocalista",
+  "role_musician": "Músico",
+  "role_tech_av": "Técnico AV",
+  "role_greeter": "Recepcionista",
+  "role_usher": "Porteiro",
+  "role_kids_ministry": "Ministério Infantil",
+  "role_prayer_team": "Equipe de Oração"
 }

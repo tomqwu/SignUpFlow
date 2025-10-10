@@ -89,5 +89,13 @@
   "export_calendar": "📥 导出日历",
   "volunteer": "志愿者",
   "administrator": "管理员",
-  "admin": "管理"
+  "admin": "管理",
+  "role_worship_leader": "敬拜主领",
+  "role_vocalist": "主唱",
+  "role_musician": "乐手",
+  "role_tech_av": "技术/音视频",
+  "role_greeter": "接待员",
+  "role_usher": "招待员",
+  "role_kids_ministry": "儿童事工",
+  "role_prayer_team": "祷告团队"
 }
