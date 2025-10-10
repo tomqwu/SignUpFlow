@@ -60,6 +60,55 @@ function translatePage() {
     });
 }
 
+/**
+ * Translate an API response message.
+ *
+ * The backend returns message_key and message_params for i18n support.
+ * This function translates the key using the user's selected language.
+ *
+ * @param {Object} response - API response with message_key and message_params
+ * @returns {string} Translated message
+ */
+function translateApiMessage(response) {
+    if (response && response.message_key) {
+        return i18n.t(response.message_key, response.message_params || {});
+    }
+    // Fallback for old responses that don't have message_key
+    return response?.message || response?.detail || 'Unknown error';
+}
+
+/**
+ * Handle API error and return translated error message.
+ *
+ * @param {Error|Response} error - Fetch error or response object
+ * @returns {Promise<string>} Translated error message
+ */
+async function getApiErrorMessage(error) {
+    let message;
+
+    if (error.response) {
+        try {
+            const data = await error.response.json();
+            // Check if detail is an object with message_key (new format)
+            if (typeof data.detail === 'object' && data.detail.message_key) {
+                message = i18n.t(data.detail.message_key, data.detail.message_params || {});
+            } else {
+                // Old format: detail is a string
+                message = data.detail || data.message || 'Unknown error';
+            }
+        } catch (e) {
+            message = error.message;
+        }
+    } else if (error.message_key) {
+        // Direct error object with message_key
+        message = i18n.t(error.message_key, error.message_params || {});
+    } else {
+        message = error.message || 'Unknown error';
+    }
+
+    return message;
+}
+
 // Session Management
 function checkExistingSession() {
     const savedUser = localStorage.getItem('roster_user');
@@ -881,7 +930,7 @@ async function loadMySchedule() {
                 '<span class="schedule-badge schedule-badge-blocked">Blocked</span>' :
                 '<span class="schedule-badge">Confirmed</span>';
 
-            const roleDisplay = a.role ? `<br>📋 Role: <strong>${a.role}</strong>` : '';
+            const roleDisplay = a.role ? `<br>📋 Role: <strong>${translateRole(a.role)}</strong>` : '';
 
             return `
             <div class="schedule-item ${blocked ? 'schedule-item-blocked' : ''}">
@@ -1554,12 +1603,14 @@ async function loadEventAssignments(eventId) {
         if (!validation.is_valid && validation.warnings.length > 0) {
             html += '<div class="event-warnings">';
             validation.warnings.forEach(w => {
+                // Translate warning message using message_key if available
+                const message = translateApiMessage(w);
                 if (w.type === 'missing_config') {
-                    html += `<div class="warning">⚠️ ${w.message}</div>`;
+                    html += `<div class="warning">⚠️ ${message}</div>`;
                 } else if (w.type === 'insufficient_people') {
-                    html += `<div class="warning">⚠️ ${w.message}</div>`;
+                    html += `<div class="warning">⚠️ ${message}</div>`;
                 } else if (w.type === 'blocked_assignments') {
-                    html += `<div class="warning">⚠️ ${w.message}</div>`;
+                    html += `<div class="warning">⚠️ ${message}</div>`;
                 }
             });
             html += '</div>';
@@ -1705,14 +1756,20 @@ async function toggleAssignment(eventId, personId, isCurrentlyAssigned) {
 
         if (response.ok) {
             const result = await response.json();
-            showToast(i18n.t('messages.success.assignment_updated'), 'success');
+            // Use translateApiMessage to get the translated message from backend
+            const message = translateApiMessage(result) || i18n.t('messages.success.assignment_updated');
+            showToast(message, 'success');
 
             // Refresh the modal and the event card
             showAssignments(eventId);
             loadEventAssignments(eventId);
         } else {
             const error = await response.json();
-            showToast(error.detail || i18n.t('messages.errors.error_updating_assignment'), 'error');
+            // Try to translate error message from backend
+            const errorMsg = (typeof error.detail === 'object' && error.detail.message_key)
+                ? i18n.t(error.detail.message_key, error.detail.message_params || {})
+                : (error.detail || i18n.t('messages.errors.error_updating_assignment'));
+            showToast(errorMsg, 'error');
         }
     } catch (error) {
         showToast(i18n.t('messages.errors.generic') + ': ' + error.message, 'error');

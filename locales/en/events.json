@@ -109,5 +109,22 @@
   "role_nursery": "Nursery",
   "role_parking": "Parking",
   "role_security": "Security",
-  "role_other": "Other"
+  "role_other": "Other",
+  "assign": {
+    "success": "Assigned {person} to event",
+    "already_assigned": "Person '{person}' is already assigned to this event",
+    "not_assigned": "Person '{person}' is not assigned to this event",
+    "unassigned": "Unassigned {person} from event"
+  },
+  "validation": {
+    "no_roles": "Event has no role requirements specified",
+    "need_more_people": "Need {needed} {role}(s) but only {available} available",
+    "blocked_people_assigned": "⚠️ People with blocked dates assigned: {people}",
+    "needs": "Needs: {roles}"
+  },
+  "errors": {
+    "person_not_found": "Person not found",
+    "event_not_found": "Event not found",
+    "assignment_not_found": "Assignment not found"
+  }
 }

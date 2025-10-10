@@ -109,5 +109,22 @@
   "role_nursery": "托儿所",
   "role_parking": "停车",
   "role_security": "安保",
-  "role_other": "其他"
+  "role_other": "其他",
+  "assign": {
+    "success": "已將 {person} 分配到活動",
+    "already_assigned": "'{person}' 已被分配到此活動",
+    "not_assigned": "'{person}' 未被分配到此活動",
+    "unassigned": "已將 {person} 從活動中取消分配"
+  },
+  "validation": {
+    "no_roles": "活動未指定角色要求",
+    "need_more_people": "需要 {needed} 個 {role}，但只有 {available} 個可用",
+    "blocked_people_assigned": "⚠️ 已分配有阻止日期的人員：{people}",
+    "needs": "需要：{roles}"
+  },
+  "errors": {
+    "person_not_found": "未找到人員",
+    "event_not_found": "未找到活動",
+    "assignment_not_found": "未找到分配"
+  }
 }

@@ -9,6 +9,7 @@ from pydantic import BaseModel
 from api.database import get_db
 from api.schemas.event import EventCreate, EventUpdate, EventResponse, EventList
 from api.models import Event, EventTeam, Organization, Team, Person, Assignment, VacationPeriod, Availability
+from api.utils.response_messages import success_response, error_response, validation_warning
 
 router = APIRouter(prefix="/events", tags=["events"])
 
@@ -244,10 +245,10 @@ def validate_event(event_id: str, db: Session = Depends(get_db)):
     role_counts = (event.extra_data or {}).get("role_counts", {})
 
     if not role_counts:
-        warnings.append({
-            "type": "missing_config",
-            "message": "Event has no role requirements specified"
-        })
+        warnings.append(validation_warning(
+            "missing_config",
+            "events.validation.no_roles"
+        ))
         is_valid = False
     else:
         # Check each role has enough people
@@ -259,13 +260,13 @@ def validate_event(event_id: str, db: Session = Depends(get_db)):
             available_count = len(available_people)
 
             if available_count < needed_count:
-                warnings.append({
-                    "type": "insufficient_people",
-                    "role": role,
-                    "needed": needed_count,
-                    "available": available_count,
-                    "message": f"Need {needed_count} {role}(s) but only {available_count} available"
-                })
+                warnings.append(validation_warning(
+                    "insufficient_people",
+                    "events.validation.need_more_people",
+                    needed=needed_count,
+                    role=role,
+                    available=available_count
+                ))
                 is_valid = False
 
     # Check if any assigned people are blocked on this event date
@@ -290,11 +291,11 @@ def validate_event(event_id: str, db: Session = Depends(get_db)):
                     blocked_people.append(person.name)
 
         if blocked_people:
-            warnings.append({
-                "type": "blocked_assignments",
-                "message": f"People with blocked dates assigned: {', '.join(blocked_people)}",
-                "blocked_people": blocked_people
-            })
+            warnings.append(validation_warning(
+                "blocked_assignments",
+                "events.validation.blocked_people_assigned",
+                people=", ".join(blocked_people)
+            ))
             is_valid = False
 
     return {
@@ -309,14 +310,16 @@ def manage_assignment(event_id: str, request: AssignmentRequest, db: Session = D
     """Assign or unassign a person to/from an event."""
     event = db.query(Event).filter(Event.id == event_id).first()
     if not event:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail=f"Event '{event_id}' not found"
+        raise error_response(
+            "events.errors.event_not_found",
+            status_code=status.HTTP_404_NOT_FOUND
         )
 
     person = db.query(Person).filter(Person.id == request.person_id).first()
     if not person:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail=f"Person '{request.person_id}' not found"
+        raise error_response(
+            "events.errors.person_not_found",
+            status_code=status.HTTP_404_NOT_FOUND
         )
 
     if request.action == "assign":
@@ -327,9 +330,10 @@ def manage_assignment(event_id: str, request: AssignmentRequest, db: Session = D
         ).first()
 
         if existing:
-            raise HTTPException(
+            raise error_response(
+                "events.assign.already_assigned",
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"Person '{person.name}' is already assigned to this event"
+                person=person.name
             )
 
         # Create new assignment (solution_id is None for manual assignments)
@@ -341,8 +345,11 @@ def manage_assignment(event_id: str, request: AssignmentRequest, db: Session = D
         )
         db.add(assignment)
         db.commit()
-        role_info = f" as {request.role}" if request.role else ""
-        return {"message": f"Assigned {person.name} to event{role_info}", "assignment_id": assignment.id, "role": request.role}
+        return success_response(
+            "events.assign.success",
+            {"assignment_id": assignment.id, "role": request.role},
+            person=person.name
+        )
 
     elif request.action == "unassign":
         # Find and delete assignment
@@ -352,14 +359,18 @@ def manage_assignment(event_id: str, request: AssignmentRequest, db: Session = D
         ).first()
 
         if not assignment:
-            raise HTTPException(
+            raise error_response(
+                "events.assign.not_assigned",
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"Person '{person.name}' is not assigned to this event"
+                person=person.name
             )
 
         db.delete(assignment)
         db.commit()
-        return {"message": f"Unassigned {person.name} from event"}
+        return success_response(
+            "events.assign.unassigned",
+            person=person.name
+        )
 
     else:
         raise HTTPException(

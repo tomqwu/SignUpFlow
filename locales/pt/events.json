@@ -109,5 +109,22 @@
   "role_nursery": "Nursery",
   "role_parking": "Parking",
   "role_security": "Security",
-  "role_other": "Other"
+  "role_other": "Other",
+  "assign": {
+    "success": "Atribuído {person} ao evento",
+    "already_assigned": "A pessoa '{person}' já está atribuída a este evento",
+    "not_assigned": "A pessoa '{person}' não está atribuída a este evento",
+    "unassigned": "Desatribuído {person} do evento"
+  },
+  "validation": {
+    "no_roles": "O evento não tem requisitos de funções especificados",
+    "need_more_people": "Precisa de {needed} {role}(s) mas apenas {available} disponível(is)",
+    "blocked_people_assigned": "⚠️ Pessoas com datas bloqueadas atribuídas: {people}",
+    "needs": "Precisa: {roles}"
+  },
+  "errors": {
+    "person_not_found": "Pessoa não encontrada",
+    "event_not_found": "Evento não encontrado",
+    "assignment_not_found": "Atribuição não encontrada"
+  }
 }

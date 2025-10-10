@@ -374,7 +374,9 @@ class TestEventAssignments:
         assert response.status_code == 200
         data = response.json()
         assert "assignment_id" in data
-        assert "Assigned" in data["message"]
+        # Check new i18n message structure
+        assert "message_key" in data
+        assert data["message_key"] == "events.assign.success"
 
     def test_unassign_person_from_event(self):
         """Test unassigning a person from an event."""
@@ -411,7 +413,9 @@ class TestEventAssignments:
         )
         assert response.status_code == 200
         data = response.json()
-        assert "Unassigned" in data["message"]
+        # Check new i18n message structure
+        assert "message_key" in data
+        assert data["message_key"] == "events.assign.unassigned"
 
     def test_assign_already_assigned_person_fails(self):
         """Test that assigning an already assigned person returns error."""

@@ -56,8 +56,9 @@ class TestEventRoleAssignment:
 
         assert response.status_code == 200
         data = response.json()
-        assert "message" in data
-        assert "usher" in data["message"].lower()
+        # Check new i18n message structure
+        assert "message_key" in data
+        assert data["message_key"] == "events.assign.success"
         assert data["role"] == "usher"
 
     def test_assign_person_with_different_roles(self):
