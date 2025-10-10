@@ -7,6 +7,7 @@
   "logout": "Sign Out",
   "save_changes": "Save Changes",
   "language_change_note": "Changes take effect immediately",
+  "permission_level": "Permission Level",
   "permission_note": "Your permission level is set by an administrator. Event-specific roles are selected when you join individual events.",
   "sections": {
     "profile": "Profile Information",

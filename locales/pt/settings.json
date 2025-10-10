@@ -8,6 +8,7 @@
   "email": "Email",
   "timezone": "Fuso Horário",
   "language": "Idioma",
+  "permission_level": "Nível de Permissão",
   "permissions": "Permissões",
   "roles": "Funções",
   "admin": "Administrador",

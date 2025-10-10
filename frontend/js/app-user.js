@@ -1084,6 +1084,11 @@ async function showSettings() {
 
     // Display user's permission roles (read-only)
     const permissionDisplay = document.getElementById('settings-permission-display');
+
+    // Debug: Check existing content BEFORE we modify it
+    console.log('🔍 BEFORE update - innerHTML:', permissionDisplay.innerHTML);
+    console.log('🔍 BEFORE update - textContent:', permissionDisplay.textContent);
+
     const roles = currentUser.roles || [];
 
     // Debug: Log roles structure

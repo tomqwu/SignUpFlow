@@ -4,6 +4,48 @@ import pytest
 from playwright.sync_api import Page, expect
 
 
+def test_settings_permission_console_logs(page: Page):
+    """Test to capture console logs and see actual role data structure."""
+    # Capture console messages
+    console_messages = []
+    page.on("console", lambda msg: console_messages.append(f"{msg.type()}: {msg.text()}"))
+
+    # Navigate to app
+    page.goto("http://localhost:8000/")
+    page.wait_for_load_state("networkidle")
+
+    # Click Sign in link
+    page.get_by_role("link", name="Sign in").click()
+    page.wait_for_timeout(500)
+
+    # Login as admin
+    page.fill('[data-i18n-placeholder="auth.placeholder_email"]', "pastor@grace.church")
+    page.fill('[data-i18n-placeholder="auth.placeholder_password"]', "password")
+    page.get_by_role("button", name="Sign in").click()
+    page.wait_for_timeout(2000)
+
+    # Verify we're logged in
+    expect(page.locator("#user-name-display")).to_be_visible(timeout=5000)
+
+    # Open settings modal by clicking the gear icon
+    page.locator('button.btn-icon:has-text("⚙️")').click()
+    page.wait_for_timeout(1000)
+
+    # Print all console messages related to showSettings
+    print("\n" + "="*80)
+    print("CONSOLE LOGS (DEBUG showSettings):")
+    print("="*80)
+    for msg in console_messages:
+        if "showSettings" in msg or "role" in msg.lower() or "DEBUG" in msg:
+            print(msg)
+    print("="*80)
+
+    # Also check what's in localStorage
+    current_user = page.evaluate("JSON.parse(localStorage.getItem('currentUser'))")
+    print("\nLocalStorage currentUser.roles:")
+    print(current_user.get('roles') if current_user else None)
+
+
 def test_settings_permission_display_no_object_object(page: Page):
     """Test that settings permission display doesn't show [object Object]."""
     # Navigate to app
