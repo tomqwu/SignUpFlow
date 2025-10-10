@@ -8,7 +8,7 @@ import secrets
 import time
 
 from api.database import get_db
-from api.dependencies import verify_admin_access, verify_org_member, get_organization_by_id
+from api.dependencies import verify_admin_access, verify_org_member, get_organization_by_id, get_current_admin_user
 from api.utils.security import generate_invitation_token, generate_auth_token, hash_password
 from api.utils.db_helpers import check_email_exists
 from api.schemas.invitation import (
@@ -91,14 +91,16 @@ def create_invitation(
 
 
 @router.get("", response_model=InvitationList)
-def list_invitations(
+async def list_invitations(
     org_id: str = Query(..., description="Organization ID"),
-    admin: Person = Depends(verify_admin_access),
+    admin: Person = Depends(get_current_admin_user),
     status_filter: Optional[str] = Query(None, description="Filter by status (pending, accepted, expired, cancelled)"),
     db: Session = Depends(get_db),
 ):
     """
     List all invitations for an organization (admin only).
+
+    Requires JWT authentication via Authorization header.
     """
     # Verify admin belongs to the organization
     verify_org_member(admin, org_id)

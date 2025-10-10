@@ -2045,7 +2045,12 @@ async function loadInvitations() {
     listEl.innerHTML = '<div class="loading">Loading invitations...</div>';
 
     try {
-        const response = await fetch(`${API_BASE_URL}/invitations?org_id=${currentUser.org_id}`);
+        const authToken = localStorage.getItem('authToken');
+        const response = await fetch(`${API_BASE_URL}/invitations?org_id=${currentUser.org_id}`, {
+            headers: {
+                'Authorization': `Bearer ${authToken}`
+            }
+        });
 
         if (response.status === 404) {
             // Invitations feature not implemented yet
