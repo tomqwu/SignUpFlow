@@ -156,6 +156,16 @@ async def serve_spa(full_path: str):
             media_type = 'application/json'
         elif file_path.endswith('.html'):
             media_type = 'text/html'
+        elif file_path.endswith('.svg'):
+            media_type = 'image/svg+xml'
+        elif file_path.endswith('.png'):
+            media_type = 'image/png'
+        elif file_path.endswith('.jpg') or file_path.endswith('.jpeg'):
+            media_type = 'image/jpeg'
+        elif file_path.endswith('.gif'):
+            media_type = 'image/gif'
+        elif file_path.endswith('.ico'):
+            media_type = 'image/x-icon'
 
         return FileResponse(file_path, media_type=media_type)
 
