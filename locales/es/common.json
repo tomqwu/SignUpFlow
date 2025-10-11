@@ -21,7 +21,8 @@
     "download": "Descargar",
     "upload": "Subir",
     "copy": "Copy",
-    "done": "Done"
+    "done": "Done",
+    "edit_roles": "Editar Roles"
   },
   "actions": {
     "loading": "Cargando...",

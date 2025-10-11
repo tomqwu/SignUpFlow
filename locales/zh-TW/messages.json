@@ -86,5 +86,44 @@
     "success_add": "休假添加成功！",
     "success_delete": "休假删除成功！",
     "error": "管理可用性时出错"
+  },
+  "loading": {
+    "events": "正在載入活動...",
+    "calendar": "正在載入您的行事曆...",
+    "schedule": "正在載入您的日程...",
+    "people": "正在載入人員...",
+    "schedules": "正在載入日程...",
+    "invitations": "正在載入邀請...",
+    "statistics": "正在載入統計資訊...",
+    "generating_schedule": "⏳ 正在生成日程... 這可能需要一段時間。"
+  },
+  "empty": {
+    "no_organizations": "還沒有組織。建立一個開始吧！",
+    "no_upcoming_events": "沒有即將到來的活動",
+    "no_volunteers_yet": "還沒有志工 - 成為第一個！",
+    "no_assignments": "沒有即將到來的分配。",
+    "no_timeoff": "沒有設定休假期。在上面新增一個！",
+    "no_events_yet": "還沒有活動。建立一個開始吧！",
+    "no_people_yet": "還沒有註冊人員。",
+    "no_schedules_yet": "還沒有生成日程。點擊上面的\"生成日程\"！",
+    "no_matching_roles": "未找到具有匹配角色的人員",
+    "no_schedule_data": "沒有可用的日程資料。",
+    "no_schedule_generated": "還沒有生成日程。點擊上面的\"生成日程\"！",
+    "no_assignments_in_schedule": "日程中沒有分配。",
+    "no_invitations_yet": "還沒有發送邀請。點擊\"邀請使用者\"開始吧！",
+    "invitations_coming_soon": "邀請功能即將推出！",
+    "no_permissions_found": "未找到有效權限",
+    "no_permissions_assigned": "未分配權限",
+    "no_roles_set": "未設定角色"
+  },
+  "error_loading": {
+    "organizations": "載入組織時發生錯誤。請確保 API 正在執行。",
+    "calendar": "載入行事曆時發生錯誤：{message}",
+    "timeoff": "載入休假時發生錯誤：{message}",
+    "events": "載入活動時發生錯誤：{message}",
+    "people": "載入人員時發生錯誤：{message}",
+    "schedules": "載入日程時發生錯誤：{message}",
+    "invitations": "載入邀請時發生錯誤：{message}",
+    "statistics": "載入統計資訊時發生錯誤：{message}"
   }
 }

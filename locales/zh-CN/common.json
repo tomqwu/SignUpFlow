@@ -21,7 +21,8 @@
     "download": "下载",
     "upload": "上传",
     "copy": "复制",
-    "done": "完成"
+    "done": "完成",
+    "edit_roles": "编辑角色"
   },
   "actions": {
     "loading": "加载中...",

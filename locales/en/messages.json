@@ -86,5 +86,44 @@
     "success_add": "Time off added successfully!",
     "success_delete": "Time off deleted successfully!",
     "error": "Error managing availability"
+  },
+  "loading": {
+    "events": "Loading events...",
+    "calendar": "Loading your calendar...",
+    "schedule": "Loading your schedule...",
+    "people": "Loading people...",
+    "schedules": "Loading schedules...",
+    "invitations": "Loading invitations...",
+    "statistics": "Loading statistics...",
+    "generating_schedule": "⏳ Generating schedule... This may take a moment."
+  },
+  "empty": {
+    "no_organizations": "No organizations yet. Create one to get started!",
+    "no_upcoming_events": "No upcoming events",
+    "no_volunteers_yet": "No volunteers yet - be the first!",
+    "no_assignments": "No upcoming assignments.",
+    "no_timeoff": "No time-off periods set. Add one above!",
+    "no_events_yet": "No events yet. Create one to get started!",
+    "no_people_yet": "No people registered yet.",
+    "no_schedules_yet": "No schedules generated yet. Click \"Generate Schedule\" above!",
+    "no_matching_roles": "No people with matching roles found",
+    "no_schedule_data": "No schedule data available.",
+    "no_schedule_generated": "No schedule generated yet. Click \"Generate Schedule\" above.",
+    "no_assignments_in_schedule": "No assignments in schedule.",
+    "no_invitations_yet": "No invitations sent yet. Click \"Invite User\" to get started!",
+    "invitations_coming_soon": "Invitations feature coming soon!",
+    "no_permissions_found": "No valid permissions found",
+    "no_permissions_assigned": "No permissions assigned",
+    "no_roles_set": "No roles set"
+  },
+  "error_loading": {
+    "organizations": "Error loading organizations. Make sure the API is running.",
+    "calendar": "Error loading calendar: {message}",
+    "timeoff": "Error loading time-off: {message}",
+    "events": "Error loading events: {message}",
+    "people": "Error loading people: {message}",
+    "schedules": "Error loading schedules: {message}",
+    "invitations": "Error loading invitations: {message}",
+    "statistics": "Error loading statistics: {message}"
   }
 }

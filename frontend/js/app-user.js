@@ -287,7 +287,7 @@ async function loadOrganizations() {
         const data = await response.json();
 
         if (data.organizations.length === 0) {
-            listEl.innerHTML = '<p class="help-text">No organizations yet. Create one to get started!</p>';
+            listEl.innerHTML = `<p class="help-text">${i18n.t('messages.empty.no_organizations')}</p>`;
             return;
         }
 
@@ -298,7 +298,7 @@ async function loadOrganizations() {
             </div>
         `).join('');
     } catch (error) {
-        listEl.innerHTML = `<p class="help-text">Error loading organizations. Make sure the API is running.</p>`;
+        listEl.innerHTML = `<p class="help-text">${i18n.t('messages.error_loading.organizations')}</p>`;
     }
 }
 
@@ -559,7 +559,7 @@ function switchView(viewName, skipUrlUpdate = false) {
 // All Events View
 async function loadAllEvents() {
     const eventsEl = document.getElementById('all-events-list');
-    eventsEl.innerHTML = '<div class="loading">Loading events...</div>';
+    eventsEl.innerHTML = `<div class="loading">${i18n.t('messages.loading.events')}</div>`;
 
     try {
         // Get all events
@@ -584,7 +584,7 @@ async function loadAllEvents() {
             .sort((a, b) => new Date(a.start_time) - new Date(b.start_time));
 
         if (upcomingEvents.length === 0) {
-            eventsEl.innerHTML = '<div class="loading">No upcoming events</div>';
+            eventsEl.innerHTML = `<div class="loading">${i18n.t('messages.empty.no_upcoming_events')}</div>`;
             return;
         }
 
@@ -600,8 +600,8 @@ async function loadAllEvents() {
                     <h3>${event.type}</h3>
                     <div class="event-actions">
                         ${isUserAssigned ?
-                            `<button class="btn btn-small btn-remove" onclick="leaveEvent('${event.id}')">Leave Event</button>` :
-                            `<button class="btn btn-small btn-primary" onclick="joinEvent('${event.id}')">Join Event</button>`
+                            `<button class="btn btn-small btn-remove" onclick="leaveEvent('${event.id}')">${i18n.t('events.leave_event')}</button>` :
+                            `<button class="btn btn-small btn-primary" onclick="joinEvent('${event.id}')">${i18n.t('events.join_event')}</button>`
                         }
                     </div>
                 </div>
@@ -638,7 +638,7 @@ async function loadAllEvents() {
                                 `;
                             }).join('')}
                         </ul>
-                    ` : '<p class="help-text">No volunteers yet - be the first!</p>'}
+                    ` : `<p class="help-text">${i18n.t('messages.empty.no_volunteers_yet')}</p>`}
                 </div>
             </div>
             `;
@@ -652,7 +652,7 @@ async function loadAllEvents() {
 // Calendar View
 async function loadCalendar() {
     const calendarEl = document.getElementById('calendar-grid');
-    calendarEl.innerHTML = '<div class="loading">Loading your calendar...</div>';
+    calendarEl.innerHTML = `<div class="loading">${i18n.t('messages.loading.calendar')}</div>`;
 
     try {
         // Get all events for the organization
@@ -784,7 +784,7 @@ async function loadCalendar() {
             }).join('');
 
     } catch (error) {
-        calendarEl.innerHTML = `<div class="loading">Error loading calendar: ${error.message}</div>`;
+        calendarEl.innerHTML = `<div class="loading">${i18n.t('messages.error_loading.calendar', {message: error.message})}</div>`;
     }
 }
 
@@ -879,7 +879,7 @@ async function resetCalendarToken() {
 // Schedule View
 async function loadMySchedule() {
     const scheduleEl = document.getElementById('schedule-list');
-    scheduleEl.innerHTML = '<div class="loading">Loading your schedule...</div>';
+    scheduleEl.innerHTML = `<div class="loading">${i18n.t('messages.loading.schedule')}</div>`;
 
     try {
         // Load blocked dates
@@ -919,7 +919,7 @@ async function loadMySchedule() {
 
         // Render schedule
         if (upcoming.length === 0) {
-            scheduleEl.innerHTML = '<div class="loading">No upcoming assignments.</div>';
+            scheduleEl.innerHTML = `<div class="loading">${i18n.t('messages.empty.no_assignments')}</div>`;
             return;
         }
 
@@ -975,7 +975,7 @@ async function loadTimeOff() {
         const data = await response.json();
 
         if (data.total === 0) {
-            listEl.innerHTML = '<p class="help-text">No time-off periods set. Add one above!</p>';
+            listEl.innerHTML = `<p class="help-text">${i18n.t('messages.empty.no_timeoff')}</p>`;
             return;
         }
 
@@ -1008,7 +1008,7 @@ async function loadTimeOff() {
         }).join('');
 
     } catch (error) {
-        listEl.innerHTML = `<p class="help-text">Error loading time-off: ${error.message}</p>`;
+        listEl.innerHTML = `<p class="help-text">${i18n.t('messages.error_loading.timeoff', {message: error.message})}</p>`;
     }
 }
 
@@ -1193,10 +1193,10 @@ async function showSettings() {
         if (processedRoles.length > 0) {
             permissionDisplay.innerHTML = processedRoles.join('');
         } else {
-            permissionDisplay.innerHTML = '<em>No valid permissions found</em>';
+            permissionDisplay.innerHTML = `<em>${i18n.t('messages.empty.no_permissions_found')}</em>`;
         }
     } else {
-        permissionDisplay.innerHTML = '<em>No permissions assigned</em>';
+        permissionDisplay.innerHTML = `<em>${i18n.t('messages.empty.no_permissions_assigned')}</em>`;
     }
 }
 
@@ -1333,7 +1333,7 @@ async function loadAdminStats() {
 
 async function loadAdminEvents() {
     const listEl = document.getElementById('admin-events-list');
-    listEl.innerHTML = '<div class="loading">Loading events...</div>';
+    listEl.innerHTML = `<div class="loading">${i18n.t('messages.loading.events')}</div>`;
 
     try {
         const orgId = currentUser.org_id;
@@ -1346,7 +1346,7 @@ async function loadAdminEvents() {
 
         if (data.total === 0) {
             console.log('[loadAdminEvents] No events found, showing message');
-            listEl.innerHTML = '<p class="help-text">No events yet. Create one to get started!</p>';
+            listEl.innerHTML = `<p class="help-text">${i18n.t('messages.empty.no_events_yet')}</p>`;
             return;
         }
 
@@ -1370,9 +1370,9 @@ async function loadAdminEvents() {
                     <div id="assignments-${event.id}" class="event-assignments"></div>
                 </div>
                 <div class="admin-item-actions">
-                    <button class="btn btn-small" onclick="showAssignments('${event.id}')">Assign People</button>
-                    <button class="btn btn-small" onclick="editEvent('${event.id}')">Edit</button>
-                    <button class="btn btn-small btn-remove" onclick="deleteEvent('${event.id}')">Delete</button>
+                    <button class="btn btn-small" onclick="showAssignments('${event.id}')">${i18n.t('events.assign_people')}</button>
+                    <button class="btn btn-small" onclick="editEvent('${event.id}')">${i18n.t('common.buttons.edit')}</button>
+                    <button class="btn btn-small btn-remove" onclick="deleteEvent('${event.id}')">${i18n.t('common.buttons.delete')}</button>
                 </div>
             </div>
         `).join('');
@@ -1380,7 +1380,7 @@ async function loadAdminEvents() {
         // Load assignments for each event
         data.events.forEach(event => loadEventAssignments(event.id));
     } catch (error) {
-        listEl.innerHTML = `<p class="help-text">Error loading events: ${error.message}</p>`;
+        listEl.innerHTML = `<p class="help-text">${i18n.t('messages.error_loading.events', {message: error.message})}</p>`;
     }
 }
 
@@ -1394,7 +1394,7 @@ async function loadAdminPeople() {
         const data = await response.json();
 
         if (data.total === 0) {
-            listEl.innerHTML = '<p class="help-text">No people registered yet.</p>';
+            listEl.innerHTML = `<p class="help-text">${i18n.t('messages.empty.no_people_yet')}</p>`;
             return;
         }
 
@@ -1459,12 +1459,12 @@ async function loadAdminPeople() {
                             ${blockedHtml}
                         </div>
                     </div>
-                    <button class="btn btn-secondary btn-sm" onclick='showEditPersonModal(${JSON.stringify(person)})'>Edit Roles</button>
+                    <button class="btn btn-secondary btn-sm" onclick='showEditPersonModal(${JSON.stringify(person)})'>${i18n.t('common.buttons.edit_roles')}</button>
                 </div>
             `;
         }).join('');
     } catch (error) {
-        listEl.innerHTML = `<p class="help-text">Error loading people: ${error.message}</p>`;
+        listEl.innerHTML = `<p class="help-text">${i18n.t('messages.error_loading.people', {message: error.message})}</p>`;
     }
 }
 
@@ -1478,7 +1478,7 @@ async function loadAdminSolutions() {
         const data = await response.json();
 
         if (data.total === 0) {
-            listEl.innerHTML = '<p class="help-text">No schedules generated yet. Click "Generate Schedule" above!</p>';
+            listEl.innerHTML = `<p class="help-text">${i18n.t('messages.empty.no_schedules_yet')}</p>`;
             return;
         }
 
@@ -1499,7 +1499,7 @@ async function loadAdminSolutions() {
             </div>
         `).join('');
     } catch (error) {
-        listEl.innerHTML = `<p class="help-text">Error loading schedules: ${error.message}</p>`;
+        listEl.innerHTML = `<p class="help-text">${i18n.t('messages.error_loading.schedules', {message: error.message})}</p>`;
     }
 }
 
@@ -1661,7 +1661,7 @@ async function showAssignments(eventId) {
         const listEl = document.getElementById('assignment-people-list');
 
         if (people.length === 0) {
-            listEl.innerHTML = '<p class="help-text">No people with matching roles found</p>';
+            listEl.innerHTML = `<p class="help-text">${i18n.t('messages.empty.no_matching_roles')}</p>`;
         } else {
             // Get required roles from event
             const roleCount = event.extra_data?.role_counts || {};
@@ -1805,7 +1805,7 @@ async function deleteSolution(solutionId) {
 // Schedule Generation
 async function generateSchedule() {
     const statusEl = document.getElementById('solver-status');
-    statusEl.innerHTML = '<div class="solver-status running">⏳ Generating schedule... This may take a moment.</div>';
+    statusEl.innerHTML = `<div class="solver-status running">${i18n.t('messages.loading.generating_schedule')}</div>`;
 
     try {
         // Calculate date range (next 90 days)
@@ -1988,7 +1988,7 @@ function updateRoleBadgesDisplay() {
     }
 
     if (roles.length === 0) {
-        rolesDisplay.innerHTML = '<span class="role-badge" style="background: #9ca3af;">No roles set</span>';
+        rolesDisplay.innerHTML = `<span class="role-badge" style="background: #9ca3af;">${i18n.t('messages.empty.no_roles_set')}</span>`;
         // Show setup hint for users without roles
         showSetupHint();
     } else {
@@ -2158,7 +2158,7 @@ async function loadInvitations() {
 
         if (response.status === 404) {
             // Invitations feature not implemented yet
-            listEl.innerHTML = '<p class="help-text">Invitations feature coming soon!</p>';
+            listEl.innerHTML = `<p class="help-text">${i18n.t('messages.empty.invitations_coming_soon')}</p>`;
             document.getElementById('pending-invitations').textContent = '-';
             document.getElementById('accepted-invitations').textContent = '-';
             document.getElementById('expired-invitations').textContent = '-';
@@ -2178,7 +2178,7 @@ async function loadInvitations() {
         document.getElementById('expired-invitations').textContent = expired;
 
         if (invitations.length === 0) {
-            listEl.innerHTML = '<p class="help-text">No invitations sent yet. Click "Invite User" to get started!</p>';
+            listEl.innerHTML = `<p class="help-text">${i18n.t('messages.empty.no_invitations_yet')}</p>`;
             return;
         }
 
@@ -2203,7 +2203,7 @@ async function loadInvitations() {
             </div>
         `).join('');
     } catch (error) {
-        listEl.innerHTML = `<p class="help-text">Error loading invitations: ${error.message}</p>`;
+        listEl.innerHTML = `<p class="help-text">${i18n.t('messages.error_loading.invitations', {message: error.message})}</p>`;
         document.getElementById('pending-invitations').textContent = '0';
         document.getElementById('accepted-invitations').textContent = '0';
         document.getElementById('expired-invitations').textContent = '0';
@@ -2314,14 +2314,14 @@ async function showScheduleStats() {
     const statsContent = document.getElementById('stats-content');
 
     statsDisplay.classList.remove('hidden');
-    statsContent.innerHTML = '<div class="loading">Loading statistics...</div>';
+    statsContent.innerHTML = `<div class="loading">${i18n.t('messages.loading.statistics')}</div>`;
 
     try {
         const solutionsResponse = await fetch(`${API_BASE_URL}/solutions/?org_id=${currentUser.org_id}`);
         const solutionsData = await solutionsResponse.json();
 
         if (solutionsData.solutions.length === 0) {
-            statsContent.innerHTML = '<p class="help-text">No schedule data available.</p>';
+            statsContent.innerHTML = `<p class="help-text">${i18n.t('messages.empty.no_schedule_data')}</p>`;
             return;
         }
 
@@ -2375,7 +2375,7 @@ async function showScheduleStats() {
             </div>
         `;
     } catch (error) {
-        statsContent.innerHTML = `<p class="help-text">Error loading statistics: ${error.message}</p>`;
+        statsContent.innerHTML = `<p class="help-text">${i18n.t('messages.error_loading.statistics', {message: error.message})}</p>`;
     }
 }
 
@@ -2388,13 +2388,13 @@ async function loadAdminCalendarView() {
         const solutionsData = await solutionsResponse.json();
 
         if (solutionsData.solutions.length === 0) {
-            calendarEl.innerHTML = '<div class="loading">No schedule generated yet. Click "Generate Schedule" above.</div>';
+            calendarEl.innerHTML = `<div class="loading">${i18n.t('messages.empty.no_schedule_generated')}</div>`;
             return;
         }
 
         const latestSolution = solutionsData.solutions.find(s => s.assignment_count > 0);
         if (!latestSolution) {
-            calendarEl.innerHTML = '<div class="loading">No assignments in schedule.</div>';
+            calendarEl.innerHTML = `<div class="loading">${i18n.t('messages.empty.no_assignments_in_schedule')}</div>`;
             return;
         }
 
@@ -2442,7 +2442,7 @@ async function loadAdminCalendarView() {
                 `;
             }).join('');
     } catch (error) {
-        calendarEl.innerHTML = `<div class="loading">Error loading calendar: ${error.message}</div>`;
+        calendarEl.innerHTML = `<div class="loading">${i18n.t('messages.error_loading.calendar', {message: error.message})}</div>`;
     }
 }
 

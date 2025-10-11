@@ -86,5 +86,44 @@
     "success_add": "Time off added successfully!",
     "success_delete": "Time off deleted successfully!",
     "error": "Error managing availability"
+  },
+  "loading": {
+    "events": "Carregando eventos...",
+    "calendar": "Carregando seu calendário...",
+    "schedule": "Carregando seu horário...",
+    "people": "Carregando pessoas...",
+    "schedules": "Carregando horários...",
+    "invitations": "Carregando convites...",
+    "statistics": "Carregando estatísticas...",
+    "generating_schedule": "⏳ Gerando horário... Isso pode levar um momento."
+  },
+  "empty": {
+    "no_organizations": "Ainda não há organizações. Crie uma para começar!",
+    "no_upcoming_events": "Não há eventos próximos",
+    "no_volunteers_yet": "Ainda não há voluntários - seja o primeiro!",
+    "no_assignments": "Não há atribuições próximas.",
+    "no_timeoff": "Não há períodos de folga definidos. Adicione um acima!",
+    "no_events_yet": "Ainda não há eventos. Crie um para começar!",
+    "no_people_yet": "Ainda não há pessoas registradas.",
+    "no_schedules_yet": "Ainda não há horários gerados. Clique em \"Gerar Horário\" acima!",
+    "no_matching_roles": "Não foram encontradas pessoas com funções correspondentes",
+    "no_schedule_data": "Não há dados de horário disponíveis.",
+    "no_schedule_generated": "Ainda não foi gerado um horário. Clique em \"Gerar Horário\" acima!",
+    "no_assignments_in_schedule": "Não há atribuições no horário.",
+    "no_invitations_yet": "Ainda não foram enviados convites. Clique em \"Convidar Usuário\" para começar!",
+    "invitations_coming_soon": "Recurso de convites em breve!",
+    "no_permissions_found": "Não foram encontradas permissões válidas",
+    "no_permissions_assigned": "Não há permissões atribuídas",
+    "no_roles_set": "Não há funções definidas"
+  },
+  "error_loading": {
+    "organizations": "Erro ao carregar organizações. Certifique-se de que a API esteja em execução.",
+    "calendar": "Erro ao carregar calendário: {message}",
+    "timeoff": "Erro ao carregar folga: {message}",
+    "events": "Erro ao carregar eventos: {message}",
+    "people": "Erro ao carregar pessoas: {message}",
+    "schedules": "Erro ao carregar horários: {message}",
+    "invitations": "Erro ao carregar convites: {message}",
+    "statistics": "Erro ao carregar estatísticas: {message}"
   }
 }
