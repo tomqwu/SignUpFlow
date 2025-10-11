@@ -8,7 +8,7 @@ def test_settings_permission_console_logs(page: Page):
     """Test to capture console logs and see actual role data structure."""
     # Capture console messages
     console_messages = []
-    page.on("console", lambda msg: console_messages.append(f"{msg.type()}: {msg.text()}"))
+    page.on("console", lambda msg: console_messages.append(f"{msg.type}: {msg.text()}"))
 
     # Navigate to app
     page.goto("http://localhost:8000/")
