@@ -20,7 +20,7 @@
   "end_date_hint": "留空表示从开始日期起一年",
   "location": "地点",
   "roles_needed": "需要的角色 - 选择所有适用的",
-  "assign_people": "为活动分配人员",
+  "assign_people": "安排人员",
   "select_your_role": "选择您的角色",
   "role_question": "您将担任此活动的什么角色？",
   "custom_role_name": "自定义角色名称",

@@ -1,7 +1,7 @@
 {
-  "title": "管理控制台",
+  "title": "智慧排班",
   "admin": "管理",
-  "dashboard": "仪表板",
+  "dashboard": "控制台",
   "add_role": "添加角色",
   "add_custom_role": "添加自定义角色",
   "role_name": "角色名称",
@@ -32,15 +32,6 @@
     "search_placeholder": "按姓名或电子邮件搜索...",
     "no_results": "未找到人员"
   },
-  "solver": {
-    "title": "日程生成器",
-    "run_button": "生成日程",
-    "running": "正在生成日程...",
-    "success": "日程生成成功！",
-    "error": "生成日程时出错",
-    "solutions": "生成的解决方案",
-    "assignments": "创建的任务"
-  },
   "invitations": {
     "title": "用户邀请",
     "send_button": "发送邀请",
@@ -53,8 +44,8 @@
     "expired": "已过期"
   },
   "admin_console": "管理控制台",
-  "manage_your_org": "管理您的组织",
-  "event_management": "活动管理",
+  "manage_your_org": "管理您的組織",
+  "event_management": "活動管理",
   "create_event_button": "+ 创建活动",
   "total_events": "活动总数：",
   "role_management": "角色管理",
@@ -83,5 +74,14 @@
   "total_people": "总人数：",
   "pending": "待处理",
   "accepted": "已接受",
-  "expired": "已过期"
+  "expired": "已过期",
+  "solver": {
+    "title": "智慧排班",
+    "run_button": "產生排班",
+    "running": "正在排班中...",
+    "success": "排班產生成功！",
+    "error": "產生排班時發生錯誤",
+    "solutions": "產生的方案",
+    "assignments": "已建立的分配"
+  }
 }

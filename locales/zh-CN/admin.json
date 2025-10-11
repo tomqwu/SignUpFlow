@@ -1,7 +1,7 @@
 {
-  "title": "管理控制台",
+  "title": "智能排班",
   "admin": "管理",
-  "dashboard": "仪表板",
+  "dashboard": "控制台",
   "add_role": "添加角色",
   "add_custom_role": "添加自定义角色",
   "role_name": "角色名称",
@@ -31,15 +31,6 @@
     "total": "总人数",
     "search_placeholder": "按姓名或电子邮件搜索...",
     "no_results": "未找到人员"
-  },
-  "solver": {
-    "title": "日程生成器",
-    "run_button": "生成日程",
-    "running": "正在生成日程...",
-    "success": "日程生成成功！",
-    "error": "生成日程时出错",
-    "solutions": "生成的解决方案",
-    "assignments": "创建的任务"
   },
   "invitations": {
     "title": "用户邀请",
@@ -83,5 +74,14 @@
   "total_people": "总人数：",
   "pending": "待处理",
   "accepted": "已接受",
-  "expired": "已过期"
+  "expired": "已过期",
+  "solver": {
+    "title": "智能排班",
+    "run_button": "生成排班",
+    "running": "正在排班中...",
+    "success": "排班生成成功！",
+    "error": "生成排班时出错",
+    "solutions": "生成的方案",
+    "assignments": "已创建的分配"
+  }
 }
