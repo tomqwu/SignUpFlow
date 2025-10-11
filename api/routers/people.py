@@ -116,29 +116,40 @@ def get_person(person_id: str, db: Session = Depends(get_db)):
 @router.put("/{person_id}", response_model=PersonResponse)
 def update_person(person_id: str, person_data: PersonUpdate, db: Session = Depends(get_db)):
     """Update person."""
-    person = db.query(Person).filter(Person.id == person_id).first()
-    if not person:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail=f"Person '{person_id}' not found"
-        )
+    try:
+        person = db.query(Person).filter(Person.id == person_id).first()
+        if not person:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND, detail=f"Person '{person_id}' not found"
+            )
 
-    # Update fields
-    if person_data.name is not None:
-        person.name = person_data.name
-    if person_data.email is not None:
-        person.email = person_data.email
-    if person_data.roles is not None:
-        person.roles = person_data.roles
-    if person_data.timezone is not None:
-        person.timezone = person_data.timezone
-    if hasattr(person_data, 'language') and person_data.language is not None:
-        person.language = person_data.language
-    if person_data.extra_data is not None:
-        person.extra_data = person_data.extra_data
+        # Update fields
+        if person_data.name is not None:
+            person.name = person_data.name
+        if person_data.email is not None:
+            person.email = person_data.email
+        if person_data.roles is not None:
+            person.roles = person_data.roles
+        if person_data.timezone is not None:
+            person.timezone = person_data.timezone
+        if hasattr(person_data, 'language') and person_data.language is not None:
+            person.language = person_data.language
+        if person_data.extra_data is not None:
+            person.extra_data = person_data.extra_data
 
-    db.commit()
-    db.refresh(person)
-    return person
+        db.commit()
+        db.refresh(person)
+        return person
+    except HTTPException:
+        raise
+    except Exception as e:
+        import traceback
+        print(f"\n{'='*80}")
+        print(f"ERROR updating person {person_id}:")
+        print(traceback.format_exc())
+        print(f"{'='*80}\n")
+        db.rollback()
+        raise
 
 
 @router.delete("/{person_id}", status_code=status.HTTP_204_NO_CONTENT)

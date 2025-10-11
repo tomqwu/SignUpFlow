@@ -123,7 +123,7 @@ def test_backend_message_keys_structure(page: Page):
     console_messages = []
 
     def handle_console(msg):
-        console_messages.append(f"{msg.type}: {msg.text()}")
+        console_messages.append(f"{msg.type}: {msg.text}")
 
     page.on("console", handle_console)
 
