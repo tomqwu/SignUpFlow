@@ -24,13 +24,8 @@ const DEBUG = (() => {
         return stored === 'true';
     }
 
-    // Check if running on localhost or development environment
-    const isDev = window.location.hostname === 'localhost' ||
-                  window.location.hostname === '127.0.0.1' ||
-                  window.location.hostname.includes('dev') ||
-                  window.location.hostname.includes('staging');
-
-    return isDev;
+    // Default: debug mode OFF (must be explicitly enabled)
+    return false;
 })();
 
 // Debug object with conditional logging

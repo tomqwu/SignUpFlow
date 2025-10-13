@@ -6,13 +6,16 @@ We've introduced a centralized debug utility (`/js/debug.js`) that provides cond
 
 ## Debug Utility Features
 
-### Automatic Environment Detection
+### Debug Mode Control
 
-The debug utility automatically enables itself in these environments:
-- `localhost` or `127.0.0.1`
-- Domains containing `dev` or `staging`
-- URLs with `?debug=true` parameter
-- When `localStorage.getItem('debug') === 'true'`
+Debug mode is **OFF by default**. You can enable it through:
+- URL parameter: `?debug=true`
+- localStorage: `localStorage.setItem('debug', 'true')`
+- Browser console: `debug.enable()`
+
+To disable:
+- URL parameter: `?debug=false`
+- Browser console: `debug.disable()`
 
 ### API Methods
 
