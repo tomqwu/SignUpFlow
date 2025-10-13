@@ -1978,14 +1978,15 @@ function updateRoleBadgesDisplay() {
     const roles = currentUser.roles || [];
 
     // Debug: Log roles structure with detailed inspection
-    console.log('🔍 DEBUG updateRoleBadgesDisplay:');
-    console.log('  - roles:', roles);
-    console.log('  - Type:', typeof roles);
-    console.log('  - IsArray:', Array.isArray(roles));
-    console.log('  - JSON:', JSON.stringify(roles));
+    debug.group('updateRoleBadgesDisplay');
+    debug.log('roles:', roles);
+    debug.log('Type:', typeof roles);
+    debug.log('IsArray:', Array.isArray(roles));
+    debug.log('JSON:', JSON.stringify(roles));
     if (roles.length > 0) {
-        console.log('  - First role:', roles[0], 'Type:', typeof roles[0]);
+        debug.log('First role:', roles[0], 'Type:', typeof roles[0]);
     }
+    debug.groupEnd();
 
     if (roles.length === 0) {
         rolesDisplay.innerHTML = `<span class="role-badge" style="background: #9ca3af;">${i18n.t('messages.empty.no_roles_set')}</span>`;
