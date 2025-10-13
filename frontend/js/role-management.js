@@ -65,8 +65,13 @@ function toggleRoleCount(role) {
     }
 }
 
-// Capitalize role names for display
+// Translate and capitalize role names for display
 function capitalizeRole(role) {
+    // Use translateRole() if available (from app-user.js)
+    if (typeof translateRole === 'function') {
+        return translateRole(role);
+    }
+    // Fallback: capitalize the role name
     return role.split(/[-_]/).map(word =>
         word.charAt(0).toUpperCase() + word.slice(1)
     ).join(' ');
