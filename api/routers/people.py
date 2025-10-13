@@ -8,6 +8,7 @@ from api.database import get_db
 from api.dependencies import get_current_user, get_current_admin_user
 from api.schemas.person import PersonCreate, PersonUpdate, PersonResponse, PersonList
 from api.models import Person, Organization
+from api.logging_config import logger
 
 router = APIRouter(prefix="/people", tags=["people"])
 
@@ -143,11 +144,7 @@ def update_person(person_id: str, person_data: PersonUpdate, db: Session = Depen
     except HTTPException:
         raise
     except Exception as e:
-        import traceback
-        print(f"\n{'='*80}")
-        print(f"ERROR updating person {person_id}:")
-        print(traceback.format_exc())
-        print(f"{'='*80}\n")
+        logger.error(f"Error updating person {person_id}: {str(e)}", exc_info=True)
         db.rollback()
         raise
 
