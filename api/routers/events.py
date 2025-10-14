@@ -10,6 +10,7 @@ from api.database import get_db
 from api.schemas.event import EventCreate, EventUpdate, EventResponse, EventList
 from api.models import Event, EventTeam, Organization, Team, Person, Assignment, VacationPeriod, Availability
 from api.utils.response_messages import success_response, error_response, validation_warning
+from api.dependencies import get_current_user, get_current_admin_user, verify_org_member
 
 router = APIRouter(prefix="/events", tags=["events"])
 
@@ -32,8 +33,15 @@ class AssignmentRequest(BaseModel):
 
 
 @router.post("/", response_model=EventResponse, status_code=status.HTTP_201_CREATED)
-def create_event(event_data: EventCreate, db: Session = Depends(get_db)):
-    """Create a new event."""
+def create_event(
+    event_data: EventCreate,
+    current_admin: Person = Depends(get_current_admin_user),
+    db: Session = Depends(get_db)
+):
+    """Create a new event (admin only)."""
+    # Verify admin belongs to the organization
+    verify_org_member(current_admin, event_data.org_id)
+
     # Verify organization exists
     org = db.query(Organization).filter(Organization.id == event_data.org_id).first()
     if not org:
@@ -129,13 +137,21 @@ def get_event(event_id: str, db: Session = Depends(get_db)):
 
 
 @router.put("/{event_id}", response_model=EventResponse)
-def update_event(event_id: str, event_data: EventUpdate, db: Session = Depends(get_db)):
-    """Update event."""
+def update_event(
+    event_id: str,
+    event_data: EventUpdate,
+    current_admin: Person = Depends(get_current_admin_user),
+    db: Session = Depends(get_db)
+):
+    """Update event (admin only)."""
     event = db.query(Event).filter(Event.id == event_id).first()
     if not event:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail=f"Event '{event_id}' not found"
         )
+
+    # Verify admin belongs to the same organization as the event
+    verify_org_member(current_admin, event.org_id)
 
     # Update fields
     if event_data.type is not None:
@@ -162,13 +178,20 @@ def update_event(event_id: str, event_data: EventUpdate, db: Session = Depends(g
 
 
 @router.delete("/{event_id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_event(event_id: str, db: Session = Depends(get_db)):
-    """Delete event."""
+def delete_event(
+    event_id: str,
+    current_admin: Person = Depends(get_current_admin_user),
+    db: Session = Depends(get_db)
+):
+    """Delete event (admin only)."""
     event = db.query(Event).filter(Event.id == event_id).first()
     if not event:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail=f"Event '{event_id}' not found"
         )
+
+    # Verify admin belongs to the same organization as the event
+    verify_org_member(current_admin, event.org_id)
 
     db.delete(event)
     db.commit()
@@ -306,8 +329,13 @@ def validate_event(event_id: str, db: Session = Depends(get_db)):
 
 
 @router.post("/{event_id}/assignments")
-def manage_assignment(event_id: str, request: AssignmentRequest, db: Session = Depends(get_db)):
-    """Assign or unassign a person to/from an event."""
+def manage_assignment(
+    event_id: str,
+    request: AssignmentRequest,
+    current_admin: Person = Depends(get_current_admin_user),
+    db: Session = Depends(get_db)
+):
+    """Assign or unassign a person to/from an event (admin only)."""
     event = db.query(Event).filter(Event.id == event_id).first()
     if not event:
         raise error_response(
@@ -315,12 +343,18 @@ def manage_assignment(event_id: str, request: AssignmentRequest, db: Session = D
             status_code=status.HTTP_404_NOT_FOUND
         )
 
+    # Verify admin belongs to the same organization as the event
+    verify_org_member(current_admin, event.org_id)
+
     person = db.query(Person).filter(Person.id == request.person_id).first()
     if not person:
         raise error_response(
             "events.errors.person_not_found",
             status_code=status.HTTP_404_NOT_FOUND
         )
+
+    # Verify person belongs to the same organization
+    verify_org_member(current_admin, person.org_id)
 
     if request.action == "assign":
         # Check if already assigned

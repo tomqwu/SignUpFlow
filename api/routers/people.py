@@ -5,7 +5,7 @@ from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.orm import Session
 
 from api.database import get_db
-from api.dependencies import get_current_user, get_current_admin_user
+from api.dependencies import get_current_user, get_current_admin_user, verify_org_member, check_admin_permission
 from api.schemas.person import PersonCreate, PersonUpdate, PersonResponse, PersonList
 from api.models import Person, Organization
 from api.logging_config import logger
@@ -42,8 +42,12 @@ async def update_current_person(
 
 
 @router.post("/", response_model=PersonResponse, status_code=status.HTTP_201_CREATED)
-def create_person(person_data: PersonCreate, db: Session = Depends(get_db)):
-    """Create a new person."""
+def create_person(
+    person_data: PersonCreate,
+    current_admin: Person = Depends(get_current_admin_user),
+    db: Session = Depends(get_db)
+):
+    """Create a new person (admin only)."""
     # Verify organization exists
     org = db.query(Organization).filter(Organization.id == person_data.org_id).first()
     if not org:
@@ -51,6 +55,9 @@ def create_person(person_data: PersonCreate, db: Session = Depends(get_db)):
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Organization '{person_data.org_id}' not found",
         )
+
+    # Verify admin belongs to the organization
+    verify_org_member(current_admin, person_data.org_id)
 
     # Check if person already exists
     existing = db.query(Person).filter(Person.id == person_data.id).first()
@@ -82,13 +89,20 @@ def list_people(
     role: Optional[str] = Query(None, description="Filter by role"),
     skip: int = 0,
     limit: int = 100,
+    current_user: Person = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    """List people with optional filters."""
+    """List people. Users can only see people from their own organization."""
     query = db.query(Person)
 
+    # Enforce organization isolation - users can only see people from their own org
     if org_id:
+        # Verify user has access to this organization
+        verify_org_member(current_user, org_id)
         query = query.filter(Person.org_id == org_id)
+    else:
+        # Default to current user's organization
+        query = query.filter(Person.org_id == current_user.org_id)
 
     # Note: For JSON field filtering in SQLite, we'd need to load and filter in memory
     # For production with PostgreSQL, we could use JSON operators
@@ -104,24 +118,58 @@ def list_people(
 
 
 @router.get("/{person_id}", response_model=PersonResponse)
-def get_person(person_id: str, db: Session = Depends(get_db)):
-    """Get person by ID."""
+def get_person(
+    person_id: str,
+    current_user: Person = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Get person by ID. Users can only view people from their own organization."""
     person = db.query(Person).filter(Person.id == person_id).first()
     if not person:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail=f"Person '{person_id}' not found"
         )
+
+    # Verify user belongs to the same organization
+    verify_org_member(current_user, person.org_id)
+
     return person
 
 
 @router.put("/{person_id}", response_model=PersonResponse)
-def update_person(person_id: str, person_data: PersonUpdate, db: Session = Depends(get_db)):
-    """Update person."""
+def update_person(
+    person_id: str,
+    person_data: PersonUpdate,
+    current_user: Person = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Update person. Users can edit themselves, admins can edit anyone in their org."""
     try:
         person = db.query(Person).filter(Person.id == person_id).first()
         if not person:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND, detail=f"Person '{person_id}' not found"
+            )
+
+        # Check permissions
+        is_admin = check_admin_permission(current_user)
+        is_self = current_user.id == person_id
+
+        if not is_self and not is_admin:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="You can only edit your own profile unless you are an admin"
+            )
+
+        # Admins can only edit people in their own organization
+        if is_admin and not is_self:
+            verify_org_member(current_user, person.org_id)
+
+        # Prevent role escalation: non-admins cannot modify roles
+        if person_data.roles is not None and not is_admin:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Only admins can modify user roles"
             )
 
         # Update fields
@@ -150,13 +198,20 @@ def update_person(person_id: str, person_data: PersonUpdate, db: Session = Depen
 
 
 @router.delete("/{person_id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_person(person_id: str, db: Session = Depends(get_db)):
-    """Delete person."""
+def delete_person(
+    person_id: str,
+    current_admin: Person = Depends(get_current_admin_user),
+    db: Session = Depends(get_db)
+):
+    """Delete person (admin only)."""
     person = db.query(Person).filter(Person.id == person_id).first()
     if not person:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail=f"Person '{person_id}' not found"
         )
+
+    # Verify admin belongs to the same organization
+    verify_org_member(current_admin, person.org_id)
 
     db.delete(person)
     db.commit()

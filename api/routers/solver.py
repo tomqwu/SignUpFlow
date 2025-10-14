@@ -6,6 +6,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from api.database import get_db
+from api.dependencies import get_current_admin_user, verify_org_member
 
 logger = logging.getLogger("rostio")
 from api.schemas.solver import SolveRequest, SolveResponse, ViolationInfo, FairnessMetrics, SolutionMetrics
@@ -35,9 +36,13 @@ router = APIRouter(prefix="/solver", tags=["solver"])
 
 
 @router.post("/solve", response_model=SolveResponse)
-def solve_schedule(solve_request: SolveRequest, db: Session = Depends(get_db)):
+def solve_schedule(
+    solve_request: SolveRequest,
+    current_admin: Person = Depends(get_current_admin_user),
+    db: Session = Depends(get_db)
+):
     """
-    Generate a schedule for the organization.
+    Generate a schedule for the organization (admin only).
 
     This endpoint:
     1. Loads all org data from database
@@ -52,6 +57,9 @@ def solve_schedule(solve_request: SolveRequest, db: Session = Depends(get_db)):
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Organization '{solve_request.org_id}' not found",
         )
+
+    # Verify admin belongs to the organization
+    verify_org_member(current_admin, solve_request.org_id)
 
     # Load all data
     people_db = db.query(Person).filter(Person.org_id == solve_request.org_id).all()

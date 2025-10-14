@@ -5,6 +5,7 @@ from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.orm import Session
 
 from api.database import get_db
+from api.dependencies import get_current_user, get_current_admin_user, verify_org_member
 from api.schemas.team import (
     TeamCreate,
     TeamUpdate,
@@ -19,8 +20,12 @@ router = APIRouter(prefix="/teams", tags=["teams"])
 
 
 @router.post("/", response_model=TeamResponse, status_code=status.HTTP_201_CREATED)
-def create_team(team_data: TeamCreate, db: Session = Depends(get_db)):
-    """Create a new team."""
+def create_team(
+    team_data: TeamCreate,
+    current_admin: Person = Depends(get_current_admin_user),
+    db: Session = Depends(get_db)
+):
+    """Create a new team (admin only)."""
     # Verify organization exists
     org = db.query(Organization).filter(Organization.id == team_data.org_id).first()
     if not org:
@@ -28,6 +33,9 @@ def create_team(team_data: TeamCreate, db: Session = Depends(get_db)):
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Organization '{team_data.org_id}' not found",
         )
+
+    # Verify admin belongs to the organization
+    verify_org_member(current_admin, team_data.org_id)
 
     # Check if team already exists
     existing = db.query(Team).filter(Team.id == team_data.id).first()
@@ -78,13 +86,20 @@ def list_teams(
     org_id: Optional[str] = Query(None, description="Filter by organization ID"),
     skip: int = 0,
     limit: int = 100,
+    current_user: Person = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    """List teams with optional filters."""
+    """List teams. Users can only see teams from their own organization."""
     query = db.query(Team)
 
+    # Enforce organization isolation
     if org_id:
+        # Verify user has access to this organization
+        verify_org_member(current_user, org_id)
         query = query.filter(Team.org_id == org_id)
+    else:
+        # Default to current user's organization
+        query = query.filter(Team.org_id == current_user.org_id)
 
     teams = query.offset(skip).limit(limit).all()
     total = query.count()
@@ -101,13 +116,20 @@ def list_teams(
 
 
 @router.get("/{team_id}", response_model=TeamResponse)
-def get_team(team_id: str, db: Session = Depends(get_db)):
-    """Get team by ID."""
+def get_team(
+    team_id: str,
+    current_user: Person = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Get team by ID. Users can only view teams from their own organization."""
     team = db.query(Team).filter(Team.id == team_id).first()
     if not team:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail=f"Team '{team_id}' not found"
         )
+
+    # Verify user belongs to the same organization
+    verify_org_member(current_user, team.org_id)
 
     member_count = db.query(TeamMember).filter(TeamMember.team_id == team.id).count()
     response = TeamResponse.model_validate(team)
@@ -116,13 +138,21 @@ def get_team(team_id: str, db: Session = Depends(get_db)):
 
 
 @router.put("/{team_id}", response_model=TeamResponse)
-def update_team(team_id: str, team_data: TeamUpdate, db: Session = Depends(get_db)):
-    """Update team."""
+def update_team(
+    team_id: str,
+    team_data: TeamUpdate,
+    current_admin: Person = Depends(get_current_admin_user),
+    db: Session = Depends(get_db)
+):
+    """Update team (admin only)."""
     team = db.query(Team).filter(Team.id == team_id).first()
     if not team:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail=f"Team '{team_id}' not found"
         )
+
+    # Verify admin belongs to the same organization
+    verify_org_member(current_admin, team.org_id)
 
     # Update fields
     if team_data.name is not None:
@@ -142,13 +172,21 @@ def update_team(team_id: str, team_data: TeamUpdate, db: Session = Depends(get_d
 
 
 @router.post("/{team_id}/members", status_code=status.HTTP_204_NO_CONTENT)
-def add_team_members(team_id: str, members: TeamMemberAdd, db: Session = Depends(get_db)):
-    """Add members to team."""
+def add_team_members(
+    team_id: str,
+    members: TeamMemberAdd,
+    current_admin: Person = Depends(get_current_admin_user),
+    db: Session = Depends(get_db)
+):
+    """Add members to team (admin only)."""
     team = db.query(Team).filter(Team.id == team_id).first()
     if not team:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail=f"Team '{team_id}' not found"
         )
+
+    # Verify admin belongs to the same organization
+    verify_org_member(current_admin, team.org_id)
 
     for person_id in members.person_ids:
         # Verify person exists
@@ -157,6 +195,9 @@ def add_team_members(team_id: str, members: TeamMemberAdd, db: Session = Depends
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND, detail=f"Person '{person_id}' not found"
             )
+
+        # Verify person belongs to the same organization
+        verify_org_member(current_admin, person.org_id)
 
         # Check if already a member
         existing = (
@@ -173,13 +214,21 @@ def add_team_members(team_id: str, members: TeamMemberAdd, db: Session = Depends
 
 
 @router.delete("/{team_id}/members", status_code=status.HTTP_204_NO_CONTENT)
-def remove_team_members(team_id: str, members: TeamMemberRemove, db: Session = Depends(get_db)):
-    """Remove members from team."""
+def remove_team_members(
+    team_id: str,
+    members: TeamMemberRemove,
+    current_admin: Person = Depends(get_current_admin_user),
+    db: Session = Depends(get_db)
+):
+    """Remove members from team (admin only)."""
     team = db.query(Team).filter(Team.id == team_id).first()
     if not team:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail=f"Team '{team_id}' not found"
         )
+
+    # Verify admin belongs to the same organization
+    verify_org_member(current_admin, team.org_id)
 
     for person_id in members.person_ids:
         db.query(TeamMember).filter(
@@ -191,13 +240,20 @@ def remove_team_members(team_id: str, members: TeamMemberRemove, db: Session = D
 
 
 @router.delete("/{team_id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_team(team_id: str, db: Session = Depends(get_db)):
-    """Delete team."""
+def delete_team(
+    team_id: str,
+    current_admin: Person = Depends(get_current_admin_user),
+    db: Session = Depends(get_db)
+):
+    """Delete team (admin only)."""
     team = db.query(Team).filter(Team.id == team_id).first()
     if not team:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail=f"Team '{team_id}' not found"
         )
+
+    # Verify admin belongs to the same organization
+    verify_org_member(current_admin, team.org_id)
 
     db.delete(team)
     db.commit()
