@@ -69,5 +69,10 @@ backups/
 # OS
 .DS_Store
 Thumbs.db
+
+# Database files
 *.db
+*.db-shm
+*.db-wal
+*.db.before_restore_*
 examples/*.db
