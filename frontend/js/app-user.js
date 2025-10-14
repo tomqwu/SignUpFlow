@@ -2071,15 +2071,13 @@ async function sendInvitation(event) {
     }
 
     try {
-        const response = await authFetch(`${API_BASE_URL}/invitations`, {
+        const response = await authFetch(`${API_BASE_URL}/invitations?org_id=${currentUser.org_id}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-                org_id: currentUser.org_id,
                 email: email,
                 name: name,
-                roles: roles,
-                invited_by: currentUser.id
+                roles: roles
             })
         });
 
