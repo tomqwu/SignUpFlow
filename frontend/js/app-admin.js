@@ -169,7 +169,7 @@ async function loadPeople() {
     }
 
     try {
-        const response = await fetch(`${API_BASE_URL}/people/?org_id=${orgId}`);
+        const response = await authFetch(`${API_BASE_URL}/people/?org_id=${orgId}`);
         const data = await response.json();
 
         if (data.people.length === 0) {
@@ -222,7 +222,7 @@ async function createPerson(event) {
     };
 
     try {
-        const response = await fetch(`${API_BASE_URL}/people/`, {
+        const response = await authFetch(`${API_BASE_URL}/people/`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(data)
@@ -252,7 +252,7 @@ async function loadTeams() {
     }
 
     try {
-        const response = await fetch(`${API_BASE_URL}/teams/?org_id=${orgId}`);
+        const response = await authFetch(`${API_BASE_URL}/teams/?org_id=${orgId}`);
         const data = await response.json();
 
         if (data.teams.length === 0) {
@@ -299,7 +299,7 @@ async function createTeam(event) {
     };
 
     try {
-        const response = await fetch(`${API_BASE_URL}/teams/`, {
+        const response = await authFetch(`${API_BASE_URL}/teams/`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(data)
@@ -330,8 +330,8 @@ async function loadEvents() {
 
     try {
         const [eventsResponse, peopleResponse, solutionsResponse] = await Promise.all([
-            fetch(`${API_BASE_URL}/events/?org_id=${orgId}`),
-            fetch(`${API_BASE_URL}/people/?org_id=${orgId}`),
+            authFetch(`${API_BASE_URL}/events/?org_id=${orgId}`),
+            authFetch(`${API_BASE_URL}/people/?org_id=${orgId}`),
             fetch(`${API_BASE_URL}/solutions/?org_id=${orgId}`)
         ]);
 
@@ -442,7 +442,7 @@ async function createEvent(event) {
     };
 
     try {
-        const response = await fetch(`${API_BASE_URL}/events/`, {
+        const response = await authFetch(`${API_BASE_URL}/events/`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(data)
@@ -480,7 +480,7 @@ async function solveSchedule(event) {
     metricsEl.innerHTML = '<div class="loading">Solving schedule...</div>';
 
     try {
-        const response = await fetch(`${API_BASE_URL}/solver/solve`, {
+        const response = await authFetch(`${API_BASE_URL}/solver/solve`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(data)
@@ -681,7 +681,7 @@ async function updatePersonRoles(event) {
         .map(cb => cb.value);
 
     try {
-        const response = await fetch(`${API_BASE_URL}/people/${personId}`, {
+        const response = await authFetch(`${API_BASE_URL}/people/${personId}`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({

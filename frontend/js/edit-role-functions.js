@@ -32,7 +32,7 @@ async function saveEditRole(event) {
         // If role name changed, update in people's roles array
         if (oldRoleName !== newRoleName) {
             // Get all people
-            const peopleResponse = await fetch(`${API_BASE_URL}/people/?org_id=${currentOrg.id}`);
+            const peopleResponse = await authFetch(`${API_BASE_URL}/people/?org_id=${currentOrg.id}`);
             const peopleData = await peopleResponse.json();
             const people = peopleData.people || [];
 
@@ -42,7 +42,7 @@ async function saveEditRole(event) {
                 .map(async (person) => {
                     const updatedRoles = person.roles.map(r => r === oldRoleName ? newRoleName : r);
 
-                    const response = await fetch(`${API_BASE_URL}/people/${person.id}`, {
+                    const response = await authFetch(`${API_BASE_URL}/people/${person.id}`, {
                         method: 'PUT',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ roles: updatedRoles })

@@ -40,7 +40,7 @@ window.createEvent = async function(event) {
     try {
         // Handle UPDATE mode
         if (editingEventId) {
-            const response = await fetch(`${API_BASE_URL}/events/${editingEventId}`, {
+            const response = await authFetch(`${API_BASE_URL}/events/${editingEventId}`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -76,7 +76,7 @@ window.createEvent = async function(event) {
         // Handle CREATE mode
         if (occurs === 'once') {
             const eventId = type.toLowerCase().replace(/\s+/g, '_') + '_' + Date.now();
-            const response = await fetch(API_BASE_URL + '/events/', {
+            const response = await authFetch(API_BASE_URL + '/events/', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -126,7 +126,7 @@ window.createEvent = async function(event) {
 
             let successCount = 0;
             for (const evt of events) {
-                const response = await fetch(API_BASE_URL + '/events/', {
+                const response = await authFetch(API_BASE_URL + '/events/', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(evt)

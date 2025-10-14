@@ -158,7 +158,7 @@ async function loadAdminRoles() {
         const descriptions = orgData.config?.role_descriptions || {};
 
         // Fetch people to count role assignments
-        const peopleResponse = await fetch(`${API_BASE_URL}/people/?org_id=${currentOrg.id}`);
+        const peopleResponse = await authFetch(`${API_BASE_URL}/people/?org_id=${currentOrg.id}`);
         const peopleData = await peopleResponse.json();
         const people = peopleData.people || [];
 
@@ -286,7 +286,7 @@ async function showManageRolePeopleModal(roleName) {
     document.getElementById('manage-role-name').textContent = capitalizeRole(roleName);
 
     // Load all people in the organization
-    const peopleResponse = await fetch(`${API_BASE_URL}/people/?org_id=${currentOrg.id}`);
+    const peopleResponse = await authFetch(`${API_BASE_URL}/people/?org_id=${currentOrg.id}`);
     const peopleData = await peopleResponse.json();
     const people = peopleData.people || [];
 
@@ -325,7 +325,7 @@ async function saveRolePeople(event) {
 
     try {
         // Fetch all people to update their roles
-        const peopleResponse = await fetch(`${API_BASE_URL}/people/?org_id=${currentOrg.id}`);
+        const peopleResponse = await authFetch(`${API_BASE_URL}/people/?org_id=${currentOrg.id}`);
         const peopleData = await peopleResponse.json();
         const people = peopleData.people || [];
 
@@ -345,7 +345,7 @@ async function saveRolePeople(event) {
                     newRoles = (person.roles || []).filter(r => r !== roleName);
                 }
 
-                const response = await fetch(`${API_BASE_URL}/people/${person.id}`, {
+                const response = await authFetch(`${API_BASE_URL}/people/${person.id}`, {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ roles: newRoles })

@@ -9,7 +9,7 @@
  */
 async function checkConflicts(personId, eventId) {
     try {
-        const response = await fetch(`${API_BASE_URL}/conflicts/check`, {
+        const response = await authFetch(`${API_BASE_URL}/conflicts/check`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({

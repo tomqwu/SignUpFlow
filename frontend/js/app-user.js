@@ -433,7 +433,7 @@ async function loadUserOrganizations() {
         // Query each organization to find where user exists
         for (const org of data.organizations) {
             try {
-                const peopleResponse = await fetch(`${API_BASE_URL}/people/?org_id=${org.id}`);
+                const peopleResponse = await authFetch(`${API_BASE_URL}/people/?org_id=${org.id}`);
                 const peopleData = await peopleResponse.json();
 
                 if (peopleData.people) {
@@ -563,16 +563,16 @@ async function loadAllEvents() {
 
     try {
         // Get all events
-        const eventsResponse = await fetch(`${API_BASE_URL}/events/?org_id=${currentUser.org_id}`);
+        const eventsResponse = await authFetch(`${API_BASE_URL}/events/?org_id=${currentUser.org_id}`);
         const eventsData = await eventsResponse.json();
 
         // Get ALL assignments (both from solutions and manual)
-        const assignmentsResponse = await fetch(`${API_BASE_URL}/events/assignments/all?org_id=${currentUser.org_id}`);
+        const assignmentsResponse = await authFetch(`${API_BASE_URL}/events/assignments/all?org_id=${currentUser.org_id}`);
         const assignmentsData = await assignmentsResponse.json();
         const assignments = assignmentsData.assignments;
 
         // Get all people to show names
-        const peopleResponse = await fetch(`${API_BASE_URL}/people/?org_id=${currentUser.org_id}`);
+        const peopleResponse = await authFetch(`${API_BASE_URL}/people/?org_id=${currentUser.org_id}`);
         const peopleData = await peopleResponse.json();
         const peopleMap = {};
         peopleData.people.forEach(p => peopleMap[p.id] = p.name);
@@ -656,7 +656,7 @@ async function loadCalendar() {
 
     try {
         // Get all events for the organization
-        const eventsResponse = await fetch(`${API_BASE_URL}/events/?org_id=${currentUser.org_id}`);
+        const eventsResponse = await authFetch(`${API_BASE_URL}/events/?org_id=${currentUser.org_id}`);
         const eventsData = await eventsResponse.json();
 
         // Get solutions to see assignments
@@ -888,7 +888,7 @@ async function loadMySchedule() {
         const blockedDates = timeoffData.timeoff || [];
 
         // Get ALL assignments (both from solutions and manual) for the user
-        const assignmentsResponse = await fetch(`${API_BASE_URL}/events/assignments/all?org_id=${currentUser.org_id}`);
+        const assignmentsResponse = await authFetch(`${API_BASE_URL}/events/assignments/all?org_id=${currentUser.org_id}`);
         const assignmentsData = await assignmentsResponse.json();
 
         const myAssignments = assignmentsData.assignments
@@ -1215,7 +1215,7 @@ async function saveSettings() {
         console.log('💾 saveSettings - Saving timezone:', timezone, 'language:', language);
 
         // Save both timezone and language
-        const response = await fetch(`${API_BASE_URL}/people/${currentUser.id}`, {
+        const response = await authFetch(`${API_BASE_URL}/people/${currentUser.id}`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ timezone, language })
@@ -1314,8 +1314,8 @@ async function loadAdminStats() {
     try {
         const orgId = currentUser.org_id;
         const [peopleRes, eventsRes, solutionsRes] = await Promise.all([
-            fetch(`${API_BASE_URL}/people/?org_id=${orgId}`),
-            fetch(`${API_BASE_URL}/events/?org_id=${orgId}`),
+            authFetch(`${API_BASE_URL}/people/?org_id=${orgId}`),
+            authFetch(`${API_BASE_URL}/events/?org_id=${orgId}`),
             fetch(`${API_BASE_URL}/solutions/?org_id=${orgId}`)
         ]);
 
@@ -1339,7 +1339,7 @@ async function loadAdminEvents() {
         const orgId = currentUser.org_id;
         console.log('[loadAdminEvents] currentUser:', currentUser);
         console.log('[loadAdminEvents] orgId:', orgId);
-        const response = await fetch(`${API_BASE_URL}/events/?org_id=${orgId}`);
+        const response = await authFetch(`${API_BASE_URL}/events/?org_id=${orgId}`);
         const data = await response.json();
         console.log('[loadAdminEvents] API response:', data);
         console.log('[loadAdminEvents] Total events:', data.total);
@@ -1390,7 +1390,7 @@ async function loadAdminPeople() {
 
     try {
         const orgId = currentUser.org_id;
-        const response = await fetch(`${API_BASE_URL}/people/?org_id=${orgId}`);
+        const response = await authFetch(`${API_BASE_URL}/people/?org_id=${orgId}`);
         const data = await response.json();
 
         if (data.total === 0) {
@@ -1510,7 +1510,7 @@ async function loadAdminSolutions() {
 async function editEvent(eventId) {
     try {
         // Fetch event details
-        const response = await fetch(`${API_BASE_URL}/events/${eventId}`);
+        const response = await authFetch(`${API_BASE_URL}/events/${eventId}`);
         const event = await response.json();
 
         // Load role selector first
@@ -1564,7 +1564,7 @@ async function deleteEvent(eventId) {
         if (!confirmed) return;
 
         try {
-            const response = await fetch(`${API_BASE_URL}/events/${eventId}`, {
+            const response = await authFetch(`${API_BASE_URL}/events/${eventId}`, {
                 method: 'DELETE'
             });
 
@@ -1585,9 +1585,9 @@ async function deleteEvent(eventId) {
 async function loadEventAssignments(eventId) {
     try {
         const [peopleResp, validationResp, eventResp] = await Promise.all([
-            fetch(`${API_BASE_URL}/events/${eventId}/available-people`),
-            fetch(`${API_BASE_URL}/events/${eventId}/validation`),
-            fetch(`${API_BASE_URL}/events/${eventId}`)
+            authFetch(`${API_BASE_URL}/events/${eventId}/available-people`),
+            authFetch(`${API_BASE_URL}/events/${eventId}/validation`),
+            authFetch(`${API_BASE_URL}/events/${eventId}`)
         ]);
 
         const people = await peopleResp.json();
@@ -1650,8 +1650,8 @@ async function loadEventAssignments(eventId) {
 async function showAssignments(eventId) {
     try {
         const [peopleResponse, eventResponse] = await Promise.all([
-            fetch(`${API_BASE_URL}/events/${eventId}/available-people`),
-            fetch(`${API_BASE_URL}/events/${eventId}`)
+            authFetch(`${API_BASE_URL}/events/${eventId}/available-people`),
+            authFetch(`${API_BASE_URL}/events/${eventId}`)
         ]);
 
         const people = await peopleResponse.json();
@@ -1748,7 +1748,7 @@ async function showAssignments(eventId) {
 async function toggleAssignment(eventId, personId, isCurrentlyAssigned) {
     try {
         const action = isCurrentlyAssigned ? 'unassign' : 'assign';
-        const response = await fetch(`${API_BASE_URL}/events/${eventId}/assignments`, {
+        const response = await authFetch(`${API_BASE_URL}/events/${eventId}/assignments`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ person_id: personId, action })
@@ -1812,7 +1812,7 @@ async function generateSchedule() {
         const today = new Date();
         const futureDate = new Date(today.getTime() + 90 * 24 * 60 * 60 * 1000);
 
-        const response = await fetch(`${API_BASE_URL}/solver/solve`, {
+        const response = await authFetch(`${API_BASE_URL}/solver/solve`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -2119,7 +2119,7 @@ async function sendInvitation(event) {
     }
 
     try {
-        const response = await fetch(`${API_BASE_URL}/invitations`, {
+        const response = await authFetch(`${API_BASE_URL}/invitations`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -2151,7 +2151,7 @@ async function loadInvitations() {
 
     try {
         const authToken = localStorage.getItem('authToken');
-        const response = await fetch(`${API_BASE_URL}/invitations?org_id=${currentUser.org_id}`, {
+        const response = await authFetch(`${API_BASE_URL}/invitations?org_id=${currentUser.org_id}`, {
             headers: {
                 'Authorization': `Bearer ${authToken}`
             }
@@ -2213,7 +2213,7 @@ async function loadInvitations() {
 
 async function resendInvitation(invitationId) {
     try {
-        const response = await fetch(`${API_BASE_URL}/invitations/${invitationId}/resend`, {
+        const response = await authFetch(`${API_BASE_URL}/invitations/${invitationId}/resend`, {
             method: 'POST'
         });
 
@@ -2234,7 +2234,7 @@ async function cancelInvitation(invitationId) {
         if (!confirmed) return;
 
         try {
-            const response = await fetch(`${API_BASE_URL}/invitations/${invitationId}`, {
+            const response = await authFetch(`${API_BASE_URL}/invitations/${invitationId}`, {
                 method: 'DELETE'
             });
 
@@ -2499,7 +2499,7 @@ async function updatePersonRoles(event) {
         .map(cb => cb.value);
 
     try {
-        const response = await fetch(`${API_BASE_URL}/people/${personId}`, {
+        const response = await authFetch(`${API_BASE_URL}/people/${personId}`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -2577,7 +2577,7 @@ async function submitEventRole(event) {
     }
 
     try {
-        const response = await fetch(`${API_BASE_URL}/events/${eventId}/assignments`, {
+        const response = await authFetch(`${API_BASE_URL}/events/${eventId}/assignments`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -2607,7 +2607,7 @@ async function leaveEvent(eventId) {
         if (!confirmed) return;
 
         try {
-            const response = await fetch(`${API_BASE_URL}/events/${eventId}/assignments`, {
+            const response = await authFetch(`${API_BASE_URL}/events/${eventId}/assignments`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
