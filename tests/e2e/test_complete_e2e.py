@@ -309,82 +309,108 @@ def test_api_crud_operations():
     print("✅ Organization created")
 
     # Create person
+    test_email = f"crud{int(time.time())}@test.com"
     person_resp = requests.post(f"{API_BASE}/auth/signup", json={
         "name": "CRUD Test Person",
-        "email": f"crud{int(time.time())}@test.com",
+        "email": test_email,
         "password": "password",
         "org_id": org_id,
-        "roles": ["volunteer"]
+        "roles": ["admin"]  # Need admin role for creating events/teams
     })
     assert person_resp.status_code in [200, 201]
     person_id = person_resp.json()["person_id"]
     print("✅ Person created")
 
-    # Update person
-    update_resp = requests.put(f"{API_BASE}/people/{person_id}", json={
-        "name": "Updated Name",
-        "roles": ["volunteer", "admin"]
+    # Login to get JWT token
+    login_resp = requests.post(f"{API_BASE}/auth/login", json={
+        "email": test_email,
+        "password": "password"
     })
+    assert login_resp.status_code == 200
+    token = login_resp.json()["token"]
+    headers = {"Authorization": f"Bearer {token}"}
+    print("✅ Authenticated with JWT")
+
+    # Update person (with authentication)
+    update_resp = requests.put(f"{API_BASE}/people/{person_id}",
+        headers=headers,
+        json={
+            "name": "Updated Name",
+            "roles": ["volunteer", "admin"]
+        }
+    )
     assert update_resp.status_code == 200
     print("✅ Person updated")
 
-    # Create event
+    # Create event (with authentication)
     event_id = f"test_event_{int(time.time())}"
-    event_resp = requests.post(f"{API_BASE}/events/", json={
-        "id": event_id,
-        "org_id": org_id,
-        "type": "Test Event",
-        "start_time": (datetime.now() + timedelta(days=1)).isoformat(),
-        "end_time": (datetime.now() + timedelta(days=1, hours=2)).isoformat(),
-    })
+    event_resp = requests.post(f"{API_BASE}/events/?org_id={org_id}",
+        headers=headers,
+        json={
+            "id": event_id,
+            "org_id": org_id,
+            "type": "Test Event",
+            "start_time": (datetime.now() + timedelta(days=1)).isoformat(),
+            "end_time": (datetime.now() + timedelta(days=1, hours=2)).isoformat(),
+        }
+    )
     assert event_resp.status_code in [200, 201]
     print("✅ Event created")
 
-    # Delete event
-    delete_resp = requests.delete(f"{API_BASE}/events/{event_id}")
+    # Delete event (with authentication)
+    delete_resp = requests.delete(f"{API_BASE}/events/{event_id}?org_id={org_id}", headers=headers)
     assert delete_resp.status_code in [200, 204]
     print("✅ Event deleted")
 
-    # Create team
+    # Create team (with authentication)
     team_id = f"test_team_{int(time.time())}"
-    team_resp = requests.post(f"{API_BASE}/teams/", json={
-        "id": team_id,
-        "org_id": org_id,
-        "name": "Test Team",
-        "member_ids": [person_id]
-    })
+    team_resp = requests.post(f"{API_BASE}/teams/?org_id={org_id}",
+        headers=headers,
+        json={
+            "id": team_id,
+            "org_id": org_id,
+            "name": "Test Team",
+            "member_ids": [person_id]
+        }
+    )
     assert team_resp.status_code in [200, 201]
     print("✅ Team created")
 
-    # Delete team
-    delete_team_resp = requests.delete(f"{API_BASE}/teams/{team_id}")
+    # Delete team (with authentication)
+    delete_team_resp = requests.delete(f"{API_BASE}/teams/{team_id}?org_id={org_id}", headers=headers)
     assert delete_team_resp.status_code in [200, 204]
     print("✅ Team deleted")
 
-    # Time-off CRUD
-    timeoff_resp = requests.post(f"{API_BASE}/availability/{person_id}/timeoff", json={
-        "start_date": (date.today() + timedelta(days=10)).isoformat(),
-        "end_date": (date.today() + timedelta(days=15)).isoformat(),
-    })
+    # Time-off CRUD (with authentication)
+    timeoff_resp = requests.post(f"{API_BASE}/availability/{person_id}/timeoff?org_id={org_id}",
+        headers=headers,
+        json={
+            "start_date": (date.today() + timedelta(days=10)).isoformat(),
+            "end_date": (date.today() + timedelta(days=15)).isoformat(),
+        }
+    )
     assert timeoff_resp.status_code in [200, 201]
     timeoff_id = timeoff_resp.json()["id"]
     print("✅ Time-off created")
 
-    # Update time-off
-    update_timeoff = requests.patch(f"{API_BASE}/availability/{person_id}/timeoff/{timeoff_id}", json={
-        "start_date": (date.today() + timedelta(days=12)).isoformat(),
-        "end_date": (date.today() + timedelta(days=17)).isoformat(),
-    })
+    # Update time-off (with authentication)
+    update_timeoff = requests.patch(f"{API_BASE}/availability/{person_id}/timeoff/{timeoff_id}?org_id={org_id}",
+        headers=headers,
+        json={
+            "start_date": (date.today() + timedelta(days=12)).isoformat(),
+            "end_date": (date.today() + timedelta(days=17)).isoformat(),
+        }
+    )
     assert update_timeoff.status_code == 200
     print("✅ Time-off updated")
 
-    # Delete time-off
-    delete_timeoff = requests.delete(f"{API_BASE}/availability/{person_id}/timeoff/{timeoff_id}")
+    # Delete time-off (with authentication)
+    delete_timeoff = requests.delete(f"{API_BASE}/availability/{person_id}/timeoff/{timeoff_id}?org_id={org_id}", headers=headers)
     assert delete_timeoff.status_code in [200, 204]
     print("✅ Time-off deleted")
 
-    # Delete person
-    delete_person = requests.delete(f"{API_BASE}/people/{person_id}")
+    # Delete person (with authentication)
+    delete_person = requests.delete(f"{API_BASE}/people/{person_id}?org_id={org_id}", headers=headers)
     assert delete_person.status_code in [200, 204]
     print("✅ Person deleted")
 
