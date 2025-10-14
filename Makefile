@@ -1,4 +1,4 @@
-.PHONY: run dev stop restart setup install migrate test test-frontend test-backend test-integration test-e2e test-e2e-long test-e2e-file test-e2e-quick test-e2e-summary test-all test-coverage clean clean-all pre-commit help
+.PHONY: run dev stop restart setup install migrate test test-frontend test-backend test-integration test-e2e test-e2e-long test-e2e-file test-e2e-quick test-e2e-summary test-all test-coverage test-unit test-unit-file clean clean-all pre-commit help
 
 # Run the development server
 run:
@@ -123,6 +123,20 @@ test-coverage:
 	@npm run test:coverage
 	@poetry run pytest tests/ --cov=api --cov-report=html --cov-report=term
 
+# Run unit tests
+test-unit:
+	@echo "🧪 Running unit tests..."
+	@poetry run pytest tests/unit/ -v --tb=short
+
+# Run specific unit test file
+test-unit-file:
+	@echo "🧪 Running specific unit test file..."
+	@if [ -z "$(FILE)" ]; then \
+		echo "❌ Usage: make test-unit-file FILE=tests/unit/test_name.py"; \
+		exit 1; \
+	fi
+	@timeout 60 poetry run pytest $(FILE) -v --tb=short -s
+
 # Clean test artifacts and temporary files
 clean:
 	@echo "🧹 Cleaning test artifacts and temporary files..."
@@ -180,6 +194,8 @@ help:
 	@echo "  make test-e2e-summary - Run E2E tests and show only summary"
 	@echo "  make test-all         - Run ALL tests (frontend + backend + E2E)"
 	@echo "  make test-coverage    - Run tests with coverage reports"
+	@echo "  make test-unit        - Run unit tests only"
+	@echo "  make test-unit-file   - Run specific unit file (FILE=path/to/test.py)"
 	@echo "  make pre-commit       - Run fast tests for pre-commit hook"
 	@echo ""
 	@echo "Maintenance:"

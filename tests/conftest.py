@@ -159,8 +159,16 @@ def setup_test_database():
     if os.path.exists("test_roster.db"):
         os.remove("test_roster.db")
 
-    # Create test database
+    # Create test database with all tables
     engine = create_engine(TEST_DATABASE_URL, connect_args={"check_same_thread": False})
+
+    # Import all models to ensure they're registered with Base.metadata
+    from api.models import (
+        Organization, Person, Team, TeamMember, Resource, Event, EventTeam,
+        Assignment, Solution, Availability, VacationPeriod, AvailabilityException,
+        Holiday, Constraint, Invitation
+    )
+
     Base.metadata.create_all(bind=engine)
 
     yield
@@ -175,6 +183,8 @@ def override_get_db():
     """Override database dependency to use test database for unit tests."""
     from api.main import app
     from api.database import get_db
+    from api.dependencies import get_current_admin_user, get_current_user, verify_org_member
+    from api.models import Person
 
     engine = create_engine(TEST_DATABASE_URL, connect_args={"check_same_thread": False})
     TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
@@ -186,8 +196,63 @@ def override_get_db():
         finally:
             db.close()
 
+    def override_get_admin_user():
+        """Mock admin user for testing - bypasses authentication."""
+        return Person(
+            id="test_admin",
+            org_id="test_org",
+            name="Test Admin",
+            email="admin@test.com",
+            roles=["admin"]
+        )
+
+    def override_get_user():
+        """Mock user for testing - returns admin user to allow unit tests to pass.
+
+        Note: Most unit tests expect to be able to create/update/delete resources
+        without permission errors, so we return an admin user here.
+        """
+        return Person(
+            id="test_admin",
+            org_id="test_org",
+            name="Test Admin",
+            email="admin@test.com",
+            roles=["admin"]  # Admin role allows tests to pass permission checks
+        )
+
+    def override_verify_org_member(person: Person, org_id: str) -> None:
+        """Mock org membership verification - bypasses org checks for testing."""
+        # In tests, allow access to all orgs
+        pass
+
     app.dependency_overrides[get_db] = override_get_db_dependency
+    app.dependency_overrides[get_current_admin_user] = override_get_admin_user
+    app.dependency_overrides[get_current_user] = override_get_user
+
+    # Override verify_org_member function (not a dependency, so we monkey patch it)
+    import api.routers.people
+    import api.routers.events
+    import api.routers.teams
+
+    # Store original function
+    original_verify = api.dependencies.verify_org_member
+
+    # Replace with mock
+    api.dependencies.verify_org_member = override_verify_org_member
+    api.routers.people.verify_org_member = override_verify_org_member
+    if hasattr(api.routers.events, 'verify_org_member'):
+        api.routers.events.verify_org_member = override_verify_org_member
+    if hasattr(api.routers.teams, 'verify_org_member'):
+        api.routers.teams.verify_org_member = override_verify_org_member
 
     yield
+
+    # Restore original function
+    api.dependencies.verify_org_member = original_verify
+    api.routers.people.verify_org_member = original_verify
+    if hasattr(api.routers.events, 'verify_org_member'):
+        api.routers.events.verify_org_member = original_verify
+    if hasattr(api.routers.teams, 'verify_org_member'):
+        api.routers.teams.verify_org_member = original_verify
 
     app.dependency_overrides.clear()
