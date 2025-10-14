@@ -422,71 +422,23 @@ async function showMainApp() {
 // Load all organizations user belongs to
 async function loadUserOrganizations() {
     try {
-        // Get all organizations
-        const response = await fetch(`${API_BASE_URL}/organizations/`);
-        const data = await response.json();
+        // User belongs to their org_id from currentUser
+        // Simplified to avoid N+1 query problem
+        const dropdown = document.getElementById('org-dropdown');
+        const visibleDropdown = document.getElementById('org-dropdown-visible');
 
-        // Get unique org IDs where this user exists by checking each org
-        const userEmail = currentUser.email;
-        const userOrgIds = new Set();
+        const singleOrgHTML = `<option value="${currentOrg.id}" selected>${currentOrg.name}</option>`;
+        if (dropdown) dropdown.innerHTML = singleOrgHTML;
+        if (visibleDropdown) visibleDropdown.innerHTML = singleOrgHTML;
 
-        // Query each organization to find where user exists
-        for (const org of data.organizations) {
-            try {
-                const peopleResponse = await authFetch(`${API_BASE_URL}/people/?org_id=${org.id}`);
-                const peopleData = await peopleResponse.json();
-
-                if (peopleData.people) {
-                    const userExists = peopleData.people.some(person => person.email === userEmail);
-                    if (userExists) {
-                        userOrgIds.add(org.id);
-                    }
-                }
-            } catch (err) {
-                console.error(`Error checking org ${org.id}:`, err);
-            }
+        const orgDisplay = document.getElementById('org-name-display');
+        if (orgDisplay) {
+            orgDisplay.textContent = currentOrg.name;
+            orgDisplay.style.display = 'inline-block';
         }
-
-        // Filter to orgs user belongs to
-        const userOrgs = data.organizations.filter(org => userOrgIds.has(org.id));
-
-        // If user belongs to multiple orgs, show dropdown
-        if (userOrgs.length > 1) {
-            const dropdown = document.getElementById('org-dropdown');
-            const visibleDropdown = document.getElementById('org-dropdown-visible');
-
-            const optionsHTML = userOrgs.map(org =>
-                `<option value="${org.id}" ${org.id === currentOrg.id ? 'selected' : ''}>${org.name}</option>`
-            ).join('');
-
-            // Populate both dropdowns
-            dropdown.innerHTML = optionsHTML;
-            if (visibleDropdown) {
-                visibleDropdown.innerHTML = optionsHTML;
-            }
-
-            dropdown.style.display = 'block';
-            document.getElementById('org-name-display').style.display = 'none';
-        } else {
-            // Single org - just show badge and populate dropdowns with single option
-            const dropdown = document.getElementById('org-dropdown');
-            const visibleDropdown = document.getElementById('org-dropdown-visible');
-
-            const singleOrgHTML = `<option value="${currentOrg.id}" selected>${currentOrg.name}</option>`;
-            dropdown.innerHTML = singleOrgHTML;
-            if (visibleDropdown) {
-                visibleDropdown.innerHTML = singleOrgHTML;
-            }
-
-            document.getElementById('org-name-display').textContent = currentOrg.name;
-            document.getElementById('org-name-display').style.display = 'inline-block';
-            document.getElementById('org-dropdown').style.display = 'none';
-        }
+        if (dropdown) dropdown.style.display = 'none';
     } catch (error) {
         console.error('Error loading organizations:', error);
-        // Fallback: just show current org name
-        document.getElementById('org-name-display').textContent = currentOrg.name;
-        document.getElementById('org-name-display').style.display = 'inline-block';
     }
 }
 
