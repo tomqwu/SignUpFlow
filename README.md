@@ -15,7 +15,7 @@
 
 [Features](#-features) • [Quick Start](#-quick-start) • [Documentation](#-documentation) • [Roadmap](#-product-roadmap) • [Contributing](#-contributing)
 
-<img src="docs/screenshots/01-dashboard-home.png" alt="Rostio Dashboard" width="800">
+<img src="docs/screenshots/features/calendar-view.png" alt="Rostio Calendar View" width="800">
 
 </div>
 
@@ -76,14 +76,14 @@
 
 <div align="center">
 
-### Intuitive Dashboard
-<img src="docs/screenshots/01-dashboard-home.png" alt="Dashboard" width="700">
+### Calendar View & Scheduling
+<img src="docs/screenshots/features/calendar-view.png" alt="Calendar View" width="700">
 
-### Powerful Admin Console
-<img src="docs/screenshots/03-admin-events.png" alt="Admin Console" width="700">
+### Admin Console - Schedule Management
+<img src="docs/screenshots/05-admin-schedule.png" alt="Admin Schedule" width="700">
 
-### Mobile Responsive
-<img src="docs/screenshots/08-settings-modal.png" alt="Settings Modal" width="350">
+### Settings & Preferences
+<img src="docs/screenshots/features/settings-modal.png" alt="Settings Modal" width="350">
 
 </div>
 
@@ -283,38 +283,49 @@ POST /api/calendar/reset-token      # Reset subscription token (auth)
 <details>
 <summary><b>📸 View All Screenshots</b></summary>
 
-### Dashboard & User Views
-
-#### Personal Dashboard
-<img src="docs/screenshots/01-dashboard-home.png" alt="Dashboard" width="600">
-
-#### My Schedule
-<img src="docs/screenshots/02-my-schedule.png" alt="My Schedule" width="600">
-
 ### Admin Console
-
-#### Events Management
-<img src="docs/screenshots/03-admin-events.png" alt="Admin Events" width="600">
-
-#### Roles Management
-<img src="docs/screenshots/04-admin-roles.png" alt="Admin Roles" width="600">
 
 #### Schedule Management
 <img src="docs/screenshots/05-admin-schedule.png" alt="Admin Schedule" width="600">
 
-#### People & Invitations
+*AI-powered schedule generation with constraint solving*
+
+#### Roles Management
+<img src="docs/screenshots/admin_roles_tab_final.png" alt="Admin Roles" width="600">
+
+*Define and manage organizational roles with statistics*
+
+#### People Management
 <img src="docs/screenshots/06-admin-people.png" alt="Admin People" width="600">
+
+*Manage team members, send invitations, track status*
 
 #### Reports & Analytics
 <img src="docs/screenshots/07-admin-reports.png" alt="Admin Reports" width="600">
 
-### Modals & Features
+*Export schedules, view statistics, generate reports*
+
+### Features & UI
+
+#### Calendar View
+<img src="docs/screenshots/features/calendar-view.png" alt="Calendar View" width="600">
+
+*Interactive calendar with event management*
 
 #### Settings Modal
-<img src="docs/screenshots/08-settings-modal.png" alt="Settings" width="400">
+<img src="docs/screenshots/features/settings-modal.png" alt="Settings" width="400">
 
-#### Invite User Modal
-<img src="docs/screenshots/09-invite-user-modal.png" alt="Invite User" width="400">
+*Manage profile, roles, and preferences*
+
+#### Availability Management
+<img src="docs/screenshots/features/availability-edit-delete.png" alt="Availability" width="600">
+
+*Volunteers can set their own availability and time-off*
+
+#### Toast Notifications
+<img src="docs/screenshots/features/toast-notification.png" alt="Notifications" width="400">
+
+*Real-time feedback for all user actions*
 
 </details>
 
