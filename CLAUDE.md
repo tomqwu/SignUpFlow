@@ -738,6 +738,569 @@ See `docs/E2E_TEST_COVERAGE_ANALYSIS.md` for detailed coverage breakdown:
 
 ---
 
+## 🚨 MANDATORY TESTING WORKFLOW (BDD Approach)
+
+### Core Principles
+
+This project follows **Behavior-Driven Development (BDD)** with **Test-Driven Development (TDD)** practices:
+
+1. **Every feature MUST have tests**
+2. **Every GUI change MUST have GUI tests**
+3. **Always commit after tests pass**
+4. **Run full test suite after every change**
+
+### The Sacred Testing Workflow
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                     FEATURE REQUEST                          │
+│              "Add calendar export feature"                   │
+└──────────────────────┬──────────────────────────────────────┘
+                       │
+                       ▼
+┌─────────────────────────────────────────────────────────────┐
+│  STEP 1: DOCUMENT REQUIREMENTS (BDD Scenarios)               │
+│  ────────────────────────────────────────────────────────   │
+│  Create: docs/features/calendar-export.md                    │
+│                                                              │
+│  Feature: Calendar Export                                    │
+│    As a volunteer                                            │
+│    I want to export my schedule to ICS                       │
+│    So that I can sync with my personal calendar              │
+│                                                              │
+│  Scenario: Export personal calendar                          │
+│    Given I am logged in as a volunteer                       │
+│    When I click "Export Calendar"                            │
+│    Then I should download an ICS file                        │
+│    And it should contain my upcoming assignments             │
+│                                                              │
+│  Dependencies: None                                          │
+│  API: GET /api/calendar/personal/{person_id}                 │
+│  GUI: Add "Export" button in schedule view                   │
+└──────────────────────┬──────────────────────────────────────┘
+                       │
+                       ▼
+┌─────────────────────────────────────────────────────────────┐
+│  STEP 2: WRITE TESTS FIRST (Test-Driven Development)        │
+│  ────────────────────────────────────────────────────────   │
+│  1. Integration test for API endpoint                        │
+│     tests/integration/test_calendar.py::test_export_personal │
+│                                                              │
+│  2. E2E test for GUI workflow                                │
+│     tests/e2e/test_calendar_export.py::test_export_button    │
+│                                                              │
+│  3. Unit test for ICS generation logic                       │
+│     tests/unit/test_ics_generator.py::test_generate_ics     │
+│                                                              │
+│  ❌ ALL TESTS FAIL (expected - no code written yet)         │
+└──────────────────────┬──────────────────────────────────────┘
+                       │
+                       ▼
+┌─────────────────────────────────────────────────────────────┐
+│  STEP 3: IMPLEMENT FEATURE                                   │
+│  ────────────────────────────────────────────────────────   │
+│  1. Add API endpoint: api/routers/calendar.py                │
+│  2. Add GUI button: frontend/index.html                      │
+│  3. Add event handler: frontend/js/app-user.js               │
+│  4. Add ICS generation: api/utils/ics_generator.py           │
+└──────────────────────┬──────────────────────────────────────┘
+                       │
+                       ▼
+┌─────────────────────────────────────────────────────────────┐
+│  STEP 4: RUN TESTS UNTIL ALL PASS                            │
+│  ────────────────────────────────────────────────────────   │
+│  $ make test-all                                             │
+│                                                              │
+│  ✅ Unit tests: PASS (158/158)                               │
+│  ✅ Integration tests: PASS (130/130)  ← +1 new             │
+│  ✅ E2E tests: PASS (16/16)            ← +1 new             │
+│  ✅ Frontend tests: PASS (50/50)                             │
+│                                                              │
+│  Total: 354/354 PASSING ✅                                   │
+└──────────────────────┬──────────────────────────────────────┘
+                       │
+                       ▼
+┌─────────────────────────────────────────────────────────────┐
+│  STEP 5: COMMIT IMMEDIATELY                                  │
+│  ────────────────────────────────────────────────────────   │
+│  $ git add -A                                                │
+│  $ git commit -m "Add calendar export feature               │
+│                                                              │
+│  **Feature:** Personal calendar export to ICS               │
+│  - Add GET /api/calendar/personal/{person_id} endpoint       │
+│  - Add Export Calendar button in schedule view              │
+│  - Generate ICS files with upcoming assignments             │
+│                                                              │
+│  **Tests Added:**                                            │
+│  - Integration: test_export_personal_calendar               │
+│  - E2E: test_calendar_export_button_workflow                │
+│  - Unit: test_generate_ics_from_assignments                 │
+│                                                              │
+│  **Coverage:** 100% (354/354 tests passing)                 │
+│  "                                                           │
+│                                                              │
+│  ✅ Pre-commit hook: PASS                                    │
+│  ✅ Committed to main                                        │
+└─────────────────────────────────────────────────────────────┘
+```
+
+### Detailed Testing Requirements
+
+#### 1. **Feature Documentation (BDD Scenarios)**
+
+**Location:** `docs/features/{feature-name}.md`
+
+**Template:**
+```markdown
+# Feature: {Feature Name}
+
+## User Story
+As a {role}
+I want to {action}
+So that {benefit}
+
+## Acceptance Criteria
+- [ ] Criterion 1
+- [ ] Criterion 2
+- [ ] Criterion 3
+
+## Scenarios
+
+### Scenario: {Scenario Name}
+**Given** {precondition}
+**When** {action}
+**Then** {expected outcome}
+**And** {additional outcome}
+
+### Scenario: {Error Handling}
+**Given** {precondition}
+**When** {error condition}
+**Then** {error message displayed}
+
+## Dependencies
+- API endpoints needed
+- Database tables needed
+- Frontend components needed
+- External services needed
+
+## Technical Details
+- **API:** List endpoints
+- **Database:** List models/tables
+- **GUI:** List UI components
+- **Security:** RBAC requirements
+
+## Test Coverage
+- [ ] Unit tests: {files}
+- [ ] Integration tests: {files}
+- [ ] E2E tests: {files}
+- [ ] GUI tests: {files}
+```
+
+#### 2. **Test Writing Guidelines**
+
+##### Backend Tests (Pytest)
+
+```python
+# tests/integration/test_{feature}.py
+"""Integration tests for {feature} functionality."""
+
+import pytest
+from fastapi.testclient import TestClient
+
+def test_{scenario_name}(client, auth_headers):
+    """
+    Test {scenario description}.
+
+    Scenario: {BDD scenario from docs}
+      Given {precondition}
+      When {action}
+      Then {expected outcome}
+    """
+    # Arrange (Given)
+    setup_data = {...}
+
+    # Act (When)
+    response = client.post(
+        "/api/endpoint",
+        json=setup_data,
+        headers=auth_headers
+    )
+
+    # Assert (Then)
+    assert response.status_code == 201
+    assert response.json()["field"] == "expected_value"
+```
+
+##### E2E Tests (Playwright)
+
+```python
+# tests/e2e/test_{feature}.py
+"""E2E tests for {feature} user workflow."""
+
+from playwright.sync_api import Page, expect
+
+def test_{workflow_name}(page: Page):
+    """
+    Test complete {workflow} from start to finish.
+
+    Scenario: {BDD scenario from docs}
+      Given {precondition}
+      When {user action}
+      Then {visible outcome}
+    """
+    # Given - Setup
+    page.goto("http://localhost:8000/login")
+    # ... login
+
+    # When - User action
+    page.locator('[data-i18n="feature.button"]').click()
+
+    # Then - Verify outcome
+    expect(page.locator('[data-i18n="feature.success"]')).to_be_visible()
+```
+
+##### Frontend Tests (Jest)
+
+```javascript
+// frontend/tests/{feature}.test.js
+/**
+ * Unit tests for {feature} JavaScript logic.
+ */
+
+describe('{Feature Name}', () => {
+    test('should {behavior description}', () => {
+        // Arrange
+        const input = {...};
+
+        // Act
+        const result = functionUnderTest(input);
+
+        // Assert
+        expect(result).toBe(expectedValue);
+    });
+});
+```
+
+#### 3. **GUI Testing Requirements**
+
+**Every GUI change requires:**
+
+1. **E2E Test** - Full user workflow in browser
+2. **Screenshot Test** (future) - Visual regression testing
+3. **Accessibility Test** (future) - WCAG compliance
+4. **Mobile Test** (future) - Responsive design verification
+
+**Example GUI Change:**
+
+```javascript
+// Changed: Added "Export" button to schedule view
+// Required tests:
+
+// 1. E2E test
+def test_export_button_appears(page: Page):
+    """Test that Export button appears in schedule view."""
+    page.goto("http://localhost:8000/app/schedule")
+    expect(page.locator('[data-i18n="schedule.export"]')).to_be_visible()
+
+// 2. E2E test - Click workflow
+def test_export_button_downloads_file(page: Page):
+    """Test that clicking Export button downloads ICS file."""
+    page.goto("http://localhost:8000/app/schedule")
+
+    with page.expect_download() as download_info:
+        page.locator('[data-i18n="schedule.export"]').click()
+
+    download = download_info.value
+    assert download.suggested_filename.endswith('.ics')
+
+// 3. Frontend test - Event handler
+test('exportCalendar should call API and trigger download', async () => {
+    const mockResponse = { url: '/calendar.ics' };
+    global.authFetch = jest.fn().mockResolvedValue({
+        ok: true,
+        json: async () => mockResponse
+    });
+
+    await exportCalendar();
+
+    expect(global.authFetch).toHaveBeenCalledWith('/api/calendar/personal/me');
+});
+```
+
+#### 4. **Commit After Every Change**
+
+**Required Commit Message Format:**
+
+```
+{Short Description (50 chars)}
+
+**Feature:** {Feature name from docs/features/}
+- {Change 1}
+- {Change 2}
+- {Change 3}
+
+**Tests Added:**
+- {Test file 1}: {Test function names}
+- {Test file 2}: {Test function names}
+
+**Coverage:** {X/Y tests passing}
+
+**Related:**
+- Feature doc: docs/features/{feature-name}.md
+- API: {Endpoints added/modified}
+- GUI: {Components added/modified}
+
+🤖 Generated with [Claude Code](https://claude.com/claude-code)
+
+Co-Authored-By: Claude <noreply@anthropic.com>
+```
+
+**Example:**
+
+```bash
+git commit -m "Add personal calendar export to ICS format
+
+**Feature:** Calendar Export (docs/features/calendar-export.md)
+- Add GET /api/calendar/personal/{person_id} endpoint
+- Add ICS file generation utility
+- Add Export Calendar button in schedule view
+- Add download trigger on button click
+
+**Tests Added:**
+- tests/integration/test_calendar.py: test_export_personal_calendar
+- tests/e2e/test_calendar_export.py: test_export_button_workflow
+- tests/unit/test_ics_generator.py: test_generate_ics_format
+- frontend/tests/calendar.test.js: test_export_handler
+
+**Coverage:** 354/354 tests passing (100%)
+
+**Related:**
+- Feature doc: docs/features/calendar-export.md
+- API: GET /api/calendar/personal/{person_id}
+- GUI: Export button in schedule view
+
+🤖 Generated with [Claude Code](https://claude.com/claude-code)
+
+Co-Authored-By: Claude <noreply@anthropic.com>"
+```
+
+#### 5. **Full Test Suite After Every Change**
+
+**MANDATORY: Run after implementing feature:**
+
+```bash
+# Run ALL tests (not just unit tests)
+make test-all
+
+# Expected output:
+✅ Frontend tests: 50/50 PASS
+✅ Backend unit tests: 158/158 PASS
+✅ Backend integration tests: 130/130 PASS
+✅ Backend security tests: 7/7 PASS
+✅ E2E tests: 16/16 PASS
+────────────────────────────────
+✅ TOTAL: 361/361 PASSING (100%)
+```
+
+**If ANY test fails:**
+
+1. ❌ **DO NOT COMMIT**
+2. Fix the failing test OR fix your code
+3. Run `make test-all` again
+4. Repeat until 100% pass rate
+5. ✅ **THEN commit**
+
+### Testing Workflow Checklist
+
+**Before writing ANY code:**
+
+- [ ] Create `docs/features/{feature-name}.md` with BDD scenarios
+- [ ] Document user stories, acceptance criteria
+- [ ] List all dependencies (API, DB, GUI, external)
+- [ ] Create test file stubs for all test types needed
+
+**Before implementing feature:**
+
+- [ ] Write failing integration test for API endpoint
+- [ ] Write failing E2E test for GUI workflow
+- [ ] Write failing unit tests for business logic
+- [ ] Run `make test-all` - confirm tests fail (Red phase)
+
+**While implementing:**
+
+- [ ] Implement minimum code to make tests pass (Green phase)
+- [ ] Run `make test-all` frequently
+- [ ] Refactor code while keeping tests green (Refactor phase)
+
+**Before committing:**
+
+- [ ] Run `make test-all` - **ALL tests MUST pass**
+- [ ] Check test coverage didn't decrease
+- [ ] Update feature documentation if needed
+- [ ] Write descriptive commit message with test details
+
+**After committing:**
+
+- [ ] Verify pre-commit hook passed
+- [ ] Check CI/CD pipeline passes (future)
+- [ ] Update project status documents if needed
+
+### Test Organization
+
+```
+tests/
+├── docs/                          # Test documentation
+│   └── TEST_STRATEGY.md           # Overall testing approach
+│
+├── features/                      # BDD feature files (future)
+│   └── calendar_export.feature    # Gherkin scenarios
+│
+├── unit/                          # Unit tests (fast, isolated)
+│   ├── test_calendar.py           # Calendar utility tests
+│   ├── test_ics_generator.py      # ICS generation tests
+│   └── test_solver.py             # Solver algorithm tests
+│
+├── integration/                   # API integration tests
+│   ├── test_calendar.py           # Calendar API tests
+│   ├── test_events.py             # Event API tests
+│   └── test_people.py             # People API tests
+│
+├── security/                      # Security tests
+│   ├── test_authentication.py     # JWT, bcrypt tests
+│   └── test_rbac.py               # RBAC permission tests
+│
+├── e2e/                           # End-to-end GUI tests
+│   ├── test_calendar_export.py    # Calendar export workflow
+│   ├── test_auth_flows.py         # Login/signup flows
+│   └── test_admin_console.py      # Admin workflows
+│
+└── conftest.py                    # Pytest fixtures & config
+```
+
+### Documentation Requirements
+
+**Every feature MUST have:**
+
+1. **Feature Doc:** `docs/features/{feature-name}.md`
+   - BDD scenarios (Given/When/Then)
+   - User stories
+   - Acceptance criteria
+   - Dependencies
+   - API specifications
+   - GUI mockups/descriptions
+
+2. **Test Documentation:** In test files
+   - Docstrings explaining what is being tested
+   - Reference to BDD scenario
+   - Clear Arrange/Act/Assert structure
+
+3. **API Documentation:** Auto-generated by FastAPI
+   - `/docs` endpoint (Swagger UI)
+   - Endpoint descriptions
+   - Request/response schemas
+   - Example requests
+
+### Testing Anti-Patterns (DON'T DO THIS)
+
+❌ **Writing code before writing tests**
+```python
+# Wrong: Code first, test later
+def export_calendar(person_id):
+    # ... 100 lines of code
+    pass
+
+# Then trying to write tests after
+def test_export_calendar():  # Hard to test!
+    pass
+```
+
+✅ **Write test first, then implement**
+```python
+# Right: Test first
+def test_export_calendar_returns_ics():
+    """Test calendar export returns valid ICS format."""
+    result = export_calendar("person_123")
+    assert result.startswith("BEGIN:VCALENDAR")
+
+# Then implement to make test pass
+def export_calendar(person_id):
+    return "BEGIN:VCALENDAR\n..."  # Minimal implementation
+```
+
+❌ **Committing without running full test suite**
+```bash
+# Wrong: Only run unit tests
+poetry run pytest tests/unit/ -v
+git commit -m "Add feature"  # Missing E2E test failures!
+```
+
+✅ **Always run full suite**
+```bash
+# Right: Run ALL tests
+make test-all  # Runs unit + integration + E2E + frontend
+# Only commit if 100% pass
+git commit -m "Add feature"
+```
+
+❌ **Skipping tests for "quick fixes"**
+```python
+# Wrong: No test for bug fix
+def fix_calendar_bug():
+    # Fixed the crash
+    pass
+```
+
+✅ **Regression test for every bug fix**
+```python
+# Right: Test that reproduces bug, then fix
+def test_calendar_doesnt_crash_on_empty_schedule():
+    """Regression test for #123 - crash on empty schedule."""
+    result = export_calendar(person_with_no_events)
+    assert result.startswith("BEGIN:VCALENDAR")  # Shouldn't crash
+
+def export_calendar(person_id):
+    events = get_events(person_id)
+    if not events:  # Fix: handle empty case
+        return generate_empty_calendar()
+```
+
+❌ **Testing implementation details**
+```python
+# Wrong: Testing how it works internally
+def test_calendar_uses_datetime_module():
+    with mock.patch('datetime.datetime') as mock_dt:
+        export_calendar("123")
+        assert mock_dt.called  # Brittle!
+```
+
+✅ **Test behavior, not implementation**
+```python
+# Right: Test what it does, not how
+def test_calendar_includes_event_date():
+    """Test that exported calendar includes event date."""
+    result = export_calendar("person_with_event")
+    assert "DTSTART:20250101T100000" in result  # Behavioral test
+```
+
+### When Tests Can Be Skipped
+
+**NEVER skip tests except:**
+
+1. **Exploratory prototyping** - Delete prototype code after
+2. **Documentation changes** - Pure markdown files (but use `--no-verify`)
+3. **Emergency hotfix** - MUST add tests in next commit
+
+**Even then, prefer:**
+```bash
+# Acceptable for docs-only changes
+git commit --no-verify -m "Update documentation"
+
+# Still requires full test suite to pass
+make test-all  # Should still be green!
+```
+
+---
+
 ## Security & Authentication
 
 ### JWT Authentication Flow
