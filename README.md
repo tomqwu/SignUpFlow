@@ -101,7 +101,7 @@ Python 3.11+ | Poetry | SQLite
 
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/rostio.git
+git clone https://github.com/tomqwu/rostio.git
 cd rostio
 
 # Install and setup (using Makefile)
@@ -199,6 +199,7 @@ See [TEST_REPORT.md](TEST_REPORT.md) for detailed results.
 | 🎯 [SaaS Readiness](docs/SAAS_READINESS_SUMMARY.md) | Gap analysis & launch timeline |
 | 🏗️ [Launch Roadmap](docs/LAUNCH_ROADMAP.md) | Week-by-week implementation plan |
 | 🔒 [Security Guide](docs/SECURITY_MIGRATION.md) | JWT, bcrypt, best practices |
+| 🔐 [RBAC Implementation](docs/RBAC_IMPLEMENTATION_COMPLETE.md) | Role-based access control details |
 | 🌐 [API Documentation](http://localhost:8000/docs) | Interactive Swagger UI |
 | 🧪 [Test Coverage](TEST_REPORT.md) | Comprehensive test results |
 | 🌍 [i18n Guide](docs/I18N_QUICK_START.md) | Multi-language setup |
@@ -358,14 +359,12 @@ We welcome contributions! Here's how to get started:
 
 ### Get Help
 
-[![Discord](https://img.shields.io/badge/Discord-Join%20Chat-7289DA?style=for-the-badge&logo=discord&logoColor=white)](https://discord.gg/rostio)
-[![GitHub Issues](https://img.shields.io/badge/GitHub-Issues-181717?style=for-the-badge&logo=github&logoColor=white)](https://github.com/yourusername/rostio/issues)
+[![GitHub Issues](https://img.shields.io/badge/GitHub-Issues-181717?style=for-the-badge&logo=github&logoColor=white)](https://github.com/tomqwu/rostio/issues)
 [![Documentation](https://img.shields.io/badge/Docs-Read-blue?style=for-the-badge&logo=read-the-docs&logoColor=white)](docs/)
 
 ### Stay Updated
 
-[![Twitter](https://img.shields.io/badge/Twitter-Follow-1DA1F2?style=for-the-badge&logo=twitter&logoColor=white)](https://twitter.com/rostio_app)
-[![Blog](https://img.shields.io/badge/Blog-Latest-orange?style=for-the-badge&logo=rss&logoColor=white)](https://blog.rostio.com)
+[![GitHub](https://img.shields.io/badge/GitHub-Follow-181717?style=for-the-badge&logo=github&logoColor=white)](https://github.com/tomqwu/rostio)
 
 </div>
 
@@ -383,7 +382,7 @@ This project is licensed under the **MIT License** - see the [LICENSE](LICENSE) 
 
 If Rostio helps your organization, please consider starring the repo to show your support!
 
-[![Star on GitHub](https://img.shields.io/github/stars/yourusername/rostio?style=social)](https://github.com/yourusername/rostio)
+[![Star on GitHub](https://img.shields.io/github/stars/tomqwu/rostio?style=social)](https://github.com/tomqwu/rostio)
 
 ---
 
@@ -391,6 +390,6 @@ If Rostio helps your organization, please consider starring the repo to show you
 
 *Simplifying volunteer scheduling for organizations worldwide*
 
-[Report Bug](https://github.com/yourusername/rostio/issues) • [Request Feature](https://github.com/yourusername/rostio/issues) • [View Roadmap](PRODUCT_ROADMAP_INDEX.md)
+[Report Bug](https://github.com/tomqwu/rostio/issues) • [Request Feature](https://github.com/tomqwu/rostio/issues) • [View Roadmap](PRODUCT_ROADMAP_INDEX.md)
 
 </div>
