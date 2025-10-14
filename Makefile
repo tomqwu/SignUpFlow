@@ -1,4 +1,4 @@
-.PHONY: run dev stop restart setup install migrate test test-frontend test-backend test-integration test-e2e test-e2e-long test-e2e-file test-all test-coverage clean clean-all pre-commit help
+.PHONY: run dev stop restart setup install migrate test test-frontend test-backend test-integration test-e2e test-e2e-long test-e2e-file test-e2e-quick test-e2e-summary test-all test-coverage clean clean-all pre-commit help
 
 # Run the development server
 run:
@@ -83,6 +83,16 @@ test-e2e-file:
 	fi
 	@timeout 300 poetry run pytest $(FILE) -v --tb=short -s
 
+# Run E2E tests quickly (no traceback, summary only)
+test-e2e-quick:
+	@echo "🌐 Running E2E tests (quick mode - no traceback)..."
+	@timeout 600 poetry run pytest tests/e2e/ -v --tb=no
+
+# Run E2E tests and show only summary
+test-e2e-summary:
+	@echo "🌐 Running E2E tests (summary only)..."
+	@timeout 600 poetry run pytest tests/e2e/ -v --tb=no | grep -E "(PASSED|FAILED|test session starts|passed|failed|warning)"
+
 # Run ALL tests (frontend + backend + integration + E2E)
 test-all:
 	@echo "🚀 Running complete test suite..."
@@ -166,6 +176,8 @@ help:
 	@echo "  make test-e2e         - Run E2E browser tests (Playwright)"
 	@echo "  make test-e2e-long    - Run E2E tests with 10min timeout"
 	@echo "  make test-e2e-file    - Run specific E2E file (FILE=path/to/test.py)"
+	@echo "  make test-e2e-quick   - Run E2E tests with no traceback"
+	@echo "  make test-e2e-summary - Run E2E tests and show only summary"
 	@echo "  make test-all         - Run ALL tests (frontend + backend + E2E)"
 	@echo "  make test-coverage    - Run tests with coverage reports"
 	@echo "  make pre-commit       - Run fast tests for pre-commit hook"
