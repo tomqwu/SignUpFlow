@@ -1,4 +1,4 @@
-.PHONY: run dev stop restart setup install migrate test test-frontend test-backend test-integration test-e2e test-all test-coverage clean clean-all pre-commit help
+.PHONY: run dev stop restart setup install migrate test test-frontend test-backend test-integration test-e2e test-e2e-long test-e2e-file test-all test-coverage clean clean-all pre-commit help
 
 # Run the development server
 run:
@@ -68,6 +68,20 @@ test-integration:
 test-e2e:
 	@echo "🌐 Running E2E browser tests..."
 	@poetry run pytest tests/e2e/ -v --tb=short
+
+# Run E2E tests with extended timeout (for long-running tests)
+test-e2e-long:
+	@echo "🌐 Running E2E browser tests (extended timeout)..."
+	@timeout 600 poetry run pytest tests/e2e/ -v --tb=short
+
+# Run specific E2E test file
+test-e2e-file:
+	@echo "🌐 Running specific E2E test file..."
+	@if [ -z "$(FILE)" ]; then \
+		echo "❌ Usage: make test-e2e-file FILE=tests/e2e/test_name.py"; \
+		exit 1; \
+	fi
+	@timeout 300 poetry run pytest $(FILE) -v --tb=short -s
 
 # Run ALL tests (frontend + backend + integration + E2E)
 test-all:
@@ -150,6 +164,8 @@ help:
 	@echo "  make test-backend     - Run backend Python tests only"
 	@echo "  make test-integration - Run integration tests only"
 	@echo "  make test-e2e         - Run E2E browser tests (Playwright)"
+	@echo "  make test-e2e-long    - Run E2E tests with 10min timeout"
+	@echo "  make test-e2e-file    - Run specific E2E file (FILE=path/to/test.py)"
 	@echo "  make test-all         - Run ALL tests (frontend + backend + E2E)"
 	@echo "  make test-coverage    - Run tests with coverage reports"
 	@echo "  make pre-commit       - Run fast tests for pre-commit hook"
