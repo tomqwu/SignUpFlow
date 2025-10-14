@@ -29,7 +29,7 @@ router = APIRouter(prefix="/invitations", tags=["invitations"])
 def create_invitation(
     request: InvitationCreate,
     org_id: str = Query(..., description="Organization ID"),
-    inviter: Person = Depends(verify_admin_access),
+    inviter: Person = Depends(get_current_admin_user),
     db: Session = Depends(get_db),
 ):
     """
@@ -259,7 +259,7 @@ def accept_invitation(
 @router.delete("/{invitation_id}", status_code=status.HTTP_204_NO_CONTENT)
 def cancel_invitation(
     invitation_id: str,
-    admin: Person = Depends(verify_admin_access),
+    admin: Person = Depends(get_current_admin_user),
     db: Session = Depends(get_db),
 ):
     """
@@ -287,7 +287,7 @@ def cancel_invitation(
 @router.post("/{invitation_id}/resend", response_model=InvitationResponse)
 def resend_invitation(
     invitation_id: str,
-    admin: Person = Depends(verify_admin_access),
+    admin: Person = Depends(get_current_admin_user),
     db: Session = Depends(get_db),
 ):
     """

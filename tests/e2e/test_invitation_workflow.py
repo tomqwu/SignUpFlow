@@ -20,7 +20,7 @@ def get_auth_token(email: str, password: str) -> str:
     return resp.json()["token"]
 
 
-@pytest.mark.skip(reason="Invitation API requires person_id, GUI form has 422 errors - needs investigation")
+@pytest.mark.skip(reason="Join page invitation UI not implemented yet - needs frontend work to handle ?invite= parameter")
 def test_complete_invitation_workflow(page: Page):
     """Test complete invitation workflow - API creation + GUI acceptance."""
 
@@ -71,7 +71,8 @@ def test_complete_invitation_workflow(page: Page):
     page.wait_for_timeout(2000)
 
     # Should show profile form with pre-filled email
-    email_field = page.locator('input[type="email"]')
+    # Use more specific locator to avoid matching multiple email inputs
+    email_field = page.locator('#user-email, input[type="email"]').first
     expect(email_field).to_be_visible(timeout=5000)
 
     # Verify email is pre-filled
