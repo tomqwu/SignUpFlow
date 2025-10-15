@@ -6,8 +6,8 @@
 
 *AI-powered scheduling for churches, non-profits, and organizations*
 
-[![Tests](https://img.shields.io/badge/tests-344%20passing-brightgreen?style=for-the-badge)](TEST_REPORT.md)
-[![Coverage](https://img.shields.io/badge/coverage-100%25-success?style=for-the-badge)](TEST_REPORT.md)
+[![Tests](https://img.shields.io/badge/tests-278%20passing-brightgreen?style=for-the-badge)](docs/TEST_PERFORMANCE.md)
+[![Quality](https://img.shields.io/badge/quality-99.6%25%20pass%20rate-success?style=for-the-badge)](docs/TEST_PERFORMANCE.md)
 [![Security](https://img.shields.io/badge/security-JWT%20%2B%20bcrypt-blue?style=for-the-badge&logo=security)](docs/SECURITY_ANALYSIS.md)
 [![Python](https://img.shields.io/badge/python-3.11+-blue?style=for-the-badge&logo=python)](https://www.python.org/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.115-009688?style=for-the-badge&logo=fastapi)](https://fastapi.tiangolo.com/)
@@ -57,7 +57,7 @@
 ### 📧 Communication
 - **Email Notifications** - Assignment alerts (coming soon)
 - **Calendar Integration** - ICS export + live webcal sync
-- **Multi-language Support** - EN, ES, PT, ZH-CN, ZH-TW
+- **Multi-language Support** - 6 languages (EN, ES, ZH-CN, KO, TL, VI)
 - **SMS Notifications** - Text reminders (coming soon)
 
 ### 📊 Analytics & Reports
@@ -155,14 +155,20 @@ Password: password
 
 ## 🧪 Testing
 
-### Test Coverage: 344 Tests, 100% Pass Rate
+### Test Coverage: 278 Passing Tests (99.6% Pass Rate)
 
 ```bash
-# Quick test (pre-commit)
+# Quick test (fast, ~10s)
 make test
 
-# Full test suite (backend + frontend + E2E)
+# Fast unit tests only (skip slow password tests, ~7s)
+make test-unit-fast
+
+# Full test suite (backend + frontend + E2E, ~50s)
 make test-all
+
+# Show timing information
+make test-with-timing
 ```
 
 <details>
@@ -170,20 +176,26 @@ make test-all
 
 | Type | Count | Coverage | Runtime |
 |------|-------|----------|---------|
-| 🔧 Unit Tests | 158 | Core logic, models, utilities | ~10s |
-| 🔗 Integration Tests | 129 | API endpoints, workflows | ~8s |
-| 🔐 Security Tests | 7 | JWT auth, bcrypt hashing | ~2s |
-| 💻 Frontend Tests | 50 | JS logic, i18n, router | ~0.4s |
-| 🌐 E2E Tests | 15+ | Full user workflows, UI | ~30s |
+| 🔧 **Unit Tests** | 190 | Core logic, models, API | ~10s |
+| 🌐 **Frontend Tests** | 50 | JS logic, i18n, router | ~0.4s |
+| 🎯 **Comprehensive** | 23 | Integration + API flows | ~30s |
+| 🖥️ **GUI i18n** | 15 | i18n regression tests | ~0.6s |
+| **Total** | **278** | **Full coverage** | **~50s** |
+
+**Recent Improvements:**
+- ✅ 99.6% pass rate (278 passing, 1 legitimately skipped)
+- ✅ Comprehensive i18n testing (15 new tests)
+- ✅ Fast test commands for rapid iteration
+- ✅ Performance documentation with optimization strategies
 
 **Key Test Files:**
+- [test_gui_i18n_implementation.py](tests/test_gui_i18n_implementation.py) - i18n regression tests
+- [test_conftest_mocking.py](tests/unit/test_conftest_mocking.py) - Auth mocking infrastructure
 - [test_auth_flows.py](tests/e2e/test_auth_flows.py) - Authentication workflows
-- [test_authentication.py](tests/security/test_authentication.py) - Security
-- [test_invitations.py](tests/integration/test_invitations.py) - User invitations
 - [test_calendar.py](tests/unit/test_calendar.py) - Calendar export
-- [test_admin_console.py](tests/e2e/test_admin_console.py) - Admin features
+- [comprehensive_test_suite.py](tests/comprehensive_test_suite.py) - Full integration tests
 
-See [TEST_REPORT.md](TEST_REPORT.md) for detailed results.
+See [TEST_PERFORMANCE.md](docs/TEST_PERFORMANCE.md) for performance details and optimization strategies.
 
 </details>
 
@@ -201,8 +213,8 @@ See [TEST_REPORT.md](TEST_REPORT.md) for detailed results.
 | 🔒 [Security Guide](docs/SECURITY_MIGRATION.md) | JWT, bcrypt, best practices |
 | 🔐 [RBAC Implementation](docs/RBAC_IMPLEMENTATION_COMPLETE.md) | Role-based access control details |
 | 🌐 [API Documentation](http://localhost:8000/docs) | Interactive Swagger UI |
-| 🧪 [Test Coverage](TEST_REPORT.md) | Comprehensive test results |
-| 🌍 [i18n Guide](docs/I18N_QUICK_START.md) | Multi-language setup |
+| 🧪 [Test Performance](docs/TEST_PERFORMANCE.md) | Test optimization & performance guide |
+| 🌍 [i18n Guide](docs/I18N_QUICK_START.md) | Multi-language setup (6 languages) |
 
 </div>
 
