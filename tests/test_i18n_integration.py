@@ -55,30 +55,29 @@ class TestI18nAPI:
         assert resp.status_code == 200
 
         people = resp.json()["people"]
-        if people:
-            person_id = people[0]["id"]
+        assert len(people) > 0, "No test person available - ensure test data setup is working"
 
-            # Update language to Chinese
-            update_resp = requests.put(
-                f"{API_BASE}/people/{person_id}",
-                json={"language": "zh-CN"},
-                headers=headers
-            )
-            assert update_resp.status_code == 200
+        person_id = people[0]["id"]
 
-            # Verify it was saved
-            get_resp = requests.get(f"{API_BASE}/people/{person_id}", headers=headers)
-            assert get_resp.status_code == 200
-            assert get_resp.json()["language"] == "zh-CN"
+        # Update language to Chinese
+        update_resp = requests.put(
+            f"{API_BASE}/people/{person_id}",
+            json={"language": "zh-CN"},
+            headers=headers
+        )
+        assert update_resp.status_code == 200
 
-            # Cleanup - set back to English
-            requests.put(
-                f"{API_BASE}/people/{person_id}",
-                json={"language": "en"},
-                headers=headers
-            )
-        else:
-            pytest.skip("No test person available")
+        # Verify it was saved
+        get_resp = requests.get(f"{API_BASE}/people/{person_id}", headers=headers)
+        assert get_resp.status_code == 200
+        assert get_resp.json()["language"] == "zh-CN"
+
+        # Cleanup - set back to English
+        requests.put(
+            f"{API_BASE}/people/{person_id}",
+            json={"language": "en"},
+            headers=headers
+        )
 
     def test_auth_login_returns_language(self):
         """Verify login response includes language field"""
@@ -87,13 +86,12 @@ class TestI18nAPI:
             json={"email": "sarah@test.com", "password": "password"}
         )
 
-        if login_resp.status_code == 200:
-            data = login_resp.json()
-            # Language must be in response
-            assert "language" in data
-            assert isinstance(data["language"], str)
-        else:
-            pytest.skip("Could not login with test credentials")
+        assert login_resp.status_code == 200, f"Login failed with status {login_resp.status_code}: {login_resp.text}"
+
+        data = login_resp.json()
+        # Language must be in response
+        assert "language" in data
+        assert isinstance(data["language"], str)
 
 
 class TestI18nTranslationFiles:
@@ -199,47 +197,42 @@ class TestI18nGUI:
                 # Verify logged in
                 assert page.locator('#main-app').is_visible()
 
-                # 2. Open settings
-                settings_btn = page.locator('[onclick="openSettings()"]')
-                if settings_btn.count() > 0:
-                    settings_btn.click()
-                    page.wait_for_timeout(500)
+                # 2. Open settings (use gear icon button)
+                settings_btn = page.locator('button.btn-icon[onclick="showSettings()"]')
+                assert settings_btn.count() > 0, "Settings button not found - check if GUI element exists"
 
-                    # 3. Change language to Chinese
-                    language_select = page.locator('#settings-language')
-                    if language_select.count() > 0:
-                        language_select.select_option('zh-CN')
+                settings_btn.click()
+                page.wait_for_timeout(500)
 
-                        # 4. Save settings
-                        save_btn = page.locator('button:has-text("Save")')
-                        if save_btn.count() == 0:
-                            save_btn = page.locator('button:has-text("保存")')  # Chinese
+                # 3. Change language to Chinese
+                language_select = page.locator('#settings-language')
+                assert language_select.count() > 0, "Language selector not found - check if settings modal has language dropdown"
 
-                        if save_btn.count() > 0:
-                            save_btn.click()
-                            page.wait_for_timeout(1000)
+                language_select.select_option('zh-CN')
 
-                            # 5. Verify UI changed to Chinese
-                            # Check for Chinese text in navigation or headers
-                            body_text = page.locator('body').text_content()
-                            # Should contain some Chinese characters
-                            has_chinese = any('\u4e00' <= char <= '\u9fff' for char in body_text)
-                            assert has_chinese, "UI should contain Chinese text after language change"
+                # 4. Save settings (use onclick selector to be specific)
+                save_btn = page.locator('button[onclick="saveSettings()"]')
 
-                            # 6. Refresh page
-                            page.reload()
-                            page.wait_for_timeout(2000)
+                assert save_btn.count() > 0, "Save button not found - check if settings modal has save button"
 
-                            # 7. Verify language persisted
-                            body_text_after = page.locator('body').text_content()
-                            has_chinese_after = any('\u4e00' <= char <= '\u9fff' for char in body_text_after)
-                            assert has_chinese_after, "Language should persist after refresh"
-                        else:
-                            pytest.skip("Could not find save button")
-                    else:
-                        pytest.skip("Could not find language selector")
-                else:
-                    pytest.skip("Could not find settings button")
+                save_btn.click()
+                page.wait_for_timeout(1000)
+
+                # 5. Verify UI changed to Chinese
+                # Check for Chinese text in navigation or headers
+                body_text = page.locator('body').text_content()
+                # Should contain some Chinese characters
+                has_chinese = any('\u4e00' <= char <= '\u9fff' for char in body_text)
+                assert has_chinese, "UI should contain Chinese text after language change"
+
+                # 6. Refresh page
+                page.reload()
+                page.wait_for_timeout(2000)
+
+                # 7. Verify language persisted
+                body_text_after = page.locator('body').text_content()
+                has_chinese_after = any('\u4e00' <= char <= '\u9fff' for char in body_text_after)
+                assert has_chinese_after, "Language should persist after refresh"
 
             finally:
                 browser.close()

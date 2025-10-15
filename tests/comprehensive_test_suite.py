@@ -29,6 +29,55 @@ def get_auth_headers():
         return {"Authorization": f"Bearer {token}"}
     return {}
 
+
+def setup_test_data():
+    """Ensure test data exists before running tests."""
+    headers = get_auth_headers()
+
+    # Ensure test_org exists
+    requests.post(f"{API_BASE}/organizations/", json={
+        "id": "test_org",
+        "name": "Test Organization",
+        "region": "Test Region"
+    })
+
+    # Ensure at least one test person exists
+    requests.post(f"{API_BASE}/people/", json={
+        "id": "test_person_comp_001",
+        "name": "Comprehensive Test Person",
+        "email": "comptest@example.com",
+        "org_id": "test_org",
+        "roles": ["volunteer", "leader"]
+    }, headers=headers)
+
+    # Ensure at least one test event exists
+    start_time = (datetime.now() + timedelta(days=7)).isoformat()
+    end_time = (datetime.now() + timedelta(days=7, hours=2)).isoformat()
+    requests.post(f"{API_BASE}/events/", json={
+        "id": "test_event_comp_001",
+        "org_id": "test_org",
+        "type": "Comprehensive Test Event",
+        "start_time": start_time,
+        "end_time": end_time,
+        "extra_data": {
+            "role_counts": {
+                "volunteer": 2,
+                "leader": 1
+            }
+        }
+    }, headers=headers)
+
+# ============================================================================
+# PYTEST FIXTURES
+# ============================================================================
+
+@pytest.fixture(scope="session", autouse=True)
+def ensure_test_data():
+    """Automatically set up test data before any tests run."""
+    setup_test_data()
+    yield
+
+
 # ============================================================================
 # API TESTS
 # ============================================================================
@@ -85,15 +134,17 @@ class TestPeopleAPI:
 
     def test_update_person_roles(self):
         """Update person's roles"""
-        # First get a valid person ID
-        resp = requests.get(f"{API_BASE}/people/?org_id=test_org")
-        if resp.status_code == 200 and resp.json()["people"]:
-            person_id = resp.json()["people"][0]["id"]
-            data = {"roles": ["volunteer", "leader"]}
-            response = requests.put(f"{API_BASE}/people/{person_id}", json=data)
-            assert response.status_code == 200
-        else:
-            pytest.skip("No test person available")
+        headers = get_auth_headers()
+        # Get first person
+        resp = requests.get(f"{API_BASE}/people/?org_id=test_org", headers=headers)
+        assert resp.status_code == 200
+        people = resp.json()["people"]
+        assert len(people) > 0, "No test person available - setup_test_data() may have failed"
+
+        person_id = people[0]["id"]
+        data = {"roles": ["volunteer", "leader"]}
+        response = requests.put(f"{API_BASE}/people/{person_id}", json=data, headers=headers)
+        assert response.status_code == 200
 
 
 class TestEventsAPI:
@@ -130,35 +181,39 @@ class TestEventsAPI:
 
     def test_get_available_people(self):
         """Get available people for event"""
+        headers = get_auth_headers()
         # Get first event
-        events_resp = requests.get(f"{API_BASE}/events/?org_id=test_org")
-        if events_resp.status_code == 200 and events_resp.json().get("events"):
-            event_id = events_resp.json()["events"][0]["id"]
-            response = requests.get(f"{API_BASE}/events/{event_id}/available-people")
-            assert response.status_code == 200
-            people = response.json()
-            assert isinstance(people, list)
-            # Check that each person has is_blocked field
-            for person in people:
-                assert "is_blocked" in person
-                assert isinstance(person["is_blocked"], bool)
-        else:
-            pytest.skip("No test events available")
+        events_resp = requests.get(f"{API_BASE}/events/?org_id=test_org", headers=headers)
+        assert events_resp.status_code == 200
+        events = events_resp.json().get("events", [])
+        assert len(events) > 0, "No test events available"
+        
+        event_id = events[0]["id"]
+        response = requests.get(f"{API_BASE}/events/{event_id}/available-people", headers=headers)
+        assert response.status_code == 200
+        people = response.json()
+        assert isinstance(people, list)
+        # Check that each person has is_blocked field
+        for person in people:
+            assert "is_blocked" in person
+            assert isinstance(person["is_blocked"], bool)
 
     def test_event_validation(self):
         """Test event validation endpoint"""
+        headers = get_auth_headers()
         # Get first event
-        events_resp = requests.get(f"{API_BASE}/events/?org_id=test_org")
-        if events_resp.status_code == 200 and events_resp.json().get("events"):
-            event_id = events_resp.json()["events"][0]["id"]
-            response = requests.get(f"{API_BASE}/events/{event_id}/validation")
-            assert response.status_code == 200
-            data = response.json()
-            assert "is_valid" in data
-            assert "warnings" in data
-            assert isinstance(data["warnings"], list)
-        else:
-            pytest.skip("No test events available")
+        events_resp = requests.get(f"{API_BASE}/events/?org_id=test_org", headers=headers)
+        assert events_resp.status_code == 200
+        events = events_resp.json().get("events", [])
+        assert len(events) > 0, "No test events available"
+        
+        event_id = events[0]["id"]
+        response = requests.get(f"{API_BASE}/events/{event_id}/validation", headers=headers)
+        assert response.status_code == 200
+        data = response.json()
+        assert "is_valid" in data
+        assert "warnings" in data
+        assert isinstance(data["warnings"], list)
 
 
 class TestAvailabilityAPI:
@@ -166,131 +221,148 @@ class TestAvailabilityAPI:
 
     def test_add_blocked_date(self):
         """Add a blocked date period"""
+        headers = get_auth_headers()
         # Get first person
-        resp = requests.get(f"{API_BASE}/people/?org_id=test_org")
-        if resp.status_code == 200 and resp.json()["people"]:
-            person_id = resp.json()["people"][0]["id"]
-            data = {
-                "start_date": (date.today() + timedelta(days=10)).isoformat(),
-                "end_date": (date.today() + timedelta(days=12)).isoformat(),
-                "reason": "Test vacation"
-            }
-            response = requests.post(
-                f"{API_BASE}/availability/{person_id}/timeoff",
-                json=data
-            )
-            # 409 = already exists (test might run multiple times)
-            assert response.status_code in [200, 201, 409]
-        else:
-            pytest.skip("No test person available")
+        resp = requests.get(f"{API_BASE}/people/?org_id=test_org", headers=headers)
+        assert resp.status_code == 200
+        people = resp.json()["people"]
+        assert len(people) > 0, "No test person available"
+
+        person_id = people[0]["id"]
+        data = {
+            "start_date": (date.today() + timedelta(days=10)).isoformat(),
+            "end_date": (date.today() + timedelta(days=12)).isoformat(),
+            "reason": "Test vacation"
+        }
+        response = requests.post(
+            f"{API_BASE}/availability/{person_id}/timeoff",
+            json=data,
+            headers=headers
+        )
+        # 409 = already exists (test might run multiple times)
+        assert response.status_code in [200, 201, 409]
 
     def test_get_blocked_dates(self):
         """Get person's blocked dates"""
+        headers = get_auth_headers()
         # Get first person
-        resp = requests.get(f"{API_BASE}/people/?org_id=test_org")
-        if resp.status_code == 200 and resp.json()["people"]:
-            person_id = resp.json()["people"][0]["id"]
-            response = requests.get(f"{API_BASE}/availability/{person_id}/timeoff")
-            assert response.status_code == 200
-            data = response.json()
-            assert "timeoff" in data
-            assert isinstance(data["timeoff"], list)
-            # Check that reason field exists
-            if len(data["timeoff"]) > 0:
-                assert "reason" in data["timeoff"][0] or data["timeoff"][0].get("reason") is None
-        else:
-            pytest.skip("No test person available")
+        resp = requests.get(f"{API_BASE}/people/?org_id=test_org", headers=headers)
+        assert resp.status_code == 200
+        people = resp.json()["people"]
+        assert len(people) > 0, "No test person available"
+
+        person_id = people[0]["id"]
+        response = requests.get(f"{API_BASE}/availability/{person_id}/timeoff", headers=headers)
+        assert response.status_code == 200
+        data = response.json()
+        assert "timeoff" in data
+        assert isinstance(data["timeoff"], list)
+        # Check that reason field exists
+        if len(data["timeoff"]) > 0:
+            assert "reason" in data["timeoff"][0] or data["timeoff"][0].get("reason") is None
 
     def test_update_blocked_date(self):
         """Update a blocked date's reason"""
+        headers = get_auth_headers()
         # Get first person
-        resp = requests.get(f"{API_BASE}/people/?org_id=test_org")
-        if resp.status_code == 200 and resp.json()["people"]:
-            person_id = resp.json()["people"][0]["id"]
-            # First get existing timeoff
-            response = requests.get(f"{API_BASE}/availability/{person_id}/timeoff")
-            timeoff_list = response.json()["timeoff"]
+        resp = requests.get(f"{API_BASE}/people/?org_id=test_org", headers=headers)
+        assert resp.status_code == 200
+        people = resp.json()["people"]
+        assert len(people) > 0, "No test person available"
 
-            if len(timeoff_list) > 0:
-                timeoff_id = timeoff_list[0]["id"]
-                data = {
-                    "start_date": timeoff_list[0]["start_date"],
-                    "end_date": timeoff_list[0]["end_date"],
-                    "reason": "Updated reason"
-                }
-                response = requests.patch(
-                    f"{API_BASE}/availability/{person_id}/timeoff/{timeoff_id}",
-                    json=data
-                )
-                assert response.status_code == 200
-        else:
-            pytest.skip("No test person available")
+        person_id = people[0]["id"]
+        # First get existing timeoff
+        response = requests.get(f"{API_BASE}/availability/{person_id}/timeoff", headers=headers)
+        assert response.status_code == 200
+        timeoff_list = response.json()["timeoff"]
 
+        if len(timeoff_list) > 0:
+            timeoff_id = timeoff_list[0]["id"]
+            data = {
+                "start_date": timeoff_list[0]["start_date"],
+                "end_date": timeoff_list[0]["end_date"],
+                "reason": "Updated reason"
+            }
+            response = requests.patch(
+                f"{API_BASE}/availability/{person_id}/timeoff/{timeoff_id}",
+                json=data,
+                headers=headers
+            )
+            assert response.status_code == 200
     def test_delete_blocked_date(self):
         """Delete a blocked date"""
+        headers = get_auth_headers()
         # Get first person
-        resp = requests.get(f"{API_BASE}/people/?org_id=test_org")
-        if resp.status_code == 200 and resp.json()["people"]:
-            person_id = resp.json()["people"][0]["id"]
-            # Get all timeoff
-            response = requests.get(f"{API_BASE}/availability/{person_id}/timeoff")
-            timeoff_list = response.json()["timeoff"]
+        resp = requests.get(f"{API_BASE}/people/?org_id=test_org", headers=headers)
+        assert resp.status_code == 200
+        people = resp.json()["people"]
+        assert len(people) > 0, "No test person available"
 
-            if len(timeoff_list) > 0:
-                timeoff_id = timeoff_list[0]["id"]
-                response = requests.delete(
-                    f"{API_BASE}/availability/{person_id}/timeoff/{timeoff_id}"
-                )
-                assert response.status_code in [200, 204]
-        else:
-            pytest.skip("No test person available")
+        person_id = people[0]["id"]
+        # Get all timeoff
+        response = requests.get(f"{API_BASE}/availability/{person_id}/timeoff", headers=headers)
+        assert response.status_code == 200
+        timeoff_list = response.json()["timeoff"]
 
-
+        if len(timeoff_list) > 0:
+            timeoff_id = timeoff_list[0]["id"]
+            response = requests.delete(
+                f"{API_BASE}/availability/{person_id}/timeoff/{timeoff_id}",
+                headers=headers
+            )
+            assert response.status_code in [200, 204]
 class TestAssignmentsAPI:
     """Test Assignment operations"""
 
     def test_assign_person_to_event(self):
         """Assign a person to an event"""
+        headers = get_auth_headers()
         # Get first person and event
-        people_resp = requests.get(f"{API_BASE}/people/?org_id=test_org")
-        events_resp = requests.get(f"{API_BASE}/events/?org_id=test_org")
+        people_resp = requests.get(f"{API_BASE}/people/?org_id=test_org", headers=headers)
+        events_resp = requests.get(f"{API_BASE}/events/?org_id=test_org", headers=headers)
 
-        if (people_resp.status_code == 200 and people_resp.json()["people"] and
-            events_resp.status_code == 200 and events_resp.json().get("events")):
-            person_id = people_resp.json()["people"][0]["id"]
-            event_id = events_resp.json()["events"][0]["id"]
+        assert people_resp.status_code == 200
+        assert events_resp.status_code == 200
+        people = people_resp.json()["people"]
+        events = events_resp.json().get("events", [])
+        assert len(people) > 0, "No test people available"
+        assert len(events) > 0, "No test events available"
 
-            data = {"person_id": person_id, "action": "assign", "role": "volunteer"}
-            response = requests.post(
-                f"{API_BASE}/events/{event_id}/assignments",
-                json=data
-            )
-            # 200/201 = success, 409 = already assigned, 400 = validation (person may not have matching roles)
-            assert response.status_code in [200, 201, 400, 409]
-        else:
-            pytest.skip("No test data available")
+        person_id = people[0]["id"]
+        event_id = events[0]["id"]
 
+        data = {"person_id": person_id, "action": "assign", "role": "volunteer"}
+        response = requests.post(
+            f"{API_BASE}/events/{event_id}/assignments",
+            json=data,
+            headers=headers
+        )
+        # 200/201 = success, 409 = already assigned, 400 = validation
+        assert response.status_code in [200, 201, 400, 409]
     def test_unassign_person_from_event(self):
         """Unassign a person from an event"""
+        headers = get_auth_headers()
         # Get first person and event
-        people_resp = requests.get(f"{API_BASE}/people/?org_id=test_org")
-        events_resp = requests.get(f"{API_BASE}/events/?org_id=test_org")
+        people_resp = requests.get(f"{API_BASE}/people/?org_id=test_org", headers=headers)
+        events_resp = requests.get(f"{API_BASE}/events/?org_id=test_org", headers=headers)
 
-        if (people_resp.status_code == 200 and people_resp.json()["people"] and
-            events_resp.status_code == 200 and events_resp.json().get("events")):
-            person_id = people_resp.json()["people"][0]["id"]
-            event_id = events_resp.json()["events"][0]["id"]
+        assert people_resp.status_code == 200
+        assert events_resp.status_code == 200
+        people = people_resp.json()["people"]
+        events = events_resp.json().get("events", [])
+        assert len(people) > 0, "No test people available"
+        assert len(events) > 0, "No test events available"
 
-            data = {"person_id": person_id, "action": "unassign"}
-            response = requests.post(
-                f"{API_BASE}/events/{event_id}/assignments",
-                json=data
-            )
-            assert response.status_code == 200
-        else:
-            pytest.skip("No test data available")
+        person_id = people[0]["id"]
+        event_id = events[0]["id"]
 
-
+        data = {"person_id": person_id, "action": "unassign"}
+        response = requests.post(
+            f"{API_BASE}/events/{event_id}/assignments",
+            json=data,
+            headers=headers
+        )
+        assert response.status_code == 200
 class TestSolverAPI:
     """Test Schedule Generation (Solver)"""
 
@@ -321,9 +393,14 @@ class TestPDFExportAPI:
 
     def test_pdf_export_has_blocked_markers(self):
         """Test that PDF export includes [BLOCKED] markers"""
+        headers = get_auth_headers()
         # Get first person
-        people_resp = requests.get(f"{API_BASE}/people/?org_id=test_org")
-        if people_resp.status_code == 200 and people_resp.json()["people"]:
+        people_resp = requests.get(f"{API_BASE}/people/?org_id=test_org", headers=headers)
+        assert people_resp.status_code == 200
+        people = people_resp.json()["people"]
+        assert len(people) > 0, "No test people available"
+        
+        if True:
             person_id = people_resp.json()["people"][0]["id"]
 
             # Add a blocked date
@@ -334,7 +411,8 @@ class TestPDFExportAPI:
             }
             requests.post(
                 f"{API_BASE}/availability/{person_id}/timeoff",
-                json=data
+                json=data,
+                headers=headers
             )
 
             # Generate a solution
@@ -347,6 +425,7 @@ class TestPDFExportAPI:
             solve_response = requests.post(
                 f"{API_BASE}/solver/solve",
                 json=solve_data,
+                headers=headers,
                 timeout=30
             )
 
@@ -357,16 +436,13 @@ class TestPDFExportAPI:
                 export_data = {"format": "pdf"}
                 pdf_response = requests.post(
                     f"{API_BASE}/solutions/{solution_id}/export",
-                    json=export_data
+                    json=export_data,
+                    headers=headers
                 )
 
                 assert pdf_response.status_code == 200
                 assert pdf_response.headers["Content-Type"] == "application/pdf"
                 assert len(pdf_response.content) > 0
-            else:
-                pytest.skip("Could not generate solution")
-        else:
-            pytest.skip("No test person available")
 
 
 # ============================================================================
@@ -541,12 +617,19 @@ class TestBlockedDatesIntegration:
 
     def test_blocked_person_shown_in_validation(self):
         """Test that blocked people cause validation warnings"""
+        headers = get_auth_headers()
         # Get first person and event
-        people_resp = requests.get(f"{API_BASE}/people/?org_id=test_org")
-        events_resp = requests.get(f"{API_BASE}/events/?org_id=test_org")
+        people_resp = requests.get(f"{API_BASE}/people/?org_id=test_org", headers=headers)
+        events_resp = requests.get(f"{API_BASE}/events/?org_id=test_org", headers=headers)
 
-        if (people_resp.status_code == 200 and people_resp.json()["people"] and
-            events_resp.status_code == 200 and events_resp.json().get("events")):
+        assert people_resp.status_code == 200
+        assert events_resp.status_code == 200
+        people = people_resp.json()["people"]
+        events = events_resp.json().get("events", [])
+        assert len(people) > 0, "No test people available"
+        assert len(events) > 0, "No test events available"
+        
+        if True:
             person_id = people_resp.json()["people"][0]["id"]
             event_id = events_resp.json()["events"][0]["id"]
             event_date = events_resp.json()["events"][0]["start_time"][:10]  # Get date part
@@ -559,24 +642,25 @@ class TestBlockedDatesIntegration:
             }
             requests.post(
                 f"{API_BASE}/availability/{person_id}/timeoff",
-                json=data
+                json=data,
+                headers=headers
             )
 
             # Assign person to event
             requests.post(
                 f"{API_BASE}/events/{event_id}/assignments",
-                json={"person_id": person_id, "action": "assign"}
+                json={"person_id": person_id, "action": "assign"},
+                headers=headers
             )
 
             # Check validation shows warning
-            response = requests.get(f"{API_BASE}/events/{event_id}/validation")
+            response = requests.get(f"{API_BASE}/events/{event_id}/validation", headers=headers)
             data = response.json()
 
             assert "is_valid" in data
             if data.get("warnings"):
                 assert any(w["type"] == "blocked_assignments" for w in data["warnings"])
-        else:
-            pytest.skip("No test data available")
+
 
 
 # ============================================================================
