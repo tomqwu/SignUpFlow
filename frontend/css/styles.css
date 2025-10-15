@@ -431,6 +431,14 @@ form label {
     font-size: 0.9rem;
     cursor: pointer;
     transition: all 0.2s ease;
+    height: auto !important;
+    overflow: hidden !important;
+    min-width: 90px;
+}
+
+.language-dropdown-header option {
+    background: var(--primary);
+    color: white;
 }
 
 .language-dropdown-header:hover {
