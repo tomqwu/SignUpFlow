@@ -4,11 +4,11 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from pydantic import BaseModel, EmailStr
 import secrets
-import hashlib
 from datetime import datetime, timedelta
 
 from api.database import get_db
 from api.models import Person
+from api.security import hash_password
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
@@ -85,13 +85,8 @@ def reset_password(
             detail="User not found",
         )
 
-    # Hash new password
-    password_hash = hashlib.sha256(request.new_password.encode()).hexdigest()
-
-    # Update password in extra_data
-    extra_data = person.extra_data or {}
-    extra_data["password_hash"] = password_hash
-    person.extra_data = extra_data
+    # Hash new password using bcrypt (same as signup/login)
+    person.password_hash = hash_password(request.new_password)
 
     db.commit()
 
