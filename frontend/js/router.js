@@ -1,5 +1,5 @@
 /**
- * URL-based Router for Rostio
+ * URL-based Router for SignUpFlow
  * Handles navigation with proper URL updates and browser history
  */
 
@@ -25,14 +25,14 @@ class Router {
         };
 
         this.pageTitles = {
-            '/': 'Welcome to Rostio',
-            '/login': 'Sign In - Rostio',
-            '/join': 'Join Organization - Rostio',
-            '/profile': 'Create Profile - Rostio',
-            '/app/schedule': 'My Schedule - Rostio',
-            '/app/events': 'Events - Rostio',
-            '/app/availability': 'Availability - Rostio',
-            '/app/admin': 'Admin Console - Rostio'
+            '/': 'Welcome to SignUpFlow',
+            '/login': 'Sign In - SignUpFlow',
+            '/join': 'Join Organization - SignUpFlow',
+            '/profile': 'Create Profile - SignUpFlow',
+            '/app/schedule': 'My Schedule - SignUpFlow',
+            '/app/events': 'Events - SignUpFlow',
+            '/app/availability': 'Availability - SignUpFlow',
+            '/app/admin': 'Admin Console - SignUpFlow'
         };
 
         // Listen for browser back/forward
@@ -58,7 +58,7 @@ class Router {
         console.log(`🛣️  router.handleRoute called with path: ${path}, addToHistory: ${addToHistory}`);
 
         // Update page title
-        const title = this.pageTitles[path] || 'Rostio';
+        const title = this.pageTitles[path] || 'SignUpFlow';
         document.title = title;
 
         // Update meta description based on page
@@ -151,8 +151,8 @@ class Router {
      */
     updateMetaDescription(path) {
         const descriptions = {
-            '/': 'Join Rostio to manage your team schedule, availability, and events effortlessly. Perfect for churches, leagues, and organizations.',
-            '/login': 'Sign in to Rostio to access your schedule and manage your availability.',
+            '/': 'Join SignUpFlow to manage your team schedule, availability, and events effortlessly. Perfect for churches, leagues, and organizations.',
+            '/login': 'Sign in to SignUpFlow to access your schedule and manage your availability.',
             '/app/schedule': 'View your upcoming schedule and assignments.',
             '/app/events': 'Browse and join upcoming events in your organization.',
             '/app/availability': 'Manage your availability and time off preferences.',

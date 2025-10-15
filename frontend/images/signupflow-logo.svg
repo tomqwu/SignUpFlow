@@ -1,0 +1,27 @@
+<svg width="240" height="60" viewBox="0 0 240 60" xmlns="http://www.w3.org/2000/svg">
+  <!-- Pen/Signup icon -->
+  <g transform="translate(10, 10)">
+    <!-- Clipboard body -->
+    <rect x="2" y="10" width="30" height="35" rx="4" fill="#3b82f6" opacity="0.9"/>
+    <!-- Clipboard clip -->
+    <rect x="10" y="8" width="14" height="6" rx="2" fill="#2563eb"/>
+    <!-- Checkmarks -->
+    <path d="M 8 20 L 11 23 L 16 18" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+    <path d="M 8 28 L 11 31 L 16 26" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+    <path d="M 8 36 L 11 39 L 16 34" stroke="#fbbf24" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+    <!-- Lines representing text -->
+    <line x1="19" y1="21" x2="26" y2="21" stroke="white" stroke-width="2" stroke-linecap="round" opacity="0.7"/>
+    <line x1="19" y1="29" x2="26" y2="29" stroke="white" stroke-width="2" stroke-linecap="round" opacity="0.7"/>
+    <line x1="19" y1="37" x2="26" y2="37" stroke="white" stroke-width="2" stroke-linecap="round" opacity="0.7"/>
+  </g>
+
+  <!-- "SignUpFlow" text -->
+  <text x="50" y="38" font-family="Arial, sans-serif" font-size="26" font-weight="bold" fill="#1e293b">
+    SignUp<tspan fill="#3b82f6">Flow</tspan>
+  </text>
+
+  <!-- Tagline -->
+  <text x="51" y="51" font-family="Arial, sans-serif" font-size="9" fill="#64748b">
+    Sign-ups Made Simple
+  </text>
+</svg>

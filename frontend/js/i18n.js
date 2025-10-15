@@ -1,5 +1,5 @@
 /**
- * Rostio Internationalization (i18n) Manager
+ * SignUpFlow Internationalization (i18n) Manager
  *
  * Lightweight i18n solution for multi-language support
  * Supports: translation, interpolation, pluralization, fallback
@@ -32,7 +32,7 @@ class I18n {
      */
     detectLocale() {
         // 1. Check localStorage (user preference)
-        const stored = localStorage.getItem('rostio_locale');
+        const stored = localStorage.getItem('signupflow_locale');
         if (stored && this.supportedLocales.includes(stored)) {
             return stored;
         }
@@ -201,7 +201,7 @@ class I18n {
         }
 
         this.locale = locale;
-        localStorage.setItem('rostio_locale', locale);
+        localStorage.setItem('signupflow_locale', locale);
 
         // Reload all loaded namespaces for new locale
         const namespacesToLoad = Array.from(this.loadedNamespaces)
