@@ -72,23 +72,6 @@
 
 ---
 
-## 🎨 Beautiful, Modern UI
-
-<div align="center">
-
-### Calendar View & Scheduling
-<img src="docs/screenshots/features/calendar-view.png" alt="Calendar View" width="700">
-
-### Admin Console - Schedule Management
-<img src="docs/screenshots/05-admin-schedule.png" alt="Admin Schedule" width="700">
-
-### Settings & Preferences
-<img src="docs/screenshots/features/settings-modal.png" alt="Settings Modal" width="350">
-
-</div>
-
----
-
 ## 🚀 Quick Start
 
 ### Prerequisites
@@ -291,54 +274,54 @@ POST /api/calendar/reset-token      # Reset subscription token (auth)
 
 ## 🎨 Screenshots
 
+<div align="center">
+
+<table>
+<tr>
+<td width="50%">
+
+### 📅 AI-Powered Scheduling
+<img src="docs/screenshots/05-admin-schedule.png" alt="Schedule Management" width="100%">
+
+Generate optimal schedules with constraint solving
+
+</td>
+<td width="50%">
+
+### 👥 Team Management
+<img src="docs/screenshots/06-admin-people.png" alt="People Management" width="100%">
+
+Manage volunteers and send invitations
+
+</td>
+</tr>
+</table>
+
 <details>
-<summary><b>📸 View All Screenshots</b></summary>
+<summary>📸 <b>View More Screenshots</b></summary>
 
-### Admin Console
+<br>
 
-#### Schedule Management
-<img src="docs/screenshots/05-admin-schedule.png" alt="Admin Schedule" width="600">
-
-*AI-powered schedule generation with constraint solving*
-
-#### Roles Management
-<img src="docs/screenshots/admin_roles_tab_final.png" alt="Admin Roles" width="600">
-
-*Define and manage organizational roles with statistics*
-
-#### People Management
-<img src="docs/screenshots/06-admin-people.png" alt="Admin People" width="600">
-
-*Manage team members, send invitations, track status*
-
-#### Reports & Analytics
-<img src="docs/screenshots/07-admin-reports.png" alt="Admin Reports" width="600">
-
-*Export schedules, view statistics, generate reports*
-
-### Features & UI
-
-#### Calendar View
-<img src="docs/screenshots/features/calendar-view.png" alt="Calendar View" width="600">
-
-*Interactive calendar with event management*
-
-#### Settings Modal
-<img src="docs/screenshots/features/settings-modal.png" alt="Settings" width="400">
-
-*Manage profile, roles, and preferences*
-
-#### Availability Management
-<img src="docs/screenshots/features/availability-edit-delete.png" alt="Availability" width="600">
-
-*Volunteers can set their own availability and time-off*
-
-#### Toast Notifications
-<img src="docs/screenshots/features/toast-notification.png" alt="Notifications" width="400">
-
-*Real-time feedback for all user actions*
+<table>
+<tr>
+<td width="33%">
+<img src="docs/screenshots/admin_roles_tab_final.png" alt="Roles" width="100%">
+<br><i>Roles Management</i>
+</td>
+<td width="33%">
+<img src="docs/screenshots/features/settings-modal.png" alt="Settings" width="100%">
+<br><i>User Settings</i>
+</td>
+<td width="33%">
+<img src="docs/screenshots/features/availability-edit-delete.png" alt="Availability" width="100%">
+<br><i>Availability Tracking</i>
+</td>
+</tr>
+</table>
 
 </details>
+
+</div>
 
 ---
 
