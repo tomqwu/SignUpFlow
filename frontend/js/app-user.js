@@ -727,7 +727,7 @@ async function loadCalendar() {
                                     })}
                                 </div>
                                 <div class="event-title">${a.event_type}</div>
-                                ${blocked ? '<div class="event-blocked-badge">⚠️ BLOCKED</div>' : ''}
+                                ${blocked ? `<div class="event-blocked-badge">⚠️ ${i18n.t('schedule.badges.blocked').toUpperCase()}</div>` : ''}
                             </div>
                             `;
                         }).join('')}
@@ -879,8 +879,8 @@ async function loadMySchedule() {
             const eventDate = new Date(a.event_start);
             const blocked = isBlocked(eventDate);
             const badge = blocked ?
-                '<span class="schedule-badge schedule-badge-blocked">Blocked</span>' :
-                '<span class="schedule-badge">Confirmed</span>';
+                `<span class="schedule-badge schedule-badge-blocked">${i18n.t('schedule.badges.blocked')}</span>` :
+                `<span class="schedule-badge">${i18n.t('schedule.badges.confirmed')}</span>`;
 
             const roleDisplay = a.role ? `<br>📋 Role: <strong>${translateRole(a.role)}</strong>` : '';
 
@@ -1397,7 +1397,7 @@ async function loadAdminPeople() {
 
                 const moreCount = upcomingBlocked.length > 3 ? ` (+${upcomingBlocked.length - 3} more)` : '';
                 blockedHtml = `<br><div style="margin-top: 8px; color: #dc2626; font-size: 0.9rem;">
-                    <strong>Blocked Dates:</strong><br>${blockedList}${moreCount}
+                    <strong>${i18n.t('schedule.blocked_dates')}:</strong><br>${blockedList}${moreCount}
                 </div>`;
             }
 

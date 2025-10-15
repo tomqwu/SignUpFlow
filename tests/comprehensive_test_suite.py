@@ -481,7 +481,6 @@ class TestGUILogin:
 class TestGUIEventManagement:
     """Test Event Management GUI"""
 
-    @pytest.mark.skip(reason="GUI test needs updating after i18n changes")
     def test_event_list_shows_blocked_warnings(self, api_server):
         """Test that Event Management shows blocked warnings"""
         with sync_playwright() as p:
@@ -521,7 +520,6 @@ class TestGUIEventManagement:
 class TestGUIAssignmentModal:
     """Test Assignment Modal GUI"""
 
-    @pytest.mark.skip(reason="GUI test needs updating after i18n changes")
     def test_assignment_modal_shows_blocked_badge(self, api_server):
         """Test that assignment modal shows BLOCKED badges"""
         with sync_playwright() as p:
@@ -565,7 +563,6 @@ class TestGUIAssignmentModal:
 class TestGUIBlockedDates:
     """Test Blocked Dates Management GUI"""
 
-    @pytest.mark.skip(reason="GUI test needs updating after i18n changes")
     def test_add_blocked_date_with_reason(self, api_server):
         """Test adding a blocked date with reason through GUI"""
         with sync_playwright() as p:
@@ -597,8 +594,8 @@ class TestGUIBlockedDates:
             page.fill('#timeoff-end', future_date)
             page.fill('#timeoff-reason', "GUI Test Vacation")
 
-            # Submit
-            page.locator('button[type="submit"]:has-text("Add Time Off")').click()
+            # Submit - use form selector instead of text to be language-independent
+            page.locator('form[onsubmit="addTimeOff(event)"] button[type="submit"]').click()
             page.wait_for_timeout(2000)
 
             # Check that it appears in the list
