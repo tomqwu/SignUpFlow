@@ -1,4 +1,4 @@
-.PHONY: run dev stop restart setup install migrate test test-frontend test-backend test-integration test-e2e test-e2e-long test-e2e-file test-e2e-quick test-e2e-summary test-all test-coverage test-unit test-unit-file clean clean-all pre-commit help
+.PHONY: run dev stop restart setup install migrate test test-frontend test-backend test-integration test-e2e test-e2e-long test-e2e-file test-e2e-quick test-e2e-summary test-all test-coverage test-unit test-unit-fast test-unit-file test-with-timing clean clean-all pre-commit help
 
 # Run the development server
 run:
@@ -162,8 +162,18 @@ clean-all: stop clean
 pre-commit:
 	@echo "⚡ Running fast pre-commit tests..."
 	@npm test -- --bail
-	@poetry run pytest tests/ -x --tb=short -m "not slow"
+	@poetry run pytest tests/unit/ -x --tb=short
 	@echo "✅ Pre-commit tests passed!"
+
+# Run only fast unit tests (skip slow password hashing tests)
+test-unit-fast:
+	@echo "⚡ Running fast unit tests (skipping slow tests)..."
+	@poetry run pytest tests/unit/ -v --tb=short -m "not slow"
+
+# Run tests with timing information
+test-with-timing:
+	@echo "⏱️  Running tests with timing information..."
+	@poetry run pytest tests/unit/ --durations=20 -v --tb=short
 
 # Help (default target)
 .DEFAULT_GOAL := help
@@ -195,7 +205,9 @@ help:
 	@echo "  make test-all         - Run ALL tests (frontend + backend + E2E)"
 	@echo "  make test-coverage    - Run tests with coverage reports"
 	@echo "  make test-unit        - Run unit tests only"
+	@echo "  make test-unit-fast   - Run fast unit tests (skip slow password tests)"
 	@echo "  make test-unit-file   - Run specific unit file (FILE=path/to/test.py)"
+	@echo "  make test-with-timing - Run tests with timing information"
 	@echo "  make pre-commit       - Run fast tests for pre-commit hook"
 	@echo ""
 	@echo "Maintenance:"
