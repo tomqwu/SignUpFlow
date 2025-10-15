@@ -58,11 +58,28 @@ def signup(request: SignupRequest, db: Session = Depends(get_db)):
     # Verify organization exists
     org = get_organization_by_id(request.org_id, db)
 
+    # Check if this is the first user in the organization
+    existing_users_count = db.query(Person).filter(Person.org_id == request.org_id).count()
+    is_first_user = existing_users_count == 0
+
     # Create person ID from email
     person_id = f"person_{request.email.split('@')[0]}_{int(time.time())}"
 
     # Hash password
     password_hash = hash_password(request.password)
+
+    # Determine roles: first user gets admin, others cannot self-assign admin
+    if is_first_user:
+        # First user in the organization automatically becomes admin
+        roles = ["admin"]
+    else:
+        # Non-first users cannot self-assign admin role during signup
+        # Admin role can only be granted by existing admins via invitation or role management
+        requested_roles = request.roles if request.roles else []
+        # Filter out admin role from requested roles (security: users can't make themselves admin)
+        safe_roles = [role for role in requested_roles if role != "admin"]
+        # Default to volunteer if no valid roles requested
+        roles = safe_roles if safe_roles else ["volunteer"]
 
     # Create person
     person = Person(
@@ -71,7 +88,7 @@ def signup(request: SignupRequest, db: Session = Depends(get_db)):
         name=request.name,
         email=request.email,
         password_hash=password_hash,
-        roles=request.roles or [],
+        roles=roles,
         extra_data={}
     )
 

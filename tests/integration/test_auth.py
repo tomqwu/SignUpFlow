@@ -31,14 +31,14 @@ class TestAuthSignup:
             "config": {}
         })
 
-        # Signup
+        # Signup - first user in org becomes admin automatically
         email = f"test_{int(datetime.now().timestamp())}@test.com"
         response = client.post(f"{API_BASE}/auth/signup", json={
             "org_id": org_id,
             "name": "Test User",
             "email": email,
             "password": "password123",
-            "roles": ["volunteer"]
+            "roles": ["volunteer"]  # Requested role will be ignored; first user gets admin
         })
 
         assert response.status_code == 201
@@ -46,7 +46,8 @@ class TestAuthSignup:
         assert "person_id" in data
         assert "token" in data
         assert data["email"] == email
-        assert "volunteer" in data["roles"]
+        # First user automatically becomes admin
+        assert "admin" in data["roles"]
 
     def test_signup_duplicate_email(self, api_server):
         """Test signup rejects duplicate email."""
@@ -104,25 +105,32 @@ class TestAuthLogin:
         """Test successful login with correct credentials."""
         client = httpx.Client()
 
-        # Create org and user
-        org_id = f"test_org_{int(datetime.now().timestamp())}"
-        email = f"login_{int(datetime.now().timestamp())}@test.com"
+        # Create org and user with highly unique IDs
+        import random
+        unique_id = f"{int(datetime.now().timestamp() * 1000)}_{random.randint(10000, 99999)}"
+        org_id = f"login_test_org_{unique_id}"
+        email = f"login_{unique_id}@test.com"
         password = "testpass123"
 
-        client.post(f"{API_BASE}/organizations/", json={
+        org_response = client.post(f"{API_BASE}/organizations/", json={
             "id": org_id,
-            "name": "Test Org",
+            "name": "Login Test Org",
             "region": "US",
             "config": {}
         })
+        assert org_response.status_code == 201, f"Org creation failed: {org_response.text}"
 
-        client.post(f"{API_BASE}/auth/signup", json={
+        # Sign up first user - they automatically become admin
+        signup_response = client.post(f"{API_BASE}/auth/signup", json={
             "org_id": org_id,
             "name": "Login User",
             "email": email,
-            "password": password,
-            "roles": ["admin"]
+            "password": password
         })
+        assert signup_response.status_code == 201, f"Signup failed: {signup_response.text}"
+        signup_data = signup_response.json()
+        # Verify first user got admin role
+        assert "admin" in signup_data["roles"], f"First user should get admin, got: {signup_data['roles']}"
 
         # Login
         response = client.post(f"{API_BASE}/auth/login", json={
@@ -134,6 +142,7 @@ class TestAuthLogin:
         data = response.json()
         assert "token" in data
         assert data["email"] == email
+        # First user in org automatically gets admin role
         assert "admin" in data["roles"]
 
     def test_login_wrong_password(self, api_server):
