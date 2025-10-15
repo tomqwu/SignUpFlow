@@ -2,8 +2,8 @@
 
 ## Overview
 
-**Status**: ✅ **278 passing tests** (99.6% pass rate)  
-**Total Runtime**: ~50 seconds for full suite  
+**Status**: ✅ **281 passing tests** (99.6% pass rate)
+**Total Runtime**: ~50 seconds for full suite
 **Last Updated**: 2025-10-15
 
 ---
@@ -14,18 +14,18 @@
 
 | Category | Tests | Status | Runtime | Description |
 |----------|-------|--------|---------|-------------|
-| **Unit Tests** | 190 | ✅ 190 passing | ~10s | Core business logic, models, API endpoints |
+| **Unit Tests** | 193 | ✅ 193 passing | ~11s | Core business logic, models, API endpoints |
 | **Frontend Tests** | 50 | ✅ 50 passing | ~0.4s | JavaScript, i18n, router, session management |
-| **Comprehensive** | 23 | ✅ 23 passing | ~30s | Integration tests, API workflows |
-| **GUI i18n** | 15 | ✅ 15 passing | ~0.6s | i18n implementation regression tests |
+| **Comprehensive** | 23 | ✅ 23 passing | ~25s | Integration tests, API workflows |
+| **GUI i18n** | 15 | ✅ 15 passing | ~0.7s | i18n implementation regression tests |
 | **Skipped** | 1 | ⚠️ Legitimate | - | Flaky test pending proper test data setup |
-| **TOTAL** | **279** | **278 passing** | **~50s** | **99.6% pass rate** |
+| **TOTAL** | **282** | **281 passing** | **~50s** | **99.6% pass rate** |
 
 ### By Test Type
 
 | Type | Tests | Description |
 |------|-------|-------------|
-| 🔧 Unit | 190 | Models, utilities, business logic, API |
+| 🔧 Unit | 193 | Models, utilities, business logic, API |
 | 🎨 Frontend | 50 | JS logic, i18n, router, session |
 | 🔗 Integration | 23 | API workflows, data flows |
 | 🖥️ GUI/i18n | 15 | Multi-language support, regression |
@@ -74,7 +74,7 @@ make test-coverage      # Generate coverage reports
 
 ## Key Test Files
 
-### Unit Tests (190 tests)
+### Unit Tests (193 tests)
 
 | File | Tests | Focus Area |
 |------|-------|-----------|
@@ -87,6 +87,7 @@ make test-coverage      # Generate coverage reports
 | [test_conftest_mocking.py](../tests/unit/test_conftest_mocking.py) | 12 | Test infrastructure, auth mocking |
 | [test_organizations.py](../tests/unit/test_organizations.py) | 12 | Organization management |
 | [test_availability.py](../tests/unit/test_availability.py) | 10 | Time-off, blocked dates |
+| [test_password_reset.py](../tests/unit/test_password_reset.py) | 3 | **NEW** Password reset security (bcrypt) |
 | Others | 45 | Teams, invitations, i18n, roles, language |
 
 ### Frontend Tests (50 tests)
@@ -125,9 +126,9 @@ make test-coverage      # Generate coverage reports
 
 | Metric | Value | Notes |
 |--------|-------|-------|
-| **Pass Rate** | 99.6% | 278 passing, 1 skipped |
+| **Pass Rate** | 99.6% | 281 passing, 1 skipped |
 | **Total Runtime** | ~50s | Full suite including E2E |
-| **Unit Tests** | ~10s | 190 tests, includes slow password hashing |
+| **Unit Tests** | ~11s | 193 tests, includes slow password hashing |
 | **Fast Unit Tests** | ~7s | Skip slow tests with `make test-unit-fast` |
 | **Frontend Tests** | ~0.4s | 50 tests, Jest |
 | **Pre-commit** | ~10s | Fast validation before commits |
@@ -267,7 +268,7 @@ make test-all
 
 ## Conclusion
 
-Rostio's test suite provides **excellent coverage** with **278 passing tests** and a **99.6% pass rate**. The test infrastructure is robust, well-documented, and optimized for developer productivity.
+Rostio's test suite provides **excellent coverage** with **281 passing tests** and a **99.6% pass rate**. The test infrastructure is robust, well-documented, and optimized for developer productivity.
 
 **Key Strengths:**
 - ✅ Comprehensive coverage of core functionality

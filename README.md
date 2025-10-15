@@ -6,7 +6,7 @@
 
 *AI-powered scheduling for churches, non-profits, and organizations*
 
-[![Tests](https://img.shields.io/badge/tests-278%20passing-brightgreen?style=for-the-badge)](docs/TEST_PERFORMANCE.md)
+[![Tests](https://img.shields.io/badge/tests-281%20passing-brightgreen?style=for-the-badge)](docs/TEST_PERFORMANCE.md)
 [![Quality](https://img.shields.io/badge/quality-99.6%25%20pass%20rate-success?style=for-the-badge)](docs/TEST_PERFORMANCE.md)
 [![Security](https://img.shields.io/badge/security-JWT%20%2B%20bcrypt-blue?style=for-the-badge&logo=security)](docs/SECURITY_ANALYSIS.md)
 [![Python](https://img.shields.io/badge/python-3.11+-blue?style=for-the-badge&logo=python)](https://www.python.org/)
@@ -155,7 +155,7 @@ Password: password
 
 ## 🧪 Testing
 
-### Test Coverage: 278 Passing Tests (99.6% Pass Rate)
+### Test Coverage: 281 Passing Tests (99.6% Pass Rate)
 
 ```bash
 # Quick test (fast, ~10s)
@@ -176,15 +176,16 @@ make test-with-timing
 
 | Type | Count | Coverage | Runtime |
 |------|-------|----------|---------|
-| 🔧 **Unit Tests** | 190 | Core logic, models, API | ~10s |
+| 🔧 **Unit Tests** | 193 | Core logic, models, API | ~11s |
 | 🌐 **Frontend Tests** | 50 | JS logic, i18n, router | ~0.4s |
-| 🎯 **Comprehensive** | 23 | Integration + API flows | ~30s |
-| 🖥️ **GUI i18n** | 15 | i18n regression tests | ~0.6s |
-| **Total** | **278** | **Full coverage** | **~50s** |
+| 🎯 **Comprehensive** | 23 | Integration + API flows | ~25s |
+| 🖥️ **GUI i18n** | 15 | i18n regression tests | ~0.7s |
+| **Total** | **281** | **Full coverage** | **~50s** |
 
 **Recent Improvements:**
-- ✅ 99.6% pass rate (278 passing, 1 legitimately skipped)
-- ✅ Comprehensive i18n testing (15 new tests)
+- ✅ 99.6% pass rate (281 passing, 1 legitimately skipped)
+- ✅ Fixed critical password reset security vulnerability (bcrypt)
+- ✅ Comprehensive i18n testing (15 regression tests)
 - ✅ Fast test commands for rapid iteration
 - ✅ Performance documentation with optimization strategies
 
@@ -207,7 +208,6 @@ See [TEST_PERFORMANCE.md](docs/TEST_PERFORMANCE.md) for performance details and 
 
 | Document | Description |
 |----------|-------------|
-| 📖 [Product Roadmap](PRODUCT_ROADMAP_INDEX.md) | 6-week launch plan & pricing strategy |
 | 🎯 [SaaS Readiness](docs/SAAS_READINESS_SUMMARY.md) | Gap analysis & launch timeline |
 | 🏗️ [Launch Roadmap](docs/LAUNCH_ROADMAP.md) | Week-by-week implementation plan |
 | 🔒 [Security Guide](docs/SECURITY_MIGRATION.md) | JWT, bcrypt, best practices |
@@ -254,8 +254,6 @@ Email:               ░░░░░░░░░░░░░░░░░░░�
 | 🏢 **Enterprise** | Custom | Unlimited | White-label, SSO, dedicated support, SLA |
 
 **Break-even:** 7-10 customers | **Target:** 100 signups, 10 paid customers (90 days)
-
-📖 **Full Details:** See [PRODUCT_ROADMAP_INDEX.md](PRODUCT_ROADMAP_INDEX.md)
 
 </div>
 
@@ -402,6 +400,6 @@ If Rostio helps your organization, please consider starring the repo to show you
 
 *Simplifying volunteer scheduling for organizations worldwide*
 
-[Report Bug](https://github.com/tomqwu/rostio/issues) • [Request Feature](https://github.com/tomqwu/rostio/issues) • [View Roadmap](PRODUCT_ROADMAP_INDEX.md)
+[Report Bug](https://github.com/tomqwu/rostio/issues) • [Request Feature](https://github.com/tomqwu/rostio/issues) • [View Roadmap](#%EF%B8%8F-product-roadmap)
 
 </div>
