@@ -1629,7 +1629,7 @@ async function showAssignments(eventId) {
                                 <div class="person-assignment-item ${person.is_blocked ? 'person-blocked' : ''}">
                                     <div class="person-info">
                                         <strong>${person.name}</strong>
-                                        ${person.is_blocked ? '<span class="schedule-badge-blocked">BLOCKED</span>' : ''}
+                                        ${person.is_blocked ? `<span class="schedule-badge-blocked">${i18n.t('schedule.badges.blocked').toUpperCase()}</span>` : ''}
                                         <span class="person-roles">${person.roles.map(r => typeof r === 'string' ? r : (r.name || r.role || '[unknown]')).join(', ')}</span>
                                     </div>
                                     <button
@@ -1669,7 +1669,7 @@ async function showAssignments(eventId) {
                                         <div class="person-assignment-item ${person.is_blocked ? 'person-blocked' : ''}">
                                             <div class="person-info">
                                                 <strong>${person.name}</strong>
-                                                ${person.is_blocked ? '<span class="schedule-badge-blocked">BLOCKED</span>' : ''}
+                                                ${person.is_blocked ? `<span class="schedule-badge-blocked">${i18n.t('schedule.badges.blocked').toUpperCase()}</span>` : ''}
                                             </div>
                                             <button
                                                 class="btn btn-small ${person.is_assigned ? 'btn-remove' : ''}"
