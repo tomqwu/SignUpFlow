@@ -1809,6 +1809,120 @@ e568282  Implement comprehensive RBAC security with 27 passing tests
 
 ---
 
+## Workspace Cleanup Rules
+
+### Golden Rules
+
+1. **No scripts in root directory**
+   - All scripts belong in `scripts/` directory
+   - Exception: Project configuration files (Makefile, package.json, pyproject.toml)
+
+2. **One-time scripts go in /tmp**
+   - If you create a script that runs only once, put it in `/tmp/`
+   - Delete it immediately after use
+   - Never commit temporary scripts
+
+3. **No database files in git**
+   - Database files are already in `.gitignore`
+   - Never commit: `*.db`, `*.db-shm`, `*.db-wal`, `*.db.before_restore_*`
+   - If accidentally committed, remove with `git rm --cached`
+
+4. **Keep root directory clean**
+   - Only configuration files and documentation in root
+   - Move utility scripts to `scripts/`
+   - Move one-time scripts to `/tmp/`
+
+### Directory Organization
+
+```
+rostio/
+├── api/                    # Backend code
+├── frontend/               # Frontend code
+├── tests/                  # Test suites
+├── docs/                   # Documentation
+├── locales/               # i18n translations
+├── scripts/               # ✅ Utility scripts (reusable)
+│   ├── backup_database.sh
+│   ├── migrate_passwords_to_bcrypt.py
+│   └── run_e2e_tests.sh
+├── /tmp/                  # ✅ Temporary scripts (one-time use)
+│   ├── fix_bug_123.sh     # Delete after running
+│   └── migrate_data.py    # Delete after running
+├── Makefile               # ✅ Build automation
+├── pyproject.toml         # ✅ Python config
+├── package.json           # ✅ Frontend config
+├── README.md              # ✅ Main documentation
+├── CLAUDE.md              # ✅ AI assistant context
+└── roster.db              # ⚠️ Not in git (ignored)
+```
+
+### Cleanup Checklist
+
+Before committing, verify:
+
+- [ ] No temporary scripts in root directory
+- [ ] All reusable scripts in `scripts/` directory
+- [ ] No database files staged for commit
+- [ ] No backup files staged for commit
+- [ ] No test artifacts staged for commit
+- [ ] Root directory only has config and docs
+
+### Examples
+
+#### ✅ Good: One-time script in /tmp
+
+```bash
+# Create temporary script
+cat > /tmp/fix_data.py << 'EOF'
+# One-time data fix
+from api.database import get_db
+# ... fix code
+EOF
+
+# Run it
+python /tmp/fix_data.py
+
+# Delete it
+rm /tmp/fix_data.py
+```
+
+#### ✅ Good: Reusable script in scripts/
+
+```bash
+# Create reusable script
+cat > scripts/backup_database.sh << 'EOF'
+#!/bin/bash
+# Backs up database with timestamp
+cp roster.db "backups/roster_$(date +%Y%m%d_%H%M%S).db"
+EOF
+
+chmod +x scripts/backup_database.sh
+git add scripts/backup_database.sh
+git commit -m "Add database backup script"
+```
+
+#### ❌ Bad: Script in root directory
+
+```bash
+# Don't do this!
+cat > fix_bug.py << 'EOF'
+# Bug fix script
+EOF
+
+# This clutters root directory
+```
+
+#### ❌ Bad: Committing temporary files
+
+```bash
+# Don't do this!
+git add roster.db
+git add temp_script.py
+git commit -m "Add temp files"  # Wrong!
+```
+
+---
+
 ## Tips for AI Assistants
 
 ### When Debugging
