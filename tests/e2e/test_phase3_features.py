@@ -41,7 +41,7 @@ def test_database_backup():
     print(f"✅ Backup created: {os.path.basename(latest_backup)} ({backup_size} bytes)")
 
 
-@pytest.mark.skip(reason="Database restore test is flaky - infrastructure testing, not core E2E workflow")
+@pytest.mark.skip(reason="Test needs auth refactor - creates/queries people without JWT tokens. Infrastructure test, not core user workflow.")
 def test_database_restore():
     """Test database restore script restores from backup."""
     # First, create a backup
