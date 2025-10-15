@@ -1,8 +1,8 @@
 [tool.poetry]
-name = "roster-api"
-version = "0.2.0"
-description = "Microservice API for constraint-based roster scheduling (cricket, church, on-call)"
-authors = ["Roster Team"]
+name = "signupflow-api"
+version = "1.0.0"
+description = "AI-powered volunteer scheduling and sign-up management API"
+authors = ["SignUpFlow Team"]
 readme = "README.md"
 packages = [{include = "api"}]
 

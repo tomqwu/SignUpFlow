@@ -1,10 +1,10 @@
 <div align="center">
 
-# 🎯 Rostio
+# 📋 SignUpFlow
 
-### Modern Volunteer Scheduling & Roster Management
+### Volunteer Scheduling Made Simple
 
-*AI-powered scheduling for churches, non-profits, and organizations*
+*AI-powered sign-up management for churches, sports leagues, and non-profits*
 
 [![Tests](https://img.shields.io/badge/tests-281%20passing-brightgreen?style=for-the-badge)](docs/TEST_PERFORMANCE.md)
 [![Quality](https://img.shields.io/badge/quality-99.6%25%20pass%20rate-success?style=for-the-badge)](docs/TEST_PERFORMANCE.md)
@@ -15,7 +15,7 @@
 
 [Features](#-features) • [Quick Start](#-quick-start) • [Documentation](#-documentation) • [Roadmap](#-product-roadmap) • [Contributing](#-contributing)
 
-<img src="docs/screenshots/homepage.png" alt="Rostio Calendar View" width="800">
+<img src="docs/screenshots/homepage.png" alt="SignUpFlow Dashboard" width="800">
 
 </div>
 
@@ -84,8 +84,8 @@ Python 3.11+ | Poetry | SQLite
 
 ```bash
 # Clone the repository
-git clone https://github.com/tomqwu/rostio.git
-cd rostio
+git clone https://github.com/tomqwu/signupflow.git
+cd signupflow
 
 # Install and setup (using Makefile)
 make setup
@@ -352,12 +352,12 @@ We welcome contributions! Here's how to get started:
 
 ### Get Help
 
-[![GitHub Issues](https://img.shields.io/badge/GitHub-Issues-181717?style=for-the-badge&logo=github&logoColor=white)](https://github.com/tomqwu/rostio/issues)
+[![GitHub Issues](https://img.shields.io/badge/GitHub-Issues-181717?style=for-the-badge&logo=github&logoColor=white)](https://github.com/tomqwu/signupflow/issues)
 [![Documentation](https://img.shields.io/badge/Docs-Read-blue?style=for-the-badge&logo=read-the-docs&logoColor=white)](docs/)
 
 ### Stay Updated
 
-[![GitHub](https://img.shields.io/badge/GitHub-Follow-181717?style=for-the-badge&logo=github&logoColor=white)](https://github.com/tomqwu/rostio)
+[![GitHub](https://img.shields.io/badge/GitHub-Follow-181717?style=for-the-badge&logo=github&logoColor=white)](https://github.com/tomqwu/signupflow)
 
 </div>
 
@@ -373,16 +373,16 @@ This project is licensed under the **MIT License** - see the [LICENSE](LICENSE) 
 
 ## ⭐ Star Us!
 
-If Rostio helps your organization, please consider starring the repo to show your support!
+If SignUpFlow helps your organization, please consider starring the repo to show your support!
 
-[![Star on GitHub](https://img.shields.io/github/stars/tomqwu/rostio?style=social)](https://github.com/tomqwu/rostio)
+[![Star on GitHub](https://img.shields.io/github/stars/tomqwu/signupflow?style=social)](https://github.com/tomqwu/signupflow)
 
 ---
 
-**Made with ❤️ by the Rostio Team**
+**Made with ❤️ by the SignUpFlow Team**
 
-*Simplifying volunteer scheduling for organizations worldwide*
+*Simplifying volunteer sign-ups for organizations worldwide*
 
-[Report Bug](https://github.com/tomqwu/rostio/issues) • [Request Feature](https://github.com/tomqwu/rostio/issues) • [View Roadmap](#%EF%B8%8F-product-roadmap)
+[Report Bug](https://github.com/tomqwu/signupflow/issues) • [Request Feature](https://github.com/tomqwu/signupflow/issues) • [View Roadmap](#%EF%B8%8F-product-roadmap)
 
 </div>

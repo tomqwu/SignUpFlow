@@ -35,22 +35,22 @@ async def lifespan(app: FastAPI):
     """Handle application startup and shutdown."""
     # Startup
     init_db()
-    logger.info("🚀 Rostio API started")
+    logger.info("🚀 SignUpFlow API started")
     logger.info("📖 API docs available at http://localhost:8000/docs")
-    print("🚀 Rostio API started")
+    print("🚀 SignUpFlow API started")
     print("📖 API docs available at http://localhost:8000/docs")
 
     yield
 
     # Shutdown
-    print("👋 Rostio API shutting down")
+    print("👋 SignUpFlow API shutting down")
 
 
 # Create FastAPI app with lifespan handler
 app = FastAPI(
-    title="Rostio API",
-    description="Team scheduling made simple - constraint-based roster scheduling",
-    version="0.2.0",
+    title="SignUpFlow API",
+    description="AI-powered volunteer scheduling and sign-up management",
+    version="1.0.0",
     docs_url="/docs",
     redoc_url="/redoc",
     lifespan=lifespan,
@@ -84,7 +84,7 @@ app.add_middleware(
 @app.get("/health", tags=["health"])
 def health_check():
     """Health check endpoint."""
-    return {"status": "healthy", "service": "rostio-api", "version": "0.2.0"}
+    return {"status": "healthy", "service": "signupflow-api", "version": "1.0.0"}
 
 
 # Register routers with /api prefix
@@ -108,9 +108,9 @@ app.include_router(calendar.router, prefix="/api")
 def api_info():
     """API information endpoint."""
     return {
-        "service": "Rostio API",
-        "version": "0.2.0",
-        "description": "Constraint-based scheduling for teams, events, and resources",
+        "service": "SignUpFlow API",
+        "version": "1.0.0",
+        "description": "AI-powered volunteer scheduling and sign-up management",
         "docs": "/docs",
         "redoc": "/redoc",
         "endpoints": {
