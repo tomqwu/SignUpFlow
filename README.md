@@ -15,7 +15,7 @@
 
 [Features](#-features) • [Quick Start](#-quick-start) • [Documentation](#-documentation) • [Roadmap](#-product-roadmap) • [Contributing](#-contributing)
 
-<img src="docs/screenshots/features/calendar-view.png" alt="Rostio Calendar View" width="800">
+<img src="docs/screenshots/homepage.png" alt="Rostio Calendar View" width="800">
 
 </div>
 
