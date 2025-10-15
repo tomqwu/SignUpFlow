@@ -14,6 +14,22 @@ API_BASE = "http://localhost:8000/api"
 APP_URL = "http://localhost:8000"
 
 # ============================================================================
+# AUTHENTICATION HELPER
+# ============================================================================
+
+def get_auth_headers():
+    """Get authentication headers for API requests."""
+    # Login as admin user
+    response = requests.post(f"{API_BASE}/auth/login", json={
+        "email": "jane@test.com",
+        "password": "password"
+    })
+    if response.status_code == 200:
+        token = response.json()["token"]
+        return {"Authorization": f"Bearer {token}"}
+    return {}
+
+# ============================================================================
 # API TESTS
 # ============================================================================
 
@@ -47,6 +63,7 @@ class TestPeopleAPI:
 
     def test_create_person(self):
         """Create a new person"""
+        headers = get_auth_headers()
         data = {
             "id": "test_person_001",
             "name": "Test Person",
@@ -54,12 +71,13 @@ class TestPeopleAPI:
             "org_id": "test_org",
             "roles": ["volunteer"]
         }
-        response = requests.post(f"{API_BASE}/people/", json=data)
+        response = requests.post(f"{API_BASE}/people/", json=data, headers=headers)
         assert response.status_code in [200, 201, 409]
 
     def test_list_people(self):
         """List all people in organization"""
-        response = requests.get(f"{API_BASE}/people/?org_id=test_org")
+        headers = get_auth_headers()
+        response = requests.get(f"{API_BASE}/people/?org_id=test_org", headers=headers)
         assert response.status_code == 200
         data = response.json()
         assert "people" in data
@@ -83,6 +101,7 @@ class TestEventsAPI:
 
     def test_create_event(self):
         """Create a new event"""
+        headers = get_auth_headers()
         start_time = (datetime.now() + timedelta(days=7)).isoformat()
         end_time = (datetime.now() + timedelta(days=7, hours=2)).isoformat()
 
@@ -99,7 +118,7 @@ class TestEventsAPI:
                 }
             }
         }
-        response = requests.post(f"{API_BASE}/events/", json=data)
+        response = requests.post(f"{API_BASE}/events/", json=data, headers=headers)
         assert response.status_code in [200, 201, 409]
 
     def test_list_events(self):
@@ -277,13 +296,14 @@ class TestSolverAPI:
 
     def test_generate_schedule(self):
         """Generate a schedule solution"""
+        headers = get_auth_headers()
         data = {
             "org_id": "test_org",
             "from_date": (date.today() + timedelta(days=1)).isoformat(),
             "to_date": (date.today() + timedelta(days=30)).isoformat(),
             "mode": "relaxed"
         }
-        response = requests.post(f"{API_BASE}/solver/solve", json=data, timeout=30)
+        response = requests.post(f"{API_BASE}/solver/solve", json=data, headers=headers, timeout=30)
         assert response.status_code in [200, 201]
         result = response.json()
         assert "solution_id" in result
