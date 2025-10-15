@@ -17,13 +17,26 @@ API_BASE = "http://localhost:8000/api"
 APP_URL = "http://localhost:8000"
 
 
+def get_auth_headers():
+    """Get authentication headers for API requests."""
+    response = requests.post(f"{API_BASE}/auth/login", json={
+        "email": "jane@test.com",
+        "password": "password"
+    })
+    if response.status_code == 200:
+        token = response.json()["token"]
+        return {"Authorization": f"Bearer {token}"}
+    return {}
+
+
 class TestI18nAPI:
     """Test i18n backend functionality"""
 
     def test_person_has_language_field(self):
         """Verify Person model has language field"""
+        headers = get_auth_headers()
         # Get first person
-        resp = requests.get(f"{API_BASE}/people/?org_id=test_org")
+        resp = requests.get(f"{API_BASE}/people/?org_id=test_org", headers=headers)
         assert resp.status_code == 200
 
         people = resp.json()["people"]
@@ -36,8 +49,9 @@ class TestI18nAPI:
 
     def test_update_person_language(self):
         """Verify language can be updated via PUT /people/{id}"""
+        headers = get_auth_headers()
         # Get first person
-        resp = requests.get(f"{API_BASE}/people/?org_id=test_org")
+        resp = requests.get(f"{API_BASE}/people/?org_id=test_org", headers=headers)
         assert resp.status_code == 200
 
         people = resp.json()["people"]
@@ -47,19 +61,21 @@ class TestI18nAPI:
             # Update language to Chinese
             update_resp = requests.put(
                 f"{API_BASE}/people/{person_id}",
-                json={"language": "zh-CN"}
+                json={"language": "zh-CN"},
+                headers=headers
             )
             assert update_resp.status_code == 200
 
             # Verify it was saved
-            get_resp = requests.get(f"{API_BASE}/people/{person_id}")
+            get_resp = requests.get(f"{API_BASE}/people/{person_id}", headers=headers)
             assert get_resp.status_code == 200
             assert get_resp.json()["language"] == "zh-CN"
 
             # Cleanup - set back to English
             requests.put(
                 f"{API_BASE}/people/{person_id}",
-                json={"language": "en"}
+                json={"language": "en"},
+                headers=headers
             )
         else:
             pytest.skip("No test person available")
