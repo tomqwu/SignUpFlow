@@ -1152,11 +1152,48 @@ async function showSettings() {
     }
 }
 
-// Change language
+// Change language immediately
 async function changeLanguage(locale) {
-    // Language will be saved when user clicks "Save" button in Settings
-    // Just update the UI to show selection
-    console.log(`Language selected: ${locale}`);
+    console.log(`🌐 Changing language to: ${locale}`);
+
+    // Update i18n locale
+    await i18n.setLocale(locale);
+
+    // Sync all language dropdowns
+    const dropdowns = [
+        'welcome-language',
+        'login-language',
+        'header-language',
+        'settings-language'
+    ];
+
+    dropdowns.forEach(id => {
+        const dropdown = document.getElementById(id);
+        if (dropdown) {
+            dropdown.value = locale;
+        }
+    });
+
+    // Re-translate the page
+    translatePage();
+
+    // If user is logged in, save preference to backend
+    if (currentUser && currentUser.id) {
+        try {
+            await authFetch(`${API_BASE_URL}/people/${currentUser.id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ language: locale })
+            });
+
+            currentUser.language = locale;
+            saveSession();
+            console.log('✅ Language preference saved to backend');
+        } catch (error) {
+            console.warn('Could not save language preference:', error);
+            // Don't show error toast - language change still works locally
+        }
+    }
 }
 
 async function saveSettings() {

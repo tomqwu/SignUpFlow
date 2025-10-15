@@ -63,6 +63,16 @@
         <!-- Onboarding Screen -->
         <div id="onboarding-screen" class="screen">
             <div class="welcome-card">
+                <div class="language-selector-top">
+                    <select id="welcome-language" onchange="changeLanguage(this.value)" class="language-dropdown">
+                        <option value="en">English</option>
+                        <option value="es">Español</option>
+                        <option value="zh-CN">中文</option>
+                        <option value="ko">한국어</option>
+                        <option value="tl">Tagalog</option>
+                        <option value="vi">Tiếng Việt</option>
+                    </select>
+                </div>
                 <h1><img src="/images/rostio-logo-simple.svg" alt="Rostio" style="height: 60px; vertical-align: middle; margin-right: 20px;"> <span data-i18n="auth.welcome_to_rostio">Welcome to Rostio</span></h1>
                 <p class="welcome-text" data-i18n="auth.welcome_subtitle">Join your organization and manage your schedule effortlessly</p>
 
@@ -92,6 +102,16 @@
         <!-- Login Screen -->
         <div id="login-screen" class="screen hidden">
             <div class="form-container">
+                <div class="language-selector-top">
+                    <select id="login-language" onchange="changeLanguage(this.value)" class="language-dropdown">
+                        <option value="en">English</option>
+                        <option value="es">Español</option>
+                        <option value="zh-CN">中文</option>
+                        <option value="ko">한국어</option>
+                        <option value="tl">Tagalog</option>
+                        <option value="vi">Tiếng Việt</option>
+                    </select>
+                </div>
                 <h2 data-i18n="auth.sign_in_title">Sign In</h2>
                 <p class="subtitle" data-i18n="auth.welcome_back_subtitle">Welcome back! Sign in to access your schedule</p>
 
@@ -194,6 +214,14 @@
                         </div>
                     </div>
                     <div class="user-info">
+                        <select id="header-language" onchange="changeLanguage(this.value)" class="language-dropdown-header">
+                            <option value="en">🌐 EN</option>
+                            <option value="es">🌐 ES</option>
+                            <option value="zh-CN">🌐 中文</option>
+                            <option value="ko">🌐 한국어</option>
+                            <option value="tl">🌐 TL</option>
+                            <option value="vi">🌐 VI</option>
+                        </select>
                         <span id="user-name-display"></span>
                         <button class="btn-icon" onclick="showSettings()">⚙️</button>
                     </div>
