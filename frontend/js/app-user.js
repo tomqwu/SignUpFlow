@@ -407,7 +407,7 @@ async function completeInvitationSignup(event) {
         showToast(i18n.t('auth.welcome_message') || data.message, 'success');
 
         // Load main app
-        await loadMainApp();
+        await showMainApp();
 
     } catch (error) {
         showToast(i18n.t('messages.errors.generic') + ': ' + error.message, 'error');
