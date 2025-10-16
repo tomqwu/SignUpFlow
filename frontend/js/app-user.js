@@ -283,6 +283,16 @@ function showLogin_old() {
 // Global variable to store invitation data
 let currentInvitation = null;
 
+// Detect user's timezone from browser
+function detectTimezone() {
+    try {
+        return Intl.DateTimeFormat().resolvedOptions().timeZone;
+    } catch (error) {
+        console.warn('Could not detect timezone, defaulting to UTC:', error);
+        return 'UTC';
+    }
+}
+
 // Verify invitation token
 async function verifyInvitationToken(event) {
     event.preventDefault();
@@ -324,6 +334,12 @@ async function verifyInvitationToken(event) {
         } else {
             rolesDisplay.innerHTML = '<span class="role-badge">volunteer</span>';
         }
+
+        // Auto-detect and set timezone
+        const detectedTimezone = detectTimezone();
+        const timezoneSelect = document.getElementById('user-timezone');
+        timezoneSelect.value = detectedTimezone;
+        console.log('🌍 Detected timezone:', detectedTimezone);
 
         // Show profile screen
         showScreen('profile-screen');

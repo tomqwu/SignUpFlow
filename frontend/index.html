@@ -211,11 +211,49 @@
                         <label data-i18n="settings.timezone">Your Timezone</label>
                         <select id="user-timezone">
                             <option value="UTC">UTC</option>
-                            <option value="America/New_York">Eastern Time</option>
-                            <option value="America/Chicago">Central Time</option>
-                            <option value="America/Denver">Mountain Time</option>
-                            <option value="America/Los_Angeles">Pacific Time</option>
+                            <optgroup label="Americas">
+                                <option value="America/New_York">Eastern Time (US)</option>
+                                <option value="America/Chicago">Central Time (US)</option>
+                                <option value="America/Denver">Mountain Time (US)</option>
+                                <option value="America/Los_Angeles">Pacific Time (US)</option>
+                                <option value="America/Anchorage">Alaska Time (US)</option>
+                                <option value="Pacific/Honolulu">Hawaii Time (US)</option>
+                                <option value="America/Toronto">Toronto</option>
+                                <option value="America/Mexico_City">Mexico City</option>
+                                <option value="America/Sao_Paulo">São Paulo</option>
+                                <option value="America/Buenos_Aires">Buenos Aires</option>
+                            </optgroup>
+                            <optgroup label="Europe">
+                                <option value="Europe/London">London</option>
+                                <option value="Europe/Paris">Paris / Berlin</option>
+                                <option value="Europe/Madrid">Madrid</option>
+                                <option value="Europe/Rome">Rome</option>
+                                <option value="Europe/Athens">Athens</option>
+                                <option value="Europe/Moscow">Moscow</option>
+                            </optgroup>
+                            <optgroup label="Asia">
+                                <option value="Asia/Dubai">Dubai</option>
+                                <option value="Asia/Kolkata">Mumbai / Delhi</option>
+                                <option value="Asia/Shanghai">Shanghai / Beijing</option>
+                                <option value="Asia/Hong_Kong">Hong Kong</option>
+                                <option value="Asia/Singapore">Singapore</option>
+                                <option value="Asia/Tokyo">Tokyo</option>
+                                <option value="Asia/Seoul">Seoul</option>
+                                <option value="Asia/Manila">Manila</option>
+                            </optgroup>
+                            <optgroup label="Africa">
+                                <option value="Africa/Cairo">Cairo</option>
+                                <option value="Africa/Johannesburg">Johannesburg</option>
+                                <option value="Africa/Lagos">Lagos</option>
+                                <option value="Africa/Nairobi">Nairobi</option>
+                            </optgroup>
+                            <optgroup label="Oceania">
+                                <option value="Australia/Sydney">Sydney</option>
+                                <option value="Australia/Melbourne">Melbourne</option>
+                                <option value="Pacific/Auckland">Auckland</option>
+                            </optgroup>
                         </select>
+                        <p class="help-text" data-i18n="settings.timezone_auto_detected">Auto-detected from your browser</p>
                     </div>
 
                     <div class="form-group">
