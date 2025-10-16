@@ -198,3 +198,63 @@ class TestRateLimitProduction:
 
 if __name__ == "__main__":
     pytest.main([__file__, "-v"])
+
+
+class TestRateLimitConfiguration:
+    """Test rate limit configuration via environment variables."""
+
+    def test_rate_limits_use_env_vars(self):
+        """Test that rate limits can be configured via environment variables."""
+        # Set custom rate limit via env var
+        os.environ["RATE_LIMIT_SIGNUP_MAX"] = "10"
+        os.environ["RATE_LIMIT_SIGNUP_WINDOW"] = "60"
+
+        # Reload the rate limiter module to pick up new env vars
+        import importlib
+        from api.utils import rate_limiter as rl_module
+        importlib.reload(rl_module)
+
+        # Check that custom values are loaded
+        assert rl_module.RATE_LIMITS["signup"]["max_requests"] == 10
+        assert rl_module.RATE_LIMITS["signup"]["window_seconds"] == 60
+
+        # Cleanup
+        del os.environ["RATE_LIMIT_SIGNUP_MAX"]
+        del os.environ["RATE_LIMIT_SIGNUP_WINDOW"]
+        importlib.reload(rl_module)
+
+    def test_rate_limits_use_defaults_when_env_not_set(self):
+        """Test that rate limits use defaults when env vars not set."""
+        # Ensure env vars are not set
+        for key in ["RATE_LIMIT_SIGNUP_MAX", "RATE_LIMIT_SIGNUP_WINDOW"]:
+            if key in os.environ:
+                del os.environ[key]
+
+        # Reload the rate limiter module
+        import importlib
+        from api.utils import rate_limiter as rl_module
+        importlib.reload(rl_module)
+
+        # Check that default values are used
+        assert rl_module.RATE_LIMITS["signup"]["max_requests"] == 3  # default
+        assert rl_module.RATE_LIMITS["signup"]["window_seconds"] == 3600  # default
+
+    def test_rate_limits_handle_invalid_env_vars(self):
+        """Test that invalid env vars fall back to defaults."""
+        # Set invalid (non-integer) env var
+        os.environ["RATE_LIMIT_LOGIN_MAX"] = "invalid"
+        os.environ["RATE_LIMIT_LOGIN_WINDOW"] = "not_a_number"
+
+        # Reload the rate limiter module
+        import importlib
+        from api.utils import rate_limiter as rl_module
+        importlib.reload(rl_module)
+
+        # Should use defaults when env vars are invalid
+        assert rl_module.RATE_LIMITS["login"]["max_requests"] == 5  # default
+        assert rl_module.RATE_LIMITS["login"]["window_seconds"] == 300  # default
+
+        # Cleanup
+        del os.environ["RATE_LIMIT_LOGIN_MAX"]
+        del os.environ["RATE_LIMIT_LOGIN_WINDOW"]
+        importlib.reload(rl_module)

@@ -3,8 +3,21 @@ Rate limiting utility to prevent spam and abuse.
 
 Implements a simple token bucket algorithm with in-memory storage.
 For production, consider using Redis for distributed rate limiting.
+
+Configuration via environment variables:
+- RATE_LIMIT_SIGNUP_MAX: Max signup requests (default: 3)
+- RATE_LIMIT_SIGNUP_WINDOW: Signup window in seconds (default: 3600)
+- RATE_LIMIT_LOGIN_MAX: Max login requests (default: 5)
+- RATE_LIMIT_LOGIN_WINDOW: Login window in seconds (default: 300)
+- RATE_LIMIT_CREATE_ORG_MAX: Max create org requests (default: 2)
+- RATE_LIMIT_CREATE_ORG_WINDOW: Create org window in seconds (default: 3600)
+- RATE_LIMIT_CREATE_INVITATION_MAX: Max create invitation requests (default: 10)
+- RATE_LIMIT_CREATE_INVITATION_WINDOW: Create invitation window in seconds (default: 300)
+- RATE_LIMIT_VERIFY_INVITATION_MAX: Max verify invitation requests (default: 10)
+- RATE_LIMIT_VERIFY_INVITATION_WINDOW: Verify invitation window in seconds (default: 60)
 """
 
+import os
 import time
 from typing import Dict, Tuple
 from collections import defaultdict
@@ -92,11 +105,35 @@ class RateLimiter:
 rate_limiter = RateLimiter()
 
 
+def get_env_int(key: str, default: int) -> int:
+    """Get integer value from environment variable with default."""
+    try:
+        return int(os.getenv(key, default))
+    except (ValueError, TypeError):
+        return default
+
+
 # Rate limit configurations for different endpoints
+# Values can be overridden via environment variables
 RATE_LIMITS = {
-    "signup": {"max_requests": 3, "window_seconds": 3600},  # 3 per hour
-    "create_org": {"max_requests": 2, "window_seconds": 3600},  # 2 per hour
-    "create_invitation": {"max_requests": 10, "window_seconds": 300},  # 10 per 5 min
-    "login": {"max_requests": 5, "window_seconds": 300},  # 5 per 5 min
-    "verify_invitation": {"max_requests": 10, "window_seconds": 60},  # 10 per min
+    "signup": {
+        "max_requests": get_env_int("RATE_LIMIT_SIGNUP_MAX", 3),
+        "window_seconds": get_env_int("RATE_LIMIT_SIGNUP_WINDOW", 3600),
+    },
+    "create_org": {
+        "max_requests": get_env_int("RATE_LIMIT_CREATE_ORG_MAX", 2),
+        "window_seconds": get_env_int("RATE_LIMIT_CREATE_ORG_WINDOW", 3600),
+    },
+    "create_invitation": {
+        "max_requests": get_env_int("RATE_LIMIT_CREATE_INVITATION_MAX", 10),
+        "window_seconds": get_env_int("RATE_LIMIT_CREATE_INVITATION_WINDOW", 300),
+    },
+    "login": {
+        "max_requests": get_env_int("RATE_LIMIT_LOGIN_MAX", 5),
+        "window_seconds": get_env_int("RATE_LIMIT_LOGIN_WINDOW", 300),
+    },
+    "verify_invitation": {
+        "max_requests": get_env_int("RATE_LIMIT_VERIFY_INVITATION_MAX", 10),
+        "window_seconds": get_env_int("RATE_LIMIT_VERIFY_INVITATION_WINDOW", 60),
+    },
 }
