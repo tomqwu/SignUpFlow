@@ -137,15 +137,24 @@
             </div>
         </div>
 
-        <!-- Join Organization -->
+        <!-- Join Organization (Invitation-Based) -->
         <div id="join-screen" class="screen hidden">
             <div class="form-container">
-                <h2 data-i18n="auth.join_org">Join Your Organization</h2>
-                <p class="subtitle" data-i18n="auth.find_your_organization">First, let's find your organization</p>
+                <h2 data-i18n="auth.join_org_invitation">Join with Invitation</h2>
+                <p class="subtitle" data-i18n="auth.enter_invitation_code">Enter the invitation code you received via email</p>
 
-                <div id="org-list" class="org-selection">
-                    <div class="loading"data-i18n="common.loading_orgs">Loading organizations...</div>
-                </div>
+                <!-- Invitation Token Entry -->
+                <form onsubmit="verifyInvitationToken(event)" id="invitation-form">
+                    <div class="form-group">
+                        <label data-i18n="auth.invitation_token">Invitation Code</label>
+                        <input type="text" id="invitation-token" data-i18n-placeholder="auth.placeholder_invitation_token" placeholder="Enter your invitation code" required autofocus>
+                        <p class="help-text" data-i18n="auth.invitation_help">This was sent to your email by your organization administrator</p>
+                    </div>
+                    <div id="invitation-error" class="error-message hidden"></div>
+                    <div class="form-actions">
+                        <button type="submit" class="btn btn-primary btn-large" data-i18n="auth.verify_invitation">Verify Invitation →</button>
+                    </div>
+                </form>
 
                 <div class="divider">
                     <span data-i18n="common.or">or</span>
@@ -155,6 +164,7 @@
 
                 <div id="create-org-section" class="hidden">
                     <h3 data-i18n="auth.create_org">Create Your Organization</h3>
+                    <p class="help-text" data-i18n="auth.first_user_becomes_admin">You'll be the first member and administrator</p>
                     <form onsubmit="createAndJoinOrg(event)">
                         <input type="text" id="new-org-name" data-i18n-placeholder="auth.placeholder_org_name" placeholder="Organization Name" required>
                         <input type="text" id="new-org-region" data-i18n-placeholder="auth.placeholder_location" placeholder="Location (optional)">
@@ -163,38 +173,61 @@
                         </div>
                     </form>
                 </div>
+
+                <p class="help-text" style="margin-top: 20px;">
+                    <span data-i18n="auth.no_invitation">Don't have an invitation code?</span>
+                    <span data-i18n="auth.contact_admin">Contact your organization administrator to receive one.</span>
+                </p>
             </div>
         </div>
 
         <!-- User Profile Setup -->
         <div id="profile-screen" class="screen hidden">
             <div class="form-container">
-                <h2 data-i18n="auth.about_you">Tell Us About Yourself</h2>
-                <p class="subtitle" data-i18n="auth.create_account_subtitle">Create your account to get started</p>
+                <h2 data-i18n="auth.complete_signup">Complete Your Signup</h2>
+                <p class="subtitle" data-i18n="auth.almost_there">Almost there! Just set your password to complete registration</p>
 
-                <form onsubmit="createProfile(event)">
-                    <input type="text" id="user-name" data-i18n-placeholder="common.placeholder_full_name" placeholder="Your Full Name" required>
-                    <input type="email" id="user-email" data-i18n-placeholder="common.placeholder_email" placeholder="Email Address" required>
-                    <input type="password" id="user-password" data-i18n-placeholder="auth.placeholder_create_password" placeholder="Create Password (min 6 characters)" minlength="6" required>
-                    <input type="tel" id="user-phone" data-i18n-placeholder="common.placeholder_phone" placeholder="Phone Number (optional)">
+                <form onsubmit="completeInvitationSignup(event)">
+                    <!-- Hidden field for invitation token -->
+                    <input type="hidden" id="invitation-token-hidden">
 
-                    <label data-i18n="auth.permission_level">Permission Level</label>
-                    <div class="role-selector" id="role-selector">
-                        <label class="role-option">
-                            <input type="checkbox" value="volunteer" checked> <span data-i18n="common.volunteer">Volunteer</span>
-                            <small class="form-help"><span data-i18n="auth.regular_member">Regular member</span></small>
-                        </label>
-                        <label class="role-option admin-role">
-                            <input type="checkbox" value="admin"> <span data-i18n="common.administrator">Administrator</span>
-                            <small class="form-help"><span data-i18n="auth.can_manage_org">Can manage organization and create events</span></small>
-                        </label>
+                    <!-- Pre-filled from invitation (read-only) -->
+                    <div class="form-group">
+                        <label data-i18n="common.labels.full_name">Full Name</label>
+                        <input type="text" id="user-name" data-i18n-placeholder="common.placeholder_full_name" placeholder="Your Full Name" required readonly>
                     </div>
-                    <p class="help-text">
-                        <strong data-i18n="common.note">Note:</strong> You'll choose specific event roles (usher, greeter, etc.) when you join events.
-                    </p>
+
+                    <div class="form-group">
+                        <label data-i18n="common.labels.email">Email Address</label>
+                        <input type="email" id="user-email" data-i18n-placeholder="common.placeholder_email" placeholder="Email Address" required readonly>
+                    </div>
+
+                    <div class="form-group">
+                        <label data-i18n="auth.create_password">Create Password</label>
+                        <input type="password" id="user-password" data-i18n-placeholder="auth.placeholder_create_password" placeholder="Create Password (min 6 characters)" minlength="6" required autofocus>
+                    </div>
+
+                    <div class="form-group">
+                        <label data-i18n="settings.timezone">Your Timezone</label>
+                        <select id="user-timezone">
+                            <option value="UTC">UTC</option>
+                            <option value="America/New_York">Eastern Time</option>
+                            <option value="America/Chicago">Central Time</option>
+                            <option value="America/Denver">Mountain Time</option>
+                            <option value="America/Los_Angeles">Pacific Time</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label data-i18n="auth.assigned_roles">Your Assigned Roles</label>
+                        <div id="invitation-roles-display" class="role-badges">
+                            <!-- Pre-assigned roles from invitation will be displayed here -->
+                        </div>
+                        <p class="help-text" data-i18n="auth.roles_assigned_by_admin">These roles were assigned by your organization administrator</p>
+                    </div>
 
                     <div class="form-actions">
-                        <button type="submit" class="btn btn-primary btn-large" data-i18n="common.buttons.next">Continue →</button>
+                        <button type="submit" class="btn btn-primary btn-large" data-i18n="auth.complete_registration">Complete Registration →</button>
                     </div>
                 </form>
             </div>

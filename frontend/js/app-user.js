@@ -280,68 +280,122 @@ function showLogin_old() {
 }
 
 // Organization Selection - Search-based for privacy
-async function loadOrganizations() {
-    const listEl = document.getElementById('org-list');
+// Global variable to store invitation data
+let currentInvitation = null;
 
-    // Don't load all organizations - show search interface instead
-    listEl.innerHTML = `
-        <div class="org-search-container">
-            <div class="form-group">
-                <label data-i18n="auth.search_organization">Search for your organization</label>
-                <input type="text" id="org-search-input" data-i18n-placeholder="auth.org_search_placeholder" placeholder="Enter organization name..." class="form-control" oninput="searchOrganizations()">
-            </div>
-            <div id="org-search-results"></div>
-            <div class="divider"><span data-i18n="common.or">or</span></div>
-            <button class="btn btn-secondary btn-block" onclick="showCreateOrg()" data-i18n="auth.create_new_org">Create New Organization</button>
-        </div>
-    `;
+// Verify invitation token
+async function verifyInvitationToken(event) {
+    event.preventDefault();
 
-    // Translate the newly added content
-    translatePage();
-}
+    const token = document.getElementById('invitation-token').value.trim();
+    const errorEl = document.getElementById('invitation-error');
 
-// Search organizations by name
-async function searchOrganizations() {
-    const searchInput = document.getElementById('org-search-input');
-    const resultsEl = document.getElementById('org-search-results');
-    const searchTerm = searchInput.value.trim();
-
-    if (searchTerm.length < 2) {
-        resultsEl.innerHTML = '';
+    if (!token) {
+        errorEl.textContent = i18n.t('auth.invitation_required');
+        errorEl.classList.remove('hidden');
         return;
     }
 
     try {
-        const response = await fetch(`${API_BASE_URL}/organizations/`);
+        // Call invitation verification API
+        const response = await fetch(`${API_BASE_URL}/invitations/${token}`);
         const data = await response.json();
 
-        // Filter organizations by search term
-        const filtered = data.organizations.filter(org =>
-            org.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            (org.region && org.region.toLowerCase().includes(searchTerm.toLowerCase()))
-        ).slice(0, 5); // Limit to 5 results
-
-        if (filtered.length === 0) {
-            resultsEl.innerHTML = `<p class="help-text" data-i18n="messages.empty.no_matching_orgs">No matching organizations found. Try creating a new one.</p>`;
-            translatePage();
+        if (!response.ok || !data.valid) {
+            errorEl.textContent = data.message || i18n.t('auth.invalid_invitation');
+            errorEl.classList.remove('hidden');
             return;
         }
 
-        resultsEl.innerHTML = filtered.map(org => `
-            <div class="org-card" onclick="selectOrganization('${org.id}', '${org.name}')">
-                <h3>${org.name}</h3>
-                <p>${org.region || 'No location specified'}</p>
-            </div>
-        `).join('');
+        // Store invitation data
+        currentInvitation = data.invitation;
+
+        // Pre-fill profile form with invitation data
+        document.getElementById('user-name').value = currentInvitation.name;
+        document.getElementById('user-email').value = currentInvitation.email;
+        document.getElementById('invitation-token-hidden').value = token;
+
+        // Display assigned roles
+        const rolesDisplay = document.getElementById('invitation-roles-display');
+        if (currentInvitation.roles && currentInvitation.roles.length > 0) {
+            rolesDisplay.innerHTML = currentInvitation.roles.map(role =>
+                `<span class="role-badge">${role}</span>`
+            ).join('');
+        } else {
+            rolesDisplay.innerHTML = '<span class="role-badge">volunteer</span>';
+        }
+
+        // Show profile screen
+        showScreen('profile-screen');
+
     } catch (error) {
-        resultsEl.innerHTML = `<p class="help-text" data-i18n="messages.error_loading.organizations">Error loading organizations</p>`;
-        translatePage();
+        errorEl.textContent = i18n.t('messages.errors.generic') + ': ' + error.message;
+        errorEl.classList.remove('hidden');
     }
 }
 
-function selectOrganization(orgId, orgName) {
-    currentOrg = { id: orgId, name: orgName };
-    showScreen('profile-screen');
+// Complete invitation-based signup
+async function completeInvitationSignup(event) {
+    event.preventDefault();
+
+    const token = document.getElementById('invitation-token-hidden').value;
+    const password = document.getElementById('user-password').value;
+    const timezone = document.getElementById('user-timezone').value;
+
+    if (!token || !password) {
+        showToast(i18n.t('messages.errors.missing_fields'), 'error');
+        return;
+    }
+
+    try {
+        // Accept invitation and create account
+        const response = await fetch(`${API_BASE_URL}/invitations/${token}/accept`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                password: password,
+                timezone: timezone
+            })
+        });
+
+        if (!response.ok) {
+            const error = await response.json();
+            showToast(error.detail || i18n.t('messages.errors.signup_failed'), 'error');
+            return;
+        }
+
+        const data = await response.json();
+
+        // Store user session
+        currentUser = {
+            id: data.person_id,
+            name: data.name,
+            email: data.email,
+            roles: data.roles,
+            timezone: data.timezone,
+            language: i18n.getLocale(),
+            token: data.token
+        };
+
+        currentOrg = {
+            id: data.org_id,
+            name: currentInvitation.org_id // We'll fetch proper org name later
+        };
+
+        window.currentUser = currentUser;
+        window.currentOrg = currentOrg;
+
+        saveSession();
+
+        // Show success message
+        showToast(i18n.t('auth.welcome_message') || data.message, 'success');
+
+        // Load main app
+        await loadMainApp();
+
+    } catch (error) {
+        showToast(i18n.t('messages.errors.generic') + ': ' + error.message, 'error');
+    }
 }
 
 function showCreateOrg() {
