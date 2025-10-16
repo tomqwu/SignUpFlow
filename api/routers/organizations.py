@@ -12,13 +12,14 @@ from api.schemas.organization import (
     OrganizationList,
 )
 from api.models import Organization
+from api.utils.rate_limit_middleware import rate_limit
 
 router = APIRouter(prefix="/organizations", tags=["organizations"])
 
 
-@router.post("/", response_model=OrganizationResponse, status_code=status.HTTP_201_CREATED)
+@router.post("/", response_model=OrganizationResponse, status_code=status.HTTP_201_CREATED, dependencies=[Depends(rate_limit("create_org"))])
 def create_organization(org_data: OrganizationCreate, db: Session = Depends(get_db)):
-    """Create a new organization."""
+    """Create a new organization. Rate limited to 2 requests per hour per IP."""
     # Check if organization already exists
     existing = db.query(Organization).filter(Organization.id == org_data.id).first()
     if existing:

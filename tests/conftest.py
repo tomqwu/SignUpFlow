@@ -18,6 +18,7 @@ def api_server():
     # Set test database URL environment variable
     test_env = os.environ.copy()
     test_env["DATABASE_URL"] = "sqlite:///./test_roster.db"
+    test_env["TESTING"] = "true"  # Disable rate limiting during tests
 
     # Start server with test database
     process = subprocess.Popen(
@@ -135,6 +136,10 @@ def test_data():
 
 def pytest_configure(config):
     """Configure pytest with custom markers."""
+    import os
+    # Set TESTING environment variable to disable rate limiting
+    os.environ["TESTING"] = "true"
+
     config.addinivalue_line("markers", "unit: Unit tests")
     config.addinivalue_line("markers", "integration: Integration tests")
     config.addinivalue_line("markers", "e2e: End-to-end tests")

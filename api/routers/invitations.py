@@ -11,6 +11,7 @@ from api.database import get_db
 from api.dependencies import verify_admin_access, verify_org_member, get_organization_by_id, get_current_admin_user
 from api.utils.security import generate_invitation_token, generate_auth_token, hash_password
 from api.utils.db_helpers import check_email_exists
+from api.utils.rate_limit_middleware import rate_limit
 from api.schemas.invitation import (
     InvitationCreate,
     InvitationResponse,
@@ -25,7 +26,7 @@ router = APIRouter(prefix="/invitations", tags=["invitations"])
 
 
 # Endpoints
-@router.post("", response_model=InvitationResponse, status_code=status.HTTP_201_CREATED)
+@router.post("", response_model=InvitationResponse, status_code=status.HTTP_201_CREATED, dependencies=[Depends(rate_limit("create_invitation"))])
 def create_invitation(
     request: InvitationCreate,
     org_id: str = Query(..., description="Organization ID"),
@@ -33,7 +34,7 @@ def create_invitation(
     db: Session = Depends(get_db),
 ):
     """
-    Create a new invitation (admin only).
+    Create a new invitation (admin only). Rate limited to 10 requests per 5 minutes per IP.
 
     Sends an invitation email to a new user to join the organization.
     """
@@ -132,10 +133,10 @@ async def list_invitations(
     )
 
 
-@router.get("/{token}", response_model=InvitationVerify)
+@router.get("/{token}", response_model=InvitationVerify, dependencies=[Depends(rate_limit("verify_invitation"))])
 def verify_invitation(token: str, db: Session = Depends(get_db)):
     """
-    Verify an invitation token.
+    Verify an invitation token. Rate limited to 10 requests per minute per IP.
 
     Checks if the invitation is valid and not expired.
     """

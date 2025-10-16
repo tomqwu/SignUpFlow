@@ -1,7 +1,7 @@
 """Authentication endpoints."""
 
 from typing import Optional
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Request
 from sqlalchemy.orm import Session
 from pydantic import BaseModel, EmailStr, Field
 import time
@@ -10,6 +10,7 @@ from api.database import get_db
 from api.dependencies import get_organization_by_id
 from api.security import hash_password, verify_password, create_access_token
 from api.models import Person, Organization
+from api.utils.rate_limit_middleware import rate_limit
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
@@ -43,9 +44,9 @@ class AuthResponse(BaseModel):
 
 
 # Endpoints
-@router.post("/signup", response_model=AuthResponse, status_code=status.HTTP_201_CREATED)
+@router.post("/signup", response_model=AuthResponse, status_code=status.HTTP_201_CREATED, dependencies=[Depends(rate_limit("signup"))])
 def signup(request: SignupRequest, db: Session = Depends(get_db)):
-    """Create a new user account."""
+    """Create a new user account. Rate limited to 3 requests per hour per IP."""
 
     # Check if email already exists
     existing = db.query(Person).filter(Person.email == request.email).first()
@@ -111,9 +112,9 @@ def signup(request: SignupRequest, db: Session = Depends(get_db)):
     )
 
 
-@router.post("/login", response_model=AuthResponse)
+@router.post("/login", response_model=AuthResponse, dependencies=[Depends(rate_limit("login"))])
 def login(request: LoginRequest, db: Session = Depends(get_db)):
-    """Login with email and password."""
+    """Login with email and password. Rate limited to 5 requests per 5 minutes per IP."""
 
     # Find user by email
     person = db.query(Person).filter(Person.email == request.email).first()
