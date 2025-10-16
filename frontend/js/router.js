@@ -8,6 +8,8 @@ class Router {
         this.routes = {
             '/': 'onboarding-screen',
             '/login': 'login-screen',
+            '/forgot-password': 'forgot-password-screen',
+            '/reset-password': 'reset-password-screen',
             '/join': 'join-screen',
             '/profile': 'profile-screen',
             '/app': 'main-app',
@@ -27,6 +29,8 @@ class Router {
         this.pageTitles = {
             '/': 'Welcome to SignUpFlow',
             '/login': 'Sign In - SignUpFlow',
+            '/forgot-password': 'Reset Password - SignUpFlow',
+            '/reset-password': 'Create New Password - SignUpFlow',
             '/join': 'Join Organization - SignUpFlow',
             '/profile': 'Create Profile - SignUpFlow',
             '/app/schedule': 'My Schedule - SignUpFlow',
@@ -65,7 +69,7 @@ class Router {
         this.updateMetaDescription(path);
 
         // Handle authentication screens
-        if (path === '/' || path === '/login' || path === '/join' || path === '/profile') {
+        if (path === '/' || path === '/login' || path === '/forgot-password' || path === '/reset-password' || path === '/join' || path === '/profile') {
             const screenId = this.routes[path];
             console.log(`🛣️  Auth screen detected. Path: ${path}, screenId: ${screenId}`);
             if (screenId) {

@@ -1269,6 +1269,19 @@ form label {
     display: none;
 }
 
+.success-message {
+    background: #d1fae5;
+    color: #065f46;
+    padding: 12px;
+    border-radius: 8px;
+    margin: 10px 0;
+    font-size: 0.9rem;
+}
+
+.success-message.hidden {
+    display: none;
+}
+
 /* Role Management */
 .roles-list {
     margin-top: 15px;

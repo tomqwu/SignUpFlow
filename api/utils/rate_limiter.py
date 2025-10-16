@@ -136,4 +136,12 @@ RATE_LIMITS = {
         "max_requests": get_env_int("RATE_LIMIT_VERIFY_INVITATION_MAX", 10),
         "window_seconds": get_env_int("RATE_LIMIT_VERIFY_INVITATION_WINDOW", 60),
     },
+    "password_reset": {
+        "max_requests": get_env_int("RATE_LIMIT_PASSWORD_RESET_MAX", 3),
+        "window_seconds": get_env_int("RATE_LIMIT_PASSWORD_RESET_WINDOW", 3600),
+    },
+    "password_reset_confirm": {
+        "max_requests": get_env_int("RATE_LIMIT_PASSWORD_RESET_CONFIRM_MAX", 5),
+        "window_seconds": get_env_int("RATE_LIMIT_PASSWORD_RESET_CONFIRM_WINDOW", 300),
+    },
 }

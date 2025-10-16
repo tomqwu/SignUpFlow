@@ -275,6 +275,117 @@ async function handleLogin(event) {
     }
 }
 
+// ============================================================================
+// PASSWORD RESET
+// ============================================================================
+
+function showForgotPassword() {
+    console.log('🔑 showForgotPassword called');
+    router.navigate('/forgot-password');
+}
+
+async function handleForgotPassword(event) {
+    event.preventDefault();
+
+    const email = document.getElementById('forgot-email').value;
+    const errorEl = document.getElementById('forgot-error');
+    const successEl = document.getElementById('forgot-success');
+
+    errorEl.classList.add('hidden');
+    successEl.classList.add('hidden');
+
+    try {
+        const response = await fetch(`${API_BASE_URL}/auth/forgot-password`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email })
+        });
+
+        if (response.ok) {
+            const data = await response.json();
+            successEl.textContent = i18n.t('auth.password_reset_email_sent') || 'Check your email for reset instructions';
+            successEl.classList.remove('hidden');
+
+            // In development, show the reset link
+            if (data.reset_link) {
+                console.log('🔑 Password reset link (dev only):', data.reset_link);
+                // Extract token from link and show reset screen directly in dev mode
+                const token = data.reset_link.split('token=')[1];
+                setTimeout(() => {
+                    showResetPasswordWithToken(token);
+                }, 2000);
+            }
+        } else {
+            // Show same success message even on error to prevent email enumeration
+            successEl.textContent = i18n.t('auth.password_reset_email_sent') || 'Check your email for reset instructions';
+            successEl.classList.remove('hidden');
+        }
+    } catch (error) {
+        console.error('Password reset request error:', error);
+        successEl.textContent = i18n.t('auth.password_reset_email_sent') || 'Check your email for reset instructions';
+        successEl.classList.remove('hidden');
+    }
+}
+
+function showResetPasswordWithToken(token) {
+    console.log('🔑 showResetPasswordWithToken called with token');
+    document.getElementById('reset-token').value = token;
+    router.navigate('/reset-password');
+}
+
+async function handleResetPassword(event) {
+    event.preventDefault();
+
+    const token = document.getElementById('reset-token').value;
+    const password = document.getElementById('reset-password').value;
+    const confirmPassword = document.getElementById('reset-password-confirm').value;
+    const errorEl = document.getElementById('reset-error');
+    const successEl = document.getElementById('reset-success');
+
+    errorEl.classList.add('hidden');
+    successEl.classList.add('hidden');
+
+    // Validate password match
+    if (password !== confirmPassword) {
+        errorEl.textContent = i18n.t('auth.passwords_dont_match') || 'Passwords do not match';
+        errorEl.classList.remove('hidden');
+        return;
+    }
+
+    // Validate password length
+    if (password.length < 8) {
+        errorEl.textContent = i18n.t('auth.password_too_short') || 'Password must be at least 8 characters';
+        errorEl.classList.remove('hidden');
+        return;
+    }
+
+    try {
+        const response = await fetch(`${API_BASE_URL}/auth/reset-password`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ token, new_password: password })
+        });
+
+        if (response.ok) {
+            successEl.textContent = i18n.t('auth.password_reset_success') || 'Password reset successful! Redirecting to login...';
+            successEl.classList.remove('hidden');
+
+            // Redirect to login after 2 seconds
+            setTimeout(() => {
+                showLogin();
+            }, 2000);
+        } else {
+            const error = await response.json();
+            errorEl.textContent = error.detail || i18n.t('auth.password_reset_failed');
+            errorEl.classList.remove('hidden');
+        }
+    } catch (error) {
+        console.error('Password reset error:', error);
+        errorEl.textContent = i18n.t('messages.errors.connection_error');
+        errorEl.classList.remove('hidden');
+    }
+}
+
 function showLogin_old() {
     showToast(i18n.t('messages.info.login_coming_soon'), 'info');
 }

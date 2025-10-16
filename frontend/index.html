@@ -131,9 +131,67 @@
                     <div class="form-actions">
                         <button type="submit" class="btn btn-primary btn-large" data-i18n="auth.sign_in">Sign In →</button>
                     </div>
+
+                    <p class="help-text" style="text-align: center; margin-top: 10px;">
+                        <a href="#" onclick="showForgotPassword(); return false;" data-i18n="auth.forgot_password">Forgot password?</a>
+                    </p>
                 </form>
 
                 <p class="help-text"><span data-i18n="auth.no_account">Don't have an account?</span> <a href="#" onclick="startOnboarding(); return false;"><span data-i18n="auth.signup_link">Sign up</span></a></p>
+            </div>
+        </div>
+
+        <!-- Forgot Password Screen -->
+        <div id="forgot-password-screen" class="screen hidden">
+            <div class="form-container">
+                <h2 data-i18n="auth.reset_password">Reset Password</h2>
+                <p class="subtitle" data-i18n="auth.reset_password_subtitle">Enter your email address and we'll send you a reset link</p>
+
+                <form onsubmit="handleForgotPassword(event)">
+                    <div class="form-group">
+                        <label data-i18n="common.labels.email">Email Address</label>
+                        <input type="email" id="forgot-email" data-i18n-placeholder="auth.placeholder_email" placeholder="your@email.com" required autofocus>
+                    </div>
+
+                    <div id="forgot-error" class="error-message hidden"></div>
+                    <div id="forgot-success" class="success-message hidden"></div>
+
+                    <div class="form-actions">
+                        <button type="submit" class="btn btn-primary btn-large" data-i18n="auth.send_reset_link">Send Reset Link →</button>
+                    </div>
+                </form>
+
+                <p class="help-text"><span data-i18n="auth.remember_password">Remember your password?</span> <a href="#" onclick="showLogin(); return false;" data-i18n="auth.back_to_login">Back to login</a></p>
+            </div>
+        </div>
+
+        <!-- Reset Password Screen -->
+        <div id="reset-password-screen" class="screen hidden">
+            <div class="form-container">
+                <h2 data-i18n="auth.create_new_password">Create New Password</h2>
+                <p class="subtitle" data-i18n="auth.enter_new_password">Enter your new password below</p>
+
+                <form onsubmit="handleResetPassword(event)">
+                    <input type="hidden" id="reset-token">
+
+                    <div class="form-group">
+                        <label data-i18n="auth.new_password">New Password</label>
+                        <input type="password" id="reset-password" data-i18n-placeholder="auth.placeholder_new_password" placeholder="Enter new password" minlength="8" required autofocus>
+                        <p class="help-text" data-i18n="auth.password_requirements">At least 8 characters</p>
+                    </div>
+
+                    <div class="form-group">
+                        <label data-i18n="auth.confirm_password">Confirm Password</label>
+                        <input type="password" id="reset-password-confirm" data-i18n-placeholder="auth.placeholder_confirm_password" placeholder="Confirm new password" minlength="8" required>
+                    </div>
+
+                    <div id="reset-error" class="error-message hidden"></div>
+                    <div id="reset-success" class="success-message hidden"></div>
+
+                    <div class="form-actions">
+                        <button type="submit" class="btn btn-primary btn-large" data-i18n="auth.reset_password_button">Reset Password →</button>
+                    </div>
+                </form>
             </div>
         </div>
 
