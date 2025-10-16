@@ -287,14 +287,17 @@ async function loadOrganizations() {
     listEl.innerHTML = `
         <div class="org-search-container">
             <div class="form-group">
-                <label>${i18n.t('auth.search_organization') || 'Search for your organization'}</label>
-                <input type="text" id="org-search-input" placeholder="${i18n.t('auth.org_search_placeholder') || 'Enter organization name...'}" class="form-control" oninput="searchOrganizations()">
+                <label data-i18n="auth.search_organization">Search for your organization</label>
+                <input type="text" id="org-search-input" data-i18n-placeholder="auth.org_search_placeholder" placeholder="Enter organization name..." class="form-control" oninput="searchOrganizations()">
             </div>
             <div id="org-search-results"></div>
-            <div class="divider"><span>${i18n.t('common.or') || 'or'}</span></div>
-            <button class="btn btn-secondary btn-block" onclick="showCreateOrg()">${i18n.t('auth.create_new_org') || 'Create New Organization'}</button>
+            <div class="divider"><span data-i18n="common.or">or</span></div>
+            <button class="btn btn-secondary btn-block" onclick="showCreateOrg()" data-i18n="auth.create_new_org">Create New Organization</button>
         </div>
     `;
+
+    // Translate the newly added content
+    translatePage();
 }
 
 // Search organizations by name
@@ -319,7 +322,8 @@ async function searchOrganizations() {
         ).slice(0, 5); // Limit to 5 results
 
         if (filtered.length === 0) {
-            resultsEl.innerHTML = `<p class="help-text">${i18n.t('messages.empty.no_matching_orgs') || 'No matching organizations found. Try creating a new one.'}</p>`;
+            resultsEl.innerHTML = `<p class="help-text" data-i18n="messages.empty.no_matching_orgs">No matching organizations found. Try creating a new one.</p>`;
+            translatePage();
             return;
         }
 
@@ -330,7 +334,8 @@ async function searchOrganizations() {
             </div>
         `).join('');
     } catch (error) {
-        resultsEl.innerHTML = `<p class="help-text">${i18n.t('messages.error_loading.organizations') || 'Error loading organizations'}</p>`;
+        resultsEl.innerHTML = `<p class="help-text" data-i18n="messages.error_loading.organizations">Error loading organizations</p>`;
+        translatePage();
     }
 }
 
