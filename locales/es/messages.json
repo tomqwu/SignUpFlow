@@ -99,6 +99,7 @@
   },
   "empty": {
     "no_organizations": "Aún no hay organizaciones. ¡Crea una para comenzar!",
+    "no_matching_orgs": "No se encontraron organizaciones coincidentes. Intenta crear una nueva.",
     "no_upcoming_events": "No hay eventos próximos",
     "no_volunteers_yet": "Aún no hay voluntarios - ¡sé el primero!",
     "no_assignments": "No hay asignaciones próximas.",

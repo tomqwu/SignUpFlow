@@ -279,26 +279,58 @@ function showLogin_old() {
     showToast(i18n.t('messages.info.login_coming_soon'), 'info');
 }
 
-// Organization Selection
+// Organization Selection - Search-based for privacy
 async function loadOrganizations() {
     const listEl = document.getElementById('org-list');
+
+    // Don't load all organizations - show search interface instead
+    listEl.innerHTML = `
+        <div class="org-search-container">
+            <div class="form-group">
+                <label>${i18n.t('auth.search_organization') || 'Search for your organization'}</label>
+                <input type="text" id="org-search-input" placeholder="${i18n.t('auth.org_search_placeholder') || 'Enter organization name...'}" class="form-control" oninput="searchOrganizations()">
+            </div>
+            <div id="org-search-results"></div>
+            <div class="divider"><span>${i18n.t('common.or') || 'or'}</span></div>
+            <button class="btn btn-secondary btn-block" onclick="showCreateOrg()">${i18n.t('auth.create_new_org') || 'Create New Organization'}</button>
+        </div>
+    `;
+}
+
+// Search organizations by name
+async function searchOrganizations() {
+    const searchInput = document.getElementById('org-search-input');
+    const resultsEl = document.getElementById('org-search-results');
+    const searchTerm = searchInput.value.trim();
+
+    if (searchTerm.length < 2) {
+        resultsEl.innerHTML = '';
+        return;
+    }
+
     try {
         const response = await fetch(`${API_BASE_URL}/organizations/`);
         const data = await response.json();
 
-        if (data.organizations.length === 0) {
-            listEl.innerHTML = `<p class="help-text">${i18n.t('messages.empty.no_organizations')}</p>`;
+        // Filter organizations by search term
+        const filtered = data.organizations.filter(org =>
+            org.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            (org.region && org.region.toLowerCase().includes(searchTerm.toLowerCase()))
+        ).slice(0, 5); // Limit to 5 results
+
+        if (filtered.length === 0) {
+            resultsEl.innerHTML = `<p class="help-text">${i18n.t('messages.empty.no_matching_orgs') || 'No matching organizations found. Try creating a new one.'}</p>`;
             return;
         }
 
-        listEl.innerHTML = data.organizations.map(org => `
+        resultsEl.innerHTML = filtered.map(org => `
             <div class="org-card" onclick="selectOrganization('${org.id}', '${org.name}')">
                 <h3>${org.name}</h3>
                 <p>${org.region || 'No location specified'}</p>
             </div>
         `).join('');
     } catch (error) {
-        listEl.innerHTML = `<p class="help-text">${i18n.t('messages.error_loading.organizations')}</p>`;
+        resultsEl.innerHTML = `<p class="help-text">${i18n.t('messages.error_loading.organizations') || 'Error loading organizations'}</p>`;
     }
 }
 

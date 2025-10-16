@@ -199,6 +199,17 @@ body {
     margin: 30px 0;
 }
 
+.org-search-container {
+    padding: 20px 0;
+}
+
+#org-search-results {
+    display: grid;
+    gap: 15px;
+    margin: 20px 0;
+    min-height: 50px;
+}
+
 .org-card {
     background: var(--bg);
     padding: 20px;
@@ -369,10 +380,17 @@ form label {
 .btn-secondary {
     background: var(--secondary);
     color: white;
+    border-color: var(--secondary);
 }
 
 .btn-secondary:hover {
     background: #475569;
+    border-color: #475569;
+}
+
+.btn-block {
+    width: 100%;
+    display: block;
 }
 
 .btn-large {

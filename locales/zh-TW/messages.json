@@ -114,7 +114,8 @@
     "invitations_coming_soon": "邀請功能即將推出！",
     "no_permissions_found": "未找到有效權限",
     "no_permissions_assigned": "未分配權限",
-    "no_roles_set": "未設定角色"
+    "no_roles_set": "未設定角色",
+    "no_matching_orgs": "未找到匹配的組織。嘗試創建一個新的。"
   },
   "error_loading": {
     "organizations": "載入組織時發生錯誤。請確保 API 正在執行。",

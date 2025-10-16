@@ -114,7 +114,8 @@
     "invitations_coming_soon": "邀请功能即将推出！",
     "no_permissions_found": "未找到有效权限",
     "no_permissions_assigned": "未分配权限",
-    "no_roles_set": "未设置角色"
+    "no_roles_set": "未设置角色",
+    "no_matching_orgs": "未找到匹配的组织。尝试创建一个新的。"
   },
   "error_loading": {
     "organizations": "加载组织时出错。请确保 API 正在运行。",

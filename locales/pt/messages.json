@@ -114,7 +114,8 @@
     "invitations_coming_soon": "Recurso de convites em breve!",
     "no_permissions_found": "Não foram encontradas permissões válidas",
     "no_permissions_assigned": "Não há permissões atribuídas",
-    "no_roles_set": "Não há funções definidas"
+    "no_roles_set": "Não há funções definidas",
+    "no_matching_orgs": "Nenhuma organização correspondente encontrada. Tente criar uma nova."
   },
   "error_loading": {
     "organizations": "Erro ao carregar organizações. Certifique-se de que a API esteja em execução.",
