@@ -32,6 +32,7 @@
     <script src="/js/search-filter.js"></script>
     <script src="/js/auth-fetch.js"></script>
     <script src="/js/router.js"></script>
+    <script src="/js/recaptcha.js"></script>
 
     <!-- Structured Data for SEO -->
     <script type="application/ld+json">
@@ -249,15 +250,15 @@
                     <!-- Hidden field for invitation token -->
                     <input type="hidden" id="invitation-token-hidden">
 
-                    <!-- Pre-filled from invitation (read-only) -->
+                    <!-- Pre-filled from invitation -->
                     <div class="form-group">
                         <label data-i18n="common.labels.full_name">Full Name</label>
-                        <input type="text" id="user-name" data-i18n-placeholder="common.placeholder_full_name" placeholder="Your Full Name" required readonly>
+                        <input type="text" id="user-name" data-i18n-placeholder="common.placeholder_full_name" placeholder="Your Full Name" required>
                     </div>
 
                     <div class="form-group">
                         <label data-i18n="common.labels.email">Email Address</label>
-                        <input type="email" id="user-email" data-i18n-placeholder="common.placeholder_email" placeholder="Email Address" required readonly>
+                        <input type="email" id="user-email" data-i18n-placeholder="common.placeholder_email" placeholder="Email Address" required>
                     </div>
 
                     <div class="form-group">

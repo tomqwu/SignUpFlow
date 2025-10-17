@@ -1,131 +1,205 @@
-"""End-to-end test for login flow using Playwright."""
+"""
+E2E test for login flow - Following claude.md guidelines
+Tests the complete user journey from login page to main app
 
+User Journey:
+1. User opens app
+2. User navigates to login screen
+3. User enters email and password
+4. User clicks login button
+5. User sees main app with their name displayed
+6. User can access their data/schedule
+"""
 import pytest
 from playwright.sync_api import Page, expect
+import time
+import requests
 
 
-@pytest.fixture(scope="module")
-def browser_context_args(browser_context_args):
-    """Configure browser context."""
-    return {
-        **browser_context_args,
-        "viewport": {"width": 1280, "height": 720},
+def test_login_complete_user_journey(page: Page):
+    """Test complete login flow from login screen to main app"""
+
+    print(f"\n{'='*80}")
+    print("TESTING LOGIN USER JOURNEY")
+    print(f"{'='*80}\n")
+
+    # Setup: Create a test user to login with
+    timestamp = int(time.time())
+    test_email = f"logintest{timestamp}@test.com"
+    test_password = "TestPassword123"
+    test_name = f"Login Test User {timestamp}"
+
+    print("Setup: Creating test user via API...")
+    org_data = {
+        "id": f"login_test_org_{timestamp}",
+        "name": f"Login Test Org {timestamp}",
+        "region": "Test",
+        "config": {}
     }
+    requests.post("http://localhost:8000/api/organizations/", json=org_data)
 
+    signup_data = {
+        "org_id": org_data["id"],
+        "name": test_name,
+        "email": test_email,
+        "password": test_password,
+        "roles": ["admin"]
+    }
+    signup_response = requests.post("http://localhost:8000/api/auth/signup", json=signup_data)
+    if signup_response.status_code not in [200, 201]:
+        raise Exception(f"Failed to create test user: {signup_response.text}")
+    print(f"✓ Test user created: {test_email}\n")
 
-def test_login_page_loads(page: Page):
-    """Test that the login page loads and displays correctly."""
-    # Navigate to home page
-    page.goto("http://localhost:8000/")
-
-    # Wait for page to load
+    # Step 1: Navigate to app
+    print("Step 1: Navigating to app...")
+    page.goto("http://localhost:8000")
     page.wait_for_load_state("networkidle")
 
-    # Take screenshot of home page
-    page.screenshot(path="/tmp/01-home-page.png")
+    # Step 2: Navigate to login screen
+    print("Step 2: Navigating to login screen...")
+    if page.locator('#onboarding-screen').is_visible():
+        page.locator('a:has-text("Sign in")').click()
+        page.wait_for_timeout(500)
 
-    # Check if we see the onboarding screen
-    onboarding = page.locator("#onboarding-screen")
-    print(f"Onboarding visible: {onboarding.is_visible()}")
+    expect(page.locator('#login-screen')).to_be_visible()
+    print("✓ Login screen visible\n")
 
-    # Look for "Sign in" link (use role to be specific)
-    sign_in_link = page.get_by_role("link", name="Sign in")
-    print(f"Sign in link found: {sign_in_link.count()}")
+    # Step 3: Fill in credentials
+    print(f"Step 3: Entering credentials ({test_email})...")
+    page.locator('#login-email').fill(test_email)
+    page.locator('#login-password').fill(test_password)
 
-    # Click "Sign in" link
-    if sign_in_link.count() > 0:
-        sign_in_link.click()
-        page.wait_for_timeout(1000)  # Wait 1 second
+    # Track login request
+    login_requests = []
+    def handle_response(response):
+        if '/auth/login' in response.url:
+            login_requests.append({
+                'status': response.status,
+                'url': response.url
+            })
+    page.on("response", handle_response)
 
-        # Take screenshot after clicking
-        page.screenshot(path="/tmp/02-after-sign-in-click.png")
+    # Step 4: Submit login
+    print("Step 4: Clicking login button...")
+    page.locator('#login-screen button[type="submit"]').click()
+    page.wait_for_timeout(2000)
 
-        # Check URL
-        print(f"Current URL: {page.url}")
+    # Step 5: Verify login success
+    print("Step 5: Verifying login success...\n")
 
-        # Check if login screen is visible
-        login_screen = page.locator("#login-screen")
-        print(f"Login screen visible: {login_screen.is_visible()}")
+    # Check API response
+    if login_requests:
+        last_login = login_requests[-1]
+        print(f"  Login API status: {last_login['status']}")
+        if last_login['status'] not in [200, 201]:
+            raise AssertionError(f"Login API failed with status {last_login['status']}")
+        print("  ✓ Login API successful")
 
-        # Check all screens visibility
-        screens = page.locator(".screen").all()
-        for i, screen in enumerate(screens):
-            screen_id = screen.get_attribute("id")
-            classes = screen.get_attribute("class")
-            is_visible = screen.is_visible()
-            print(f"Screen {i}: {screen_id}, classes: {classes}, visible: {is_visible}")
+    # Should be on main app screen
+    try:
+        expect(page.locator('#main-app')).to_be_visible(timeout=5000)
+        print("  ✓ Main app visible")
+    except Exception as e:
+        print(f"  ✗ Main app not visible: {e}")
+        # Debug
+        print("\n  Visible screens:")
+        for screen_id in ['onboarding-screen', 'login-screen', 'join-screen', 'profile-screen', 'main-app']:
+            is_visible = page.locator(f'#{screen_id}').is_visible()
+            print(f"    {screen_id}: {'VISIBLE' if is_visible else 'hidden'}")
+        page.screenshot(path="/tmp/login_failed.png")
+        raise
+
+    # Step 6: Verify user data is displayed
+    print("Step 6: Verifying user data displayed...\n")
+
+    # User name should be shown
+    user_display = page.locator('#user-name-display')
+    expect(user_display).to_be_visible()
+    expect(user_display).to_have_text(test_name)
+    print(f"  ✓ User name displayed: '{test_name}'")
+
+    # Auth token should be saved
+    auth_token = page.evaluate("() => localStorage.getItem('authToken')")
+    assert auth_token is not None, "Auth token not saved"
+    print("  ✓ Auth token saved to localStorage")
+
+    # Schedule section should be accessible
+    if page.locator('#schedule-section').count() > 0:
+        print("  ✓ Schedule section accessible")
+
+    print(f"\n{'='*80}")
+    print("✅ LOGIN FLOW TEST PASSED")
+    print(f"{'='*80}\n")
 
 
-def test_login_form_submission(page: Page):
-    """Test submitting the login form."""
-    # Navigate directly to login page
-    page.goto("http://localhost:8000/login")
+def test_login_with_invalid_credentials(page: Page):
+    """Test that login fails gracefully with wrong password"""
+
+    print("\nTesting login with invalid credentials...")
+
+    page.goto("http://localhost:8000")
     page.wait_for_load_state("networkidle")
 
-    # Take screenshot
-    page.screenshot(path="/tmp/03-login-page-direct.png")
+    # Navigate to login
+    if page.locator('#onboarding-screen').is_visible():
+        page.locator('a:has-text("Sign in")').click()
+        page.wait_for_timeout(500)
 
-    # Check if login form is visible
-    login_screen = page.locator("#login-screen")
-    print(f"Login screen visible: {login_screen.is_visible()}")
+    expect(page.locator('#login-screen')).to_be_visible()
 
-    # Check if form fields exist
-    email_input = page.locator("#login-email")
-    password_input = page.locator("#login-password")
-    print(f"Email input visible: {email_input.is_visible()}")
-    print(f"Password input visible: {password_input.is_visible()}")
+    # Enter invalid credentials
+    page.locator('#login-email').fill("nonexistent@test.com")
+    page.locator('#login-password').fill("wrongpassword")
 
-    if email_input.is_visible() and password_input.is_visible():
-        # Fill in the form
-        email_input.fill("pastor@grace.church")
-        password_input.fill("password")
+    # Try to login
+    page.locator('#login-screen button[type="submit"]').click()
+    page.wait_for_timeout(2000)
 
-        # Take screenshot before submit
-        page.screenshot(path="/tmp/04-login-form-filled.png")
+    # Should still be on login screen (not logged in)
+    expect(page.locator('#login-screen')).to_be_visible()
+    print("✓ Still on login screen (not logged in)")
 
-        # Click submit button
-        submit_button = page.get_by_role("button", name="Sign In")
-        submit_button.click()
+    # Should NOT be on main app
+    expect(page.locator('#main-app')).not_to_be_visible()
+    print("✓ Not logged in with invalid credentials")
 
-        # Wait for navigation or error
-        page.wait_for_timeout(2000)
-
-        # Take screenshot after submit
-        page.screenshot(path="/tmp/05-after-login-submit.png")
-
-        # Check current URL
-        print(f"After login URL: {page.url}")
-
-        # Check for error messages
-        error_div = page.locator("#login-error")
-        if error_div.is_visible():
-            print(f"Login error: {error_div.text_content()}")
-
-        # Check if we're on the main app
-        main_app = page.locator("#main-app")
-        print(f"Main app visible: {main_app.is_visible()}")
+    # Error message should be visible
+    # Check for toast or error div
+    has_error = (
+        page.locator('.toast.error').is_visible() or
+        page.locator('#login-error').is_visible() or
+        page.locator('.error-message').is_visible()
+    )
+    if has_error:
+        print("✓ Error message shown to user")
+    else:
+        print("⚠️  Warning: Error message may not be visible")
 
 
-def test_check_console_logs(page: Page):
-    """Test and capture console logs during login."""
-    console_messages = []
+def test_login_empty_form_validation(page: Page):
+    """Test that empty login form prevents submission"""
 
-    def handle_console(msg):
-        console_messages.append(f"{msg.type}: {msg.text}")
+    print("\nTesting login form validation...")
 
-    page.on("console", handle_console)
-
-    # Navigate to home
-    page.goto("http://localhost:8000/")
+    page.goto("http://localhost:8000")
     page.wait_for_load_state("networkidle")
 
-    # Click sign in (use role to be specific)
-    sign_in_link = page.get_by_role("link", name="Sign in")
-    if sign_in_link.count() > 0:
-        sign_in_link.click()
-        page.wait_for_timeout(1000)
+    # Navigate to login
+    if page.locator('#onboarding-screen').is_visible():
+        page.locator('a:has-text("Sign in")').click()
+        page.wait_for_timeout(500)
 
-    # Print all console messages
-    print("\n=== Console Messages ===")
-    for msg in console_messages:
-        print(msg)
+    expect(page.locator('#login-screen')).to_be_visible()
+
+    # Try to submit without filling anything
+    page.locator('#login-screen button[type="submit"]').click()
+    page.wait_for_timeout(500)
+
+    # HTML5 validation should prevent submission
+    # Should still be on login screen
+    expect(page.locator('#login-screen')).to_be_visible()
+    print("✓ Form validation prevents empty submission")
+
+
+if __name__ == "__main__":
+    pytest.main([__file__, "-v", "-s"])

@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Org Creation</title>
+</head>
+<body>
+    <h1>Test Organization Creation</h1>
+
+    <form id="test-form">
+        <label>Organization Name:</label>
+        <input type="text" id="org-name" value="Test Organization" required>
+        <br><br>
+
+        <label>Region:</label>
+        <input type="text" id="org-region" value="US">
+        <br><br>
+
+        <button type="submit">Create Organization</button>
+    </form>
+
+    <div id="result" style="margin-top: 20px; padding: 10px; border: 1px solid #ccc;"></div>
+
+    <script>
+        const API_BASE_URL = '/api';
+
+        document.getElementById('test-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const name = document.getElementById('org-name').value;
+            const region = document.getElementById('org-region').value;
+            const id = name.toLowerCase().replace(/\s+/g, '_') + '_' + Date.now();
+
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = 'Creating organization...';
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/organizations/`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        id: id,
+                        name: name,
+                        region: region || null,
+                        config: {}
+                    })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    resultDiv.innerHTML = `<div style="color: green;">
+                        <strong>✅ Success!</strong><br>
+                        Organization ID: ${data.id}<br>
+                        Name: ${data.name}<br>
+                        Region: ${data.region}<br>
+                        Created: ${data.created_at}
+                    </div>`;
+                } else {
+                    resultDiv.innerHTML = `<div style="color: red;">
+                        <strong>❌ Error ${response.status}</strong><br>
+                        ${data.detail || JSON.stringify(data)}
+                    </div>`;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<div style="color: red;">
+                    <strong>❌ Network Error</strong><br>
+                    ${error.message}
+                </div>`;
+            }
+        });
+    </script>
+</body>
+</html>

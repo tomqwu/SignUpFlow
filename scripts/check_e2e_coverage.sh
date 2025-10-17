@@ -1,0 +1,35 @@
+#!/bin/bash
+# Check which user journeys have e2e test coverage
+
+echo "======================================"
+echo "E2E Test Coverage Report"
+echo "======================================"
+echo ""
+
+echo "✅ User Journeys WITH E2E Tests:"
+echo "--------------------------------"
+echo "1. Create Org → Signup → Main App"
+echo "   Test: tests/e2e/test_complete_org_creation.py"
+echo ""
+echo "2. Create Organization (partial)"
+echo "   Test: tests/e2e/test_org_creation_flow.py"
+echo ""
+
+echo "❌ User Journeys WITHOUT E2E Tests:"
+echo "-----------------------------------"
+echo "1. Accept Invitation → Complete Signup → Main App"
+echo "2. Login → Main App"
+echo "3. Forgot Password → Reset → Login"
+echo "4. Create Event → View Schedule"
+echo "5. Join Event → View My Schedule"
+echo "6. Admin Invite User → User Accepts"
+echo "7. Change Language → UI Updates"
+echo "8. Change Timezone → Times Update"
+echo "9. Edit Profile → Save → Verify"
+echo "10. Logout → Login Again"
+echo ""
+
+echo "======================================"
+echo "RECOMMENDATION: Write e2e tests for"
+echo "all missing user journeys above."
+echo "======================================"

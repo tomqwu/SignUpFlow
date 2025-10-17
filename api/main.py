@@ -8,6 +8,10 @@ from fastapi.responses import JSONResponse, FileResponse
 import uvicorn
 import os
 import traceback
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
 
 from api.database import init_db
 from api.logging_config import logger

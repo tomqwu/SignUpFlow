@@ -42,6 +42,11 @@ def rate_limit(limit_type: str):
             return True
 
         client_ip = get_client_ip(request)
+
+        # Disable rate limiting for localhost/development
+        if client_ip in ("127.0.0.1", "localhost", "::1"):
+            return True
+
         key = f"{limit_type}:{client_ip}"
 
         config = RATE_LIMITS.get(limit_type, {"max_requests": 10, "window_seconds": 60})

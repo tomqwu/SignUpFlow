@@ -76,3 +76,4 @@ Thumbs.db
 *.db-wal
 *.db.before_restore_*
 examples/*.db
+.env

@@ -139,11 +139,15 @@ async function createOrganization(event) {
     };
 
     try {
-        const response = await fetch(`${API_BASE_URL}/organizations/`, {
+        // Get reCAPTCHA token for create_org action
+        let fetchOptions = {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(data)
-        });
+        };
+        fetchOptions = await addRecaptchaToken('create_org', fetchOptions);
+
+        const response = await fetch(`${API_BASE_URL}/organizations/`, fetchOptions);
 
         if (response.ok) {
             hideCreateOrgForm();

@@ -11,6 +11,7 @@ from api.dependencies import get_organization_by_id
 from api.security import hash_password, verify_password, create_access_token
 from api.models import Person, Organization
 from api.utils.rate_limit_middleware import rate_limit
+from api.utils.recaptcha import get_recaptcha_site_key
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
@@ -151,3 +152,18 @@ def check_email(email: EmailStr, db: Session = Depends(get_db)):
     """Check if email is already registered."""
     exists = db.query(Person).filter(Person.email == email).first() is not None
     return {"exists": exists}
+
+
+@router.get("/recaptcha-site-key")
+def get_recaptcha_config():
+    """
+    Get reCAPTCHA site key for frontend use.
+
+    Returns:
+        dict: Contains site_key and enabled status
+    """
+    site_key = get_recaptcha_site_key()
+    return {
+        "site_key": site_key,
+        "enabled": bool(site_key)
+    }

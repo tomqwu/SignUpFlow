@@ -11,6 +11,15 @@ from api.schemas.event import EventCreate, EventUpdate, EventResponse, EventList
 from api.models import Event, EventTeam, Organization, Team, Person, Assignment, VacationPeriod, Availability
 from api.utils.response_messages import success_response, error_response, validation_warning
 from api.dependencies import get_current_user, get_current_admin_user, verify_org_member
+from api.utils.event_helpers import (
+    is_person_blocked_on_date,
+    get_assigned_person_ids,
+    person_has_matching_role,
+    get_event_required_roles,
+    count_people_with_role,
+    validate_time_range,
+    get_blocked_assigned_people
+)
 
 router = APIRouter(prefix="/events", tags=["events"])
 
@@ -59,10 +68,11 @@ def create_event(
         )
 
     # Validate times
-    if event_data.end_time <= event_data.start_time:
+    is_valid, error_message = validate_time_range(event_data.start_time, event_data.end_time)
+    if not is_valid:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="End time must be after start time",
+            detail=error_message,
         )
 
     # Create event
@@ -166,10 +176,11 @@ def update_event(
         event.extra_data = event_data.extra_data
 
     # Validate times
-    if event.end_time <= event.start_time:
+    is_valid, error_message = validate_time_range(event.start_time, event.end_time)
+    if not is_valid:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="End time must be after start time",
+            detail=error_message,
         )
 
     db.commit()
@@ -199,25 +210,27 @@ def delete_event(
 
 
 @router.get("/{event_id}/available-people", response_model=List[AvailablePerson])
-def get_available_people(event_id: str, db: Session = Depends(get_db)):
-    """Get people available for this event based on roles."""
+def get_available_people(event_id: str, db: Session = Depends(get_db)) -> List[AvailablePerson]:
+    """
+    Get people available for this event based on roles.
+
+    Returns list of people who have matching roles, with flags indicating
+    if they're already assigned or have blocked the event date.
+    """
     event = db.query(Event).filter(Event.id == event_id).first()
     if not event:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail=f"Event '{event_id}' not found"
         )
 
-    # Get required roles from event extra_data
-    role_counts = (event.extra_data or {}).get("role_counts", {})
-    required_roles = list(role_counts.keys()) if role_counts else (event.extra_data or {}).get("roles", [])
+    # Get required roles from event
+    required_roles = get_event_required_roles(event)
 
     # Get all people in the organization
     people = db.query(Person).filter(Person.org_id == event.org_id).all()
 
     # Get current assignments for this event
-    assigned_person_ids = {
-        a.person_id for a in db.query(Assignment).filter(Assignment.event_id == event_id).all()
-    }
+    assigned_person_ids = get_assigned_person_ids(db, event_id)
 
     # Get event date (just the date part, not time)
     event_date = event.start_time.date()
@@ -228,17 +241,9 @@ def get_available_people(event_id: str, db: Session = Depends(get_db)):
         person_roles = person.roles or []
 
         # Check if person has any of the required roles
-        has_matching_role = not required_roles or any(role in person_roles for role in required_roles)
-
-        if has_matching_role:
-            # Check if person has blocked this date via Availability -> VacationPeriod join
-            is_blocked = db.query(VacationPeriod).join(
-                Availability, VacationPeriod.availability_id == Availability.id
-            ).filter(
-                Availability.person_id == person.id,
-                VacationPeriod.start_date <= event_date,
-                VacationPeriod.end_date >= event_date
-            ).first() is not None
+        if person_has_matching_role(person_roles, required_roles):
+            # Check if person has blocked this date
+            is_blocked = is_person_blocked_on_date(db, person.id, event_date)
 
             available.append(AvailablePerson(
                 id=person.id,
@@ -253,8 +258,18 @@ def get_available_people(event_id: str, db: Session = Depends(get_db)):
 
 
 @router.get("/{event_id}/validation")
-def validate_event(event_id: str, db: Session = Depends(get_db)):
-    """Validate if event has proper configuration and enough people."""
+def validate_event(event_id: str, db: Session = Depends(get_db)) -> dict:
+    """
+    Validate if event has proper configuration and enough people.
+
+    Checks:
+    1. Event has role requirements configured
+    2. Enough people available for each role
+    3. No assigned people are blocked on the event date
+
+    Returns:
+        Dictionary with is_valid flag and list of validation warnings
+    """
     event = db.query(Event).filter(Event.id == event_id).first()
     if not event:
         raise HTTPException(
@@ -279,8 +294,7 @@ def validate_event(event_id: str, db: Session = Depends(get_db)):
 
         for role, needed_count in role_counts.items():
             # Count people with this role
-            available_people = [p for p in people if p.roles and role in p.roles]
-            available_count = len(available_people)
+            available_count = count_people_with_role(people, role)
 
             if available_count < needed_count:
                 warnings.append(validation_warning(
@@ -294,32 +308,15 @@ def validate_event(event_id: str, db: Session = Depends(get_db)):
 
     # Check if any assigned people are blocked on this event date
     event_date = event.start_time.date()
-    assignments = db.query(Assignment).filter(Assignment.event_id == event_id).all()
+    blocked_people = get_blocked_assigned_people(db, event_id, event_date)
 
-    if assignments:
-        blocked_people = []
-        for assignment in assignments:
-            # Check if person has blocked this date
-            is_blocked = db.query(VacationPeriod).join(
-                Availability, VacationPeriod.availability_id == Availability.id
-            ).filter(
-                Availability.person_id == assignment.person_id,
-                VacationPeriod.start_date <= event_date,
-                VacationPeriod.end_date >= event_date
-            ).first() is not None
-
-            if is_blocked:
-                person = db.query(Person).filter(Person.id == assignment.person_id).first()
-                if person:
-                    blocked_people.append(person.name)
-
-        if blocked_people:
-            warnings.append(validation_warning(
-                "blocked_assignments",
-                "events.validation.blocked_people_assigned",
-                people=", ".join(blocked_people)
-            ))
-            is_valid = False
+    if blocked_people:
+        warnings.append(validation_warning(
+            "blocked_assignments",
+            "events.validation.blocked_people_assigned",
+            people=", ".join(blocked_people)
+        ))
+        is_valid = False
 
     return {
         "event_id": event_id,

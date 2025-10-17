@@ -13,11 +13,12 @@ from api.schemas.organization import (
 )
 from api.models import Organization
 from api.utils.rate_limit_middleware import rate_limit
+from api.utils.recaptcha_middleware import require_recaptcha
 
 router = APIRouter(prefix="/organizations", tags=["organizations"])
 
 
-@router.post("/", response_model=OrganizationResponse, status_code=status.HTTP_201_CREATED, dependencies=[Depends(rate_limit("create_org"))])
+@router.post("/", response_model=OrganizationResponse, status_code=status.HTTP_201_CREATED, dependencies=[Depends(rate_limit("create_org")), Depends(require_recaptcha)])
 def create_organization(org_data: OrganizationCreate, db: Session = Depends(get_db)):
     """Create a new organization. Rate limited to 2 requests per hour per IP."""
     # Check if organization already exists
