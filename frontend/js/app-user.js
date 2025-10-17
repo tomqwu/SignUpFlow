@@ -130,18 +130,9 @@ function checkExistingSession() {
             showMainApp();
         }
     } else {
-        // Not logged in - check if trying to access protected route
-        if (currentPath.startsWith('/app')) {
-            // Redirect to login if trying to access app without session
-            router.navigate('/login', true);
-        } else if (currentPath === '/login') {
-            router.handleRoute('/login', false);
-        } else if (currentPath === '/join') {
-            router.handleRoute('/join', false);
-        } else {
-            // Default to onboarding
-            router.handleRoute('/', false);
-        }
+        // Not logged in - initialize router for auth screens
+        // router.init() handles all routing including protected routes
+        router.init();
     }
 }
 

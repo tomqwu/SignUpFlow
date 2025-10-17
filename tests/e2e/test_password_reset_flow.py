@@ -211,6 +211,33 @@ def test_password_reset_with_mismatched_passwords(page: Page):
     # Navigate to reset password screen with token
     print("\nStep 1: Navigating to reset password screen...")
     page.goto(f"http://localhost:8000/reset-password?token={token}")
+
+    # Debug: Wait for page to load and check which screen is visible
+    page.wait_for_timeout(1000)  # Give router time to process
+
+    # Check all screens
+    screens = ['onboarding-screen', 'login-screen', 'forgot-password-screen', 'reset-password-screen', 'join-screen', 'profile-screen', 'main-app']
+    visible_screen = None
+    for screen_id in screens:
+        if page.locator(f'#{screen_id}').is_visible():
+            visible_screen = screen_id
+            break
+
+    # Debug: Check if router detected the token
+    url_info = page.evaluate("""() => {
+        return {
+            pathname: window.location.pathname,
+            search: window.location.search,
+            hasRouter: typeof router !== 'undefined',
+            resetToken: document.getElementById('reset-token')?.value || 'NOT SET'
+        };
+    }""")
+    print(f"  Debug: URL pathname = {url_info['pathname']}")
+    print(f"  Debug: URL search = {url_info['search']}")
+    print(f"  Debug: Router exists = {url_info['hasRouter']}")
+    print(f"  Debug: Reset token field value = {url_info['resetToken']}")
+    print(f"  Debug: Visible screen = {visible_screen}")
+
     expect(page.locator('#reset-password-screen')).to_be_visible(timeout=3000)
     print("  ✓ Reset password screen visible")
 
