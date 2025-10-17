@@ -91,6 +91,19 @@ class Router {
                 }
             }
 
+            // Special handling for /reset-password route with reset token
+            if (path === '/reset-password' && window.location.search) {
+                const urlParams = new URLSearchParams(window.location.search);
+                const resetToken = urlParams.get('token');
+
+                if (resetToken) {
+                    console.log(`🔑  Reset password token detected: ${resetToken.substring(0, 20)}...`);
+                    // Pre-fill token and show reset password screen
+                    this.handleResetPasswordToken(resetToken);
+                    return;
+                }
+            }
+
             if (screenId) {
                 this.showScreen(screenId);
             }
@@ -251,6 +264,24 @@ class Router {
                 errorEl.classList.remove('hidden');
             }
         }
+    }
+
+    /**
+     * Handle reset password token from URL
+     */
+    handleResetPasswordToken(token) {
+        console.log(`🔑  Processing reset password token...`);
+
+        // Pre-fill the hidden token field
+        const tokenField = document.getElementById('reset-token');
+        if (tokenField) {
+            tokenField.value = token;
+            console.log(`🔑  Token pre-filled in hidden field`);
+        }
+
+        // Show reset password screen
+        this.showScreen('reset-password-screen');
+        console.log(`🔑  Navigated to reset password screen with token`);
     }
 
     /**
