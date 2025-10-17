@@ -3,6 +3,11 @@
  * Handles navigation with proper URL updates and browser history
  */
 
+// Define API_BASE_URL if not already defined
+if (typeof API_BASE_URL === 'undefined') {
+    var API_BASE_URL = '/api';
+}
+
 class Router {
     constructor() {
         this.routes = {
@@ -72,6 +77,20 @@ class Router {
         if (path === '/' || path === '/login' || path === '/forgot-password' || path === '/reset-password' || path === '/join' || path === '/profile') {
             const screenId = this.routes[path];
             console.log(`🛣️  Auth screen detected. Path: ${path}, screenId: ${screenId}`);
+
+            // Special handling for /join route with invitation token
+            if (path === '/join' && window.location.search) {
+                const urlParams = new URLSearchParams(window.location.search);
+                const invitationToken = urlParams.get('token');
+
+                if (invitationToken) {
+                    console.log(`🎟️  Invitation token detected: ${invitationToken.substring(0, 20)}...`);
+                    // Automatically verify invitation token and navigate to profile screen
+                    this.handleInvitationToken(invitationToken);
+                    return;
+                }
+            }
+
             if (screenId) {
                 this.showScreen(screenId);
             }
@@ -147,6 +166,90 @@ class Router {
             console.log(`🎬 router.showScreen: ${screenId} is now visible`);
         } else {
             console.error(`🎬 router.showScreen: ${screenId} not found!`);
+        }
+    }
+
+    /**
+     * Handle invitation token from URL
+     */
+    async handleInvitationToken(token) {
+        console.log(`🎟️  Processing invitation token...`);
+        const errorEl = document.getElementById('invitation-error');
+
+        try {
+            // Call invitation verification API
+            const response = await fetch(`${API_BASE_URL}/invitations/${token}`);
+            const data = await response.json();
+
+            if (!response.ok || !data.valid) {
+                console.error('🎟️  Invalid invitation token');
+                // Show join screen with error
+                this.showScreen('join-screen');
+                if (errorEl) {
+                    errorEl.textContent = data.message || 'Invalid or expired invitation link';
+                    errorEl.classList.remove('hidden');
+                }
+                return;
+            }
+
+            // Store invitation data globally
+            window.currentInvitation = data.invitation;
+            console.log('🎟️  Invitation verified:', window.currentInvitation);
+
+            // Pre-fill profile form with invitation data
+            document.getElementById('user-name').value = window.currentInvitation.name;
+            document.getElementById('user-email').value = window.currentInvitation.email;
+            document.getElementById('invitation-token-hidden').value = token;
+
+            // Make name and email readonly for invitations
+            document.getElementById('user-name').setAttribute('readonly', true);
+            document.getElementById('user-email').setAttribute('readonly', true);
+
+            // Display assigned roles
+            const rolesDisplay = document.getElementById('invitation-roles-display');
+            const rolesDisplayParent = rolesDisplay?.closest('.form-group');
+            if (window.currentInvitation.roles && window.currentInvitation.roles.length > 0) {
+                rolesDisplay.innerHTML = window.currentInvitation.roles.map(role =>
+                    `<span class="role-badge">${role}</span>`
+                ).join('');
+                if (rolesDisplayParent) {
+                    rolesDisplayParent.style.display = 'block';
+                }
+            } else {
+                rolesDisplay.innerHTML = '<span class="role-badge">volunteer</span>';
+                if (rolesDisplayParent) {
+                    rolesDisplayParent.style.display = 'block';
+                }
+            }
+
+            // Auto-detect and set timezone
+            const detectedTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+            const timezoneSelect = document.getElementById('user-timezone');
+            if (timezoneSelect && detectedTimezone) {
+                const option = Array.from(timezoneSelect.options).find(opt => opt.value === detectedTimezone);
+                if (option) {
+                    timezoneSelect.value = detectedTimezone;
+                }
+            }
+            console.log('🌍 Auto-detected timezone:', detectedTimezone);
+
+            // Change form handler to invitation signup
+            const profileForm = document.querySelector('#profile-screen form');
+            if (profileForm && window.completeInvitationSignup) {
+                profileForm.onsubmit = window.completeInvitationSignup;
+            }
+
+            // Show profile screen
+            this.showScreen('profile-screen');
+            console.log('🎟️  Navigated to profile screen with invitation data');
+
+        } catch (error) {
+            console.error('🎟️  Error processing invitation token:', error);
+            this.showScreen('join-screen');
+            if (errorEl) {
+                errorEl.textContent = 'Error processing invitation link. Please try again.';
+                errorEl.classList.remove('hidden');
+            }
         }
     }
 

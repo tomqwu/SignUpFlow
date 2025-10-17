@@ -138,7 +138,6 @@ function checkExistingSession() {
             router.handleRoute('/login', false);
         } else if (currentPath === '/join') {
             router.handleRoute('/join', false);
-            loadOrganizations();
         } else {
             // Default to onboarding
             router.handleRoute('/', false);
@@ -195,7 +194,6 @@ function showScreen(screenId) {
 function startOnboarding() {
     console.log('📝 startOnboarding called');
     router.navigate('/join');
-    loadOrganizations();
 }
 
 function showLogin() {
@@ -295,11 +293,15 @@ async function handleForgotPassword(event) {
     successEl.classList.add('hidden');
 
     try {
-        const response = await fetch(`${API_BASE_URL}/auth/forgot-password`, {
+        // Get reCAPTCHA token for password_reset action
+        let fetchOptions = {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ email })
-        });
+        };
+        fetchOptions = await addRecaptchaToken('password_reset', fetchOptions);
+
+        const response = await fetch(`${API_BASE_URL}/auth/forgot-password`, fetchOptions);
 
         if (response.ok) {
             const data = await response.json();
@@ -360,11 +362,15 @@ async function handleResetPassword(event) {
     }
 
     try {
-        const response = await fetch(`${API_BASE_URL}/auth/reset-password`, {
+        // Get reCAPTCHA token for password_reset_confirm action
+        let fetchOptions = {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ token, new_password: password })
-        });
+        };
+        fetchOptions = await addRecaptchaToken('password_reset_confirm', fetchOptions);
+
+        const response = await fetch(`${API_BASE_URL}/auth/reset-password`, fetchOptions);
 
         if (response.ok) {
             successEl.textContent = i18n.t('auth.password_reset_success') || 'Password reset successful! Redirecting to login...';
@@ -493,6 +499,13 @@ async function completeInvitationSignup(event) {
 
         const data = await response.json();
 
+        // Fetch organization details to get the org name
+        const orgResponse = await fetch(`${API_BASE_URL}/organizations/${data.org_id}`);
+        const orgData = await orgResponse.json();
+
+        // Save JWT token to localStorage
+        localStorage.setItem('authToken', data.token);
+
         // Store user session
         currentUser = {
             id: data.person_id,
@@ -501,12 +514,12 @@ async function completeInvitationSignup(event) {
             roles: data.roles,
             timezone: data.timezone,
             language: i18n.getLocale(),
-            token: data.token
+            org_id: data.org_id
         };
 
         currentOrg = {
             id: data.org_id,
-            name: currentInvitation.org_id // We'll fetch proper org name later
+            name: orgData.name || data.org_id
         };
 
         window.currentUser = currentUser;
@@ -537,7 +550,8 @@ async function createAndJoinOrg(event) {
     const orgId = orgName.toLowerCase().replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, '');
 
     try {
-        const response = await fetch(`${API_BASE_URL}/organizations/`, {
+        // Get reCAPTCHA token for create_org action
+        let fetchOptions = {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -546,10 +560,41 @@ async function createAndJoinOrg(event) {
                 region: orgRegion || null,
                 config: {}
             })
-        });
+        };
+        fetchOptions = await addRecaptchaToken('create_org', fetchOptions);
+
+        const response = await fetch(`${API_BASE_URL}/organizations/`, fetchOptions);
 
         if (response.ok || response.status === 409) {
             currentOrg = { id: orgId, name: orgName };
+
+            // Clear and prepare the profile form for new org creator signup
+            document.getElementById('user-name').value = '';
+            document.getElementById('user-email').value = '';
+            document.getElementById('user-password').value = '';
+            document.getElementById('invitation-token-hidden').value = '';
+
+            // Auto-detect and set timezone from browser
+            const detectedTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+            const timezoneSelect = document.getElementById('user-timezone');
+            if (timezoneSelect && detectedTimezone) {
+                // Try to set to detected timezone, fall back to UTC if not in list
+                const option = Array.from(timezoneSelect.options).find(opt => opt.value === detectedTimezone);
+                if (option) {
+                    timezoneSelect.value = detectedTimezone;
+                }
+            }
+
+            // Hide invitation-specific UI elements (roles section)
+            const rolesDisplayParent = document.getElementById('invitation-roles-display')?.closest('.form-group');
+            if (rolesDisplayParent) {
+                rolesDisplayParent.style.display = 'none';
+            }
+
+            // Change the form submission handler to createProfile instead of completeInvitationSignup
+            const profileForm = document.querySelector('#profile-screen form');
+            profileForm.onsubmit = createProfile;
+
             showScreen('profile-screen');
         } else {
             showToast(i18n.t('messages.errors.create_org_failed'), 'error');
@@ -566,10 +611,13 @@ async function createProfile(event) {
     const name = document.getElementById('user-name').value;
     const email = document.getElementById('user-email').value;
     const password = document.getElementById('user-password').value;
-    const phone = document.getElementById('user-phone').value;
 
-    const roles = Array.from(document.querySelectorAll('#role-selector input:checked'))
-        .map(input => input.value);
+    // For new org creators, default to admin role
+    // Role selector may not exist on profile-screen, so provide fallback
+    const roleSelector = document.querySelector('#role-selector');
+    const roles = roleSelector
+        ? Array.from(document.querySelectorAll('#role-selector input:checked')).map(input => input.value)
+        : ['admin'];  // Default role for organization creators
 
     try {
         // Use signup endpoint with password
@@ -2844,7 +2892,6 @@ window.startOnboarding = startOnboarding;
 window.showLogin = showLogin;
 window.handleLogin = handleLogin;
 window.createProfile = createProfile;
-window.selectOrganization = selectOrganization;
 window.createAndJoinOrg = createAndJoinOrg;
 
 // Navigation
