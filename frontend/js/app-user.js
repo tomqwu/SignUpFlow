@@ -784,7 +784,10 @@ async function loadAllEvents() {
         const peopleResponse = await authFetch(`${API_BASE_URL}/people/?org_id=${currentUser.org_id}`);
         const peopleData = await peopleResponse.json();
         const peopleMap = {};
-        peopleData.people.forEach(p => peopleMap[p.id] = p.name);
+        // Defensive check: peopleData.people might be undefined
+        if (peopleData.people && Array.isArray(peopleData.people)) {
+            peopleData.people.forEach(p => peopleMap[p.id] = p.name);
+        }
 
         // Filter and sort events
         const now = new Date();
@@ -1183,7 +1186,8 @@ async function loadTimeOff() {
         const response = await fetch(`${API_BASE_URL}/availability/${currentUser.id}/timeoff?_=${Date.now()}`);
         const data = await response.json();
 
-        if (data.total === 0) {
+        // Defensive check: data.timeoff might be undefined or not an array
+        if (data.total === 0 || !data.timeoff || !Array.isArray(data.timeoff) || data.timeoff.length === 0) {
             listEl.innerHTML = `<p class="help-text">${i18n.t('messages.empty.no_timeoff')}</p>`;
             return;
         }
@@ -1642,7 +1646,8 @@ async function loadAdminPeople() {
         const response = await authFetch(`${API_BASE_URL}/people/?org_id=${orgId}`);
         const data = await response.json();
 
-        if (data.total === 0) {
+        // Defensive check: data.people might be undefined or not an array
+        if (data.total === 0 || !data.people || !Array.isArray(data.people) || data.people.length === 0) {
             listEl.innerHTML = `<p class="help-text">${i18n.t('messages.empty.no_people_yet')}</p>`;
             return;
         }
@@ -1726,7 +1731,8 @@ async function loadAdminSolutions() {
         const response = await fetch(`${API_BASE_URL}/solutions/?org_id=${orgId}`);
         const data = await response.json();
 
-        if (data.total === 0) {
+        // Defensive check: data.solutions might be undefined or not an array
+        if (data.total === 0 || !data.solutions || !Array.isArray(data.solutions) || data.solutions.length === 0) {
             listEl.innerHTML = `<p class="help-text">${i18n.t('messages.empty.no_schedules_yet')}</p>`;
             return;
         }
@@ -2648,6 +2654,12 @@ async function loadAdminCalendarView() {
 
         const assignmentsResponse = await fetch(`${API_BASE_URL}/solutions/${latestSolution.id}/assignments`);
         const assignmentsData = await assignmentsResponse.json();
+
+        // Defensive check: assignmentsData.assignments might be undefined or not an array
+        if (!assignmentsData.assignments || !Array.isArray(assignmentsData.assignments) || assignmentsData.assignments.length === 0) {
+            calendarEl.innerHTML = `<div class="loading">${i18n.t('messages.empty.no_assignments_yet')}</div>`;
+            return;
+        }
 
         // Group by date
         const byDate = {};
