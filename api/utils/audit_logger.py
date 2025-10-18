@@ -8,7 +8,7 @@ import secrets
 from typing import Optional, Dict, Any
 from sqlalchemy.orm import Session
 from fastapi import Request
-from api.models.audit_log import AuditLog, AuditAction
+from api.models import AuditLog, AuditAction
 
 
 def log_audit_event(

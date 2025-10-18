@@ -33,7 +33,13 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
         # Environment-based configuration
         self.is_production = os.getenv("ENVIRONMENT", "development") == "production"
         self.hsts_enabled = os.getenv("SECURITY_HSTS_ENABLED", str(self.is_production)).lower() == "true"
-        self.hsts_max_age = int(os.getenv("SECURITY_HSTS_MAX_AGE", "31536000"))  # 1 year
+
+        # Parse HSTS max-age with fallback for invalid values
+        try:
+            self.hsts_max_age = int(os.getenv("SECURITY_HSTS_MAX_AGE", "31536000"))  # 1 year
+        except ValueError:
+            self.hsts_max_age = 31536000  # Default fallback
+
         self.csp_enabled = os.getenv("SECURITY_CSP_ENABLED", "true").lower() == "true"
         self.frame_options = os.getenv("SECURITY_FRAME_OPTIONS", "DENY")
 

@@ -43,7 +43,8 @@ class PasswordValidator:
             "letmein", "trustno1", "dragon", "baseball", "111111", "iloveyou", "master",
             "sunshine", "ashley", "bailey", "passw0rd", "shadow", "123123", "654321",
             "superman", "qazwsx", "michael", "football", "password1", "admin", "welcome",
-            "Login123", "Test123!", "Admin123",  # Common test passwords
+            # Common test/demo passwords
+            "login123", "test123", "test123!", "admin123", "password123", "password123!",
         }
 
     def validate(self, password: str) -> Tuple[bool, Optional[str]]:
