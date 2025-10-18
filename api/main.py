@@ -74,6 +74,13 @@ async def error_logging_middleware(request: Request, call_next):
             content={"detail": "Internal server error. Please try again later."}
         )
 
+# Security headers middleware
+from api.utils.security_headers_middleware import add_security_headers_middleware
+add_security_headers_middleware(app)
+
+# Rate limiting is applied via decorators in routers (see api/utils/rate_limit_middleware.py)
+# reCAPTCHA is applied via middleware (see api/utils/recaptcha_middleware.py)
+
 # CORS middleware
 app.add_middleware(
     CORSMiddleware,

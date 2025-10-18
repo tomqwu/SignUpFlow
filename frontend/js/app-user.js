@@ -1590,7 +1590,7 @@ async function loadAdminEvents() {
         console.log('[loadAdminEvents] API response:', data);
         console.log('[loadAdminEvents] Total events:', data.total);
 
-        if (data.total === 0) {
+        if (data.total === 0 || !data.events || !Array.isArray(data.events) || data.events.length === 0) {
             console.log('[loadAdminEvents] No events found, showing message');
             listEl.innerHTML = `<p class="help-text">${i18n.t('messages.empty.no_events_yet')}</p>`;
             return;
@@ -1623,9 +1623,12 @@ async function loadAdminEvents() {
             </div>
         `).join('');
 
-        // Load assignments for each event
-        data.events.forEach(event => loadEventAssignments(event.id));
+        // Load assignments for each event (defensive check)
+        if (data.events && Array.isArray(data.events)) {
+            data.events.forEach(event => loadEventAssignments(event.id));
+        }
     } catch (error) {
+        console.error('[loadAdminEvents] Error loading events:', error);
         listEl.innerHTML = `<p class="help-text">${i18n.t('messages.error_loading.events', {message: error.message})}</p>`;
     }
 }
