@@ -2583,6 +2583,12 @@ async function showScheduleStats() {
         const assignmentsResponse = await fetch(`${API_BASE_URL}/solutions/${latestSolution.id}/assignments`);
         const assignmentsData = await assignmentsResponse.json();
 
+        // Defensive check: assignmentsData.assignments might be undefined or not an array
+        if (!assignmentsData.assignments || !Array.isArray(assignmentsData.assignments) || assignmentsData.assignments.length === 0) {
+            statsContent.innerHTML = `<p class="help-text">${i18n.t('messages.empty.no_assignments_yet')}</p>`;
+            return;
+        }
+
         // Calculate statistics
         const assignments = assignmentsData.assignments;
         const peopleCount = new Set(assignments.map(a => a.person_id)).size;
