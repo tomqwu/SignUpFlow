@@ -15,7 +15,7 @@ const DEFAULT_ROLES = [
 // Load roles from organization config
 async function loadOrgRoles() {
     try {
-        const response = await fetch(`${API_BASE_URL}/organizations/${currentUser.org_id}`);
+        const response = await authFetch(`${API_BASE_URL}/organizations/${currentUser.org_id}`);
         if (response.ok) {
             const data = await response.json();
             // Try custom_roles first, then roles, then default
@@ -98,7 +98,7 @@ async function addCustomRole(event) {
 
     try {
         // Load current org config
-        const orgResponse = await fetch(`${API_BASE_URL}/organizations/${currentUser.org_id}`);
+        const orgResponse = await authFetch(`${API_BASE_URL}/organizations/${currentUser.org_id}`);
         const orgData = await orgResponse.json();
 
         // Get current roles or default
@@ -114,7 +114,7 @@ async function addCustomRole(event) {
         const updatedRoles = [...currentRoles, roleName];
 
         // Update org config
-        const updateResponse = await fetch(`${API_BASE_URL}/organizations/${currentUser.org_id}`, {
+        const updateResponse = await authFetch(`${API_BASE_URL}/organizations/${currentUser.org_id}`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -153,7 +153,7 @@ async function loadAdminRoles() {
 
     try {
         const roles = await loadOrgRoles();
-        const orgResponse = await fetch(`${API_BASE_URL}/organizations/${currentOrg.id}`);
+        const orgResponse = await authFetch(`${API_BASE_URL}/organizations/${currentOrg.id}`);
         const orgData = await orgResponse.json();
         const descriptions = orgData.config?.role_descriptions || {};
 
@@ -229,7 +229,7 @@ async function performDeleteRole(roleName) {
 
     try {
         // Load current org config
-        const orgResponse = await fetch(`${API_BASE_URL}/organizations/${currentUser.org_id}`);
+        const orgResponse = await authFetch(`${API_BASE_URL}/organizations/${currentUser.org_id}`);
         const orgData = await orgResponse.json();
 
         // Remove role
@@ -241,7 +241,7 @@ async function performDeleteRole(roleName) {
         delete descriptions[roleName];
 
         // Update org config
-        const updateResponse = await fetch(`${API_BASE_URL}/organizations/${currentUser.org_id}`, {
+        const updateResponse = await authFetch(`${API_BASE_URL}/organizations/${currentUser.org_id}`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({

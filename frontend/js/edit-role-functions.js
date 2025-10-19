@@ -22,7 +22,7 @@ async function saveEditRole(event) {
 
     try {
         // Get current org config
-        const orgResponse = await fetch(`${API_BASE_URL}/organizations/${currentOrg.id}`);
+        const orgResponse = await authFetch(`${API_BASE_URL}/organizations/${currentOrg.id}`);
         const orgData = await orgResponse.json();
 
         const config = orgData.config || {};
@@ -69,7 +69,7 @@ async function saveEditRole(event) {
         roleDescriptions[newRoleName] = newDescription;
 
         // Update org config
-        const updateResponse = await fetch(`${API_BASE_URL}/organizations/${currentOrg.id}`, {
+        const updateResponse = await authFetch(`${API_BASE_URL}/organizations/${currentOrg.id}`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
