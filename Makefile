@@ -191,11 +191,41 @@ test-integration: check-poetry
 # Run E2E tests (browser automation)
 test-e2e: check-poetry
 	@echo "🌐 Running E2E browser tests..."
+	@echo "🔍 Checking if server is running..."
+	@if ! curl -s http://localhost:8000/health > /dev/null 2>&1; then \
+		echo "⚠️  Server not running. Starting server..."; \
+		poetry run uvicorn api.main:app --host 0.0.0.0 --port 8000 --reload > /dev/null 2>&1 & \
+		echo "⏳ Waiting for server to be ready..."; \
+		for i in 1 2 3 4 5; do \
+			sleep 1; \
+			if curl -s http://localhost:8000/health > /dev/null 2>&1; then \
+				echo "✅ Server ready"; \
+				break; \
+			fi; \
+		done; \
+	else \
+		echo "✅ Server already running"; \
+	fi
 	@poetry run pytest tests/e2e/ -v --tb=short
 
 # Run E2E tests with extended timeout (for long-running tests)
 test-e2e-long: check-poetry
 	@echo "🌐 Running E2E browser tests (extended timeout)..."
+	@echo "🔍 Checking if server is running..."
+	@if ! curl -s http://localhost:8000/health > /dev/null 2>&1; then \
+		echo "⚠️  Server not running. Starting server..."; \
+		poetry run uvicorn api.main:app --host 0.0.0.0 --port 8000 --reload > /dev/null 2>&1 & \
+		echo "⏳ Waiting for server to be ready..."; \
+		for i in 1 2 3 4 5; do \
+			sleep 1; \
+			if curl -s http://localhost:8000/health > /dev/null 2>&1; then \
+				echo "✅ Server ready"; \
+				break; \
+			fi; \
+		done; \
+	else \
+		echo "✅ Server already running"; \
+	fi
 	@timeout 600 poetry run pytest tests/e2e/ -v --tb=short
 
 # Run specific E2E test file
@@ -220,6 +250,23 @@ test-e2e-summary: check-poetry
 # Run ALL tests (frontend + backend + integration + E2E)
 test-all: check-npm check-poetry
 	@echo "🚀 Running complete test suite..."
+	@echo ""
+	@echo "🔍 Checking if server is running..."
+	@if ! curl -s http://localhost:8000/health > /dev/null 2>&1; then \
+		echo "⚠️  Server not running. Starting server..."; \
+		poetry run uvicorn api.main:app --host 0.0.0.0 --port 8000 --reload > /dev/null 2>&1 & \
+		SERVER_PID=$$!; \
+		echo "⏳ Waiting for server to be ready..."; \
+		for i in 1 2 3 4 5; do \
+			sleep 1; \
+			if curl -s http://localhost:8000/health > /dev/null 2>&1; then \
+				echo "✅ Server ready (PID: $$SERVER_PID)"; \
+				break; \
+			fi; \
+		done; \
+	else \
+		echo "✅ Server already running"; \
+	fi
 	@echo ""
 	@echo "================================"
 	@echo "   FRONTEND TESTS"
@@ -270,10 +317,17 @@ clean:
 	@rm -rf .pytest_cache
 	@rm -rf test_roster.db
 	@rm -rf __pycache__
-	@find . -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true
-	@find . -type f -name "*.pyc" -delete 2>/dev/null || true
+	@find . -type d -name "__pycache__" ! -path "*/node_modules/*" ! -path "*/.venv/*" -exec rm -rf {} + 2>/dev/null || true
+	@find . -type f -name "*.pyc" ! -path "*/node_modules/*" ! -path "*/.venv/*" -delete 2>/dev/null || true
 	@find . -type f -name ".DS_Store" -delete 2>/dev/null || true
+	@rm -f *.db-shm *.db-wal 2>/dev/null || true
 	@echo "✅ Clean complete"
+
+# Weekly maintenance cleanup
+clean-weekly:
+	@echo "🧹 Running weekly maintenance cleanup..."
+	@./scripts/cleanup_maintenance.sh
+	@echo "✅ Weekly maintenance complete"
 
 # Clean everything (includes dependencies)
 clean-all: stop clean
@@ -328,12 +382,12 @@ help:
 	@echo "  make test-frontend    - Run frontend JavaScript tests only"
 	@echo "  make test-backend     - Run backend Python tests only"
 	@echo "  make test-integration - Run integration tests only"
-	@echo "  make test-e2e         - Run E2E browser tests (Playwright)"
-	@echo "  make test-e2e-long    - Run E2E tests with 10min timeout"
+	@echo "  make test-e2e         - Run E2E browser tests (auto-starts server)"
+	@echo "  make test-e2e-long    - Run E2E tests with 10min timeout (auto-starts server)"
 	@echo "  make test-e2e-file    - Run specific E2E file (FILE=path/to/test.py)"
 	@echo "  make test-e2e-quick   - Run E2E tests with no traceback"
 	@echo "  make test-e2e-summary - Run E2E tests and show only summary"
-	@echo "  make test-all         - Run ALL tests (frontend + backend + E2E)"
+	@echo "  make test-all         - Run ALL tests (auto-starts server if needed)"
 	@echo "  make test-coverage    - Run tests with coverage reports"
 	@echo "  make test-unit        - Run unit tests only"
 	@echo "  make test-unit-fast   - Run fast unit tests (skip slow password tests)"
@@ -343,6 +397,7 @@ help:
 	@echo ""
 	@echo "Maintenance:"
 	@echo "  make clean            - Clean test artifacts and temp files"
+	@echo "  make clean-weekly     - Weekly maintenance cleanup (Python cache, logs, WAL files)"
 	@echo "  make clean-all        - Deep clean (stop server + remove dependencies)"
 	@echo "  make help             - Show this help message"
 	@echo ""
