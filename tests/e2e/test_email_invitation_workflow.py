@@ -12,6 +12,68 @@ Following Mandatory E2E Testing Workflow from CLAUDE.md.
 import pytest
 from playwright.sync_api import Page, expect
 import time
+import requests
+import os
+
+
+# Mailtrap API configuration
+MAILTRAP_API_TOKEN = os.environ.get("MAILTRAP_API_TOKEN", "")
+MAILTRAP_INBOX_ID = os.environ.get("MAILTRAP_INBOX_ID", "3238231")  # Default inbox ID
+MAILTRAP_ACCOUNT_ID = os.environ.get("MAILTRAP_ACCOUNT_ID", "")
+
+
+def get_mailtrap_messages(inbox_id=MAILTRAP_INBOX_ID, account_id=MAILTRAP_ACCOUNT_ID):
+    """
+    Get messages from Mailtrap inbox using API.
+
+    API Docs: https://api-docs.mailtrap.io/docs/mailtrap-api-docs/a80869adf4489-get-messages
+
+    Returns:
+        list: List of email messages in inbox
+    """
+    if not MAILTRAP_API_TOKEN:
+        pytest.skip("MAILTRAP_API_TOKEN not set - skipping API verification")
+
+    url = f"https://mailtrap.io/api/accounts/{account_id}/inboxes/{inbox_id}/messages"
+    headers = {
+        "Api-Token": MAILTRAP_API_TOKEN
+    }
+
+    try:
+        response = requests.get(url, headers=headers)
+        response.raise_for_status()
+        return response.json()
+    except requests.exceptions.RequestException as e:
+        pytest.skip(f"Failed to connect to Mailtrap API: {e}")
+
+
+def get_latest_email(to_email, inbox_id=MAILTRAP_INBOX_ID, account_id=MAILTRAP_ACCOUNT_ID, timeout=10):
+    """
+    Poll Mailtrap inbox for latest email sent to specific address.
+
+    Args:
+        to_email: Email address to search for
+        inbox_id: Mailtrap inbox ID
+        account_id: Mailtrap account ID
+        timeout: Maximum seconds to wait for email
+
+    Returns:
+        dict: Email message object or None if not found
+    """
+    import time
+    start_time = time.time()
+
+    while time.time() - start_time < timeout:
+        messages = get_mailtrap_messages(inbox_id, account_id)
+
+        # Find email sent to specific address
+        for msg in messages:
+            if msg.get('to_email') == to_email:
+                return msg
+
+        time.sleep(1)  # Wait 1 second before retry
+
+    return None
 
 
 def test_admin_sends_invitation_email(page: Page):
@@ -142,3 +204,53 @@ def test_invitation_email_service_handles_errors():
 
     # Should return False (not raise exception)
     assert success is False, "Email service should return False for failed sends"
+
+
+def test_invitation_email_delivered_to_mailtrap_inbox():
+    """
+    Test that invitation email is actually delivered to Mailtrap inbox.
+
+    This test uses the Mailtrap Inbox API to programmatically verify
+    email delivery without manual checking.
+
+    Requires:
+        - MAILTRAP_API_TOKEN environment variable
+        - MAILTRAP_ACCOUNT_ID environment variable
+        - MAILTRAP_INBOX_ID environment variable (optional, defaults to 3238231)
+
+    API Docs: https://api-docs.mailtrap.io/docs/mailtrap-api-docs/a80869adf4489-get-messages
+    """
+    from api.services.email_service import email_service
+
+    # Use unique email to avoid conflicts with other tests
+    test_email = f"api-test-{int(time.time())}@example.com"
+    test_token = "test_api_verification_token_123"
+
+    # Send invitation email
+    success = email_service.send_invitation_email(
+        to_email=test_email,
+        admin_name="API Test Admin",
+        org_name="API Test Organization",
+        invitation_token=test_token,
+        app_url="http://localhost:8000"
+    )
+
+    assert success, "Email service should send email successfully"
+
+    # Verify email appears in Mailtrap inbox via API
+    email_message = get_latest_email(test_email, timeout=15)
+
+    if email_message is None:
+        pytest.fail(f"Email to {test_email} not found in Mailtrap inbox within 15 seconds")
+
+    # Verify email content
+    assert email_message['to_email'] == test_email, "Email should be sent to correct recipient"
+    assert "You're invited to join" in email_message['subject'], "Email subject should contain invitation text"
+    assert email_message['from_email'] == "noreply@signupflow.io", "Email should be from correct sender"
+
+    # Verify email contains invitation link with token
+    assert test_token in email_message.get('html_body', ''), "Email should contain invitation token in HTML body"
+    assert "API Test Admin" in email_message.get('html_body', ''), "Email should mention admin name"
+    assert "API Test Organization" in email_message.get('html_body', ''), "Email should mention organization name"
+
+    print(f"✅ Email successfully delivered to Mailtrap inbox (Message ID: {email_message.get('id')})")
