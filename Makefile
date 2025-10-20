@@ -1,4 +1,4 @@
-.PHONY: run dev stop restart setup install migrate test test-frontend test-backend test-integration test-e2e test-e2e-long test-e2e-file test-e2e-quick test-e2e-summary test-all test-coverage test-unit test-unit-fast test-unit-file test-with-timing clean clean-all pre-commit help check-poetry check-npm check-python check-deps install-poetry install-npm install-deps fix-node-libs
+.PHONY: run dev stop restart setup install migrate test test-frontend test-backend test-integration test-e2e test-e2e-long test-e2e-file test-e2e-quick test-e2e-summary test-email test-email-unit test-all test-coverage test-unit test-unit-fast test-unit-file test-with-timing clean clean-all pre-commit help check-poetry check-npm check-python check-deps install-poetry install-npm install-deps fix-node-libs
 
 # Auto-installation targets
 install-poetry:
@@ -247,6 +247,33 @@ test-e2e-summary: check-poetry
 	@echo "🌐 Running E2E tests (summary only)..."
 	@timeout 600 poetry run pytest tests/e2e/ -v --tb=no | grep -E "(PASSED|FAILED|test session starts|passed|failed|warning)"
 
+# Run email invitation tests (unit tests only - no server required)
+test-email-unit: check-poetry
+	@echo "📧 Running email invitation unit tests..."
+	@poetry run pytest tests/e2e/test_email_invitation_workflow.py::test_invitation_email_contains_correct_content tests/e2e/test_email_invitation_workflow.py::test_invitation_email_service_handles_errors -v --tb=short
+
+# Run all email tests including E2E (requires server and Mailtrap API credentials)
+test-email: check-poetry
+	@echo "📧 Running all email invitation tests..."
+	@echo "🔍 Checking if server is running..."
+	@if ! curl -s http://localhost:8000/health > /dev/null 2>&1; then \
+		echo "⚠️  Server not running. Starting server..."; \
+		poetry run uvicorn api.main:app --host 0.0.0.0 --port 8000 --reload > /dev/null 2>&1 & \
+		echo "⏳ Waiting for server to be ready..."; \
+		for i in 1 2 3 4 5; do \
+			sleep 1; \
+			if curl -s http://localhost:8000/health > /dev/null 2>&1; then \
+				echo "✅ Server ready"; \
+				break; \
+			fi; \
+		done; \
+	else \
+		echo "✅ Server already running"; \
+	fi
+	@echo ""
+	@echo "Running email tests with rate limit delays..."
+	@poetry run pytest tests/e2e/test_email_invitation_workflow.py -v --tb=short
+
 # Run ALL tests (frontend + backend + integration + E2E)
 test-all: check-npm check-poetry
 	@echo "🚀 Running complete test suite..."
@@ -387,6 +414,8 @@ help:
 	@echo "  make test-e2e-file    - Run specific E2E file (FILE=path/to/test.py)"
 	@echo "  make test-e2e-quick   - Run E2E tests with no traceback"
 	@echo "  make test-e2e-summary - Run E2E tests and show only summary"
+	@echo "  make test-email-unit  - Run email unit tests (no server required)"
+	@echo "  make test-email       - Run all email tests (auto-starts server)"
 	@echo "  make test-all         - Run ALL tests (auto-starts server if needed)"
 	@echo "  make test-coverage    - Run tests with coverage reports"
 	@echo "  make test-unit        - Run unit tests only"
