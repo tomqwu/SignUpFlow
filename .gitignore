@@ -77,3 +77,6 @@ Thumbs.db
 *.db.before_restore_*
 examples/*.db
 .env
+
+# Spec-kit / Claude Code local settings
+.claude/settings.local.json
