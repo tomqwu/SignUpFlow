@@ -5,6 +5,7 @@ Uses Mailtrap for testing and can be configured for production SMTP.
 """
 
 import smtplib
+import os
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from typing import Optional
@@ -18,30 +19,38 @@ class EmailService:
 
     def __init__(
         self,
-        smtp_host: str = "sandbox.smtp.mailtrap.io",
-        smtp_port: int = 2525,
-        smtp_user: str = "a336c0c4dec825",
-        smtp_password: str = "bc41cad242b7fe",
-        from_email: str = "noreply@signupflow.io",
-        from_name: str = "SignUpFlow"
+        smtp_host: Optional[str] = None,
+        smtp_port: Optional[int] = None,
+        smtp_user: Optional[str] = None,
+        smtp_password: Optional[str] = None,
+        from_email: Optional[str] = None,
+        from_name: Optional[str] = None
     ):
         """
         Initialize email service.
 
+        Reads configuration from environment variables if not provided:
+        - MAILTRAP_SMTP_HOST (default: sandbox.smtp.mailtrap.io)
+        - MAILTRAP_SMTP_PORT (default: 2525)
+        - MAILTRAP_SMTP_USER
+        - MAILTRAP_SMTP_PASSWORD
+        - EMAIL_FROM (default: noreply@signupflow.io)
+        - EMAIL_FROM_NAME (default: SignUpFlow)
+
         Args:
-            smtp_host: SMTP server hostname
-            smtp_port: SMTP server port
-            smtp_user: SMTP username
-            smtp_password: SMTP password
-            from_email: Sender email address
-            from_name: Sender display name
+            smtp_host: SMTP server hostname (overrides env var)
+            smtp_port: SMTP server port (overrides env var)
+            smtp_user: SMTP username (overrides env var)
+            smtp_password: SMTP password (overrides env var)
+            from_email: Sender email address (overrides env var)
+            from_name: Sender display name (overrides env var)
         """
-        self.smtp_host = smtp_host
-        self.smtp_port = smtp_port
-        self.smtp_user = smtp_user
-        self.smtp_password = smtp_password
-        self.from_email = from_email
-        self.from_name = from_name
+        self.smtp_host = smtp_host or os.getenv("MAILTRAP_SMTP_HOST", "sandbox.smtp.mailtrap.io")
+        self.smtp_port = smtp_port or int(os.getenv("MAILTRAP_SMTP_PORT", "2525"))
+        self.smtp_user = smtp_user or os.getenv("MAILTRAP_SMTP_USER", "")
+        self.smtp_password = smtp_password or os.getenv("MAILTRAP_SMTP_PASSWORD", "")
+        self.from_email = from_email or os.getenv("EMAIL_FROM", "noreply@signupflow.io")
+        self.from_name = from_name or os.getenv("EMAIL_FROM_NAME", "SignUpFlow")
 
     def send_email(
         self,
