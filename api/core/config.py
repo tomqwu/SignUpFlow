@@ -6,11 +6,17 @@ Loads settings from environment variables with validation.
 
 import os
 from typing import Optional
-from pydantic_settings import BaseSettings
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
     """Application settings loaded from environment variables."""
+
+    model_config = SettingsConfigDict(
+        env_file=".env",
+        case_sensitive=True,
+        extra="ignore",
+    )
 
     # Database
     DATABASE_URL: str = "sqlite:///./roster.db"
@@ -70,11 +76,6 @@ class Settings(BaseSettings):
     # reCAPTCHA
     RECAPTCHA_SITE_KEY: Optional[str] = None
     RECAPTCHA_SECRET_KEY: Optional[str] = None
-
-    class Config:
-        env_file = ".env"
-        case_sensitive = True
-
 
 # Global settings instance
 settings = Settings()
