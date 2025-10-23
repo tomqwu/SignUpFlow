@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>Reminder: {{ event_title }}</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            line-height: 1.6;
+            color: #333333;
+            background-color: #f4f4f7;
+        }
+        .email-container {
+            max-width: 600px;
+            margin: 0 auto;
+            background-color: #ffffff;
+        }
+        .header {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            padding: 40px 30px;
+            text-align: center;
+            color: #ffffff;
+        }
+        .header h1 {
+            margin: 0;
+            font-size: 28px;
+            font-weight: 600;
+        }
+        .content {
+            padding: 40px 30px;
+        }
+        .greeting {
+            font-size: 18px;
+            margin-bottom: 20px;
+            color: #333333;
+        }
+        .message {
+            font-size: 16px;
+            color: #555555;
+            margin-bottom: 30px;
+        }
+        .reminder-badge {
+            background-color: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 15px 20px;
+            margin: 25px 0;
+            border-radius: 4px;
+            font-size: 16px;
+            color: #856404;
+        }
+        .reminder-badge strong {
+            font-size: 18px;
+            color: #856404;
+        }
+        .event-card {
+            background-color: #f8f9fa;
+            border-left: 4px solid #f5576c;
+            padding: 20px;
+            margin: 25px 0;
+            border-radius: 4px;
+        }
+        .event-title {
+            font-size: 22px;
+            font-weight: 600;
+            color: #333333;
+            margin-bottom: 15px;
+        }
+        .event-details {
+            margin: 10px 0;
+        }
+        .detail-row {
+            display: table;
+            width: 100%;
+            margin: 8px 0;
+        }
+        .detail-label {
+            display: table-cell;
+            font-weight: 600;
+            color: #555555;
+            width: 30%;
+            padding-right: 10px;
+        }
+        .detail-value {
+            display: table-cell;
+            color: #333333;
+        }
+        .role-highlight {
+            background-color: #f5576c;
+            color: #ffffff;
+            padding: 4px 12px;
+            border-radius: 16px;
+            display: inline-block;
+            font-weight: 500;
+        }
+        .time-highlight {
+            font-size: 18px;
+            font-weight: 600;
+            color: #f5576c;
+        }
+        .preparation-box {
+            background-color: #e7f3ff;
+            border-left: 4px solid #2196f3;
+            padding: 15px 20px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+        .preparation-box h3 {
+            margin: 0 0 10px 0;
+            color: #1976d2;
+            font-size: 16px;
+        }
+        .preparation-box ul {
+            margin: 5px 0;
+            padding-left: 20px;
+        }
+        .preparation-box li {
+            margin: 5px 0;
+            color: #0d47a1;
+        }
+        .button {
+            display: inline-block;
+            padding: 14px 28px;
+            background-color: #f5576c;
+            color: #ffffff !important;
+            text-decoration: none;
+            border-radius: 6px;
+            font-weight: 500;
+            margin: 10px 10px 10px 0;
+            transition: background-color 0.3s ease;
+        }
+        .button:hover {
+            background-color: #d93654;
+        }
+        .button-secondary {
+            background-color: #6c757d;
+        }
+        .button-secondary:hover {
+            background-color: #5a6268;
+        }
+        .actions {
+            margin: 30px 0;
+            text-align: center;
+        }
+        .footer {
+            background-color: #f8f9fa;
+            padding: 30px;
+            text-align: center;
+            border-top: 1px solid #e9ecef;
+        }
+        .footer-text {
+            font-size: 14px;
+            color: #6c757d;
+            margin: 5px 0;
+        }
+        .footer-link {
+            color: #f5576c;
+            text-decoration: none;
+        }
+        .footer-link:hover {
+            text-decoration: underline;
+        }
+        @media only screen and (max-width: 600px) {
+            .content {
+                padding: 30px 20px;
+            }
+            .header {
+                padding: 30px 20px;
+            }
+            .header h1 {
+                font-size: 24px;
+            }
+            .event-title {
+                font-size: 20px;
+            }
+            .detail-label, .detail-value {
+                display: block;
+                width: 100%;
+            }
+            .detail-label {
+                margin-bottom: 4px;
+            }
+            .button {
+                display: block;
+                margin: 10px 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="email-container">
+        <!-- Header -->
+        <div class="header">
+            <h1>🔔 Event Reminder</h1>
+        </div>
+
+        <!-- Content -->
+        <div class="content">
+            <div class="greeting">
+                Hi {{ volunteer_name }},
+            </div>
+
+            <div class="reminder-badge">
+                <strong>📅 Upcoming Event Tomorrow!</strong><br>
+                Your event is in <span class="time-highlight">{{ hours_remaining }} hours</span>
+            </div>
+
+            <div class="message">
+                This is a friendly reminder about your scheduled assignment:
+            </div>
+
+            <!-- Event Card -->
+            <div class="event-card">
+                <div class="event-title">{{ event_title }}</div>
+
+                <div class="event-details">
+                    <div class="detail-row">
+                        <div class="detail-label">Your Role:</div>
+                        <div class="detail-value">
+                            <span class="role-highlight">{{ role }}</span>
+                        </div>
+                    </div>
+
+                    <div class="detail-row">
+                        <div class="detail-label">Date & Time:</div>
+                        <div class="detail-value">{{ event_datetime }}</div>
+                    </div>
+
+                    {% if event_location %}
+                    <div class="detail-row">
+                        <div class="detail-label">Location:</div>
+                        <div class="detail-value">{{ event_location }}</div>
+                    </div>
+                    {% endif %}
+
+                    {% if event_duration %}
+                    <div class="detail-row">
+                        <div class="detail-label">Duration:</div>
+                        <div class="detail-value">{{ event_duration }}</div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            {% if what_to_bring or additional_info %}
+            <!-- Preparation Box -->
+            <div class="preparation-box">
+                <h3>📋 Preparation</h3>
+                {% if what_to_bring %}
+                <p><strong>What to bring:</strong></p>
+                <p>{{ what_to_bring }}</p>
+                {% endif %}
+                {% if additional_info %}
+                <p><strong>Additional Info:</strong></p>
+                <p>{{ additional_info }}</p>
+                {% endif %}
+                <ul>
+                    <li>Please arrive 15 minutes early</li>
+                    <li>Check in with the event coordinator upon arrival</li>
+                </ul>
+            </div>
+            {% endif %}
+
+            <!-- Actions -->
+            <div class="actions">
+                <a href="{{ calendar_url }}" class="button">📅 Add to Calendar</a>
+                <a href="{{ schedule_url }}" class="button button-secondary">View Schedule</a>
+            </div>
+
+            <div class="message" style="margin-top: 30px;">
+                See you soon! 👋
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="footer">
+            <div class="footer-text">
+                <a href="{{ unsubscribe_url }}" class="footer-link">Unsubscribe from reminders</a>
+            </div>
+            <div class="footer-text" style="margin-top: 15px;">
+                Powered by <a href="https://signupflow.io" class="footer-link">SignUpFlow</a>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

@@ -190,6 +190,20 @@ class TestContentSecurityPolicy:
         # Should allow i18next CDN
         assert "cdn.jsdelivr.net" in csp or "unpkg.com" in csp or "'unsafe-inline'" in csp
 
+    @patch.dict(os.environ, {"SECURITY_CSP_ENABLED": "true"})
+    def test_csp_allows_google_frames(self, test_app, test_client):
+        """Test that CSP allows Google reCAPTCHA iframes."""
+        add_security_headers_middleware(test_app)
+
+        response = test_client.get("/test")
+
+        csp = response.headers.get("Content-Security-Policy", "")
+
+        # Should have frame-src directive with Google domains
+        assert "frame-src" in csp
+        assert "google.com" in csp
+        assert "gstatic.com" in csp
+
 
 class TestPermissionsPolicy:
     """Test Permissions-Policy header."""

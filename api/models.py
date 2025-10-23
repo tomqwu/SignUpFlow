@@ -59,10 +59,14 @@ class Organization(Base):
     teams = relationship("Team", back_populates="organization", cascade="all, delete-orphan")
     resources = relationship("Resource", back_populates="organization", cascade="all, delete-orphan")
     events = relationship("Event", back_populates="organization", cascade="all, delete-orphan")
+    recurring_series = relationship("RecurringSeries", back_populates="organization", cascade="all, delete-orphan")
     holidays = relationship("Holiday", back_populates="organization", cascade="all, delete-orphan")
     constraints = relationship("Constraint", back_populates="organization", cascade="all, delete-orphan")
     solutions = relationship("Solution", back_populates="organization", cascade="all, delete-orphan")
     invitations = relationship("Invitation", back_populates="organization", cascade="all, delete-orphan")
+    onboarding_progress = relationship("OnboardingProgress", back_populates="organization", cascade="all, delete-orphan")
+    notifications = relationship("Notification", back_populates="organization", cascade="all, delete-orphan")
+    email_preferences = relationship("EmailPreference", back_populates="organization", cascade="all, delete-orphan")
 
 
 class Person(Base):
@@ -82,6 +86,7 @@ class Person(Base):
     invited_by = Column(String, ForeignKey("people.id"), nullable=True)  # Who invited this person
     last_login = Column(DateTime, nullable=True)  # Last login timestamp
     calendar_token = Column(String, unique=True, nullable=True)  # Unique token for calendar subscription
+    is_sample = Column(Boolean, default=False, nullable=False)  # For sample/demo data
     extra_data = Column(JSONType, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
@@ -93,6 +98,9 @@ class Person(Base):
     assignments = relationship("Assignment", back_populates="person", cascade="all, delete-orphan")
     invitations_sent = relationship("Invitation", foreign_keys="Invitation.invited_by", back_populates="inviter", cascade="all, delete-orphan")
     invited_by_person = relationship("Person", remote_side="Person.id", foreign_keys=[invited_by])
+    onboarding_progress = relationship("OnboardingProgress", back_populates="person", uselist=False, cascade="all, delete-orphan")
+    notifications_received = relationship("Notification", back_populates="recipient", foreign_keys="Notification.recipient_id", cascade="all, delete-orphan")
+    email_preferences = relationship("EmailPreference", back_populates="person", uselist=False, cascade="all, delete-orphan")
 
     # Indexes
     __table_args__ = (
@@ -112,6 +120,7 @@ class Team(Base):
     org_id = Column(String, ForeignKey("organizations.id"), nullable=False)
     name = Column(String, nullable=False)
     description = Column(String, nullable=True)
+    is_sample = Column(Boolean, default=False, nullable=False)  # For sample/demo data
     extra_data = Column(JSONType, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
@@ -183,7 +192,14 @@ class Event(Base):
     start_time = Column(DateTime, nullable=False)
     end_time = Column(DateTime, nullable=False)
     resource_id = Column(String, ForeignKey("resources.id"), nullable=True)
+    is_sample = Column(Boolean, default=False, nullable=False)  # For sample/demo data
     extra_data = Column(JSONType, nullable=True)
+
+    # Recurring events support (added for spec 006-recurring-events-ui)
+    series_id = Column(String, ForeignKey("recurring_series.id"), nullable=True)  # Link to recurring series
+    occurrence_sequence = Column(Integer, nullable=True)  # Position in series (1, 2, 3...)
+    is_exception = Column(Boolean, default=False, nullable=False)  # Single occurrence modified
+
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
@@ -192,11 +208,100 @@ class Event(Base):
     resource = relationship("Resource", back_populates="events")
     event_teams = relationship("EventTeam", back_populates="event", cascade="all, delete-orphan")
     assignments = relationship("Assignment", back_populates="event", cascade="all, delete-orphan")
+    notifications = relationship("Notification", back_populates="event", cascade="all, delete-orphan")
+    recurring_series = relationship("RecurringSeries", back_populates="occurrences")
+    recurrence_exception = relationship("RecurrenceException", back_populates="occurrence", uselist=False, cascade="all, delete-orphan")
 
     # Indexes
     __table_args__ = (
         Index("idx_events_org_id", "org_id"),
         Index("idx_events_start_time", "start_time"),
+        Index("idx_events_series_id", "series_id"),
+    )
+
+
+class RecurringSeries(Base):
+    """Recurring event series template and recurrence pattern definition."""
+
+    __tablename__ = "recurring_series"
+
+    id = Column(String, primary_key=True)
+    org_id = Column(String, ForeignKey("organizations.id"), nullable=False)
+    created_by = Column(String, ForeignKey("people.id"), nullable=False)
+
+    # Event template (inherited by occurrences)
+    title = Column(String, nullable=False)
+    duration = Column(Integer, nullable=False)  # Duration in minutes
+    location = Column(String, nullable=True)
+    role_requirements = Column(JSONType, nullable=True)  # {"usher": 2, "greeter": 1}
+
+    # Recurrence pattern
+    pattern_type = Column(String, nullable=False)  # 'weekly', 'biweekly', 'monthly', 'custom'
+    frequency_interval = Column(Integer, nullable=True)  # For custom patterns (e.g., every 3 weeks)
+    selected_days = Column(JSONType, nullable=True)  # For weekly: ["sunday", "wednesday"]
+    weekday_position = Column(String, nullable=True)  # For monthly: "first", "second", "last"
+    weekday_name = Column(String, nullable=True)  # For monthly: "sunday", "monday", "friday"
+
+    # Series duration
+    start_date = Column(Date, nullable=False)
+    end_condition_type = Column(String, nullable=False)  # 'date', 'count', 'indefinite'
+    end_date = Column(Date, nullable=True)
+    occurrence_count = Column(Integer, nullable=True)
+
+    # Status
+    active = Column(Boolean, default=True, nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    # Relationships
+    organization = relationship("Organization", back_populates="recurring_series")
+    creator = relationship("Person", foreign_keys=[created_by])
+    occurrences = relationship("Event", back_populates="recurring_series", cascade="all, delete-orphan")
+    exceptions = relationship("RecurrenceException", back_populates="series", cascade="all, delete-orphan")
+
+    # Indexes
+    __table_args__ = (
+        Index("idx_recurring_series_org_id", "org_id"),
+        Index("idx_recurring_series_created_by", "created_by"),
+        Index("idx_recurring_series_start_date", "start_date"),
+        Index("idx_recurring_series_active", "active"),
+    )
+
+
+class RecurrenceException(Base):
+    """Single occurrence modification in a recurring series."""
+
+    __tablename__ = "recurrence_exceptions"
+
+    id = Column(String, primary_key=True)
+    occurrence_id = Column(String, ForeignKey("events.id"), nullable=False, unique=True)
+    series_id = Column(String, ForeignKey("recurring_series.id"), nullable=False)
+
+    # Exception type
+    exception_type = Column(String, nullable=False)  # 'time_change', 'cancellation', 'full_edit'
+
+    # Original values (before modification)
+    original_title = Column(String, nullable=True)
+    original_start_time = Column(DateTime, nullable=True)
+    original_end_time = Column(DateTime, nullable=True)
+    original_location = Column(String, nullable=True)
+
+    # Custom values (after modification)
+    custom_title = Column(String, nullable=True)
+    custom_start_time = Column(DateTime, nullable=True)
+    custom_end_time = Column(DateTime, nullable=True)
+    custom_location = Column(String, nullable=True)
+
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    # Relationships
+    occurrence = relationship("Event", back_populates="recurrence_exception")
+    series = relationship("RecurringSeries", back_populates="exceptions")
+
+    # Indexes
+    __table_args__ = (
+        Index("idx_recurrence_exceptions_occurrence_id", "occurrence_id"),
+        Index("idx_recurrence_exceptions_series_id", "series_id"),
     )
 
 
@@ -385,6 +490,37 @@ class Invitation(Base):
     )
 
 
+class OnboardingProgress(Base):
+    """Onboarding progress tracking for users."""
+
+    __tablename__ = "onboarding_progress"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    person_id = Column(String, ForeignKey("people.id"), nullable=False, unique=True)
+    org_id = Column(String, ForeignKey("organizations.id"), nullable=False)
+    wizard_step_completed = Column(Integer, default=0)  # 0-4 (0=not started, 4=completed)
+    wizard_data = Column(JSONType, default=dict)  # {"org": {...}, "event": {...}, "team": {...}, "invitations": [...]}
+    checklist_state = Column(JSONType, default=dict)  # {"complete_profile": True, "create_event": False, ...}
+    tutorials_completed = Column(JSONType, default=list)  # ["event_creation", "team_management", ...]
+    features_unlocked = Column(JSONType, default=list)  # ["recurring_events", "manual_editing", "sms"]
+    videos_watched = Column(JSONType, default=list)  # ["getting_started", "creating_events", ...]
+    onboarding_skipped = Column(Boolean, default=False)
+    checklist_dismissed = Column(Boolean, default=False)
+    tutorials_dismissed = Column(Boolean, default=False)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    # Relationships
+    person = relationship("Person", back_populates="onboarding_progress")
+    organization = relationship("Organization", back_populates="onboarding_progress")
+
+    # Indexes
+    __table_args__ = (
+        Index("idx_onboarding_progress_person_id", "person_id"),
+        Index("idx_onboarding_progress_org_id", "org_id"),
+    )
+
+
 class Assignment(Base):
     """Assignment of person to event with specific role."""
 
@@ -407,6 +543,143 @@ class Assignment(Base):
         Index("idx_assignments_solution_id", "solution_id"),
         Index("idx_assignments_event_id", "event_id"),
         Index("idx_assignments_person_id", "person_id"),
+    )
+
+
+# ==============================================================================
+# Email Notification Models
+# ==============================================================================
+
+class NotificationType:
+    """Email notification types."""
+    ASSIGNMENT = "assignment"  # Volunteer assigned to event
+    REMINDER = "reminder"  # 24-hour reminder before event
+    UPDATE = "update"  # Event details changed
+    CANCELLATION = "cancellation"  # Event canceled
+    DIGEST_DAILY = "digest_daily"  # Daily digest of notifications
+    DIGEST_WEEKLY = "digest_weekly"  # Weekly digest of notifications
+    ADMIN_SUMMARY = "admin_summary"  # Weekly admin statistics
+
+
+class NotificationStatus:
+    """Email notification delivery statuses."""
+    PENDING = "pending"  # Queued for sending
+    SENDING = "sending"  # Currently being sent
+    SENT = "sent"  # Sent successfully
+    DELIVERED = "delivered"  # Delivered to recipient's mailbox
+    OPENED = "opened"  # Recipient opened email
+    CLICKED = "clicked"  # Recipient clicked link in email
+    BOUNCED = "bounced"  # Email bounced (invalid address)
+    FAILED = "failed"  # Sending failed (will retry)
+    RETRY = "retry"  # Retrying after failure
+
+
+class EmailFrequency:
+    """Email notification frequency preferences."""
+    IMMEDIATE = "immediate"  # Send immediately
+    DAILY = "daily"  # Batch into daily digest
+    WEEKLY = "weekly"  # Batch into weekly digest
+    DISABLED = "disabled"  # No emails
+
+
+class DeliveryEventType:
+    """SendGrid webhook event types."""
+    PROCESSED = "processed"
+    DROPPED = "dropped"
+    DELIVERED = "delivered"
+    DEFERRED = "deferred"
+    BOUNCE = "bounce"
+    OPEN = "open"
+    CLICK = "click"
+    SPAM_REPORT = "spamreport"
+    UNSUBSCRIBE = "unsubscribe"
+
+
+class Notification(Base):
+    """Email notification tracking."""
+
+    __tablename__ = "notifications"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    org_id = Column(String, ForeignKey("organizations.id"), nullable=False)
+    recipient_id = Column(String, ForeignKey("people.id"), nullable=False)
+    type = Column(String, nullable=False)  # NotificationType value
+    status = Column(String, default=NotificationStatus.PENDING, nullable=False)
+    event_id = Column(String, ForeignKey("events.id"), nullable=True)  # Related event (if applicable)
+    template_data = Column(JSONType, nullable=True)  # Template rendering data
+    retry_count = Column(Integer, default=0, nullable=False)
+    sendgrid_message_id = Column(String, nullable=True, unique=True)  # SendGrid message ID
+    error_message = Column(Text, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    sent_at = Column(DateTime, nullable=True)
+    delivered_at = Column(DateTime, nullable=True)
+    opened_at = Column(DateTime, nullable=True)
+    clicked_at = Column(DateTime, nullable=True)
+
+    # Relationships
+    organization = relationship("Organization", back_populates="notifications")
+    recipient = relationship("Person", back_populates="notifications_received", foreign_keys=[recipient_id])
+    event = relationship("Event", back_populates="notifications")
+
+    # Indexes
+    __table_args__ = (
+        Index("idx_notifications_org_id", "org_id"),
+        Index("idx_notifications_recipient_id", "recipient_id"),
+        Index("idx_notifications_event_id", "event_id"),
+        Index("idx_notifications_status", "status"),
+        Index("idx_notifications_created_at", "created_at"),
+    )
+
+
+class EmailPreference(Base):
+    """User email notification preferences."""
+
+    __tablename__ = "email_preferences"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    person_id = Column(String, ForeignKey("people.id"), nullable=False, unique=True)
+    org_id = Column(String, ForeignKey("organizations.id"), nullable=False)
+    frequency = Column(String, default=EmailFrequency.IMMEDIATE, nullable=False)
+    enabled_types = Column(JSONType, default=list, nullable=False)  # List of enabled NotificationType values
+    language = Column(String, default="en", nullable=False)  # Email language preference
+    timezone = Column(String, default="UTC", nullable=False)  # For digest scheduling
+    digest_hour = Column(Integer, default=8, nullable=False)  # Hour to send digests (0-23)
+    unsubscribe_token = Column(String, unique=True, nullable=False)  # Unique unsubscribe token
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    # Relationships
+    person = relationship("Person", back_populates="email_preferences", uselist=False)
+    organization = relationship("Organization", back_populates="email_preferences")
+
+    # Indexes
+    __table_args__ = (
+        Index("idx_email_preferences_person_id", "person_id"),
+        Index("idx_email_preferences_org_id", "org_id"),
+    )
+
+
+class DeliveryLog(Base):
+    """SendGrid webhook delivery event log."""
+
+    __tablename__ = "delivery_logs"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    notification_id = Column(Integer, ForeignKey("notifications.id"), nullable=False)
+    event_type = Column(String, nullable=False)  # DeliveryEventType value
+    sendgrid_message_id = Column(String, nullable=False)
+    timestamp = Column(DateTime, nullable=False)
+    reason = Column(Text, nullable=True)  # Bounce reason, error message, etc.
+    raw_event = Column(JSONType, nullable=True)  # Full SendGrid webhook payload
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    # Relationships
+    notification = relationship("Notification", backref="delivery_logs")
+
+    # Indexes
+    __table_args__ = (
+        Index("idx_delivery_logs_notification_id", "notification_id"),
+        Index("idx_delivery_logs_sendgrid_message_id", "sendgrid_message_id"),
+        Index("idx_delivery_logs_timestamp", "timestamp"),
     )
 
 

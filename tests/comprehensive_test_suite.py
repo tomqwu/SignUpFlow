@@ -5,77 +5,18 @@ Covers all API endpoints and critical GUI workflows with blocked dates integrati
 """
 
 import pytest
-import requests
 from datetime import datetime, timedelta, date
 from playwright.sync_api import sync_playwright, expect
+from fastapi.testclient import TestClient
 import time
 
-API_BASE = "http://localhost:8000/api"
 APP_URL = "http://localhost:8000"
-
-# ============================================================================
-# AUTHENTICATION HELPER
-# ============================================================================
-
-def get_auth_headers():
-    """Get authentication headers for API requests."""
-    # Login as admin user
-    response = requests.post(f"{API_BASE}/auth/login", json={
-        "email": "jane@test.com",
-        "password": "password"
-    })
-    if response.status_code == 200:
-        token = response.json()["token"]
-        return {"Authorization": f"Bearer {token}"}
-    return {}
-
-
-def setup_test_data():
-    """Ensure test data exists before running tests."""
-    headers = get_auth_headers()
-
-    # Ensure test_org exists
-    requests.post(f"{API_BASE}/organizations/", json={
-        "id": "test_org",
-        "name": "Test Organization",
-        "region": "Test Region"
-    })
-
-    # Ensure at least one test person exists
-    requests.post(f"{API_BASE}/people/", json={
-        "id": "test_person_comp_001",
-        "name": "Comprehensive Test Person",
-        "email": "comptest@example.com",
-        "org_id": "test_org",
-        "roles": ["volunteer", "leader"]
-    }, headers=headers)
-
-    # Ensure at least one test event exists
-    start_time = (datetime.now() + timedelta(days=7)).isoformat()
-    end_time = (datetime.now() + timedelta(days=7, hours=2)).isoformat()
-    requests.post(f"{API_BASE}/events/", json={
-        "id": "test_event_comp_001",
-        "org_id": "test_org",
-        "type": "Comprehensive Test Event",
-        "start_time": start_time,
-        "end_time": end_time,
-        "extra_data": {
-            "role_counts": {
-                "volunteer": 2,
-                "leader": 1
-            }
-        }
-    }, headers=headers)
 
 # ============================================================================
 # PYTEST FIXTURES
 # ============================================================================
-
-@pytest.fixture(scope="session", autouse=True)
-def ensure_test_data():
-    """Automatically set up test data before any tests run."""
-    setup_test_data()
-    yield
+# All test authentication and database setup is handled by conftest.py
+# Tests use client: TestClient and auth_headers: dict fixtures
 
 
 # ============================================================================
@@ -85,23 +26,23 @@ def ensure_test_data():
 class TestOrganizationsAPI:
     """Test Organization CRUD operations"""
 
-    def test_create_organization(self):
+    def test_create_organization(self, client: TestClient, test_org_setup):
         """Create a new organization"""
         data = {"id": "test_org_api", "name": "Test Organization API", "region": "Test Region"}
-        response = requests.post(f"{API_BASE}/organizations/", json=data)
+        response = client.post("/api/organizations/", json=data)
         assert response.status_code in [200, 201, 409]  # 409 if already exists
 
-    def test_list_organizations(self):
+    def test_list_organizations(self, client: TestClient, test_org_setup):
         """List all organizations"""
-        response = requests.get(f"{API_BASE}/organizations/")
+        response = client.get("/api/organizations/")
         assert response.status_code == 200
         data = response.json()
         assert "organizations" in data
         assert isinstance(data["organizations"], list)
 
-    def test_get_organization(self):
+    def test_get_organization(self, client: TestClient, test_org_setup):
         """Get specific organization"""
-        response = requests.get(f"{API_BASE}/organizations/test_org")
+        response = client.get("/api/organizations/test_org")
         assert response.status_code == 200
         data = response.json()
         assert data["id"] == "test_org"
@@ -110,9 +51,8 @@ class TestOrganizationsAPI:
 class TestPeopleAPI:
     """Test People CRUD operations"""
 
-    def test_create_person(self):
+    def test_create_person(self, client: TestClient, auth_headers: dict, test_org_setup):
         """Create a new person"""
-        headers = get_auth_headers()
         data = {
             "id": "test_person_001",
             "name": "Test Person",
@@ -120,39 +60,36 @@ class TestPeopleAPI:
             "org_id": "test_org",
             "roles": ["volunteer"]
         }
-        response = requests.post(f"{API_BASE}/people/", json=data, headers=headers)
+        response = client.post("/api/people/", json=data, headers=auth_headers)
         assert response.status_code in [200, 201, 409]
 
-    def test_list_people(self):
+    def test_list_people(self, client: TestClient, auth_headers: dict, test_org_setup):
         """List all people in organization"""
-        headers = get_auth_headers()
-        response = requests.get(f"{API_BASE}/people/?org_id=test_org", headers=headers)
+        response = client.get("/api/people/?org_id=test_org", headers=auth_headers)
         assert response.status_code == 200
         data = response.json()
         assert "people" in data
         assert isinstance(data["people"], list)
 
-    def test_update_person_roles(self):
+    def test_update_person_roles(self, client: TestClient, auth_headers: dict, test_org_setup):
         """Update person's roles"""
-        headers = get_auth_headers()
         # Get first person
-        resp = requests.get(f"{API_BASE}/people/?org_id=test_org", headers=headers)
+        resp = client.get("/api/people/?org_id=test_org", headers=auth_headers)
         assert resp.status_code == 200
         people = resp.json()["people"]
-        assert len(people) > 0, "No test person available - setup_test_data() may have failed"
+        assert len(people) > 0, "No test person available"
 
         person_id = people[0]["id"]
         data = {"roles": ["volunteer", "leader"]}
-        response = requests.put(f"{API_BASE}/people/{person_id}", json=data, headers=headers)
+        response = client.put(f"/api/people/{person_id}", json=data, headers=auth_headers)
         assert response.status_code == 200
 
 
 class TestEventsAPI:
     """Test Event CRUD operations"""
 
-    def test_create_event(self):
+    def test_create_event(self, client: TestClient, auth_headers: dict, test_org_setup):
         """Create a new event"""
-        headers = get_auth_headers()
         start_time = (datetime.now() + timedelta(days=7)).isoformat()
         end_time = (datetime.now() + timedelta(days=7, hours=2)).isoformat()
 
@@ -169,27 +106,26 @@ class TestEventsAPI:
                 }
             }
         }
-        response = requests.post(f"{API_BASE}/events/", json=data, headers=headers)
+        response = client.post("/api/events/", json=data, headers=auth_headers)
         assert response.status_code in [200, 201, 409]
 
-    def test_list_events(self):
+    def test_list_events(self, client: TestClient, test_org_setup):
         """List all events"""
-        response = requests.get(f"{API_BASE}/events/?org_id=test_org")
+        response = client.get("/api/events/?org_id=test_org")
         assert response.status_code == 200
         data = response.json()
         assert "events" in data
 
-    def test_get_available_people(self):
+    def test_get_available_people(self, client: TestClient, auth_headers: dict, test_org_setup):
         """Get available people for event"""
-        headers = get_auth_headers()
         # Get first event
-        events_resp = requests.get(f"{API_BASE}/events/?org_id=test_org", headers=headers)
+        events_resp = client.get("/api/events/?org_id=test_org", headers=auth_headers)
         assert events_resp.status_code == 200
         events = events_resp.json().get("events", [])
         assert len(events) > 0, "No test events available"
-        
+
         event_id = events[0]["id"]
-        response = requests.get(f"{API_BASE}/events/{event_id}/available-people", headers=headers)
+        response = client.get(f"/api/events/{event_id}/available-people", headers=auth_headers)
         assert response.status_code == 200
         people = response.json()
         assert isinstance(people, list)
@@ -198,17 +134,16 @@ class TestEventsAPI:
             assert "is_blocked" in person
             assert isinstance(person["is_blocked"], bool)
 
-    def test_event_validation(self):
+    def test_event_validation(self, client: TestClient, auth_headers: dict, test_org_setup):
         """Test event validation endpoint"""
-        headers = get_auth_headers()
         # Get first event
-        events_resp = requests.get(f"{API_BASE}/events/?org_id=test_org", headers=headers)
+        events_resp = client.get("/api/events/?org_id=test_org", headers=auth_headers)
         assert events_resp.status_code == 200
         events = events_resp.json().get("events", [])
         assert len(events) > 0, "No test events available"
-        
+
         event_id = events[0]["id"]
-        response = requests.get(f"{API_BASE}/events/{event_id}/validation", headers=headers)
+        response = client.get(f"/api/events/{event_id}/validation", headers=auth_headers)
         assert response.status_code == 200
         data = response.json()
         assert "is_valid" in data
@@ -219,11 +154,10 @@ class TestEventsAPI:
 class TestAvailabilityAPI:
     """Test Availability/Blocked Dates operations"""
 
-    def test_add_blocked_date(self):
+    def test_add_blocked_date(self, client: TestClient, auth_headers: dict, test_org_setup):
         """Add a blocked date period"""
-        headers = get_auth_headers()
         # Get first person
-        resp = requests.get(f"{API_BASE}/people/?org_id=test_org", headers=headers)
+        resp = client.get("/api/people/?org_id=test_org", headers=auth_headers)
         assert resp.status_code == 200
         people = resp.json()["people"]
         assert len(people) > 0, "No test person available"
@@ -234,25 +168,24 @@ class TestAvailabilityAPI:
             "end_date": (date.today() + timedelta(days=12)).isoformat(),
             "reason": "Test vacation"
         }
-        response = requests.post(
-            f"{API_BASE}/availability/{person_id}/timeoff",
+        response = client.post(
+            f"/api/availability/{person_id}/timeoff",
             json=data,
-            headers=headers
+            headers=auth_headers
         )
         # 409 = already exists (test might run multiple times)
         assert response.status_code in [200, 201, 409]
 
-    def test_get_blocked_dates(self):
+    def test_get_blocked_dates(self, client: TestClient, auth_headers: dict, test_org_setup):
         """Get person's blocked dates"""
-        headers = get_auth_headers()
         # Get first person
-        resp = requests.get(f"{API_BASE}/people/?org_id=test_org", headers=headers)
+        resp = client.get("/api/people/?org_id=test_org", headers=auth_headers)
         assert resp.status_code == 200
         people = resp.json()["people"]
         assert len(people) > 0, "No test person available"
 
         person_id = people[0]["id"]
-        response = requests.get(f"{API_BASE}/availability/{person_id}/timeoff", headers=headers)
+        response = client.get(f"/api/availability/{person_id}/timeoff", headers=auth_headers)
         assert response.status_code == 200
         data = response.json()
         assert "timeoff" in data
@@ -261,18 +194,17 @@ class TestAvailabilityAPI:
         if len(data["timeoff"]) > 0:
             assert "reason" in data["timeoff"][0] or data["timeoff"][0].get("reason") is None
 
-    def test_update_blocked_date(self):
+    def test_update_blocked_date(self, client: TestClient, auth_headers: dict, test_org_setup):
         """Update a blocked date's reason"""
-        headers = get_auth_headers()
         # Get first person
-        resp = requests.get(f"{API_BASE}/people/?org_id=test_org", headers=headers)
+        resp = client.get("/api/people/?org_id=test_org", headers=auth_headers)
         assert resp.status_code == 200
         people = resp.json()["people"]
         assert len(people) > 0, "No test person available"
 
         person_id = people[0]["id"]
         # First get existing timeoff
-        response = requests.get(f"{API_BASE}/availability/{person_id}/timeoff", headers=headers)
+        response = client.get(f"/api/availability/{person_id}/timeoff", headers=auth_headers)
         assert response.status_code == 200
         timeoff_list = response.json()["timeoff"]
 
@@ -283,43 +215,41 @@ class TestAvailabilityAPI:
                 "end_date": timeoff_list[0]["end_date"],
                 "reason": "Updated reason"
             }
-            response = requests.patch(
-                f"{API_BASE}/availability/{person_id}/timeoff/{timeoff_id}",
+            response = client.patch(
+                f"/api/availability/{person_id}/timeoff/{timeoff_id}",
                 json=data,
-                headers=headers
+                headers=auth_headers
             )
             assert response.status_code == 200
-    def test_delete_blocked_date(self):
+    def test_delete_blocked_date(self, client: TestClient, auth_headers: dict, test_org_setup):
         """Delete a blocked date"""
-        headers = get_auth_headers()
         # Get first person
-        resp = requests.get(f"{API_BASE}/people/?org_id=test_org", headers=headers)
+        resp = client.get("/api/people/?org_id=test_org", headers=auth_headers)
         assert resp.status_code == 200
         people = resp.json()["people"]
         assert len(people) > 0, "No test person available"
 
         person_id = people[0]["id"]
         # Get all timeoff
-        response = requests.get(f"{API_BASE}/availability/{person_id}/timeoff", headers=headers)
+        response = client.get(f"/api/availability/{person_id}/timeoff", headers=auth_headers)
         assert response.status_code == 200
         timeoff_list = response.json()["timeoff"]
 
         if len(timeoff_list) > 0:
             timeoff_id = timeoff_list[0]["id"]
-            response = requests.delete(
-                f"{API_BASE}/availability/{person_id}/timeoff/{timeoff_id}",
-                headers=headers
+            response = client.delete(
+                f"/api/availability/{person_id}/timeoff/{timeoff_id}",
+                headers=auth_headers
             )
             assert response.status_code in [200, 204]
 class TestAssignmentsAPI:
     """Test Assignment operations"""
 
-    def test_assign_person_to_event(self):
+    def test_assign_person_to_event(self, client: TestClient, auth_headers: dict, test_org_setup):
         """Assign a person to an event"""
-        headers = get_auth_headers()
         # Get first person and event
-        people_resp = requests.get(f"{API_BASE}/people/?org_id=test_org", headers=headers)
-        events_resp = requests.get(f"{API_BASE}/events/?org_id=test_org", headers=headers)
+        people_resp = client.get("/api/people/?org_id=test_org", headers=auth_headers)
+        events_resp = client.get("/api/events/?org_id=test_org", headers=auth_headers)
 
         assert people_resp.status_code == 200
         assert events_resp.status_code == 200
@@ -332,19 +262,18 @@ class TestAssignmentsAPI:
         event_id = events[0]["id"]
 
         data = {"person_id": person_id, "action": "assign", "role": "volunteer"}
-        response = requests.post(
-            f"{API_BASE}/events/{event_id}/assignments",
+        response = client.post(
+            f"/api/events/{event_id}/assignments",
             json=data,
-            headers=headers
+            headers=auth_headers
         )
         # 200/201 = success, 409 = already assigned, 400 = validation
         assert response.status_code in [200, 201, 400, 409]
-    def test_unassign_person_from_event(self):
+    def test_unassign_person_from_event(self, client: TestClient, auth_headers: dict, test_org_setup):
         """Unassign a person from an event"""
-        headers = get_auth_headers()
         # Get first person and event
-        people_resp = requests.get(f"{API_BASE}/people/?org_id=test_org", headers=headers)
-        events_resp = requests.get(f"{API_BASE}/events/?org_id=test_org", headers=headers)
+        people_resp = client.get("/api/people/?org_id=test_org", headers=auth_headers)
+        events_resp = client.get("/api/events/?org_id=test_org", headers=auth_headers)
 
         assert people_resp.status_code == 200
         assert events_resp.status_code == 200
@@ -357,32 +286,31 @@ class TestAssignmentsAPI:
         event_id = events[0]["id"]
 
         data = {"person_id": person_id, "action": "unassign"}
-        response = requests.post(
-            f"{API_BASE}/events/{event_id}/assignments",
+        response = client.post(
+            f"/api/events/{event_id}/assignments",
             json=data,
-            headers=headers
+            headers=auth_headers
         )
         assert response.status_code == 200
 class TestSolverAPI:
     """Test Schedule Generation (Solver)"""
 
-    def test_generate_schedule(self):
+    def test_generate_schedule(self, client: TestClient, auth_headers: dict, test_org_setup):
         """Generate a schedule solution"""
-        headers = get_auth_headers()
         data = {
             "org_id": "test_org",
             "from_date": (date.today() + timedelta(days=1)).isoformat(),
             "to_date": (date.today() + timedelta(days=30)).isoformat(),
             "mode": "relaxed"
         }
-        response = requests.post(f"{API_BASE}/solver/solve", json=data, headers=headers, timeout=30)
+        response = client.post("/api/solver/solve", json=data, headers=auth_headers)
         assert response.status_code in [200, 201]
         result = response.json()
         assert "solution_id" in result
 
-    def test_list_solutions(self):
+    def test_list_solutions(self, client: TestClient, test_org_setup):
         """List generated solutions"""
-        response = requests.get(f"{API_BASE}/solutions/?org_id=test_org")
+        response = client.get("/api/solutions/?org_id=test_org")
         assert response.status_code == 200
         data = response.json()
         assert "solutions" in data
@@ -391,15 +319,14 @@ class TestSolverAPI:
 class TestPDFExportAPI:
     """Test PDF Export with blocked dates"""
 
-    def test_pdf_export_has_blocked_markers(self):
+    def test_pdf_export_has_blocked_markers(self, client: TestClient, auth_headers: dict, test_org_setup):
         """Test that PDF export includes [BLOCKED] markers"""
-        headers = get_auth_headers()
         # Get first person
-        people_resp = requests.get(f"{API_BASE}/people/?org_id=test_org", headers=headers)
+        people_resp = client.get("/api/people/?org_id=test_org", headers=auth_headers)
         assert people_resp.status_code == 200
         people = people_resp.json()["people"]
         assert len(people) > 0, "No test people available"
-        
+
         if True:
             person_id = people_resp.json()["people"][0]["id"]
 
@@ -409,10 +336,10 @@ class TestPDFExportAPI:
                 "end_date": "2025-10-15",
                 "reason": "Testing PDF export"
             }
-            requests.post(
-                f"{API_BASE}/availability/{person_id}/timeoff",
+            client.post(
+                f"/api/availability/{person_id}/timeoff",
                 json=data,
-                headers=headers
+                headers=auth_headers
             )
 
             # Generate a solution
@@ -422,11 +349,10 @@ class TestPDFExportAPI:
                 "to_date": (date.today() + timedelta(days=30)).isoformat(),
                 "mode": "relaxed"
             }
-            solve_response = requests.post(
-                f"{API_BASE}/solver/solve",
+            solve_response = client.post(
+                "/api/solver/solve",
                 json=solve_data,
-                headers=headers,
-                timeout=30
+                headers=auth_headers
             )
 
             if solve_response.status_code in [200, 201] and "solution_id" in solve_response.json():
@@ -434,10 +360,10 @@ class TestPDFExportAPI:
 
                 # Export as PDF
                 export_data = {"format": "pdf"}
-                pdf_response = requests.post(
-                    f"{API_BASE}/solutions/{solution_id}/export",
+                pdf_response = client.post(
+                    f"/api/solutions/{solution_id}/export",
                     json=export_data,
-                    headers=headers
+                    headers=auth_headers
                 )
 
                 assert pdf_response.status_code == 200
@@ -630,12 +556,11 @@ class TestGUIBlockedDates:
 class TestBlockedDatesIntegration:
     """Test complete blocked dates workflow"""
 
-    def test_blocked_person_shown_in_validation(self):
+    def test_blocked_person_shown_in_validation(self, client: TestClient, auth_headers: dict, test_org_setup):
         """Test that blocked people cause validation warnings"""
-        headers = get_auth_headers()
         # Get first person and event
-        people_resp = requests.get(f"{API_BASE}/people/?org_id=test_org", headers=headers)
-        events_resp = requests.get(f"{API_BASE}/events/?org_id=test_org", headers=headers)
+        people_resp = client.get("/api/people/?org_id=test_org", headers=auth_headers)
+        events_resp = client.get("/api/events/?org_id=test_org", headers=auth_headers)
 
         assert people_resp.status_code == 200
         assert events_resp.status_code == 200
@@ -643,7 +568,7 @@ class TestBlockedDatesIntegration:
         events = events_resp.json().get("events", [])
         assert len(people) > 0, "No test people available"
         assert len(events) > 0, "No test events available"
-        
+
         if True:
             person_id = people_resp.json()["people"][0]["id"]
             event_id = events_resp.json()["events"][0]["id"]
@@ -655,21 +580,21 @@ class TestBlockedDatesIntegration:
                 "end_date": event_date,
                 "reason": "Integration test"
             }
-            requests.post(
-                f"{API_BASE}/availability/{person_id}/timeoff",
+            client.post(
+                f"/api/availability/{person_id}/timeoff",
                 json=data,
-                headers=headers
+                headers=auth_headers
             )
 
             # Assign person to event
-            requests.post(
-                f"{API_BASE}/events/{event_id}/assignments",
+            client.post(
+                f"/api/events/{event_id}/assignments",
                 json={"person_id": person_id, "action": "assign"},
-                headers=headers
+                headers=auth_headers
             )
 
             # Check validation shows warning
-            response = requests.get(f"{API_BASE}/events/{event_id}/validation", headers=headers)
+            response = client.get(f"/api/events/{event_id}/validation", headers=auth_headers)
             data = response.json()
 
             assert "is_valid" in data

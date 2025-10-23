@@ -23,6 +23,7 @@ from api.routers import (
     people,
     teams,
     events,
+    recurring_events,
     constraints,
     solver,
     solutions,
@@ -30,6 +31,8 @@ from api.routers import (
     conflicts,
     invitations,
     calendar,
+    onboarding,
+    notifications,
 )
 
 
@@ -104,6 +107,7 @@ app.include_router(organizations.router, prefix="/api")
 app.include_router(people.router, prefix="/api")
 app.include_router(teams.router, prefix="/api")
 app.include_router(events.router, prefix="/api")
+app.include_router(recurring_events.router, prefix="/api")
 app.include_router(constraints.router, prefix="/api")
 app.include_router(solver.router, prefix="/api")
 app.include_router(solutions.router, prefix="/api")
@@ -113,6 +117,8 @@ app.include_router(password_reset.router, prefix="/api")
 app.include_router(analytics.router, prefix="/api")
 app.include_router(invitations.router, prefix="/api")
 app.include_router(calendar.router, prefix="/api")
+app.include_router(onboarding.router, prefix="/api")
+app.include_router(notifications.router, prefix="/api")
 
 # API Info endpoint
 @app.get("/api", tags=["root"])

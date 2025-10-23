@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>Event Cancelled: {{ event_title }}</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            line-height: 1.6;
+            color: #333333;
+            background-color: #f4f4f7;
+        }
+        .email-container {
+            max-width: 600px;
+            margin: 0 auto;
+            background-color: #ffffff;
+        }
+        .header {
+            background: linear-gradient(135deg, #6c757d 0%, #495057 100%);
+            padding: 40px 30px;
+            text-align: center;
+            color: #ffffff;
+        }
+        .header h1 {
+            margin: 0;
+            font-size: 28px;
+            font-weight: 600;
+        }
+        .content {
+            padding: 40px 30px;
+        }
+        .greeting {
+            font-size: 18px;
+            margin-bottom: 20px;
+            color: #333333;
+        }
+        .message {
+            font-size: 16px;
+            color: #555555;
+            margin-bottom: 30px;
+        }
+        .cancellation-badge {
+            background-color: #f8d7da;
+            border-left: 4px solid #dc3545;
+            padding: 20px;
+            margin: 25px 0;
+            border-radius: 4px;
+        }
+        .cancellation-badge h3 {
+            margin: 0 0 15px 0;
+            color: #721c24;
+            font-size: 18px;
+        }
+        .event-card {
+            background-color: #f8f9fa;
+            border-left: 4px solid #6c757d;
+            padding: 20px;
+            margin: 25px 0;
+            border-radius: 4px;
+            opacity: 0.8;
+        }
+        .event-title {
+            font-size: 22px;
+            font-weight: 600;
+            color: #333333;
+            margin-bottom: 15px;
+        }
+        .event-details {
+            margin: 10px 0;
+        }
+        .detail-row {
+            display: table;
+            width: 100%;
+            margin: 8px 0;
+        }
+        .detail-label {
+            display: table-cell;
+            font-weight: 600;
+            color: #555555;
+            width: 40%;
+            padding-right: 10px;
+        }
+        .detail-value {
+            display: table-cell;
+            color: #333333;
+        }
+        .role-highlight {
+            background-color: #6c757d;
+            color: #ffffff;
+            padding: 4px 12px;
+            border-radius: 16px;
+            display: inline-block;
+            font-weight: 500;
+        }
+        .cancelled-label {
+            color: #dc3545;
+            font-style: italic;
+            font-size: 14px;
+        }
+        .reason-box {
+            background-color: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 15px 20px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+        .reason-box h4 {
+            margin: 0 0 10px 0;
+            color: #856404;
+            font-size: 16px;
+        }
+        .reason-box p {
+            margin: 0;
+            color: #856404;
+        }
+        .no-action-box {
+            background-color: #d1ecf1;
+            border-left: 4px solid #17a2b8;
+            padding: 15px 20px;
+            margin: 20px 0;
+            border-radius: 4px;
+            text-align: center;
+        }
+        .no-action-box p {
+            margin: 0;
+            color: #0c5460;
+            font-weight: 600;
+        }
+        .button {
+            display: inline-block;
+            padding: 14px 28px;
+            background-color: #667eea;
+            color: #ffffff !important;
+            text-decoration: none;
+            border-radius: 6px;
+            font-weight: 500;
+            margin: 10px 10px 10px 0;
+            transition: background-color 0.3s ease;
+        }
+        .button:hover {
+            background-color: #5568d3;
+        }
+        .actions {
+            margin: 30px 0;
+            text-align: center;
+        }
+        .footer {
+            background-color: #f8f9fa;
+            padding: 30px;
+            text-align: center;
+            border-top: 1px solid #e9ecef;
+        }
+        .footer-text {
+            font-size: 14px;
+            color: #6c757d;
+            margin: 5px 0;
+        }
+        .footer-link {
+            color: #667eea;
+            text-decoration: none;
+        }
+        .footer-link:hover {
+            text-decoration: underline;
+        }
+        @media only screen and (max-width: 600px) {
+            .content {
+                padding: 30px 20px;
+            }
+            .header {
+                padding: 30px 20px;
+            }
+            .header h1 {
+                font-size: 24px;
+            }
+            .event-title {
+                font-size: 20px;
+            }
+            .detail-label, .detail-value {
+                display: block;
+                width: 100%;
+            }
+            .detail-label {
+                margin-bottom: 4px;
+            }
+            .button {
+                display: block;
+                margin: 10px 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="email-container">
+        <!-- Header -->
+        <div class="header">
+            <h1>❌ Event Cancelled</h1>
+        </div>
+
+        <!-- Content -->
+        <div class="content">
+            <div class="greeting">
+                Hi {{ volunteer_name }},
+            </div>
+
+            <div class="message">
+                Unfortunately, the following event has been cancelled:
+            </div>
+
+            <!-- Cancellation Notice -->
+            <div class="cancellation-badge">
+                <h3>🚫 This event is no longer happening</h3>
+                <p style="margin: 0; color: #721c24;">
+                    Your assignment has been removed and you are no longer scheduled for this event.
+                </p>
+            </div>
+
+            <!-- Cancelled Event Details -->
+            <div class="event-card">
+                <div class="event-title">
+                    {{ event_title }}
+                    <span class="cancelled-label">(Cancelled)</span>
+                </div>
+
+                <div class="event-details">
+                    <div class="detail-row">
+                        <div class="detail-label">Your Role:</div>
+                        <div class="detail-value">
+                            <span class="role-highlight">{{ role }}</span>
+                            <span class="cancelled-label">(no longer needed)</span>
+                        </div>
+                    </div>
+
+                    <div class="detail-row">
+                        <div class="detail-label">Originally Scheduled:</div>
+                        <div class="detail-value">{{ event_datetime }}</div>
+                    </div>
+
+                    {% if event_location %}
+                    <div class="detail-row">
+                        <div class="detail-label">Location:</div>
+                        <div class="detail-value">{{ event_location }}</div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            {% if cancellation_reason %}
+            <!-- Cancellation Reason -->
+            <div class="reason-box">
+                <h4>📝 Reason for Cancellation</h4>
+                <p>{{ cancellation_reason }}</p>
+            </div>
+            {% endif %}
+
+            <!-- No Action Needed -->
+            <div class="no-action-box">
+                <p>✓ No action needed on your part</p>
+            </div>
+
+            <!-- Actions -->
+            <div class="actions">
+                <a href="{{ schedule_url }}" class="button">📅 View Your Schedule</a>
+            </div>
+
+            <div class="message" style="margin-top: 30px;">
+                We appreciate your willingness to serve! 🙏
+            </div>
+
+            {% if apology_message %}
+            <div class="message" style="font-style: italic; color: #6c757d;">
+                {{ apology_message }}
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Footer -->
+        <div class="footer">
+            <div class="footer-text">
+                <a href="{{ unsubscribe_url }}" class="footer-link">Unsubscribe from cancellation notifications</a>
+            </div>
+            <div class="footer-text" style="margin-top: 15px;">
+                Powered by <a href="https://signupflow.io" class="footer-link">SignUpFlow</a>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

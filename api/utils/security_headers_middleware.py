@@ -90,6 +90,7 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
             "img-src 'self' data: https:",  # Allow images from same origin, data URIs, and HTTPS
             "font-src 'self' data:",  # Allow fonts from same origin and data URIs
             "connect-src 'self' https://www.google.com",  # Allow API calls to same origin and reCAPTCHA
+            "frame-src 'self' https://www.google.com https://www.gstatic.com",  # Allow Google reCAPTCHA iframes
             "frame-ancestors 'none'",  # Prevent embedding (same as X-Frame-Options: DENY)
             "base-uri 'self'",  # Restrict base tag to same origin
             "form-action 'self'",  # Only allow forms to submit to same origin

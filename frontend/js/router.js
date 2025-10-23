@@ -21,7 +21,8 @@ class Router {
             '/app/schedule': 'main-app',
             '/app/events': 'main-app',
             '/app/availability': 'main-app',
-            '/app/admin': 'main-app'
+            '/app/admin': 'main-app',
+            '/app/onboarding-dashboard': 'onboarding-dashboard'
         };
 
         this.viewRoutes = {
@@ -41,7 +42,8 @@ class Router {
             '/app/schedule': 'My Schedule - SignUpFlow',
             '/app/events': 'Events - SignUpFlow',
             '/app/availability': 'Availability - SignUpFlow',
-            '/app/admin': 'Admin Console - SignUpFlow'
+            '/app/admin': 'Admin Console - SignUpFlow',
+            '/app/onboarding-dashboard': 'Getting Started - SignUpFlow'
         };
 
         // Listen for browser back/forward
@@ -106,6 +108,24 @@ class Router {
 
             if (screenId) {
                 this.showScreen(screenId);
+            }
+            return;
+        }
+
+        // Handle onboarding dashboard (special app screen)
+        if (path === '/app/onboarding-dashboard') {
+            this.showScreen('onboarding-dashboard');
+
+            // Initialize onboarding dashboard components
+            if (window.initChecklist) {
+                window.initChecklist();
+            }
+
+            // Initialize sample data controls
+            if (window.renderSampleDataControls) {
+                setTimeout(() => {
+                    window.renderSampleDataControls('dashboard-sample-data-controls');
+                }, 100);
             }
             return;
         }

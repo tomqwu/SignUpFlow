@@ -78,5 +78,11 @@ Thumbs.db
 examples/*.db
 .env
 
+# Celery
+celerybeat-schedule
+celerybeat-schedule.db
+celerybeat.pid
+celery-task-meta-*
+
 # Spec-kit / Claude Code local settings
 .claude/settings.local.json

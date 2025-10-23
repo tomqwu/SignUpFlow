@@ -6,6 +6,38 @@ function toggleRecurrenceOptions() {
     options.style.display = occurs !== 'once' ? 'block' : 'none';
 }
 
+/**
+ * Create recurring series using new RecurringSeries API
+ * Returns the created series or null if failed
+ */
+async function createRecurringSeries(seriesData) {
+    try {
+        const response = await authFetch(
+            `${API_BASE_URL}/recurring-series?org_id=${currentUser.org_id}`,
+            {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(seriesData)
+            }
+        );
+
+        if (response.ok) {
+            const series = await response.json();
+            return series;
+        } else {
+            const error = await response.json();
+            showToast(`Failed to create recurring series: ${error.detail || 'Unknown error'}`, 'error');
+            return null;
+        }
+    } catch (error) {
+        console.error('Recurring series creation error:', error);
+        showToast(`Error creating recurring series: ${error.message}`, 'error');
+        return null;
+    }
+}
+
+window.createRecurringSeries = createRecurringSeries;
+
 window.createEvent = async function(event) {
     console.log('[recurring-events.js createEvent] Function called!');
     event.preventDefault();
@@ -156,6 +188,11 @@ async function showCreateEventForm() {
 
     // Load org roles into the role selector with count inputs
     await renderRoleSelector('event-role-selector', true);
+
+    // Initialize recurring events UI
+    if (typeof initRecurringEventsUI === 'function') {
+        initRecurringEventsUI();
+    }
 }
 
 function closeCreateEventForm() {

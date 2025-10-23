@@ -7,6 +7,7 @@ from sqlalchemy.orm import Session
 
 from api.database import get_db
 from api.dependencies import get_current_admin_user, verify_org_member
+from api.services.notification_service import create_assignment_notifications
 
 logger = logging.getLogger("rostio")
 from api.schemas.solver import SolveRequest, SolveResponse, ViolationInfo, FairnessMetrics, SolutionMetrics
@@ -185,7 +186,8 @@ def solve_schedule(
     db.add(db_solution)
     db.flush()
 
-    # Save assignments
+    # Save assignments and collect IDs for notifications
+    assignment_ids = []
     for assignment in solution.assignments:
         for person_id in assignment.assignees:
             db_assignment = DBAssignment(
@@ -194,9 +196,27 @@ def solve_schedule(
                 person_id=person_id,
             )
             db.add(db_assignment)
+            db.flush()  # Flush to get assignment ID
+            assignment_ids.append(db_assignment.id)
 
     db.commit()
     db.refresh(db_solution)
+
+    # Create notifications for new assignments
+    try:
+        notification_result = create_assignment_notifications(
+            assignment_ids=assignment_ids,
+            db=db,
+            send_immediately=True
+        )
+        logger.info(
+            f"Notifications: {notification_result['created']} created, "
+            f"{notification_result['queued']} queued, "
+            f"{notification_result['skipped']} skipped"
+        )
+    except Exception as e:
+        # Log error but don't fail the solve operation
+        logger.error(f"Failed to create assignment notifications: {e}")
 
     # Build response
     violations = [

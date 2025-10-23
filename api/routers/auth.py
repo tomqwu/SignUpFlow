@@ -9,7 +9,7 @@ import time
 from api.database import get_db
 from api.dependencies import get_organization_by_id
 from api.security import hash_password, verify_password, create_access_token
-from api.models import Person, Organization
+from api.models import Person, Organization, OnboardingProgress
 from api.utils.rate_limit_middleware import rate_limit
 from api.utils.recaptcha import get_recaptcha_site_key
 
@@ -97,6 +97,19 @@ def signup(request: SignupRequest, db: Session = Depends(get_db)):
     db.add(person)
     db.commit()
     db.refresh(person)
+
+    # Initialize OnboardingProgress for new user
+    onboarding_progress = OnboardingProgress(
+        person_id=person.id,
+        org_id=person.org_id,
+        wizard_step_completed=0,
+        checklist_state={},
+        tutorials_completed=[],
+        features_unlocked=[],
+        onboarding_skipped=False
+    )
+    db.add(onboarding_progress)
+    db.commit()
 
     # Generate JWT access token
     access_token = create_access_token(data={"sub": person.id})

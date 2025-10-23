@@ -9,34 +9,20 @@ These tests verify the complete i18n workflow including:
 """
 
 import pytest
-import requests
+from fastapi.testclient import TestClient
 from playwright.sync_api import sync_playwright, expect
 from datetime import datetime
 
-API_BASE = "http://localhost:8000/api"
 APP_URL = "http://localhost:8000"
-
-
-def get_auth_headers():
-    """Get authentication headers for API requests."""
-    response = requests.post(f"{API_BASE}/auth/login", json={
-        "email": "jane@test.com",
-        "password": "password"
-    })
-    if response.status_code == 200:
-        token = response.json()["token"]
-        return {"Authorization": f"Bearer {token}"}
-    return {}
 
 
 class TestI18nAPI:
     """Test i18n backend functionality"""
 
-    def test_person_has_language_field(self):
+    def test_person_has_language_field(self, client: TestClient, auth_headers: dict, test_org_setup):
         """Verify Person model has language field"""
-        headers = get_auth_headers()
         # Get first person
-        resp = requests.get(f"{API_BASE}/people/?org_id=test_org", headers=headers)
+        resp = client.get("/api/people/?org_id=test_org", headers=auth_headers)
         assert resp.status_code == 200
 
         people = resp.json()["people"]
@@ -47,11 +33,10 @@ class TestI18nAPI:
             # Default should be 'en' or a valid locale
             assert person["language"] in ["en", "es", "pt", "fr", "zh-CN", "zh-TW", None]
 
-    def test_update_person_language(self):
+    def test_update_person_language(self, client: TestClient, auth_headers: dict, test_org_setup):
         """Verify language can be updated via PUT /people/{id}"""
-        headers = get_auth_headers()
         # Get first person
-        resp = requests.get(f"{API_BASE}/people/?org_id=test_org", headers=headers)
+        resp = client.get("/api/people/?org_id=test_org", headers=auth_headers)
         assert resp.status_code == 200
 
         people = resp.json()["people"]
@@ -60,30 +45,31 @@ class TestI18nAPI:
         person_id = people[0]["id"]
 
         # Update language to Chinese
-        update_resp = requests.put(
-            f"{API_BASE}/people/{person_id}",
+        update_resp = client.put(
+            f"/api/people/{person_id}",
             json={"language": "zh-CN"},
-            headers=headers
+            headers=auth_headers
         )
         assert update_resp.status_code == 200
 
         # Verify it was saved
-        get_resp = requests.get(f"{API_BASE}/people/{person_id}", headers=headers)
+        get_resp = client.get(f"/api/people/{person_id}", headers=auth_headers)
         assert get_resp.status_code == 200
         assert get_resp.json()["language"] == "zh-CN"
 
         # Cleanup - set back to English
-        requests.put(
-            f"{API_BASE}/people/{person_id}",
+        client.put(
+            f"/api/people/{person_id}",
             json={"language": "en"},
-            headers=headers
+            headers=auth_headers
         )
 
-    def test_auth_login_returns_language(self):
+    def test_auth_login_returns_language(self, client: TestClient, test_org_setup):
         """Verify login response includes language field"""
-        login_resp = requests.post(
-            f"{API_BASE}/auth/login",
-            json={"email": "sarah@test.com", "password": "password"}
+        # Use test volunteer user created by test_org_setup fixture
+        login_resp = client.post(
+            "/api/auth/login",
+            json={"email": "volunteer@test.com", "password": "password"}
         )
 
         assert login_resp.status_code == 200, f"Login failed with status {login_resp.status_code}: {login_resp.text}"

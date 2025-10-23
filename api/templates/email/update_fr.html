@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>Schedule Update: {{ event_title }}</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            line-height: 1.6;
+            color: #333333;
+            background-color: #f4f4f7;
+        }
+        .email-container {
+            max-width: 600px;
+            margin: 0 auto;
+            background-color: #ffffff;
+        }
+        .header {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            padding: 40px 30px;
+            text-align: center;
+            color: #ffffff;
+        }
+        .header h1 {
+            margin: 0;
+            font-size: 28px;
+            font-weight: 600;
+        }
+        .content {
+            padding: 40px 30px;
+        }
+        .greeting {
+            font-size: 18px;
+            margin-bottom: 20px;
+            color: #333333;
+        }
+        .message {
+            font-size: 16px;
+            color: #555555;
+            margin-bottom: 30px;
+        }
+        .update-badge {
+            background-color: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 15px 20px;
+            margin: 25px 0;
+            border-radius: 4px;
+        }
+        .update-badge h3 {
+            margin: 0 0 10px 0;
+            color: #856404;
+            font-size: 18px;
+        }
+        .change-row {
+            margin: 15px 0;
+            padding: 15px;
+            background-color: #f8f9fa;
+            border-radius: 4px;
+        }
+        .change-label {
+            font-weight: 600;
+            color: #555555;
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 8px;
+        }
+        .change-values {
+            display: table;
+            width: 100%;
+        }
+        .old-value, .new-value {
+            display: table-cell;
+            width: 50%;
+            padding: 10px;
+        }
+        .old-value {
+            text-decoration: line-through;
+            color: #dc3545;
+            opacity: 0.7;
+            border-right: 2px solid #dee2e6;
+        }
+        .new-value {
+            color: #28a745;
+            font-weight: 600;
+            padding-left: 20px;
+        }
+        .value-label {
+            font-size: 12px;
+            text-transform: uppercase;
+            font-weight: 600;
+            margin-bottom: 5px;
+            color: #6c757d;
+        }
+        .event-card {
+            background-color: #f8f9fa;
+            border-left: 4px solid #667eea;
+            padding: 20px;
+            margin: 25px 0;
+            border-radius: 4px;
+        }
+        .event-title {
+            font-size: 22px;
+            font-weight: 600;
+            color: #333333;
+            margin-bottom: 15px;
+        }
+        .event-details {
+            margin: 10px 0;
+        }
+        .detail-row {
+            display: table;
+            width: 100%;
+            margin: 8px 0;
+        }
+        .detail-label {
+            display: table-cell;
+            font-weight: 600;
+            color: #555555;
+            width: 30%;
+            padding-right: 10px;
+        }
+        .detail-value {
+            display: table-cell;
+            color: #333333;
+        }
+        .role-highlight {
+            background-color: #667eea;
+            color: #ffffff;
+            padding: 4px 12px;
+            border-radius: 16px;
+            display: inline-block;
+            font-weight: 500;
+        }
+        .button {
+            display: inline-block;
+            padding: 14px 28px;
+            background-color: #667eea;
+            color: #ffffff !important;
+            text-decoration: none;
+            border-radius: 6px;
+            font-weight: 500;
+            margin: 10px 10px 10px 0;
+            transition: background-color 0.3s ease;
+        }
+        .button:hover {
+            background-color: #5568d3;
+        }
+        .actions {
+            margin: 30px 0;
+            text-align: center;
+        }
+        .footer {
+            background-color: #f8f9fa;
+            padding: 30px;
+            text-align: center;
+            border-top: 1px solid #e9ecef;
+        }
+        .footer-text {
+            font-size: 14px;
+            color: #6c757d;
+            margin: 5px 0;
+        }
+        .footer-link {
+            color: #667eea;
+            text-decoration: none;
+        }
+        .footer-link:hover {
+            text-decoration: underline;
+        }
+        @media only screen and (max-width: 600px) {
+            .content {
+                padding: 30px 20px;
+            }
+            .header {
+                padding: 30px 20px;
+            }
+            .header h1 {
+                font-size: 24px;
+            }
+            .event-title {
+                font-size: 20px;
+            }
+            .old-value, .new-value {
+                display: block;
+                width: 100%;
+                border-right: none;
+                padding: 10px 0;
+            }
+            .new-value {
+                padding-left: 0;
+                padding-top: 15px;
+                border-top: 2px solid #dee2e6;
+            }
+            .detail-label, .detail-value {
+                display: block;
+                width: 100%;
+            }
+            .detail-label {
+                margin-bottom: 4px;
+            }
+            .button {
+                display: block;
+                margin: 10px 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="email-container">
+        <!-- Header -->
+        <div class="header">
+            <h1>🔄 Schedule Update</h1>
+        </div>
+
+        <!-- Content -->
+        <div class="content">
+            <div class="greeting">
+                Hi {{ volunteer_name }},
+            </div>
+
+            <div class="message">
+                There's been a change to your assignment:
+            </div>
+
+            <!-- What Changed -->
+            <div class="update-badge">
+                <h3>⚠️ What Changed</h3>
+
+                {% if time_changed %}
+                <div class="change-row">
+                    <div class="change-label">Date & Time</div>
+                    <div class="change-values">
+                        <div class="old-value">
+                            <div class="value-label">Previous</div>
+                            {{ old_datetime }}
+                        </div>
+                        <div class="new-value">
+                            <div class="value-label">Updated</div>
+                            {{ new_datetime }}
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+
+                {% if location_changed %}
+                <div class="change-row">
+                    <div class="change-label">Location</div>
+                    <div class="change-values">
+                        <div class="old-value">
+                            <div class="value-label">Previous</div>
+                            {{ old_location }}
+                        </div>
+                        <div class="new-value">
+                            <div class="value-label">Updated</div>
+                            {{ new_location }}
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+
+                {% if other_changes %}
+                <div class="change-row">
+                    <div class="change-label">Other Changes</div>
+                    <p style="margin: 5px 0; color: #555555;">{{ other_changes }}</p>
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- Current Event Details -->
+            <div class="event-card">
+                <div class="event-title">{{ event_title }}</div>
+
+                <div class="event-details">
+                    <div class="detail-row">
+                        <div class="detail-label">Your Role:</div>
+                        <div class="detail-value">
+                            <span class="role-highlight">{{ role }}</span>
+                        </div>
+                    </div>
+
+                    <div class="detail-row">
+                        <div class="detail-label">Date & Time:</div>
+                        <div class="detail-value">{{ new_datetime }}</div>
+                    </div>
+
+                    {% if new_location %}
+                    <div class="detail-row">
+                        <div class="detail-label">Location:</div>
+                        <div class="detail-value">{{ new_location }}</div>
+                    </div>
+                    {% endif %}
+
+                    {% if event_duration %}
+                    <div class="detail-row">
+                        <div class="detail-label">Duration:</div>
+                        <div class="detail-value">{{ event_duration }}</div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Actions -->
+            <div class="actions">
+                <a href="{{ schedule_url }}" class="button">📅 View Updated Schedule</a>
+            </div>
+
+            <div class="message" style="margin-top: 30px;">
+                Thank you for your flexibility! 🙏
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="footer">
+            <div class="footer-text">
+                <a href="{{ unsubscribe_url }}" class="footer-link">Unsubscribe from update notifications</a>
+            </div>
+            <div class="footer-text" style="margin-top: 15px;">
+                Powered by <a href="https://signupflow.io" class="footer-link">SignUpFlow</a>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

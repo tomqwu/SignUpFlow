@@ -5,6 +5,8 @@ const API_BASE_URL = window.API_BASE_URL || '/api';
 let currentOrg = null;
 let organizations = [];
 
+// Note: Using window.addSampleBadge() from sample-data-manager.js (loaded via script tag)
+
 // Initialize app
 document.addEventListener('DOMContentLoaded', async () => {
     initTabs();
@@ -185,7 +187,7 @@ async function loadPeople() {
             <div class="data-card">
                 <div class="data-card-header">
                     <div>
-                        <div class="data-card-title">${person.name}</div>
+                        <div class="data-card-title">${window.addSampleBadge(person.name, person.is_sample)}</div>
                         <div class="data-card-id">ID: ${person.id}</div>
                     </div>
                     <button class="btn btn-secondary btn-sm" onclick='showEditPersonModal(${JSON.stringify(person)})'>Edit Roles</button>
@@ -268,7 +270,7 @@ async function loadTeams() {
             <div class="data-card">
                 <div class="data-card-header">
                     <div>
-                        <div class="data-card-title">${team.name}</div>
+                        <div class="data-card-title">${window.addSampleBadge(team.name, team.is_sample)}</div>
                         <div class="data-card-id">ID: ${team.id}</div>
                     </div>
                 </div>
@@ -407,7 +409,7 @@ async function loadEvents() {
             <div class="data-card">
                 <div class="data-card-header">
                     <div>
-                        <div class="data-card-title">${event.type}</div>
+                        <div class="data-card-title">${window.addSampleBadge(event.type, event.is_sample)}</div>
                         <div class="data-card-id">ID: ${event.id}</div>
                     </div>
                     <span class="badge badge-primary">${event.type}</span>

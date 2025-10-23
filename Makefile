@@ -121,7 +121,7 @@ check-deps:
 
 # Run the development server
 run: check-poetry
-	@echo "🚀 Starting Rostio development server..."
+	@echo "🚀 Starting SignUpFlow development server..."
 	@poetry run uvicorn api.main:app --host 0.0.0.0 --port 8000 --reload
 
 # Alias for run
@@ -129,7 +129,7 @@ dev: run
 
 # Stop the development server
 stop:
-	@echo "🛑 Stopping Rostio server..."
+	@echo "🛑 Stopping SignUpFlow server..."
 	@-pkill -f "uvicorn api.main:app" 2>/dev/null || true
 	@-lsof -ti:8000 | xargs kill -9 2>/dev/null || true
 	@echo "✅ Server stopped"
@@ -142,7 +142,7 @@ restart: stop
 
 # First-time setup (auto-installs everything!)
 setup:
-	@echo "🚀 Starting Rostio setup..."
+	@echo "🚀 Starting SignUpFlow setup..."
 	@echo ""
 	@$(MAKE) check-python
 	@$(MAKE) install-deps
@@ -384,7 +384,7 @@ test-with-timing: check-poetry
 .DEFAULT_GOAL := help
 
 help:
-	@echo "Rostio Commands:"
+	@echo "SignUpFlow Commands:"
 	@echo ""
 	@echo "🚀 Quick Start (One Command Does Everything!):"
 	@echo "  make setup            - Auto-install Poetry, npm, packages, and setup DB"

@@ -183,6 +183,17 @@ def setup_test_database():
         os.remove("test_roster.db")
 
 
+@pytest.fixture
+def auth_headers():
+    """
+    Provide authentication headers for test requests.
+
+    Since get_current_admin_user and get_current_user are mocked via dependency overrides,
+    the actual token value doesn't matter - just needs to be present.
+    """
+    return {"Authorization": "Bearer test_token"}
+
+
 @pytest.fixture(scope="function", autouse=True)
 def override_get_db():
     """Override database dependency to use test database for unit tests."""
@@ -261,3 +272,155 @@ def override_get_db():
         api.routers.teams.verify_org_member = original_verify
 
     app.dependency_overrides.clear()
+
+
+# Database session fixture for integration tests
+@pytest.fixture(scope="function")
+def db():
+    """Provide a database session for integration tests."""
+    engine = create_engine(TEST_DATABASE_URL, connect_args={"check_same_thread": False})
+    TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+
+    session = TestingSessionLocal()
+    try:
+        yield session
+    finally:
+        session.close()
+
+
+# Helper functions for creating test data
+def create_test_org(db):
+    """Create a test organization."""
+    from api.models import Organization
+    from datetime import datetime
+    import time
+    import random
+
+    # Add random component to prevent timestamp collisions
+    rand_suffix = random.randint(1000, 9999)
+    timestamp = int(time.time() * 1000)  # Use milliseconds for better uniqueness
+    org_id = f"test_org_{timestamp}_{rand_suffix}"
+
+    org = Organization(
+        id=org_id,
+        name="Test Organization",
+        region="US",
+        config={}
+    )
+    db.add(org)
+    db.commit()
+    db.refresh(org)
+    return org
+
+
+def create_test_user(db, org_id, roles=None, email=None):
+    """Create a test user/person."""
+    from api.models import Person
+    from api.security import hash_password
+    from datetime import datetime
+    import time
+    import random
+
+    if roles is None:
+        roles = ["volunteer"]
+
+    if email is None:
+        # Add random component to prevent timestamp collisions
+        rand_suffix = random.randint(1000, 9999)
+        timestamp = int(time.time() * 1000)  # Use milliseconds for better uniqueness
+        email = f"test_{timestamp}_{rand_suffix}@test.com"
+
+    # Generate person ID in the same format as auth.py
+    person_id = f"person_{email.split('@')[0]}_{int(time.time())}_{random.randint(1000, 9999)}"
+
+    person = Person(
+        id=person_id,
+        org_id=org_id,
+        name="Test User",
+        email=email,
+        password_hash=hash_password("TestPassword123!"),
+        roles=roles
+    )
+    db.add(person)
+    db.commit()
+    db.refresh(person)
+    return person
+
+
+@pytest.fixture(scope="function")
+def client(db):
+    """FastAPI TestClient for integration tests."""
+    from fastapi.testclient import TestClient
+    from api.main import app
+    
+    with TestClient(app) as test_client:
+        yield test_client
+
+
+@pytest.fixture(scope="function")
+def test_db(db):
+    """Alias for db fixture to match test naming."""
+    return db
+
+
+@pytest.fixture(scope="function")
+def test_org_setup(db):
+    """
+    Setup test organization and users for comprehensive tests.
+
+    Creates:
+    - Organization with ID "test_org"
+    - Test admin user
+    - Test volunteer user
+
+    Returns:
+        dict: {"org": Organization, "admin": Person, "volunteer": Person}
+    """
+    from api.models import Organization, Person
+    from api.security import hash_password
+
+    # Check if test_org already exists
+    org = db.query(Organization).filter(Organization.id == "test_org").first()
+    if not org:
+        # Create test organization with fixed ID
+        org = Organization(
+            id="test_org",
+            name="Test Organization",
+            region="US",
+            config={}
+        )
+        db.add(org)
+        db.flush()
+
+    # Check if admin user already exists
+    admin = db.query(Person).filter(Person.id == "test_admin").first()
+    if not admin:
+        admin = Person(
+            id="test_admin",
+            org_id="test_org",
+            name="Test Admin",
+            email="admin@test.com",
+            password_hash=hash_password("password"),
+            roles=["admin"]
+        )
+        db.add(admin)
+
+    # Check if volunteer user already exists
+    volunteer = db.query(Person).filter(Person.id == "test_volunteer").first()
+    if not volunteer:
+        volunteer = Person(
+            id="test_volunteer",
+            org_id="test_org",
+            name="Test Volunteer",
+            email="volunteer@test.com",
+            password_hash=hash_password("password"),
+            roles=["volunteer"]
+        )
+        db.add(volunteer)
+
+    db.commit()
+    db.refresh(org)
+    db.refresh(admin)
+    db.refresh(volunteer)
+
+    return {"org": org, "admin": admin, "volunteer": volunteer}

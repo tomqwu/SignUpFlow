@@ -1,0 +1,839 @@
+openapi: 3.0.3
+info:
+  title: Email Notification System API
+  description: |
+    API endpoints for SignUpFlow email notification system.
+
+    ## Authentication
+    All endpoints require JWT Bearer token authentication.
+
+    ## Multi-tenant Isolation
+    All endpoints MUST include `org_id` query parameter and verify user belongs to organization.
+
+    ## RBAC
+    - **Admin endpoints**: Require `admin` role
+    - **Volunteer endpoints**: Accessible to all authenticated users
+  version: 1.0.0
+  contact:
+    name: SignUpFlow API Support
+    url: https://signupflow.io
+
+servers:
+  - url: http://localhost:8000/api
+    description: Development server
+  - url: https://api.signupflow.io
+    description: Production server
+
+security:
+  - BearerAuth: []
+
+tags:
+  - name: Notifications
+    description: Notification management endpoints
+  - name: Email Preferences
+    description: User email preference management
+  - name: Admin
+    description: Admin-only notification operations
+
+paths:
+  /notifications:
+    get:
+      summary: List notifications
+      description: |
+        List all notifications for an organization.
+
+        **RBAC**: Admins see all notifications, volunteers see only their own.
+      tags:
+        - Notifications
+      parameters:
+        - $ref: '#/components/parameters/OrgIdQueryParam'
+        - name: recipient_id
+          in: query
+          description: Filter by recipient (volunteers can only query their own ID)
+          schema:
+            type: string
+        - name: type
+          in: query
+          description: Filter by notification type
+          schema:
+            $ref: '#/components/schemas/NotificationType'
+        - name: status
+          in: query
+          description: Filter by delivery status
+          schema:
+            $ref: '#/components/schemas/NotificationStatus'
+        - name: limit
+          in: query
+          description: Number of results to return (default 50, max 500)
+          schema:
+            type: integer
+            default: 50
+            maximum: 500
+        - name: offset
+          in: query
+          description: Pagination offset
+          schema:
+            type: integer
+            default: 0
+      responses:
+        '200':
+          description: Notifications retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  notifications:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Notification'
+                  total:
+                    type: integer
+                    description: Total number of notifications matching filters
+                  limit:
+                    type: integer
+                  offset:
+                    type: integer
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+
+    post:
+      summary: Create notification (admin only)
+      description: |
+        Manually create a notification for testing or admin-triggered communications.
+
+        **RBAC**: Admin only
+      tags:
+        - Notifications
+        - Admin
+      parameters:
+        - $ref: '#/components/parameters/OrgIdQueryParam'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NotificationCreate'
+      responses:
+        '201':
+          description: Notification created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Notification'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+
+  /notifications/{notification_id}:
+    get:
+      summary: Get notification by ID
+      description: |
+        Retrieve a specific notification.
+
+        **RBAC**: Admins can view any notification, volunteers only their own.
+      tags:
+        - Notifications
+      parameters:
+        - name: notification_id
+          in: path
+          required: true
+          schema:
+            type: string
+        - $ref: '#/components/parameters/OrgIdQueryParam'
+      responses:
+        '200':
+          description: Notification retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotificationDetail'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+
+  /notifications/{notification_id}/retry:
+    post:
+      summary: Retry failed notification (admin only)
+      description: |
+        Manually retry a failed notification.
+
+        **RBAC**: Admin only
+      tags:
+        - Notifications
+        - Admin
+      parameters:
+        - name: notification_id
+          in: path
+          required: true
+          schema:
+            type: string
+        - $ref: '#/components/parameters/OrgIdQueryParam'
+      responses:
+        '200':
+          description: Notification re-queued for retry
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Notification re-queued successfully"
+                  notification:
+                    $ref: '#/components/schemas/Notification'
+        '400':
+          description: Cannot retry (already delivered or max retries exceeded)
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+
+  /notifications/stats:
+    get:
+      summary: Get notification statistics (admin only)
+      description: |
+        Retrieve delivery statistics for organization.
+
+        **RBAC**: Admin only
+      tags:
+        - Admin
+      parameters:
+        - $ref: '#/components/parameters/OrgIdQueryParam'
+        - name: start_date
+          in: query
+          description: Start date for statistics (ISO 8601)
+          schema:
+            type: string
+            format: date-time
+        - name: end_date
+          in: query
+          description: End date for statistics (ISO 8601)
+          schema:
+            type: string
+            format: date-time
+      responses:
+        '200':
+          description: Statistics retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotificationStats'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+
+  /email-preferences/me:
+    get:
+      summary: Get my email preferences
+      description: |
+        Retrieve current user's email preferences.
+
+        **RBAC**: All authenticated users
+      tags:
+        - Email Preferences
+      parameters:
+        - $ref: '#/components/parameters/OrgIdQueryParam'
+      responses:
+        '200':
+          description: Preferences retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EmailPreference'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+    put:
+      summary: Update my email preferences
+      description: |
+        Update current user's email preferences.
+
+        **RBAC**: All authenticated users
+      tags:
+        - Email Preferences
+      parameters:
+        - $ref: '#/components/parameters/OrgIdQueryParam'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EmailPreferenceUpdate'
+      responses:
+        '200':
+          description: Preferences updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EmailPreference'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /email-preferences/unsubscribe/{token}:
+    get:
+      summary: Unsubscribe page
+      description: |
+        Public unsubscribe page (accessible without authentication via email link).
+      tags:
+        - Email Preferences
+      parameters:
+        - name: token
+          in: path
+          required: true
+          description: Unsubscribe token from email link
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Unsubscribe page rendered (HTML)
+          content:
+            text/html:
+              schema:
+                type: string
+        '404':
+          description: Invalid unsubscribe token
+
+    post:
+      summary: Process unsubscribe
+      description: |
+        Process unsubscribe form submission.
+      tags:
+        - Email Preferences
+      parameters:
+        - name: token
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                unsubscribe_all:
+                  type: boolean
+                  description: If true, disable all emails. If false, show preferences form.
+              required:
+                - unsubscribe_all
+      responses:
+        '200':
+          description: Unsubscribe processed successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "You have been unsubscribed successfully"
+        '404':
+          description: Invalid unsubscribe token
+
+  /webhooks/sendgrid:
+    post:
+      summary: SendGrid event webhook
+      description: |
+        Webhook endpoint for SendGrid delivery events.
+
+        **Authentication**: Webhook signature verification (SendGrid secret key).
+      tags:
+        - Admin
+      security: []  # Public endpoint, uses webhook signature
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                $ref: '#/components/schemas/SendGridWebhookEvent'
+      responses:
+        '200':
+          description: Webhook processed successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  processed:
+                    type: integer
+                    example: 5
+        '401':
+          description: Invalid webhook signature
+        '400':
+          description: Invalid webhook payload
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  parameters:
+    OrgIdQueryParam:
+      name: org_id
+      in: query
+      required: true
+      description: Organization ID (multi-tenant isolation)
+      schema:
+        type: string
+
+  schemas:
+    NotificationType:
+      type: string
+      enum:
+        - assignment
+        - reminder
+        - update
+        - cancellation
+        - digest_daily
+        - digest_weekly
+        - admin_summary
+      description: |
+        - `assignment`: Volunteer assigned to event
+        - `reminder`: 24-hour event reminder
+        - `update`: Event details changed
+        - `cancellation`: Event canceled
+        - `digest_daily`: Daily digest of assignments
+        - `digest_weekly`: Weekly digest of assignments
+        - `admin_summary`: Weekly admin statistics
+
+    NotificationStatus:
+      type: string
+      enum:
+        - pending
+        - queued
+        - sent
+        - delivered
+        - opened
+        - clicked
+        - failed
+        - bounced
+        - spam
+        - unsubscribed
+      description: |
+        - `pending`: Created, not yet queued
+        - `queued`: Added to Celery queue
+        - `sent`: Sent to SendGrid
+        - `delivered`: Delivered to recipient inbox
+        - `opened`: Recipient opened email
+        - `clicked`: Recipient clicked link in email
+        - `failed`: Temporary failure (will retry)
+        - `bounced`: Permanent failure (bad email)
+        - `spam`: Marked as spam by recipient
+        - `unsubscribed`: Recipient unsubscribed
+
+    Notification:
+      type: object
+      properties:
+        id:
+          type: string
+          example: "notif_1234567890"
+        org_id:
+          type: string
+          example: "org_123"
+        recipient_id:
+          type: string
+          example: "person_456"
+        type:
+          $ref: '#/components/schemas/NotificationType'
+        status:
+          $ref: '#/components/schemas/NotificationStatus'
+        event_id:
+          type: string
+          nullable: true
+          example: "event_789"
+        retry_count:
+          type: integer
+          example: 0
+        max_retries:
+          type: integer
+          example: 3
+        created_at:
+          type: string
+          format: date-time
+          example: "2025-01-20T10:00:00Z"
+        sent_at:
+          type: string
+          format: date-time
+          nullable: true
+          example: "2025-01-20T10:01:30Z"
+        delivered_at:
+          type: string
+          format: date-time
+          nullable: true
+          example: "2025-01-20T10:02:15Z"
+      required:
+        - id
+        - org_id
+        - recipient_id
+        - type
+        - status
+        - created_at
+
+    NotificationDetail:
+      allOf:
+        - $ref: '#/components/schemas/Notification'
+        - type: object
+          properties:
+            template_data:
+              type: object
+              description: Dynamic content for email template
+              example:
+                event_title: "Sunday Service"
+                event_datetime: "2025-01-05T10:00:00"
+                event_location: "Main Sanctuary"
+                role: "Usher"
+            delivery_logs:
+              type: array
+              items:
+                $ref: '#/components/schemas/DeliveryLog'
+
+    NotificationCreate:
+      type: object
+      properties:
+        recipient_id:
+          type: string
+          description: Volunteer to receive notification
+        type:
+          $ref: '#/components/schemas/NotificationType'
+        event_id:
+          type: string
+          nullable: true
+          description: Related event (optional)
+        template_data:
+          type: object
+          description: Dynamic content for email
+          example:
+            event_title: "Special Event"
+            custom_message: "Thank you for volunteering!"
+      required:
+        - recipient_id
+        - type
+        - template_data
+
+    DeliveryLog:
+      type: object
+      properties:
+        id:
+          type: string
+          example: "log_1234567890123"
+        notification_id:
+          type: string
+          example: "notif_1234567890"
+        event_type:
+          type: string
+          enum:
+            - created
+            - queued
+            - sending
+            - sent
+            - delivered
+            - opened
+            - clicked
+            - bounced
+            - failed
+            - retry
+            - spam
+            - unsubscribed
+        timestamp:
+          type: string
+          format: date-time
+          example: "2025-01-20T10:00:00Z"
+        status_code:
+          type: integer
+          nullable: true
+          example: 202
+        error_message:
+          type: string
+          nullable: true
+          example: "Temporary SMTP failure"
+      required:
+        - id
+        - notification_id
+        - event_type
+        - timestamp
+
+    NotificationStats:
+      type: object
+      properties:
+        period:
+          type: object
+          properties:
+            start_date:
+              type: string
+              format: date-time
+            end_date:
+              type: string
+              format: date-time
+        totals:
+          type: object
+          properties:
+            sent:
+              type: integer
+              example: 1250
+            delivered:
+              type: integer
+              example: 1180
+            opened:
+              type: integer
+              example: 720
+            clicked:
+              type: integer
+              example: 450
+            failed:
+              type: integer
+              example: 35
+            bounced:
+              type: integer
+              example: 25
+            spam:
+              type: integer
+              example: 10
+        rates:
+          type: object
+          properties:
+            delivery_rate:
+              type: number
+              format: float
+              example: 0.944
+              description: delivered / sent
+            open_rate:
+              type: number
+              format: float
+              example: 0.576
+              description: opened / delivered
+            click_rate:
+              type: number
+              format: float
+              example: 0.360
+              description: clicked / delivered
+            bounce_rate:
+              type: number
+              format: float
+              example: 0.020
+              description: bounced / sent
+        by_type:
+          type: object
+          additionalProperties:
+            type: object
+            properties:
+              sent:
+                type: integer
+              delivered:
+                type: integer
+              opened:
+                type: integer
+          example:
+            assignment:
+              sent: 500
+              delivered: 475
+              opened: 320
+            reminder:
+              sent: 450
+              delivered: 430
+              opened: 250
+
+    EmailFrequency:
+      type: string
+      enum:
+        - immediate
+        - daily
+        - weekly
+        - disabled
+      description: |
+        - `immediate`: Send emails immediately
+        - `daily`: Batch into daily digest at specified hour
+        - `weekly`: Batch into weekly digest (Monday at specified hour)
+        - `disabled`: No emails except critical (assignment, cancellation)
+
+    EmailPreference:
+      type: object
+      properties:
+        person_id:
+          type: string
+          example: "person_123"
+        org_id:
+          type: string
+          example: "org_456"
+        frequency:
+          $ref: '#/components/schemas/EmailFrequency'
+        digest_hour:
+          type: integer
+          minimum: 0
+          maximum: 23
+          example: 8
+          description: Hour for digest delivery (0-23, local time)
+        enabled_types:
+          type: array
+          items:
+            $ref: '#/components/schemas/NotificationType'
+          nullable: true
+          description: Enabled notification types (null = all enabled)
+          example: ["assignment", "reminder", "update"]
+        language:
+          type: string
+          nullable: true
+          enum: [en, es, pt, zh-CN, zh-TW, ko]
+          example: "en"
+        timezone:
+          type: string
+          nullable: true
+          example: "America/Toronto"
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+      required:
+        - person_id
+        - org_id
+        - frequency
+
+    EmailPreferenceUpdate:
+      type: object
+      properties:
+        frequency:
+          $ref: '#/components/schemas/EmailFrequency'
+        digest_hour:
+          type: integer
+          minimum: 0
+          maximum: 23
+        enabled_types:
+          type: array
+          items:
+            $ref: '#/components/schemas/NotificationType'
+          description: Notification types to enable (empty array = all disabled)
+        language:
+          type: string
+          enum: [en, es, pt, zh-CN, zh-TW, ko]
+        timezone:
+          type: string
+
+    SendGridWebhookEvent:
+      type: object
+      properties:
+        email:
+          type: string
+          example: "volunteer@example.com"
+        timestamp:
+          type: integer
+          example: 1516299721
+          description: Unix timestamp
+        smtp-id:
+          type: string
+          example: "<14c5d75ce93.dfd.64b469@ismtpd-555>"
+        event:
+          type: string
+          enum:
+            - delivered
+            - bounce
+            - dropped
+            - spam_report
+            - unsubscribe
+            - group_unsubscribe
+            - open
+            - click
+          example: "delivered"
+        category:
+          type: array
+          items:
+            type: string
+          example: ["notifications"]
+        sg_event_id:
+          type: string
+          example: "4NztHBhOTNSH-Zl8P7o3IA=="
+        sg_message_id:
+          type: string
+          example: "14c5d75ce93.dfd.64b469.filter0001.16648.5515E0B88.0"
+        reason:
+          type: string
+          nullable: true
+          description: Reason for bounce/drop
+          example: "550 5.1.1 The email account that you tried to reach does not exist"
+        status:
+          type: string
+          nullable: true
+          description: SMTP status code
+          example: "5.1.1"
+        url:
+          type: string
+          nullable: true
+          description: For click events - the URL clicked
+      required:
+        - email
+        - timestamp
+        - event
+
+  responses:
+    UnauthorizedError:
+      description: Authentication required or invalid token
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              detail:
+                type: string
+                example: "Invalid authentication credentials"
+
+    ForbiddenError:
+      description: User lacks required permissions
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              detail:
+                type: string
+                example: "Admin access required"
+
+    NotFoundError:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              detail:
+                type: string
+                example: "Notification not found"
+
+    ValidationError:
+      description: Request validation failed
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              detail:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    loc:
+                      type: array
+                      items:
+                        type: string
+                    msg:
+                      type: string
+                    type:
+                      type: string

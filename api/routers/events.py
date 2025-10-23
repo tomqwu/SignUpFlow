@@ -376,6 +376,18 @@ def manage_assignment(
         )
         db.add(assignment)
         db.commit()
+        db.refresh(assignment)  # Refresh to get assignment ID
+
+        # 🎯 TRIGGER NOTIFICATION: Send assignment email to volunteer
+        try:
+            from api.services.notification_service import create_assignment_notifications
+            create_assignment_notifications([assignment.id], db, send_immediately=True)
+        except Exception as e:
+            # Log error but don't fail the assignment - notification is non-critical
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.error(f"Failed to send assignment notification for assignment {assignment.id}: {e}")
+
         return success_response(
             "events.assign.success",
             {"assignment_id": assignment.id, "role": request.role},

@@ -1,4 +1,4 @@
-# Rostio SaaS Readiness - Executive Summary
+# SignUpFlow SaaS Readiness - Executive Summary
 
 **Status:** 80% Complete | **Ready for Launch:** 4-6 weeks
 
@@ -268,6 +268,6 @@ TOTAL:                  $185/month
 
 ---
 
-**Bottom Line:** Rostio is 80% ready. With 6 weeks of focused work on pricing, email, and deployment, we can launch a production SaaS business. The core product is solid, tests are passing, and the tech stack is modern. The gaps are infrastructure and monetization, not product quality.
+**Bottom Line:** SignUpFlow is 80% ready. With 6 weeks of focused work on pricing, email, and deployment, we can launch a production SaaS business. The core product is solid, tests are passing, and the tech stack is modern. The gaps are infrastructure and monetization, not product quality.
 
 **Recommendation:** Go for Option A (Fast Launch) to validate market fit, then upgrade to Option B once we have 20+ paying customers.
