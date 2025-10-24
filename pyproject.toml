@@ -26,6 +26,7 @@ passlib = {extras = ["bcrypt"], version = "^1.7.4"}
 twilio = "^9.8.4"
 celery = "^5.5.3"
 redis = "^7.0.0"
+stripe = "^11.3.0"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.2.0"

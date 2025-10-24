@@ -64,6 +64,36 @@ class Organization(Base):
     solutions = relationship("Solution", back_populates="organization", cascade="all, delete-orphan")
     invitations = relationship("Invitation", back_populates="organization", cascade="all, delete-orphan")
 
+    # Billing relationships
+    subscription = relationship("Subscription", back_populates="organization", uselist=False, cascade="all, delete-orphan")
+    usage_metrics = relationship("UsageMetrics", cascade="all, delete-orphan")
+    subscription_events = relationship("SubscriptionEvent", cascade="all, delete-orphan")
+
+    # Convenience properties for billing
+    @property
+    def subscription_tier(self):
+        """Get current subscription tier."""
+        return self.subscription.plan_tier if self.subscription else "free"
+
+    @property
+    def volunteer_limit(self):
+        """Get volunteer limit based on subscription tier."""
+        tier_limits = {
+            "free": 10,
+            "starter": 50,
+            "pro": 200,
+            "enterprise": None  # Unlimited
+        }
+        return tier_limits.get(self.subscription_tier, 10)
+
+    @property
+    def is_over_limit(self):
+        """Check if organization is over volunteer limit."""
+        if self.volunteer_limit is None:  # Unlimited
+            return False
+        current_volunteers = len([p for p in self.people if "volunteer" in (p.roles or [])])
+        return current_volunteers > self.volunteer_limit
+
 
 class Person(Base):
     """Person/player/volunteer entity."""
@@ -642,6 +672,136 @@ class SmsReply(Base):
         Index("idx_sms_replies_person_created", "person_id", "created_at"),
         Index("idx_sms_replies_type_created", "reply_type", "created_at"),
         Index("idx_sms_replies_twilio_sid", "twilio_message_sid"),
+    )
+
+
+# ==============================================================================
+# Billing & Subscription Models
+# ==============================================================================
+
+
+class Subscription(Base):
+    """Organization's current subscription tier and billing status."""
+
+    __tablename__ = "subscriptions"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    org_id = Column(String, ForeignKey("organizations.id", ondelete="CASCADE"), nullable=False, unique=True)
+    stripe_customer_id = Column(String(255), unique=True, nullable=True)  # Stripe customer ID
+    stripe_subscription_id = Column(String(255), unique=True, nullable=True)  # Stripe subscription ID
+    plan_tier = Column(String(20), nullable=False, default="free")  # free, starter, pro, enterprise
+    billing_cycle = Column(String(10), nullable=True)  # monthly, annual (null for free)
+    status = Column(String(20), nullable=False, default="active")  # active, trialing, past_due, cancelled, incomplete
+    trial_end_date = Column(DateTime, nullable=True)  # Trial expiration date
+    current_period_start = Column(DateTime, nullable=True)  # Current billing period start
+    current_period_end = Column(DateTime, nullable=True)  # Current billing period end
+    cancel_at_period_end = Column(Boolean, nullable=False, default=False)  # Scheduled cancellation
+    created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
+    updated_at = Column(DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    # Relationships
+    organization = relationship("Organization", back_populates="subscription")
+    billing_history = relationship("BillingHistory", back_populates="subscription", cascade="all, delete-orphan")
+
+    # Indexes
+    __table_args__ = (
+        Index("idx_subscriptions_org_id", "org_id"),
+        Index("idx_subscriptions_status", "status"),
+        Index("idx_subscriptions_stripe_customer", "stripe_customer_id"),
+    )
+
+
+class BillingHistory(Base):
+    """Historical record of all billing events."""
+
+    __tablename__ = "billing_history"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    org_id = Column(String, ForeignKey("organizations.id", ondelete="CASCADE"), nullable=False)
+    subscription_id = Column(Integer, ForeignKey("subscriptions.id", ondelete="CASCADE"), nullable=True)
+    event_type = Column(String(50), nullable=False)  # charge, refund, subscription_change, trial_start, trial_end
+    amount_cents = Column(Integer, nullable=False, default=0)  # Amount in cents (USD)
+    currency = Column(String(3), nullable=False, default="usd")
+    payment_status = Column(String(20), nullable=False)  # succeeded, failed, pending
+    stripe_invoice_id = Column(String(255), unique=True, nullable=True)
+    invoice_pdf_url = Column(String(500), nullable=True)  # URL to invoice PDF
+    description = Column(Text, nullable=True)
+    extra_metadata = Column(JSONType, nullable=True)  # Additional event metadata
+    event_timestamp = Column(DateTime, nullable=False, default=datetime.utcnow)
+
+    # Relationships
+    subscription = relationship("Subscription", back_populates="billing_history")
+
+    # Indexes
+    __table_args__ = (
+        Index("idx_billing_history_org_timestamp", "org_id", "event_timestamp"),
+        Index("idx_billing_history_stripe_invoice", "stripe_invoice_id"),
+    )
+
+
+class PaymentMethod(Base):
+    """Organization's stored payment information (managed by Stripe)."""
+
+    __tablename__ = "payment_methods"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    org_id = Column(String, ForeignKey("organizations.id", ondelete="CASCADE"), nullable=False)
+    stripe_payment_method_id = Column(String(255), unique=True, nullable=False)
+    card_brand = Column(String(20), nullable=True)  # visa, mastercard, amex, discover
+    card_last4 = Column(String(4), nullable=True)  # Last 4 digits
+    exp_month = Column(Integer, nullable=True)
+    exp_year = Column(Integer, nullable=True)
+    billing_address = Column(JSONType, nullable=True)  # {street, city, state, zip, country}
+    is_primary = Column(Boolean, nullable=False, default=False)
+    is_active = Column(Boolean, nullable=False, default=True)
+    added_at = Column(DateTime, nullable=False, default=datetime.utcnow)
+
+    # Indexes
+    __table_args__ = (
+        Index("idx_payment_methods_org_id", "org_id"),
+        Index("idx_payment_methods_stripe_pm", "stripe_payment_method_id"),
+    )
+
+
+class UsageMetrics(Base):
+    """Tracks organization resource consumption for limit enforcement."""
+
+    __tablename__ = "usage_metrics"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    org_id = Column(String, ForeignKey("organizations.id", ondelete="CASCADE"), nullable=False)
+    metric_type = Column(String(50), nullable=False)  # volunteers_count, events_count, storage_mb, api_calls
+    current_value = Column(Integer, nullable=False, default=0)
+    plan_limit = Column(Integer, nullable=True)  # null = unlimited
+    percentage_used = Column(Float, nullable=False, default=0.0)  # Calculated field
+    last_updated = Column(DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    # Indexes
+    __table_args__ = (
+        Index("idx_usage_metrics_org_metric", "org_id", "metric_type"),
+    )
+
+
+class SubscriptionEvent(Base):
+    """Audit log of all subscription changes for compliance and analytics."""
+
+    __tablename__ = "subscription_events"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    org_id = Column(String, ForeignKey("organizations.id", ondelete="CASCADE"), nullable=False)
+    event_type = Column(String(50), nullable=False)  # created, upgraded, downgraded, trial_started, cancelled, reactivated
+    previous_plan = Column(String(20), nullable=True)  # Previous plan tier
+    new_plan = Column(String(20), nullable=False)  # New plan tier
+    admin_id = Column(String, ForeignKey("people.id", ondelete="SET NULL"), nullable=True)  # Admin who initiated change
+    reason = Column(Text, nullable=True)  # Reason for change (optional)
+    notes = Column(Text, nullable=True)  # Additional notes
+    extra_metadata = Column(JSONType, nullable=True)  # Additional metadata
+    event_timestamp = Column(DateTime, nullable=False, default=datetime.utcnow)
+
+    # Indexes
+    __table_args__ = (
+        Index("idx_subscription_events_org_timestamp", "org_id", "event_timestamp"),
+        Index("idx_subscription_events_type", "event_type"),
     )
 
 

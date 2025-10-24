@@ -31,6 +31,8 @@ from api.routers import (
     invitations,
     calendar,
     sms,
+    billing,
+    webhooks,
 )
 
 
@@ -115,6 +117,8 @@ app.include_router(analytics.router, prefix="/api")
 app.include_router(invitations.router, prefix="/api")
 app.include_router(calendar.router, prefix="/api")
 app.include_router(sms.router)
+app.include_router(billing.router, prefix="/api")
+app.include_router(webhooks.router, prefix="/api")
 
 # API Info endpoint
 @app.get("/api", tags=["root"])
