@@ -2,11 +2,11 @@
 
 **Branch**: `011-billing-subscription-system`
 **Started**: 2025-10-23
-**Status**: Phase 5 Complete! Moving to Phase 6
+**Status**: Phase 8 Complete! Annual billing with 20% discount implemented
 
 ## Summary
 
-Implementing Stripe-integrated billing and subscription system with four tiers (Free, Starter, Pro, Enterprise). System includes usage limit enforcement, self-service billing portal, trial management, and webhook synchronization.
+Implementing Stripe-integrated billing and subscription system with four tiers (Free, Starter, Pro, Enterprise). System includes usage limit enforcement, self-service billing portal, trial management, annual billing with 20% discount, and webhook synchronization.
 
 ## Progress Overview
 
@@ -15,9 +15,10 @@ Implementing Stripe-integrated billing and subscription system with four tiers (
 - ✅ Phase 3: US1 Free Plan (7/7 tasks - 100%)
 - ✅ Phase 4: US2 Paid Upgrade (12/12 tasks - 100%)
 - ✅ Phase 5: US3 14-Day Trial (6/8 tasks - 75%, 2 email tasks deferred)
-- ⏳ Phase 6: US4 Failed Payment Handling (0/12 tasks - 0%)
+- ✅ Phase 8: US6 Annual Billing (6/6 tasks - 100%)
+- ⏳ Phase 6: US4 Failed Payment Handling (0/12 tasks - 0%, requires email service)
 
-**Overall**: 63/155 tasks complete (41%)
+**Overall**: 69/155 tasks complete (45%)
 
 ## Phase 5 Completion Details
 
@@ -53,6 +54,44 @@ Implementing Stripe-integrated billing and subscription system with four tiers (
 - T062: Trial notification email templates - Deferred to email service implementation
 - T063: send_trial_notifications() - Deferred to email service implementation
 - Placeholder logic exists in billing_tasks.py
+
+## Phase 8 Completion Details
+
+### Annual Pricing Calculations (✅ Complete)
+- `calculate_annual_price()` in billing_service.py - Calculates 20% discounted annual price
+- `get_annual_savings()` in billing_service.py - Calculates savings from annual billing
+- Updated `_get_plan_amount()` with correct 20% discount pricing:
+  - starter_annual: $278.40/year (save $69.60 = 20% off $348)
+  - pro_annual: $950.40/year (save $237.60 = 20% off $1188)
+
+### Billing Cycle Switching (✅ Complete)
+- `switch_billing_cycle()` in billing_service.py - Switches between monthly and annual
+- `_calculate_prorated_amount()` - Calculates prorated charge/credit for mid-period switches
+- `update_subscription_billing_cycle()` in stripe_service.py - Stripe API integration
+- Prorated billing logic:
+  - Monthly → Annual: Charge prorated difference for remaining period
+  - Annual → Monthly: Credit unused annual time to customer balance
+- Billing history recording for cycle changes
+- Subscription event audit trail
+
+### Frontend Annual Billing UI (✅ Complete)
+- Updated pricing display to show annual savings badge
+- Added billing cycle display in subscription details
+- Added next renewal date display
+- Shows "Save $69.60 (20% off)" for starter annual
+- Shows "Save $237.60 (20% off)" for pro annual
+- Responsive grid layout for subscription details
+
+### i18n Translations (✅ Complete)
+- Updated locales/en/billing.json with annual pricing:
+  - starter_annual: "$278.40/year"
+  - starter_annual_savings: "Save $69.60 (20% off)"
+  - pro_annual: "$950.40/year"
+  - pro_annual_savings: "Save $237.60 (20% off)"
+  - annual_discount: "Save 20% with annual billing"
+- Added billing_portal translations:
+  - billing_cycle: "Billing Cycle"
+  - next_renewal: "Next Renewal"
 
 ## Phase 4 Completion Details
 

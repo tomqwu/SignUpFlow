@@ -12,12 +12,14 @@
   "pricing": {
     "free_price": "$0/month",
     "starter_monthly": "$29/month",
-    "starter_annual": "$290/year",
+    "starter_annual": "$278.40/year",
+    "starter_annual_savings": "Save $69.60 (20% off)",
     "pro_monthly": "$99/month",
-    "pro_annual": "$990/year",
+    "pro_annual": "$950.40/year",
+    "pro_annual_savings": "Save $237.60 (20% off)",
     "enterprise_price": "Contact us",
     "trial_period": "14-day free trial",
-    "annual_discount": "Save 17% with annual billing"
+    "annual_discount": "Save 20% with annual billing"
   },
   "features": {
     "volunteers_limit": "{{count}} volunteers",
@@ -42,6 +44,8 @@
   "billing_portal": {
     "title": "Billing & Subscription",
     "current_plan": "Current Plan",
+    "billing_cycle": "Billing Cycle",
+    "next_renewal": "Next Renewal",
     "change_plan": "Change Plan",
     "cancel_subscription": "Cancel Subscription",
     "billing_history": "Billing History",

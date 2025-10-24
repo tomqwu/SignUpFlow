@@ -73,6 +73,13 @@ function displayCurrentSubscription(data) {
     const planName = i18n.t(`billing.plan_names.${subscription.plan_tier}`);
     const statusBadge = getStatusBadge(subscription.status);
 
+    // Format billing cycle and next renewal date
+    const billingCycleDisplay = subscription.billing_cycle ?
+        i18n.t(`billing.billing_cycles.${subscription.billing_cycle}`) : '';
+
+    const nextRenewalDate = subscription.current_period_end ?
+        new Date(subscription.current_period_end).toLocaleDateString() : '';
+
     container.innerHTML = `
         <div class="subscription-header">
             <h2 data-i18n="billing.billing_portal.current_plan">${i18n.t('billing.billing_portal.current_plan')}</h2>
@@ -81,6 +88,31 @@ function displayCurrentSubscription(data) {
                 ${statusBadge}
             </div>
         </div>
+
+        ${subscription.billing_cycle && subscription.plan_tier !== 'free' ? `
+            <div class="subscription-details" style="margin: 1.5rem 0; padding: 1rem; background-color: #f9fafb; border-radius: 0.5rem;">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                    <div>
+                        <p style="font-size: 0.875rem; color: #6b7280; margin-bottom: 0.25rem;">
+                            ${i18n.t('billing.billing_portal.billing_cycle')}
+                        </p>
+                        <p style="font-weight: 500; color: #1f2937;">
+                            ${billingCycleDisplay}
+                        </p>
+                    </div>
+                    ${nextRenewalDate ? `
+                        <div>
+                            <p style="font-size: 0.875rem; color: #6b7280; margin-bottom: 0.25rem;">
+                                ${i18n.t('billing.billing_portal.next_renewal')}
+                            </p>
+                            <p style="font-weight: 500; color: #1f2937;">
+                                ${nextRenewalDate}
+                            </p>
+                        </div>
+                    ` : ''}
+                </div>
+            </div>
+        ` : ''}
 
         ${subscription.status === 'trialing' ? `
             <div class="trial-notice">
@@ -239,13 +271,20 @@ function renderPricingCard(plan) {
     if (plan.tier === 'free' || plan.tier === 'enterprise') {
         priceHtml = `<div class="price">${plan.price}</div>`;
     } else {
+        // Get savings for annual billing
+        const savingsKey = `billing.pricing.${plan.tier}_annual_savings`;
+        const savingsBadge = i18n.t(savingsKey);
+
         priceHtml = `
             <div class="price">
                 <span class="monthly-price">${plan.monthlyPrice}</span>
                 <span class="annual-price">${plan.annualPrice}</span>
             </div>
-            <p class="billing-cycle-note" data-i18n="billing.pricing.annual_discount">
-                ${i18n.t('billing.pricing.annual_discount')}
+            <p class="billing-cycle-note monthly-note" data-i18n="billing.pricing.trial_period">
+                ${i18n.t('billing.pricing.trial_period')}
+            </p>
+            <p class="billing-cycle-note annual-note savings-badge" style="display: none;">
+                <strong style="color: #059669;">${savingsBadge}</strong>
             </p>
         `;
     }

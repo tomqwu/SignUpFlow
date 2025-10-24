@@ -211,6 +211,69 @@ class StripeService:
             logger.error(f"Error changing plan for org {org_id}: {e}")
             return {"success": False, "message": str(e)}
 
+    def update_subscription_billing_cycle(
+        self,
+        stripe_subscription_id: str,
+        new_price_id: str,
+        prorated_amount_cents: int
+    ) -> Dict[str, Any]:
+        """
+        Update subscription billing cycle in Stripe.
+
+        Args:
+            stripe_subscription_id: Stripe subscription ID
+            new_price_id: New Stripe price ID (with new billing cycle)
+            prorated_amount_cents: Prorated amount to charge/credit
+
+        Returns:
+            dict: Result with success status
+                {
+                    "success": bool,
+                    "stripe_subscription": dict,
+                    "message": str
+                }
+
+        Example:
+            result = stripe_service.update_subscription_billing_cycle(
+                stripe_subscription_id="sub_123",
+                new_price_id="price_starter_annual",
+                prorated_amount_cents=5000  # Charge $50 prorated
+            )
+        """
+        try:
+            # Update Stripe subscription with new price
+            updated_subscription = self.stripe_client.update_subscription(
+                subscription_id=stripe_subscription_id,
+                price_id=new_price_id,
+                proration_behavior="always_invoice"  # Create invoice for proration
+            )
+
+            if not updated_subscription:
+                return {
+                    "success": False,
+                    "message": "Failed to update billing cycle in Stripe"
+                }
+
+            logger.info(
+                f"Updated billing cycle for subscription {stripe_subscription_id} "
+                f"to {new_price_id} (prorated: ${abs(prorated_amount_cents)/100:.2f})"
+            )
+
+            return {
+                "success": True,
+                "stripe_subscription": updated_subscription,
+                "message": "Billing cycle updated in Stripe"
+            }
+
+        except Exception as e:
+            logger.error(
+                f"Error updating billing cycle for subscription {stripe_subscription_id}: {e}"
+            )
+            return {
+                "success": False,
+                "message": f"Failed to update billing cycle: {str(e)}"
+            }
+
     def cancel_subscription(
         self,
         org_id: str,

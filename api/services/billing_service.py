@@ -701,12 +701,13 @@ class BillingService:
             int: Amount in cents
         """
         # Price mapping (in cents)
+        # Annual pricing: 20% off annual total (equivalent to 2 months free)
         price_map = {
-            "starter_monthly": 2900,   # $29/month
-            "starter_annual": 29000,   # $290/year
-            "pro_monthly": 9900,       # $99/month
-            "pro_annual": 99000,       # $990/year
-            "enterprise": 0            # Contact sales
+            "starter_monthly": 2900,    # $29/month
+            "starter_annual": 27840,    # $278.40/year (20% off $348 = save $69.60)
+            "pro_monthly": 9900,        # $99/month
+            "pro_annual": 95040,        # $950.40/year (20% off $1188 = save $237.60)
+            "enterprise": 0             # Contact sales
         }
 
         price_lower = price_id.lower()
@@ -717,6 +718,247 @@ class BillingService:
 
         logger.warning(f"Unknown price ID: {price_id}, defaulting to $29")
         return 2900  # Default to starter monthly
+
+    def calculate_annual_price(self, monthly_price_cents: int) -> int:
+        """
+        Calculate annual subscription price with 20% discount.
+
+        Formula: monthly_price * 12 * 0.8
+        Discount: 20% off (equivalent to 2 months free)
+
+        Args:
+            monthly_price_cents: Monthly price in cents
+
+        Returns:
+            int: Annual price in cents with 20% discount applied
+
+        Example:
+            >>> calculate_annual_price(2900)  # $29/month
+            27840  # $278.40/year (20% off $348)
+
+            >>> calculate_annual_price(9900)  # $99/month
+            95040  # $950.40/year (20% off $1188)
+        """
+        annual_full_price = monthly_price_cents * 12
+        annual_discounted_price = int(annual_full_price * 0.8)
+        return annual_discounted_price
+
+    def get_annual_savings(self, monthly_price_cents: int) -> int:
+        """
+        Calculate savings from annual billing vs monthly.
+
+        Args:
+            monthly_price_cents: Monthly price in cents
+
+        Returns:
+            int: Savings amount in cents (20% of annual price)
+
+        Example:
+            >>> get_annual_savings(2900)  # $29/month
+            6960  # $69.60 savings (20% of $348)
+        """
+        annual_full_price = monthly_price_cents * 12
+        annual_discounted_price = self.calculate_annual_price(monthly_price_cents)
+        savings = annual_full_price - annual_discounted_price
+        return savings
+
+    def switch_billing_cycle(
+        self,
+        org_id: str,
+        new_billing_cycle: str,
+        admin_id: Optional[str] = None
+    ) -> Dict[str, Any]:
+        """
+        Switch subscription billing cycle between monthly and annual.
+
+        This handles prorated charge/credit calculations:
+        - Monthly → Annual: Charge prorated amount for remaining period
+        - Annual → Monthly: Credit prorated amount for unused period
+
+        Args:
+            org_id: Organization ID
+            new_billing_cycle: New billing cycle ("monthly" or "annual")
+            admin_id: Admin who initiated switch (optional)
+
+        Returns:
+            dict: Result with success status
+                {
+                    "success": bool,
+                    "subscription": Subscription object,
+                    "message": str,
+                    "prorated_amount_cents": int  # Charge (positive) or credit (negative)
+                }
+
+        Example:
+            billing = BillingService(db)
+            result = billing.switch_billing_cycle(
+                org_id="org_123",
+                new_billing_cycle="annual",
+                admin_id="person_admin_123"
+            )
+        """
+        try:
+            # Validate billing cycle
+            if new_billing_cycle not in ["monthly", "annual"]:
+                return {
+                    "success": False,
+                    "message": "Invalid billing cycle. Must be 'monthly' or 'annual'"
+                }
+
+            # Get current subscription
+            subscription = self.get_subscription(org_id)
+            if not subscription:
+                return {"success": False, "message": "No subscription found"}
+
+            # Only allow switching for active paid subscriptions
+            if subscription.plan_tier == "free":
+                return {
+                    "success": False,
+                    "message": "Cannot switch billing cycle for free plan"
+                }
+
+            if subscription.status != "active":
+                return {
+                    "success": False,
+                    "message": f"Cannot switch billing cycle for {subscription.status} subscription"
+                }
+
+            current_cycle = subscription.billing_cycle
+            if current_cycle == new_billing_cycle:
+                return {
+                    "success": False,
+                    "message": f"Subscription is already on {new_billing_cycle} billing cycle"
+                }
+
+            # Calculate prorated amount
+            prorated_amount = self._calculate_prorated_amount(
+                subscription=subscription,
+                new_billing_cycle=new_billing_cycle
+            )
+
+            # Get new price ID
+            plan_tier = subscription.plan_tier
+            new_price_id = f"{plan_tier}_{new_billing_cycle}"
+
+            # Update subscription in Stripe
+            from api.services.stripe_service import StripeService
+            stripe_service = StripeService(self.db)
+
+            if subscription.stripe_subscription_id:
+                # Call Stripe to update billing cycle
+                stripe_result = stripe_service.update_subscription_billing_cycle(
+                    stripe_subscription_id=subscription.stripe_subscription_id,
+                    new_price_id=new_price_id,
+                    prorated_amount_cents=prorated_amount
+                )
+
+                if not stripe_result["success"]:
+                    return stripe_result
+
+            # Update local subscription
+            previous_cycle = subscription.billing_cycle
+            subscription.billing_cycle = new_billing_cycle
+
+            self.db.commit()
+            self.db.refresh(subscription)
+
+            # Record billing history
+            self._record_billing_history(
+                org_id=org_id,
+                event_type="billing_cycle_changed",
+                amount_cents=abs(prorated_amount),
+                payment_status="succeeded" if prorated_amount > 0 else "credited",
+                description=f"Switched from {previous_cycle} to {new_billing_cycle} billing",
+                stripe_invoice_id=None  # Will be updated by webhook
+            )
+
+            # Record subscription event
+            self._record_subscription_event(
+                org_id=org_id,
+                event_type="billing_cycle_changed",
+                new_plan=subscription.plan_tier,
+                previous_plan=subscription.plan_tier,
+                admin_id=admin_id,
+                notes=f"Switched from {previous_cycle} to {new_billing_cycle} billing"
+            )
+
+            logger.info(
+                f"Switched billing cycle for org {org_id}: {previous_cycle} → {new_billing_cycle} "
+                f"(prorated: ${abs(prorated_amount)/100:.2f})"
+            )
+
+            return {
+                "success": True,
+                "subscription": subscription,
+                "prorated_amount_cents": prorated_amount,
+                "message": f"Successfully switched to {new_billing_cycle} billing"
+            }
+
+        except Exception as e:
+            self.db.rollback()
+            logger.error(f"Error switching billing cycle for org {org_id}: {e}")
+            return {
+                "success": False,
+                "message": f"Failed to switch billing cycle: {str(e)}"
+            }
+
+    def _calculate_prorated_amount(
+        self,
+        subscription: Subscription,
+        new_billing_cycle: str
+    ) -> int:
+        """
+        Calculate prorated amount for billing cycle switch.
+
+        Args:
+            subscription: Current subscription
+            new_billing_cycle: New billing cycle ("monthly" or "annual")
+
+        Returns:
+            int: Prorated amount in cents
+                - Positive: Charge (monthly → annual)
+                - Negative: Credit (annual → monthly)
+        """
+        now = datetime.utcnow()
+        current_cycle = subscription.billing_cycle
+        plan_tier = subscription.plan_tier
+
+        # Get pricing
+        monthly_price = self._get_plan_amount(f"{plan_tier}_monthly")
+        annual_price = self._get_plan_amount(f"{plan_tier}_annual")
+
+        # Calculate days remaining in current period
+        if subscription.current_period_end:
+            total_period_days = (subscription.current_period_end - subscription.current_period_start).days
+            remaining_days = (subscription.current_period_end - now).days
+            if remaining_days < 0:
+                remaining_days = 0
+        else:
+            total_period_days = 30 if current_cycle == "monthly" else 365
+            remaining_days = total_period_days
+
+        # Calculate prorated amount
+        if current_cycle == "monthly" and new_billing_cycle == "annual":
+            # Monthly → Annual: Charge difference for remaining period
+            # Credit unused monthly, charge annual prorated
+            unused_monthly = int(monthly_price * (remaining_days / 30))
+            annual_prorated = int(annual_price * (remaining_days / 365))
+            prorated_amount = annual_prorated - unused_monthly
+
+        elif current_cycle == "annual" and new_billing_cycle == "monthly":
+            # Annual → Monthly: Credit unused annual
+            unused_annual = int(annual_price * (remaining_days / 365))
+            prorated_amount = -unused_annual  # Negative = credit
+
+        else:
+            prorated_amount = 0
+
+        logger.info(
+            f"Calculated prorated amount for {current_cycle} → {new_billing_cycle}: "
+            f"${prorated_amount/100:.2f} ({remaining_days} days remaining)"
+        )
+
+        return prorated_amount
 
     def _record_subscription_event(
         self,
