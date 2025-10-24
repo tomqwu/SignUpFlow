@@ -43,7 +43,7 @@ open https://dashboard.stripe.com/test/apikeys
 # Edit .env file
 nano .env
 
-# Add these lines (replace with your actual keys):
+# Add these lines (get your keys from https://dashboard.stripe.com/test/apikeys):
 STRIPE_PUBLISHABLE_KEY=pk_test_YOUR_PUBLISHABLE_KEY_HERE
 STRIPE_SECRET_KEY=sk_test_YOUR_SECRET_KEY_HERE
 STRIPE_TEST_MODE=true
