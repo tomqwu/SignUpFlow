@@ -27,6 +27,10 @@ twilio = "^9.8.4"
 celery = "^5.5.3"
 redis = "^7.0.0"
 stripe = "^11.3.0"
+psycopg2-binary = "^2.9.9"
+python-dotenv = "^1.0.0"
+sendgrid = "^6.11.0"
+jinja2 = "^3.1.2"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.2.0"

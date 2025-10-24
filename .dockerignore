@@ -1,0 +1,110 @@
+# Git files
+.git
+.gitignore
+.gitattributes
+
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual environments
+venv/
+ENV/
+env/
+.venv
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+.hypothesis/
+*.cover
+.cache
+nosetests.xml
+coverage.xml
+*.log
+test-reports/
+
+# Documentation
+docs/
+*.md
+!README.md
+
+# Database files (should use volumes)
+*.db
+*.db-shm
+*.db-wal
+*.db.before_restore_*
+
+# Environment files (secrets should be injected)
+.env
+.env.*
+!.env.example
+
+# Node modules (if any)
+node_modules/
+npm-debug.log
+yarn-error.log
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+
+# Specs and planning (not needed in production)
+specs/
+
+# Screenshots
+docs/screenshots/
+
+# CI/CD
+.github/
+.gitlab-ci.yml
+.circleci/
+
+# Docker files (avoid recursive copying)
+Dockerfile*
+docker-compose*.yml
+.dockerignore
+
+# Makefile and scripts (not needed in container)
+Makefile
+scripts/
+
+# Alembic cache
+alembic/__pycache__/
+
+# Logs
+logs/
+*.log
+
+# Backup files
+*.backup
+*.bak
