@@ -88,6 +88,18 @@ function displayCurrentSubscription(data) {
                 <p>${i18n.t('billing.messages.trial_ends', {
                     date: new Date(subscription.trial_end_date).toLocaleDateString()
                 })}</p>
+                <button
+                    class="btn-primary add-payment-btn"
+                    data-i18n="billing.buttons.add_payment_method"
+                    style="margin-top: 1rem;">
+                    ${i18n.t('billing.buttons.add_payment_method')}
+                </button>
+                <p style="margin-top: 0.5rem; font-size: 0.875rem; color: #6b7280;">
+                    ${i18n.t('billing.upgrade_prompts.trial_ending_soon', {
+                        days: Math.ceil((new Date(subscription.trial_end_date) - new Date()) / (1000 * 60 * 60 * 24)),
+                        plan: i18n.t(`billing.plan_names.${subscription.plan_tier}`)
+                    })}
+                </p>
             </div>
         ` : ''}
 
@@ -278,9 +290,17 @@ function renderPlanButton(plan, isCurrentPlan) {
         `;
     }
 
+    // For paid plans, show both "Start Trial" and "Upgrade" options
     return `
         <button
-            class="btn-primary upgrade-btn"
+            class="btn-primary start-trial-btn"
+            data-plan="${plan.tier}"
+            data-i18n="billing.buttons.start_trial"
+            style="margin-bottom: 0.5rem;">
+            ${i18n.t('billing.buttons.start_trial')}
+        </button>
+        <button
+            class="btn-secondary upgrade-btn"
             data-plan="${plan.tier}"
             data-i18n="billing.buttons.upgrade">
             ${i18n.t('billing.buttons.upgrade')}
@@ -297,6 +317,17 @@ function setupEventListeners() {
         if (e.target.classList.contains('upgrade-btn')) {
             const plan = e.target.dataset.plan;
             await handleUpgrade(plan);
+        }
+
+        // Start trial button clicks
+        if (e.target.classList.contains('start-trial-btn')) {
+            const plan = e.target.dataset.plan;
+            await handleStartTrial(plan);
+        }
+
+        // Add payment method button clicks
+        if (e.target.classList.contains('add-payment-btn')) {
+            await handleAddPayment();
         }
     });
 
@@ -362,6 +393,90 @@ async function handleUpgrade(planTier) {
         console.error('Upgrade error:', error);
         hideLoading();
         showError(error.message || i18n.t('billing.error_messages.upgrade_failed'));
+    }
+}
+
+/**
+ * Handle start trial
+ */
+async function handleStartTrial(planTier) {
+    try {
+        const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+
+        // Show confirmation dialog
+        const confirmed = confirm(
+            i18n.t('billing.confirmation.start_trial_message', {
+                plan: i18n.t(`billing.plan_names.${planTier}`),
+                days: 14
+            }) || `Start 14-day free trial of ${i18n.t(`billing.plan_names.${planTier}`)} plan? No payment required.`
+        );
+
+        if (!confirmed) return;
+
+        // Show loading state
+        showLoading(i18n.t('common.loading'));
+
+        // Create trial request
+        const response = await authFetch(
+            `${API_BASE_URL}/billing/subscription/trial`,
+            {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    org_id: currentUser.org_id,
+                    plan_tier: planTier,
+                    trial_days: 14
+                })
+            }
+        );
+
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.detail || 'Failed to start trial');
+        }
+
+        const result = await response.json();
+
+        hideLoading();
+
+        if (result.success) {
+            showSuccess(i18n.t('billing.messages.trial_started'));
+            // Reload subscription to show trial status
+            setTimeout(() => {
+                loadCurrentSubscription();
+                loadPricingPlans(); // Refresh pricing cards to show updated state
+            }, 1000);
+        } else {
+            throw new Error(result.message || 'Failed to start trial');
+        }
+
+    } catch (error) {
+        console.error('Start trial error:', error);
+        hideLoading();
+        showError(error.message || i18n.t('billing.error_messages.trial_failed'));
+    }
+}
+
+/**
+ * Handle add payment method
+ */
+async function handleAddPayment() {
+    try {
+        // TODO: Implement Stripe Billing Portal integration
+        // For now, redirect to upgrade flow (which includes payment)
+
+        showInfo(
+            'To add a payment method, please upgrade your subscription. ' +
+            'The trial will automatically convert to a paid subscription when you add payment.'
+        );
+
+        // Alternative: Could implement Stripe Customer Portal session
+        // const response = await authFetch(`${API_BASE_URL}/billing/portal-session`);
+        // window.location.href = result.portal_url;
+
+    } catch (error) {
+        console.error('Add payment error:', error);
+        showError('Failed to open payment method manager');
     }
 }
 

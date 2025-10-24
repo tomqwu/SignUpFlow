@@ -13,7 +13,8 @@ from api.services.stripe_service import StripeService
 from api.schemas.billing import (
     SubscriptionResponse,
     UsageSummaryResponse,
-    UpgradeRequest
+    UpgradeRequest,
+    TrialRequest
 )
 
 router = APIRouter(tags=["billing"])
@@ -200,4 +201,73 @@ def handle_checkout_success(
         "subscription": SubscriptionResponse.from_orm(subscription),
         "usage": usage_summary,
         "message": "Subscription updated successfully"
+    }
+
+
+@router.post("/billing/subscription/trial")
+def start_trial(
+    request: TrialRequest,
+    admin: Person = Depends(verify_admin_access),
+    db: Session = Depends(get_db)
+) -> Dict[str, Any]:
+    """
+    Start a 14-day trial of a paid plan.
+
+    This endpoint:
+    1. Validates organization is on free plan
+    2. Updates subscription to trial status
+    3. Sets trial_end_date to 14 days from now
+    4. Updates usage limits to trial plan tier
+    5. Records subscription event for audit trail
+    6. Sends trial welcome email (future)
+
+    Requires:
+        - User must be admin
+        - User must belong to the organization
+        - Organization must have active free plan
+
+    Request Body:
+        {
+            "org_id": "org_123",
+            "plan_tier": "starter",
+            "trial_days": 14
+        }
+
+    Returns:
+        dict: Trial subscription details
+        {
+            "success": true,
+            "subscription": SubscriptionResponse,
+            "trial_end_date": "2025-11-06T...",
+            "message": "Started 14-day trial of starter plan"
+        }
+    """
+    # Verify admin belongs to organization
+    verify_org_member(admin, request.org_id)
+
+    # Start trial via BillingService
+    billing_service = BillingService(db)
+    result = billing_service.start_trial(
+        org_id=request.org_id,
+        plan_tier=request.plan_tier,
+        trial_days=request.trial_days,
+        admin_id=admin.id
+    )
+
+    if not result["success"]:
+        raise HTTPException(
+            status_code=400,
+            detail=result["message"]
+        )
+
+    # Get updated usage summary
+    usage_service = UsageService(db)
+    usage_summary = usage_service.get_usage_summary(request.org_id)
+
+    return {
+        "success": True,
+        "subscription": SubscriptionResponse.from_orm(result["subscription"]),
+        "usage": usage_summary,
+        "trial_end_date": result["trial_end_date"].isoformat(),
+        "message": result["message"]
     }

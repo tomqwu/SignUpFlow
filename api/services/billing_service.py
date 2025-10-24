@@ -479,6 +479,217 @@ class BillingService:
             logger.error(f"Error recording billing history for org {org_id}: {e}")
             return None
 
+    def start_trial(
+        self,
+        org_id: str,
+        plan_tier: str,
+        trial_days: int = 14,
+        admin_id: Optional[str] = None
+    ) -> Dict[str, Any]:
+        """
+        Start a trial period for an organization.
+
+        This upgrades the organization to a paid plan tier with trial status.
+        Trial automatically expires after trial_days and requires payment method.
+
+        Args:
+            org_id: Organization ID
+            plan_tier: Plan tier to trial (starter, pro, enterprise)
+            trial_days: Number of trial days (default: 14)
+            admin_id: Admin who initiated trial (optional)
+
+        Returns:
+            dict: Result with success status
+                {
+                    "success": bool,
+                    "subscription": Subscription object,
+                    "message": str,
+                    "trial_end_date": datetime
+                }
+
+        Example:
+            billing = BillingService(db)
+            result = billing.start_trial(
+                org_id="org_123",
+                plan_tier="pro",
+                trial_days=14,
+                admin_id="person_admin_123"
+            )
+        """
+        try:
+            # Get current subscription
+            subscription = self.get_subscription(org_id)
+            if not subscription:
+                return {"success": False, "message": "No subscription found"}
+
+            # Only allow trials from free tier
+            if subscription.plan_tier != "free":
+                return {
+                    "success": False,
+                    "message": f"Cannot start trial from {subscription.plan_tier} plan"
+                }
+
+            # Validate plan tier
+            if plan_tier not in ["starter", "pro", "enterprise"]:
+                return {
+                    "success": False,
+                    "message": "Invalid plan tier for trial"
+                }
+
+            previous_plan = subscription.plan_tier
+
+            # Calculate trial end date
+            trial_end = datetime.utcnow() + timedelta(days=trial_days)
+
+            # Update subscription to trial status
+            subscription.plan_tier = plan_tier
+            subscription.status = "trialing"
+            subscription.trial_end_date = trial_end
+            subscription.current_period_start = datetime.utcnow()
+            subscription.current_period_end = trial_end
+
+            self.db.commit()
+            self.db.refresh(subscription)
+
+            # Record subscription event
+            self._record_subscription_event(
+                org_id=org_id,
+                event_type="trial_started",
+                new_plan=plan_tier,
+                previous_plan=previous_plan,
+                admin_id=admin_id,
+                notes=f"Started {trial_days}-day trial of {plan_tier} plan"
+            )
+
+            # Update usage metrics to new plan limits
+            self.update_volunteer_count(org_id)
+
+            logger.info(
+                f"Started {trial_days}-day trial for org {org_id}: "
+                f"{previous_plan} → {plan_tier} (expires {trial_end})"
+            )
+
+            # TODO: Send trial started email
+            # This will be implemented when email service is ready
+
+            return {
+                "success": True,
+                "subscription": subscription,
+                "trial_end_date": trial_end,
+                "message": f"Started {trial_days}-day trial of {plan_tier} plan"
+            }
+
+        except Exception as e:
+            self.db.rollback()
+            logger.error(f"Error starting trial for org {org_id}: {e}")
+            return {
+                "success": False,
+                "message": f"Failed to start trial: {str(e)}"
+            }
+
+    def auto_downgrade_expired_trials(self) -> Dict[str, Any]:
+        """
+        Automatically downgrade subscriptions with expired trials.
+
+        This should be called daily via Celery scheduled task.
+        Downgrades all subscriptions where:
+        - status is "trialing"
+        - trial_end_date < now()
+        - no payment method on file
+
+        Returns:
+            dict: Result with downgraded organization count
+                {
+                    "success": bool,
+                    "downgraded_count": int,
+                    "downgraded_orgs": list[str],
+                    "message": str
+                }
+
+        Example:
+            billing = BillingService(db)
+            result = billing.auto_downgrade_expired_trials()
+            # Called daily by Celery task
+        """
+        try:
+            now = datetime.utcnow()
+
+            # Find all expired trials
+            expired_trials = self.db.query(Subscription).filter(
+                Subscription.status == "trialing",
+                Subscription.trial_end_date <= now
+            ).all()
+
+            downgraded_orgs = []
+
+            for subscription in expired_trials:
+                # Check if payment method on file
+                payment_method = self.db.query(PaymentMethod).filter(
+                    PaymentMethod.org_id == subscription.org_id,
+                    PaymentMethod.is_primary == True,
+                    PaymentMethod.is_active == True
+                ).first()
+
+                if payment_method:
+                    # Has payment method - convert to paid subscription
+                    # This will be handled by Stripe webhook when trial converts
+                    logger.info(
+                        f"Trial expired for org {subscription.org_id} but has payment method - "
+                        f"will convert to paid"
+                    )
+                    continue
+
+                # No payment method - downgrade to free
+                previous_plan = subscription.plan_tier
+
+                subscription.plan_tier = "free"
+                subscription.status = "active"
+                subscription.trial_end_date = None
+                subscription.billing_cycle = None
+                subscription.current_period_start = None
+                subscription.current_period_end = None
+
+                self.db.commit()
+                self.db.refresh(subscription)
+
+                # Record subscription event
+                self._record_subscription_event(
+                    org_id=subscription.org_id,
+                    event_type="trial_expired",
+                    new_plan="free",
+                    previous_plan=previous_plan,
+                    reason="Trial expired without payment method",
+                    notes=f"Auto-downgraded from {previous_plan} trial to free plan"
+                )
+
+                # Update usage metrics to free plan limits
+                self.update_volunteer_count(subscription.org_id)
+
+                downgraded_orgs.append(subscription.org_id)
+
+                logger.info(
+                    f"Auto-downgraded org {subscription.org_id} from {previous_plan} trial to free"
+                )
+
+                # TODO: Send trial expired email
+                # This will be implemented when email service is ready
+
+            return {
+                "success": True,
+                "downgraded_count": len(downgraded_orgs),
+                "downgraded_orgs": downgraded_orgs,
+                "message": f"Downgraded {len(downgraded_orgs)} expired trials to free plan"
+            }
+
+        except Exception as e:
+            self.db.rollback()
+            logger.error(f"Error auto-downgrading expired trials: {e}")
+            return {
+                "success": False,
+                "downgraded_count": 0,
+                "message": f"Failed to downgrade expired trials: {str(e)}"
+            }
+
     def _get_plan_amount(self, price_id: str) -> int:
         """
         Get plan amount in cents from price ID.

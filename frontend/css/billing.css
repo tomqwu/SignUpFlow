@@ -306,6 +306,17 @@
     transform: scale(1.02);
 }
 
+.btn-secondary {
+    background-color: #e5e7eb;
+    color: var(--text-primary, #1f2937);
+    border: 1px solid #d1d5db;
+}
+
+.btn-secondary:hover {
+    background-color: #d1d5db;
+    transform: scale(1.02);
+}
+
 .btn-current {
     background-color: #d1fae5;
     color: #065f46;

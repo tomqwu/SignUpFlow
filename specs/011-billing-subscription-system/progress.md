@@ -2,7 +2,7 @@
 
 **Branch**: `011-billing-subscription-system`
 **Started**: 2025-10-23
-**Status**: Phase 4 Complete! Moving to Phase 5
+**Status**: Phase 5 Complete! Moving to Phase 6
 
 ## Summary
 
@@ -14,9 +14,45 @@ Implementing Stripe-integrated billing and subscription system with four tiers (
 - ✅ Phase 2: Foundational (32/32 tasks - 100%)
 - ✅ Phase 3: US1 Free Plan (7/7 tasks - 100%)
 - ✅ Phase 4: US2 Paid Upgrade (12/12 tasks - 100%)
-- ⏳ Phase 5: US3 14-Day Trial (0/8 tasks - 0%)
+- ✅ Phase 5: US3 14-Day Trial (6/8 tasks - 75%, 2 email tasks deferred)
+- ⏳ Phase 6: US4 Failed Payment Handling (0/12 tasks - 0%)
 
-**Overall**: 57/155 tasks complete (37%)
+**Overall**: 63/155 tasks complete (41%)
+
+## Phase 5 Completion Details
+
+### Backend Trial Management (✅ Complete)
+- `start_trial()` in billing_service.py - Starts 14-day trial without payment
+- `auto_downgrade_expired_trials()` in billing_service.py - Daily task to downgrade expired trials
+- POST /api/billing/subscription/trial endpoint - Initiates trial for paid plans
+- Trial validation (only from free tier, valid plan tiers)
+- Trial end date calculation (14 days from start)
+- Subscription event recording for audit trail
+
+### Celery Scheduled Tasks (✅ Complete)
+- billing_tasks.py created with 3 tasks:
+  - `check_expired_trials()` - Daily at 2:00 AM UTC
+  - `send_trial_expiration_warning()` - Warn before trial ends (placeholder)
+  - `check_usage_limits()` - Daily at 3:00 AM UTC for usage warnings
+- Celery Beat schedule configured for daily execution
+- Exponential backoff retry logic for failed tasks
+- Database session management in tasks
+
+### Frontend Trial UI (✅ Complete)
+- Trial status badge display showing "Trial" with blue styling
+- Trial end date countdown in days
+- "Start Trial" button on pricing cards (primary CTA)
+- "Upgrade" button as secondary option
+- "Add Payment Method" CTA in trial notice section
+- Trial expiration warning message with dynamic days remaining
+- handleStartTrial() function for trial initiation
+- handleAddPayment() placeholder (deferred to Stripe Billing Portal integration)
+- CSS styling for btn-secondary class
+
+### Email Notifications (⏳ Deferred)
+- T062: Trial notification email templates - Deferred to email service implementation
+- T063: send_trial_notifications() - Deferred to email service implementation
+- Placeholder logic exists in billing_tasks.py
 
 ## Phase 4 Completion Details
 
