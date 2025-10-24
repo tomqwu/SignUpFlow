@@ -25,6 +25,7 @@
     <link rel="canonical" href="https://signupflow.io/">
     <link rel="stylesheet" href="/css/styles.css">
     <link rel="stylesheet" href="/css/mobile.css">
+    <link rel="stylesheet" href="/css/sms.css">
     <script src="/js/debug.js"></script>
     <script src="/js/toast.js"></script>
     <script src="/js/form-validation.js"></script>
@@ -862,6 +863,9 @@
                             <span data-i18n="settings.permission_note">Your permission level is set by an administrator. Event-specific roles are selected when you join individual events.</span>
                         </p>
                     </div>
+
+                    <!-- SMS Preferences Section (dynamically populated) -->
+                    <div id="sms-preferences-container"></div>
                 </div>
                 <div class="modal-footer">
                     <button class="btn btn-secondary" onclick="logout()" data-i18n="settings.logout">Sign Out</button>
@@ -1128,6 +1132,8 @@
         document.write('<script src="/js/role-management.js?t=' + cacheBust + '"><\/script>');
         document.write('<script src="/js/edit-role-functions.js?t=' + cacheBust + '"><\/script>');
         document.write('<script src="/js/recurring-events.js?t=' + cacheBust + '"><\/script>');
+        document.write('<script src="/js/sms-preferences.js?t=' + cacheBust + '"><\/script>');
+        document.write('<script src="/js/admin-sms-broadcast.js?t=' + cacheBust + '"><\/script>');
         document.write('<script src="/js/app-user.js?t=' + cacheBust + '"><\/script>');
     </script>
 </body>

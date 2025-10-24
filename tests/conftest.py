@@ -23,19 +23,25 @@ def api_server():
     # Start server with test database
     process = subprocess.Popen(
         ["poetry", "run", "uvicorn", "api.main:app", "--host", "0.0.0.0", "--port", "8000"],
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
         env=test_env,
     )
 
     # Wait for server to be ready
-    for _ in range(30):
+    server_ready = False
+    for _ in range(60):
         try:
             response = requests.get(f"{API_BASE.replace('/api', '')}/health", timeout=1)
             if response.status_code == 200:
+                server_ready = True
                 break
-        except:
+        except Exception:
             time.sleep(0.5)
+        else:
+            time.sleep(0.5)
+
+    if not server_ready:
+        process.terminate()
+        raise RuntimeError("API server failed to start within timeout window")
 
     # Setup test data
     from tests.setup_test_data import setup_test_data
@@ -45,7 +51,10 @@ def api_server():
 
     # Cleanup
     process.terminate()
-    process.wait(timeout=5)
+    try:
+        process.wait(timeout=5)
+    except subprocess.TimeoutExpired:
+        process.kill()
 
 
 @pytest.fixture(scope="function")

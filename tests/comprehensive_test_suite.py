@@ -72,7 +72,7 @@ def setup_test_data():
 # ============================================================================
 
 @pytest.fixture(scope="session", autouse=True)
-def ensure_test_data():
+def ensure_test_data(api_server):
     """Automatically set up test data before any tests run."""
     setup_test_data()
     yield

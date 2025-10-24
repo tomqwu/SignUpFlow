@@ -30,6 +30,7 @@ from api.routers import (
     conflicts,
     invitations,
     calendar,
+    sms,
 )
 
 
@@ -113,6 +114,7 @@ app.include_router(password_reset.router, prefix="/api")
 app.include_router(analytics.router, prefix="/api")
 app.include_router(invitations.router, prefix="/api")
 app.include_router(calendar.router, prefix="/api")
+app.include_router(sms.router)
 
 # API Info endpoint
 @app.get("/api", tags=["root"])

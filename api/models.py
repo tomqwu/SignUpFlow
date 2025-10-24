@@ -496,6 +496,155 @@ class AuditAction:
     CONFIG_CHANGED = "system.config.changed"
 
 
+class SmsPreference(Base):
+    """SMS notification preferences for volunteers."""
+
+    __tablename__ = "sms_preferences"
+
+    person_id = Column(Integer, ForeignKey("people.id", ondelete="CASCADE"), primary_key=True)
+    phone_number = Column(String(20), nullable=False)
+    verified = Column(Boolean, nullable=False, default=False)
+    notification_types = Column(JSONType, nullable=False, default=list)  # ['assignment', 'reminder', 'change', 'cancellation']
+    opt_in_date = Column(DateTime, nullable=True)
+    opt_out_date = Column(DateTime, nullable=True)
+    language = Column(String(5), nullable=False, default="en")
+    timezone = Column(String(50), nullable=False, default="UTC")
+    created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
+    updated_at = Column(DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    # Indexes
+    __table_args__ = (
+        Index("idx_sms_preferences_verified", "verified", "opt_out_date"),
+    )
+
+
+class SmsMessage(Base):
+    """Log of all sent SMS messages for audit trail and delivery tracking."""
+
+    __tablename__ = "sms_messages"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    organization_id = Column(Integer, ForeignKey("organizations.id", ondelete="CASCADE"), nullable=False)
+    recipient_id = Column(Integer, ForeignKey("people.id", ondelete="CASCADE"), nullable=False)
+    phone_number = Column(String(20), nullable=False)
+    message_text = Column(Text, nullable=False)
+    message_type = Column(String(20), nullable=False)  # 'assignment', 'reminder', 'broadcast', 'system', 'verification'
+    event_id = Column(Integer, ForeignKey("events.id", ondelete="SET NULL"), nullable=True)
+    template_id = Column(Integer, ForeignKey("sms_templates.id", ondelete="SET NULL"), nullable=True)
+    status = Column(String(20), nullable=False, default="queued")  # 'queued', 'sent', 'delivered', 'failed', 'undelivered'
+    twilio_message_sid = Column(String(34), unique=True, nullable=True)
+    cost_cents = Column(Integer, nullable=False, default=0)
+    error_message = Column(Text, nullable=True)
+    is_urgent = Column(Boolean, nullable=False, default=False)
+    sent_at = Column(DateTime, nullable=True)
+    delivered_at = Column(DateTime, nullable=True)
+    failed_at = Column(DateTime, nullable=True)
+    created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
+
+    # Indexes
+    __table_args__ = (
+        Index("idx_sms_messages_org_created", "organization_id", "created_at"),
+        Index("idx_sms_messages_recipient_created", "recipient_id", "created_at"),
+        Index("idx_sms_messages_status_created", "status", "created_at"),
+        Index("idx_sms_messages_twilio_sid", "twilio_message_sid"),
+        Index("idx_sms_messages_type_created", "message_type", "created_at"),
+    )
+
+
+class SmsTemplate(Base):
+    """Reusable message templates with variable substitution."""
+
+    __tablename__ = "sms_templates"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    organization_id = Column(Integer, ForeignKey("organizations.id", ondelete="CASCADE"), nullable=False)
+    name = Column(String(100), nullable=False)
+    template_text = Column(Text, nullable=False)
+    message_type = Column(String(20), nullable=False)  # 'assignment', 'reminder', 'cancellation', 'broadcast'
+    character_count = Column(Integer, nullable=False)
+    translations = Column(JSONType, nullable=False, default=dict)  # {'en': '...', 'es': '...'}
+    is_system = Column(Boolean, nullable=False, default=False)
+    usage_count = Column(Integer, nullable=False, default=0)
+    created_by = Column(Integer, ForeignKey("people.id", ondelete="CASCADE"), nullable=False)
+    created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
+    updated_at = Column(DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    # Indexes
+    __table_args__ = (
+        Index("idx_sms_templates_org_type", "organization_id", "message_type"),
+        Index("idx_sms_templates_system", "is_system"),
+    )
+
+
+class SmsUsage(Base):
+    """Monthly SMS usage tracking and budget management per organization."""
+
+    __tablename__ = "sms_usage"
+
+    organization_id = Column(Integer, ForeignKey("organizations.id", ondelete="CASCADE"), nullable=False, primary_key=True)
+    month_year = Column(String(7), nullable=False, primary_key=True)  # '2025-10'
+    assignment_count = Column(Integer, nullable=False, default=0)
+    reminder_count = Column(Integer, nullable=False, default=0)
+    broadcast_count = Column(Integer, nullable=False, default=0)
+    system_count = Column(Integer, nullable=False, default=0)
+    total_cost_cents = Column(Integer, nullable=False, default=0)
+    budget_limit_cents = Column(Integer, nullable=False, default=10000)  # $100 default
+    alert_threshold_percent = Column(Integer, nullable=False, default=80)
+    alert_sent_at_80 = Column(Boolean, nullable=False, default=False)
+    alert_sent_at_100 = Column(Boolean, nullable=False, default=False)
+    auto_pause_enabled = Column(Boolean, nullable=False, default=True)
+    created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
+    updated_at = Column(DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    # Indexes
+    __table_args__ = (
+        Index("idx_sms_usage_month", "month_year"),
+    )
+
+
+class SmsVerificationCode(Base):
+    """Temporary storage for phone verification codes (10-minute expiration)."""
+
+    __tablename__ = "sms_verification_codes"
+
+    person_id = Column(Integer, ForeignKey("people.id", ondelete="CASCADE"), primary_key=True)
+    phone_number = Column(String(20), nullable=False)
+    verification_code = Column(Integer, nullable=False)  # 6-digit: 100000-999999
+    attempts = Column(Integer, nullable=False, default=0)
+    expires_at = Column(DateTime, nullable=False)
+    created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
+
+    # Indexes
+    __table_args__ = (
+        Index("idx_sms_verification_expires", "expires_at"),
+    )
+
+
+class SmsReply(Base):
+    """Log of incoming SMS replies for audit trail and analytics."""
+
+    __tablename__ = "sms_replies"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    person_id = Column(Integer, ForeignKey("people.id", ondelete="CASCADE"), nullable=False)
+    phone_number = Column(String(20), nullable=False)
+    message_text = Column(Text, nullable=False)
+    reply_type = Column(String(20), nullable=False)  # 'yes', 'no', 'stop', 'start', 'help', 'unknown'
+    original_message_id = Column(Integer, ForeignKey("sms_messages.id", ondelete="SET NULL"), nullable=True)
+    event_id = Column(Integer, ForeignKey("events.id", ondelete="SET NULL"), nullable=True)
+    action_taken = Column(String(50), nullable=False)  # 'confirmed', 'declined', 'opted_out', 'help_sent', etc.
+    twilio_message_sid = Column(String(34), unique=True, nullable=True)
+    processed_at = Column(DateTime, nullable=True)
+    created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
+
+    # Indexes
+    __table_args__ = (
+        Index("idx_sms_replies_person_created", "person_id", "created_at"),
+        Index("idx_sms_replies_type_created", "reply_type", "created_at"),
+        Index("idx_sms_replies_twilio_sid", "twilio_message_sid"),
+    )
+
+
 def create_database(db_url: str = "sqlite:///roster.db"):
     """Create database and all tables."""
     engine = create_engine(db_url, echo=False)
