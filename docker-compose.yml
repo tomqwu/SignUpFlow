@@ -1,8 +1,6 @@
 # Docker Compose for SignUpFlow
 # Production-ready configuration with PostgreSQL, Redis, and FastAPI
 
-version: '3.8'
-
 services:
   # ============================================================================
   # PostgreSQL Database

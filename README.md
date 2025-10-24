@@ -74,20 +74,41 @@
 
 ## 🚀 Quick Start
 
-### Prerequisites
+### 🐳 Docker (Recommended)
 
-```bash
-Python 3.11+ | Poetry | SQLite
-```
-
-### One-Command Setup
+**Get running in 2 minutes with PostgreSQL + Redis:**
 
 ```bash
 # Clone the repository
 git clone https://github.com/tomqwu/signupflow.git
 cd signupflow
 
-# Install and setup (using Makefile)
+# Start all services (PostgreSQL + Redis + API)
+make up
+
+# Run migrations
+make migrate-docker
+
+# Visit http://localhost:8000
+```
+
+**Default login:** `jane@test.com` / `password`
+
+📖 **See:** [DOCKER_QUICK_START.md](DOCKER_QUICK_START.md) | [Docker Development Guide](docs/DOCKER_DEVELOPMENT.md)
+
+---
+
+### 💻 Local Development (Alternative)
+
+**Without Docker, using SQLite:**
+
+```bash
+# Prerequisites
+Python 3.11+ | Poetry | SQLite
+
+# One-command setup
+git clone https://github.com/tomqwu/signupflow.git
+cd signupflow
 make setup
 
 # Start the server

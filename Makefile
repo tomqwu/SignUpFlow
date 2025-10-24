@@ -1,4 +1,4 @@
-.PHONY: run dev stop restart setup install migrate test test-frontend test-backend test-integration test-e2e test-e2e-long test-e2e-file test-e2e-quick test-e2e-summary test-email test-email-unit test-all test-coverage test-unit test-unit-fast test-unit-file test-with-timing clean clean-all pre-commit help check-poetry check-npm check-python check-deps install-poetry install-npm install-deps fix-node-libs
+.PHONY: run dev stop restart setup install migrate test test-frontend test-backend test-integration test-e2e test-e2e-long test-e2e-file test-e2e-quick test-e2e-summary test-email test-email-unit test-all test-coverage test-unit test-unit-fast test-unit-file test-with-timing clean clean-all pre-commit help check-poetry check-npm check-python check-deps install-poetry install-npm install-deps fix-node-libs up down build logs shell db-shell redis-shell test-docker migrate-docker restart-api ps clean-docker
 
 # Auto-installation targets
 install-poetry:
@@ -380,16 +380,131 @@ test-with-timing: check-poetry
 	@echo "⏱️  Running tests with timing information..."
 	@poetry run pytest tests/unit/ --durations=20 -v --tb=short
 
+# ============================================================================
+# Docker Compose Commands (Development Environment)
+# ============================================================================
+
+# Start all services (PostgreSQL + Redis + API with hot-reload)
+up:
+	@echo "🐳 Starting SignUpFlow development environment..."
+	@docker-compose -f docker-compose.dev.yml up -d
+	@echo ""
+	@echo "✅ Services started!"
+	@echo "   API:        http://localhost:8000"
+	@echo "   PostgreSQL: localhost:5433 (user: signupflow, db: signupflow_dev)"
+	@echo "   Redis:      localhost:6380"
+	@echo ""
+	@echo "View logs:     make logs"
+	@echo "Stop services: make down"
+	@echo ""
+
+# Stop all services
+down:
+	@echo "🛑 Stopping SignUpFlow development environment..."
+	@docker-compose -f docker-compose.dev.yml down
+	@echo "✅ Services stopped"
+
+# Build Docker images
+build:
+	@echo "🔨 Building Docker images..."
+	@docker-compose -f docker-compose.dev.yml build --no-cache
+	@echo "✅ Build complete"
+
+# Rebuild and restart (after dependency changes)
+rebuild: down build up
+
+# View logs from all services
+logs:
+	@docker-compose -f docker-compose.dev.yml logs -f
+
+# View logs from specific service
+logs-api:
+	@docker-compose -f docker-compose.dev.yml logs -f api
+
+logs-db:
+	@docker-compose -f docker-compose.dev.yml logs -f db
+
+logs-redis:
+	@docker-compose -f docker-compose.dev.yml logs -f redis
+
+# Open shell in API container
+shell:
+	@echo "🐚 Opening shell in API container..."
+	@docker-compose -f docker-compose.dev.yml exec api bash
+
+# Open PostgreSQL shell
+db-shell:
+	@echo "🐘 Opening PostgreSQL shell..."
+	@docker-compose -f docker-compose.dev.yml exec db psql -U signupflow -d signupflow_dev
+
+# Open Redis CLI
+redis-shell:
+	@echo "🔴 Opening Redis CLI..."
+	@docker-compose -f docker-compose.dev.yml exec redis redis-cli -a dev_redis_password
+
+# Run tests in Docker container
+test-docker:
+	@echo "🧪 Running tests in Docker container..."
+	@docker-compose -f docker-compose.dev.yml exec api pytest tests/ -v --tb=short
+
+# Run migrations in Docker container
+migrate-docker:
+	@echo "🔄 Running migrations in Docker container..."
+	@docker-compose -f docker-compose.dev.yml exec api alembic upgrade head
+	@echo "✅ Migrations complete"
+
+# Restart API service only (quick restart after code changes)
+restart-api:
+	@echo "🔄 Restarting API service..."
+	@docker-compose -f docker-compose.dev.yml restart api
+	@echo "✅ API restarted"
+
+# Show running services
+ps:
+	@docker-compose -f docker-compose.dev.yml ps
+
+# Clean Docker volumes and containers
+clean-docker:
+	@echo "🧹 Cleaning Docker volumes and containers..."
+	@docker-compose -f docker-compose.dev.yml down -v
+	@echo "✅ Docker cleanup complete"
+
+# Clean everything including Docker images
+clean-docker-all: clean-docker
+	@echo "🧹 Removing Docker images..."
+	@docker-compose -f docker-compose.dev.yml down --rmi all
+	@echo "✅ Complete Docker cleanup done"
+
 # Help (default target)
 .DEFAULT_GOAL := help
 
 help:
 	@echo "SignUpFlow Commands:"
 	@echo ""
-	@echo "🚀 Quick Start (One Command Does Everything!):"
+	@echo "🚀 Quick Start:"
 	@echo "  make setup            - Auto-install Poetry, npm, packages, and setup DB"
+	@echo "  make up               - Start Docker environment (PostgreSQL + Redis + API)"
 	@echo ""
-	@echo "Getting Started:"
+	@echo "🐳 Docker Development (Recommended):"
+	@echo "  make up               - Start all services (PostgreSQL + Redis + API)"
+	@echo "  make down             - Stop all services"
+	@echo "  make logs             - View logs from all services"
+	@echo "  make logs-api         - View API logs only"
+	@echo "  make logs-db          - View PostgreSQL logs only"
+	@echo "  make logs-redis       - View Redis logs only"
+	@echo "  make shell            - Open bash shell in API container"
+	@echo "  make db-shell         - Open PostgreSQL shell"
+	@echo "  make redis-shell      - Open Redis CLI"
+	@echo "  make test-docker      - Run tests in Docker container"
+	@echo "  make migrate-docker   - Run migrations in Docker container"
+	@echo "  make restart-api      - Restart API service only"
+	@echo "  make build            - Build Docker images"
+	@echo "  make rebuild          - Rebuild and restart all services"
+	@echo "  make ps               - Show running services"
+	@echo "  make clean-docker     - Clean Docker volumes and containers"
+	@echo "  make clean-docker-all - Remove everything including images"
+	@echo ""
+	@echo "💻 Local Development (Without Docker):"
 	@echo "  make check-deps       - Check which dependencies are installed"
 	@echo "  make install-deps     - Auto-install Poetry and npm (if missing)"
 	@echo "  make install-poetry   - Auto-install Poetry only"
