@@ -1411,6 +1411,11 @@ async function showSettings() {
     } else {
         permissionDisplay.innerHTML = `<em>${i18n.t('messages.empty.no_permissions_assigned')}</em>`;
     }
+
+    // Initialize SMS preferences UI (if module loaded)
+    if (typeof initSmsPreferences === 'function') {
+        await initSmsPreferences();
+    }
 }
 
 // Change language immediately

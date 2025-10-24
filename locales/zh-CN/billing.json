@@ -1,0 +1,108 @@
+{
+  "plan_names": {
+    "free": "Free",
+    "starter": "Starter",
+    "pro": "Pro",
+    "enterprise": "Enterprise"
+  },
+  "billing_cycles": {
+    "monthly": "Monthly",
+    "annual": "Annual"
+  },
+  "pricing": {
+    "free_price": "$0/month",
+    "starter_monthly": "$29/month",
+    "starter_annual": "$290/year",
+    "pro_monthly": "$99/month",
+    "pro_annual": "$990/year",
+    "enterprise_price": "Contact us",
+    "trial_period": "14-day free trial",
+    "annual_discount": "Save 17% with annual billing"
+  },
+  "features": {
+    "volunteers_limit": "{{count}} volunteers",
+    "volunteers_unlimited": "Unlimited volunteers",
+    "events_limit": "{{count}} events per month",
+    "events_unlimited": "Unlimited events",
+    "storage_limit": "{{count}} MB storage",
+    "storage_unlimited": "Unlimited storage",
+    "api_calls_limit": "{{count}} API calls per day",
+    "api_calls_unlimited": "Unlimited API calls",
+    "email_support": "Email support",
+    "priority_support": "Priority support",
+    "phone_support": "Phone support",
+    "dedicated_account_manager": "Dedicated account manager"
+  },
+  "upgrade_prompts": {
+    "volunteer_limit_reached": "You've reached your volunteer limit ({{current}}/{{limit}}). Upgrade to {{next_tier}} for more volunteers.",
+    "trial_ending_soon": "Your trial ends in {{days}} days. Add a payment method to continue with {{plan}} plan.",
+    "trial_ended": "Your trial has ended. Upgrade to continue using premium features.",
+    "upgrade_to_unlock": "Upgrade to {{plan}} to unlock this feature"
+  },
+  "billing_portal": {
+    "title": "Billing & Subscription",
+    "current_plan": "Current Plan",
+    "change_plan": "Change Plan",
+    "cancel_subscription": "Cancel Subscription",
+    "billing_history": "Billing History",
+    "payment_method": "Payment Method",
+    "usage": "Usage",
+    "invoices": "Invoices"
+  },
+  "buttons": {
+    "upgrade": "Upgrade",
+    "downgrade": "Downgrade",
+    "start_trial": "Start Free Trial",
+    "add_payment_method": "Add Payment Method",
+    "update_payment_method": "Update Payment Method",
+    "view_invoice": "View Invoice",
+    "download_invoice": "Download Invoice",
+    "manage_subscription": "Manage Subscription",
+    "contact_sales": "Contact Sales"
+  },
+  "status": {
+    "active": "Active",
+    "trialing": "Trial",
+    "past_due": "Past Due",
+    "cancelled": "Cancelled",
+    "incomplete": "Incomplete"
+  },
+  "messages": {
+    "upgrade_success": "Successfully upgraded to {{plan}} plan",
+    "downgrade_success": "Successfully downgraded to {{plan}} plan",
+    "cancel_success": "Subscription cancelled. You'll have access until {{end_date}}",
+    "cancel_immediate_success": "Subscription cancelled immediately",
+    "payment_method_added": "Payment method added successfully",
+    "payment_method_updated": "Payment method updated successfully",
+    "trial_started": "Your 14-day free trial has started"
+  },
+  "error_messages": {
+    "upgrade_failed": "Failed to upgrade subscription. Please try again.",
+    "downgrade_failed": "Failed to downgrade subscription. Please try again.",
+    "cancel_failed": "Failed to cancel subscription. Please contact support.",
+    "payment_failed": "Payment failed. Please update your payment method.",
+    "payment_method_invalid": "Invalid payment method. Please try again.",
+    "volunteer_limit_exceeded": "Volunteer limit exceeded. Please upgrade your plan.",
+    "stripe_error": "Payment processing error. Please try again or contact support."
+  },
+  "confirmation": {
+    "upgrade_title": "Confirm Upgrade",
+    "upgrade_message": "Upgrade to {{plan}} plan for {{price}}?",
+    "downgrade_title": "Confirm Downgrade",
+    "downgrade_message": "Downgrade to {{plan}} plan? You will lose access to premium features.",
+    "cancel_title": "Cancel Subscription",
+    "cancel_message": "Are you sure you want to cancel your subscription?",
+    "cancel_immediate_warning": "Cancelling immediately will result in immediate loss of access."
+  },
+  "usage_tracking": {
+    "current_usage": "Current Usage",
+    "plan_limits": "Plan Limits",
+    "volunteers": "Volunteers",
+    "events": "Events",
+    "storage": "Storage",
+    "api_calls": "API Calls",
+    "percentage_used": "{{percent}}% used",
+    "approaching_limit": "Approaching limit",
+    "over_limit": "Over limit"
+  }
+}

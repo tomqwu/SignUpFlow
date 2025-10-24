@@ -23,11 +23,10 @@ reportlab = "^4.4.4"
 playwright = "^1.55.0"
 python-jose = {extras = ["cryptography"], version = "^3.5.0"}
 passlib = {extras = ["bcrypt"], version = "^1.7.4"}
-celery = "5.3.4"
-redis = "5.0.1"
-sendgrid = "6.11.0"
-jinja2 = "3.1.2"
-pydantic-settings = "^2.0.0"
+twilio = "^9.8.4"
+celery = "^5.5.3"
+redis = "^7.0.0"
+stripe = "^11.3.0"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.2.0"

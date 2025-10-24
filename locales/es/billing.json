@@ -1,0 +1,108 @@
+{
+  "plan_names": {
+    "free": "Gratis",
+    "starter": "Inicial",
+    "pro": "Profesional",
+    "enterprise": "Empresarial"
+  },
+  "billing_cycles": {
+    "monthly": "Mensual",
+    "annual": "Anual"
+  },
+  "pricing": {
+    "free_price": "$0/mes",
+    "starter_monthly": "$29/mes",
+    "starter_annual": "$290/año",
+    "pro_monthly": "$99/mes",
+    "pro_annual": "$990/año",
+    "enterprise_price": "Contáctenos",
+    "trial_period": "Prueba gratuita de 14 días",
+    "annual_discount": "Ahorre 17% con facturación anual"
+  },
+  "features": {
+    "volunteers_limit": "{{count}} voluntarios",
+    "volunteers_unlimited": "Voluntarios ilimitados",
+    "events_limit": "{{count}} eventos por mes",
+    "events_unlimited": "Eventos ilimitados",
+    "storage_limit": "{{count}} MB de almacenamiento",
+    "storage_unlimited": "Almacenamiento ilimitado",
+    "api_calls_limit": "{{count}} llamadas API por día",
+    "api_calls_unlimited": "Llamadas API ilimitadas",
+    "email_support": "Soporte por correo electrónico",
+    "priority_support": "Soporte prioritario",
+    "phone_support": "Soporte telefónico",
+    "dedicated_account_manager": "Gerente de cuenta dedicado"
+  },
+  "upgrade_prompts": {
+    "volunteer_limit_reached": "Ha alcanzado su límite de voluntarios ({{current}}/{{limit}}). Actualice a {{next_tier}} para más voluntarios.",
+    "trial_ending_soon": "Su prueba termina en {{days}} días. Agregue un método de pago para continuar con el plan {{plan}}.",
+    "trial_ended": "Su prueba ha terminado. Actualice para seguir usando funciones premium.",
+    "upgrade_to_unlock": "Actualice a {{plan}} para desbloquear esta función"
+  },
+  "billing_portal": {
+    "title": "Facturación y Suscripción",
+    "current_plan": "Plan Actual",
+    "change_plan": "Cambiar Plan",
+    "cancel_subscription": "Cancelar Suscripción",
+    "billing_history": "Historial de Facturación",
+    "payment_method": "Método de Pago",
+    "usage": "Uso",
+    "invoices": "Facturas"
+  },
+  "buttons": {
+    "upgrade": "Actualizar",
+    "downgrade": "Degradar",
+    "start_trial": "Iniciar Prueba Gratuita",
+    "add_payment_method": "Agregar Método de Pago",
+    "update_payment_method": "Actualizar Método de Pago",
+    "view_invoice": "Ver Factura",
+    "download_invoice": "Descargar Factura",
+    "manage_subscription": "Administrar Suscripción",
+    "contact_sales": "Contactar Ventas"
+  },
+  "status": {
+    "active": "Activo",
+    "trialing": "Prueba",
+    "past_due": "Vencido",
+    "cancelled": "Cancelado",
+    "incomplete": "Incompleto"
+  },
+  "messages": {
+    "upgrade_success": "Actualizado exitosamente al plan {{plan}}",
+    "downgrade_success": "Degradado exitosamente al plan {{plan}}",
+    "cancel_success": "Suscripción cancelada. Tendrás acceso hasta {{end_date}}",
+    "cancel_immediate_success": "Suscripción cancelada inmediatamente",
+    "payment_method_added": "Método de pago agregado exitosamente",
+    "payment_method_updated": "Método de pago actualizado exitosamente",
+    "trial_started": "Su prueba gratuita de 14 días ha comenzado"
+  },
+  "error_messages": {
+    "upgrade_failed": "No se pudo actualizar la suscripción. Inténtelo de nuevo.",
+    "downgrade_failed": "No se pudo degradar la suscripción. Inténtelo de nuevo.",
+    "cancel_failed": "No se pudo cancelar la suscripción. Contacte con soporte.",
+    "payment_failed": "El pago falló. Actualice su método de pago.",
+    "payment_method_invalid": "Método de pago inválido. Inténtelo de nuevo.",
+    "volunteer_limit_exceeded": "Límite de voluntarios excedido. Actualice su plan.",
+    "stripe_error": "Error de procesamiento de pago. Inténtelo de nuevo o contacte con soporte."
+  },
+  "confirmation": {
+    "upgrade_title": "Confirmar Actualización",
+    "upgrade_message": "¿Actualizar al plan {{plan}} por {{price}}?",
+    "downgrade_title": "Confirmar Degradación",
+    "downgrade_message": "¿Degradar al plan {{plan}}? Perderá acceso a funciones premium.",
+    "cancel_title": "Cancelar Suscripción",
+    "cancel_message": "¿Está seguro que desea cancelar su suscripción?",
+    "cancel_immediate_warning": "Cancelar inmediatamente resultará en pérdida de acceso inmediata."
+  },
+  "usage_tracking": {
+    "current_usage": "Uso Actual",
+    "plan_limits": "Límites del Plan",
+    "volunteers": "Voluntarios",
+    "events": "Eventos",
+    "storage": "Almacenamiento",
+    "api_calls": "Llamadas API",
+    "percentage_used": "{{percent}}% usado",
+    "approaching_limit": "Acercándose al límite",
+    "over_limit": "Sobre el límite"
+  }
+}

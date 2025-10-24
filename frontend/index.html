@@ -25,6 +25,7 @@
     <link rel="canonical" href="https://signupflow.io/">
     <link rel="stylesheet" href="/css/styles.css">
     <link rel="stylesheet" href="/css/mobile.css">
+    <link rel="stylesheet" href="/css/sms.css">
     <script src="/js/debug.js"></script>
     <script src="/js/toast.js"></script>
     <script src="/js/form-validation.js"></script>
@@ -786,99 +787,6 @@
                             <label data-i18n="events.location">Location</label>
                             <input type="text" id="event-location" data-i18n-placeholder="events.placeholder_location" placeholder="Main Sanctuary, Fellowship Hall">
                         </div>
-
-                        <!-- Recurring Events Section -->
-                        <div class="form-group">
-                            <label>
-                                <input type="checkbox" id="is-recurring" data-i18n-attr="recurring.make_recurring">
-                                <span data-i18n="recurring.make_recurring">Make this a recurring event</span>
-                            </label>
-                        </div>
-
-                        <div id="recurring-options-container" style="display: none;">
-                            <div class="form-group">
-                                <label data-i18n="recurring.pattern">Recurrence Pattern</label>
-                                <select id="recurrence-pattern">
-                                    <option value="weekly" data-i18n="recurring.weekly">Weekly</option>
-                                    <option value="biweekly" data-i18n="recurring.biweekly">Biweekly (every 2 weeks)</option>
-                                    <option value="monthly" data-i18n="recurring.monthly">Monthly</option>
-                                    <option value="custom" data-i18n="recurring.custom">Custom interval</option>
-                                </select>
-                            </div>
-
-                            <!-- Weekly/Biweekly Options -->
-                            <div id="weekly-options" class="form-group" style="display: block;">
-                                <label data-i18n="recurring.select_days">Select Days</label>
-                                <div id="day-selection" class="day-checkboxes">
-                                    <label><input type="checkbox" value="sunday"><span data-i18n="recurring.sunday">Sunday</span></label>
-                                    <label><input type="checkbox" value="monday"><span data-i18n="recurring.monday">Monday</span></label>
-                                    <label><input type="checkbox" value="tuesday"><span data-i18n="recurring.tuesday">Tuesday</span></label>
-                                    <label><input type="checkbox" value="wednesday"><span data-i18n="recurring.wednesday">Wednesday</span></label>
-                                    <label><input type="checkbox" value="thursday"><span data-i18n="recurring.thursday">Thursday</span></label>
-                                    <label><input type="checkbox" value="friday"><span data-i18n="recurring.friday">Friday</span></label>
-                                    <label><input type="checkbox" value="saturday"><span data-i18n="recurring.saturday">Saturday</span></label>
-                                </div>
-                            </div>
-
-                            <!-- Monthly Options -->
-                            <div id="monthly-options" class="form-group" style="display: none;">
-                                <label data-i18n="recurring.monthly_pattern">Monthly Pattern</label>
-                                <div style="display: flex; gap: 10px;">
-                                    <select id="weekday-position">
-                                        <option value="first" data-i18n="recurring.first">First</option>
-                                        <option value="second" data-i18n="recurring.second">Second</option>
-                                        <option value="third" data-i18n="recurring.third">Third</option>
-                                        <option value="fourth" data-i18n="recurring.fourth">Fourth</option>
-                                        <option value="last" data-i18n="recurring.last">Last</option>
-                                    </select>
-                                    <select id="weekday-name">
-                                        <option value="sunday" data-i18n="recurring.sunday">Sunday</option>
-                                        <option value="monday" data-i18n="recurring.monday">Monday</option>
-                                        <option value="tuesday" data-i18n="recurring.tuesday">Tuesday</option>
-                                        <option value="wednesday" data-i18n="recurring.wednesday">Wednesday</option>
-                                        <option value="thursday" data-i18n="recurring.thursday">Thursday</option>
-                                        <option value="friday" data-i18n="recurring.friday">Friday</option>
-                                        <option value="saturday" data-i18n="recurring.saturday">Saturday</option>
-                                    </select>
-                                </div>
-                            </div>
-
-                            <!-- Custom Interval Options -->
-                            <div id="custom-options" class="form-group" style="display: none;">
-                                <label data-i18n="recurring.custom_interval">Every N weeks</label>
-                                <input type="number" id="custom-interval" min="1" max="52" value="3">
-                            </div>
-
-                            <!-- End Condition -->
-                            <div class="form-group">
-                                <label data-i18n="recurring.ends">Ends</label>
-                                <select id="end-condition">
-                                    <option value="date" data-i18n="recurring.on_date">On a specific date</option>
-                                    <option value="count" data-i18n="recurring.after_count">After number of occurrences</option>
-                                    <option value="indefinite" data-i18n="recurring.never">Never (indefinite)</option>
-                                </select>
-                            </div>
-
-                            <div id="end-date-field" class="form-group" style="display: block;">
-                                <label data-i18n="recurring.end_date">End Date</label>
-                                <input type="date" id="end-date">
-                            </div>
-
-                            <div id="occurrence-count-field" class="form-group" style="display: none;">
-                                <label data-i18n="recurring.occurrence_count">Number of Occurrences</label>
-                                <input type="number" id="occurrence-count" min="1" max="200" value="10">
-                            </div>
-
-                            <!-- Calendar Preview -->
-                            <div class="form-group">
-                                <label data-i18n="recurring.preview">Calendar Preview</label>
-                                <div id="calendar-preview" class="calendar-preview">
-                                    <p class="preview-empty">Select pattern options to see preview</p>
-                                </div>
-                                <div id="preview-warning" class="preview-warning" style="display: none;"></div>
-                            </div>
-                        </div>
-
                         <div class="form-group">
                             <label data-i18n="events.roles_needed">Roles Needed - Select all that apply</label>
                             <div class="role-selector" id="event-role-selector">
@@ -955,6 +863,9 @@
                             <span data-i18n="settings.permission_note">Your permission level is set by an administrator. Event-specific roles are selected when you join individual events.</span>
                         </p>
                     </div>
+
+                    <!-- SMS Preferences Section (dynamically populated) -->
+                    <div id="sms-preferences-container"></div>
                 </div>
                 <div class="modal-footer">
                     <button class="btn btn-secondary" onclick="logout()" data-i18n="settings.logout">Sign Out</button>
@@ -1212,132 +1123,6 @@
                 </div>
             </div>
         </div>
-
-        <!-- Onboarding Dashboard -->
-        <div id="onboarding-dashboard" class="screen hidden">
-            <header class="app-header">
-                <div class="header-content">
-                    <div class="header-left">
-                        <div class="logo-container" onclick="navigateTo('/app/schedule')"><img src="/images/signupflow-logo-white.svg" alt="SignUpFlow" class="header-logo"></div>
-                    </div>
-                    <div class="user-info">
-                        <span id="onboarding-user-name"></span>
-                        <button class="btn-secondary" onclick="navigateTo('/app/schedule')" data-i18n="onboarding.dashboard.go_to_app">Go to App →</button>
-                    </div>
-                </div>
-            </header>
-
-            <div class="onboarding-dashboard-content">
-                <!-- Welcome Banner -->
-                <div class="welcome-banner">
-                    <h1 data-i18n="onboarding.dashboard.welcome">🎉 Welcome to SignUpFlow!</h1>
-                    <p data-i18n="onboarding.dashboard.subtitle">You're all set! Here's what you can do next:</p>
-                </div>
-
-                <!-- Sample Data Controls -->
-                <div class="dashboard-section">
-                    <h2 data-i18n="onboarding.dashboard.explore.title">🧪 Explore Features</h2>
-                    <p data-i18n="onboarding.dashboard.explore.subtitle">Generate sample data to try out features before adding real data</p>
-                    <div id="dashboard-sample-data-controls"></div>
-                </div>
-
-                <!-- Checklist Widget -->
-                <div id="onboarding-checklist-container" class="dashboard-section">
-                    <!-- Checklist will be rendered by onboarding-checklist.js -->
-                </div>
-
-                <!-- Quick Start Videos -->
-                <div class="dashboard-section">
-                    <h2 data-i18n="onboarding.dashboard.videos.title">📹 Quick Start Videos</h2>
-                    <p data-i18n="onboarding.dashboard.videos.subtitle">Short 2-3 minute guides to get you started</p>
-                    <div class="video-grid" id="dashboard-video-grid">
-                        <div class="video-card" data-video-id="getting_started">
-                            <div class="video-thumbnail" onclick="window.playVideo('getting_started')">
-                                <div class="play-icon">▶</div>
-                            </div>
-                            <h3 data-i18n="onboarding.dashboard.videos.getting_started">Getting Started</h3>
-                            <p data-i18n="onboarding.dashboard.videos.getting_started_desc">Learn the basics of SignUpFlow</p>
-                            <span class="video-duration">2:30</span>
-                        </div>
-                        <div class="video-card" data-video-id="creating_events">
-                            <div class="video-thumbnail" onclick="window.playVideo('creating_events')">
-                                <div class="play-icon">▶</div>
-                            </div>
-                            <h3 data-i18n="onboarding.dashboard.videos.creating_events">Creating Events</h3>
-                            <p data-i18n="onboarding.dashboard.videos.creating_events_desc">Set up your first event</p>
-                            <span class="video-duration">3:00</span>
-                        </div>
-                        <div class="video-card" data-video-id="managing_volunteers">
-                            <div class="video-thumbnail" onclick="window.playVideo('managing_volunteers')">
-                                <div class="play-icon">▶</div>
-                            </div>
-                            <h3 data-i18n="onboarding.dashboard.videos.managing_volunteers">Managing Volunteers</h3>
-                            <p data-i18n="onboarding.dashboard.videos.managing_volunteers_desc">Add and organize your team</p>
-                            <span class="video-duration">2:45</span>
-                        </div>
-                        <div class="video-card" data-video-id="running_solver">
-                            <div class="video-thumbnail" onclick="window.playVideo('running_solver')">
-                                <div class="play-icon">▶</div>
-                            </div>
-                            <h3 data-i18n="onboarding.dashboard.videos.running_solver">Running the Solver</h3>
-                            <p data-i18n="onboarding.dashboard.videos.running_solver_desc">Auto-generate fair schedules</p>
-                            <span class="video-duration">3:15</span>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Documentation Links -->
-                <div class="dashboard-section">
-                    <h2 data-i18n="onboarding.dashboard.docs.title">📚 Documentation & Help</h2>
-                    <div class="docs-grid">
-                        <a href="/docs/quick-start" class="doc-card">
-                            <div class="doc-icon">📖</div>
-                            <h3 data-i18n="onboarding.dashboard.docs.quick_start">Quick Start Guide</h3>
-                            <p data-i18n="onboarding.dashboard.docs.quick_start_desc">Step-by-step setup instructions</p>
-                        </a>
-                        <a href="/docs/features" class="doc-card">
-                            <div class="doc-icon">✨</div>
-                            <h3 data-i18n="onboarding.dashboard.docs.features">Feature Overview</h3>
-                            <p data-i18n="onboarding.dashboard.docs.features_desc">Explore all capabilities</p>
-                        </a>
-                        <a href="/docs/faq" class="doc-card">
-                            <div class="doc-icon">❓</div>
-                            <h3 data-i18n="onboarding.dashboard.docs.faq">FAQ</h3>
-                            <p data-i18n="onboarding.dashboard.docs.faq_desc">Common questions answered</p>
-                        </a>
-                        <a href="/support" class="doc-card">
-                            <div class="doc-icon">💬</div>
-                            <h3 data-i18n="onboarding.dashboard.docs.support">Get Support</h3>
-                            <p data-i18n="onboarding.dashboard.docs.support_desc">Contact our team</p>
-                        </a>
-                    </div>
-                </div>
-
-                <!-- Sample Data Section (if available) -->
-                <div id="sample-data-section" class="dashboard-section" style="display: none;">
-                    <h2 data-i18n="onboarding.dashboard.sample_data.title">🎯 Sample Data</h2>
-                    <div class="sample-data-card">
-                        <div class="sample-data-info">
-                            <p data-i18n="onboarding.dashboard.sample_data.description">Sample data is loaded to help you explore features. All sample data is marked with "SAMPLE -" prefix.</p>
-                            <div class="sample-data-stats">
-                                <span class="stat"><strong id="sample-events-count">0</strong> <span data-i18n="onboarding.dashboard.sample_data.events">events</span></span>
-                                <span class="stat"><strong id="sample-teams-count">0</strong> <span data-i18n="onboarding.dashboard.sample_data.teams">teams</span></span>
-                                <span class="stat"><strong id="sample-people-count">0</strong> <span data-i18n="onboarding.dashboard.sample_data.volunteers">volunteers</span></span>
-                            </div>
-                        </div>
-                        <div class="sample-data-actions">
-                            <button class="btn-secondary" onclick="cleanupSampleData()" data-i18n="onboarding.dashboard.sample_data.cleanup">🗑️ Clean Up Sample Data</button>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Action Buttons -->
-                <div class="dashboard-actions">
-                    <button class="btn-primary btn-large" onclick="navigateTo('/app/schedule')" data-i18n="onboarding.dashboard.go_to_app">Go to App →</button>
-                    <button class="btn-link" onclick="resetOnboarding()" data-i18n="onboarding.dashboard.reset">Start Onboarding Again</button>
-                </div>
-            </div>
-        </div>
     </div>
 
     <script>
@@ -1347,13 +1132,8 @@
         document.write('<script src="/js/role-management.js?t=' + cacheBust + '"><\/script>');
         document.write('<script src="/js/edit-role-functions.js?t=' + cacheBust + '"><\/script>');
         document.write('<script src="/js/recurring-events.js?t=' + cacheBust + '"><\/script>');
-        document.write('<script src="/js/recurring-events-ui.js?t=' + cacheBust + '"><\/script>');
-        document.write('<script src="/js/sample-data-manager.js?t=' + cacheBust + '"><\/script>');
-        document.write('<script src="/js/onboarding-wizard.js?t=' + cacheBust + '"><\/script>');
-        document.write('<script src="/js/onboarding-checklist.js?t=' + cacheBust + '"><\/script>');
-        document.write('<script src="/js/quick-start-videos.js?t=' + cacheBust + '"><\/script>');
-        document.write('<script src="/js/tutorial-overlays.js?t=' + cacheBust + '"><\/script>');
-        document.write('<script src="/js/feature-unlocks.js?t=' + cacheBust + '"><\/script>');
+        document.write('<script src="/js/sms-preferences.js?t=' + cacheBust + '"><\/script>');
+        document.write('<script src="/js/admin-sms-broadcast.js?t=' + cacheBust + '"><\/script>');
         document.write('<script src="/js/app-user.js?t=' + cacheBust + '"><\/script>');
     </script>
 </body>

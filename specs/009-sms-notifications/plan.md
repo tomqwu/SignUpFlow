@@ -1,68 +1,105 @@
-# Implementation Plan: SMS Notifications
+# Implementation Plan: [FEATURE]
 
-**Branch**: `009-sms-notifications` | **Date**: 2025-10-20 | **Spec**: [spec.md](./spec.md)
+**Branch**: `[###-feature-name]` | **Date**: [DATE] | **Spec**: [link]
+**Input**: Feature specification from `/specs/[###-feature-name]/spec.md`
+
+**Note**: This template is filled in by the `/speckit.plan` command. See `.specify/templates/commands/plan.md` for the execution workflow.
 
 ## Summary
 
-SMS notification system for volunteer communications with Twilio integration. Volunteers receive SMS alerts for assignment reminders (24h before), schedule changes, and urgent broadcasts. Double opt-in compliance (TCPA), STOP keyword support, phone validation, rate limiting (3 SMS/day, quiet hours 10pm-8am), cost tracking with monthly limits, delivery status monitoring, message templates with dynamic variables, and bilingual support (English/Spanish).
-
-**Key Capabilities**:
-- Assignment reminders 24h before with YES/NO reply handling
-- Automatic schedule change notifications (time, location, role, cancellation)
-- Admin broadcast messages to teams or individuals
-- Double opt-in with confirmation code (regulatory compliance)
-- STOP/START keyword handling with audit trail
-- Cost management (monthly limits, overage alerts, usage dashboard)
-- Phone validation (Twilio lookup API, detect landlines)
-- Message templates with {{volunteer_name}}, {{event_name}}, {{date}}, {{time}}, {{location}}
-
-**Total Additional Infrastructure Cost**: ~$30-100/month (Twilio usage-based)
+[Extract from feature spec: primary requirement + technical approach from research]
 
 ## Technical Context
 
-**Language/Version**: Python 3.11+ (backend), Vanilla JavaScript (frontend)
-**Primary Dependencies**:
-- Twilio SDK (SMS sending, delivery tracking, phone validation)
-- Twilio Programmable Messaging API
-- PostgreSQL (message history, opt-in audit trail)
+<!--
+  ACTION REQUIRED: Replace the content in this section with the technical details
+  for the project. The structure here is presented in advisory capacity to guide
+  the iteration process.
+-->
 
-**Storage**: PostgreSQL 14+ (SMSMessage, SMSOptIn, SMSTemplate tables)
-**Testing**: Pytest (API), Playwright (E2E SMS opt-in workflow), Twilio test credentials
-**Performance Goals**: <5s SMS delivery, <200ms opt-in validation, <1s template rendering
-**Constraints**:
-- Max 3 SMS per volunteer per day (exclude urgent)
-- Quiet hours 10pm-8am local time (configurable)
-- 160 chars standard SMS, 1600 chars multi-part
-- Monthly limit enforcement (500/1000/2000 tiers)
+**Language/Version**: [e.g., Python 3.11, Swift 5.9, Rust 1.75 or NEEDS CLARIFICATION]  
+**Primary Dependencies**: [e.g., FastAPI, UIKit, LLVM or NEEDS CLARIFICATION]  
+**Storage**: [if applicable, e.g., PostgreSQL, CoreData, files or N/A]  
+**Testing**: [e.g., pytest, XCTest, cargo test or NEEDS CLARIFICATION]  
+**Target Platform**: [e.g., Linux server, iOS 15+, WASM or NEEDS CLARIFICATION]
+**Project Type**: [single/web/mobile - determines source structure]  
+**Performance Goals**: [domain-specific, e.g., 1000 req/s, 10k lines/sec, 60 fps or NEEDS CLARIFICATION]  
+**Constraints**: [domain-specific, e.g., <200ms p95, <100MB memory, offline-capable or NEEDS CLARIFICATION]  
+**Scale/Scope**: [domain-specific, e.g., 10k users, 1M LOC, 50 screens or NEEDS CLARIFICATION]
 
-**Cost Model**:
-- Twilio SMS: $0.0079/message (US)
-- Twilio lookup: $0.005/number validation
-- International SMS: $0.05-0.15/message
-- Estimated: 500 SMS/month org = $4/month, 2000 SMS/month org = $16/month
+## Constitution Check
 
-## Constitution Check ✅ ALL GATES PASS
+*GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.*
 
-E2E tests verify SMS opt-in workflow, delivery tracking, STOP keyword, cost limit enforcement. All other gates pass.
+[Gates determined based on constitution file]
 
 ## Project Structure
 
-```
-api/
-├── routers/sms_notifications.py    # SMS API endpoints
-├── services/
-│   ├── sms_service.py              # Twilio integration
-│   └── sms_templates.py            # Template rendering
-├── models.py                       # SMSMessage, SMSOptIn, SMSTemplate
+### Documentation (this feature)
 
-frontend/
-├── js/sms-settings.js              # Opt-in UI
-└── js/sms-broadcast.js             # Admin broadcast UI
+```
+specs/[###-feature]/
+├── plan.md              # This file (/speckit.plan command output)
+├── research.md          # Phase 0 output (/speckit.plan command)
+├── data-model.md        # Phase 1 output (/speckit.plan command)
+├── quickstart.md        # Phase 1 output (/speckit.plan command)
+├── contracts/           # Phase 1 output (/speckit.plan command)
+└── tasks.md             # Phase 2 output (/speckit.tasks command - NOT created by /speckit.plan)
+```
+
+### Source Code (repository root)
+<!--
+  ACTION REQUIRED: Replace the placeholder tree below with the concrete layout
+  for this feature. Delete unused options and expand the chosen structure with
+  real paths (e.g., apps/admin, packages/something). The delivered plan must
+  not include Option labels.
+-->
+
+```
+# [REMOVE IF UNUSED] Option 1: Single project (DEFAULT)
+src/
+├── models/
+├── services/
+├── cli/
+└── lib/
 
 tests/
-└── e2e/test_sms_workflow.py        # SMS opt-in E2E tests
+├── contract/
+├── integration/
+└── unit/
+
+# [REMOVE IF UNUSED] Option 2: Web application (when "frontend" + "backend" detected)
+backend/
+├── src/
+│   ├── models/
+│   ├── services/
+│   └── api/
+└── tests/
+
+frontend/
+├── src/
+│   ├── components/
+│   ├── pages/
+│   └── services/
+└── tests/
+
+# [REMOVE IF UNUSED] Option 3: Mobile + API (when "iOS/Android" detected)
+api/
+└── [same as backend above]
+
+ios/ or android/
+└── [platform-specific structure: feature modules, UI flows, platform tests]
 ```
 
----
+**Structure Decision**: [Document the selected structure and reference the real
+directories captured above]
 
-**Status**: Streamlined plan complete
+## Complexity Tracking
+
+*Fill ONLY if Constitution Check has violations that must be justified*
+
+| Violation | Why Needed | Simpler Alternative Rejected Because |
+|-----------|------------|-------------------------------------|
+| [e.g., 4th project] | [current need] | [why 3 projects insufficient] |
+| [e.g., Repository pattern] | [specific problem] | [why direct DB access insufficient] |
+

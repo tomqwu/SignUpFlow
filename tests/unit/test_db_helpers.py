@@ -35,24 +35,35 @@ def _unique_id(prefix="test"):
 @pytest.fixture
 def db_session():
     """Create a test database session."""
-    from api.database import get_db, init_db
     import tempfile
     import os
+    from sqlalchemy import create_engine
+    from sqlalchemy.orm import sessionmaker
+    from api.models import Base
 
     # Create temporary database
     fd, path = tempfile.mkstemp(suffix=".db")
-    os.environ["DATABASE_URL"] = f"sqlite:///{path}"
+    database_url = f"sqlite:///{path}"
 
-    # Initialize database
-    init_db()
+    # Create engine for temp database
+    engine = create_engine(
+        database_url,
+        connect_args={"check_same_thread": False},
+        echo=False
+    )
 
-    # Get session
-    db = next(get_db())
+    # Create all tables
+    Base.metadata.create_all(bind=engine)
+
+    # Create session
+    TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+    db = TestingSessionLocal()
 
     yield db
 
     # Cleanup
     db.close()
+    engine.dispose()
     os.close(fd)
     os.unlink(path)
 

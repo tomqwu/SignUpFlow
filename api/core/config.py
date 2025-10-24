@@ -71,6 +71,25 @@ class Settings(BaseSettings):
     RECAPTCHA_SITE_KEY: Optional[str] = None
     RECAPTCHA_SECRET_KEY: Optional[str] = None
 
+    # Stripe Payment Processing
+    STRIPE_SECRET_KEY: Optional[str] = None
+    STRIPE_PUBLISHABLE_KEY: Optional[str] = None
+    STRIPE_PUBLIC_KEY: Optional[str] = None
+    STRIPE_WEBHOOK_SECRET: Optional[str] = None
+    STRIPE_TEST_MODE: bool = True
+    STRIPE_PRICE_STARTER_MONTHLY: Optional[str] = None
+    STRIPE_PRICE_STARTER_ANNUAL: Optional[str] = None
+    STRIPE_PRICE_PRO_MONTHLY: Optional[str] = None
+    STRIPE_PRICE_PRO_ANNUAL: Optional[str] = None
+    STRIPE_PRICE_ENTERPRISE_MONTHLY: Optional[str] = None
+    STRIPE_PRICE_ENTERPRISE_ANNUAL: Optional[str] = None
+
+    # Twilio SMS Service
+    TWILIO_ACCOUNT_SID: Optional[str] = None
+    TWILIO_AUTH_TOKEN: Optional[str] = None
+    TWILIO_PHONE_NUMBER: Optional[str] = None
+    TWILIO_TEST_MODE: bool = True
+
     class Config:
         env_file = ".env"
         case_sensitive = True
