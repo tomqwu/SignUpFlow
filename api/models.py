@@ -696,6 +696,7 @@ class Subscription(Base):
     current_period_start = Column(DateTime, nullable=True)  # Current billing period start
     current_period_end = Column(DateTime, nullable=True)  # Current billing period end
     cancel_at_period_end = Column(Boolean, nullable=False, default=False)  # Scheduled cancellation
+    pending_downgrade = Column(JSONType, nullable=True)  # Scheduled downgrade: {"new_plan": "starter", "effective_date": "2025-11-01"}
     created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
     updated_at = Column(DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow)
 

@@ -192,8 +192,65 @@ def check_usage_limits(self) -> Dict[str, Any]:
         db.close()
 
 
+@celery_app.task(bind=True, max_retries=3)
+def apply_pending_downgrades(self) -> Dict[str, Any]:
+    """
+    Daily task to apply scheduled downgrades at period end.
+
+    This task:
+    1. Finds all subscriptions with pending_downgrade
+    2. Checks if effective_date <= now()
+    3. Applies the downgrade to new plan tier
+    4. Applies credit to Stripe customer balance
+    5. Clears pending_downgrade field
+    6. Records subscription event for audit trail
+    7. Sends downgrade confirmation email (future)
+
+    Scheduled: Daily at 1:00 AM UTC (before trial check at 2:00 AM)
+
+    Returns:
+        dict: Summary of applied downgrades
+        {
+            "success": bool,
+            "applied_count": int,
+            "applied_downgrades": List[dict],
+            "message": str
+        }
+    """
+    logger.info("Starting daily pending downgrades check...")
+    db = SessionLocal()
+
+    try:
+        billing_service = BillingService(db)
+        result = billing_service.apply_pending_downgrades()
+
+        logger.info(
+            f"Pending downgrades check complete: "
+            f"{result['applied_count']} downgrades applied"
+        )
+
+        if result['applied_downgrades']:
+            logger.info(f"Applied downgrades: {result['applied_downgrades']}")
+
+        return result
+
+    except Exception as e:
+        logger.error(f"Error during pending downgrades check: {e}", exc_info=True)
+        # Retry the task with exponential backoff
+        raise self.retry(exc=e, countdown=60 * (2 ** self.request.retries))
+
+    finally:
+        db.close()
+
+
 # Celery Beat schedule for periodic tasks
 celery_app.conf.beat_schedule = {
+    # Apply pending downgrades daily at 1:00 AM UTC (before trial check)
+    "apply-pending-downgrades": {
+        "task": "api.tasks.billing_tasks.apply_pending_downgrades",
+        "schedule": crontab(hour=1, minute=0),
+    },
+
     # Check expired trials daily at 2:00 AM UTC
     "check-expired-trials": {
         "task": "api.tasks.billing_tasks.check_expired_trials",

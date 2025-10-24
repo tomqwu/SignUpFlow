@@ -16,9 +16,10 @@ Implementing Stripe-integrated billing and subscription system with four tiers (
 - ✅ Phase 4: US2 Paid Upgrade (12/12 tasks - 100%)
 - ✅ Phase 5: US3 14-Day Trial (6/8 tasks - 75%, 2 email tasks deferred)
 - ✅ Phase 8: US6 Annual Billing (6/6 tasks - 100%)
+- ⏳ Phase 7: US5 Subscription Tier Changes (6/8 tasks - 75%, 2 UI tasks remaining)
 - ⏳ Phase 6: US4 Failed Payment Handling (0/12 tasks - 0%, requires email service)
 
-**Overall**: 69/155 tasks complete (45%)
+**Overall**: 75/155 tasks complete (48%)
 
 ## Phase 5 Completion Details
 
@@ -54,6 +55,44 @@ Implementing Stripe-integrated billing and subscription system with four tiers (
 - T062: Trial notification email templates - Deferred to email service implementation
 - T063: send_trial_notifications() - Deferred to email service implementation
 - Placeholder logic exists in billing_tasks.py
+
+## Phase 7 Completion Details (In Progress)
+
+### Backend Downgrade Scheduling (✅ Complete)
+- `downgrade_subscription()` in billing_service.py - Schedules downgrade for period end
+- `_calculate_downgrade_credit()` helper - Calculates prorated credit for unused time
+- Tier hierarchy validation (free < starter < pro < enterprise)
+- Pending downgrade storage in subscription.pending_downgrade JSON field
+- Subscription event recording for downgrade_scheduled
+
+### Backend Downgrade Execution (✅ Complete)
+- `apply_pending_downgrades()` in billing_service.py - Applies downgrades at period end
+- Checks effective_date <= now() before applying
+- Applies credit to Stripe customer balance
+- Clears pending_downgrade field after execution
+- Records downgrade_applied subscription event
+
+### API Endpoints (✅ Complete)
+- POST /api/billing/subscription/downgrade - Schedule downgrade endpoint
+- DowngradeRequest schema with validation
+- Admin-only access control
+- Request validation (org_id, new_plan_tier, reason)
+
+### Celery Scheduled Tasks (✅ Complete)
+- `apply_pending_downgrades()` task in billing_tasks.py
+- Daily execution at 1:00 AM UTC (before trial check)
+- Exponential backoff retry logic
+- Database session management
+
+### Stripe Integration (✅ Complete)
+- `apply_customer_credit()` in stripe_service.py
+- Creates negative balance transaction for credits
+- Credits automatically applied to future invoices
+- Error handling and logging
+
+### Frontend UI (⏳ 2 tasks remaining)
+- T081: Display "Downgrade scheduled" message in billing portal - PENDING
+- T082: Add "Cancel Downgrade" button in billing portal - PENDING
 
 ## Phase 8 Completion Details
 

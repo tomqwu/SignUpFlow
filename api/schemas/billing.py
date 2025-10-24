@@ -33,6 +33,7 @@ class SubscriptionResponse(BaseModel):
     current_period_start: Optional[datetime] = Field(None, description="Current billing period start")
     current_period_end: Optional[datetime] = Field(None, description="Current billing period end")
     cancel_at_period_end: bool = Field(False, description="Scheduled for cancellation")
+    pending_downgrade: Optional[Dict[str, Any]] = Field(None, description="Scheduled downgrade details (new_plan_tier, effective_date, credit_amount_cents)")
     created_at: datetime = Field(..., description="Subscription created timestamp")
     updated_at: datetime = Field(..., description="Last updated timestamp")
 

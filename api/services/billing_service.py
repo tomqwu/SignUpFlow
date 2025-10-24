@@ -960,6 +960,313 @@ class BillingService:
 
         return prorated_amount
 
+    def downgrade_subscription(
+        self,
+        org_id: str,
+        new_plan_tier: str,
+        reason: Optional[str] = None,
+        admin_id: Optional[str] = None
+    ) -> Dict[str, Any]:
+        """
+        Schedule subscription downgrade to execute at period end.
+
+        Downgrades are scheduled rather than immediate to avoid service disruption.
+        Credit for unused time is calculated and applied at downgrade execution.
+
+        Args:
+            org_id: Organization ID
+            new_plan_tier: New plan tier (must be lower than current)
+            reason: Reason for downgrade (optional)
+            admin_id: Admin who initiated downgrade (optional)
+
+        Returns:
+            dict: Result with success status
+                {
+                    "success": bool,
+                    "subscription": Subscription object,
+                    "message": str,
+                    "effective_date": str,  # ISO format
+                    "credit_amount_cents": int
+                }
+
+        Example:
+            result = billing_service.downgrade_subscription(
+                org_id="org_123",
+                new_plan_tier="starter",
+                reason="Reducing team size",
+                admin_id="person_admin_123"
+            )
+        """
+        try:
+            # Get current subscription
+            subscription = self.get_subscription(org_id)
+            if not subscription:
+                return {"success": False, "message": "No subscription found"}
+
+            current_plan = subscription.plan_tier
+
+            # Validate downgrade is allowed
+            tier_hierarchy = {"free": 0, "starter": 1, "pro": 2, "enterprise": 3}
+            current_tier_level = tier_hierarchy.get(current_plan, 0)
+            new_tier_level = tier_hierarchy.get(new_plan_tier, 0)
+
+            if new_tier_level >= current_tier_level:
+                return {
+                    "success": False,
+                    "message": f"Cannot downgrade from {current_plan} to {new_plan_tier}. Use upgrade instead."
+                }
+
+            # Only allow downgrades for active paid subscriptions
+            if current_plan == "free":
+                return {
+                    "success": False,
+                    "message": "Cannot downgrade free plan"
+                }
+
+            if subscription.status != "active":
+                return {
+                    "success": False,
+                    "message": f"Cannot downgrade {subscription.status} subscription"
+                }
+
+            # Calculate effective date (end of current period)
+            effective_date = subscription.current_period_end or datetime.utcnow()
+
+            # Calculate credit for unused time
+            credit_amount = self._calculate_downgrade_credit(
+                subscription=subscription,
+                new_plan_tier=new_plan_tier
+            )
+
+            # Store pending downgrade
+            subscription.pending_downgrade = {
+                "new_plan_tier": new_plan_tier,
+                "effective_date": effective_date.isoformat(),
+                "credit_amount_cents": credit_amount,
+                "reason": reason,
+                "scheduled_at": datetime.utcnow().isoformat()
+            }
+
+            self.db.commit()
+            self.db.refresh(subscription)
+
+            # Record subscription event
+            self._record_subscription_event(
+                org_id=org_id,
+                event_type="downgrade_scheduled",
+                new_plan=new_plan_tier,
+                previous_plan=current_plan,
+                admin_id=admin_id,
+                reason=reason,
+                notes=f"Downgrade from {current_plan} to {new_plan_tier} scheduled for {effective_date.isoformat()}"
+            )
+
+            logger.info(
+                f"Scheduled downgrade for org {org_id}: {current_plan} → {new_plan_tier} "
+                f"(effective {effective_date}, credit ${credit_amount/100:.2f})"
+            )
+
+            return {
+                "success": True,
+                "subscription": subscription,
+                "effective_date": effective_date.isoformat(),
+                "credit_amount_cents": credit_amount,
+                "message": f"Downgrade to {new_plan_tier} scheduled for {effective_date.strftime('%Y-%m-%d')}"
+            }
+
+        except Exception as e:
+            self.db.rollback()
+            logger.error(f"Error scheduling downgrade for org {org_id}: {e}")
+            return {
+                "success": False,
+                "message": f"Failed to schedule downgrade: {str(e)}"
+            }
+
+    def _calculate_downgrade_credit(
+        self,
+        subscription: Subscription,
+        new_plan_tier: str
+    ) -> int:
+        """
+        Calculate credit for unused time when downgrading.
+
+        Args:
+            subscription: Current subscription
+            new_plan_tier: New (lower) plan tier
+
+        Returns:
+            int: Credit amount in cents
+        """
+        now = datetime.utcnow()
+        current_plan = subscription.plan_tier
+        billing_cycle = subscription.billing_cycle
+
+        # Get pricing
+        current_price = self._get_plan_amount(f"{current_plan}_{billing_cycle}")
+        new_price = self._get_plan_amount(f"{new_plan_tier}_{billing_cycle}")
+
+        # Calculate days remaining in period
+        if subscription.current_period_end:
+            total_period_days = (subscription.current_period_end - subscription.current_period_start).days
+            remaining_days = (subscription.current_period_end - now).days
+            if remaining_days < 0:
+                remaining_days = 0
+        else:
+            total_period_days = 30 if billing_cycle == "monthly" else 365
+            remaining_days = 0
+
+        # Calculate credit: (current_price - new_price) * (remaining_days / total_period_days)
+        price_difference = current_price - new_price
+        if total_period_days > 0:
+            credit_amount = int(price_difference * (remaining_days / total_period_days))
+        else:
+            credit_amount = 0
+
+        logger.info(
+            f"Calculated downgrade credit: {current_plan} → {new_plan_tier}, "
+            f"{remaining_days}/{total_period_days} days remaining, "
+            f"credit ${credit_amount/100:.2f}"
+        )
+
+        return credit_amount
+
+    def apply_pending_downgrades(self) -> Dict[str, Any]:
+        """
+        Apply all pending downgrades that have reached their effective date.
+
+        This method:
+        1. Finds all subscriptions with pending_downgrade not null
+        2. Checks if effective_date <= now()
+        3. Applies the downgrade to new plan tier
+        4. Applies credit to Stripe customer balance
+        5. Clears pending_downgrade field
+        6. Records subscription event for audit trail
+
+        Returns:
+            dict: Summary of applied downgrades
+            {
+                "success": bool,
+                "applied_count": int,
+                "applied_downgrades": List[dict],
+                "message": str
+            }
+        """
+        try:
+            now = datetime.utcnow()
+            applied_downgrades = []
+
+            # Find all subscriptions with pending downgrades
+            subscriptions = self.db.query(Subscription).filter(
+                Subscription.pending_downgrade.isnot(None)
+            ).all()
+
+            logger.info(f"Found {len(subscriptions)} subscriptions with pending downgrades")
+
+            for subscription in subscriptions:
+                try:
+                    pending = subscription.pending_downgrade
+                    effective_date_str = pending.get("effective_date")
+                    new_plan_tier = pending.get("new_plan_tier")
+                    credit_amount_cents = pending.get("credit_amount_cents", 0)
+                    reason = pending.get("reason")
+
+                    # Parse effective date
+                    effective_date = datetime.fromisoformat(effective_date_str)
+
+                    # Check if effective date has passed
+                    if effective_date > now:
+                        logger.info(
+                            f"Skipping downgrade for org {subscription.org_id}: "
+                            f"effective date {effective_date} is in the future"
+                        )
+                        continue
+
+                    logger.info(
+                        f"Applying downgrade for org {subscription.org_id}: "
+                        f"{subscription.plan_tier} → {new_plan_tier}"
+                    )
+
+                    # Store previous plan for event recording
+                    previous_plan = subscription.plan_tier
+
+                    # Apply the downgrade
+                    subscription.plan_tier = new_plan_tier
+
+                    # Apply credit to Stripe customer balance (T080)
+                    if credit_amount_cents > 0 and subscription.stripe_customer_id:
+                        try:
+                            from api.services.stripe_service import StripeService
+                            stripe_service = StripeService(self.db)
+                            stripe_service.apply_customer_credit(
+                                customer_id=subscription.stripe_customer_id,
+                                amount_cents=credit_amount_cents,
+                                description=f"Credit for downgrade from {previous_plan} to {new_plan_tier}"
+                            )
+                            logger.info(
+                                f"Applied ${credit_amount_cents/100:.2f} credit to "
+                                f"Stripe customer {subscription.stripe_customer_id}"
+                            )
+                        except Exception as e:
+                            logger.error(
+                                f"Failed to apply Stripe credit for org {subscription.org_id}: {e}"
+                            )
+                            # Continue anyway - don't block downgrade
+
+                    # Clear pending_downgrade field
+                    subscription.pending_downgrade = None
+                    subscription.updated_at = now
+
+                    self.db.commit()
+                    self.db.refresh(subscription)
+
+                    # Record subscription event
+                    self._record_subscription_event(
+                        org_id=subscription.org_id,
+                        event_type="downgrade_applied",
+                        new_plan=new_plan_tier,
+                        previous_plan=previous_plan,
+                        reason=reason,
+                        notes=f"Scheduled downgrade applied: {previous_plan} → {new_plan_tier}, credit ${credit_amount_cents/100:.2f}"
+                    )
+
+                    applied_downgrades.append({
+                        "org_id": subscription.org_id,
+                        "previous_plan": previous_plan,
+                        "new_plan": new_plan_tier,
+                        "credit_amount_cents": credit_amount_cents,
+                        "effective_date": effective_date_str
+                    })
+
+                    logger.info(
+                        f"Successfully applied downgrade for org {subscription.org_id}: "
+                        f"{previous_plan} → {new_plan_tier}"
+                    )
+
+                except Exception as e:
+                    logger.error(
+                        f"Error applying downgrade for subscription {subscription.id}: {e}",
+                        exc_info=True
+                    )
+                    self.db.rollback()
+                    # Continue with next subscription
+
+            return {
+                "success": True,
+                "applied_count": len(applied_downgrades),
+                "applied_downgrades": applied_downgrades,
+                "message": f"Applied {len(applied_downgrades)} pending downgrades"
+            }
+
+        except Exception as e:
+            self.db.rollback()
+            logger.error(f"Error in apply_pending_downgrades: {e}", exc_info=True)
+            return {
+                "success": False,
+                "applied_count": 0,
+                "applied_downgrades": [],
+                "message": f"Failed to apply pending downgrades: {str(e)}"
+            }
+
     def _record_subscription_event(
         self,
         org_id: str,

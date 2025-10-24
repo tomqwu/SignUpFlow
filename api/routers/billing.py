@@ -14,7 +14,8 @@ from api.schemas.billing import (
     SubscriptionResponse,
     UsageSummaryResponse,
     UpgradeRequest,
-    TrialRequest
+    TrialRequest,
+    DowngradeRequest
 )
 
 router = APIRouter(tags=["billing"])
@@ -269,5 +270,80 @@ def start_trial(
         "subscription": SubscriptionResponse.from_orm(result["subscription"]),
         "usage": usage_summary,
         "trial_end_date": result["trial_end_date"].isoformat(),
+        "message": result["message"]
+    }
+
+
+@router.post("/billing/subscription/downgrade")
+def downgrade_subscription(
+    request: DowngradeRequest,
+    admin: Person = Depends(verify_admin_access),
+    db: Session = Depends(get_db)
+) -> Dict[str, Any]:
+    """
+    Schedule subscription downgrade to execute at period end.
+
+    This endpoint:
+    1. Validates downgrade is to lower tier
+    2. Schedules downgrade for current period end
+    3. Calculates credit for unused time
+    4. Stores pending downgrade in subscription.pending_downgrade
+    5. Records subscription event for audit trail
+    6. Sends downgrade confirmation email (future)
+
+    Requires:
+        - User must be admin
+        - User must belong to the organization
+        - Organization must have active paid subscription
+        - New plan tier must be lower than current tier
+
+    Request Body:
+        {
+            "org_id": "org_123",
+            "new_plan_tier": "starter",
+            "reason": "Cost reduction"
+        }
+
+    Returns:
+        dict: Downgrade scheduled details
+        {
+            "success": true,
+            "subscription": SubscriptionResponse,
+            "pending_downgrade": {
+                "new_plan_tier": "starter",
+                "effective_date": "2025-11-23",
+                "credit_amount_cents": 5000,
+                "reason": "Cost reduction"
+            },
+            "message": "Downgrade scheduled for end of billing period"
+        }
+    """
+    # Verify admin belongs to organization
+    verify_org_member(admin, request.org_id)
+
+    # Schedule downgrade via BillingService
+    billing_service = BillingService(db)
+    result = billing_service.downgrade_subscription(
+        org_id=request.org_id,
+        new_plan_tier=request.new_plan_tier,
+        reason=request.reason,
+        admin_id=admin.id
+    )
+
+    if not result["success"]:
+        raise HTTPException(
+            status_code=400,
+            detail=result["message"]
+        )
+
+    # Get updated usage summary
+    usage_service = UsageService(db)
+    usage_summary = usage_service.get_usage_summary(request.org_id)
+
+    return {
+        "success": True,
+        "subscription": SubscriptionResponse.from_orm(result["subscription"]),
+        "usage": usage_summary,
+        "pending_downgrade": result["pending_downgrade"],
         "message": result["message"]
     }

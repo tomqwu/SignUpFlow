@@ -531,3 +531,60 @@ class StripeService:
         else:
             logger.warning(f"Unknown price ID format: {price_id}, defaulting to starter")
             return "starter"
+
+    def apply_customer_credit(
+        self,
+        customer_id: str,
+        amount_cents: int,
+        description: str = "Account credit"
+    ) -> Dict[str, Any]:
+        """
+        Apply credit to Stripe customer balance.
+
+        This adds a customer balance transaction that can be used to credit
+        future invoices automatically.
+
+        Args:
+            customer_id: Stripe customer ID
+            amount_cents: Credit amount in cents (positive number)
+            description: Description of the credit
+
+        Returns:
+            dict: Result of credit application
+            {
+                "success": bool,
+                "transaction_id": str,
+                "amount_cents": int,
+                "message": str
+            }
+        """
+        try:
+            import stripe
+
+            # Create negative balance transaction to add credit
+            # Stripe customer balance uses negative values for credits
+            balance_transaction = stripe.Customer.create_balance_transaction(
+                customer_id,
+                amount=-abs(amount_cents),  # Negative = credit
+                currency="usd",
+                description=description
+            )
+
+            logger.info(
+                f"Applied ${amount_cents/100:.2f} credit to customer {customer_id} "
+                f"(transaction {balance_transaction.id})"
+            )
+
+            return {
+                "success": True,
+                "transaction_id": balance_transaction.id,
+                "amount_cents": amount_cents,
+                "message": f"Applied ${amount_cents/100:.2f} credit to customer balance"
+            }
+
+        except Exception as e:
+            logger.error(f"Error applying credit to customer {customer_id}: {e}")
+            return {
+                "success": False,
+                "message": f"Failed to apply credit: {str(e)}"
+            }
