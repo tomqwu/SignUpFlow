@@ -14,13 +14,19 @@ from api.schemas.organization import (
 from api.models import Organization
 from api.utils.rate_limit_middleware import rate_limit
 from api.utils.recaptcha_middleware import require_recaptcha
+from api.services.billing_service import BillingService
+from api.services.usage_service import UsageService
+from api.logging_config import logger
 
 router = APIRouter(prefix="/organizations", tags=["organizations"])
 
 
 @router.post("/", response_model=OrganizationResponse, status_code=status.HTTP_201_CREATED, dependencies=[Depends(rate_limit("create_org")), Depends(require_recaptcha)])
 def create_organization(org_data: OrganizationCreate, db: Session = Depends(get_db)):
-    """Create a new organization. Rate limited to 2 requests per hour per IP."""
+    """Create a new organization. Rate limited to 2 requests per hour per IP.
+
+    Automatically creates Free plan subscription with 10 volunteer limit.
+    """
     # Check if organization already exists
     existing = db.query(Organization).filter(Organization.id == org_data.id).first()
     if existing:
@@ -39,6 +45,19 @@ def create_organization(org_data: OrganizationCreate, db: Session = Depends(get_
     db.add(org)
     db.commit()
     db.refresh(org)
+
+    # Auto-create Free plan subscription
+    billing_service = BillingService(db)
+    subscription = billing_service.create_free_subscription(org.id)
+
+    if subscription:
+        # Initialize volunteer usage metrics (0/10 for Free plan)
+        usage_service = UsageService(db)
+        usage_service.track_volunteer_added(org.id)  # Will create metric with 0 volunteers
+        logger.info(f"Free plan subscription created for org {org.id}")
+    else:
+        logger.error(f"Failed to create free subscription for org {org.id}")
+
     return org
 
 

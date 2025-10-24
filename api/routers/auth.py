@@ -12,6 +12,7 @@ from api.security import hash_password, verify_password, create_access_token
 from api.models import Person, Organization
 from api.utils.rate_limit_middleware import rate_limit
 from api.utils.recaptcha import get_recaptcha_site_key
+from api.services.usage_service import UsageService
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
@@ -83,6 +84,17 @@ def signup(request: SignupRequest, db: Session = Depends(get_db)):
         # Default to volunteer if no valid roles requested
         roles = safe_roles if safe_roles else ["volunteer"]
 
+    # Check volunteer limit before creating volunteer user
+    if "volunteer" in roles and not is_first_user:
+        usage_service = UsageService(db)
+        if not usage_service.can_add_volunteer(request.org_id):
+            # Get limit info for error message
+            result = usage_service.enforce_volunteer_limit(request.org_id)
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail=result.get("message", "Volunteer limit reached. Please upgrade your plan.")
+            )
+
     # Create person
     person = Person(
         id=person_id,
@@ -97,6 +109,11 @@ def signup(request: SignupRequest, db: Session = Depends(get_db)):
     db.add(person)
     db.commit()
     db.refresh(person)
+
+    # Update volunteer usage metrics if volunteer role
+    if "volunteer" in roles:
+        usage_service = UsageService(db)
+        usage_service.track_volunteer_added(request.org_id)
 
     # Generate JWT access token
     access_token = create_access_token(data={"sub": person.id})
