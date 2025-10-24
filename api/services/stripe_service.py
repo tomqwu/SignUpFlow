@@ -15,7 +15,7 @@ Example Usage:
 """
 
 from typing import Optional, Dict, Any
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 from datetime import datetime
 
 from api.models import Organization, Subscription, PaymentMethod
@@ -71,8 +71,10 @@ class StripeService:
                 print(f"Subscription ID: {result['stripe_subscription_id']}")
         """
         try:
-            # Get organization and current subscription
-            org = self.db.query(Organization).filter(Organization.id == org_id).first()
+            # Get organization and current subscription (with eager loading)
+            org = self.db.query(Organization).options(
+                joinedload(Organization.subscription)
+            ).filter(Organization.id == org_id).first()
             if not org:
                 return {"success": False, "message": "Organization not found"}
 
@@ -88,27 +90,30 @@ class StripeService:
                 admin = next((p for p in org.people if "admin" in (p.roles or [])), None)
                 customer_email = admin.email if admin else f"{org_id}@signupflow.io"
 
-                customer = self.stripe_client.create_customer(
+                customer_result = self.stripe_client.create_customer(
                     org_id=org_id,
                     email=customer_email,
                     name=org.name
                 )
 
-                if not customer:
-                    return {"success": False, "message": "Failed to create Stripe customer"}
+                if not customer_result["success"]:
+                    return {"success": False, "message": customer_result["message"]}
 
-                subscription.stripe_customer_id = customer["id"]
+                subscription.stripe_customer_id = customer_result["customer_id"]
 
             # Create Stripe subscription
-            stripe_subscription = self.stripe_client.create_subscription(
+            subscription_result = self.stripe_client.create_subscription(
                 customer_id=subscription.stripe_customer_id,
                 price_id=price_id,
                 trial_days=trial_days,
                 metadata={"org_id": org_id}
             )
 
-            if not stripe_subscription:
-                return {"success": False, "message": "Failed to create Stripe subscription"}
+            if not subscription_result["success"]:
+                return {"success": False, "message": subscription_result["message"]}
+
+            # Extract Stripe subscription object
+            stripe_subscription = subscription_result["subscription"]
 
             # Determine plan tier from price_id
             plan_tier = self._get_tier_from_price_id(price_id)
@@ -178,13 +183,16 @@ class StripeService:
                 return {"success": False, "message": "No active paid subscription found"}
 
             # Update Stripe subscription
-            updated_stripe_sub = self.stripe_client.update_subscription(
+            update_result = self.stripe_client.update_subscription(
                 subscription_id=subscription.stripe_subscription_id,
                 price_id=new_price_id
             )
 
-            if not updated_stripe_sub:
-                return {"success": False, "message": "Failed to update Stripe subscription"}
+            if not update_result["success"]:
+                return {"success": False, "message": update_result["message"]}
+
+            # Extract updated subscription object
+            updated_stripe_sub = update_result["subscription"]
 
             # Update local database
             previous_plan = subscription.plan_tier
@@ -242,17 +250,19 @@ class StripeService:
         """
         try:
             # Update Stripe subscription with new price
-            updated_subscription = self.stripe_client.update_subscription(
+            update_result = self.stripe_client.update_subscription(
                 subscription_id=stripe_subscription_id,
                 price_id=new_price_id,
                 proration_behavior="always_invoice"  # Create invoice for proration
             )
 
-            if not updated_subscription:
+            if not update_result["success"]:
                 return {
                     "success": False,
-                    "message": "Failed to update billing cycle in Stripe"
+                    "message": update_result["message"]
                 }
+
+            updated_subscription = update_result["subscription"]
 
             logger.info(
                 f"Updated billing cycle for subscription {stripe_subscription_id} "
@@ -298,13 +308,13 @@ class StripeService:
                 return {"success": False, "message": "No active subscription found"}
 
             # Cancel in Stripe
-            cancelled = self.stripe_client.cancel_subscription(
+            cancel_result = self.stripe_client.cancel_subscription(
                 subscription_id=subscription.stripe_subscription_id,
                 at_period_end=at_period_end
             )
 
-            if not cancelled:
-                return {"success": False, "message": "Failed to cancel in Stripe"}
+            if not cancel_result["success"]:
+                return {"success": False, "message": cancel_result["message"]}
 
             # Update local database
             if at_period_end:
@@ -357,14 +367,14 @@ class StripeService:
                 return {"success": False, "message": "No Stripe customer found"}
 
             # Attach payment method in Stripe
-            attached = self.stripe_client.attach_payment_method(
+            attach_result = self.stripe_client.attach_payment_method(
                 customer_id=subscription.stripe_customer_id,
                 payment_method_id=payment_method_id,
                 set_as_default=True
             )
 
-            if not attached:
-                return {"success": False, "message": "Failed to attach payment method"}
+            if not attach_result["success"]:
+                return {"success": False, "message": attach_result["message"]}
 
             # Save to local database
             payment_method = PaymentMethod(
@@ -452,24 +462,26 @@ class StripeService:
 
             # Create customer if doesn't exist
             if not customer_id:
-                org = self.db.query(Organization).filter(Organization.id == org_id).first()
+                org = self.db.query(Organization).options(
+                    joinedload(Organization.subscription)
+                ).filter(Organization.id == org_id).first()
                 if not org:
                     return {"success": False, "message": "Organization not found"}
 
                 admin = next((p for p in org.people if "admin" in (p.roles or [])), None)
                 customer_email = admin.email if admin else f"{org_id}@signupflow.io"
 
-                customer = self.stripe_client.create_customer(
+                customer_result = self.stripe_client.create_customer(
                     org_id=org_id,
                     email=customer_email,
                     name=org.name,
                     metadata={"org_id": org_id}
                 )
 
-                if not customer:
-                    return {"success": False, "message": "Failed to create Stripe customer"}
+                if not customer_result["success"]:
+                    return {"success": False, "message": customer_result["message"]}
 
-                customer_id = customer["id"]
+                customer_id = customer_result["customer_id"]
                 subscription.stripe_customer_id = customer_id
                 self.db.commit()
 
@@ -587,4 +599,301 @@ class StripeService:
             return {
                 "success": False,
                 "message": f"Failed to apply credit: {str(e)}"
+            }
+
+    def list_payment_methods(self, org_id: str) -> Dict[str, Any]:
+        """
+        List all payment methods for organization's Stripe customer.
+
+        Returns payment methods with card details, expiration, and default status.
+
+        Args:
+            org_id: Organization ID
+
+        Returns:
+            dict: Payment methods list
+            {
+                "success": bool,
+                "payment_methods": List[dict],
+                "message": str
+            }
+        """
+        try:
+            import stripe
+            from api.models import Subscription
+
+            # Get subscription to find customer ID
+            subscription = self.db.query(Subscription).filter(
+                Subscription.org_id == org_id
+            ).first()
+
+            if not subscription or not subscription.stripe_customer_id:
+                return {
+                    "success": True,
+                    "payment_methods": [],
+                    "message": "No payment methods found (no Stripe customer)"
+                }
+
+            # List payment methods for customer
+            payment_methods = stripe.PaymentMethod.list(
+                customer=subscription.stripe_customer_id,
+                type="card"
+            )
+
+            # Get customer to check default payment method
+            customer = stripe.Customer.retrieve(subscription.stripe_customer_id)
+            default_pm_id = customer.invoice_settings.default_payment_method
+
+            # Format payment methods
+            formatted_pms = []
+            for pm in payment_methods.data:
+                formatted_pms.append({
+                    "id": pm.id,
+                    "type": pm.type,
+                    "card": {
+                        "brand": pm.card.brand,
+                        "last4": pm.card.last4,
+                        "exp_month": pm.card.exp_month,
+                        "exp_year": pm.card.exp_year
+                    },
+                    "is_default": pm.id == default_pm_id
+                })
+
+            logger.info(f"Retrieved {len(formatted_pms)} payment methods for org {org_id}")
+
+            return {
+                "success": True,
+                "payment_methods": formatted_pms,
+                "message": f"Found {len(formatted_pms)} payment methods"
+            }
+
+        except Exception as e:
+            logger.error(f"Error listing payment methods for org {org_id}: {e}")
+            return {
+                "success": False,
+                "payment_methods": [],
+                "message": f"Failed to list payment methods: {str(e)}"
+            }
+
+    def attach_payment_method(self, org_id: str, payment_method_id: str) -> Dict[str, Any]:
+        """
+        Attach payment method to organization's Stripe customer.
+
+        Args:
+            org_id: Organization ID
+            payment_method_id: Stripe payment method ID (created client-side)
+
+        Returns:
+            dict: Result of attachment
+            {
+                "success": bool,
+                "message": str
+            }
+        """
+        try:
+            import stripe
+            from api.models import Subscription
+
+            # Get subscription to find customer ID
+            subscription = self.db.query(Subscription).filter(
+                Subscription.org_id == org_id
+            ).first()
+
+            if not subscription:
+                return {
+                    "success": False,
+                    "message": "No subscription found for organization"
+                }
+
+            # Create customer if doesn't exist
+            if not subscription.stripe_customer_id:
+                customer = stripe.Customer.create(
+                    metadata={"org_id": org_id}
+                )
+                subscription.stripe_customer_id = customer.id
+                self.db.commit()
+                logger.info(f"Created Stripe customer {customer.id} for org {org_id}")
+
+            # Attach payment method to customer
+            payment_method = stripe.PaymentMethod.attach(
+                payment_method_id,
+                customer=subscription.stripe_customer_id
+            )
+
+            logger.info(
+                f"Attached payment method {payment_method_id} to customer "
+                f"{subscription.stripe_customer_id} (org {org_id})"
+            )
+
+            # If this is the first payment method, set it as default
+            customer = stripe.Customer.retrieve(subscription.stripe_customer_id)
+            if not customer.invoice_settings.default_payment_method:
+                stripe.Customer.modify(
+                    subscription.stripe_customer_id,
+                    invoice_settings={"default_payment_method": payment_method_id}
+                )
+                logger.info(f"Set {payment_method_id} as default payment method")
+
+            return {
+                "success": True,
+                "message": "Payment method added successfully"
+            }
+
+        except Exception as e:
+            logger.error(f"Error attaching payment method for org {org_id}: {e}")
+            return {
+                "success": False,
+                "message": f"Failed to add payment method: {str(e)}"
+            }
+
+    def detach_payment_method(self, payment_method_id: str) -> Dict[str, Any]:
+        """
+        Detach payment method from customer.
+
+        Args:
+            payment_method_id: Stripe payment method ID to detach
+
+        Returns:
+            dict: Result of detachment
+            {
+                "success": bool,
+                "message": str
+            }
+        """
+        try:
+            import stripe
+
+            # Detach payment method
+            payment_method = stripe.PaymentMethod.detach(payment_method_id)
+
+            logger.info(f"Detached payment method {payment_method_id}")
+
+            return {
+                "success": True,
+                "message": "Payment method removed successfully"
+            }
+
+        except Exception as e:
+            logger.error(f"Error detaching payment method {payment_method_id}: {e}")
+            return {
+                "success": False,
+                "message": f"Failed to remove payment method: {str(e)}"
+            }
+
+    def set_default_payment_method(self, org_id: str, payment_method_id: str) -> Dict[str, Any]:
+        """
+        Set payment method as default for organization's Stripe customer.
+
+        Args:
+            org_id: Organization ID
+            payment_method_id: Stripe payment method ID to set as default
+
+        Returns:
+            dict: Result of update
+            {
+                "success": bool,
+                "message": str
+            }
+        """
+        try:
+            import stripe
+            from api.models import Subscription
+
+            # Get subscription to find customer ID
+            subscription = self.db.query(Subscription).filter(
+                Subscription.org_id == org_id
+            ).first()
+
+            if not subscription or not subscription.stripe_customer_id:
+                return {
+                    "success": False,
+                    "message": "No Stripe customer found for organization"
+                }
+
+            # Set default payment method
+            stripe.Customer.modify(
+                subscription.stripe_customer_id,
+                invoice_settings={"default_payment_method": payment_method_id}
+            )
+
+            logger.info(
+                f"Set payment method {payment_method_id} as default for "
+                f"customer {subscription.stripe_customer_id} (org {org_id})"
+            )
+
+            return {
+                "success": True,
+                "message": "Primary payment method updated successfully"
+            }
+
+        except Exception as e:
+            logger.error(f"Error setting default payment method for org {org_id}: {e}")
+            return {
+                "success": False,
+                "message": f"Failed to update primary payment method: {str(e)}"
+            }
+
+    def create_billing_portal_session(self, org_id: str, return_url: Optional[str] = None) -> Dict[str, Any]:
+        """
+        Create Stripe billing portal session for self-service management.
+
+        The billing portal allows customers to:
+        - Update payment methods
+        - View invoices and payment history
+        - Update billing email
+        - Cancel subscription (if enabled in Stripe dashboard)
+
+        Args:
+            org_id: Organization ID
+            return_url: URL to return to after portal session (optional)
+
+        Returns:
+            dict: Result with portal URL
+            {
+                "success": bool,
+                "url": str (if successful),
+                "message": str
+            }
+        """
+        try:
+            import stripe
+            from api.models import Subscription
+
+            # Get subscription to find customer ID
+            subscription = self.db.query(Subscription).filter(
+                Subscription.org_id == org_id
+            ).first()
+
+            if not subscription or not subscription.stripe_customer_id:
+                return {
+                    "success": False,
+                    "message": "No Stripe customer found for organization. Please upgrade to a paid plan first."
+                }
+
+            # Set return URL (default to placeholder if not provided)
+            if not return_url:
+                return_url = "https://signupflow.io/billing"  # TODO: Use actual app URL
+
+            # Create billing portal session
+            session = stripe.billing_portal.Session.create(
+                customer=subscription.stripe_customer_id,
+                return_url=return_url
+            )
+
+            logger.info(
+                f"Created billing portal session for customer {subscription.stripe_customer_id} "
+                f"(org {org_id})"
+            )
+
+            return {
+                "success": True,
+                "url": session.url,
+                "message": "Billing portal session created successfully"
+            }
+
+        except Exception as e:
+            logger.error(f"Error creating billing portal session for org {org_id}: {e}")
+            return {
+                "success": False,
+                "message": f"Failed to create billing portal session: {str(e)}"
             }

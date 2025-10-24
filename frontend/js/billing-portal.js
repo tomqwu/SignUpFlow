@@ -167,6 +167,37 @@ function displayCurrentSubscription(data) {
             </div>
         ` : ''}
 
+        ${subscription.cancel_at_period_end ? `
+            <div class="cancellation-notice" style="margin: 1.5rem 0; padding: 1rem; background-color: #fef2f2; border-left: 4px solid #ef4444; border-radius: 0.5rem;">
+                <div style="display: flex; justify-content: space-between; align-items: start;">
+                    <div>
+                        <strong style="color: #991b1b; display: block; margin-bottom: 0.5rem;">
+                            ⚠️ Cancellation Scheduled
+                        </strong>
+                        <p style="color: #7f1d1d; margin-bottom: 0.5rem;">
+                            Your subscription will end on <strong>${subscription.current_period_end ? new Date(subscription.current_period_end).toLocaleDateString() : 'N/A'}</strong>
+                        </p>
+                        <p style="color: #7f1d1d; font-size: 0.875rem;">
+                            You'll have access to ${i18n.t(`billing.plan_names.${subscription.plan_tier}`)} features until then.
+                        </p>
+                        ${data.next_invoice && data.next_invoice.data_retention_until ? `
+                            <p style="color: #7f1d1d; font-size: 0.875rem; margin-top: 0.5rem;">
+                                📦 Data will be retained until <strong>${new Date(data.next_invoice.data_retention_until).toLocaleDateString()}</strong> (30 days after cancellation)
+                            </p>
+                        ` : ''}
+                    </div>
+                    <button
+                        class="btn-secondary cancel-cancellation-btn"
+                        style="margin-left: 1rem; white-space: nowrap;"
+                        onclick="handleCancelCancellation()">
+                        Keep Subscription
+                    </button>
+                </div>
+            </div>
+        ` : ''}
+
+        ${renderReactivationNotice(subscription, data)}
+
         <div class="usage-summary">
             <h3 data-i18n="billing.usage_tracking.current_usage">${i18n.t('billing.usage_tracking.current_usage')}</h3>
             ${renderUsageMetrics(usage)}
@@ -214,6 +245,71 @@ function renderUsageMetrics(usage) {
 
     html += '</div>';
     return html;
+}
+
+/**
+ * Render reactivation notice for cancelled subscriptions within retention period
+ */
+function renderReactivationNotice(subscription, data) {
+    // Check if subscription is cancelled and we have organization cancellation data
+    if (subscription.status !== 'cancelled' && subscription.status !== 'canceled') {
+        return '';
+    }
+
+    // Get current organization data
+    const currentOrg = JSON.parse(localStorage.getItem('currentOrg') || 'null');
+    if (!currentOrg || !currentOrg.data_retention_until) {
+        return '';
+    }
+
+    const now = new Date();
+    const retentionDate = new Date(currentOrg.data_retention_until);
+    const daysRemaining = Math.ceil((retentionDate - now) / (1000 * 60 * 60 * 24));
+
+    // Only show if within retention period
+    if (daysRemaining <= 0) {
+        return `
+            <div class="reactivation-expired" style="margin: 1.5rem 0; padding: 1rem; background-color: #fef2f2; border-left: 4px solid #dc2626; border-radius: 0.5rem;">
+                <strong style="color: #991b1b; display: block; margin-bottom: 0.5rem;">
+                    🔒 Subscription Cancelled
+                </strong>
+                <p style="color: #7f1d1d; margin-bottom: 0.5rem;">
+                    Your subscription was cancelled and the data retention period has expired.
+                </p>
+                <p style="color: #7f1d1d; font-size: 0.875rem;">
+                    To resume using ${i18n.t('common.app_name') || 'SignUpFlow'}, please start a new subscription.
+                </p>
+            </div>
+        `;
+    }
+
+    // Within retention period - show reactivation option
+    return `
+        <div class="reactivation-notice" style="margin: 1.5rem 0; padding: 1rem; background-color: #fef9c3; border-left: 4px solid #eab308; border-radius: 0.5rem;">
+            <div style="display: flex; justify-content: space-between; align-items: start;">
+                <div>
+                    <strong style="color: #854d0e; display: block; margin-bottom: 0.5rem;">
+                        💡 Reactivation Available
+                    </strong>
+                    <p style="color: #713f12; margin-bottom: 0.5rem;">
+                        Your subscription was cancelled, but you can still reactivate it!
+                    </p>
+                    <p style="color: #713f12; font-size: 0.875rem;">
+                        ⏰ You have <strong>${daysRemaining} day${daysRemaining !== 1 ? 's' : ''}</strong> remaining to reactivate before your data is deleted.
+                    </p>
+                    <p style="color: #713f12; font-size: 0.875rem; margin-top: 0.5rem;">
+                        Data retention expires: <strong>${retentionDate.toLocaleDateString()}</strong>
+                    </p>
+                </div>
+                <button
+                    class="btn-primary reactivate-btn"
+                    style="margin-left: 1rem; white-space: nowrap;"
+                    onclick="handleReactivateSubscription()">
+                    Reactivate Subscription
+                </button>
+            </div>
+        </div>
+    `;
 }
 
 /**
@@ -685,6 +781,111 @@ async function cancelDowngrade() {
 }
 
 /**
+ * Handle subscription cancellation (stop cancellation)
+ */
+async function handleCancelCancellation() {
+    const currentUser = JSON.parse(localStorage.getItem('currentUser') || 'null');
+    const currentOrg = JSON.parse(localStorage.getItem('currentOrg') || 'null');
+
+    if (!currentUser || !currentOrg) {
+        showError('Please log in to modify subscription');
+        return;
+    }
+
+    if (!confirm('Are you sure you want to keep your subscription active? This will stop the scheduled cancellation.')) {
+        return;
+    }
+
+    showLoading('Updating subscription...');
+
+    try {
+        // NOTE: This functionality requires backend endpoint to stop cancellation
+        // For now, we'll use reactivate endpoint or implement dedicated endpoint
+        // TODO: Implement /billing/subscription/stop-cancellation endpoint
+
+        showError('This feature is coming soon. Please contact support to keep your subscription.');
+        hideLoading();
+
+        // Future implementation:
+        // const response = await authFetch(`${API_BASE_URL}/billing/subscription/stop-cancellation?org_id=${currentOrg.id}`, {
+        //     method: 'POST',
+        //     headers: { 'Content-Type': 'application/json' }
+        // });
+
+    } catch (error) {
+        hideLoading();
+        showError(error.message || 'Failed to update subscription. Please try again.');
+        console.error('Error stopping cancellation:', error);
+    }
+}
+
+/**
+ * Handle subscription reactivation
+ */
+async function handleReactivateSubscription() {
+    const currentUser = JSON.parse(localStorage.getItem('currentUser') || 'null');
+    const currentOrg = JSON.parse(localStorage.getItem('currentOrg') || 'null');
+
+    if (!currentUser || !currentOrg) {
+        showError('Please log in to reactivate subscription');
+        return;
+    }
+
+    const confirmed = confirm(
+        'Reactivate your subscription?\n\n' +
+        'Your subscription will be restored to its previous plan tier.\n' +
+        'You will retain all your data and settings.'
+    );
+
+    if (!confirmed) return;
+
+    showLoading('Reactivating subscription...');
+
+    try {
+        const response = await authFetch(
+            `${API_BASE_URL}/billing/subscription/reactivate?org_id=${currentOrg.id}`,
+            {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' }
+            }
+        );
+
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.detail || 'Failed to reactivate subscription');
+        }
+
+        const result = await response.json();
+
+        hideLoading();
+
+        if (result.success) {
+            showSuccess('Subscription reactivated successfully! Welcome back!');
+
+            // Update organization in localStorage to clear cancellation data
+            if (currentOrg) {
+                currentOrg.cancelled_at = null;
+                currentOrg.data_retention_until = null;
+                localStorage.setItem('currentOrg', JSON.stringify(currentOrg));
+            }
+
+            // Reload subscription data to refresh UI
+            setTimeout(() => {
+                loadCurrentSubscription();
+                loadPricingPlans(); // Refresh pricing cards
+            }, 1000);
+        } else {
+            throw new Error(result.message || 'Failed to reactivate subscription');
+        }
+
+    } catch (error) {
+        hideLoading();
+        showError(error.message || 'Failed to reactivate subscription. Please try again.');
+        console.error('Error reactivating subscription:', error);
+    }
+}
+
+/**
  * Show toast notification
  */
 function showToast(message, type = 'info') {
@@ -703,3 +904,552 @@ function showToast(message, type = 'info') {
         setTimeout(() => toast.remove(), 300);
     }, 3000);
 }
+
+/**
+ * Load and display billing history
+ */
+async function loadBillingHistory(page = 1) {
+    const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+    const container = document.getElementById('billing-history');
+
+    if (!container || !currentUser) return;
+
+    try {
+        const response = await authFetch(
+            `${API_BASE_URL}/billing/history?org_id=${currentUser.org_id}&page=${page}&limit=10`
+        );
+
+        if (!response.ok) {
+            throw new Error('Failed to load billing history');
+        }
+
+        const data = await response.json();
+        displayBillingHistory(data.history, data.pagination);
+    } catch (error) {
+        console.error('Error loading billing history:', error);
+        showError('Failed to load billing history');
+    }
+}
+
+/**
+ * Display billing history table
+ */
+function displayBillingHistory(history, pagination) {
+    const container = document.getElementById('billing-history');
+    if (!container) return;
+
+    if (!history || history.length === 0) {
+        container.innerHTML = `
+            <div style="text-align: center; padding: 40px; color: #6b7280;">
+                <p>No billing history yet.</p>
+            </div>
+        `;
+        return;
+    }
+
+    const tableHtml = `
+        <div class="billing-history-section">
+            <h2 style="margin-bottom: 1.5rem;">Billing History</h2>
+
+            <table class="billing-history-table" style="width: 100%; border-collapse: collapse;">
+                <thead>
+                    <tr style="background-color: #f9fafb; border-bottom: 2px solid #e5e7eb;">
+                        <th style="padding: 12px; text-align: left;">Date</th>
+                        <th style="padding: 12px; text-align: left;">Description</th>
+                        <th style="padding: 12px; text-align: left;">Plan</th>
+                        <th style="padding: 12px; text-align: right;">Amount</th>
+                        <th style="padding: 12px; text-align: center;">Invoice</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${history.map(record => `
+                        <tr style="border-bottom: 1px solid #e5e7eb;">
+                            <td style="padding: 12px;">
+                                ${new Date(record.created_at).toLocaleDateString()}
+                            </td>
+                            <td style="padding: 12px;">
+                                ${formatEventType(record.event_type)}
+                                ${record.description ? `<br><small style="color: #6b7280;">${record.description}</small>` : ''}
+                            </td>
+                            <td style="padding: 12px;">
+                                <span style="padding: 4px 8px; background-color: #e0e7ff; color: #4338ca; border-radius: 4px; font-size: 0.875rem;">
+                                    ${record.plan_tier ? record.plan_tier.charAt(0).toUpperCase() + record.plan_tier.slice(1) : 'N/A'}
+                                </span>
+                            </td>
+                            <td style="padding: 12px; text-align: right; font-weight: 500;">
+                                ${formatAmount(record.amount_cents)}
+                            </td>
+                            <td style="padding: 12px; text-align: center;">
+                                <button
+                                    onclick="downloadInvoice('${record.id}')"
+                                    style="padding: 6px 12px; background-color: #4f46e5; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 0.875rem;"
+                                    onmouseover="this.style.backgroundColor='#4338ca'"
+                                    onmouseout="this.style.backgroundColor='#4f46e5'">
+                                    Download
+                                </button>
+                            </td>
+                        </tr>
+                    `).join('')}
+                </tbody>
+            </table>
+
+            ${renderPagination(pagination)}
+        </div>
+    `;
+
+    container.innerHTML = tableHtml;
+}
+
+/**
+ * Format event type for display
+ */
+function formatEventType(eventType) {
+    const typeMap = {
+        'upgrade': 'Plan Upgrade',
+        'downgrade': 'Plan Downgrade',
+        'payment': 'Payment Received',
+        'credit': 'Account Credit',
+        'trial_started': 'Trial Started',
+        'trial_ended': 'Trial Ended',
+        'subscription_created': 'Subscription Created',
+        'subscription_updated': 'Subscription Updated',
+        'subscription_cancelled': 'Subscription Cancelled',
+        'invoice_paid': 'Invoice Paid'
+    };
+
+    return typeMap[eventType] || eventType.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+}
+
+/**
+ * Format amount in cents to USD
+ */
+function formatAmount(amountCents) {
+    if (amountCents === null || amountCents === undefined) {
+        return 'N/A';
+    }
+
+    const amount = amountCents / 100;
+
+    if (amount === 0) {
+        return '$0.00';
+    }
+
+    if (amount > 0) {
+        return `$${amount.toFixed(2)}`;
+    }
+
+    return `-$${Math.abs(amount).toFixed(2)}`;
+}
+
+/**
+ * Render pagination controls
+ */
+function renderPagination(pagination) {
+    if (!pagination || pagination.pages <= 1) {
+        return '';
+    }
+
+    const { page, pages } = pagination;
+    let paginationHtml = '<div style="display: flex; justify-content: center; align-items: center; margin-top: 20px; gap: 10px;">';
+
+    // Previous button
+    if (page > 1) {
+        paginationHtml += `
+            <button
+                onclick="loadBillingHistory(${page - 1})"
+                style="padding: 8px 16px; background-color: white; border: 1px solid #d1d5db; border-radius: 4px; cursor: pointer;"
+                onmouseover="this.style.backgroundColor='#f9fafb'"
+                onmouseout="this.style.backgroundColor='white'">
+                Previous
+            </button>
+        `;
+    }
+
+    // Page numbers
+    paginationHtml += `<span style="color: #6b7280;">Page ${page} of ${pages}</span>`;
+
+    // Next button
+    if (page < pages) {
+        paginationHtml += `
+            <button
+                onclick="loadBillingHistory(${page + 1})"
+                style="padding: 8px 16px; background-color: white; border: 1px solid #d1d5db; border-radius: 4px; cursor: pointer;"
+                onmouseover="this.style.backgroundColor='#f9fafb'"
+                onmouseout="this.style.backgroundColor='white'">
+                Next
+            </button>
+        `;
+    }
+
+    paginationHtml += '</div>';
+    return paginationHtml;
+}
+
+/**
+ * Download invoice PDF
+ */
+async function downloadInvoice(billingHistoryId) {
+    const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+
+    if (!currentUser) {
+        showError('Please log in to download invoice');
+        return;
+    }
+
+    try {
+        // Open invoice in new tab (HTML format for viewing)
+        window.open(
+            `${API_BASE_URL}/billing/invoices/${billingHistoryId}/pdf?format=html`,
+            '_blank'
+        );
+    } catch (error) {
+        console.error('Error downloading invoice:', error);
+        showError('Failed to download invoice');
+    }
+}
+
+/**
+ * Load and display payment methods
+ */
+async function loadPaymentMethods() {
+    const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+    const container = document.getElementById('payment-methods');
+
+    if (!container || !currentUser) return;
+
+    try {
+        const response = await authFetch(
+            `${API_BASE_URL}/billing/payment-methods?org_id=${currentUser.org_id}`
+        );
+
+        if (!response.ok) {
+            throw new Error('Failed to load payment methods');
+        }
+
+        const data = await response.json();
+        displayPaymentMethods(data.payment_methods || []);
+    } catch (error) {
+        console.error('Error loading payment methods:', error);
+        showError('Failed to load payment methods');
+    }
+}
+
+/**
+ * Display payment methods
+ */
+function displayPaymentMethods(paymentMethods) {
+    const container = document.getElementById('payment-methods');
+    if (!container) return;
+
+    if (!paymentMethods || paymentMethods.length === 0) {
+        container.innerHTML = `
+            <div style="text-align: center; padding: 40px; color: #6b7280;">
+                <p style="margin-bottom: 1rem;">No payment methods on file.</p>
+                <button
+                    onclick="handleAddPaymentMethod()"
+                    class="btn-primary"
+                    style="padding: 10px 20px;">
+                    Add Payment Method
+                </button>
+            </div>
+        `;
+        return;
+    }
+
+    const cardsHtml = paymentMethods.map(pm => {
+        const brandIcon = getCardBrandIcon(pm.card.brand);
+        const isExpired = isCardExpired(pm.card.exp_month, pm.card.exp_year);
+
+        return `
+            <div class="payment-method-card" style="
+                padding: 1.5rem;
+                border: 2px solid ${pm.is_default ? '#4f46e5' : '#e5e7eb'};
+                border-radius: 0.5rem;
+                background-color: ${pm.is_default ? '#eef2ff' : 'white'};
+                position: relative;
+            ">
+                ${pm.is_default ? `
+                    <div style="
+                        position: absolute;
+                        top: 0.5rem;
+                        right: 0.5rem;
+                        background-color: #4f46e5;
+                        color: white;
+                        padding: 4px 8px;
+                        border-radius: 4px;
+                        font-size: 0.75rem;
+                        font-weight: 500;
+                    ">
+                        Primary
+                    </div>
+                ` : ''}
+
+                <div style="display: flex; align-items: center; margin-bottom: 1rem;">
+                    <div style="font-size: 2rem; margin-right: 1rem;">${brandIcon}</div>
+                    <div style="flex: 1;">
+                        <div style="font-weight: 600; font-size: 1.125rem; margin-bottom: 0.25rem;">
+                            ${pm.card.brand.charAt(0).toUpperCase() + pm.card.brand.slice(1)} •••• ${pm.card.last4}
+                        </div>
+                        <div style="color: ${isExpired ? '#dc2626' : '#6b7280'}; font-size: 0.875rem;">
+                            Expires ${pm.card.exp_month}/${pm.card.exp_year}
+                            ${isExpired ? ' <span style="color: #dc2626; font-weight: 500;">(Expired)</span>' : ''}
+                        </div>
+                    </div>
+                </div>
+
+                <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                    ${!pm.is_default ? `
+                        <button
+                            onclick="handleSetPrimaryPaymentMethod('${pm.id}')"
+                            style="
+                                padding: 8px 16px;
+                                background-color: #4f46e5;
+                                color: white;
+                                border: none;
+                                border-radius: 4px;
+                                cursor: pointer;
+                                font-size: 0.875rem;
+                            "
+                            onmouseover="this.style.backgroundColor='#4338ca'"
+                            onmouseout="this.style.backgroundColor='#4f46e5'">
+                            Set as Primary
+                        </button>
+                    ` : ''}
+                    ${!pm.is_default ? `
+                        <button
+                            onclick="handleRemovePaymentMethod('${pm.id}')"
+                            style="
+                                padding: 8px 16px;
+                                background-color: white;
+                                color: #dc2626;
+                                border: 1px solid #dc2626;
+                                border-radius: 4px;
+                                cursor: pointer;
+                                font-size: 0.875rem;
+                            "
+                            onmouseover="this.style.backgroundColor='#fef2f2'"
+                            onmouseout="this.style.backgroundColor='white'">
+                            Remove
+                        </button>
+                    ` : ''}
+                </div>
+            </div>
+        `;
+    }).join('');
+
+    container.innerHTML = `
+        <div class="payment-methods-section">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+                <h2 style="margin: 0;">Payment Methods</h2>
+                <button
+                    onclick="handleAddPaymentMethod()"
+                    class="btn-primary"
+                    style="padding: 10px 20px;">
+                    Add Payment Method
+                </button>
+            </div>
+
+            <div style="display: grid; gap: 1rem; grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));">
+                ${cardsHtml}
+            </div>
+        </div>
+    `;
+}
+
+/**
+ * Get card brand icon (emoji)
+ */
+function getCardBrandIcon(brand) {
+    const icons = {
+        'visa': '💳',
+        'mastercard': '💳',
+        'amex': '💳',
+        'discover': '💳',
+        'diners': '💳',
+        'jcb': '💳',
+        'unionpay': '💳'
+    };
+    return icons[brand.toLowerCase()] || '💳';
+}
+
+/**
+ * Check if card is expired
+ */
+function isCardExpired(expMonth, expYear) {
+    const now = new Date();
+    const currentYear = now.getFullYear();
+    const currentMonth = now.getMonth() + 1; // 0-indexed
+
+    if (expYear < currentYear) return true;
+    if (expYear === currentYear && expMonth < currentMonth) return true;
+    return false;
+}
+
+/**
+ * Handle adding new payment method
+ */
+async function handleAddPaymentMethod() {
+    showInfo('Payment method setup via Stripe Elements coming soon. Use Stripe Billing Portal for now.');
+
+    // TODO: Implement Stripe Elements for adding payment method
+    // 1. Load Stripe.js
+    // 2. Create Stripe Elements (card element)
+    // 3. Handle card submission
+    // 4. Call POST /api/billing/payment-methods with payment_method_id
+    // 5. Reload payment methods
+
+    // For now, direct user to Stripe billing portal
+    setTimeout(() => {
+        handleOpenBillingPortal();
+    }, 2000);
+}
+
+/**
+ * Handle removing payment method
+ */
+async function handleRemovePaymentMethod(paymentMethodId) {
+    const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+
+    if (!currentUser) {
+        showError('Please log in to remove payment method');
+        return;
+    }
+
+    const confirmed = confirm(
+        'Remove this payment method?\n\n' +
+        'You can add it back later if needed.'
+    );
+
+    if (!confirmed) return;
+
+    showLoading('Removing payment method...');
+
+    try {
+        const response = await authFetch(
+            `${API_BASE_URL}/billing/payment-methods/${paymentMethodId}?org_id=${currentUser.org_id}`,
+            {
+                method: 'DELETE',
+                headers: { 'Content-Type': 'application/json' }
+            }
+        );
+
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.detail || 'Failed to remove payment method');
+        }
+
+        hideLoading();
+        showSuccess('Payment method removed successfully!');
+
+        // Reload payment methods
+        setTimeout(() => {
+            loadPaymentMethods();
+        }, 1000);
+
+    } catch (error) {
+        hideLoading();
+        showError(error.message || 'Failed to remove payment method. Please try again.');
+        console.error('Error removing payment method:', error);
+    }
+}
+
+/**
+ * Handle setting payment method as primary
+ */
+async function handleSetPrimaryPaymentMethod(paymentMethodId) {
+    const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+
+    if (!currentUser) {
+        showError('Please log in to update payment method');
+        return;
+    }
+
+    showLoading('Updating primary payment method...');
+
+    try {
+        const response = await authFetch(
+            `${API_BASE_URL}/billing/payment-methods/${paymentMethodId}/primary?org_id=${currentUser.org_id}`,
+            {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' }
+            }
+        );
+
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.detail || 'Failed to update primary payment method');
+        }
+
+        hideLoading();
+        showSuccess('Primary payment method updated!');
+
+        // Reload payment methods
+        setTimeout(() => {
+            loadPaymentMethods();
+        }, 1000);
+
+    } catch (error) {
+        hideLoading();
+        showError(error.message || 'Failed to update primary payment method. Please try again.');
+        console.error('Error updating primary payment method:', error);
+    }
+}
+
+/**
+ * Handle opening Stripe billing portal (T106)
+ */
+async function handleOpenBillingPortal() {
+    const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+
+    if (!currentUser) {
+        showError('Please log in to access billing portal');
+        return;
+    }
+
+    showLoading('Opening Stripe billing portal...');
+
+    try {
+        const response = await authFetch(
+            `${API_BASE_URL}/billing/portal?org_id=${currentUser.org_id}`,
+            {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    return_url: window.location.href
+                })
+            }
+        );
+
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.detail || 'Failed to create billing portal session');
+        }
+
+        const data = await response.json();
+
+        hideLoading();
+
+        // Redirect to Stripe billing portal
+        if (data.url) {
+            window.location.href = data.url;
+        } else {
+            throw new Error('No portal URL returned');
+        }
+
+    } catch (error) {
+        hideLoading();
+        showError(error.message || 'Failed to open billing portal. Please try again.');
+        console.error('Error opening billing portal:', error);
+    }
+}
+
+// Export handler functions to global scope for onclick handlers
+window.handleCancelCancellation = handleCancelCancellation;
+window.handleReactivateSubscription = handleReactivateSubscription;
+window.loadBillingHistory = loadBillingHistory;
+window.downloadInvoice = downloadInvoice;
+window.loadPaymentMethods = loadPaymentMethods;
+window.handleAddPaymentMethod = handleAddPaymentMethod;
+window.handleRemovePaymentMethod = handleRemovePaymentMethod;
+window.handleSetPrimaryPaymentMethod = handleSetPrimaryPaymentMethod;
+window.handleOpenBillingPortal = handleOpenBillingPortal;

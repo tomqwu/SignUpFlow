@@ -316,6 +316,241 @@ SignUpFlow (formerly Rostio) is an **AI-powered volunteer scheduling and sign-up
 | **Bcrypt** | Password hashing | 12 rounds |
 | **PyJWT** | JWT tokens | Latest |
 | **Uvicorn** | ASGI server | Latest |
+| **Stripe** | Payment processing | Latest |
+
+### Billing & Payments Architecture
+
+SignUpFlow uses **Stripe** for subscription management and payment processing with a comprehensive billing system.
+
+#### Billing Database Schema (5 Tables)
+
+```
+subscriptions (one-to-one with organizations)
+├── org_id (FK → organizations.id)
+├── plan_tier (free/starter/pro/enterprise)
+├── billing_cycle (monthly/annual)
+├── status (active/trial/cancelled/past_due)
+├── stripe_subscription_id
+├── stripe_customer_id
+└── trial_end_date
+
+billing_history (billing events log)
+├── org_id (FK → organizations.id)
+├── event_type (subscription_created/upgraded/downgraded/cancelled/payment_succeeded/payment_failed)
+├── amount_cents
+├── currency
+├── event_timestamp
+├── stripe_invoice_id
+└── description
+
+payment_methods (stored payment info)
+├── org_id (FK → organizations.id)
+├── stripe_payment_method_id
+├── card_brand (visa/mastercard/amex)
+├── card_last4
+├── card_exp_month
+├── card_exp_year
+└── is_default
+
+usage_metrics (resource consumption tracking)
+├── org_id (FK → organizations.id)
+├── metric_type (volunteers/events/storage/api_calls)
+├── current_value
+├── plan_limit
+├── last_updated
+└── metadata (JSON)
+
+subscription_events (audit trail)
+├── org_id (FK → organizations.id)
+├── event_type (trial_started/plan_changed/cancelled/reactivated)
+├── event_timestamp
+├── initiated_by (person_id)
+├── previous_state
+├── new_state
+└── metadata (JSON)
+```
+
+#### Stripe Integration Flow
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                      Frontend (JavaScript)                   │
+│  Billing Portal: frontend/js/billing-portal.js              │
+│  - Plan selection UI                                         │
+│  - Stripe Checkout integration                               │
+│  - Payment method management                                 │
+│  - Invoice download                                          │
+└──────────────────────┬──────────────────────────────────────┘
+                       │ REST API calls
+                       ▼
+┌─────────────────────────────────────────────────────────────┐
+│              Backend API (FastAPI)                           │
+│  Router: api/routers/billing.py                              │
+│  - GET /billing/subscription (get current plan)             │
+│  - POST /billing/upgrade (upgrade to paid)                  │
+│  - POST /billing/downgrade (downgrade plan)                 │
+│  - POST /billing/cancel (cancel subscription)               │
+│  - POST /billing/payment-method (save card)                 │
+│  - POST /webhooks/stripe (handle Stripe events)             │
+└──────────────────────┬──────────────────────────────────────┘
+                       │
+                       ▼
+┌─────────────────────────────────────────────────────────────┐
+│           Service Layer (Business Logic)                     │
+│  BillingService: api/services/billing_service.py            │
+│  - Subscription lifecycle management                         │
+│  - Usage tracking and limit enforcement                      │
+│  StripeService: api/services/stripe_service.py              │
+│  - Stripe API operations (upgrade, downgrade, cancel)       │
+│  - Checkout session creation                                 │
+│  WebhookService: api/services/webhook_service.py            │
+│  - Process Stripe webhooks (6 event types)                  │
+│  UsageService: api/services/usage_service.py                │
+│  - Track volunteers, events, storage, API calls             │
+│  - Enforce plan limits                                       │
+└──────────────────────┬──────────────────────────────────────┘
+                       │
+                       ▼
+┌─────────────────────────────────────────────────────────────┐
+│              Stripe Client Wrapper                           │
+│  StripeClient: api/utils/stripe_client.py                   │
+│  - create_customer()                                         │
+│  - create_subscription()                                     │
+│  - update_subscription()                                     │
+│  - cancel_subscription()                                     │
+│  - attach_payment_method()                                   │
+│  - verify_webhook_signature()                                │
+│  - Comprehensive error handling (6 error types)             │
+└──────────────────────┬──────────────────────────────────────┘
+                       │
+                       ▼
+┌─────────────────────────────────────────────────────────────┐
+│                   Stripe API                                 │
+│  - Customer management                                       │
+│  - Subscription billing                                      │
+│  - Payment processing                                        │
+│  - Webhook events                                            │
+└─────────────────────────────────────────────────────────────┘
+```
+
+#### Webhook Flow
+
+Stripe sends webhooks for billing events which are processed asynchronously:
+
+```
+Stripe → POST /api/webhooks/stripe
+         (with signature in header)
+         ↓
+    Verify webhook signature
+         ↓
+    Route to WebhookService handler
+         ↓
+┌────────────────────────────────────┐
+│  Supported Webhook Events (6):     │
+│                                    │
+│  1. customer.subscription.created  │
+│     → Update subscription status   │
+│                                    │
+│  2. customer.subscription.updated  │
+│     → Sync plan changes            │
+│                                    │
+│  3. customer.subscription.deleted  │
+│     → Handle cancellation          │
+│                                    │
+│  4. invoice.payment_succeeded      │
+│     → Record successful payment    │
+│     → Create billing history       │
+│                                    │
+│  5. invoice.payment_failed         │
+│     → Mark subscription past_due   │
+│     → Trigger retry logic          │
+│                                    │
+│  6. payment_method.attached        │
+│     → Save payment method          │
+└────────────────────────────────────┘
+         ↓
+    Update database (billing_history, subscription status)
+         ↓
+    Return 200 OK to Stripe
+```
+
+#### Subscription Plans
+
+| Plan | Price | Volunteer Limit | Features |
+|------|-------|-----------------|----------|
+| **Free** | $0/month | 10 volunteers | Basic scheduling, email support |
+| **Starter** | $19.99/month | 50 volunteers | Everything in Free + SMS notifications, priority support |
+| **Pro** | $49.99/month | 200 volunteers | Everything in Starter + analytics, custom branding, API access |
+| **Enterprise** | Contact sales | Unlimited | Everything in Pro + dedicated support, custom features, SLA |
+
+**Trial Period:** 14-day free trial for all paid plans (Starter, Pro)
+
+#### Key Billing Features
+
+1. **Free Plan Assignment** - New organizations auto-assigned Free plan with 10 volunteer limit
+2. **Self-Service Upgrades** - Stripe Checkout integration for seamless plan upgrades
+3. **14-Day Trials** - Paid plans start with trial period (no credit card required initially)
+4. **Proration** - Upgrade charges prorated, downgrade credits applied to next billing
+5. **Annual Billing** - 20% discount for annual vs monthly (e.g., Pro: $479.88/year vs $599.88/year)
+6. **Usage Enforcement** - Automatic limit checks prevent exceeding plan volunteer capacity
+7. **Billing Portal** - Self-service UI for plan changes, payment methods, invoice downloads
+8. **Webhook Processing** - Async event handling for payment status, subscription changes
+9. **Comprehensive Error Handling** - User-friendly messages for card declines, API errors, network issues
+10. **Audit Trail** - All billing events logged in billing_history and subscription_events tables
+
+#### Error Handling
+
+All Stripe operations use comprehensive error handling with user-friendly messages:
+
+```python
+# Stripe Error Types Handled:
+- CardError (declined, insufficient funds, expired card)
+- RateLimitError (too many requests)
+- InvalidRequestError (invalid parameters)
+- AuthenticationError (API key issues)
+- APIConnectionError (network failures)
+- StripeError (generic Stripe errors)
+
+# Consistent Error Response Format:
+{
+    "success": false,
+    "message": "Your card has expired. Please update your payment information.",
+    "error_code": "card_expired",
+    "error_type": "card_error"
+}
+```
+
+#### Performance Optimizations
+
+1. **Database Indexes** - Composite indexes on (org_id, status), (org_id, event_timestamp)
+2. **Eager Loading** - `.options(joinedload(Organization.subscription))` eliminates N+1 queries
+3. **Pagination** - Billing history paginated (50 items per page) for efficient retrieval
+4. **Caching** (future) - Redis caching for usage metrics (5-minute TTL)
+
+#### Files & Components
+
+**Backend:**
+- `api/routers/billing.py` - REST API endpoints (9 endpoints)
+- `api/routers/webhooks.py` - Stripe webhook receiver
+- `api/services/billing_service.py` - Core billing logic (1427 lines)
+- `api/services/stripe_service.py` - Stripe API operations (638 lines)
+- `api/services/webhook_service.py` - Webhook event processing (338 lines)
+- `api/services/usage_service.py` - Usage tracking & limit enforcement (370 lines)
+- `api/utils/stripe_client.py` - Stripe API wrapper (533 lines)
+- `api/utils/stripe_error_handler.py` - Error handling (252 lines)
+- `api/schemas/billing.py` - Pydantic validation schemas
+- `api/tasks/billing_tasks.py` - Background tasks for trial expiration checks
+
+**Frontend:**
+- `frontend/js/billing-portal.js` - Billing UI and Stripe Checkout integration
+- `locales/*/billing.json` - i18n translations (6 languages)
+
+**Database:**
+- `api/models.py` - SQLAlchemy models (5 billing tables)
+
+**Configuration:**
+- Environment variables: `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`
+- Plan configuration: Hardcoded in `billing_service.py` (future: move to database)
 
 ### Frontend Technologies
 

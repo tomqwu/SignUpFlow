@@ -54,6 +54,11 @@ class Organization(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
+    # Cancellation and data retention fields
+    cancelled_at = Column(DateTime, nullable=True)  # When subscription was cancelled
+    data_retention_until = Column(DateTime, nullable=True)  # When data should be deleted (period_end + 30 days)
+    deletion_scheduled_at = Column(DateTime, nullable=True)  # When organization was marked for deletion
+
     # Relationships
     people = relationship("Person", back_populates="organization", cascade="all, delete-orphan")
     teams = relationship("Team", back_populates="organization", cascade="all, delete-orphan")
@@ -982,6 +987,7 @@ class Subscription(Base):
         Index("idx_subscriptions_org_id", "org_id"),
         Index("idx_subscriptions_status", "status"),
         Index("idx_subscriptions_stripe_customer", "stripe_customer_id"),
+        Index("idx_subscriptions_org_status", "org_id", "status"),  # Composite for common query pattern
     )
 
 

@@ -12,7 +12,7 @@ Example Usage:
 """
 
 from typing import Optional, Dict, Any, List
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 from datetime import datetime, timedelta
 
 from api.models import (
@@ -174,8 +174,10 @@ class BillingService:
             print(f"Volunteers: {metric.current_value}/{metric.plan_limit}")
         """
         try:
-            # Get organization and subscription
-            org = self.db.query(Organization).filter(Organization.id == org_id).first()
+            # Get organization and subscription (with eager loading)
+            org = self.db.query(Organization).options(
+                joinedload(Organization.subscription)
+            ).filter(Organization.id == org_id).first()
             if not org:
                 logger.error(f"Organization {org_id} not found")
                 return None
@@ -1265,6 +1267,248 @@ class BillingService:
                 "applied_count": 0,
                 "applied_downgrades": [],
                 "message": f"Failed to apply pending downgrades: {str(e)}"
+            }
+
+    def cancel_subscription(
+        self,
+        org_id: str,
+        reason: Optional[str] = None,
+        feedback: Optional[str] = None,
+        admin_id: Optional[str] = None,
+        at_period_end: bool = True
+    ) -> Dict[str, Any]:
+        """
+        Cancel organization's subscription.
+
+        Service continues until period end if at_period_end=True.
+        Organization downgraded to Free plan at period end.
+        Data retained for 30 days after cancellation.
+
+        Args:
+            org_id: Organization ID
+            reason: Cancellation reason (optional)
+            feedback: User feedback (optional)
+            admin_id: Admin who initiated cancellation
+            at_period_end: Cancel at period end (True) or immediately (False)
+
+        Returns:
+            dict: Result with success status and subscription details
+            {
+                "success": bool,
+                "subscription": Subscription object,
+                "period_end": datetime,
+                "data_retention_until": datetime,
+                "message": str
+            }
+
+        Example:
+            result = billing.cancel_subscription(
+                org_id="org_123",
+                reason="Cost reduction",
+                feedback="Great service, just downsizing",
+                admin_id="admin_456"
+            )
+        """
+        try:
+            # Get current subscription
+            subscription = self.get_subscription(org_id)
+
+            if not subscription:
+                return {
+                    "success": False,
+                    "message": "No subscription found for organization"
+                }
+
+            # Validate subscription is paid (not free)
+            if subscription.plan_tier == "free":
+                return {
+                    "success": False,
+                    "message": "Cannot cancel free plan subscription"
+                }
+
+            # Cancel via StripeService
+            from api.services.stripe_service import StripeService
+            stripe_service = StripeService(self.db)
+
+            result = stripe_service.cancel_subscription(
+                org_id=org_id,
+                at_period_end=at_period_end
+            )
+
+            if not result["success"]:
+                return result
+
+            # Refresh subscription after StripeService update
+            self.db.refresh(subscription)
+
+            # Calculate data retention period (30 days after period end)
+            period_end = subscription.current_period_end
+            data_retention_until = period_end + timedelta(days=30) if period_end else None
+
+            # Record cancellation event
+            notes_text = f"Subscription cancelled"
+            if at_period_end:
+                notes_text += f" (service continues until {period_end.isoformat() if period_end else 'N/A'})"
+            else:
+                notes_text += " (immediate cancellation)"
+
+            if feedback:
+                notes_text += f"\nFeedback: {feedback}"
+
+            self._record_subscription_event(
+                org_id=org_id,
+                event_type="cancelled",
+                new_plan=subscription.plan_tier,  # Will downgrade to free at period end
+                previous_plan=subscription.plan_tier,
+                admin_id=admin_id,
+                reason=reason,
+                notes=notes_text
+            )
+
+            logger.info(
+                f"Cancelled subscription for org {org_id}: "
+                f"plan={subscription.plan_tier}, at_period_end={at_period_end}, "
+                f"period_end={period_end}"
+            )
+
+            return {
+                "success": True,
+                "subscription": subscription,
+                "period_end": period_end,
+                "data_retention_until": data_retention_until,
+                "message": result["message"]
+            }
+
+        except Exception as e:
+            self.db.rollback()
+            logger.error(f"Error cancelling subscription for org {org_id}: {e}", exc_info=True)
+            return {
+                "success": False,
+                "message": f"Failed to cancel subscription: {str(e)}"
+            }
+
+    def reactivate_subscription(
+        self,
+        org_id: str,
+        admin_id: Optional[str] = None
+    ) -> Dict[str, Any]:
+        """
+        Reactivate a cancelled subscription within data retention period.
+
+        Organization must be within 30-day data retention window.
+        Subscription will be restored to previous plan tier.
+
+        Args:
+            org_id: Organization ID
+            admin_id: Admin who initiated reactivation
+
+        Returns:
+            dict: Result with success status and subscription details
+            {
+                "success": bool,
+                "subscription": Subscription object,
+                "message": str
+            }
+
+        Example:
+            result = billing.reactivate_subscription(
+                org_id="org_123",
+                admin_id="admin_456"
+            )
+        """
+        try:
+            # Get organization and subscription (with eager loading)
+            org = self.db.query(Organization).options(
+                joinedload(Organization.subscription)
+            ).filter(Organization.id == org_id).first()
+
+            if not org:
+                return {
+                    "success": False,
+                    "message": "Organization not found"
+                }
+
+            subscription = self.get_subscription(org_id)
+
+            if not subscription:
+                return {
+                    "success": False,
+                    "message": "No subscription found for organization"
+                }
+
+            # Check if organization is in data retention period
+            if not org.data_retention_until:
+                return {
+                    "success": False,
+                    "message": "Subscription was not cancelled or retention period has expired"
+                }
+
+            now = datetime.utcnow()
+
+            if now > org.data_retention_until:
+                return {
+                    "success": False,
+                    "message": f"Data retention period expired on {org.data_retention_until.isoformat()}. Cannot reactivate subscription."
+                }
+
+            # Check current status
+            if subscription.status not in ["cancelled", "canceled"]:
+                return {
+                    "success": False,
+                    "message": f"Subscription status is {subscription.status}, not cancelled. Cannot reactivate."
+                }
+
+            # Get previous plan from subscription events
+            from api.models import SubscriptionEvent
+
+            last_event = self.db.query(SubscriptionEvent).filter(
+                SubscriptionEvent.org_id == org_id,
+                SubscriptionEvent.event_type.in_(["cancelled", "cancelled_completed"])
+            ).order_by(SubscriptionEvent.event_timestamp.desc()).first()
+
+            previous_plan = last_event.previous_plan if last_event and last_event.previous_plan else "starter"
+
+            # Restore subscription
+            subscription.plan_tier = previous_plan
+            subscription.status = "active"
+            subscription.cancel_at_period_end = False
+            subscription.updated_at = now
+
+            # Clear organization cancellation fields
+            org.cancelled_at = None
+            org.data_retention_until = None
+
+            self.db.commit()
+            self.db.refresh(subscription)
+            self.db.refresh(org)
+
+            # Record reactivation event
+            self._record_subscription_event(
+                org_id=org_id,
+                event_type="reactivated",
+                new_plan=previous_plan,
+                previous_plan="free",
+                admin_id=admin_id,
+                notes=f"Subscription reactivated within data retention period. Restored to {previous_plan} plan."
+            )
+
+            logger.info(
+                f"Reactivated subscription for org {org_id}: "
+                f"restored to {previous_plan} plan"
+            )
+
+            return {
+                "success": True,
+                "subscription": subscription,
+                "message": f"Subscription reactivated successfully. Restored to {previous_plan} plan."
+            }
+
+        except Exception as e:
+            self.db.rollback()
+            logger.error(f"Error reactivating subscription for org {org_id}: {e}", exc_info=True)
+            return {
+                "success": False,
+                "message": f"Failed to reactivate subscription: {str(e)}"
             }
 
     def _record_subscription_event(

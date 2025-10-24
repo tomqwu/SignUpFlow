@@ -17,7 +17,7 @@ Example Usage:
 """
 
 from typing import Optional, Dict, Any, List
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 from datetime import datetime
 
 from api.models import Organization, Subscription, UsageMetrics, Person
@@ -100,8 +100,10 @@ class UsageService:
                 )
         """
         try:
-            # Get organization and subscription
-            org = self.db.query(Organization).filter(Organization.id == org_id).first()
+            # Get organization and subscription (with eager loading)
+            org = self.db.query(Organization).options(
+                joinedload(Organization.subscription)
+            ).filter(Organization.id == org_id).first()
             if not org:
                 return False
 
@@ -309,8 +311,10 @@ class UsageService:
     def _update_volunteer_count(self, org_id: str) -> Optional[UsageMetrics]:
         """Update volunteer count metric (internal helper)."""
         try:
-            # Get organization and subscription
-            org = self.db.query(Organization).filter(Organization.id == org_id).first()
+            # Get organization and subscription (with eager loading)
+            org = self.db.query(Organization).options(
+                joinedload(Organization.subscription)
+            ).filter(Organization.id == org_id).first()
             if not org:
                 return None
 

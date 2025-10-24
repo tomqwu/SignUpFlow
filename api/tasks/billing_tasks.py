@@ -243,6 +243,199 @@ def apply_pending_downgrades(self) -> Dict[str, Any]:
         db.close()
 
 
+@celery_app.task(bind=True, max_retries=3)
+def process_cancelled_subscriptions(self) -> Dict[str, Any]:
+    """
+    Daily task to process cancelled subscriptions at period end.
+
+    This task:
+    1. Finds all subscriptions with cancel_at_period_end=True
+    2. Checks if current_period_end <= now()
+    3. Downgrades subscription to free tier
+    4. Updates organization cancelled_at and data_retention_until (period_end + 30 days)
+    5. Records subscription event for audit trail
+    6. Sends cancellation confirmation email (future)
+
+    Scheduled: Daily at 4:00 AM UTC (after usage checks)
+
+    Returns:
+        dict: Summary of processed cancellations
+        {
+            "success": bool,
+            "cancelled_count": int,
+            "cancelled_orgs": List[str],
+            "message": str
+        }
+    """
+    logger.info("Starting daily cancelled subscriptions check...")
+    db = SessionLocal()
+
+    try:
+        from datetime import datetime, timedelta
+        from api.models import Subscription, Organization, SubscriptionEvent
+
+        now = datetime.utcnow()
+        cancelled_orgs = []
+
+        # Find all subscriptions marked for cancellation at period end
+        subscriptions = db.query(Subscription).filter(
+            Subscription.cancel_at_period_end == True,
+            Subscription.current_period_end <= now
+        ).all()
+
+        logger.info(f"Found {len(subscriptions)} subscriptions to process")
+
+        for subscription in subscriptions:
+            try:
+                org_id = subscription.org_id
+                previous_plan = subscription.plan_tier
+
+                # Downgrade to free tier
+                subscription.plan_tier = "free"
+                subscription.status = "cancelled"
+                subscription.cancel_at_period_end = False
+                subscription.stripe_subscription_id = None  # Clear Stripe reference
+                subscription.stripe_customer_id = None  # Clear customer reference
+                subscription.current_period_start = None
+                subscription.current_period_end = None
+                subscription.updated_at = now
+
+                # Update organization cancellation and retention fields
+                org = db.query(Organization).filter(Organization.id == org_id).first()
+                if org:
+                    org.cancelled_at = now
+                    org.data_retention_until = now + timedelta(days=30)
+                    logger.info(
+                        f"Set data retention for org {org_id} until "
+                        f"{org.data_retention_until.isoformat()}"
+                    )
+
+                db.commit()
+                db.refresh(subscription)
+
+                # Record subscription event
+                event = SubscriptionEvent(
+                    org_id=org_id,
+                    event_type="cancelled_completed",
+                    new_plan="free",
+                    previous_plan=previous_plan,
+                    notes=f"Subscription cancelled at period end. Data retained until {org.data_retention_until.isoformat() if org and org.data_retention_until else 'N/A'}"
+                )
+                db.add(event)
+                db.commit()
+
+                cancelled_orgs.append(org_id)
+                logger.info(f"Processed cancellation for org {org_id}: {previous_plan} → free")
+
+                # TODO: Send cancellation confirmation email
+
+            except Exception as e:
+                logger.error(f"Error processing cancellation for subscription {subscription.id}: {e}", exc_info=True)
+                db.rollback()
+                # Continue with next subscription
+
+        return {
+            "success": True,
+            "cancelled_count": len(cancelled_orgs),
+            "cancelled_orgs": cancelled_orgs,
+            "message": f"Processed {len(cancelled_orgs)} cancelled subscriptions"
+        }
+
+    except Exception as e:
+        logger.error(f"Error during cancelled subscriptions check: {e}", exc_info=True)
+        raise self.retry(exc=e, countdown=60 * (2 ** self.request.retries))
+
+    finally:
+        db.close()
+
+
+@celery_app.task(bind=True, max_retries=3)
+def mark_organizations_for_deletion(self) -> Dict[str, Any]:
+    """
+    Daily task to mark organizations for deletion after retention period expires.
+
+    This task:
+    1. Finds all organizations with data_retention_until < now()
+    2. Marks them for deletion by setting deletion_scheduled_at
+    3. Logs organizations scheduled for deletion
+    4. In production, would trigger actual deletion after admin review
+
+    Scheduled: Daily at 5:00 AM UTC (after cancelled subscription processing)
+
+    Returns:
+        dict: Summary of organizations marked for deletion
+        {
+            "success": bool,
+            "marked_count": int,
+            "marked_orgs": List[dict],
+            "message": str
+        }
+    """
+    logger.info("Starting daily organization deletion check...")
+    db = SessionLocal()
+
+    try:
+        from datetime import datetime
+        from api.models import Organization
+
+        now = datetime.utcnow()
+        marked_orgs = []
+
+        # Find organizations past retention period
+        organizations = db.query(Organization).filter(
+            Organization.data_retention_until.isnot(None),
+            Organization.data_retention_until <= now,
+            Organization.deletion_scheduled_at.is_(None)  # Not already marked
+        ).all()
+
+        logger.info(f"Found {len(organizations)} organizations past retention period")
+
+        for org in organizations:
+            try:
+                # Mark for deletion
+                org.deletion_scheduled_at = now
+                db.commit()
+                db.refresh(org)
+
+                marked_orgs.append({
+                    "org_id": org.id,
+                    "org_name": org.name,
+                    "cancelled_at": org.cancelled_at.isoformat() if org.cancelled_at else None,
+                    "retention_expired": org.data_retention_until.isoformat() if org.data_retention_until else None,
+                    "marked_at": now.isoformat()
+                })
+
+                logger.warning(
+                    f"Marked organization {org.id} ({org.name}) for deletion - "
+                    f"retention expired on {org.data_retention_until.isoformat()}"
+                )
+
+                # TODO: In production:
+                # 1. Send notification to admins
+                # 2. Create backup before deletion
+                # 3. Trigger actual deletion after admin confirmation
+                # 4. Or automatically delete after additional grace period (e.g., 7 days)
+
+            except Exception as e:
+                logger.error(f"Error marking organization {org.id} for deletion: {e}", exc_info=True)
+                db.rollback()
+                # Continue with next organization
+
+        return {
+            "success": True,
+            "marked_count": len(marked_orgs),
+            "marked_orgs": marked_orgs,
+            "message": f"Marked {len(marked_orgs)} organizations for deletion"
+        }
+
+    except Exception as e:
+        logger.error(f"Error during organization deletion check: {e}", exc_info=True)
+        raise self.retry(exc=e, countdown=60 * (2 ** self.request.retries))
+
+    finally:
+        db.close()
+
+
 # Celery Beat schedule for periodic tasks
 celery_app.conf.beat_schedule = {
     # Apply pending downgrades daily at 1:00 AM UTC (before trial check)
@@ -261,5 +454,17 @@ celery_app.conf.beat_schedule = {
     "check-usage-limits": {
         "task": "api.tasks.billing_tasks.check_usage_limits",
         "schedule": crontab(hour=3, minute=0),
+    },
+
+    # Process cancelled subscriptions daily at 4:00 AM UTC (after usage checks)
+    "process-cancelled-subscriptions": {
+        "task": "api.tasks.billing_tasks.process_cancelled_subscriptions",
+        "schedule": crontab(hour=4, minute=0),
+    },
+
+    # Mark organizations for deletion daily at 5:00 AM UTC (after cancellation processing)
+    "mark-organizations-for-deletion": {
+        "task": "api.tasks.billing_tasks.mark_organizations_for_deletion",
+        "schedule": crontab(hour=5, minute=0),
     },
 }

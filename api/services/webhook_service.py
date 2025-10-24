@@ -38,6 +38,65 @@ class WebhookService:
         """
         self.db = db
 
+    def verify_signature(self, payload: bytes, sig_header: str) -> Dict[str, Any]:
+        """
+        Verify Stripe webhook signature to ensure authenticity.
+
+        Stripe signs webhooks using webhook secret to prevent tampering.
+        This method verifies the signature matches the payload.
+
+        Args:
+            payload: Raw request body (bytes)
+            sig_header: Stripe-Signature header value
+
+        Returns:
+            dict: Verified Stripe event object
+
+        Raises:
+            ValueError: If payload is invalid JSON
+            Exception: If signature verification fails
+
+        Example:
+            event = webhook_service.verify_signature(
+                payload=request.body(),
+                sig_header=request.headers['stripe-signature']
+            )
+        """
+        import stripe
+        import os
+
+        # Get webhook secret from environment
+        webhook_secret = os.getenv('STRIPE_WEBHOOK_SECRET')
+
+        if not webhook_secret:
+            logger.warning(
+                "STRIPE_WEBHOOK_SECRET not configured - webhook signature verification skipped! "
+                "This is INSECURE for production. Set STRIPE_WEBHOOK_SECRET environment variable."
+            )
+            # For development/testing: parse payload without verification
+            import json
+            return json.loads(payload.decode('utf-8'))
+
+        # Verify signature and construct event
+        try:
+            event = stripe.Webhook.construct_event(
+                payload=payload.decode('utf-8'),
+                sig_header=sig_header,
+                secret=webhook_secret
+            )
+            logger.info(f"Webhook signature verified successfully for event {event.get('id')}")
+            return event
+
+        except ValueError as e:
+            # Invalid payload
+            logger.error(f"Invalid webhook payload: {e}")
+            raise ValueError(f"Invalid payload: {e}")
+
+        except stripe.error.SignatureVerificationError as e:
+            # Invalid signature
+            logger.error(f"Webhook signature verification failed: {e}")
+            raise Exception(f"Invalid signature: {e}")
+
     def process_event(self, event: Dict[str, Any]) -> Dict[str, Any]:
         """
         Process a Stripe webhook event.
