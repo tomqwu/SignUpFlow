@@ -13,6 +13,34 @@ from dotenv import load_dotenv
 # Load environment variables from .env file
 load_dotenv()
 
+# Initialize Sentry for error tracking (production only)
+import sentry_sdk
+from sentry_sdk.integrations.fastapi import FastApiIntegration
+from sentry_sdk.integrations.sqlalchemy import SqlalchemyIntegration
+
+sentry_dsn = os.getenv("SENTRY_DSN")
+environment = os.getenv("ENVIRONMENT", "development")
+
+if sentry_dsn and environment != "development":
+    sentry_sdk.init(
+        dsn=sentry_dsn,
+        environment=environment,
+        integrations=[
+            FastApiIntegration(transaction_style="endpoint"),
+            SqlalchemyIntegration(),
+        ],
+        # Set traces_sample_rate to 1.0 to capture 100% of transactions for performance monitoring.
+        # Adjust in production to reduce overhead (e.g., 0.1 = 10%)
+        traces_sample_rate=0.1 if environment == "production" else 1.0,
+        # Send errors from all environments except development
+        send_default_pii=False,  # Don't send personally identifiable information
+        attach_stacktrace=True,
+        debug=False,
+    )
+    print(f"✅ Sentry initialized for {environment} environment")
+else:
+    print(f"ℹ️  Sentry disabled (SENTRY_DSN not set or environment is development)")
+
 from api.database import init_db
 from api.logging_config import logger
 from api.routers import (
@@ -97,8 +125,45 @@ app.add_middleware(
 # Health check endpoint
 @app.get("/health", tags=["health"])
 def health_check():
-    """Health check endpoint."""
-    return {"status": "healthy", "service": "signupflow-api", "version": "1.0.0"}
+    """
+    Health check endpoint with database connectivity check.
+
+    Used by:
+    - Docker health checks
+    - Load balancers
+    - Uptime monitoring (e.g., Uptime Robot, Better Stack)
+    - Kubernetes liveness/readiness probes
+
+    Returns:
+        200 OK: Service and database are healthy
+        503 Service Unavailable: Database connection failed
+    """
+    from api.database import SessionLocal
+
+    health_status = {
+        "status": "healthy",
+        "service": "signupflow-api",
+        "version": "1.0.0",
+        "database": "unknown"
+    }
+
+    # Check database connectivity
+    try:
+        db = SessionLocal()
+        # Simple query to test connection
+        db.execute("SELECT 1")
+        db.close()
+        health_status["database"] = "connected"
+    except Exception as e:
+        health_status["status"] = "unhealthy"
+        health_status["database"] = "disconnected"
+        health_status["error"] = str(e)
+        return JSONResponse(
+            status_code=503,
+            content=health_status
+        )
+
+    return health_status
 
 
 # Register routers with /api prefix
