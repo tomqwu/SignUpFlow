@@ -347,3 +347,86 @@ def downgrade_subscription(
         "pending_downgrade": result["pending_downgrade"],
         "message": result["message"]
     }
+
+
+@router.post("/billing/subscription/cancel-downgrade")
+def cancel_downgrade(
+    org_id: str = Query(..., description="Organization ID"),
+    admin: Person = Depends(verify_admin_access),
+    db: Session = Depends(get_db)
+) -> Dict[str, Any]:
+    """
+    Cancel scheduled downgrade.
+
+    This endpoint:
+    1. Verifies pending downgrade exists
+    2. Clears pending_downgrade field from subscription
+    3. Records subscription event for audit trail
+
+    Requires:
+        - User must be admin
+        - User must belong to the organization
+        - Organization must have pending downgrade scheduled
+
+    Returns:
+        dict: Cancellation confirmation
+        {
+            "success": true,
+            "subscription": SubscriptionResponse,
+            "message": "Downgrade cancelled"
+        }
+    """
+    # Verify admin belongs to organization
+    verify_org_member(admin, org_id)
+
+    # Get subscription
+    billing_service = BillingService(db)
+    subscription = billing_service.get_subscription(org_id)
+
+    if not subscription:
+        raise HTTPException(
+            status_code=404,
+            detail="No subscription found for organization"
+        )
+
+    # Check if pending downgrade exists
+    if not subscription.pending_downgrade:
+        raise HTTPException(
+            status_code=400,
+            detail="No pending downgrade to cancel"
+        )
+
+    # Store pending downgrade details for event recording
+    pending = subscription.pending_downgrade
+    new_plan_tier = pending.get("new_plan_tier")
+
+    # Clear pending downgrade
+    subscription.pending_downgrade = None
+    db.commit()
+    db.refresh(subscription)
+
+    # Record subscription event
+    from api.models import SubscriptionEvent
+    from datetime import datetime
+
+    event = SubscriptionEvent(
+        org_id=org_id,
+        event_type="downgrade_cancelled",
+        new_plan=subscription.plan_tier,  # Stays on current plan
+        previous_plan=subscription.plan_tier,
+        admin_id=admin.id,
+        notes=f"Cancelled scheduled downgrade to {new_plan_tier}"
+    )
+    db.add(event)
+    db.commit()
+
+    # Get updated usage summary
+    usage_service = UsageService(db)
+    usage_summary = usage_service.get_usage_summary(org_id)
+
+    return {
+        "success": True,
+        "subscription": SubscriptionResponse.from_orm(subscription),
+        "usage": usage_summary,
+        "message": "Downgrade cancelled successfully"
+    }

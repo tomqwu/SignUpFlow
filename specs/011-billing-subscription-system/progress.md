@@ -16,10 +16,10 @@ Implementing Stripe-integrated billing and subscription system with four tiers (
 - ✅ Phase 4: US2 Paid Upgrade (12/12 tasks - 100%)
 - ✅ Phase 5: US3 14-Day Trial (6/8 tasks - 75%, 2 email tasks deferred)
 - ✅ Phase 8: US6 Annual Billing (6/6 tasks - 100%)
-- ⏳ Phase 7: US5 Subscription Tier Changes (6/8 tasks - 75%, 2 UI tasks remaining)
+- ✅ Phase 7: US5 Subscription Tier Changes (8/8 tasks - 100%)
 - ⏳ Phase 6: US4 Failed Payment Handling (0/12 tasks - 0%, requires email service)
 
-**Overall**: 75/155 tasks complete (48%)
+**Overall**: 77/155 tasks complete (50%)
 
 ## Phase 5 Completion Details
 
@@ -90,9 +90,19 @@ Implementing Stripe-integrated billing and subscription system with four tiers (
 - Credits automatically applied to future invoices
 - Error handling and logging
 
-### Frontend UI (⏳ 2 tasks remaining)
-- T081: Display "Downgrade scheduled" message in billing portal - PENDING
-- T082: Add "Cancel Downgrade" button in billing portal - PENDING
+### Frontend UI (✅ Complete)
+- T081: Display "Downgrade scheduled" message in billing portal
+  - Yellow notice banner with downgrade details
+  - Shows new_plan_tier, effective_date, credit_amount_cents
+  - Shows downgrade reason if provided
+  - Responsive layout with flex positioning
+- T082: Add "Cancel Downgrade" button in billing portal
+  - "Cancel Downgrade" button in downgrade notice
+  - cancelDowngrade() function with confirmation dialog
+  - POST /api/billing/subscription/cancel-downgrade endpoint
+  - Clears pending_downgrade field
+  - Records downgrade_cancelled subscription event
+  - Reloads subscription data after cancellation
 
 ## Phase 8 Completion Details
 

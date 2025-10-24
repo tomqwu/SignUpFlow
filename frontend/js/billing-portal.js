@@ -135,6 +135,38 @@ function displayCurrentSubscription(data) {
             </div>
         ` : ''}
 
+        ${subscription.pending_downgrade ? `
+            <div class="downgrade-notice" style="margin: 1.5rem 0; padding: 1rem; background-color: #fef3c7; border-left: 4px solid #f59e0b; border-radius: 0.5rem;">
+                <div style="display: flex; justify-content: space-between; align-items: start;">
+                    <div>
+                        <strong style="color: #92400e; display: block; margin-bottom: 0.5rem;">
+                            ⏳ Downgrade Scheduled
+                        </strong>
+                        <p style="color: #78350f; margin-bottom: 0.5rem;">
+                            Your plan will downgrade to <strong>${i18n.t(`billing.plan_names.${subscription.pending_downgrade.new_plan_tier}`)}</strong>
+                            on <strong>${new Date(subscription.pending_downgrade.effective_date).toLocaleDateString()}</strong>
+                        </p>
+                        ${subscription.pending_downgrade.credit_amount_cents > 0 ? `
+                            <p style="color: #78350f; font-size: 0.875rem;">
+                                💰 Account credit: $${(subscription.pending_downgrade.credit_amount_cents / 100).toFixed(2)}
+                            </p>
+                        ` : ''}
+                        ${subscription.pending_downgrade.reason ? `
+                            <p style="color: #78350f; font-size: 0.875rem; margin-top: 0.5rem;">
+                                Reason: ${subscription.pending_downgrade.reason}
+                            </p>
+                        ` : ''}
+                    </div>
+                    <button
+                        class="btn-secondary cancel-downgrade-btn"
+                        style="margin-left: 1rem; white-space: nowrap;"
+                        onclick="cancelDowngrade()">
+                        Cancel Downgrade
+                    </button>
+                </div>
+            </div>
+        ` : ''}
+
         <div class="usage-summary">
             <h3 data-i18n="billing.usage_tracking.current_usage">${i18n.t('billing.usage_tracking.current_usage')}</h3>
             ${renderUsageMetrics(usage)}
@@ -602,6 +634,54 @@ function showError(message) {
  */
 function showInfo(message) {
     showToast(message, 'info');
+}
+
+/**
+ * Cancel scheduled downgrade
+ */
+async function cancelDowngrade() {
+    const currentUser = JSON.parse(localStorage.getItem('currentUser') || 'null');
+    const currentOrg = JSON.parse(localStorage.getItem('currentOrg') || 'null');
+
+    if (!currentUser || !currentOrg) {
+        showError('Please log in to cancel downgrade');
+        return;
+    }
+
+    if (!confirm('Are you sure you want to cancel the scheduled downgrade?')) {
+        return;
+    }
+
+    showLoading('Cancelling downgrade...');
+
+    try {
+        const response = await authFetch(`${API_BASE_URL}/billing/subscription/cancel-downgrade?org_id=${currentOrg.id}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        });
+
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.detail || 'Failed to cancel downgrade');
+        }
+
+        const result = await response.json();
+
+        hideLoading();
+        showSuccess('Downgrade cancelled successfully!');
+
+        // Reload subscription data to refresh UI
+        setTimeout(() => {
+            loadSubscriptionData();
+        }, 1000);
+
+    } catch (error) {
+        hideLoading();
+        showError(error.message || 'Failed to cancel downgrade. Please try again.');
+        console.error('Error cancelling downgrade:', error);
+    }
 }
 
 /**
