@@ -1,0 +1,445 @@
+/**
+ * Billing Portal Styles
+ * Subscription management and pricing plan display
+ */
+
+/* Billing Container */
+.billing-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 2rem;
+}
+
+/* Current Subscription Section */
+.subscription-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+    padding-bottom: 1rem;
+    border-bottom: 2px solid var(--border-color, #e5e7eb);
+}
+
+.subscription-header h2 {
+    margin: 0;
+    font-size: 1.5rem;
+    color: var(--text-primary, #1f2937);
+}
+
+.plan-info {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.plan-name {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--primary-color, #3b82f6);
+}
+
+/* Status Badges */
+.status-badge {
+    padding: 0.25rem 0.75rem;
+    border-radius: 9999px;
+    font-size: 0.875rem;
+    font-weight: 500;
+}
+
+.status-active {
+    background-color: #d1fae5;
+    color: #065f46;
+}
+
+.status-trialing {
+    background-color: #dbeafe;
+    color: #1e40af;
+}
+
+.status-past_due {
+    background-color: #fee2e2;
+    color: #991b1b;
+}
+
+.status-cancelled {
+    background-color: #f3f4f6;
+    color: #6b7280;
+}
+
+/* Trial Notice */
+.trial-notice {
+    background-color: #dbeafe;
+    border-left: 4px solid #3b82f6;
+    padding: 1rem;
+    margin-bottom: 2rem;
+    border-radius: 0.5rem;
+}
+
+.trial-notice strong {
+    color: #1e40af;
+    display: block;
+    margin-bottom: 0.5rem;
+}
+
+/* Usage Summary */
+.usage-summary {
+    margin: 2rem 0;
+    padding: 1.5rem;
+    background-color: #f9fafb;
+    border-radius: 0.5rem;
+}
+
+.usage-summary h3 {
+    margin-top: 0;
+    margin-bottom: 1.5rem;
+    font-size: 1.125rem;
+    color: var(--text-primary, #1f2937);
+}
+
+.usage-metrics {
+    display: grid;
+    gap: 1.5rem;
+}
+
+.usage-metric {
+    background-color: white;
+    padding: 1rem;
+    border-radius: 0.5rem;
+    border: 1px solid var(--border-color, #e5e7eb);
+}
+
+.metric-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.5rem;
+}
+
+.metric-label {
+    font-weight: 500;
+    color: var(--text-primary, #1f2937);
+}
+
+.metric-value {
+    font-weight: 600;
+    color: var(--primary-color, #3b82f6);
+}
+
+/* Progress Bar */
+.progress-bar {
+    width: 100%;
+    height: 8px;
+    background-color: #e5e7eb;
+    border-radius: 9999px;
+    overflow: hidden;
+    margin: 0.5rem 0;
+}
+
+.progress-fill {
+    height: 100%;
+    background-color: #3b82f6;
+    transition: width 0.3s ease;
+}
+
+.progress-bar.approaching-limit .progress-fill {
+    background-color: #f59e0b;
+}
+
+.progress-bar.over-limit .progress-fill {
+    background-color: #ef4444;
+}
+
+.metric-percentage {
+    font-size: 0.875rem;
+    color: #6b7280;
+    text-align: right;
+}
+
+/* Next Invoice */
+.next-invoice {
+    margin: 2rem 0;
+    padding: 1.5rem;
+    background-color: #f0fdf4;
+    border-radius: 0.5rem;
+    border: 1px solid #86efac;
+}
+
+.next-invoice h3 {
+    margin-top: 0;
+    margin-bottom: 1rem;
+    color: #065f46;
+}
+
+.next-invoice p {
+    margin: 0.5rem 0;
+    color: #047857;
+}
+
+/* Pricing Grid */
+.pricing-section {
+    margin-top: 3rem;
+}
+
+.pricing-section h2 {
+    text-align: center;
+    font-size: 2rem;
+    margin-bottom: 1rem;
+    color: var(--text-primary, #1f2937);
+}
+
+.pricing-section p {
+    text-align: center;
+    color: #6b7280;
+    margin-bottom: 2rem;
+}
+
+.pricing-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 2rem;
+    margin-top: 2rem;
+}
+
+/* Pricing Cards */
+.pricing-card {
+    position: relative;
+    background-color: white;
+    border: 2px solid var(--border-color, #e5e7eb);
+    border-radius: 0.75rem;
+    padding: 2rem;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.pricing-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+}
+
+.pricing-card.popular {
+    border-color: var(--primary-color, #3b82f6);
+    box-shadow: 0 4px 20px rgba(59, 130, 246, 0.2);
+}
+
+.pricing-card.current {
+    background-color: #f0fdf4;
+    border-color: #86efac;
+}
+
+.popular-badge {
+    position: absolute;
+    top: -12px;
+    right: 1rem;
+    background-color: var(--primary-color, #3b82f6);
+    color: white;
+    padding: 0.25rem 1rem;
+    border-radius: 9999px;
+    font-size: 0.875rem;
+    font-weight: 600;
+}
+
+.pricing-card h3 {
+    margin-top: 0;
+    margin-bottom: 1rem;
+    font-size: 1.5rem;
+    color: var(--text-primary, #1f2937);
+}
+
+.pricing-card .price {
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: var(--primary-color, #3b82f6);
+    margin-bottom: 0.5rem;
+}
+
+.annual-price {
+    display: none;
+}
+
+.billing-cycle-note {
+    font-size: 0.875rem;
+    color: #059669;
+    margin: 0.5rem 0 1.5rem;
+}
+
+.pricing-card .features {
+    list-style: none;
+    padding: 0;
+    margin: 2rem 0;
+}
+
+.pricing-card .features li {
+    padding: 0.75rem 0;
+    border-bottom: 1px solid var(--border-color, #e5e7eb);
+    color: #4b5563;
+}
+
+.pricing-card .features li:last-child {
+    border-bottom: none;
+}
+
+.pricing-card .features li::before {
+    content: "✓";
+    color: #10b981;
+    font-weight: bold;
+    margin-right: 0.5rem;
+}
+
+/* Buttons */
+.pricing-card button {
+    width: 100%;
+    padding: 0.75rem 1.5rem;
+    border: none;
+    border-radius: 0.5rem;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.2s, transform 0.1s;
+}
+
+.btn-primary {
+    background-color: var(--primary-color, #3b82f6);
+    color: white;
+}
+
+.btn-primary:hover {
+    background-color: #2563eb;
+    transform: scale(1.02);
+}
+
+.btn-current {
+    background-color: #d1fae5;
+    color: #065f46;
+    cursor: not-allowed;
+}
+
+.btn-contact {
+    background-color: #f3f4f6;
+    color: var(--text-primary, #1f2937);
+}
+
+.btn-contact:hover {
+    background-color: #e5e7eb;
+}
+
+/* Billing Cycle Toggle */
+.billing-cycle-toggle {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 1rem;
+    margin: 2rem 0;
+}
+
+.billing-cycle-toggle label {
+    font-weight: 500;
+    color: #4b5563;
+}
+
+.billing-cycle-toggle input[type="radio"] {
+    margin: 0 0.5rem;
+}
+
+/* Loading Overlay */
+.loading-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    z-index: 9999;
+}
+
+.loading-spinner {
+    width: 50px;
+    height: 50px;
+    border: 4px solid #f3f4f6;
+    border-top-color: var(--primary-color, #3b82f6);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+.loading-overlay p {
+    color: white;
+    margin-top: 1rem;
+    font-size: 1.125rem;
+}
+
+/* Toast Notifications */
+.toast {
+    position: fixed;
+    bottom: 2rem;
+    right: 2rem;
+    padding: 1rem 1.5rem;
+    border-radius: 0.5rem;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+    color: white;
+    font-weight: 500;
+    transform: translateX(400px);
+    transition: transform 0.3s ease;
+    z-index: 10000;
+}
+
+.toast.show {
+    transform: translateX(0);
+}
+
+.toast-success {
+    background-color: #10b981;
+}
+
+.toast-error {
+    background-color: #ef4444;
+}
+
+.toast-info {
+    background-color: #3b82f6;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .billing-container {
+        padding: 1rem;
+    }
+
+    .subscription-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1rem;
+    }
+
+    .pricing-grid {
+        grid-template-columns: 1fr;
+        gap: 1.5rem;
+    }
+
+    .pricing-card .price {
+        font-size: 2rem;
+    }
+
+    .toast {
+        left: 1rem;
+        right: 1rem;
+        bottom: 1rem;
+    }
+}
+
+/* Print Styles */
+@media print {
+    .upgrade-btn,
+    .btn-contact {
+        display: none;
+    }
+
+    .pricing-card {
+        break-inside: avoid;
+    }
+}

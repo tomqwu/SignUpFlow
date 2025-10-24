@@ -21,14 +21,16 @@ class Router {
             '/app/schedule': 'main-app',
             '/app/events': 'main-app',
             '/app/availability': 'main-app',
-            '/app/admin': 'main-app'
+            '/app/admin': 'main-app',
+            '/app/billing': 'main-app'
         };
 
         this.viewRoutes = {
             '/app/schedule': 'schedule',
             '/app/events': 'events',
             '/app/availability': 'availability',
-            '/app/admin': 'admin'
+            '/app/admin': 'admin',
+            '/app/billing': 'billing'
         };
 
         this.pageTitles = {
@@ -41,7 +43,8 @@ class Router {
             '/app/schedule': 'My Schedule - SignUpFlow',
             '/app/events': 'Events - SignUpFlow',
             '/app/availability': 'Availability - SignUpFlow',
-            '/app/admin': 'Admin Console - SignUpFlow'
+            '/app/admin': 'Admin Console - SignUpFlow',
+            '/app/billing': 'Billing & Subscription - SignUpFlow'
         };
 
         // Listen for browser back/forward

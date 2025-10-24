@@ -2,7 +2,7 @@
 
 **Branch**: `011-billing-subscription-system`
 **Started**: 2025-10-23
-**Status**: Phase 3 Complete! Moving to Phase 4
+**Status**: Phase 4 Complete! Moving to Phase 5
 
 ## Summary
 
@@ -13,9 +13,48 @@ Implementing Stripe-integrated billing and subscription system with four tiers (
 - ✅ Phase 1: Setup (6/6 tasks - 100%)
 - ✅ Phase 2: Foundational (32/32 tasks - 100%)
 - ✅ Phase 3: US1 Free Plan (7/7 tasks - 100%)
-- ⏳ Phase 4: US2 Paid Upgrade (0/12 tasks - 0%)
+- ✅ Phase 4: US2 Paid Upgrade (12/12 tasks - 100%)
+- ⏳ Phase 5: US3 14-Day Trial (0/8 tasks - 0%)
 
-**Overall**: 45/155 tasks complete (29%)
+**Overall**: 57/155 tasks complete (37%)
+
+## Phase 4 Completion Details
+
+### Stripe Checkout Integration (✅ Complete)
+- `create_checkout_session()` in stripe_service.py - Generates hosted checkout page
+- Checkout session creation with trial period support
+- Success/cancel URL handling
+
+### Backend API Endpoints (✅ Complete)
+- POST /api/billing/subscription/upgrade - Upgrade to paid plan
+- POST /api/billing/subscription/checkout-success - Handle checkout completion
+- Request validation with UpgradeRequest schema
+- Admin-only access control
+
+### Billing Coordination (✅ Complete)
+- `upgrade_subscription()` in billing_service.py - Coordinates full upgrade flow
+- Billing history recording with _record_billing_history()
+- Subscription event audit trail
+- Usage metrics automatic update
+- Price calculation from price_id
+
+### Frontend Billing Portal (✅ Complete)
+- billing-portal.js - Complete subscription management UI
+- Pricing plans comparison display
+- Current subscription and usage display
+- Upgrade flow with Stripe Checkout redirect
+- Checkout success/cancel handling
+- Toast notifications for user feedback
+
+### Routing & Styles (✅ Complete)
+- /app/billing route added to router.js
+- billing.css with responsive design
+- Pricing cards with popular badge
+- Usage metrics with progress bars
+- Loading states and error handling
+
+### Email Confirmation (⏳ Placeholder)
+- TODO: Implement email sending when email service ready
 
 ## Phase 2 Completion Details
 

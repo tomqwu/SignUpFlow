@@ -314,6 +314,199 @@ class BillingService:
             logger.error(f"Error retrieving billing history for org {org_id}: {e}")
             return []
 
+    def upgrade_subscription(
+        self,
+        org_id: str,
+        price_id: str,
+        trial_days: Optional[int] = 14,
+        admin_id: Optional[str] = None
+    ) -> Dict[str, Any]:
+        """
+        Upgrade organization subscription to paid plan.
+
+        This coordinates the entire upgrade process:
+        1. Creates Stripe subscription via StripeService
+        2. Records billing history
+        3. Records subscription event for audit trail
+        4. Updates usage metrics with new limits
+        5. Sends confirmation email (future)
+
+        Args:
+            org_id: Organization ID
+            price_id: Stripe price ID
+            trial_days: Number of trial days (default: 14)
+            admin_id: Admin who initiated upgrade (optional)
+
+        Returns:
+            dict: Result with success status and details
+                {
+                    "success": bool,
+                    "subscription": Subscription object,
+                    "message": str
+                }
+
+        Example:
+            billing = BillingService(db)
+            result = billing.upgrade_subscription(
+                org_id="org_123",
+                price_id="price_starter_monthly",
+                trial_days=14,
+                admin_id="person_admin_123"
+            )
+            if result["success"]:
+                print(f"Upgraded to {result['subscription'].plan_tier}")
+        """
+        try:
+            # Get current subscription
+            current_subscription = self.get_subscription(org_id)
+            if not current_subscription:
+                return {"success": False, "message": "No subscription found"}
+
+            previous_plan = current_subscription.plan_tier
+
+            # Use StripeService to upgrade
+            from api.services.stripe_service import StripeService
+            stripe_service = StripeService(self.db)
+
+            upgrade_result = stripe_service.upgrade_to_paid(
+                org_id=org_id,
+                price_id=price_id,
+                trial_days=trial_days
+            )
+
+            if not upgrade_result["success"]:
+                return upgrade_result
+
+            subscription = upgrade_result["subscription"]
+            new_plan = subscription.plan_tier
+
+            # Record billing history (if not in trial)
+            if subscription.status == "active":  # Not trialing
+                self._record_billing_history(
+                    org_id=org_id,
+                    event_type="subscription_created",
+                    amount_cents=self._get_plan_amount(price_id),
+                    payment_status="succeeded",
+                    description=f"Upgraded from {previous_plan} to {new_plan}",
+                    stripe_invoice_id=None  # Will be updated by webhook
+                )
+
+            # Record subscription event for audit trail
+            self._record_subscription_event(
+                org_id=org_id,
+                event_type="upgraded",
+                new_plan=new_plan,
+                previous_plan=previous_plan,
+                admin_id=admin_id,
+                notes=f"Upgraded from {previous_plan} to {new_plan} plan"
+            )
+
+            # Update usage metrics with new volunteer limit
+            self.update_volunteer_count(org_id)
+
+            logger.info(
+                f"Successfully upgraded org {org_id} from {previous_plan} to {new_plan}"
+            )
+
+            # TODO: Send confirmation email with invoice details
+            # This will be implemented when email service is ready
+
+            return {
+                "success": True,
+                "subscription": subscription,
+                "message": f"Successfully upgraded to {new_plan} plan"
+            }
+
+        except Exception as e:
+            self.db.rollback()
+            logger.error(f"Error upgrading subscription for org {org_id}: {e}")
+            return {
+                "success": False,
+                "message": f"Upgrade failed: {str(e)}"
+            }
+
+    def _record_billing_history(
+        self,
+        org_id: str,
+        event_type: str,
+        amount_cents: int,
+        payment_status: str,
+        description: Optional[str] = None,
+        stripe_invoice_id: Optional[str] = None,
+        invoice_pdf_url: Optional[str] = None
+    ) -> Optional[BillingHistory]:
+        """
+        Record a billing event in history.
+
+        Args:
+            org_id: Organization ID
+            event_type: Event type (charge, refund, etc.)
+            amount_cents: Amount in cents
+            payment_status: Payment status (succeeded, failed, pending)
+            description: Event description (optional)
+            stripe_invoice_id: Stripe invoice ID (optional)
+            invoice_pdf_url: Invoice PDF URL (optional)
+
+        Returns:
+            BillingHistory: Created record
+            None: If creation fails
+        """
+        try:
+            history = BillingHistory(
+                org_id=org_id,
+                event_type=event_type,
+                amount_cents=amount_cents,
+                currency="usd",
+                payment_status=payment_status,
+                description=description,
+                stripe_invoice_id=stripe_invoice_id,
+                invoice_pdf_url=invoice_pdf_url
+            )
+
+            self.db.add(history)
+            self.db.commit()
+            self.db.refresh(history)
+
+            logger.info(
+                f"Recorded billing history for org {org_id}: "
+                f"{event_type} ${amount_cents/100:.2f} ({payment_status})"
+            )
+
+            return history
+
+        except Exception as e:
+            self.db.rollback()
+            logger.error(f"Error recording billing history for org {org_id}: {e}")
+            return None
+
+    def _get_plan_amount(self, price_id: str) -> int:
+        """
+        Get plan amount in cents from price ID.
+
+        Args:
+            price_id: Stripe price ID
+
+        Returns:
+            int: Amount in cents
+        """
+        # Price mapping (in cents)
+        price_map = {
+            "starter_monthly": 2900,   # $29/month
+            "starter_annual": 29000,   # $290/year
+            "pro_monthly": 9900,       # $99/month
+            "pro_annual": 99000,       # $990/year
+            "enterprise": 0            # Contact sales
+        }
+
+        price_lower = price_id.lower()
+
+        for key, amount in price_map.items():
+            if key in price_lower:
+                return amount
+
+        logger.warning(f"Unknown price ID: {price_id}, defaulting to $29")
+        return 2900  # Default to starter monthly
+
     def _record_subscription_event(
         self,
         org_id: str,

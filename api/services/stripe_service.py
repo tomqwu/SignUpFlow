@@ -336,6 +336,117 @@ class StripeService:
             logger.error(f"Error saving payment method for org {org_id}: {e}")
             return {"success": False, "message": str(e)}
 
+    def create_checkout_session(
+        self,
+        org_id: str,
+        price_id: str,
+        success_url: str,
+        cancel_url: str,
+        trial_days: Optional[int] = 14
+    ) -> Dict[str, Any]:
+        """
+        Create a Stripe Checkout session for payment collection.
+
+        This creates a hosted checkout page where users can enter payment details.
+
+        Args:
+            org_id: Organization ID
+            price_id: Stripe price ID
+            success_url: URL to redirect after successful payment
+            cancel_url: URL to redirect if user cancels
+            trial_days: Number of trial days (default: 14)
+
+        Returns:
+            dict: Result with checkout session URL
+                {
+                    "success": bool,
+                    "checkout_url": str,
+                    "session_id": str,
+                    "message": str
+                }
+
+        Example:
+            result = stripe_service.create_checkout_session(
+                org_id="org_123",
+                price_id="price_starter_monthly",
+                success_url="https://signupflow.io/billing/success",
+                cancel_url="https://signupflow.io/billing/cancel",
+                trial_days=14
+            )
+            if result["success"]:
+                return redirect(result["checkout_url"])
+        """
+        try:
+            # Get or create Stripe customer
+            subscription = self.db.query(Subscription).filter(
+                Subscription.org_id == org_id
+            ).first()
+
+            if not subscription:
+                return {"success": False, "message": "No subscription record found"}
+
+            customer_id = subscription.stripe_customer_id
+
+            # Create customer if doesn't exist
+            if not customer_id:
+                org = self.db.query(Organization).filter(Organization.id == org_id).first()
+                if not org:
+                    return {"success": False, "message": "Organization not found"}
+
+                admin = next((p for p in org.people if "admin" in (p.roles or [])), None)
+                customer_email = admin.email if admin else f"{org_id}@signupflow.io"
+
+                customer = self.stripe_client.create_customer(
+                    org_id=org_id,
+                    email=customer_email,
+                    name=org.name,
+                    metadata={"org_id": org_id}
+                )
+
+                if not customer:
+                    return {"success": False, "message": "Failed to create Stripe customer"}
+
+                customer_id = customer["id"]
+                subscription.stripe_customer_id = customer_id
+                self.db.commit()
+
+            # Create checkout session
+            import stripe
+            checkout_session = stripe.checkout.Session.create(
+                customer=customer_id,
+                mode="subscription",
+                line_items=[{
+                    "price": price_id,
+                    "quantity": 1
+                }],
+                subscription_data={
+                    "trial_period_days": trial_days if trial_days and trial_days > 0 else None,
+                    "metadata": {
+                        "org_id": org_id,
+                        "plan_tier": self._get_tier_from_price_id(price_id)
+                    }
+                },
+                success_url=success_url,
+                cancel_url=cancel_url,
+                metadata={"org_id": org_id}
+            )
+
+            logger.info(f"Created checkout session for org {org_id}: {checkout_session.id}")
+
+            return {
+                "success": True,
+                "checkout_url": checkout_session.url,
+                "session_id": checkout_session.id,
+                "message": "Checkout session created"
+            }
+
+        except Exception as e:
+            logger.error(f"Error creating checkout session for org {org_id}: {e}")
+            return {
+                "success": False,
+                "message": f"Failed to create checkout session: {str(e)}"
+            }
+
     def _get_tier_from_price_id(self, price_id: str) -> str:
         """
         Extract plan tier from Stripe price ID.
