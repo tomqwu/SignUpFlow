@@ -32,10 +32,22 @@
 - [ ] CHK005 Item with specific criteria
 - [ ] CHK006 Final item in this category
 
+## E2E Testing Requirements (MANDATORY)
+
+**Per Constitution Principle 1**: If a user can see it, click it, or type in it → it MUST have an E2E test
+
+- [ ] E2E-001 E2E test written BEFORE implementation (failing test exists)
+- [ ] E2E-002 Test simulates complete user journey (login → action → verify UI state)
+- [ ] E2E-003 Test verifies what user SEES, not just API responses
+- [ ] E2E-004 All UI elements tested (buttons, forms, navigation)
+- [ ] E2E-005 Manual browser verification completed (no console errors)
+- [ ] E2E-006 All E2E tests passing before merge to main
+
 ## Notes
 
 - Check items off as completed: `[x]`
 - Add comments or findings inline
 - Link to relevant resources or documentation
 - Items are numbered sequentially for easy reference
+- **E2E testing is NON-NEGOTIABLE per constitution**
 

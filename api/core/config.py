@@ -6,11 +6,17 @@ Loads settings from environment variables with validation.
 
 import os
 from typing import Optional
-from pydantic_settings import BaseSettings
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
     """Application settings loaded from environment variables."""
+
+    model_config = SettingsConfigDict(
+        env_file=".env",
+        case_sensitive=True,
+        extra="ignore",
+    )
 
     # Database
     DATABASE_URL: str = "sqlite:///./roster.db"
@@ -70,30 +76,6 @@ class Settings(BaseSettings):
     # reCAPTCHA
     RECAPTCHA_SITE_KEY: Optional[str] = None
     RECAPTCHA_SECRET_KEY: Optional[str] = None
-
-    # Stripe Payment Processing
-    STRIPE_SECRET_KEY: Optional[str] = None
-    STRIPE_PUBLISHABLE_KEY: Optional[str] = None
-    STRIPE_PUBLIC_KEY: Optional[str] = None
-    STRIPE_WEBHOOK_SECRET: Optional[str] = None
-    STRIPE_TEST_MODE: bool = True
-    STRIPE_PRICE_STARTER_MONTHLY: Optional[str] = None
-    STRIPE_PRICE_STARTER_ANNUAL: Optional[str] = None
-    STRIPE_PRICE_PRO_MONTHLY: Optional[str] = None
-    STRIPE_PRICE_PRO_ANNUAL: Optional[str] = None
-    STRIPE_PRICE_ENTERPRISE_MONTHLY: Optional[str] = None
-    STRIPE_PRICE_ENTERPRISE_ANNUAL: Optional[str] = None
-
-    # Twilio SMS Service
-    TWILIO_ACCOUNT_SID: Optional[str] = None
-    TWILIO_AUTH_TOKEN: Optional[str] = None
-    TWILIO_PHONE_NUMBER: Optional[str] = None
-    TWILIO_TEST_MODE: bool = True
-
-    class Config:
-        env_file = ".env"
-        case_sensitive = True
-
 
 # Global settings instance
 settings = Settings()
