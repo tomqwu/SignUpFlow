@@ -809,7 +809,7 @@ class SmsPreference(Base):
 
     __tablename__ = "sms_preferences"
 
-    person_id = Column(Integer, ForeignKey("people.id", ondelete="CASCADE"), primary_key=True)
+    person_id = Column(String, ForeignKey("people.id", ondelete="CASCADE"), primary_key=True)
     phone_number = Column(String(20), nullable=False)
     verified = Column(Boolean, nullable=False, default=False)
     notification_types = Column(JSONType, nullable=False, default=list)  # ['assignment', 'reminder', 'change', 'cancellation']
@@ -832,12 +832,12 @@ class SmsMessage(Base):
     __tablename__ = "sms_messages"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
-    organization_id = Column(Integer, ForeignKey("organizations.id", ondelete="CASCADE"), nullable=False)
-    recipient_id = Column(Integer, ForeignKey("people.id", ondelete="CASCADE"), nullable=False)
+    organization_id = Column(String, ForeignKey("organizations.id", ondelete="CASCADE"), nullable=False)
+    recipient_id = Column(String, ForeignKey("people.id", ondelete="CASCADE"), nullable=False)
     phone_number = Column(String(20), nullable=False)
     message_text = Column(Text, nullable=False)
     message_type = Column(String(20), nullable=False)  # 'assignment', 'reminder', 'broadcast', 'system', 'verification'
-    event_id = Column(Integer, ForeignKey("events.id", ondelete="SET NULL"), nullable=True)
+    event_id = Column(String, ForeignKey("events.id", ondelete="SET NULL"), nullable=True)
     template_id = Column(Integer, ForeignKey("sms_templates.id", ondelete="SET NULL"), nullable=True)
     status = Column(String(20), nullable=False, default="queued")  # 'queued', 'sent', 'delivered', 'failed', 'undelivered'
     twilio_message_sid = Column(String(34), unique=True, nullable=True)
@@ -865,7 +865,7 @@ class SmsTemplate(Base):
     __tablename__ = "sms_templates"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
-    organization_id = Column(Integer, ForeignKey("organizations.id", ondelete="CASCADE"), nullable=False)
+    organization_id = Column(String, ForeignKey("organizations.id", ondelete="CASCADE"), nullable=False)
     name = Column(String(100), nullable=False)
     template_text = Column(Text, nullable=False)
     message_type = Column(String(20), nullable=False)  # 'assignment', 'reminder', 'cancellation', 'broadcast'
@@ -873,7 +873,7 @@ class SmsTemplate(Base):
     translations = Column(JSONType, nullable=False, default=dict)  # {'en': '...', 'es': '...'}
     is_system = Column(Boolean, nullable=False, default=False)
     usage_count = Column(Integer, nullable=False, default=0)
-    created_by = Column(Integer, ForeignKey("people.id", ondelete="CASCADE"), nullable=False)
+    created_by = Column(String, ForeignKey("people.id", ondelete="CASCADE"), nullable=False)
     created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
     updated_at = Column(DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow)
 
@@ -889,7 +889,7 @@ class SmsUsage(Base):
 
     __tablename__ = "sms_usage"
 
-    organization_id = Column(Integer, ForeignKey("organizations.id", ondelete="CASCADE"), nullable=False, primary_key=True)
+    organization_id = Column(String, ForeignKey("organizations.id", ondelete="CASCADE"), nullable=False, primary_key=True)
     month_year = Column(String(7), nullable=False, primary_key=True)  # '2025-10'
     assignment_count = Column(Integer, nullable=False, default=0)
     reminder_count = Column(Integer, nullable=False, default=0)
@@ -915,7 +915,7 @@ class SmsVerificationCode(Base):
 
     __tablename__ = "sms_verification_codes"
 
-    person_id = Column(Integer, ForeignKey("people.id", ondelete="CASCADE"), primary_key=True)
+    person_id = Column(String, ForeignKey("people.id", ondelete="CASCADE"), primary_key=True)
     phone_number = Column(String(20), nullable=False)
     verification_code = Column(Integer, nullable=False)  # 6-digit: 100000-999999
     attempts = Column(Integer, nullable=False, default=0)
@@ -934,12 +934,12 @@ class SmsReply(Base):
     __tablename__ = "sms_replies"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
-    person_id = Column(Integer, ForeignKey("people.id", ondelete="CASCADE"), nullable=False)
+    person_id = Column(String, ForeignKey("people.id", ondelete="CASCADE"), nullable=False)
     phone_number = Column(String(20), nullable=False)
     message_text = Column(Text, nullable=False)
     reply_type = Column(String(20), nullable=False)  # 'yes', 'no', 'stop', 'start', 'help', 'unknown'
     original_message_id = Column(Integer, ForeignKey("sms_messages.id", ondelete="SET NULL"), nullable=True)
-    event_id = Column(Integer, ForeignKey("events.id", ondelete="SET NULL"), nullable=True)
+    event_id = Column(String, ForeignKey("events.id", ondelete="SET NULL"), nullable=True)
     action_taken = Column(String(50), nullable=False)  # 'confirmed', 'declined', 'opted_out', 'help_sent', etc.
     twilio_message_sid = Column(String(34), unique=True, nullable=True)
     processed_at = Column(DateTime, nullable=True)
