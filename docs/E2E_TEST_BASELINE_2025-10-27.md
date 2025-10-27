@@ -30,37 +30,40 @@ FAILED tests/e2e/test_solver_workflow.py::test_run_solver_with_constraints_compl
 ---
 
 ### Task 2: Availability Management Tests
-**Status:** ❌ FAILED (3 tests) - **ROOT CAUSE IDENTIFIED**
+**Status:** ⏭️ SKIPPED (6 tests) - **INTENTIONALLY DISABLED**
 
-**Error:** TimeoutError finding `a[href="/app/availability"]` navigation link
+**Reason:** Tests need to be rewritten to match actual UI implementation (2025-10-27)
 
+The tests were intentionally marked as skipped because they make incorrect assumptions about the UI:
+- i18n keys (expect 'availability.*' but actual is 'schedule.*')
+- Form field IDs (expect '*-date' suffix but actual has no suffix)
+- Button selectors (expect i18n attributes but actual uses plain text)
+- Edit/delete workflow (expect inline buttons but actual uses modal dialogs)
+
+**Navigation:** The availability navigation button EXISTS in frontend/index.html line 430:
+```html
+<button class="nav-btn" data-view="availability" onclick="switchView('availability')" data-i18n="schedule.availability">
+    ⏰ Availability
+</button>
 ```
-FAILED tests/e2e/test_availability_management.py::test_add_time_off_request_complete_workflow
-  playwright._impl._errors.TimeoutError: Locator.click: Timeout 5000ms exceeded.
-  waiting for locator("a[href='/app/availability']")
 
-FAILED tests/e2e/test_availability_management.py::test_edit_time_off_request
-  (same error - navigation link not found)
-
-FAILED tests/e2e/test_availability_management.py::test_delete_time_off_request
-  (same error - navigation link not found)
+Skipped tests (6 total):
 ```
-
-**Root Cause:** The `/app/availability` navigation link is **missing from the UI**. Tests can't proceed past navigation.
-
-**Fix Required:**
-1. Add availability navigation link to main app UI
-2. Verify availability route exists in frontend router
-3. Ensure availability page template is accessible
-
-**Impact:** Once navigation is fixed, all 3 tests should pass (tests are structurally correct).
-
-Additional skipped tests:
-```
+SKIPPED tests/e2e/test_availability_management.py::test_add_time_off_request_complete_workflow
+SKIPPED tests/e2e/test_availability_management.py::test_edit_time_off_request
+SKIPPED tests/e2e/test_availability_management.py::test_delete_time_off_request
 SKIPPED tests/e2e/test_availability_management.py::test_view_availability_calendar
 SKIPPED tests/e2e/test_availability_management.py::test_overlap_validation
 SKIPPED tests/e2e/test_availability_management.py::test_past_date_validation
 ```
+
+**Fix Required:**
+1. Rewrite tests to use actual UI selectors from frontend/index.html
+2. Update i18n keys from 'availability.*' to 'schedule.*'
+3. Update form field IDs to match actual implementation (no date suffix)
+4. Update edit/delete workflow to use modal dialogs instead of inline buttons
+
+**Impact:** Tests are structurally sound but need selector updates to match implementation.
 
 ---
 
