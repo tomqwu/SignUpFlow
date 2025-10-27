@@ -188,7 +188,48 @@ When `Base.metadata.sorted_tables` tried to clean up ALL tables (including the n
 
 **Fix Applied:** Updated both import statements in conftest.py to include all current models.
 
-**Status:** Testing fix now - expecting 27/27 tests to pass in both isolated and full suite runs.
+**Status:** Model import fix COMPLETE ✅ (2025-10-27)
+
+---
+
+**⚠️ CURRENT ISSUE (Post-October 27): Docker API Connectivity**
+
+**Status:** 🔴 **NEW ISSUE DISCOVERED** - All 27 RBAC tests failing in Docker
+
+**Problem:** When tests run inside Docker container, they cannot connect to the API
+- Error: `Connection refused [Errno 111]`
+- Cause: Hardcoded `API_BASE = "http://localhost:8000/api"` in `test_rbac_security.py:16`
+- Impact: **2 FAILED, 25 ERRORS** (connection refused for all tests)
+
+**Root Cause Analysis:**
+```python
+# test_rbac_security.py line 16 (WRONG - hardcoded)
+API_BASE = "http://localhost:8000/api"
+
+# conftest.py line 20 (CORRECT - environment aware)
+API_BASE = os.getenv("E2E_API_BASE", f"{APP_URL}/api").rstrip("/")
+```
+
+**Why This Fails:**
+1. RBAC tests use `requests` library for direct HTTP calls (not Playwright)
+2. When run via `docker-compose exec api pytest`, tests execute inside container
+3. Hardcoded `localhost:8000` tries to connect within container, not exposed port
+4. Other tests use Playwright which launches browser connecting to exposed port
+
+**Fix Required:**
+Replace line 16 in `test_rbac_security.py` with:
+```python
+import os
+API_BASE = os.getenv("E2E_API_BASE", "http://localhost:8000/api")
+```
+
+**Evidence:**
+```bash
+$ docker-compose -f docker-compose.dev.yml exec -T api pytest tests/e2e/test_rbac_security.py -v
+# Result: 2 failed, 25 errors - all ConnectionError: Connection refused
+```
+
+**Status:** Documented but not yet fixed
 
 ---
 
