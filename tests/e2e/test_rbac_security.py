@@ -8,11 +8,17 @@ Tests comprehensive role-based access control including:
 - Role escalation prevention
 """
 
+import os
 import pytest
 import requests
 from datetime import datetime, timedelta
+from passlib.context import CryptContext
 
-API_BASE = "http://localhost:8000/api"
+# Use environment-aware API_BASE to support both local and Docker environments
+API_BASE = os.getenv("E2E_API_BASE", "http://localhost:8000/api")
+
+# Password hashing
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 # Cache for person_ids (email -> person_id)
 _person_id_cache = {}
@@ -44,9 +50,107 @@ def test_organizations():
 
 @pytest.fixture(scope="module")
 def test_users(test_organizations):
-    """Create test users with different roles across organizations."""
-    users = [
+    """Create test users with different roles across organizations.
+
+    Strategy:
+    1. Create ALL users via signup (so they have passwords)
+    2. First user in each org becomes admin automatically
+    3. For non-admin users, admin updates their roles after signup
+    """
+
+    # All users to create
+    all_user_data = [
         # Organization Alpha users
+        {
+            "name": "Amy Admin",
+            "email": "amy.admin@alpha.com",
+            "password": "test123",
+            "org_id": "org_alpha",
+            "desired_roles": ["admin"],  # First user, becomes admin automatically
+            "is_first": True,
+        },
+        {
+            "name": "Alice Volunteer",
+            "email": "alice.volunteer@alpha.com",
+            "password": "test123",
+            "org_id": "org_alpha",
+            "desired_roles": ["volunteer"],
+            "is_first": False,
+        },
+        {
+            "name": "Alex Manager",
+            "email": "alex.manager@alpha.com",
+            "password": "test123",
+            "org_id": "org_alpha",
+            "desired_roles": ["manager"],
+            "is_first": False,
+        },
+        # Organization Beta users
+        {
+            "name": "Ben Admin",
+            "email": "ben.admin@beta.com",
+            "password": "test123",
+            "org_id": "org_beta",
+            "desired_roles": ["admin"],  # First user, becomes admin automatically
+            "is_first": True,
+        },
+        {
+            "name": "Bob Volunteer",
+            "email": "bob.volunteer@beta.com",
+            "password": "test123",
+            "org_id": "org_beta",
+            "desired_roles": ["volunteer"],
+            "is_first": False,
+        },
+    ]
+
+    admin_tokens = {}
+
+    # Step 1: Create all users via signup
+    for user in all_user_data:
+        signup_data = {
+            "name": user["name"],
+            "email": user["email"],
+            "password": user["password"],
+            "org_id": user["org_id"],
+        }
+        resp = requests.post(f"{API_BASE}/auth/signup", json=signup_data)
+        if resp.status_code in [200, 201]:
+            data = resp.json()
+            _person_id_cache[user["email"]] = data["person_id"]
+            if user["is_first"]:
+                admin_tokens[user["org_id"]] = data["token"]
+                print(f"✓ Created admin: {user['name']}")
+            else:
+                print(f"✓ Created user: {user['name']} (will update roles)")
+        elif resp.status_code == 409:
+            # User exists
+            if user["is_first"]:
+                token, data = get_auth_token(user["email"], user["password"])
+                admin_tokens[user["org_id"]] = token
+            print(f"ℹ User exists: {user['name']}")
+
+    # Step 2: Update roles for non-admin users
+    for user in all_user_data:
+        if not user["is_first"]:  # Skip admins (already have correct roles)
+            org_id = user["org_id"]
+            headers = {"Authorization": f"Bearer {admin_tokens[org_id]}"}
+
+            person_id = _person_id_cache.get(user["email"])
+            if person_id:
+                update_data = {"roles": user["desired_roles"]}
+                resp = requests.put(
+                    f"{API_BASE}/people/{person_id}",
+                    json=update_data,
+                    headers=headers
+                )
+                if resp.status_code == 200:
+                    print(f"✓ Updated roles for {user['name']}: {user['desired_roles']}")
+                else:
+                    print(f"⚠ Failed to update roles for {user['name']}: {resp.status_code}")
+
+    # Return all users for reference
+    all_users = [
         {
             "name": "Alice Volunteer",
             "email": "alice.volunteer@alpha.com",
@@ -71,7 +175,6 @@ def test_users(test_organizations):
             "roles": ["admin"],
             "person_id": "person_amy_admin"
         },
-        # Organization Beta users
         {
             "name": "Bob Volunteer",
             "email": "bob.volunteer@beta.com",
@@ -89,15 +192,7 @@ def test_users(test_organizations):
             "person_id": "person_ben_admin"
         },
     ]
-
-    for user in users:
-        resp = requests.post(f"{API_BASE}/auth/signup", json=user)
-        if resp.status_code in [200, 201]:
-            print(f"✓ Created user: {user['name']} ({user['roles'][0]})")
-        elif resp.status_code == 409:
-            print(f"ℹ User exists: {user['name']}")
-
-    return users
+    return all_users
 
 
 def get_auth_token(email: str, password: str) -> tuple[str, dict]:
