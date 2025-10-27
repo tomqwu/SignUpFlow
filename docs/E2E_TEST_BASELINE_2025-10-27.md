@@ -48,40 +48,35 @@ FAILED tests/e2e/test_solver_workflow.py::test_run_solver_with_constraints_compl
 ---
 
 ### Task 2: Availability Management Tests
-**Status:** ⏭️ SKIPPED (6 tests) - **INTENTIONALLY DISABLED**
+**Status:** ✅ **FIXED (2025-10-27)** - 3/3 active tests PASSING
 
-**Reason:** Tests need to be rewritten to match actual UI implementation (2025-10-27)
+**Previous Issues RESOLVED:**
+1. ✅ Delete test missing confirmation dialog handling
+2. ✅ 409 Conflict errors from database data persistence
+3. ✅ Test isolation issue causing failures when run together
 
-The tests were intentionally marked as skipped because they make incorrect assumptions about the UI:
-- i18n keys (expect 'availability.*' but actual is 'schedule.*')
-- Form field IDs (expect '*-date' suffix but actual has no suffix)
-- Button selectors (expect i18n attributes but actual uses plain text)
-- Edit/delete workflow (expect inline buttons but actual uses modal dialogs)
+**Fixes Applied:**
+- Fixed `test_delete_time_off_request`: Added `#confirm-yes` button click after Remove
+- Updated test docstring to reflect actual UI (confirmation dialog exists)
+- Increased date offsets to avoid overlapping with accumulated database data:
+  - Test 1: 1000-1100 days (~3 years)
+  - Test 2: 5000-5100 days (~13 years)
+  - Test 3: 10000-10100 days (~27 years)
+- Added page reload with 1s wait in test 3 to fix test isolation issue
 
-**Navigation:** The availability navigation button EXISTS in frontend/index.html line 430:
-```html
-<button class="nav-btn" data-view="availability" onclick="switchView('availability')" data-i18n="schedule.availability">
-    ⏰ Availability
-</button>
+**Test Results:**
+```
+PASSED tests/e2e/test_availability_management.py::test_add_time_off_request_complete_workflow ✅
+PASSED tests/e2e/test_availability_management.py::test_edit_time_off_request ✅
+PASSED tests/e2e/test_availability_management.py::test_delete_time_off_request ✅
+SKIPPED tests/e2e/test_availability_management.py::test_view_availability_calendar (TODO)
+SKIPPED tests/e2e/test_availability_management.py::test_overlap_validation (TODO)
+SKIPPED tests/e2e/test_availability_management.py::test_past_date_validation (TODO)
 ```
 
-Skipped tests (6 total):
-```
-SKIPPED tests/e2e/test_availability_management.py::test_add_time_off_request_complete_workflow
-SKIPPED tests/e2e/test_availability_management.py::test_edit_time_off_request
-SKIPPED tests/e2e/test_availability_management.py::test_delete_time_off_request
-SKIPPED tests/e2e/test_availability_management.py::test_view_availability_calendar
-SKIPPED tests/e2e/test_availability_management.py::test_overlap_validation
-SKIPPED tests/e2e/test_availability_management.py::test_past_date_validation
-```
+**Coverage:** 3/6 tests passing (3 TODO tests remain for future implementation)
 
-**Fix Required:**
-1. Rewrite tests to use actual UI selectors from frontend/index.html
-2. Update i18n keys from 'availability.*' to 'schedule.*'
-3. Update form field IDs to match actual implementation (no date suffix)
-4. Update edit/delete workflow to use modal dialogs instead of inline buttons
-
-**Impact:** Tests are structurally sound but need selector updates to match implementation.
+**Commit:** a887b77 - "fix: Resolve availability management E2E test failures"
 
 ---
 
