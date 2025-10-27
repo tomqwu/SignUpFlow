@@ -76,7 +76,22 @@ Thumbs.db
 *.db-wal
 *.db.before_restore_*
 examples/*.db
+
+# Environment Configuration
+# ============================================================================
+# Exclude ALL .env files (secrets - NEVER commit these!)
 .env
+.env.local
+.env.*.local
+.env.development
+.env.test
+.env.production
+
+# BUT include templates and examples (structure - safe to commit)
+!.env.example
+
+# YAML config profiles are committed (structure, no secrets)
+# config/*.yaml files are INCLUDED in git (they contain defaults, not secrets)
 
 # Celery
 celerybeat-schedule

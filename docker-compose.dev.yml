@@ -62,63 +62,20 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
+
+    # ⭐ NEW: Load secrets from .env file
+    env_file:
+      - .env
+
+    # ⭐ NEW: Minimal environment config - tells app which YAML profile to use
     environment:
-      # Database Configuration
+      # Which environment profile to load (dev/test/prod)
+      CONFIG_PROFILE: dev
+
+      # Runtime overrides (secrets from .env, structure from config/env.dev.yaml)
+      # These are the only values that should be here - everything else in YAML
       DATABASE_URL: postgresql://${POSTGRES_USER:-signupflow}:${POSTGRES_PASSWORD:-dev_password_change_in_production}@db:5432/${POSTGRES_DB:-signupflow_dev}
-
-      # Redis Configuration
       REDIS_URL: redis://:${REDIS_PASSWORD:-dev_redis_password}@redis:6379/0
-
-      # Application Configuration
-      SECRET_KEY: ${SECRET_KEY:-dev-secret-key-change-in-production-min-32-chars}
-      ALGORITHM: HS256
-      ACCESS_TOKEN_EXPIRE_HOURS: ${ACCESS_TOKEN_EXPIRE_HOURS:-24}
-      API_BASE_URL: ${API_BASE_URL:-http://localhost:8000}
-      FRONTEND_URL: ${FRONTEND_URL:-http://localhost:8000}
-      APP_URL: ${APP_URL:-http://localhost:8000}
-
-      # Environment
-      ENVIRONMENT: development
-      LOG_LEVEL: ${LOG_LEVEL:-DEBUG}
-      TESTING: ${TESTING:-false}
-
-      # Email Configuration (Mailtrap for dev)
-      MAILTRAP_SMTP_HOST: ${MAILTRAP_SMTP_HOST:-sandbox.smtp.mailtrap.io}
-      MAILTRAP_SMTP_PORT: ${MAILTRAP_SMTP_PORT:-2525}
-      MAILTRAP_SMTP_USER: ${MAILTRAP_SMTP_USER}
-      MAILTRAP_SMTP_PASSWORD: ${MAILTRAP_SMTP_PASSWORD}
-      EMAIL_FROM: ${EMAIL_FROM:-noreply@signupflow.local}
-      EMAIL_FROM_NAME: ${EMAIL_FROM_NAME:-SignUpFlow Dev}
-      EMAIL_ENABLED: ${EMAIL_ENABLED:-true}
-
-      # SMS Configuration (Twilio test credentials)
-      TWILIO_ACCOUNT_SID: ${TWILIO_ACCOUNT_SID}
-      TWILIO_AUTH_TOKEN: ${TWILIO_AUTH_TOKEN}
-      TWILIO_PHONE_NUMBER: ${TWILIO_PHONE_NUMBER:-+15005550006}
-      SMS_ENABLED: ${SMS_ENABLED:-true}
-
-      # Stripe Configuration (test mode)
-      STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY}
-      STRIPE_PUBLISHABLE_KEY: ${STRIPE_PUBLISHABLE_KEY}
-      STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET}
-      STRIPE_TEST_MODE: ${STRIPE_TEST_MODE:-true}
-
-      # reCAPTCHA Configuration (optional for dev)
-      RECAPTCHA_SITE_KEY: ${RECAPTCHA_SITE_KEY}
-      RECAPTCHA_SECRET_KEY: ${RECAPTCHA_SECRET_KEY}
-
-      # Rate Limiting Configuration
-      RATE_LIMITING_ENABLED: ${RATE_LIMITING_ENABLED:-true}
-      RATE_LIMIT_SIGNUP_MAX: ${RATE_LIMIT_SIGNUP_MAX:-5}
-      RATE_LIMIT_SIGNUP_WINDOW: ${RATE_LIMIT_SIGNUP_WINDOW:-3600}
-      RATE_LIMIT_LOGIN_MAX: ${RATE_LIMIT_LOGIN_MAX:-10}
-      RATE_LIMIT_LOGIN_WINDOW: ${RATE_LIMIT_LOGIN_WINDOW:-300}
-
-      # Feature Flags
-      SESSION_TTL_HOURS: ${SESSION_TTL_HOURS:-24}
-
-      # Monitoring (Sentry disabled in dev)
-      SENTRY_DSN: ${SENTRY_DSN:-}
 
     ports:
       - "${PORT:-8000}:8000"
@@ -130,6 +87,9 @@ services:
       - ./alembic:/app/alembic
       - ./alembic.ini:/app/alembic.ini
       - ./tests:/app/tests
+
+      # ⭐ NEW: Mount YAML configuration profiles
+      - ./config:/app/config:ro  # Read-only mount for security
 
       # Persistent data
       - ./data:/app/data
