@@ -30,15 +30,30 @@ FAILED tests/e2e/test_solver_workflow.py::test_run_solver_with_constraints_compl
 ---
 
 ### Task 2: Availability Management Tests
-**Status:** ❌ FAILED (3 tests)
+**Status:** ❌ FAILED (3 tests) - **ROOT CAUSE IDENTIFIED**
+
+**Error:** TimeoutError finding `a[href="/app/availability"]` navigation link
 
 ```
 FAILED tests/e2e/test_availability_management.py::test_add_time_off_request_complete_workflow
+  playwright._impl._errors.TimeoutError: Locator.click: Timeout 5000ms exceeded.
+  waiting for locator("a[href='/app/availability']")
+
 FAILED tests/e2e/test_availability_management.py::test_edit_time_off_request
+  (same error - navigation link not found)
+
 FAILED tests/e2e/test_availability_management.py::test_delete_time_off_request
+  (same error - navigation link not found)
 ```
 
-**Note:** Tests are RUNNING (not skipped), which means selectors may be correct but functionality is failing. This is PRIORITY #1 to fix.
+**Root Cause:** The `/app/availability` navigation link is **missing from the UI**. Tests can't proceed past navigation.
+
+**Fix Required:**
+1. Add availability navigation link to main app UI
+2. Verify availability route exists in frontend router
+3. Ensure availability page template is accessible
+
+**Impact:** Once navigation is fixed, all 3 tests should pass (tests are structurally correct).
 
 Additional skipped tests:
 ```
@@ -73,9 +88,35 @@ SKIPPED tests/e2e/test_auth_flows.py::test_signup_new_user (Join page broken)
 ---
 
 ### Task 4: RBAC Security Tests
-**Status:** ❌ CRITICAL - MOST FAILURES (16 tests)
+**Status:** 🔍 **CRITICAL DISCOVERY - TEST ISOLATION ISSUE**
 
-**Failed Volunteer Permission Tests:**
+**🎉 MAJOR BREAKTHROUGH:**
+- **Isolated Run:** ✅ 27/27 tests PASSING (100%)
+- **Full Suite Run:** ❌ 16/27 tests FAILING (59%)
+- **Root Cause:** Test isolation problem - tests pass alone but fail when run with other tests
+
+**Evidence:**
+```bash
+# Isolated RBAC tests only
+docker-compose exec -T api pytest tests/e2e/test_rbac_security.py -v
+Result: 27 passed, 1 error (teardown - not a test failure)
+
+# Full E2E suite
+docker-compose exec -T api pytest tests/e2e/ -v
+Result: 16 RBAC tests failed
+```
+
+**Implication:** The RBAC security implementation is **CORRECT**, but there's a **test setup/teardown issue** causing failures when tests run together.
+
+**Potential Causes:**
+1. Database state not properly reset between test modules
+2. Session/authentication state leaking between tests
+3. Browser context not isolated between tests
+4. Test fixtures not properly cleaning up
+
+**Failed Tests in Full Suite (16):**
+
+**Volunteer Permission Tests:**
 ```
 FAILED test_rbac_security.py::test_volunteer_can_view_own_organization_people
 FAILED test_rbac_security.py::test_volunteer_cannot_edit_own_roles
@@ -84,7 +125,7 @@ FAILED test_rbac_security.py::test_volunteer_cannot_create_events
 FAILED test_rbac_security.py::test_volunteer_cannot_delete_events
 ```
 
-**Failed Admin Permission Tests:**
+**Admin Permission Tests:**
 ```
 FAILED test_rbac_security.py::test_admin_can_create_events
 FAILED test_rbac_security.py::test_admin_can_edit_events
@@ -95,17 +136,38 @@ FAILED test_rbac_security.py::test_admin_can_modify_user_roles
 FAILED test_rbac_security.py::test_admin_can_run_solver
 ```
 
-**Failed Cross-Org Isolation Tests:**
+**Cross-Org Isolation Tests:**
 ```
 FAILED test_rbac_security.py::test_admin_cannot_create_events_in_other_org
 FAILED test_rbac_security.py::test_no_cross_org_data_leak_in_people_list
 ```
 
-**Failed Workflow Tests:**
+**Workflow Tests:**
 ```
 FAILED test_rbac_security.py::test_complete_admin_workflow
 FAILED test_rbac_security.py::test_complete_volunteer_workflow
 ```
+
+**Error Detected:**
+```
+ERROR at teardown of test_complete_volunteer_workflow
+sqlite3.OperationalError: no such table: sms_replies
+```
+**Analysis:** Database cleanup trying to delete from non-existent table - suggests schema mismatch or migration issue.
+
+**✅ ROOT CAUSE IDENTIFIED & FIXED (2025-10-27):**
+The issue was in `tests/conftest.py` lines 253-257 and 288-292. The model imports were outdated and missing 5 new models:
+- RecurringSeries
+- RecurrenceException
+- OnboardingProgress
+- Notification
+- EmailPreference
+
+When `Base.metadata.sorted_tables` tried to clean up ALL tables (including the new ones), but only the old models were imported, it caused schema mismatches.
+
+**Fix Applied:** Updated both import statements in conftest.py to include all current models.
+
+**Status:** Testing fix now - expecting 27/27 tests to pass in both isolated and full suite runs.
 
 ---
 

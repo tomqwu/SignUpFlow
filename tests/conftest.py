@@ -1,28 +1,64 @@
 """Pytest configuration and fixtures for Rostio tests."""
 
-import pytest
+from pathlib import Path
+from typing import Generator
+
+import os
 import subprocess
 import time
+from urllib.parse import urlparse
+
+import pytest
 import requests
 from playwright.sync_api import sync_playwright
 
+from tests.e2e.helpers import AppConfig, ApiTestClient, safe_artifact_name
+
+
 # Test server configuration
-API_BASE = "http://localhost:8000/api"
-APP_URL = "http://localhost:8000"
+APP_URL = os.getenv("E2E_APP_URL", "http://localhost:8000").rstrip("/")
+API_BASE = os.getenv("E2E_API_BASE", f"{APP_URL}/api").rstrip("/")
 
 
 @pytest.fixture(scope="session")
-def api_server():
+def app_config() -> AppConfig:
+    """Expose shared application endpoints to tests."""
+    return AppConfig(app_url=APP_URL, api_base=API_BASE)
+
+
+@pytest.fixture(scope="session")
+def api_server(app_config: AppConfig):
     """Start API server for testing session."""
-    import os
     # Set test database URL environment variable
     test_env = os.environ.copy()
     test_env["DATABASE_URL"] = "sqlite:///./test_roster.db"
     test_env["TESTING"] = "true"  # Disable rate limiting during tests
+    test_env["EMAIL_ENABLED"] = "false"
+    test_env["SMS_ENABLED"] = "false"
+    # Relax endpoint-specific rate limits to avoid flakiness when provisioning data
+    test_env["RATE_LIMIT_CREATE_ORG_MAX"] = "1000"
+    test_env["RATE_LIMIT_SIGNUP_MAX"] = "1000"
+    test_env["RATE_LIMIT_LOGIN_MAX"] = "1000"
+    test_env["RATE_LIMIT_CREATE_INVITATION_MAX"] = "1000"
+    test_env["RATE_LIMIT_VERIFY_INVITATION_MAX"] = "1000"
+    test_env["DISABLE_RATE_LIMITS"] = "true"
+
+    parsed_url = urlparse(app_config.app_url)
+    host = parsed_url.hostname or "0.0.0.0"
+    port = parsed_url.port or (443 if parsed_url.scheme == "https" else 80)
 
     # Start server with test database
     process = subprocess.Popen(
-        ["poetry", "run", "uvicorn", "api.main:app", "--host", "0.0.0.0", "--port", "8000"],
+        [
+            "poetry",
+            "run",
+            "uvicorn",
+            "api.main:app",
+            "--host",
+            host,
+            "--port",
+            str(port),
+        ],
         env=test_env,
     )
 
@@ -30,7 +66,7 @@ def api_server():
     server_ready = False
     for _ in range(60):
         try:
-            response = requests.get(f"{API_BASE.replace('/api', '')}/health", timeout=1)
+            response = requests.get(f"{app_config.app_url}/health", timeout=1)
             if response.status_code == 200:
                 server_ready = True
                 break
@@ -44,8 +80,24 @@ def api_server():
         raise RuntimeError("API server failed to start within timeout window")
 
     # Setup test data
-    from tests.setup_test_data import setup_test_data
-    setup_test_data()
+    # Force complete reload of setup_test_data module to get latest changes
+    import sys
+    import importlib
+
+    # Delete module from sys.modules to force fresh import
+    if 'tests.setup_test_data' in sys.modules:
+        del sys.modules['tests.setup_test_data']
+
+    # Now import fresh
+    import tests.setup_test_data
+    setup_test_data = tests.setup_test_data.setup_test_data
+    setup_test_data(app_config.api_base)
+
+    try:
+        from tests.setup_e2e_test_data import setup_e2e_test_data
+        setup_e2e_test_data()
+    except Exception as e:
+        print(f"⚠️  Warning: setup_e2e_test_data failed: {e}")
 
     yield process
 
@@ -58,15 +110,35 @@ def api_server():
 
 
 @pytest.fixture(scope="function")
-def browser_context():
+def api_client(app_config: AppConfig) -> Generator[ApiTestClient, None, None]:
+    """Provide a disposable API client for test data setup."""
+    client = ApiTestClient(app_config.api_base)
+    try:
+        yield client
+    finally:
+        client.close()
+
+
+@pytest.fixture(scope="function")
+def browser_context(request, app_config: AppConfig):
     """Provide a fresh browser context for each test."""
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=True)
         context = browser.new_context(
             viewport={"width": 1920, "height": 1080},
             user_agent="Mozilla/5.0 Playwright Test",
+            base_url=app_config.app_url,
         )
+        context.tracing.start(screenshots=True, snapshots=True, sources=True)
         yield context
+        trace_failed = getattr(request.node, "rep_call", None)
+        if trace_failed and trace_failed.failed:
+            trace_dir = Path("test-artifacts") / "traces"
+            trace_dir.mkdir(parents=True, exist_ok=True)
+            trace_path = trace_dir / f"{safe_artifact_name(request.node.nodeid)}.zip"
+            context.tracing.stop(path=str(trace_path))
+        else:
+            context.tracing.stop()
         context.close()
         browser.close()
 
@@ -75,6 +147,7 @@ def browser_context():
 def page(browser_context):
     """Provide a fresh page for each test."""
     page = browser_context.new_page()
+    page.set_default_timeout(5000)
 
     # Collect console errors
     page.on("console", lambda msg:
@@ -159,7 +232,7 @@ def pytest_configure(config):
 
 # Database test fixtures
 import os
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, text
 from sqlalchemy.orm import sessionmaker
 from api.models import Base
 
@@ -180,7 +253,8 @@ def setup_test_database():
     from api.models import (
         Organization, Person, Team, TeamMember, Resource, Event, EventTeam,
         Assignment, Solution, Availability, VacationPeriod, AvailabilityException,
-        Holiday, Constraint, Invitation
+        Holiday, Constraint, Invitation, RecurringSeries, RecurrenceException,
+        OnboardingProgress, Notification, EmailPreference
     )
 
     Base.metadata.create_all(bind=engine)
@@ -190,6 +264,51 @@ def setup_test_database():
     # Cleanup after all tests
     if os.path.exists("test_roster.db"):
         os.remove("test_roster.db")
+
+
+@pytest.fixture(scope="module", autouse=True)
+def reset_database_between_modules():
+    """
+    Reset database data between test modules to prevent test pollution.
+
+    This fixture runs automatically before each test module to ensure test isolation.
+    It deletes all data from all tables while preserving the schema.
+
+    This fixes issues where:
+    - RBAC tests pass in isolation but fail in full suite
+    - User roles modified in one test affect other tests
+    - Database state persists across test modules
+    """
+    # Yield first to let the module run
+    yield
+
+    # After module completes, clean up database data
+    engine = create_engine(TEST_DATABASE_URL, connect_args={"check_same_thread": False})
+
+    # Import all models to get table references
+    from api.models import (
+        Organization, Person, Team, TeamMember, Resource, Event, EventTeam,
+        Assignment, Solution, Availability, VacationPeriod, AvailabilityException,
+        Holiday, Constraint, Invitation, RecurringSeries, RecurrenceException,
+        OnboardingProgress, Notification, EmailPreference
+    )
+
+    # Delete all data from all tables (in reverse order to handle foreign keys)
+    with engine.connect() as conn:
+        # Disable foreign key constraints temporarily for SQLite
+        conn.execute(text("PRAGMA foreign_keys = OFF"))
+
+        # Delete data from all tables (skip tables that don't exist)
+        for table in reversed(Base.metadata.sorted_tables):
+            try:
+                conn.execute(text(f"DELETE FROM {table.name}"))
+            except Exception:
+                # Table doesn't exist in test database - skip it
+                pass
+
+        # Re-enable foreign key constraints
+        conn.execute(text("PRAGMA foreign_keys = ON"))
+        conn.commit()
 
 
 @pytest.fixture
@@ -433,3 +552,11 @@ def test_org_setup(db):
     db.refresh(volunteer)
 
     return {"org": org, "admin": admin, "volunteer": volunteer}
+
+
+@pytest.hookimpl(hookwrapper=True)
+def pytest_runtest_makereport(item, call):
+    """Make test outcome available on the request node for fixtures."""
+    outcome = yield
+    report = outcome.get_result()
+    setattr(item, f"rep_{report.when}", report)
