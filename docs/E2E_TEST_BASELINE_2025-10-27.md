@@ -16,6 +16,24 @@
 
 ---
 
+## ⚠️ IMPORTANT: Test Status Timeline
+
+**This baseline document reflects test results from the October 27, 2025 test run, but some tests have since been intentionally disabled.**
+
+### Current State (after October 27):
+Several test suites have been marked with `@pytest.mark.skip` decorators to prevent failures while tests are rewritten to match actual UI implementation:
+
+- **Availability Management (6 tests)** - SKIPPED in current code (test_availability_management.py:28)
+- **Onboarding Wizard (4 tests)** - SKIPPED in current code (test_onboarding_wizard.py:14)
+- **Onboarding Dashboard (7 tests)** - SKIPPED in current code (test_onboarding_dashboard.py:15)
+
+### Why This Matters:
+The test counts below reflect the **October 27 test run** where these tests were still enabled and failing. The current codebase has these tests intentionally disabled with clear skip reasons documented in each test file.
+
+**Key Insight:** When these tests were FAILING, they revealed selector mismatches (e.g., tests looking for `<a href="/app/availability">` but UI has `<button data-view="availability">`). Rather than leave them failing, they were marked SKIPPED with documentation of what needs to be fixed.
+
+---
+
 ## Phase 1 Priority Analysis
 
 ### Task 1: Solver Workflow Tests
@@ -199,6 +217,14 @@ FAILED test_mobile_responsive.py::test_mobile_touch_gestures
 ```
 
 ### Onboarding Wizard (7 tests)
+
+**⚠️ UPDATE:** These tests are NOW SKIPPED in current codebase (post-October 27).
+
+**Current Status:**
+- `test_onboarding_wizard.py` - Line 14: `@pytest.mark.skip(reason="Onboarding wizard UI not implemented...")`
+- `test_onboarding_dashboard.py` - Line 15: `@pytest.mark.skip(reason="Onboarding dashboard UI not implemented...")`
+
+**October 27 Results (before skip decorators added):**
 ```
 FAILED test_onboarding_wizard.py::test_wizard_complete_flow
 FAILED test_onboarding_wizard.py::test_wizard_resume_after_logout
@@ -208,6 +234,8 @@ FAILED test_onboarding_dashboard.py::test_onboarding_dashboard_displays
 FAILED test_onboarding_dashboard.py::test_checklist_widget_interaction
 FAILED test_onboarding_dashboard.py::test_video_grid_playback
 ```
+
+**Root Cause:** Onboarding wizard UI elements not implemented in frontend (`#signup-org-name`, `.onboarding-wizard`, `.onboarding-checklist`, `#dashboard-video-grid`).
 
 ### Email Notifications (4 tests)
 ```
