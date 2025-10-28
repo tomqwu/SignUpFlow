@@ -72,6 +72,16 @@ services:
       # Which environment profile to load (dev/test/prod)
       CONFIG_PROFILE: dev
 
+      # E2E test API endpoint (required for RBAC security tests in Docker)
+      # Use service name 'api' for Docker networking (localhost doesn't work inside container)
+      E2E_API_BASE: http://api:8000/api
+
+      # Disable email for E2E tests (prevents SMTP timeout issues with invalid credentials)
+      EMAIL_ENABLED: false
+
+      # Disable rate limiting for E2E tests (prevents HTTP 429 errors during test suite)
+      DISABLE_RATE_LIMITS: true
+
       # Runtime overrides (secrets from .env, structure from config/env.dev.yaml)
       # These are the only values that should be here - everything else in YAML
       DATABASE_URL: postgresql://${POSTGRES_USER:-signupflow}:${POSTGRES_PASSWORD:-dev_password_change_in_production}@db:5432/${POSTGRES_DB:-signupflow_dev}
