@@ -126,14 +126,27 @@ def test_users(test_organizations):
         elif resp.status_code == 409:
             # User exists
             if user["is_first"]:
-                token, data = get_auth_token(user["email"], user["password"])
-                admin_tokens[user["org_id"]] = token
-            print(f"ℹ User exists: {user['name']}")
+                try:
+                    token, data = get_auth_token(user["email"], user["password"])
+                    admin_tokens[user["org_id"]] = token
+                    print(f"ℹ User exists, logged in: {user['name']}")
+                except AssertionError as e:
+                    print(f"⚠ User exists but login failed: {user['name']} - {e}")
+            else:
+                print(f"ℹ User exists: {user['name']}")
+        else:
+            print(f"⚠ Failed to create {user['name']}: {resp.status_code} - {resp.text}")
 
     # Step 2: Update roles for non-admin users
     for user in all_user_data:
         if not user["is_first"]:  # Skip admins (already have correct roles)
             org_id = user["org_id"]
+
+            # Check if we have admin token for this org
+            if org_id not in admin_tokens:
+                print(f"⚠ Skipping {user['name']} - no admin token for {org_id}")
+                continue
+
             headers = {"Authorization": f"Bearer {admin_tokens[org_id]}"}
 
             person_id = _person_id_cache.get(user["email"])
