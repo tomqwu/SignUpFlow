@@ -15,6 +15,8 @@ import time
 import requests
 import os
 
+# Check if email is enabled (from environment)
+EMAIL_ENABLED = os.environ.get("EMAIL_ENABLED", "false").lower() == "true"
 
 # Mailtrap API configuration
 MAILTRAP_API_TOKEN = os.environ.get("MAILTRAP_API_TOKEN", "")
@@ -76,6 +78,10 @@ def get_latest_email(to_email, inbox_id=MAILTRAP_INBOX_ID, account_id=MAILTRAP_A
     return None
 
 
+@pytest.mark.skipif(
+    not EMAIL_ENABLED,
+    reason="Email infrastructure not configured (EMAIL_ENABLED=false). Configure SMTP settings to enable this test."
+)
 def test_admin_sends_invitation_email(page: Page):
     """
     Test complete invitation workflow with email sending.
@@ -160,6 +166,10 @@ def test_admin_sends_invitation_email(page: Page):
     expect(status_cell).to_be_visible()
 
 
+@pytest.mark.skipif(
+    not EMAIL_ENABLED,
+    reason="Email infrastructure not configured (EMAIL_ENABLED=false). This test requires SMTP server."
+)
 def test_invitation_email_contains_correct_content():
     """
     Test that invitation email contains correct content.
@@ -202,10 +212,15 @@ def test_invitation_email_service_handles_errors():
         html_content="<p>Test</p>"
     )
 
-    # Should return False (not raise exception)
-    assert success is False, "Email service should return False for failed sends"
+    # Should return False or None (not raise exception)
+    # When EMAIL_ENABLED=false, service returns None; when sending fails, it returns False
+    assert not success, "Email service should return False or None for failed sends"
 
 
+@pytest.mark.skipif(
+    not EMAIL_ENABLED or not MAILTRAP_API_TOKEN,
+    reason="Email infrastructure not configured (EMAIL_ENABLED=false or MAILTRAP_API_TOKEN missing). This test requires SMTP server and Mailtrap API access."
+)
 def test_invitation_email_delivered_to_mailtrap_inbox():
     """
     Test that invitation email is actually delivered to Mailtrap inbox.
