@@ -38,6 +38,11 @@ COPY pyproject.toml poetry.lock* ./
 # Install ALL dependencies (including dev dependencies)
 RUN poetry install --no-root
 
+# Install Playwright browsers for E2E and GUI testing
+# This fixes 224 test failures (138 E2E + 86 GUI tests)
+# chromium --with-deps installs browser binaries + system dependencies
+RUN playwright install chromium --with-deps
+
 # Copy application code
 COPY api/ ./api/
 COPY frontend/ ./frontend/
