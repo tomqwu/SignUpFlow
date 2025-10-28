@@ -47,6 +47,14 @@ def test_add_time_off_request_complete_workflow(authenticated_page: Page):
     page.wait_for_load_state("networkidle")
     expect(page.locator('h2[data-i18n="schedule.availability"]')).to_be_visible(timeout=5000)
 
+    # Step 2: Delete any existing time-off periods to avoid 409 Conflict
+    # This ensures test isolation and prevents overlap errors from previous runs
+    delete_buttons = page.locator('.timeoff-item button:has-text("Delete")').all()
+    for delete_btn in delete_buttons:
+        delete_btn.click()
+        page.wait_for_load_state("networkidle")
+        time.sleep(0.5)  # Wait for deletion to process
+
     # Step 2: Fill time-off form
     # Use random future dates (1000-1100 days) to avoid conflicts with previous test runs
     days_offset = random.randint(1000, 1100)
@@ -94,6 +102,14 @@ def test_edit_time_off_request(authenticated_page: Page):
     page.goto("http://localhost:8000/app/availability")
     page.wait_for_load_state("networkidle")
     expect(page.locator('h2[data-i18n="schedule.availability"]')).to_be_visible(timeout=5000)
+
+    # Delete any existing time-off periods to avoid 409 Conflict
+    # This ensures test isolation and prevents overlap errors from previous runs
+    delete_buttons = page.locator('.timeoff-item button:has-text("Delete")').all()
+    for delete_btn in delete_buttons:
+        delete_btn.click()
+        page.wait_for_load_state("networkidle")
+        time.sleep(0.5)  # Wait for deletion to process
 
     # Add initial time-off (use random future dates to avoid conflicts)
     # Use 5000-5100 days (~13 years) to avoid overlap with any existing data
