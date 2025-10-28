@@ -61,6 +61,7 @@ from api.routers import (
     sms,
     billing,
     webhooks,
+    notifications,
 )
 
 
@@ -139,6 +140,7 @@ def health_check():
         503 Service Unavailable: Database connection failed
     """
     from api.database import SessionLocal
+    from sqlalchemy import text
 
     health_status = {
         "status": "healthy",
@@ -151,7 +153,7 @@ def health_check():
     try:
         db = SessionLocal()
         # Simple query to test connection
-        db.execute("SELECT 1")
+        db.execute(text("SELECT 1"))
         db.close()
         health_status["database"] = "connected"
     except Exception as e:
@@ -181,6 +183,7 @@ app.include_router(password_reset.router, prefix="/api")
 app.include_router(analytics.router, prefix="/api")
 app.include_router(invitations.router, prefix="/api")
 app.include_router(calendar.router, prefix="/api")
+app.include_router(notifications.router, prefix="/api")
 app.include_router(sms.router)
 app.include_router(billing.router, prefix="/api")
 app.include_router(webhooks.router, prefix="/api")
