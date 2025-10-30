@@ -17,7 +17,25 @@ import requests
 from playwright.sync_api import Page, expect
 from datetime import datetime, timedelta
 
+# NOTE: Running in docker-compose with server already started
+# No need for api_server fixture which tries to start a new server on port 8000
+
 API_BASE = "http://localhost:8000/api"
+
+
+@pytest.fixture(scope="module", autouse=True)
+def setup_invitation_test_data():
+    """Set up test data for invitation workflow tests (docker-compose mode)."""
+    import sys
+
+    # Force fresh import of setup_test_data to get latest changes
+    if 'tests.setup_test_data' in sys.modules:
+        del sys.modules['tests.setup_test_data']
+
+    import tests.setup_test_data
+    setup_test_data = tests.setup_test_data.setup_test_data
+    setup_test_data(API_BASE)
+    yield
 
 
 def get_auth_token(email: str, password: str) -> str:

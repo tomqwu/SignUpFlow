@@ -289,6 +289,8 @@ docker-compose -f docker-compose.dev.yml exec api pytest tests/unit/test_auth.py
 docker-compose -f docker-compose.dev.yml exec api pytest tests/ --cov=api --cov-report=html
 ```
 
+> ℹ️ **Testing prerequisites:** The unit suite assumes `EMAIL_ENABLED=true`, `SMS_ENABLED=false`, and `DISABLE_RATE_LIMITS=false` in your `.env`. These keep the Docker test runs aligned with the documented settings and ensure email/rate-limit tests behave as expected.
+
 ### Service Management
 
 ```bash

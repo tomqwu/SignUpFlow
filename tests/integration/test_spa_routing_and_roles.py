@@ -23,7 +23,7 @@ async def test_spa_routing_on_reload():
         assert response.status_code == 200
         assert response.headers["content-type"].startswith("text/html")
         assert b"<!DOCTYPE html>" in response.content
-        assert b"Rostio" in response.content
+        assert b"SignUpFlow" in response.content
 
 
 @pytest.mark.asyncio

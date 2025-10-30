@@ -58,10 +58,37 @@ ENV PYTHONUNBUFFERED=1 \
     PORT=8000 \
     HOST=0.0.0.0
 
-# Install runtime dependencies only
+# Install runtime dependencies including Playwright browser dependencies
 RUN apt-get update && apt-get install -y \
     libpq5 \
     curl \
+    # Playwright browser dependencies
+    libglib2.0-0t64 \
+    libnspr4 \
+    libnss3 \
+    libdbus-1-3 \
+    libatk1.0-0t64 \
+    libatspi2.0-0t64 \
+    libxcomposite1 \
+    libxdamage1 \
+    libxfixes3 \
+    libxrandr2 \
+    libgbm1 \
+    libxkbcommon0 \
+    libasound2t64 \
+    libcups2t64 \
+    libdrm2 \
+    libxcb1 \
+    libxext6 \
+    libx11-6 \
+    libxrender1 \
+    libxshmfence1 \
+    libcairo2 \
+    libpango-1.0-0 \
+    libpangocairo-1.0-0 \
+    fonts-liberation \
+    libgdk-pixbuf2.0-0 \
+    libgtk-3-0 \
     && rm -rf /var/lib/apt/lists/*
 
 # Create non-root user for security
@@ -73,6 +100,9 @@ WORKDIR /app
 # Copy Python packages from builder
 COPY --from=builder /usr/local/lib/python3.11/site-packages /usr/local/lib/python3.11/site-packages
 COPY --from=builder /usr/local/bin /usr/local/bin
+
+# Install Playwright browsers (must be done before switching to non-root user)
+RUN playwright install chromium
 
 # Copy application code from builder
 COPY --from=builder --chown=signupflow:signupflow /app ./

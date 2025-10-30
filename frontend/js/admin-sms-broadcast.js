@@ -9,8 +9,7 @@
  * - Usage statistics
  */
 
-// Assumes authFetch, showToast, and i18n are loaded globally
-const API_BASE_URL = window.location.origin;
+// Assumes authFetch, showToast, i18n, and API_BASE_URL are loaded globally
 
 /**
  * Initialize SMS broadcast UI

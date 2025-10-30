@@ -62,6 +62,7 @@ from api.routers import (
     billing,
     webhooks,
     notifications,
+    onboarding,
 )
 
 
@@ -184,6 +185,7 @@ app.include_router(analytics.router, prefix="/api")
 app.include_router(invitations.router, prefix="/api")
 app.include_router(calendar.router, prefix="/api")
 app.include_router(notifications.router, prefix="/api")
+app.include_router(onboarding.router, prefix="/api")
 app.include_router(sms.router)
 app.include_router(billing.router, prefix="/api")
 app.include_router(webhooks.router, prefix="/api")

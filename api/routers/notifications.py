@@ -30,7 +30,7 @@ router = APIRouter(tags=["notifications"])
 # ============================================================================
 
 @router.get("/notifications/", response_model=NotificationListResponse)
-def list_notifications(
+async def list_notifications(
     org_id: str = Query(..., description="Organization ID"),
     status: Optional[str] = Query(None, description="Filter by status (pending, sent, delivered, etc.)"),
     type: Optional[str] = Query(None, description="Filter by type (assignment, reminder, update, cancellation)"),
@@ -43,19 +43,22 @@ def list_notifications(
     List notifications for current user.
 
     Volunteers see only their own notifications.
-    Admins see their own notifications (not organization-wide).
+    Admins see all organization notifications.
 
     **RBAC**: Authenticated user (volunteer or admin)
-    **Multi-tenant**: Filtered by org_id and current user
+    **Multi-tenant**: Filtered by org_id (and recipient_id for volunteers)
     """
+    from api.dependencies import check_admin_permission
+
     # Verify user belongs to organization
     verify_org_member(current_user, org_id)
 
-    # Build query - ALWAYS filter by recipient_id (user can only see own notifications)
-    query = db.query(Notification).filter(
-        Notification.org_id == org_id,
-        Notification.recipient_id == current_user.id
-    )
+    # Build query - admins see all org notifications, volunteers see only their own
+    query = db.query(Notification).filter(Notification.org_id == org_id)
+
+    # Volunteers can only see their own notifications
+    if not check_admin_permission(current_user):
+        query = query.filter(Notification.recipient_id == current_user.id)
 
     # Apply filters
     if status:
@@ -81,7 +84,7 @@ def list_notifications(
 
 
 @router.get("/notifications/{notification_id}", response_model=NotificationResponse)
-def get_notification(
+async def get_notification(
     notification_id: int,
     current_user: Person = Depends(get_current_user),
     db: Session = Depends(get_db)
@@ -112,7 +115,7 @@ def get_notification(
 
 
 @router.get("/notifications/preferences/me", response_model=EmailPreferenceResponse)
-def get_my_email_preferences(
+async def get_my_email_preferences(
     current_user: Person = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
@@ -148,7 +151,7 @@ def get_my_email_preferences(
 
 
 @router.put("/notifications/preferences/me", response_model=EmailPreferenceResponse)
-def update_my_email_preferences(
+async def update_my_email_preferences(
     preferences: EmailPreferenceUpdate,
     current_user: Person = Depends(get_current_user),
     db: Session = Depends(get_db)
@@ -203,7 +206,7 @@ def update_my_email_preferences(
 # ============================================================================
 
 @router.get("/notifications/stats/organization", response_model=NotificationStatsResponse)
-def get_organization_notification_stats(
+async def get_organization_notification_stats(
     org_id: str = Query(..., description="Organization ID"),
     days: int = Query(7, ge=1, le=90, description="Number of days to analyze"),
     admin: Person = Depends(get_current_admin_user),
@@ -279,7 +282,7 @@ def get_organization_notification_stats(
 
 
 @router.post("/notifications/test/send")
-def send_test_notification(
+async def send_test_notification(
     recipient_email: str = Query(..., description="Email address to send test notification"),
     org_id: str = Query(..., description="Organization ID"),
     admin: Person = Depends(get_current_admin_user),

@@ -2908,6 +2908,9 @@ async function leaveEvent(eventId) {
 window.startOnboarding = startOnboarding;
 window.showLogin = showLogin;
 window.handleLogin = handleLogin;
+window.showForgotPassword = showForgotPassword;
+window.handleForgotPassword = handleForgotPassword;
+window.handleResetPassword = handleResetPassword;
 window.createProfile = createProfile;
 window.createAndJoinOrg = createAndJoinOrg;
 

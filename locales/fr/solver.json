@@ -1,0 +1,9 @@
+{
+  "schedule_generation": "Génération de planning",
+  "schedule_calendar": "Calendrier de planning",
+  "generated_schedules": "Plannings générés",
+  "generate_first": "Générez un planning pour voir le calendrier",
+  "loading_schedules": "Chargement des plannings...",
+  "create_assignments_desc": "Cela créera des affectations pour tous les événements à venir",
+  "total_schedules": "Total de plannings :"
+}

@@ -37,8 +37,8 @@ def rate_limit(limit_type: str):
         Rate limiting is disabled during tests (when TESTING env var is set).
     """
     def check_rate_limit(request: Request):
-        # Disable rate limiting during tests
-        if os.getenv("TESTING") == "true":
+        # Disable rate limiting during tests or when explicitly toggled
+        if os.getenv("TESTING") == "true" or os.getenv("DISABLE_RATE_LIMITS") == "true":
             return True
 
         client_ip = get_client_ip(request)

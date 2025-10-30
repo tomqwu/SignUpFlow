@@ -18,6 +18,7 @@ from api.models import (
     Person, Assignment
 )
 from api.tasks.notifications import send_email_task
+from api.core.config import settings
 
 logger = logging.getLogger(__name__)
 
@@ -116,7 +117,12 @@ def create_assignment_notifications(
         created_count += 1
 
         # Queue email if immediate frequency
-        if send_immediately and email_pref.frequency == EmailFrequency.IMMEDIATE:
+        if (
+            send_immediately
+            and settings.EMAIL_ENABLED
+            and settings.EMAIL_SEND_ASSIGNMENT_NOTIFICATIONS
+            and email_pref.frequency == EmailFrequency.IMMEDIATE
+        ):
             try:
                 send_email_task.delay(notification.id)
                 queued_count += 1
@@ -196,7 +202,12 @@ def create_notification(
     db.flush()
 
     # Queue email if immediate frequency
-    if send_immediately and (not email_pref or email_pref.frequency == EmailFrequency.IMMEDIATE):
+    if (
+        send_immediately
+        and settings.EMAIL_ENABLED
+        and settings.EMAIL_SEND_UPDATE_NOTIFICATIONS
+        and (not email_pref or email_pref.frequency == EmailFrequency.IMMEDIATE)
+    ):
         try:
             send_email_task.delay(notification.id)
             logger.info(f"Queued email for notification {notification.id}")

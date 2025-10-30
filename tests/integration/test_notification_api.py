@@ -21,8 +21,8 @@ class TestNotificationEndpoints:
     def test_get_notifications_as_volunteer(self, client: TestClient, test_db: Session, auth_headers_volunteer: dict):
         """Test GET /api/notifications/ as volunteer (see only own notifications)."""
         # Arrange: Create test data
-        volunteer_id = "volunteer_123"
-        org_id = "org_123"
+        volunteer_id = "test_volunteer"
+        org_id = "test_org"
 
         # Create notification for volunteer
         notification = Notification(
@@ -39,6 +39,9 @@ class TestNotificationEndpoints:
         response = client.get(f"/api/notifications/?org_id={org_id}", headers=auth_headers_volunteer)
 
         # Assert
+        if response.status_code != 200:
+            print(f"DEBUG: Response status: {response.status_code}")
+            print(f"DEBUG: Response body: {response.text}")
         assert response.status_code == 200
         data = response.json()
         assert len(data["notifications"]) >= 1
@@ -47,7 +50,7 @@ class TestNotificationEndpoints:
     def test_get_notifications_as_admin_sees_all(self, client: TestClient, test_db: Session, auth_headers_admin: dict):
         """Test GET /api/notifications/ as admin (see all org notifications)."""
         # Arrange
-        org_id = "org_123"
+        org_id = "test_org"
 
         # Create notifications for different volunteers
         notif1 = Notification(org_id=org_id, recipient_id="vol_1", type=NotificationType.ASSIGNMENT, status=NotificationStatus.SENT)
@@ -66,8 +69,8 @@ class TestNotificationEndpoints:
     def test_get_single_notification(self, client: TestClient, test_db: Session, auth_headers_volunteer: dict):
         """Test GET /api/notifications/{notification_id}."""
         # Arrange
-        volunteer_id = "volunteer_123"
-        org_id = "org_123"
+        volunteer_id = "test_volunteer"
+        org_id = "test_org"
 
         notification = Notification(
             org_id=org_id,
@@ -94,8 +97,8 @@ class TestNotificationEndpoints:
     def test_get_email_preferences(self, client: TestClient, test_db: Session, auth_headers_volunteer: dict):
         """Test GET /api/notifications/preferences/me."""
         # Arrange
-        volunteer_id = "volunteer_123"
-        org_id = "org_123"
+        volunteer_id = "test_volunteer"
+        org_id = "test_org"
 
         # Create preferences
         pref = EmailPreference(
@@ -121,8 +124,8 @@ class TestNotificationEndpoints:
     def test_update_email_preferences(self, client: TestClient, test_db: Session, auth_headers_volunteer: dict):
         """Test PUT /api/notifications/preferences/me."""
         # Arrange
-        volunteer_id = "volunteer_123"
-        org_id = "org_123"
+        volunteer_id = "test_volunteer"
+        org_id = "test_org"
 
         # Create existing preferences
         pref = EmailPreference(
@@ -153,7 +156,7 @@ class TestNotificationEndpoints:
     def test_get_org_stats_as_admin(self, client: TestClient, test_db: Session, auth_headers_admin: dict):
         """Test GET /api/notifications/stats/organization (admin-only)."""
         # Arrange
-        org_id = "org_123"
+        org_id = "test_org"
 
         # Create various notifications with different statuses
         notifications = [
@@ -171,15 +174,17 @@ class TestNotificationEndpoints:
         # Assert
         assert response.status_code == 200
         data = response.json()
-        assert "total_sent" in data
-        assert "total_delivered" in data
-        assert "total_opened" in data
-        assert data["total_sent"] >= 5
+        assert "total_notifications" in data
+        assert "delivered_notifications" in data
+        assert "success_rate" in data
+        assert "status_breakdown" in data
+        assert "type_breakdown" in data
+        assert data["total_notifications"] >= 5
 
     def test_get_org_stats_as_volunteer_forbidden(self, client: TestClient, auth_headers_volunteer: dict):
         """Test that volunteers cannot access org stats (admin-only)."""
         # Arrange
-        org_id = "org_123"
+        org_id = "test_org"
 
         # Act
         response = client.get(f"/api/notifications/stats/organization?org_id={org_id}", headers=auth_headers_volunteer)
@@ -190,23 +195,29 @@ class TestNotificationEndpoints:
     def test_post_test_notification_as_admin(self, client: TestClient, test_db: Session, auth_headers_admin: dict):
         """Test POST /api/notifications/test/send (admin-only, for testing)."""
         # Arrange
-        test_data = {
-            "recipient_email": "test@example.com",
-            "notification_type": "assignment",
-            "template_data": {
-                "event_title": "Test Event",
-                "role": "Test Role"
-            }
-        }
+        recipient_email = "test@example.com"
+        org_id = "test_org"
 
         # Act
-        with patch('api.tasks.notifications.send_email_task') as mock_task:
-            response = client.post("/api/notifications/test/send", json=test_data, headers=auth_headers_admin)
+        with patch('api.services.notification_service.create_notification') as mock_create:
+            mock_notification = type('obj', (object,), {
+                'id': 'notif_123',
+                'status': 'sent'
+            })()
+            mock_create.return_value = mock_notification
+
+            response = client.post(
+                f"/api/notifications/test/send?recipient_email={recipient_email}&org_id={org_id}",
+                headers=auth_headers_admin
+            )
 
         # Assert
         assert response.status_code == 200
         data = response.json()
-        assert data["success"] is True
+        assert "message" in data
+        assert recipient_email in data["message"]
+        assert data["notification_id"] == 'notif_123'
+        assert data["status"] == 'sent'
 
     def test_notifications_multi_tenant_isolation(self, client: TestClient, test_db: Session):
         """Test that volunteers can only see notifications from their own org."""
@@ -245,7 +256,7 @@ class TestNotificationEndpoints:
 @pytest.fixture
 def test_org(test_db: Session):
     """Create test organization."""
-    org = Organization(id="org_123", name="Test Organization", region="US", config={})
+    org = Organization(id="test_org", name="Test Organization", region="US", config={})
     test_db.add(org)
     test_db.commit()
     test_db.refresh(org)
@@ -258,8 +269,8 @@ def volunteer_user(test_db: Session, test_org):
     from api.security import hash_password
 
     user = Person(
-        id="volunteer_123",
-        org_id="org_123",
+        id="test_volunteer",
+        org_id="test_org",
         name="Volunteer User",
         email="volunteer@example.com",
         password_hash=hash_password("password"),
@@ -277,8 +288,8 @@ def admin_user(test_db: Session, test_org):
     from api.security import hash_password
 
     user = Person(
-        id="admin_123",
-        org_id="org_123",
+        id="test_admin",
+        org_id="test_org",
         name="Admin User",
         email="admin@example.com",
         password_hash=hash_password("admin123"),
@@ -293,14 +304,14 @@ def admin_user(test_db: Session, test_org):
 @pytest.fixture
 def auth_headers_volunteer(volunteer_user):
     """Headers with JWT token for volunteer user."""
-    token = create_access_token({"sub": "volunteer_123", "org_id": "org_123", "roles": ["volunteer"]})
+    token = create_access_token({"sub": "test_volunteer", "org_id": "test_org", "roles": ["volunteer"]})
     return {"Authorization": f"Bearer {token}"}
 
 
 @pytest.fixture
 def auth_headers_admin(admin_user):
     """Headers with JWT token for admin user."""
-    token = create_access_token({"sub": "admin_123", "org_id": "org_123", "roles": ["admin"]})
+    token = create_access_token({"sub": "test_admin", "org_id": "test_org", "roles": ["admin"]})
     return {"Authorization": f"Bearer {token}"}
 
 

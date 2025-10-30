@@ -24,7 +24,7 @@ pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 _person_id_cache = {}
 
 
-@pytest.fixture(scope="module")
+@pytest.fixture(scope="function")
 def test_organizations():
     """Create two test organizations for isolation testing."""
     orgs = [
@@ -48,7 +48,7 @@ def test_organizations():
     return orgs
 
 
-@pytest.fixture(scope="module")
+@pytest.fixture(scope="function")
 def test_users(test_organizations):
     """Create test users with different roles across organizations.
 

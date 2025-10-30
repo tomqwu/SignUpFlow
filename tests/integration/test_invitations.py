@@ -54,6 +54,10 @@ def setup_test_org(api_server):
 
     admin_data = signup_response.json()
 
+    # Add JWT token to client headers for authenticated requests
+    jwt_token = admin_data["token"]
+    client.headers["Authorization"] = f"Bearer {jwt_token}"
+
     return {
         "client": client,
         "org_id": org_id,
@@ -119,25 +123,28 @@ class TestCreateInvitation:
     def test_create_invitation_non_admin(self, setup_test_org):
         """Test non-admin cannot create invitations."""
         data = setup_test_org
-        client = data["client"]
 
         # Create a volunteer (non-admin) user
         volunteer_email = f"volunteer_{int(time.time())}@test.com"
-        volunteer_response = client.post(f"{API_BASE}/auth/signup", json={
+        volunteer_response = httpx.Client(base_url=API_BASE).post(f"{API_BASE}/auth/signup", json={
             "org_id": data["org_id"],
             "name": "Volunteer User",
             "email": volunteer_email,
             "password": "vol123",
             "roles": ["volunteer"]
         })
-        volunteer_id = volunteer_response.json()["person_id"]
+        volunteer_data = volunteer_response.json()
 
-        # Try to create invitation as volunteer
-        response = client.post(
+        # Create a new client with volunteer's JWT token
+        volunteer_client = httpx.Client(base_url=API_BASE)
+        volunteer_jwt_token = volunteer_data["token"]
+        volunteer_client.headers["Authorization"] = f"Bearer {volunteer_jwt_token}"
+
+        # Try to create invitation as volunteer (should fail)
+        response = volunteer_client.post(
             f"{API_BASE}/invitations",
             params={
-                "org_id": data["org_id"],
-                "person_id": volunteer_id
+                "org_id": data["org_id"]
             },
             json={
                 "email": f"new_{int(time.time())}@test.com",
@@ -148,6 +155,9 @@ class TestCreateInvitation:
 
         assert response.status_code == 403
         assert "admin" in response.json()["detail"].lower()
+
+        # Clean up
+        volunteer_client.close()
 
     def test_create_invitation_duplicate_pending(self, setup_test_org):
         """Test cannot create duplicate pending invitation."""

@@ -4,11 +4,16 @@ Comprehensive Test Suite for Rostio
 Covers all API endpoints and critical GUI workflows with blocked dates integration
 """
 
+import os
 import pytest
 import requests
 from datetime import datetime, timedelta, date
 from playwright.sync_api import sync_playwright, expect
 import time
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
+
+from api.models import Person
 
 API_BASE = "http://localhost:8000/api"
 APP_URL = "http://localhost:8000"
@@ -20,14 +25,57 @@ APP_URL = "http://localhost:8000"
 def get_auth_headers():
     """Get authentication headers for API requests."""
     # Login as admin user
-    response = requests.post(f"{API_BASE}/auth/login", json={
-        "email": "jane@test.com",
-        "password": "password"
-    })
+    response = requests.post(
+        f"{API_BASE}/auth/login",
+        json={"email": "jane@test.com", "password": "password"},
+        timeout=10,
+    )
     if response.status_code == 200:
-        token = response.json()["token"]
-        return {"Authorization": f"Bearer {token}"}
+        data = response.json()
+        roles = data.get("roles", [])
+        org_id = data.get("org_id")
+        token = data.get("token")
+        if "admin" not in roles or org_id != "test_org":
+            _ensure_admin_user()
+            # Retry login once after correcting roles/org binding
+            retry = requests.post(
+                f"{API_BASE}/auth/login",
+                json={"email": "jane@test.com", "password": "password"},
+                timeout=10,
+            )
+            if retry.status_code == 200:
+                token = retry.json().get("token")
+                if token:
+                    return {"Authorization": f"Bearer {token}"}
+            print(
+                f"⚠️  Admin login failed after role correction: {retry.status_code} {retry.text}"
+            )
+            return {}
+        if token:
+            return {"Authorization": f"Bearer {token}"}
+    else:
+        print(
+            f"⚠️  Admin login failed: {response.status_code} {response.text}"
+        )
     return {}
+
+
+def _ensure_admin_user() -> None:
+    """Ensure Jane exists as an admin in the test database."""
+    db_url = os.getenv("DATABASE_URL", "sqlite:///./test_roster.db")
+    connect_args = {"check_same_thread": False} if db_url.startswith("sqlite") else {}
+    engine = create_engine(db_url, connect_args=connect_args)
+    SessionLocal = sessionmaker(bind=engine)
+    session = SessionLocal()
+    try:
+        person = session.query(Person).filter(Person.email == "jane@test.com").first()
+        if person is None:
+            return
+        person.org_id = "test_org"
+        person.roles = ["admin"]
+        session.commit()
+    finally:
+        session.close()
 
 
 def setup_test_data():

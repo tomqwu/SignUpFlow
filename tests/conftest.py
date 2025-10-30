@@ -14,6 +14,10 @@ from playwright.sync_api import sync_playwright
 
 from tests.e2e.helpers import AppConfig, ApiTestClient, safe_artifact_name
 
+# Module-level variable to store the current test's database session
+# This allows both the db fixture and the override_get_db_dependency to share the same session
+_test_db_session = None
+
 
 # Test server configuration
 APP_URL = os.getenv("E2E_APP_URL", "http://localhost:8000").rstrip("/")
@@ -28,10 +32,10 @@ def app_config() -> AppConfig:
 
 @pytest.fixture(scope="session")
 def api_server(app_config: AppConfig):
-    """Start API server for testing session."""
+    """Start API server for testing session (or use already-running server in Docker)."""
     # Set test database URL environment variable
     test_env = os.environ.copy()
-    test_env["DATABASE_URL"] = "sqlite:///./test_roster.db"
+    test_env["DATABASE_URL"] = f"sqlite:///{TEST_DB_PATH}"
     test_env["TESTING"] = "true"  # Disable rate limiting during tests
     test_env["EMAIL_ENABLED"] = "false"
     test_env["SMS_ENABLED"] = "false"
@@ -47,37 +51,72 @@ def api_server(app_config: AppConfig):
     host = parsed_url.hostname or "0.0.0.0"
     port = parsed_url.port or (443 if parsed_url.scheme == "https" else 80)
 
-    # Start server with test database
-    process = subprocess.Popen(
-        [
-            "poetry",
-            "run",
-            "uvicorn",
-            "api.main:app",
-            "--host",
-            host,
-            "--port",
-            str(port),
-        ],
-        env=test_env,
-    )
+    # Check if server is already running (Docker environment)
+    # Try port check first (faster and more reliable than HTTP check)
+    import socket
 
-    # Wait for server to be ready
-    server_ready = False
-    for _ in range(60):
-        try:
-            response = requests.get(f"{app_config.app_url}/health", timeout=1)
-            if response.status_code == 200:
-                server_ready = True
-                break
-        except Exception:
-            time.sleep(0.5)
+    server_already_running = False
+    print(f"🔍 Checking if port {port} already in use...")
+
+    # Try to bind to the port - if it fails, something is already using it
+    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    sock.settimeout(1)
+    try:
+        sock.bind((host if host != "0.0.0.0" else "127.0.0.1", port))
+        sock.close()
+        print(f"   Port {port} is available - need to start server")
+    except OSError as e:
+        if e.errno == 98:  # Address already in use
+            server_already_running = True
+            print(f"✅ Port {port} already in use - server appears to be running")
+            # Double-check with health endpoint
+            try:
+                response = requests.get(f"{app_config.app_url}/health", timeout=5)
+                if response.status_code == 200:
+                    print(f"✅ Health check confirmed - server is healthy")
+                else:
+                    print(f"⚠️  Health check returned {response.status_code}")
+            except Exception as e:
+                print(f"⚠️  Health check failed: {type(e).__name__} - {e}")
+                print(f"   Proceeding anyway since port is bound")
         else:
-            time.sleep(0.5)
+            print(f"   Unexpected socket error: {e}")
+            sock.close()
 
-    if not server_ready:
-        process.terminate()
-        raise RuntimeError("API server failed to start within timeout window")
+    # Only start server if not already running
+    process = None
+    if not server_already_running:
+        # Start server with test database
+        process = subprocess.Popen(
+            [
+                "poetry",
+                "run",
+                "uvicorn",
+                "api.main:app",
+                "--host",
+                host,
+                "--port",
+                str(port),
+            ],
+            env=test_env,
+        )
+
+        # Wait for server to be ready
+        server_ready = False
+        for _ in range(60):
+            try:
+                response = requests.get(f"{app_config.app_url}/health", timeout=1)
+                if response.status_code == 200:
+                    server_ready = True
+                    break
+            except Exception:
+                time.sleep(0.5)
+            else:
+                time.sleep(0.5)
+
+        if not server_ready:
+            process.terminate()
+            raise RuntimeError("API server failed to start within timeout window")
 
     # Setup test data
     # Force complete reload of setup_test_data module to get latest changes
@@ -101,12 +140,13 @@ def api_server(app_config: AppConfig):
 
     yield process
 
-    # Cleanup
-    process.terminate()
-    try:
-        process.wait(timeout=5)
-    except subprocess.TimeoutExpired:
-        process.kill()
+    # Cleanup - only terminate if we started the server
+    if process is not None:
+        process.terminate()
+        try:
+            process.wait(timeout=5)
+        except subprocess.TimeoutExpired:
+            process.kill()
 
 
 @pytest.fixture(scope="function")
@@ -145,7 +185,16 @@ def browser_context(request, app_config: AppConfig):
 
 @pytest.fixture(scope="function")
 def page(browser_context):
-    """Provide a fresh page for each test."""
+    """
+    Provide a fresh page for each test with clean browser state.
+
+    Phase 2 of test isolation fix: Clears browser state (localStorage,
+    sessionStorage, cookies) before each test to prevent browser-level
+    state pollution between tests.
+
+    This complements the database isolation fix (Phase 1) to ensure
+    complete test isolation.
+    """
     page = browser_context.new_page()
     page.set_default_timeout(5000)
 
@@ -154,7 +203,38 @@ def page(browser_context):
         print(f"CONSOLE: {msg.type}: {msg.text}") if msg.type in ["error", "warning"] else None
     )
 
+    # Phase 2: Clean browser state BEFORE each test
+    # This prevents localStorage/sessionStorage/cookie pollution from previous tests
+    try:
+        # Navigate to app first (required for evaluate to work)
+        page.goto(APP_URL, wait_until="domcontentloaded", timeout=10000)
+
+        # Clear all browser storage
+        page.evaluate("""() => {
+            localStorage.clear();
+            sessionStorage.clear();
+        }""")
+
+        # Clear cookies
+        browser_context.clear_cookies()
+    except Exception as e:
+        # If cleanup fails, log but don't fail the test
+        # Some tests might not need the app to be loaded
+        print(f"Warning: Browser state cleanup failed: {e}")
+
     yield page
+
+    # Clean AFTER test as well (belt and suspenders approach)
+    try:
+        page.evaluate("""() => {
+            localStorage.clear();
+            sessionStorage.clear();
+        }""")
+        browser_context.clear_cookies()
+    except Exception:
+        # Cleanup failed, but test is done anyway
+        pass
+
     page.close()
 
 
@@ -232,19 +312,21 @@ def pytest_configure(config):
 
 # Database test fixtures
 import os
+from pathlib import Path
 from sqlalchemy import create_engine, text
 from sqlalchemy.orm import sessionmaker
 from api.models import Base
 
-TEST_DATABASE_URL = "sqlite:///./test_roster.db"
+TEST_DB_PATH = Path(__file__).resolve().parent.parent / "test_roster.db"
+TEST_DATABASE_URL = f"sqlite:///{TEST_DB_PATH}"
 
 
 @pytest.fixture(scope="session", autouse=True)
 def setup_test_database():
     """Setup test database once per test session."""
     # Remove existing test database
-    if os.path.exists("test_roster.db"):
-        os.remove("test_roster.db")
+    if TEST_DB_PATH.exists():
+        TEST_DB_PATH.unlink()
 
     # Create test database with all tables
     engine = create_engine(TEST_DATABASE_URL, connect_args={"check_same_thread": False})
@@ -262,8 +344,8 @@ def setup_test_database():
     yield
 
     # Cleanup after all tests
-    if os.path.exists("test_roster.db"):
-        os.remove("test_roster.db")
+    if TEST_DB_PATH.exists():
+        TEST_DB_PATH.unlink()
 
 
 @pytest.fixture(scope="module", autouse=True)
@@ -283,6 +365,9 @@ def reset_database_between_modules():
     yield
 
     # After module completes, clean up database data
+    if not TEST_DB_PATH.exists():
+        return
+
     engine = create_engine(TEST_DATABASE_URL, connect_args={"check_same_thread": False})
 
     # Import all models to get table references
@@ -311,6 +396,66 @@ def reset_database_between_modules():
         conn.commit()
 
 
+@pytest.fixture(scope="function", autouse=True)
+def reset_database_between_tests():
+    """
+    Reset database data before EACH test function to ensure complete test isolation.
+
+    This fixture addresses test isolation problems where:
+    - Tests pass individually but fail in full suite
+    - Database state pollution from previous tests affects later tests
+    - Volunteers/events created in one test persist to the next
+    - Expected data states don't match actual database state
+
+    Implementation:
+    - Runs BEFORE each test function (autouse=True)
+    - Deletes all data from all tables
+    - Preserves table schema (no DROP/CREATE overhead)
+    - Fast isolation via DELETE instead of transaction rollback
+
+    Expected Impact:
+    - Fixes 40-50 of 58 failing tests (test isolation issues)
+    - Tests become fully independent and order-agnostic
+    - Consistent test behavior in isolation vs full suite
+    """
+    # Clean database BEFORE each test
+    # Ensure database and tables exist (create if missing to prevent silent failures)
+    engine = create_engine(TEST_DATABASE_URL, connect_args={"check_same_thread": False})
+
+    if not TEST_DB_PATH.exists():
+        # Database doesn't exist - create it with all tables
+        Base.metadata.create_all(bind=engine)
+
+    # Import all models to get table references
+    from api.models import (
+        Organization, Person, Team, TeamMember, Resource, Event, EventTeam,
+        Assignment, Solution, Availability, VacationPeriod, AvailabilityException,
+        Holiday, Constraint, Invitation, RecurringSeries, RecurrenceException,
+        OnboardingProgress, Notification, EmailPreference
+    )
+
+    # Delete all data from all tables (in reverse order to handle foreign keys)
+    with engine.connect() as conn:
+        # Disable foreign key constraints temporarily for SQLite
+        conn.execute(text("PRAGMA foreign_keys = OFF"))
+
+        # Delete data from all tables (skip tables that don't exist)
+        for table in reversed(Base.metadata.sorted_tables):
+            try:
+                conn.execute(text(f"DELETE FROM {table.name}"))
+            except Exception:
+                # Table doesn't exist in test database - skip it
+                pass
+
+        # Re-enable foreign key constraints
+        conn.execute(text("PRAGMA foreign_keys = ON"))
+        conn.commit()
+
+    yield
+
+    # No cleanup needed after test - next test will clean before it runs
+
+
 @pytest.fixture
 def auth_headers():
     """
@@ -325,44 +470,129 @@ def auth_headers():
 @pytest.fixture(scope="function", autouse=True)
 def override_get_db():
     """Override database dependency to use test database for unit tests."""
+    from fastapi import Depends
+    from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+    from sqlalchemy.orm import Session
     from api.main import app
     from api.database import get_db
     from api.dependencies import get_current_admin_user, get_current_user, verify_org_member
     from api.models import Person
 
-    engine = create_engine(TEST_DATABASE_URL, connect_args={"check_same_thread": False})
-    TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+    # Get the security scheme
+    security = HTTPBearer()
 
     def override_get_db_dependency():
-        try:
-            db = TestingSessionLocal()
-            yield db
-        finally:
-            db.close()
-
-    def override_get_admin_user():
-        """Mock admin user for testing - bypasses authentication."""
-        return Person(
-            id="test_admin",
-            org_id="test_org",
-            name="Test Admin",
-            email="admin@test.com",
-            roles=["admin"]
-        )
-
-    def override_get_user():
-        """Mock user for testing - returns admin user to allow unit tests to pass.
-
-        Note: Most unit tests expect to be able to create/update/delete resources
-        without permission errors, so we return an admin user here.
         """
-        return Person(
-            id="test_admin",
-            org_id="test_org",
-            name="Test Admin",
-            email="admin@test.com",
-            roles=["admin"]  # Admin role allows tests to pass permission checks
-        )
+        Return the same database session used by test fixtures.
+
+        This ensures that users created in test fixtures are visible to
+        the authentication override functions.
+        """
+        global _test_db_session
+
+        # If there's a test session, use it (for integration tests with db fixture)
+        if _test_db_session is not None:
+            yield _test_db_session
+        else:
+            # Fallback: create a new session (for tests without db fixture)
+            engine = create_engine(TEST_DATABASE_URL, connect_args={"check_same_thread": False})
+            TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+            db = TestingSessionLocal()
+            try:
+                yield db
+            finally:
+                db.close()
+
+    async def override_get_user(
+        credentials: HTTPAuthorizationCredentials = Depends(security),
+        db: Session = Depends(override_get_db_dependency)
+    ):
+        """Smart mock that parses JWT token and queries database for actual user.
+
+        This allows tests to create real users and JWT tokens, and the authentication
+        will work correctly based on the token.
+        """
+        from api.security import verify_token
+
+        # Parse JWT token
+        try:
+            if isinstance(credentials, HTTPAuthorizationCredentials):
+                token = credentials.credentials
+            elif isinstance(credentials, str):
+                token = credentials
+            else:
+                # Fallback to hardcoded admin for tests without proper tokens
+                return Person(
+                    id="test_admin",
+                    org_id="test_org",
+                    name="Test Admin",
+                    email="admin@test.com",
+                    roles=["admin"],
+                    timezone="UTC",
+                    language="en",
+                    status="active"
+                )
+
+            payload = verify_token(token)
+
+            # Extract person_id from token
+            person_id: str = payload.get("sub")
+            if person_id is None:
+                # Fallback to hardcoded admin
+                return Person(
+                    id="test_admin",
+                    org_id="test_org",
+                    name="Test Admin",
+                    email="admin@test.com",
+                    roles=["admin"],
+                    timezone="UTC",
+                    language="en",
+                    status="active"
+                )
+
+            # Query database for actual user
+            person = db.query(Person).filter(Person.id == person_id).first()
+            if person is None:
+                # Fallback to hardcoded admin if user not in database
+                return Person(
+                    id="test_admin",
+                    org_id="test_org",
+                    name="Test Admin",
+                    email="admin@test.com",
+                    roles=["admin"],
+                    timezone="UTC",
+                    language="en",
+                    status="active"
+                )
+
+            return person
+
+        except Exception:
+            # On any error, fallback to hardcoded admin
+            return Person(
+                id="test_admin",
+                org_id="test_org",
+                name="Test Admin",
+                email="admin@test.com",
+                roles=["admin"],
+                timezone="UTC",
+                language="en",
+                status="active"
+            )
+
+    async def override_get_admin_user(
+        current_user: Person = Depends(override_get_user)
+    ):
+        """Verify user has admin role (uses smart override)."""
+        from api.dependencies import check_admin_permission
+        from fastapi import HTTPException
+
+        if not check_admin_permission(current_user):
+            raise HTTPException(
+                status_code=403,
+                detail="Admin access required"
+            )
+        return current_user
 
     def override_verify_org_member(person: Person, org_id: str) -> None:
         """Mock org membership verification - bypasses org checks for testing."""
@@ -377,6 +607,7 @@ def override_get_db():
     import api.routers.people
     import api.routers.events
     import api.routers.teams
+    import api.routers.notifications
 
     # Store original function
     original_verify = api.dependencies.verify_org_member
@@ -388,6 +619,8 @@ def override_get_db():
         api.routers.events.verify_org_member = override_verify_org_member
     if hasattr(api.routers.teams, 'verify_org_member'):
         api.routers.teams.verify_org_member = override_verify_org_member
+    if hasattr(api.routers.notifications, 'verify_org_member'):
+        api.routers.notifications.verify_org_member = override_verify_org_member
 
     yield
 
@@ -406,14 +639,18 @@ def override_get_db():
 @pytest.fixture(scope="function")
 def db():
     """Provide a database session for integration tests."""
+    global _test_db_session
+
     engine = create_engine(TEST_DATABASE_URL, connect_args={"check_same_thread": False})
     TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
     session = TestingSessionLocal()
+    _test_db_session = session  # Store session globally for override_get_db_dependency
     try:
         yield session
     finally:
         session.close()
+        _test_db_session = None  # Clear global session after test
 
 
 # Helper functions for creating test data

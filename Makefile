@@ -279,8 +279,11 @@ test-all: check-npm check-poetry
 	@echo "🚀 Running complete test suite..."
 	@echo ""
 	@echo "🔍 Checking if server is running..."
+	@rm -f test_roster.db test_roster.db-shm test_roster.db-wal
 	@if ! curl -s http://localhost:8000/health > /dev/null 2>&1; then \
 		echo "⚠️  Server not running. Starting server..."; \
+		DISABLE_RATE_LIMITS=true TESTING=true EMAIL_ENABLED=false SMS_ENABLED=false \
+		DATABASE_URL=sqlite:///./test_roster.db \
 		poetry run uvicorn api.main:app --host 0.0.0.0 --port 8000 --reload > /dev/null 2>&1 & \
 		SERVER_PID=$$!; \
 		echo "⏳ Waiting for server to be ready..."; \
@@ -442,10 +445,124 @@ redis-shell:
 	@echo "🔴 Opening Redis CLI..."
 	@docker-compose -f docker-compose.dev.yml exec redis redis-cli -a dev_redis_password
 
-# Run tests in Docker container
+# ============================================================================
+# Docker-Based E2E Testing (Primary Testing Method)
+# ============================================================================
+
+# Run ALL E2E tests in Docker (use this for daily development)
 test-docker:
-	@echo "🧪 Running tests in Docker container..."
-	@docker-compose -f docker-compose.dev.yml exec api pytest tests/ -v --tb=short
+	@echo "🧪 Running ALL E2E tests in Docker container..."
+	@docker-compose -f docker-compose.dev.yml exec -T api pytest tests/e2e/ -v --tb=short
+
+# Run E2E tests with quick summary (no traceback)
+test-docker-quick:
+	@echo "⚡ Running E2E tests in Docker (quick mode)..."
+	@docker-compose -f docker-compose.dev.yml exec -T api pytest tests/e2e/ -v --tb=no
+
+# Run E2E tests with summary only
+test-docker-summary:
+	@echo "📊 Running E2E tests in Docker (summary only)..."
+	@docker-compose -f docker-compose.dev.yml exec -T api pytest tests/e2e/ -v --tb=no 2>&1 | grep -E "(PASSED|FAILED|SKIPPED|ERROR|=====|passed|failed|warning)"
+
+# Phase 1 Task 1: Fix Solver Workflow Tests
+test-docker-solver:
+	@echo "🤖 Running Solver Workflow E2E tests in Docker..."
+	@docker-compose -f docker-compose.dev.yml exec -T api pytest tests/e2e/test_solver_workflow.py -v --tb=short
+
+# Phase 1 Task 2: Fix Availability Management Tests
+test-docker-availability:
+	@echo "📅 Running Availability Management E2E tests in Docker..."
+	@docker-compose -f docker-compose.dev.yml exec -T api pytest tests/e2e/test_availability_management.py -v --tb=short
+
+# Phase 1 Task 3: Test Authentication Flows
+test-docker-auth:
+	@echo "🔐 Running Authentication E2E tests in Docker..."
+	@docker-compose -f docker-compose.dev.yml exec -T api pytest tests/e2e/test_auth_flows.py tests/e2e/test_login_flow.py tests/e2e/test_onboarding_wizard.py -v --tb=short
+
+# Phase 1 Task 4: Test RBAC Security
+test-docker-rbac:
+	@echo "🛡️  Running RBAC Security E2E tests in Docker..."
+	@docker-compose -f docker-compose.dev.yml exec -T api pytest tests/e2e/test_rbac_security.py -v --tb=short
+
+# Run specific E2E test file in Docker
+test-docker-file:
+	@echo "🎯 Running specific E2E test file in Docker..."
+	@if [ -z "$(FILE)" ]; then \
+		echo "❌ Usage: make test-docker-file FILE=tests/e2e/test_name.py"; \
+		exit 1; \
+	fi
+	@docker-compose -f docker-compose.dev.yml exec -T api pytest $(FILE) -v --tb=short
+
+# Run Email Invitation tests in Docker
+test-docker-email:
+	@echo "📧 Running Email Invitation E2E tests in Docker..."
+	@docker-compose -f docker-compose.dev.yml exec -T api pytest tests/e2e/test_email_invitation_workflow.py -v --tb=short
+
+# Run Calendar tests in Docker
+test-docker-calendar:
+	@echo "📅 Running Calendar E2E tests in Docker..."
+	@docker-compose -f docker-compose.dev.yml exec -T api pytest tests/e2e/test_calendar_features.py -v --tb=short
+
+# Run Language Switching tests in Docker
+test-docker-i18n:
+	@echo "🌍 Running i18n/Language Switching E2E tests in Docker..."
+	@docker-compose -f docker-compose.dev.yml exec -T api pytest tests/e2e/test_language_switching.py -v --tb=short
+
+# Run Admin Console tests in Docker
+test-docker-admin:
+	@echo "⚙️  Running Admin Console E2E tests in Docker..."
+	@docker-compose -f docker-compose.dev.yml exec -T api pytest tests/e2e/test_admin_console.py -v --tb=short
+
+# Run unit tests in Docker
+test-docker-unit:
+	@echo "🧪 Running unit tests in Docker container..."
+	@docker-compose -f docker-compose.dev.yml exec -T api pytest tests/unit/ -v --tb=short
+
+# Run unit tests (fast mode) in Docker
+test-docker-unit-fast:
+	@echo "⚡ Running fast unit tests in Docker..."
+	@docker-compose -f docker-compose.dev.yml exec -T api pytest tests/unit/ -v --tb=short -m "not slow"
+
+# Run integration tests in Docker
+test-docker-integration:
+	@echo "🔗 Running integration tests in Docker..."
+	@docker-compose -f docker-compose.dev.yml exec -T api pytest tests/integration/ -v --tb=short
+
+# Run comprehensive test suite in Docker
+test-docker-comprehensive:
+	@echo "🚀 Running comprehensive test suite in Docker..."
+	@docker-compose -f docker-compose.dev.yml exec -T api pytest tests/comprehensive_test_suite.py -v --tb=short
+
+# Run ALL tests (unit + integration + E2E) in Docker
+test-docker-all:
+	@echo "🎯 Running ALL tests in Docker container..."
+	@echo ""
+	@echo "================================"
+	@echo "   UNIT TESTS (Docker)"
+	@echo "================================"
+	@docker-compose -f docker-compose.dev.yml exec -T api pytest tests/unit/ -v --tb=short
+	@echo ""
+	@echo "================================"
+	@echo "   INTEGRATION TESTS (Docker)"
+	@echo "================================"
+	@docker-compose -f docker-compose.dev.yml exec -T api pytest tests/integration/ -v --tb=short
+	@echo ""
+	@echo "================================"
+	@echo "   E2E TESTS (Docker)"
+	@echo "================================"
+	@docker-compose -f docker-compose.dev.yml exec -T api pytest tests/e2e/ -v --tb=short
+	@echo ""
+	@echo "✅ All Docker tests complete!"
+
+# Run tests with Playwright browser automation in Docker
+test-docker-playwright:
+	@echo "🎭 Running Playwright E2E tests in Docker..."
+	@docker-compose -f docker-compose.dev.yml exec -T api pytest tests/e2e/ -v --tb=short --headed
+
+# Run tests with coverage in Docker
+test-docker-coverage:
+	@echo "📊 Running tests with coverage in Docker..."
+	@docker-compose -f docker-compose.dev.yml exec -T api pytest tests/ --cov=api --cov-report=html --cov-report=term -v --tb=short
 
 # Run migrations in Docker container
 migrate-docker:

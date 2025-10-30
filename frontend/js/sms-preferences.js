@@ -8,13 +8,12 @@
  * - Rate limit display
  */
 
-// Assumes authFetch, showToast, and i18n are loaded globally
-const API_BASE_URL = window.location.origin;
+// Assumes authFetch, showToast, i18n, and API_BASE_URL are loaded globally
 
 /**
  * Initialize SMS preferences UI
  */
-export async function initSmsPreferences() {
+async function initSmsPreferences() {
     const currentUser = JSON.parse(localStorage.getItem('currentUser') || 'null');
     if (!currentUser) return;
 

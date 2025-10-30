@@ -1,0 +1,45 @@
+{
+  "make_recurring": "Rendre cet événement récurrent",
+  "pattern": "Modèle de récurrence",
+  "weekly": "Hebdomadaire",
+  "biweekly": "Bihebdomadaire (toutes les 2 semaines)",
+  "monthly": "Mensuel",
+  "custom": "Intervalle personnalisé",
+
+  "select_days": "Sélectionner les jours",
+  "sunday": "Dimanche",
+  "monday": "Lundi",
+  "tuesday": "Mardi",
+  "wednesday": "Mercredi",
+  "thursday": "Jeudi",
+  "friday": "Vendredi",
+  "saturday": "Samedi",
+
+  "monthly_pattern": "Modèle mensuel",
+  "first": "Premier",
+  "second": "Deuxième",
+  "third": "Troisième",
+  "fourth": "Quatrième",
+  "last": "Dernier",
+
+  "custom_interval": "Toutes les N semaines",
+
+  "ends": "Se termine",
+  "on_date": "À une date spécifique",
+  "after_count": "Après un nombre d'occurrences",
+  "never": "Jamais (indéfini)",
+
+  "end_date": "Date de fin",
+  "occurrence_count": "Nombre d'occurrences",
+
+  "preview": "Aperçu du calendrier",
+  "preview_empty": "Sélectionnez les options du modèle pour voir l'aperçu",
+  "preview_loading": "Chargement de l'aperçu...",
+  "preview_error": "Erreur d'aperçu",
+
+  "series_created": "Série récurrente créée avec succès !",
+  "series_updated": "Série récurrente mise à jour avec succès !",
+  "series_deleted": "Série récurrente supprimée avec succès !",
+
+  "warning_large_series": "Ce modèle génère de nombreuses occurrences. Envisagez d'utiliser une durée plus courte."
+}

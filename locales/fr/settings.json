@@ -1,0 +1,63 @@
+{
+  "title": "Paramètres",
+  "name": "Votre nom",
+  "email": "E-mail",
+  "organization": "Organisation",
+  "timezone": "Fuseau horaire",
+  "logout": "Déconnexion",
+  "save_changes": "Enregistrer les modifications",
+  "language_change_note": "Les modifications prennent effet immédiatement",
+  "permission_level": "Niveau de permission",
+  "permission_note": "Votre niveau de permission est défini par un administrateur. Les rôles spécifiques aux événements sont sélectionnés lorsque vous rejoignez des événements individuels.",
+  "sections": {
+    "profile": "Informations de profil",
+    "preferences": "Préférences",
+    "permissions": "Permissions"
+  },
+  "fields": {
+    "name": "Nom complet",
+    "email": "Adresse e-mail",
+    "organization": "Organisation",
+    "timezone": "Fuseau horaire",
+    "language": "Langue",
+    "permission_level": "Niveau de permission"
+  },
+  "permissions": {
+    "admin": "Administrateur",
+    "admin_description": "Peut gérer l'organisation, créer des événements, inviter des utilisateurs",
+    "volunteer": "Bénévole",
+    "volunteer_description": "Membre régulier - peut voir et rejoindre des événements",
+    "note": "Votre niveau de permission est défini par un administrateur. Les rôles spécifiques aux événements (placier, accueillant, technicien son, etc.) sont sélectionnés lorsque vous rejoignez des événements individuels."
+  },
+  "save": {
+    "button": "Enregistrer les modifications",
+    "success": "Paramètres enregistrés avec succès !",
+    "error": "Erreur lors de l'enregistrement des paramètres"
+  },
+  "languages": {
+    "en": "English",
+    "es": "Español",
+    "pt": "Português",
+    "fr": "Français",
+    "de": "Deutsch",
+    "zh": "中文",
+    "ar": "العربية"
+  },
+  "tz_eastern": "Heure de l'Est",
+  "tz_central": "Heure du Centre",
+  "tz_mountain": "Heure des Rocheuses",
+  "tz_pacific": "Heure du Pacifique",
+  "tz_alaska": "Heure de l'Alaska",
+  "tz_hawaii": "Heure d'Hawaï",
+  "tz_london": "Londres",
+  "tz_paris": "Paris",
+  "tz_tokyo": "Tokyo",
+  "tz_shanghai": "Shanghai",
+  "tz_dubai": "Dubaï",
+  "tz_sydney": "Sydney",
+  "lang_english": "English",
+  "language": "Langue",
+  "lang_spanish": "Español",
+  "lang_portuguese": "Português",
+  "lang_french": "Français"
+}

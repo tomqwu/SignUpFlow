@@ -103,7 +103,11 @@ class EmailService:
             self.use_sendgrid = False
 
         # Email enabled flag
-        self.enabled = os.getenv("EMAIL_ENABLED", "true").lower() == "true"
+        # Auto-enable if explicit SMTP credentials provided (for integration tests)
+        # Otherwise respect EMAIL_ENABLED environment variable (defaults to true)
+        explicit_smtp_config = bool(smtp_user and smtp_password)
+        env_enabled = os.getenv("EMAIL_ENABLED", "true").lower() == "true"
+        self.enabled = explicit_smtp_config or env_enabled
 
         # Initialize Jinja2 template environment
         template_dir = Path(__file__).parent.parent / "templates" / "email"
@@ -316,8 +320,8 @@ class EmailService:
         part2 = MIMEText(html_content, "html")
         message.attach(part2)
 
-        # Send email
-        with smtplib.SMTP(self.smtp_host, self.smtp_port) as server:
+        # Send email (with 5-second timeout to prevent hangs)
+        with smtplib.SMTP(self.smtp_host, self.smtp_port, timeout=5) as server:
             server.starttls()
             server.login(self.smtp_user, self.smtp_password)
             server.sendmail(self.from_email, to_email, message.as_string())

@@ -1,24 +1,9 @@
-"""Pydantic schemas for billing and subscription operations.
+"""Pydantic schemas for billing and subscription operations."""
 
-These schemas validate request/response data for billing endpoints.
-
-Example Usage:
-    from api.schemas.billing import UpgradeRequest, SubscriptionResponse
-
-    # Request validation
-    request_data = UpgradeRequest(
-        org_id="org_123",
-        plan_tier="starter",
-        billing_cycle="monthly"
-    )
-
-    # Response serialization
-    response = SubscriptionResponse.from_orm(subscription)
-"""
-
-from pydantic import BaseModel, Field, validator
-from typing import Optional, List, Dict, Any
 from datetime import datetime
+from typing import Any, Dict, List, Optional
+
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 
 class SubscriptionResponse(BaseModel):
@@ -37,9 +22,9 @@ class SubscriptionResponse(BaseModel):
     created_at: datetime = Field(..., description="Subscription created timestamp")
     updated_at: datetime = Field(..., description="Last updated timestamp")
 
-    class Config:
-        from_attributes = True  # Pydantic v2 (was orm_mode in v1)
-        json_schema_extra = {
+    model_config = ConfigDict(
+        from_attributes=True,
+        json_schema_extra={
             "example": {
                 "id": 1,
                 "org_id": "org_123",
@@ -54,6 +39,7 @@ class SubscriptionResponse(BaseModel):
                 "updated_at": "2025-10-23T12:00:00"
             }
         }
+    )
 
 
 class UpgradeRequest(BaseModel):
@@ -65,29 +51,32 @@ class UpgradeRequest(BaseModel):
     payment_method_id: Optional[str] = Field(None, description="Stripe payment method ID")
     trial_days: Optional[int] = Field(14, description="Number of trial days (default: 14)")
 
-    @validator("plan_tier")
-    def validate_plan_tier(cls, v):
+    @field_validator("plan_tier")
+    @classmethod
+    def validate_plan_tier(cls, v: str) -> str:
         """Validate plan tier is one of the paid tiers."""
         if v not in ["starter", "pro", "enterprise"]:
             raise ValueError("Plan tier must be starter, pro, or enterprise")
         return v
 
-    @validator("billing_cycle")
-    def validate_billing_cycle(cls, v):
+    @field_validator("billing_cycle")
+    @classmethod
+    def validate_billing_cycle(cls, v: str) -> str:
         """Validate billing cycle."""
         if v not in ["monthly", "annual"]:
             raise ValueError("Billing cycle must be monthly or annual")
         return v
 
-    @validator("trial_days")
-    def validate_trial_days(cls, v):
+    @field_validator("trial_days")
+    @classmethod
+    def validate_trial_days(cls, v: Optional[int]) -> Optional[int]:
         """Validate trial days."""
         if v is not None and (v < 0 or v > 30):
             raise ValueError("Trial days must be between 0 and 30")
         return v
 
-    class Config:
-        json_schema_extra = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {
                 "org_id": "org_123",
                 "plan_tier": "starter",
@@ -96,6 +85,7 @@ class UpgradeRequest(BaseModel):
                 "trial_days": 14
             }
         }
+    )
 
 
 class DowngradeRequest(BaseModel):
@@ -105,21 +95,23 @@ class DowngradeRequest(BaseModel):
     new_plan_tier: str = Field(..., description="New plan tier (free, starter, pro)")
     reason: Optional[str] = Field(None, description="Reason for downgrade")
 
-    @validator("new_plan_tier")
-    def validate_new_plan_tier(cls, v):
+    @field_validator("new_plan_tier")
+    @classmethod
+    def validate_new_plan_tier(cls, v: str) -> str:
         """Validate new plan tier."""
         if v not in ["free", "starter", "pro"]:
             raise ValueError("New plan tier must be free, starter, or pro")
         return v
 
-    class Config:
-        json_schema_extra = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {
                 "org_id": "org_123",
                 "new_plan_tier": "free",
                 "reason": "Cost reduction"
             }
         }
+    )
 
 
 class ChangePlanRequest(BaseModel):
@@ -129,28 +121,31 @@ class ChangePlanRequest(BaseModel):
     new_plan_tier: str = Field(..., description="New plan tier")
     new_billing_cycle: Optional[str] = Field(None, description="New billing cycle (monthly, annual)")
 
-    @validator("new_plan_tier")
-    def validate_new_plan_tier(cls, v):
+    @field_validator("new_plan_tier")
+    @classmethod
+    def validate_new_plan_tier(cls, v: str) -> str:
         """Validate new plan tier."""
         if v not in ["free", "starter", "pro", "enterprise"]:
             raise ValueError("Plan tier must be free, starter, pro, or enterprise")
         return v
 
-    @validator("new_billing_cycle")
-    def validate_new_billing_cycle(cls, v):
+    @field_validator("new_billing_cycle")
+    @classmethod
+    def validate_new_billing_cycle(cls, v: Optional[str]) -> Optional[str]:
         """Validate new billing cycle."""
         if v is not None and v not in ["monthly", "annual"]:
             raise ValueError("Billing cycle must be monthly or annual")
         return v
 
-    class Config:
-        json_schema_extra = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {
                 "org_id": "org_123",
                 "new_plan_tier": "pro",
                 "new_billing_cycle": "annual"
             }
         }
+    )
 
 
 class TrialRequest(BaseModel):
@@ -161,22 +156,24 @@ class TrialRequest(BaseModel):
     billing_cycle: str = Field("monthly", description="Billing cycle after trial")
     trial_days: int = Field(14, description="Number of trial days")
 
-    @validator("plan_tier")
-    def validate_plan_tier(cls, v):
+    @field_validator("plan_tier")
+    @classmethod
+    def validate_plan_tier(cls, v: str) -> str:
         """Validate plan tier."""
         if v not in ["starter", "pro", "enterprise"]:
             raise ValueError("Trial plan must be starter, pro, or enterprise")
         return v
 
-    @validator("trial_days")
-    def validate_trial_days(cls, v):
+    @field_validator("trial_days")
+    @classmethod
+    def validate_trial_days(cls, v: int) -> int:
         """Validate trial days."""
         if v < 1 or v > 30:
             raise ValueError("Trial days must be between 1 and 30")
         return v
 
-    class Config:
-        json_schema_extra = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {
                 "org_id": "org_123",
                 "plan_tier": "starter",
@@ -184,6 +181,7 @@ class TrialRequest(BaseModel):
                 "trial_days": 14
             }
         }
+    )
 
 
 class CancelRequest(BaseModel):
@@ -194,8 +192,8 @@ class CancelRequest(BaseModel):
     reason: Optional[str] = Field(None, description="Reason for cancellation")
     feedback: Optional[str] = Field(None, description="Additional feedback")
 
-    class Config:
-        json_schema_extra = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {
                 "org_id": "org_123",
                 "immediately": False,
@@ -203,6 +201,7 @@ class CancelRequest(BaseModel):
                 "feedback": "Great service but we don't need it anymore"
             }
         }
+    )
 
 
 class WebhookEvent(BaseModel):
@@ -213,8 +212,8 @@ class WebhookEvent(BaseModel):
     data: Dict[str, Any] = Field(..., description="Event data")
     created: int = Field(..., description="Event creation timestamp")
 
-    class Config:
-        json_schema_extra = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {
                 "id": "evt_xxx",
                 "type": "customer.subscription.updated",
@@ -227,6 +226,7 @@ class WebhookEvent(BaseModel):
                 "created": 1698091200
             }
         }
+    )
 
 
 class UsageMetricsResponse(BaseModel):
@@ -238,9 +238,9 @@ class UsageMetricsResponse(BaseModel):
     percentage_used: float = Field(..., description="Percentage of limit used")
     last_updated: datetime = Field(..., description="Last updated timestamp")
 
-    class Config:
-        from_attributes = True
-        json_schema_extra = {
+    model_config = ConfigDict(
+        from_attributes=True,
+        json_schema_extra={
             "example": {
                 "metric_type": "volunteers_count",
                 "current_value": 25,
@@ -249,6 +249,7 @@ class UsageMetricsResponse(BaseModel):
                 "last_updated": "2025-10-23T12:00:00"
             }
         }
+    )
 
 
 class UsageSummaryResponse(BaseModel):
@@ -257,10 +258,10 @@ class UsageSummaryResponse(BaseModel):
     plan_tier: str = Field(..., description="Current plan tier")
     limits: Dict[str, Optional[int]] = Field(..., description="Plan limits")
     usage: Dict[str, Any] = Field(..., description="Current usage by metric type")
-    warnings: List[str] = Field([], description="List of approaching limits")
+    warnings: List[str] = Field(default_factory=list, description="List of approaching limits")
 
-    class Config:
-        json_schema_extra = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {
                 "plan_tier": "starter",
                 "limits": {
@@ -281,6 +282,7 @@ class UsageSummaryResponse(BaseModel):
                 ]
             }
         }
+    )
 
 
 class BillingHistoryResponse(BaseModel):
@@ -295,9 +297,9 @@ class BillingHistoryResponse(BaseModel):
     event_timestamp: datetime = Field(..., description="Event timestamp")
     invoice_pdf_url: Optional[str] = Field(None, description="Invoice PDF URL")
 
-    class Config:
-        from_attributes = True
-        json_schema_extra = {
+    model_config = ConfigDict(
+        from_attributes=True,
+        json_schema_extra={
             "example": {
                 "id": 1,
                 "event_type": "charge",
@@ -309,6 +311,7 @@ class BillingHistoryResponse(BaseModel):
                 "invoice_pdf_url": "https://stripe.com/invoice.pdf"
             }
         }
+    )
 
 
 class PaymentMethodResponse(BaseModel):
@@ -323,9 +326,9 @@ class PaymentMethodResponse(BaseModel):
     is_active: bool = Field(..., description="Is active")
     added_at: datetime = Field(..., description="When payment method was added")
 
-    class Config:
-        from_attributes = True
-        json_schema_extra = {
+    model_config = ConfigDict(
+        from_attributes=True,
+        json_schema_extra={
             "example": {
                 "id": 1,
                 "card_brand": "visa",
@@ -337,3 +340,4 @@ class PaymentMethodResponse(BaseModel):
                 "added_at": "2025-10-23T12:00:00"
             }
         }
+    )

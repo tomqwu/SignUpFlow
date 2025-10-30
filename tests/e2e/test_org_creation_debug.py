@@ -8,6 +8,12 @@ import json
 
 def test_create_organization_with_network_inspection(page: Page):
     """Test org creation and inspect all network traffic."""
+    import time
+
+    # Generate unique org name using timestamp to prevent 409 conflicts
+    timestamp = int(time.time() * 1000)
+    unique_org_name = f"Debug Test Org {timestamp}"
+    unique_location = f"Test Location {timestamp}"
 
     # Track all network requests and responses
     requests = []
@@ -62,9 +68,9 @@ def test_create_organization_with_network_inspection(page: Page):
     page.locator('button:has-text("Create New Organization")').click()
     page.wait_for_timeout(500)
 
-    # Fill in form
-    page.locator('#new-org-name').fill("Debug Test Org")
-    page.locator('#new-org-region').fill("Test Location")
+    # Fill in form with unique names to prevent 409 conflicts
+    page.locator('#new-org-name').fill(unique_org_name)
+    page.locator('#new-org-region').fill(unique_location)
 
     # Submit
     page.locator('#create-org-section button[type="submit"]').click()
