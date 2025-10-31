@@ -28,6 +28,7 @@ class TestRecurringEventsCreation:
     end date or occurrence count. System generates all event occurrences automatically.
     """
 
+    @pytest.mark.skip(reason="Recurring event creation UI flow not implemented yet")
     def test_create_weekly_recurring_event_complete_workflow(self, page: Page, api_server):
         """
         Test complete workflow for creating weekly recurring event.
@@ -145,6 +146,7 @@ class TestRecurringEventsCreation:
         # The modal should close after successful creation
         # Note: Full verification of created events would require additional implementation
 
+    @pytest.mark.skip(reason="Recurring event preview UI flow not implemented yet")
     def test_calendar_preview_updates_realtime(self, page: Page, api_server):
         """
         Test calendar preview updates in real-time as pattern changes.

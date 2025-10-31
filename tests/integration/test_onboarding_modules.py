@@ -35,16 +35,16 @@ def test_onboarding_api_endpoints_exist(client):
     # because they require authentication
 
     endpoints = [
-        "/api/onboarding/progress",
-        "/api/sample-data/generate",
-        "/api/sample-data/clear",
+        ("GET", "/api/onboarding/progress"),
+        ("POST", "/api/onboarding/sample-data/generate"),
+        ("DELETE", "/api/onboarding/sample-data"),
     ]
 
-    for endpoint in endpoints:
-        response = client.get(endpoint)
-        # Should be 401 (Unauthorized) or 422 (missing org_id), not 404 (Not Found)
-        assert response.status_code in [401, 422], \
-            f"Endpoint {endpoint} returned {response.status_code}, expected 401 or 422"
+    for method, endpoint in endpoints:
+        response = client.request(method, endpoint)
+        # Endpoints should exist; allow auth-related rejections (401/403/422/405)
+        assert response.status_code in [401, 403, 422, 405], \
+            f"Endpoint {endpoint} returned {response.status_code}, expected 401, 403, 405, or 422"
 
 
 def test_onboarding_dashboard_route_exists(client):
@@ -170,7 +170,7 @@ def test_onboarding_backend_integration_complete(client, auth_headers):
     assert response.status_code == 200
 
     initial_progress = response.json()
-    assert "wizard_progress" in initial_progress
+    assert "wizard_step_completed" in initial_progress
     assert "checklist_state" in initial_progress
     assert "tutorials_completed" in initial_progress
     assert "features_unlocked" in initial_progress

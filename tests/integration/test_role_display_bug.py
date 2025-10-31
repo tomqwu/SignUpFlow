@@ -2,8 +2,16 @@
 Integration test to catch [object Object] role display bugs.
 This test reproduces the exact bug the user reported.
 """
+import os
 import pytest
 from playwright.sync_api import Page, expect
+
+
+APP_URL = os.getenv("E2E_APP_URL")
+pytestmark = pytest.mark.skipif(
+    not APP_URL,
+    reason="E2E_APP_URL not configured; skipping Playwright UI tests"
+)
 
 
 @pytest.mark.asyncio
@@ -11,7 +19,7 @@ async def test_role_display_no_object_object(page: Page):
     """Test that roles never display as [object Object] anywhere in the app."""
 
     # Start server and navigate
-    page.goto("http://localhost:8001")
+    page.goto(APP_URL)
 
     # Create account with roles that are known to cause issues
     page.get_by_placeholder("Your Full Name").fill("Test User")
@@ -62,7 +70,7 @@ async def test_router_authentication_no_redirect_loop(page: Page):
     """Test that router properly detects authentication and doesn't redirect to login."""
 
     # Create account and login
-    page.goto("http://localhost:8001")
+    page.goto(APP_URL)
 
     page.get_by_placeholder("Your Full Name").fill("Auth Test")
     page.get_by_placeholder("Email Address").fill("auth@example.com")
@@ -97,7 +105,7 @@ async def test_roles_with_event_specific_roles(page: Page):
     # This test simulates what happens when user has custom event roles
     # We'll need to inject this via the API or database
 
-    page.goto("http://localhost:8001")
+    page.goto(APP_URL)
 
     # For now, just verify the structure handles it
     # TODO: Create user with worship-leader and vocalist roles via API

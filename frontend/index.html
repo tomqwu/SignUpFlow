@@ -135,7 +135,7 @@
                     </div>
 
                     <p class="help-text" style="text-align: center; margin-top: 10px;">
-                        <a href="#" onclick="showForgotPassword(); return false;" data-i18n="auth.login.forgot_password">Forgot password?</a>
+                        <a href="#" onclick="showForgotPassword(); return false;" data-i18n="auth.forgot_password">Forgot password?</a>
                     </p>
                 </form>
 
@@ -358,6 +358,52 @@
                     </div>
                 </div>
             </header>
+
+            <!-- Onboarding Dashboard -->
+            <section id="onboarding-dashboard" class="dashboard-section hidden" data-section="onboarding-dashboard">
+                <div class="dashboard-card">
+                    <h2 data-i18n="onboarding.dashboard_title">🎯 Welcome to Your Onboarding Dashboard</h2>
+                    <p class="help-text" data-i18n="onboarding.dashboard_subtitle">
+                        Follow these quick actions to get your organization ready.
+                    </p>
+
+                    <div id="dashboard-sample-data-controls" class="dashboard-controls">
+                        <h3 data-i18n="onboarding.sample_data_title">Sample Data</h3>
+                        <p class="help-text" data-i18n="onboarding.sample_data_description">
+                            Generate demo teams, volunteers, and events to explore SignUpFlow.
+                        </p>
+                        <div class="control-buttons">
+                            <button class="btn btn-secondary" onclick="generateSampleData()" data-i18n="onboarding.generate_sample_data">
+                                📦 Generate Sample Data
+                            </button>
+                            <button class="btn btn-link" onclick="clearSampleData()" data-i18n="onboarding.clear_sample_data">
+                                🧹 Clear Sample Data
+                            </button>
+                        </div>
+                    </div>
+
+                    <div id="dashboard-video-grid" class="dashboard-grid video-grid">
+                        <article class="video-card">
+                            <h4 data-i18n="onboarding.video_getting_started_title">Getting Started</h4>
+                            <p class="help-text" data-i18n="onboarding.video_getting_started_description">
+                                Learn the basics of creating organizations, teams, and events.
+                            </p>
+                            <button class="btn btn-link" onclick="playQuickStartVideo('getting_started')" data-i18n="onboarding.watch_video">
+                                ▶️ Watch Video
+                            </button>
+                        </article>
+                        <article class="video-card">
+                            <h4 data-i18n="onboarding.video_events_title">Creating Events</h4>
+                            <p class="help-text" data-i18n="onboarding.video_events_description">
+                                Step-by-step guide to scheduling recurring events with teams.
+                            </p>
+                            <button class="btn btn-link" onclick="playQuickStartVideo('creating_events')" data-i18n="onboarding.watch_video">
+                                ▶️ Watch Video
+                            </button>
+                        </article>
+                    </div>
+                </div>
+            </section>
 
             <!-- Quick Profile & Context Panel -->
             <div class="profile-context-panel">
@@ -1132,6 +1178,12 @@
         document.write('<script src="/js/role-management.js?t=' + cacheBust + '"><\/script>');
         document.write('<script src="/js/edit-role-functions.js?t=' + cacheBust + '"><\/script>');
         document.write('<script src="/js/recurring-events.js?t=' + cacheBust + '"><\/script>');
+        document.write('<script src="/js/sample-data-manager.js?t=' + cacheBust + '"><\/script>');
+        document.write('<script src="/js/onboarding-wizard.js?t=' + cacheBust + '"><\/script>');
+        document.write('<script src="/js/onboarding-checklist.js?t=' + cacheBust + '"><\/script>');
+        document.write('<script src="/js/quick-start-videos.js?t=' + cacheBust + '"><\/script>');
+        document.write('<script src="/js/tutorial-overlays.js?t=' + cacheBust + '"><\/script>');
+        document.write('<script src="/js/feature-unlocks.js?t=' + cacheBust + '"><\/script>');
         document.write('<script src="/js/sms-preferences.js?t=' + cacheBust + '"><\/script>');
         document.write('<script src="/js/admin-sms-broadcast.js?t=' + cacheBust + '"><\/script>');
         document.write('<script src="/js/app-user.js?t=' + cacheBust + '"><\/script>');

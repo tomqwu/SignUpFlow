@@ -256,6 +256,34 @@ def authenticated_page(page):
     page.get_by_role("button", name="Sign In").click()
     page.wait_for_timeout(2000)
 
+    # Ensure the volunteer account starts with a clean availability slate to avoid 409 conflicts
+    try:
+        auth_resp = requests.post(
+            f"{API_BASE}/auth/login",
+            json={"email": "sarah@test.com", "password": "password"},
+            timeout=5
+        )
+        if auth_resp.status_code == 200:
+            auth_data = auth_resp.json()
+            token = auth_data.get("token")
+            person_id = auth_data.get("person_id")
+            if token and person_id:
+                headers = {"Authorization": f"Bearer {token}"}
+                timeoff_resp = requests.get(
+                    f"{API_BASE}/availability/{person_id}/timeoff",
+                    headers=headers,
+                    timeout=5
+                )
+                if timeoff_resp.status_code == 200:
+                    for item in timeoff_resp.json().get("timeoff", []):
+                        requests.delete(
+                            f"{API_BASE}/availability/{person_id}/timeoff/{item['id']}",
+                            headers=headers,
+                            timeout=5
+                        )
+    except Exception as cleanup_error:
+        print(f"Warning: failed to clear existing time-off entries: {cleanup_error}")
+
     yield page
 
 
