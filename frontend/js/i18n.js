@@ -144,12 +144,16 @@ class I18n {
             path = parts.slice(1);
         }
 
+        const originalKey = key;
+
         // Get translation
-        let value = this.getTranslation(namespace, path, this.locale);
+        let value = this.getTranslation(namespace, path, this.locale, originalKey);
 
         // Fallback to English if not found
-        if (value === key && this.locale !== this.fallbackLocale) {
-            value = this.getTranslation(namespace, path, this.fallbackLocale);
+        const pathKey = path.join('.');
+        const shouldFallback = (value === originalKey || value === pathKey) && this.locale !== this.fallbackLocale;
+        if (shouldFallback) {
+            value = this.getTranslation(namespace, path, this.fallbackLocale, originalKey);
         }
 
         // Interpolate parameters
@@ -163,17 +167,17 @@ class I18n {
     /**
      * Get translation from nested object
      */
-    getTranslation(namespace, path, locale) {
+    getTranslation(namespace, path, locale, originalKey) {
         const translations = this.translations[locale]?.[namespace];
         if (!translations) {
-            return path.join('.'); // Return key as fallback
+            return originalKey ?? path.join('.'); // Return original key as fallback
         }
 
         let value = translations;
         for (const key of path) {
             value = value[key];
             if (value === undefined) {
-                return path.join('.'); // Return key as fallback
+                return originalKey ?? path.join('.'); // Return original key as fallback
             }
         }
 
