@@ -838,7 +838,7 @@ def get_billing_history(
 @router.get("/billing/invoices/{billing_history_id}/pdf")
 def download_invoice_pdf(
     billing_history_id: str,
-    format: str = Query("html", regex="^(pdf|html)$", description="Output format (pdf or html)"),
+    format: str = Query("html", pattern="^(pdf|html)$", description="Output format (pdf or html)"),
     current_user: Person = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):

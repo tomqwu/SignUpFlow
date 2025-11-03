@@ -4,14 +4,13 @@ import pytest
 from fastapi.testclient import TestClient
 from api.main import app
 
-client = TestClient(app)
 API_BASE = "http://localhost:8000/api"
 
 
 class TestTeamCreate:
     """Test team creation."""
 
-    def test_create_team_success(self):
+    def test_create_team_success(self, client):
         """Test successful team creation."""
         # Create org first
         client.post(
@@ -36,7 +35,7 @@ class TestTeamCreate:
         assert data["org_id"] == "team_test_org_001"
         assert "member_count" in data
 
-    def test_create_team_duplicate_id(self):
+    def test_create_team_duplicate_id(self, client):
         """Test creating team with duplicate ID fails."""
         client.post(
             f"{API_BASE}/organizations/",
@@ -62,7 +61,7 @@ class TestTeamCreate:
         )
         assert response.status_code == 409  # Conflict
 
-    def test_create_team_invalid_org(self):
+    def test_create_team_invalid_org(self, client):
         """Test creating team with invalid org fails."""
         response = client.post(
             f"{API_BASE}/teams/",
@@ -74,7 +73,7 @@ class TestTeamCreate:
         )
         assert response.status_code == 404
 
-    def test_create_team_with_description(self):
+    def test_create_team_with_description(self, client):
         """Test creating team with description."""
         client.post(
             f"{API_BASE}/organizations/",
@@ -97,7 +96,7 @@ class TestTeamCreate:
 class TestTeamRead:
     """Test team retrieval."""
 
-    def test_get_team_success(self):
+    def test_get_team_success(self, client):
         """Test successful team retrieval."""
         client.post(
             f"{API_BASE}/organizations/",
@@ -118,12 +117,12 @@ class TestTeamRead:
         assert data["name"] == "Get Test Team"
         assert "member_count" in data
 
-    def test_get_team_not_found(self):
+    def test_get_team_not_found(self, client):
         """Test retrieving non-existent team returns 404."""
         response = client.get(f"{API_BASE}/teams/nonexistent_team")
         assert response.status_code == 404
 
-    def test_list_teams_by_org(self):
+    def test_list_teams_by_org(self, client):
         """Test listing teams filtered by organization."""
         client.post(
             f"{API_BASE}/organizations/",
@@ -149,7 +148,7 @@ class TestTeamRead:
 class TestTeamUpdate:
     """Test team updates."""
 
-    def test_update_team_success(self):
+    def test_update_team_success(self, client):
         """Test successful team update."""
         client.post(
             f"{API_BASE}/organizations/",
@@ -176,7 +175,7 @@ class TestTeamUpdate:
         assert data["name"] == "Updated Name"
         assert data["description"] == "Updated Description"
 
-    def test_update_team_not_found(self):
+    def test_update_team_not_found(self, client):
         """Test updating non-existent team returns 404."""
         response = client.put(
             f"{API_BASE}/teams/nonexistent_team",
@@ -188,7 +187,7 @@ class TestTeamUpdate:
 class TestTeamDelete:
     """Test team deletion."""
 
-    def test_delete_team_success(self):
+    def test_delete_team_success(self, client):
         """Test successful team deletion."""
         client.post(
             f"{API_BASE}/organizations/",
@@ -208,7 +207,7 @@ class TestTeamDelete:
         response = client.get(f"{API_BASE}/teams/team_010")
         assert response.status_code == 404
 
-    def test_delete_team_not_found(self):
+    def test_delete_team_not_found(self, client):
         """Test deleting non-existent team returns 404."""
         response = client.delete(f"{API_BASE}/teams/nonexistent_team")
         assert response.status_code == 404
@@ -217,7 +216,7 @@ class TestTeamDelete:
 class TestTeamMembers:
     """Test team member operations."""
 
-    def test_add_team_member_success(self):
+    def test_add_team_member_success(self, client):
         """Test successfully adding a member to a team."""
         # Setup: create org, person, and team
         client.post(
@@ -252,7 +251,7 @@ class TestTeamMembers:
         team_data = team_response.json()
         assert team_data["member_count"] == 1
 
-    def test_add_team_member_duplicate(self):
+    def test_add_team_member_duplicate(self, client):
         """Test adding the same member twice (should be idempotent)."""
         # Setup: create org, person, and team
         client.post(

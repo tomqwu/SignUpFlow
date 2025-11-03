@@ -5,14 +5,13 @@ from datetime import datetime, timedelta
 from fastapi.testclient import TestClient
 from api.main import app
 
-client = TestClient(app)
 API_BASE = "http://localhost:8000/api"
 
 
 class TestEventCreate:
     """Test event creation."""
 
-    def test_create_event_success(self):
+    def test_create_event_success(self, client):
         """Test successful event creation."""
         # Setup with unique IDs
         import time
@@ -54,7 +53,7 @@ class TestEventCreate:
         assert data["id"] == event_id
         assert data["type"] == "Sunday Service"
 
-    def test_create_event_without_resource(self):
+    def test_create_event_without_resource(self, client):
         """Test creating event without resource (optional)."""
         import time
         timestamp = int(time.time() * 1000)
@@ -79,7 +78,7 @@ class TestEventCreate:
         )
         assert response.status_code in [200, 201]
 
-    def test_create_event_invalid_org(self):
+    def test_create_event_invalid_org(self, client):
         """Test creating event with invalid org fails."""
         start = datetime.now().isoformat()
         end = (datetime.now() + timedelta(hours=1)).isoformat()
@@ -95,7 +94,7 @@ class TestEventCreate:
         )
         assert response.status_code == 404
 
-    def test_create_event_end_before_start(self):
+    def test_create_event_end_before_start(self, client):
         """Test creating event where end time is before start time."""
         client.post(
             f"{API_BASE}/organizations/",
@@ -121,7 +120,7 @@ class TestEventCreate:
 class TestEventRead:
     """Test event retrieval."""
 
-    def test_get_event_success(self):
+    def test_get_event_success(self, client):
         """Test successful event retrieval."""
         client.post(
             f"{API_BASE}/organizations/",
@@ -144,12 +143,12 @@ class TestEventRead:
         data = response.json()
         assert data["id"] == "event_005"
 
-    def test_get_event_not_found(self):
+    def test_get_event_not_found(self, client):
         """Test retrieving non-existent event returns 404."""
         response = client.get(f"{API_BASE}/events/nonexistent_event")
         assert response.status_code == 404
 
-    def test_list_events_by_org(self):
+    def test_list_events_by_org(self, client):
         """Test listing events filtered by organization."""
         client.post(
             f"{API_BASE}/organizations/",
@@ -175,7 +174,7 @@ class TestEventRead:
         assert "events" in data
         assert len(data["events"]) >= 3
 
-    def test_list_events_date_range(self):
+    def test_list_events_date_range(self, client):
         """Test listing events within date range."""
         client.post(
             f"{API_BASE}/organizations/",
@@ -208,7 +207,7 @@ class TestEventRead:
 class TestEventUpdate:
     """Test event updates."""
 
-    def test_update_event_success(self):
+    def test_update_event_success(self, client):
         """Test successful event update."""
         client.post(
             f"{API_BASE}/organizations/",
@@ -241,7 +240,7 @@ class TestEventUpdate:
         data = response.json()
         assert data["type"] == "Updated Type"
 
-    def test_update_event_not_found(self):
+    def test_update_event_not_found(self, client):
         """Test updating non-existent event returns 404."""
         start = datetime.now().isoformat()
         end = (datetime.now() + timedelta(hours=2)).isoformat()
@@ -255,7 +254,7 @@ class TestEventUpdate:
 class TestEventDelete:
     """Test event deletion."""
 
-    def test_delete_event_success(self):
+    def test_delete_event_success(self, client):
         """Test successful event deletion."""
         client.post(
             f"{API_BASE}/organizations/",
@@ -279,7 +278,7 @@ class TestEventDelete:
         response = client.get(f"{API_BASE}/events/event_011")
         assert response.status_code == 404
 
-    def test_delete_event_not_found(self):
+    def test_delete_event_not_found(self, client):
         """Test deleting non-existent event returns 404."""
         response = client.delete(f"{API_BASE}/events/nonexistent_event")
         assert response.status_code == 404
@@ -288,7 +287,7 @@ class TestEventDelete:
 class TestEventAssignments:
     """Test dynamic event assignment features."""
 
-    def test_get_available_people_for_event(self):
+    def test_get_available_people_for_event(self, client):
         """Test getting available people for an event based on roles."""
         import time
         timestamp = int(time.time() * 1000)
@@ -344,7 +343,7 @@ class TestEventAssignments:
         assert all("is_assigned" in p for p in people)
         assert all("roles" in p for p in people)
 
-    def test_assign_person_to_event(self):
+    def test_assign_person_to_event(self, client):
         """Test assigning a person to an event."""
         import time
         timestamp = int(time.time() * 1000)
@@ -378,7 +377,7 @@ class TestEventAssignments:
         assert "message_key" in data
         assert data["message_key"] == "events.assign.success"
 
-    def test_unassign_person_from_event(self):
+    def test_unassign_person_from_event(self, client):
         """Test unassigning a person from an event."""
         import time
         timestamp = int(time.time() * 1000)
@@ -417,7 +416,7 @@ class TestEventAssignments:
         assert "message_key" in data
         assert data["message_key"] == "events.assign.unassigned"
 
-    def test_assign_already_assigned_person_fails(self):
+    def test_assign_already_assigned_person_fails(self, client):
         """Test that assigning an already assigned person returns error."""
         import time
         timestamp = int(time.time() * 1000)
@@ -451,7 +450,7 @@ class TestEventAssignments:
         )
         assert response.status_code == 400
 
-    def test_assignment_shows_in_available_people(self):
+    def test_assignment_shows_in_available_people(self, client):
         """Test that assignments are reflected in available people endpoint."""
         import time
         timestamp = int(time.time() * 1000)
@@ -491,7 +490,7 @@ class TestEventAssignments:
         assert assigned_person is not None
         assert assigned_person["is_assigned"] == True
 
-    def test_get_all_assignments_for_org(self):
+    def test_get_all_assignments_for_org(self, client):
         """Test getting all assignments (both from solutions and manual) for an organization."""
         import time
         timestamp = int(time.time() * 1000)

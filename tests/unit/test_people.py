@@ -4,14 +4,13 @@ import pytest
 from fastapi.testclient import TestClient
 from api.main import app
 
-client = TestClient(app)
 API_BASE = "http://localhost:8000/api"
 
 
 class TestPersonCreate:
     """Test person creation (non-auth endpoint)."""
 
-    def test_create_person_success(self):
+    def test_create_person_success(self, client):
         """Test successful person creation."""
         # Create org first
         client.post(
@@ -35,7 +34,7 @@ class TestPersonCreate:
         assert data["name"] == "Test Person"
         assert data["email"] == "test@example.com"
 
-    def test_create_person_duplicate_id(self):
+    def test_create_person_duplicate_id(self, client):
         """Test creating person with duplicate ID fails."""
         client.post(
             f"{API_BASE}/organizations/",
@@ -61,7 +60,7 @@ class TestPersonCreate:
         )
         assert response.status_code == 409  # Conflict
 
-    def test_create_person_invalid_org(self):
+    def test_create_person_invalid_org(self, client):
         """Test creating person with invalid org fails."""
         response = client.post(
             f"{API_BASE}/people/",
@@ -73,7 +72,7 @@ class TestPersonCreate:
         )
         assert response.status_code == 404
 
-    def test_create_person_with_roles(self):
+    def test_create_person_with_roles(self, client):
         """Test creating person with multiple roles."""
         client.post(
             f"{API_BASE}/organizations/",
@@ -97,7 +96,7 @@ class TestPersonCreate:
 class TestPersonRead:
     """Test person retrieval."""
 
-    def test_get_person_success(self):
+    def test_get_person_success(self, client):
         """Test successful person retrieval."""
         client.post(
             f"{API_BASE}/organizations/",
@@ -117,12 +116,12 @@ class TestPersonRead:
         assert data["id"] == "person_005"
         assert data["name"] == "Get Test Person"
 
-    def test_get_person_not_found(self):
+    def test_get_person_not_found(self, client):
         """Test retrieving non-existent person returns 404."""
         response = client.get(f"{API_BASE}/people/nonexistent_person")
         assert response.status_code == 404
 
-    def test_list_people_by_org(self):
+    def test_list_people_by_org(self, client):
         """Test listing people filtered by organization."""
         client.post(
             f"{API_BASE}/organizations/",
@@ -148,7 +147,7 @@ class TestPersonRead:
 class TestPersonUpdate:
     """Test person updates."""
 
-    def test_update_person_success(self):
+    def test_update_person_success(self, client):
         """Test successful person update."""
         client.post(
             f"{API_BASE}/organizations/",
@@ -174,7 +173,7 @@ class TestPersonUpdate:
         assert data["name"] == "Updated Name"
         assert data["email"] == "updated@example.com"
 
-    def test_update_person_roles(self):
+    def test_update_person_roles(self, client):
         """Test updating person roles."""
         client.post(
             f"{API_BASE}/organizations/",
@@ -198,7 +197,7 @@ class TestPersonUpdate:
         assert len(data["roles"]) == 2
         assert "admin" in data["roles"]
 
-    def test_update_person_not_found(self):
+    def test_update_person_not_found(self, client):
         """Test updating non-existent person returns 404."""
         response = client.put(
             f"{API_BASE}/people/nonexistent_person",
@@ -206,7 +205,7 @@ class TestPersonUpdate:
         )
         assert response.status_code == 404
 
-    def test_update_person_remove_role(self):
+    def test_update_person_remove_role(self, client):
         """Test removing a role from person."""
         client.post(
             f"{API_BASE}/organizations/",
@@ -233,7 +232,7 @@ class TestPersonUpdate:
         assert "volunteer" in data["roles"]
         assert "leader" in data["roles"]
 
-    def test_update_person_clear_all_roles(self):
+    def test_update_person_clear_all_roles(self, client):
         """Test clearing all roles from person."""
         client.post(
             f"{API_BASE}/organizations/",
@@ -257,7 +256,7 @@ class TestPersonUpdate:
         data = response.json()
         assert len(data["roles"]) == 0
 
-    def test_update_person_add_multiple_roles(self):
+    def test_update_person_add_multiple_roles(self, client):
         """Test adding multiple roles at once."""
         client.post(
             f"{API_BASE}/organizations/",
@@ -283,7 +282,7 @@ class TestPersonUpdate:
         assert "super_admin" in data["roles"]
         assert "volunteer" in data["roles"]
 
-    def test_update_person_roles_persisted(self):
+    def test_update_person_roles_persisted(self, client):
         """Test that role updates persist across GET requests."""
         client.post(
             f"{API_BASE}/organizations/",
@@ -316,7 +315,7 @@ class TestPersonUpdate:
 class TestPersonDelete:
     """Test person deletion."""
 
-    def test_delete_person_success(self):
+    def test_delete_person_success(self, client):
         """Test successful person deletion."""
         client.post(
             f"{API_BASE}/organizations/",
@@ -336,7 +335,7 @@ class TestPersonDelete:
         response = client.get(f"{API_BASE}/people/person_011")
         assert response.status_code == 404
 
-    def test_delete_person_not_found(self):
+    def test_delete_person_not_found(self, client):
         """Test deleting non-existent person returns 404."""
         response = client.delete(f"{API_BASE}/people/nonexistent_person")
         assert response.status_code == 404

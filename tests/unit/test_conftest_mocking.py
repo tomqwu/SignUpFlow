@@ -5,6 +5,7 @@ These tests verify that the authentication mocking in conftest.py works correctl
 allowing unit tests to bypass JWT authentication and org membership verification.
 """
 
+import asyncio
 import pytest
 from fastapi.testclient import TestClient
 from api.main import app
@@ -19,8 +20,8 @@ class TestAuthenticationMocking:
         """Verify mock admin user has expected attributes."""
         from api.dependencies import get_current_admin_user
 
-        # Get the overridden dependency
-        mock_admin = app.dependency_overrides[get_current_admin_user]()
+        # Get the overridden dependency (it's async, so we need to await it)
+        mock_admin = asyncio.run(app.dependency_overrides[get_current_admin_user]())
 
         assert mock_admin.id == "test_admin"
         assert mock_admin.org_id == "test_org"
@@ -32,8 +33,8 @@ class TestAuthenticationMocking:
         """Verify mock user has admin role to allow test operations."""
         from api.dependencies import get_current_user
 
-        # Get the overridden dependency
-        mock_user = app.dependency_overrides[get_current_user]()
+        # Get the overridden dependency (it's async, so we need to await it)
+        mock_user = asyncio.run(app.dependency_overrides[get_current_user]())
 
         assert "admin" in mock_user.roles, "Mock user should have admin role to allow unit tests to pass"
 

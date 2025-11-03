@@ -5,14 +5,13 @@ from datetime import datetime, timedelta
 from fastapi.testclient import TestClient
 from api.main import app
 
-client = TestClient(app)
 API_BASE = "http://localhost:8000/api"
 
 
 class TestAvailabilityCreate:
     """Test availability creation."""
 
-    def test_add_availability_success(self):
+    def test_add_availability_success(self, client):
         """Test successful availability/timeoff creation with start_date and end_date."""
         # Setup: Create org and person
         client.post(
@@ -53,7 +52,7 @@ class TestAvailabilityCreate:
         assert data["start_date"] == start
         assert data["end_date"] == end
 
-    def test_add_availability_invalid_person(self):
+    def test_add_availability_invalid_person(self, client):
         """Test adding availability for non-existent person fails."""
         start = (datetime.now() + timedelta(days=5)).strftime("%Y-%m-%d")
         end = (datetime.now() + timedelta(days=10)).strftime("%Y-%m-%d")
@@ -66,7 +65,7 @@ class TestAvailabilityCreate:
         )
         assert response.status_code == 404
 
-    def test_add_availability_overlapping(self):
+    def test_add_availability_overlapping(self, client):
         """Test adding overlapping availability periods returns conflict error."""
         import time
         timestamp = int(time.time() * 1000)
@@ -108,7 +107,7 @@ class TestAvailabilityCreate:
         assert response2.status_code == 409
         assert "overlap" in response2.json()["detail"].lower()
 
-    def test_add_availability_invalid_date_range(self):
+    def test_add_availability_invalid_date_range(self, client):
         """Test adding availability with end_date before start_date fails."""
         # Setup: Create org and person
         client.post(
@@ -137,7 +136,7 @@ class TestAvailabilityCreate:
 class TestAvailabilityRead:
     """Test availability retrieval."""
 
-    def test_list_availability_by_person(self):
+    def test_list_availability_by_person(self, client):
         """Test listing availability/timeoff for a specific person."""
         # Setup: Create org and person
         client.post(
@@ -176,7 +175,7 @@ class TestAvailabilityRead:
             assert "start_date" in item
             assert "end_date" in item
 
-    def test_list_availability_empty(self):
+    def test_list_availability_empty(self, client):
         """Test listing availability for person with no timeoff."""
         # Setup: Create org and person
         client.post(
@@ -199,7 +198,7 @@ class TestAvailabilityRead:
         assert data["timeoff"] == []
         assert data["total"] == 0
 
-    def test_list_availability_nonexistent_person(self):
+    def test_list_availability_nonexistent_person(self, client):
         """Test listing availability for non-existent person returns empty list."""
         response = client.get(f"{API_BASE}/availability/nonexistent_person/timeoff")
         assert response.status_code == 200
@@ -212,7 +211,7 @@ class TestAvailabilityRead:
 class TestAvailabilityDelete:
     """Test availability deletion."""
 
-    def test_delete_availability_success(self):
+    def test_delete_availability_success(self, client):
         """Test successful deletion of availability/timeoff period."""
         # Setup: Create org and person
         client.post(
@@ -248,7 +247,7 @@ class TestAvailabilityDelete:
         data = response.json()
         assert data["total"] == 0
 
-    def test_delete_availability_not_found(self):
+    def test_delete_availability_not_found(self, client):
         """Test deleting non-existent availability/timeoff returns 404."""
         # Setup: Create org and person
         client.post(
@@ -270,7 +269,7 @@ class TestAvailabilityDelete:
         )
         assert response.status_code == 404
 
-    def test_delete_availability_wrong_person(self):
+    def test_delete_availability_wrong_person(self, client):
         """Test deleting timeoff for wrong person returns 404."""
         # Setup: Create org and two persons
         client.post(

@@ -4,14 +4,13 @@ import pytest
 from fastapi.testclient import TestClient
 from api.main import app
 
-client = TestClient(app)
 API_BASE = "http://localhost:8000/api"
 
 
 class TestPersonLanguageUpdate:
     """Test updating person language field."""
 
-    def test_update_person_language_to_chinese(self):
+    def test_update_person_language_to_chinese(self, client):
         """Test updating person language to Chinese (Simplified)."""
         # Create test organization
         org_response = client.post(
@@ -49,7 +48,7 @@ class TestPersonLanguageUpdate:
         assert data["language"] == "zh-CN"
         assert data["id"] == "test_person_lang"
 
-    def test_update_person_language_and_timezone(self):
+    def test_update_person_language_and_timezone(self, client):
         """Test updating both language and timezone together."""
         # Create test organization
         org_response = client.post(
@@ -90,7 +89,7 @@ class TestPersonLanguageUpdate:
         assert data["language"] == "es"
         assert data["timezone"] == "America/Mexico_City"
 
-    def test_update_person_language_multiple_times(self):
+    def test_update_person_language_multiple_times(self, client):
         """Test updating language multiple times in succession."""
         # Create test organization
         org_response = client.post(
@@ -133,7 +132,7 @@ class TestPersonLanguageUpdate:
             data = response.json()
             assert data["language"] == lang, f"Expected language {lang}, got {data['language']}"
 
-    def test_update_person_language_invalid_person(self):
+    def test_update_person_language_invalid_person(self, client):
         """Test updating language for non-existent person returns 404."""
         response = client.put(
             f"{API_BASE}/people/nonexistent_person",

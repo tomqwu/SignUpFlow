@@ -6,14 +6,13 @@ import time
 from fastapi.testclient import TestClient
 from api.main import app
 
-client = TestClient(app)
 API_BASE = "http://localhost:8000/api"
 
 
 class TestPersonLanguageField:
     """Test language field in Person model"""
 
-    def test_person_defaults_to_english(self):
+    def test_person_defaults_to_english(self, client):
         """New person should default to English language"""
         org_id = f"lang_test_org_{int(time.time())}"
 
@@ -39,7 +38,7 @@ class TestPersonLanguageField:
         # Language defaults to 'en' if not specified
         assert data.get("language", "en") == "en"
 
-    def test_update_person_language(self):
+    def test_update_person_language(self, client):
         """Person language can be updated"""
         org_id = f"lang_test_org2_{int(time.time())}"
         person_id = f"test_person_lang_update_{int(time.time())}"
@@ -71,7 +70,7 @@ class TestPersonLanguageField:
         data = response.json()
         assert data.get("language") == "zh-CN"
 
-    def test_update_language_and_timezone_together(self):
+    def test_update_language_and_timezone_together(self, client):
         """Can update both language and timezone"""
         org_id = f"lang_test_org3_{int(time.time())}"
         person_id = f"test_person_lang_tz_{int(time.time())}"
@@ -107,7 +106,7 @@ class TestPersonLanguageField:
         assert data.get("language") == "pt"
         assert data.get("timezone") == "America/Sao_Paulo"
 
-    def test_language_persists_after_update(self):
+    def test_language_persists_after_update(self, client):
         """Language setting persists across requests"""
         org_id = f"lang_test_org4_{int(time.time())}"
         person_id = f"test_person_lang_persist_{int(time.time())}"
@@ -141,7 +140,7 @@ class TestPersonLanguageField:
         data = response.json()
         assert data.get("language") == "fr"
 
-    def test_language_supports_multiple_locales(self):
+    def test_language_supports_multiple_locales(self, client):
         """Test that all supported language codes work"""
         org_id = f"lang_test_org5_{int(time.time())}"
 

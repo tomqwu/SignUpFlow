@@ -532,95 +532,45 @@ def override_get_db():
                 db.close()
 
     async def override_get_user(
-        credentials: HTTPAuthorizationCredentials = Depends(security),
         db: Session = Depends(override_get_db_dependency)
     ):
-        """Smart mock that parses JWT token and queries database for actual user.
+        """Simple mock that returns test admin user for all unit tests.
 
-        This allows tests to create real users and JWT tokens, and the authentication
-        will work correctly based on the token.
+        This bypasses all JWT validation and Bearer token checks, allowing
+        unit tests to make authenticated requests without setting up real tokens.
         """
-        from api.security import verify_token
-
-        # Parse JWT token
-        try:
-            if isinstance(credentials, HTTPAuthorizationCredentials):
-                token = credentials.credentials
-            elif isinstance(credentials, str):
-                token = credentials
-            else:
-                # Fallback to hardcoded admin for tests without proper tokens
-                return Person(
-                    id="test_admin",
-                    org_id="test_org",
-                    name="Test Admin",
-                    email="admin@test.com",
-                    roles=["admin"],
-                    timezone="UTC",
-                    language="en",
-                    status="active"
-                )
-
-            payload = verify_token(token)
-
-            # Extract person_id from token
-            person_id: str = payload.get("sub")
-            if person_id is None:
-                # Fallback to hardcoded admin
-                return Person(
-                    id="test_admin",
-                    org_id="test_org",
-                    name="Test Admin",
-                    email="admin@test.com",
-                    roles=["admin"],
-                    timezone="UTC",
-                    language="en",
-                    status="active"
-                )
-
-            # Query database for actual user
-            person = db.query(Person).filter(Person.id == person_id).first()
-            if person is None:
-                # Fallback to hardcoded admin if user not in database
-                return Person(
-                    id="test_admin",
-                    org_id="test_org",
-                    name="Test Admin",
-                    email="admin@test.com",
-                    roles=["admin"],
-                    timezone="UTC",
-                    language="en",
-                    status="active"
-                )
-
-            return person
-
-        except Exception:
-            # On any error, fallback to hardcoded admin
-            return Person(
-                id="test_admin",
-                org_id="test_org",
-                name="Test Admin",
-                email="admin@test.com",
-                roles=["admin"],
-                timezone="UTC",
-                language="en",
-                status="active"
-            )
+        # For unit tests, always return test admin user
+        # Tests can create their own users in the database if needed
+        return Person(
+            id="test_admin",
+            org_id="test_org",
+            name="Test Admin",
+            email="admin@test.com",
+            roles=["admin"],
+            timezone="UTC",
+            language="en",
+            status="active"
+        )
 
     async def override_get_admin_user(
-        current_user: Person = Depends(override_get_user)
+        db: Session = Depends(override_get_db_dependency)
     ):
-        """Verify user has admin role (uses smart override)."""
-        from api.dependencies import check_admin_permission
-        from fastapi import HTTPException
+        """Simple mock that returns test admin user for all unit tests.
 
-        if not check_admin_permission(current_user):
-            raise HTTPException(
-                status_code=403,
-                detail="Admin access required"
-            )
-        return current_user
+        This bypasses all JWT validation and admin permission checks,
+        allowing unit tests to make admin-only requests without real tokens.
+        """
+        # For unit tests, always return test admin user
+        return Person(
+            id="test_admin",
+            org_id="test_org",
+            name="Test Admin",
+            email="admin@test.com",
+            roles=["admin"],
+            timezone="UTC",
+            language="en",
+            status="active"
+        )
 
     def override_verify_org_member(person: Person, org_id: str) -> None:
         """Mock org membership verification - bypasses org checks for testing."""

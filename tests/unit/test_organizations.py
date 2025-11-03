@@ -4,14 +4,13 @@ import pytest
 from fastapi.testclient import TestClient
 from api.main import app
 
-client = TestClient(app)
 API_BASE = "http://localhost:8000/api"
 
 
 class TestOrganizationCreate:
     """Test organization creation."""
 
-    def test_create_org_success(self):
+    def test_create_org_success(self, client):
         """Test successful organization creation."""
         response = client.post(
             f"{API_BASE}/organizations/",
@@ -27,7 +26,7 @@ class TestOrganizationCreate:
         assert data["id"] == "test_org_001_v2"
         assert data["name"] == "Test Organization"
 
-    def test_create_org_duplicate_id(self):
+    def test_create_org_duplicate_id(self, client):
         """Test creating org with duplicate ID fails."""
         # Create first org
         client.post(
@@ -41,7 +40,7 @@ class TestOrganizationCreate:
         )
         assert response.status_code == 409  # Conflict
 
-    def test_create_org_missing_name(self):
+    def test_create_org_missing_name(self, client):
         """Test creating org without name fails."""
         response = client.post(
             f"{API_BASE}/organizations/",
@@ -49,7 +48,7 @@ class TestOrganizationCreate:
         )
         assert response.status_code == 422  # Validation error
 
-    def test_create_org_empty_id(self):
+    def test_create_org_empty_id(self, client):
         """Test creating org with empty ID fails."""
         response = client.post(
             f"{API_BASE}/organizations/",
@@ -61,7 +60,7 @@ class TestOrganizationCreate:
 class TestOrganizationRead:
     """Test organization retrieval."""
 
-    def test_get_org_success(self):
+    def test_get_org_success(self, client):
         """Test successful organization retrieval."""
         # Create org first
         client.post(
@@ -75,12 +74,12 @@ class TestOrganizationRead:
         assert data["id"] == "test_org_004"
         assert data["name"] == "Get Test Org"
 
-    def test_get_org_not_found(self):
+    def test_get_org_not_found(self, client):
         """Test retrieving non-existent org returns 404."""
         response = client.get(f"{API_BASE}/organizations/nonexistent_org")
         assert response.status_code == 404
 
-    def test_list_orgs(self):
+    def test_list_orgs(self, client):
         """Test listing all organizations."""
         # Create a few orgs
         for i in range(5, 8):
@@ -99,7 +98,7 @@ class TestOrganizationRead:
 class TestOrganizationUpdate:
     """Test organization updates."""
 
-    def test_update_org_success(self):
+    def test_update_org_success(self, client):
         """Test successful organization update."""
         # Create org
         client.post(
@@ -116,7 +115,7 @@ class TestOrganizationUpdate:
         assert data["name"] == "Updated Name"
         assert data.get("region") == "New Region"
 
-    def test_update_org_not_found(self):
+    def test_update_org_not_found(self, client):
         """Test updating non-existent org returns 404."""
         response = client.put(
             f"{API_BASE}/organizations/nonexistent_org",
@@ -124,7 +123,7 @@ class TestOrganizationUpdate:
         )
         assert response.status_code == 404
 
-    def test_update_org_partial(self):
+    def test_update_org_partial(self, client):
         """Test partial update of organization."""
         # Create org
         client.post(
@@ -145,7 +144,7 @@ class TestOrganizationUpdate:
 class TestOrganizationDelete:
     """Test organization deletion."""
 
-    def test_delete_org_success(self):
+    def test_delete_org_success(self, client):
         """Test successful organization deletion."""
         # Create org
         client.post(
@@ -159,7 +158,7 @@ class TestOrganizationDelete:
         response = client.get(f"{API_BASE}/organizations/test_org_010")
         assert response.status_code == 404
 
-    def test_delete_org_not_found(self):
+    def test_delete_org_not_found(self, client):
         """Test deleting non-existent org returns 404."""
         response = client.delete(f"{API_BASE}/organizations/nonexistent_org")
         assert response.status_code == 404

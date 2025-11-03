@@ -7,14 +7,13 @@ import pytest
 from fastapi.testclient import TestClient
 from api.main import app
 
-client = TestClient(app)
 API_BASE = "http://localhost:8000/api"
 
 
 class TestInvitationsAPI:
     """Test invitations API endpoints."""
 
-    def test_list_invitations_requires_authentication_no_org(self):
+    def test_list_invitations_requires_authentication_no_org(self, client):
         """Test that listing invitations requires authentication (no org_id)."""
         # Try to list invitations without auth
         response = client.get(f"{API_BASE}/invitations")
@@ -23,7 +22,7 @@ class TestInvitationsAPI:
         # Note: In unit tests, auth is mocked so validation may happen first
         assert response.status_code in [403, 422]
 
-    def test_list_invitations_requires_authentication_with_org(self):
+    def test_list_invitations_requires_authentication_with_org(self, client):
         """Test that listing invitations requires authentication (with org_id)."""
         # Create test org
         org_response = client.post(
@@ -43,7 +42,7 @@ class TestInvitationsAPI:
         # Note: Currently might return 422 due to missing auth dependency
         assert response.status_code in [401, 403, 422]
 
-    def test_list_invitations_with_valid_admin(self):
+    def test_list_invitations_with_valid_admin(self, client):
         """Test that admin can list invitations for their org."""
         # Create test org
         org_response = client.post(
@@ -86,7 +85,7 @@ class TestInvitationsAPI:
         # assert "total" in data
         # assert isinstance(data["invitations"], list)
 
-    def test_create_invitation_requires_authentication(self):
+    def test_create_invitation_requires_authentication(self, client):
         """Test that creating invitations requires authentication."""
         # Try to create invitation without authentication
         response = client.post(

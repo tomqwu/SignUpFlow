@@ -12,14 +12,13 @@ from api.models import Organization, Person, Event, Assignment
 from api.database import Base, engine
 import time
 
-client = TestClient(app)
 API_BASE = "/api"
 
 
 class TestEventRoleAssignment:
     """Test assigning people to events with specific roles."""
 
-    def test_assign_person_with_role(self):
+    def test_assign_person_with_role(self, client):
         """Test assigning a person to an event with a specific role."""
         timestamp = int(time.time() * 1000)
         org_id = f"role_org_{timestamp}"
@@ -61,7 +60,7 @@ class TestEventRoleAssignment:
         assert data["message_key"] == "events.assign.success"
         assert data["role"] == "usher"
 
-    def test_assign_person_with_different_roles(self):
+    def test_assign_person_with_different_roles(self, client):
         """Test that the same person can have different roles in different events."""
         timestamp = int(time.time() * 1000)
         org_id = f"multi_role_org_{timestamp}"
@@ -129,7 +128,7 @@ class TestEventRoleAssignment:
         assert event2_assignment is not None
         assert event2_assignment["role"] == "greeter"
 
-    def test_assign_without_role(self):
+    def test_assign_without_role(self, client):
         """Test that assigning without a role still works (role is optional)."""
         timestamp = int(time.time() * 1000)
         org_id = f"no_role_org_{timestamp}"
@@ -163,7 +162,7 @@ class TestEventRoleAssignment:
         data = response.json()
         assert data["role"] is None
 
-    def test_get_assignments_includes_roles(self):
+    def test_get_assignments_includes_roles(self, client):
         """Test that fetching assignments returns role information."""
         timestamp = int(time.time() * 1000)
         org_id = f"get_role_org_{timestamp}"
@@ -210,7 +209,7 @@ class TestEventRoleAssignment:
 class TestEventRoleValidation:
     """Test validation and edge cases for event roles."""
 
-    def test_custom_role_name(self):
+    def test_custom_role_name(self, client):
         """Test that custom role names can be used."""
         timestamp = int(time.time() * 1000)
         org_id = f"custom_role_org_{timestamp}"
@@ -244,7 +243,7 @@ class TestEventRoleValidation:
         assert response.status_code == 200
         assert response.json()["role"] == "Coffee Barista"
 
-    def test_role_persists_after_assignment(self):
+    def test_role_persists_after_assignment(self, client):
         """Test that role information persists correctly in database."""
         timestamp = int(time.time() * 1000)
         org_id = f"persist_role_org_{timestamp}"
@@ -284,7 +283,7 @@ class TestEventRoleValidation:
         assert our_assignment is not None
         assert our_assignment["role"] == "worship_leader"
 
-    def test_empty_string_role(self):
+    def test_empty_string_role(self, client):
         """Test that empty string role is handled correctly."""
         timestamp = int(time.time() * 1000)
         org_id = f"empty_role_org_{timestamp}"
