@@ -1,5 +1,9 @@
 .PHONY: run dev stop restart setup install migrate test test-frontend test-backend test-integration test-e2e test-e2e-long test-e2e-file test-e2e-quick test-e2e-summary test-email test-email-unit test-all test-coverage test-unit test-unit-fast test-unit-file test-with-timing clean clean-all pre-commit help check-poetry check-npm check-python check-deps install-poetry install-npm install-deps fix-node-libs up down build logs shell db-shell redis-shell test-docker migrate-docker restart-api ps clean-docker
 
+TEST_SERVER_SCRIPT := ./scripts/run_with_server.sh
+TEST_SERVER_ENV := DISABLE_RATE_LIMITS=true TESTING=true EMAIL_ENABLED=false SMS_ENABLED=false DATABASE_URL=sqlite:///./test_roster.db
+DEFAULT_TEST_SERVER_CMD := $(TEST_SERVER_ENV) poetry run uvicorn api.main:app --host 0.0.0.0 --port 8000 --reload
+
 # Auto-installation targets
 install-poetry:
 	@if ! command -v poetry >/dev/null 2>&1; then \
@@ -191,42 +195,15 @@ test-integration: check-poetry
 # Run E2E tests (browser automation)
 test-e2e: check-poetry
 	@echo "🌐 Running E2E browser tests..."
-	@echo "🔍 Checking if server is running..."
-	@if ! curl -s http://localhost:8000/health > /dev/null 2>&1; then \
-		echo "⚠️  Server not running. Starting server..."; \
-		poetry run uvicorn api.main:app --host 0.0.0.0 --port 8000 --reload > /dev/null 2>&1 & \
-		echo "⏳ Waiting for server to be ready..."; \
-		for i in 1 2 3 4 5; do \
-			sleep 1; \
-			if curl -s http://localhost:8000/health > /dev/null 2>&1; then \
-				echo "✅ Server ready"; \
-				break; \
-			fi; \
-		done; \
-	else \
-		echo "✅ Server already running"; \
-	fi
-	@poetry run pytest tests/e2e/ -v --tb=short
+	@TEST_SERVER_CMD='$(DEFAULT_TEST_SERVER_CMD)' \
+		$(TEST_SERVER_SCRIPT) poetry run pytest tests/e2e/ -v --tb=short
 
 # Run E2E tests with extended timeout (for long-running tests)
 test-e2e-long: check-poetry
 	@echo "🌐 Running E2E browser tests (extended timeout)..."
-	@echo "🔍 Checking if server is running..."
-	@if ! curl -s http://localhost:8000/health > /dev/null 2>&1; then \
-		echo "⚠️  Server not running. Starting server..."; \
-		poetry run uvicorn api.main:app --host 0.0.0.0 --port 8000 --reload > /dev/null 2>&1 & \
-		echo "⏳ Waiting for server to be ready..."; \
-		for i in 1 2 3 4 5; do \
-			sleep 1; \
-			if curl -s http://localhost:8000/health > /dev/null 2>&1; then \
-				echo "✅ Server ready"; \
-				break; \
-			fi; \
-		done; \
-	else \
-		echo "✅ Server already running"; \
-	fi
-	@timeout 600 poetry run pytest tests/e2e/ -v --tb=short
+	@TEST_SERVER_CMD='$(DEFAULT_TEST_SERVER_CMD)' \
+		TEST_COMMAND_TIMEOUT=600 \
+		$(TEST_SERVER_SCRIPT) poetry run pytest tests/e2e/ -v --tb=short
 
 # Run specific E2E test file
 test-e2e-file: check-poetry
@@ -255,68 +232,23 @@ test-email-unit: check-poetry
 # Run all email tests including E2E (requires server and Mailtrap API credentials)
 test-email: check-poetry
 	@echo "📧 Running all email invitation tests..."
-	@echo "🔍 Checking if server is running..."
-	@if ! curl -s http://localhost:8000/health > /dev/null 2>&1; then \
-		echo "⚠️  Server not running. Starting server..."; \
-		poetry run uvicorn api.main:app --host 0.0.0.0 --port 8000 --reload > /dev/null 2>&1 & \
-		echo "⏳ Waiting for server to be ready..."; \
-		for i in 1 2 3 4 5; do \
-			sleep 1; \
-			if curl -s http://localhost:8000/health > /dev/null 2>&1; then \
-				echo "✅ Server ready"; \
-				break; \
-			fi; \
-		done; \
-	else \
-		echo "✅ Server already running"; \
-	fi
 	@echo ""
 	@echo "Running email tests with rate limit delays..."
-	@poetry run pytest tests/e2e/test_email_invitation_workflow.py -v --tb=short
+	@TEST_SERVER_CMD='$(DEFAULT_TEST_SERVER_CMD)' \
+		$(TEST_SERVER_SCRIPT) poetry run pytest tests/e2e/test_email_invitation_workflow.py -v --tb=short
 
 # Run ALL tests (frontend + backend + integration + E2E)
 test-all: check-npm check-poetry
 	@echo "🚀 Running complete test suite..."
 	@echo ""
-	@echo "🔍 Checking if server is running..."
 	@rm -f test_roster.db test_roster.db-shm test_roster.db-wal
-	@if ! curl -s http://localhost:8000/health > /dev/null 2>&1; then \
-		echo "⚠️  Server not running. Starting server..."; \
-		DISABLE_RATE_LIMITS=true TESTING=true EMAIL_ENABLED=false SMS_ENABLED=false \
-		DATABASE_URL=sqlite:///./test_roster.db \
-		poetry run uvicorn api.main:app --host 0.0.0.0 --port 8000 --reload > /dev/null 2>&1 & \
-		SERVER_PID=$$!; \
-		echo "⏳ Waiting for server to be ready..."; \
-		for i in 1 2 3 4 5; do \
-			sleep 1; \
-			if curl -s http://localhost:8000/health > /dev/null 2>&1; then \
-				echo "✅ Server ready (PID: $$SERVER_PID)"; \
-				break; \
-			fi; \
-		done; \
-	else \
-		echo "✅ Server already running"; \
-	fi
+	@echo "🔍 Ensuring API server is available..."
 	@echo ""
 	@echo "================================"
 	@echo "   FRONTEND TESTS"
 	@echo "================================"
-	@npm test
-	@echo ""
-	@echo "================================"
-	@echo "   BACKEND TESTS"
-	@echo "================================"
-	@poetry run pytest tests/comprehensive_test_suite.py -v --tb=short
-	@echo ""
-	@echo "================================"
-	@echo "   INTEGRATION TESTS"
-	@echo "================================"
-	@poetry run pytest tests/test_i18n_integration.py -v --tb=short
-	@echo ""
-	@echo "================================"
-	@echo "   E2E BROWSER TESTS"
-	@echo "================================"
-	@poetry run pytest tests/e2e/ -v --tb=short
+	@TEST_SERVER_CMD='$(DEFAULT_TEST_SERVER_CMD)' \
+		$(TEST_SERVER_SCRIPT) bash -lc "set -euo pipefail; npm test; echo ''; echo '================================'; echo '   BACKEND TESTS'; echo '================================'; poetry run pytest tests/comprehensive_test_suite.py -v --tb=short; echo ''; echo '================================'; echo '   INTEGRATION TESTS'; echo '================================'; poetry run pytest tests/test_i18n_integration.py -v --tb=short; echo ''; echo '================================'; echo '   E2E BROWSER TESTS'; echo '================================'; poetry run pytest tests/e2e/ -v --tb=short"
 
 # Run tests with coverage
 test-coverage: check-npm check-poetry

@@ -40,6 +40,7 @@ htmlcov/
 .tox/
 coverage/
 test-reports/
+test-artifacts/
 
 # Node.js
 node_modules/
