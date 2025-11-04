@@ -1,0 +1,45 @@
+{
+  "make_recurring": "Make this a recurring event",
+  "pattern": "Recurrence Pattern",
+  "weekly": "Weekly",
+  "biweekly": "Biweekly (every 2 weeks)",
+  "monthly": "Monthly",
+  "custom": "Custom interval",
+
+  "select_days": "Select Days",
+  "sunday": "Sunday",
+  "monday": "Monday",
+  "tuesday": "Tuesday",
+  "wednesday": "Wednesday",
+  "thursday": "Thursday",
+  "friday": "Friday",
+  "saturday": "Saturday",
+
+  "monthly_pattern": "Monthly Pattern",
+  "first": "First",
+  "second": "Second",
+  "third": "Third",
+  "fourth": "Fourth",
+  "last": "Last",
+
+  "custom_interval": "Every N weeks",
+
+  "ends": "Ends",
+  "on_date": "On a specific date",
+  "after_count": "After number of occurrences",
+  "never": "Never (indefinite)",
+
+  "end_date": "End Date",
+  "occurrence_count": "Number of Occurrences",
+
+  "preview": "Calendar Preview",
+  "preview_empty": "Select pattern options to see preview",
+  "preview_loading": "Loading preview...",
+  "preview_error": "Preview error",
+
+  "series_created": "Recurring series created successfully!",
+  "series_updated": "Recurring series updated successfully!",
+  "series_deleted": "Recurring series deleted successfully!",
+
+  "warning_large_series": "This pattern generates many occurrences. Consider using a shorter duration."
+}
