@@ -3,11 +3,15 @@
 import pytest
 from playwright.sync_api import Page, expect
 
+from tests.e2e.helpers import AppConfig
+
+pytestmark = pytest.mark.usefixtures("api_server")
+
 
 @pytest.fixture
-def user_page(page: Page):
+def user_page(page: Page, app_config: AppConfig):
     """Login as regular user."""
-    page.goto("http://localhost:8000/login")
+    page.goto(f"{app_config.app_url}/login")
     page.fill("#login-email", "pastor@grace.church")
     page.fill("#login-password", "password")
     page.get_by_role("button", name="Sign In").click()
@@ -15,9 +19,9 @@ def user_page(page: Page):
     return page
 
 
-def test_view_schedule(user_page: Page):
+def test_view_schedule(user_page: Page, app_config: AppConfig):
     """Test viewing personal schedule."""
-    user_page.goto("http://localhost:8000/app/schedule")
+    user_page.goto(f"{app_config.app_url}/app/schedule")
     user_page.wait_for_timeout(1000)
 
     # Should show schedule view
@@ -25,9 +29,9 @@ def test_view_schedule(user_page: Page):
     user_page.screenshot(path="/tmp/e2e-schedule-view.png")
 
 
-def test_set_availability(user_page: Page):
+def test_set_availability(user_page: Page, app_config: AppConfig):
     """Test setting availability/blocked dates."""
-    user_page.goto("http://localhost:8000/app/availability")
+    user_page.goto(f"{app_config.app_url}/app/availability")
     user_page.wait_for_timeout(1000)
 
     # Look for availability form
@@ -56,9 +60,9 @@ def test_set_availability(user_page: Page):
     user_page.screenshot(path="/tmp/e2e-availability-set.png")
 
 
-def test_browse_events(user_page: Page):
+def test_browse_events(user_page: Page, app_config: AppConfig):
     """Test browsing available events."""
-    user_page.goto("http://localhost:8000/app/events")
+    user_page.goto(f"{app_config.app_url}/app/events")
     user_page.wait_for_timeout(1000)
 
     # Should show events list
@@ -67,9 +71,9 @@ def test_browse_events(user_page: Page):
     user_page.screenshot(path="/tmp/e2e-events-browse.png")
 
 
-def test_join_event(user_page: Page):
+def test_join_event(user_page: Page, app_config: AppConfig):
     """Test joining an event - simplified to just verify events page loads."""
-    user_page.goto("http://localhost:8000/app/events")
+    user_page.goto(f"{app_config.app_url}/app/events")
     user_page.wait_for_timeout(1000)
 
     # Verify events page loads (joining events may not be implemented yet)
@@ -80,9 +84,9 @@ def test_join_event(user_page: Page):
     user_page.screenshot(path="/tmp/e2e-event-joined.png")
 
 
-def test_change_language(user_page: Page):
+def test_change_language(user_page: Page, app_config: AppConfig):
     """Test changing interface language in settings."""
-    user_page.goto("http://localhost:8000/app/schedule")
+    user_page.goto(f"{app_config.app_url}/app/schedule")
     user_page.wait_for_timeout(1000)
 
     # Open settings modal (use the gear icon button)
@@ -136,9 +140,9 @@ def test_update_profile(user_page: Page):
         user_page.screenshot(path="/tmp/e2e-profile-updated.png")
 
 
-def test_timezone_support(user_page: Page):
+def test_timezone_support(user_page: Page, app_config: AppConfig):
     """Test timezone selection in settings."""
-    user_page.goto("http://localhost:8000/app/schedule")
+    user_page.goto(f"{app_config.app_url}/app/schedule")
     user_page.wait_for_timeout(1000)
 
     # Open settings modal (use the gear icon button)
