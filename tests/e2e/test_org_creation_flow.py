@@ -6,12 +6,16 @@ import pytest
 from playwright.sync_api import Page, expect
 import time
 
+from tests.e2e.helpers import AppConfig
 
-def test_create_organization_complete_flow(page: Page):
+pytestmark = pytest.mark.usefixtures("api_server")
+
+
+def test_create_organization_complete_flow(page: Page, app_config: AppConfig):
     """Test the complete organization creation flow from landing page."""
 
     # Navigate to the app
-    page.goto("http://localhost:8000")
+    page.goto(f"{app_config.app_url}/")
 
     # Wait for page to load
     page.wait_for_load_state("networkidle")
@@ -104,10 +108,10 @@ def test_create_organization_complete_flow(page: Page):
         raise
 
 
-def test_create_organization_validates_empty_form(page: Page):
+def test_create_organization_validates_empty_form(page: Page, app_config: AppConfig):
     """Test that empty form shows validation error."""
 
-    page.goto("http://localhost:8000")
+    page.goto(f"{app_config.app_url}/")
     page.wait_for_load_state("networkidle")
 
     # Click through to join screen
