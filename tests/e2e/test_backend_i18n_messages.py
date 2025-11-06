@@ -3,24 +3,28 @@
 import pytest
 from playwright.sync_api import Page, expect
 
+from tests.e2e.helpers import AppConfig, ApiTestClient, login_via_ui
 
-def test_validation_messages_translated_chinese(page: Page):
+pytestmark = pytest.mark.usefixtures("api_server")
+
+
+def test_validation_messages_translated_chinese(
+    page: Page,
+    app_config: AppConfig,
+    api_client: ApiTestClient,
+):
     """Test that Chinese language setting is saved successfully."""
-    # Navigate to app
-    page.goto("http://localhost:8000/")
-    page.wait_for_load_state("networkidle")
+    # Setup: Create test organization and admin user
+    org = api_client.create_org()
+    admin = api_client.create_user(
+        org_id=org["id"],
+        name="Test Admin",
+        roles=["admin"],
+    )
 
     # Login as admin
-    page.get_by_role("link", name="Sign in").click()
-    page.wait_for_timeout(500)
-
-    page.fill('[data-i18n-placeholder="auth.placeholder_email"]', "pastor@grace.church")
-    page.fill('[data-i18n-placeholder="auth.placeholder_password"]', "password")
-    page.get_by_role("button", name="Sign in").click()
-    page.wait_for_timeout(2000)
-
-    # Verify we're logged in
-    expect(page.locator("#user-name-display")).to_be_visible(timeout=5000)
+    login_via_ui(page, app_config.app_url, admin["email"], admin["password"])
+    expect(page.locator('#main-app')).to_be_visible(timeout=10000)
 
     # Change language to Chinese (Simplified)
     page.locator('button.btn-icon:has-text("⚙️")').click()
@@ -46,23 +50,23 @@ def test_validation_messages_translated_chinese(page: Page):
     print("✅ Chinese language setting applied and UI translated successfully")
 
 
-def test_assignment_messages_translated_spanish(page: Page):
+def test_assignment_messages_translated_spanish(
+    page: Page,
+    app_config: AppConfig,
+    api_client: ApiTestClient,
+):
     """Test that backend assignment messages are translated to Spanish."""
-    # Navigate to app
-    page.goto("http://localhost:8000/")
-    page.wait_for_load_state("networkidle")
+    # Setup: Create test organization and admin user
+    org = api_client.create_org()
+    admin = api_client.create_user(
+        org_id=org["id"],
+        name="Test Admin",
+        roles=["admin"],
+    )
 
     # Login as admin
-    page.get_by_role("link", name="Sign in").click()
-    page.wait_for_timeout(500)
-
-    page.fill('[data-i18n-placeholder="auth.placeholder_email"]', "pastor@grace.church")
-    page.fill('[data-i18n-placeholder="auth.placeholder_password"]', "password")
-    page.get_by_role("button", name="Sign in").click()
-    page.wait_for_timeout(2000)
-
-    # Verify we're logged in
-    expect(page.locator("#user-name-display")).to_be_visible(timeout=5000)
+    login_via_ui(page, app_config.app_url, admin["email"], admin["password"])
+    expect(page.locator('#main-app')).to_be_visible(timeout=10000)
 
     # Change language to Spanish
     page.locator('button.btn-icon:has-text("⚙️")').click()
@@ -87,20 +91,23 @@ def test_assignment_messages_translated_spanish(page: Page):
     print("✅ Spanish language setting applied successfully")
 
 
-def test_backend_message_keys_structure(page: Page):
+def test_backend_message_keys_structure(
+    page: Page,
+    app_config: AppConfig,
+    api_client: ApiTestClient,
+):
     """Test that Portuguese language setting is saved successfully."""
-    # Navigate to app
-    page.goto("http://localhost:8000/")
-    page.wait_for_load_state("networkidle")
+    # Setup: Create test organization and admin user
+    org = api_client.create_org()
+    admin = api_client.create_user(
+        org_id=org["id"],
+        name="Test Admin",
+        roles=["admin"],
+    )
 
-    # Login
-    page.get_by_role("link", name="Sign in").click()
-    page.wait_for_timeout(500)
-
-    page.fill('[data-i18n-placeholder="auth.placeholder_email"]', "pastor@grace.church")
-    page.fill('[data-i18n-placeholder="auth.placeholder_password"]', "password")
-    page.get_by_role("button", name="Sign in").click()
-    page.wait_for_timeout(2000)
+    # Login as admin
+    login_via_ui(page, app_config.app_url, admin["email"], admin["password"])
+    expect(page.locator('#main-app')).to_be_visible(timeout=10000)
 
     # Change language to Portuguese
     page.locator('button.btn-icon:has-text("⚙️")').click()
