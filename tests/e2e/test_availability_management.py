@@ -26,8 +26,16 @@ import time
 from datetime import datetime, timedelta
 import random
 
+from tests.e2e.helpers import AppConfig, ApiTestClient, login_via_ui
 
-def test_add_time_off_request_complete_workflow(authenticated_page: Page):
+pytestmark = pytest.mark.usefixtures("api_server")
+
+
+def test_add_time_off_request_complete_workflow(
+    page: Page,
+    app_config: AppConfig,
+    api_client: ApiTestClient,
+):
     """
     Test complete time-off request workflow from volunteer perspective.
 
@@ -40,10 +48,20 @@ def test_add_time_off_request_complete_workflow(authenticated_page: Page):
     6. Verifies request appears in availability list
     7. Verifies request shows in calendar view
     """
-    page = authenticated_page
+    # Setup: Create test organization and volunteer user
+    org = api_client.create_org()
+    volunteer = api_client.create_user(
+        org_id=org["id"],
+        name="Test Volunteer",
+        roles=["volunteer"],
+    )
+
+    # Login as volunteer
+    login_via_ui(page, app_config.app_url, volunteer["email"], volunteer["password"])
+    expect(page.locator('#main-app')).to_be_visible(timeout=10000)
 
     # Step 1: Navigate to My Availability
-    page.goto("http://localhost:8000/app/availability")
+    page.goto(f"{app_config.app_url}/app/availability")
     page.wait_for_load_state("networkidle")
     expect(page.locator('h2[data-i18n="schedule.availability"]')).to_be_visible(timeout=5000)
 
@@ -84,7 +102,11 @@ def test_add_time_off_request_complete_workflow(authenticated_page: Page):
     expect(timeoff_entry).to_be_visible()
 
 
-def test_edit_time_off_request(authenticated_page: Page):
+def test_edit_time_off_request(
+    page: Page,
+    app_config: AppConfig,
+    api_client: ApiTestClient,
+):
     """
     Test editing an existing time-off request.
 
@@ -96,10 +118,20 @@ def test_edit_time_off_request(authenticated_page: Page):
     5. Saves changes
     6. Verifies changes persisted
     """
-    page = authenticated_page
+    # Setup: Create test organization and volunteer user
+    org = api_client.create_org()
+    volunteer = api_client.create_user(
+        org_id=org["id"],
+        name="Test Volunteer",
+        roles=["volunteer"],
+    )
+
+    # Login as volunteer
+    login_via_ui(page, app_config.app_url, volunteer["email"], volunteer["password"])
+    expect(page.locator('#main-app')).to_be_visible(timeout=10000)
 
     # Navigate to availability
-    page.goto("http://localhost:8000/app/availability")
+    page.goto(f"{app_config.app_url}/app/availability")
     page.wait_for_load_state("networkidle")
     expect(page.locator('h2[data-i18n="schedule.availability"]')).to_be_visible(timeout=5000)
 
@@ -152,7 +184,11 @@ def test_edit_time_off_request(authenticated_page: Page):
     expect(updated_entry).to_be_visible()
 
 
-def test_delete_time_off_request(authenticated_page: Page):
+def test_delete_time_off_request(
+    page: Page,
+    app_config: AppConfig,
+    api_client: ApiTestClient,
+):
     """
     Test deleting a time-off request.
 
@@ -162,10 +198,20 @@ def test_delete_time_off_request(authenticated_page: Page):
     3. Clicks "Remove" on the request
     4. Verifies request removed from list (no confirmation dialog in UI)
     """
-    page = authenticated_page
+    # Setup: Create test organization and volunteer user
+    org = api_client.create_org()
+    volunteer = api_client.create_user(
+        org_id=org["id"],
+        name="Test Volunteer",
+        roles=["volunteer"],
+    )
+
+    # Login as volunteer
+    login_via_ui(page, app_config.app_url, volunteer["email"], volunteer["password"])
+    expect(page.locator('#main-app')).to_be_visible(timeout=10000)
 
     # Navigate to availability page (reload to ensure fresh state)
-    page.goto("http://localhost:8000/app/availability", wait_until="networkidle")
+    page.goto(f"{app_config.app_url}/app/availability", wait_until="networkidle")
 
     # Give extra time for page to fully render after previous tests
     page.wait_for_timeout(1000)
