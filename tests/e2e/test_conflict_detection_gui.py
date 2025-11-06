@@ -63,31 +63,32 @@ from playwright.sync_api import Page, expect
 import time
 from datetime import datetime, timedelta
 
+from tests.e2e.helpers import AppConfig, ApiTestClient, login_via_ui
+
+pytestmark = pytest.mark.usefixtures("api_server")
+
 
 @pytest.fixture(scope="function")
-def admin_login(page: Page):
+def admin_login(
+    page: Page,
+    app_config: AppConfig,
+    api_client: ApiTestClient,
+):
     """Login as admin for conflict detection tests."""
-    # Navigate directly to login page
-    page.goto("http://localhost:8000/login")
-    page.wait_for_load_state("networkidle")
+    # Setup: Create test organization and admin user
+    org = api_client.create_org()
+    admin = api_client.create_user(
+        org_id=org["id"],
+        name="Test Admin",
+        roles=["admin"],
+    )
 
-    # Verify login screen is visible
-    expect(page.locator("#login-screen")).to_be_visible(timeout=5000)
-
-    # Fill login form
-    page.fill("#login-email", "pastor@grace.church")
-    page.fill("#login-password", "password")
-
-    # Submit login
-    page.get_by_role("button", name="Sign In").click()
-    page.wait_for_timeout(2000)
-
-    # Verify logged in
-    expect(page).to_have_url("http://localhost:8000/app/schedule")
-    expect(page.locator("#main-app")).to_be_visible()
+    # Login as admin
+    login_via_ui(page, app_config.app_url, admin["email"], admin["password"])
+    expect(page.locator('#main-app')).to_be_visible(timeout=10000)
 
     # Navigate to admin console
-    page.goto("http://localhost:8000/app/admin")
+    page.goto(f"{app_config.app_url}/app/admin")
     page.wait_for_timeout(1000)
 
     # Click Conflicts tab (if exists)
@@ -122,7 +123,7 @@ def test_view_scheduling_conflicts(admin_login: Page):
             const currentOrg = JSON.parse(localStorage.getItem('currentOrg'));
 
             // Create person
-            const personResponse = await fetch('http://localhost:8000/api/people/', {
+            const personResponse = await fetch(`${window.location.origin}/api/people/', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -143,7 +144,7 @@ def test_view_scheduling_conflicts(admin_login: Page):
             const nextWeek = new Date(today);
             nextWeek.setDate(nextWeek.getDate() + 7);
 
-            const availResponse = await fetch('http://localhost:8000/api/availability', {
+            const availResponse = await fetch(`${window.location.origin}/api/availability', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -177,7 +178,7 @@ def test_view_scheduling_conflicts(admin_login: Page):
                 tomorrow.setDate(tomorrow.getDate() + 1);
                 tomorrow.setHours(10, 0, 0, 0);
 
-                await fetch('http://localhost:8000/api/events/', {{
+                await fetch(`${window.location.origin}/api/events/', {{
                     method: 'POST',
                     headers: {{
                         'Content-Type': 'application/json',
@@ -206,7 +207,7 @@ def test_view_scheduling_conflicts(admin_login: Page):
         page.wait_for_timeout(500)
     else:
         # Try navigating directly
-        page.goto("http://localhost:8000/app/admin#conflicts")
+        page.goto(f"{app_config.app_url}/app/admin#conflicts")
         page.wait_for_timeout(1000)
 
     # Verify conflicts dashboard is visible
@@ -271,7 +272,7 @@ def test_resolve_conflicts_manually(admin_login: Page):
             const currentOrg = JSON.parse(localStorage.getItem('currentOrg'));
 
             // Create person
-            const personResponse = await fetch('http://localhost:8000/api/people/', {
+            const personResponse = await fetch(`${window.location.origin}/api/people/', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -291,7 +292,7 @@ def test_resolve_conflicts_manually(admin_login: Page):
             tomorrow.setDate(tomorrow.getDate() + 1);
             tomorrow.setHours(14, 0, 0, 0);
 
-            const eventResponse = await fetch('http://localhost:8000/api/events/', {
+            const eventResponse = await fetch(`${window.location.origin}/api/events/', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -308,7 +309,7 @@ def test_resolve_conflicts_manually(admin_login: Page):
             const event = await eventResponse.json();
 
             // Add time-off overlapping with event
-            const availResponse = await fetch('http://localhost:8000/api/availability', {
+            const availResponse = await fetch(`${window.location.origin}/api/availability', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -399,7 +400,7 @@ def test_auto_detect_overlapping_assignments(admin_login: Page):
             const currentOrg = JSON.parse(localStorage.getItem('currentOrg'));
 
             // Create person
-            const personResponse = await fetch('http://localhost:8000/api/people/', {
+            const personResponse = await fetch(`${window.location.origin}/api/people/', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -419,7 +420,7 @@ def test_auto_detect_overlapping_assignments(admin_login: Page):
             nextWeek.setDate(nextWeek.getDate() + 7);
             nextWeek.setHours(9, 0, 0, 0);
 
-            const eventResponse = await fetch('http://localhost:8000/api/events/', {
+            const eventResponse = await fetch(`${window.location.origin}/api/events/', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -436,7 +437,7 @@ def test_auto_detect_overlapping_assignments(admin_login: Page):
             const event = await eventResponse.json();
 
             // Add time-off overlapping with event
-            await fetch('http://localhost:8000/api/availability', {
+            await fetch(`${window.location.origin}/api/availability', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -534,7 +535,7 @@ def test_conflict_resolution_suggestions(admin_login: Page):
             const currentOrg = JSON.parse(localStorage.getItem('currentOrg'));
 
             // Create conflicted person
-            const conflictedPersonResponse = await fetch('http://localhost:8000/api/people/', {
+            const conflictedPersonResponse = await fetch(`${window.location.origin}/api/people/', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -552,7 +553,7 @@ def test_conflict_resolution_suggestions(admin_login: Page):
             // Create 2 alternative volunteers (available)
             const alternatives = [];
             for (let i = 0; i < 2; i++) {
-                const altResponse = await fetch('http://localhost:8000/api/people/', {
+                const altResponse = await fetch(`${window.location.origin}/api/people/', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -573,7 +574,7 @@ def test_conflict_resolution_suggestions(admin_login: Page):
             tomorrow.setDate(tomorrow.getDate() + 1);
             tomorrow.setHours(11, 0, 0, 0);
 
-            const eventResponse = await fetch('http://localhost:8000/api/events/', {
+            const eventResponse = await fetch(`${window.location.origin}/api/events/', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -590,7 +591,7 @@ def test_conflict_resolution_suggestions(admin_login: Page):
             const event = await eventResponse.json();
 
             // Add time-off for conflicted person
-            await fetch('http://localhost:8000/api/availability', {
+            await fetch(`${window.location.origin}/api/availability', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -684,7 +685,7 @@ def test_export_conflicts_report(admin_login: Page):
                 const currentOrg = JSON.parse(localStorage.getItem('currentOrg'));
 
                 // Create person
-                const personResponse = await fetch('http://localhost:8000/api/people/', {{
+                const personResponse = await fetch(`${window.location.origin}/api/people/', {{
                     method: 'POST',
                     headers: {{
                         'Content-Type': 'application/json',
@@ -704,7 +705,7 @@ def test_export_conflicts_report(admin_login: Page):
                 future.setDate(future.getDate() + {i+1});
                 future.setHours(13, 0, 0, 0);
 
-                const eventResponse = await fetch('http://localhost:8000/api/events/', {{
+                const eventResponse = await fetch(`${window.location.origin}/api/events/', {{
                     method: 'POST',
                     headers: {{
                         'Content-Type': 'application/json',
@@ -720,7 +721,7 @@ def test_export_conflicts_report(admin_login: Page):
                 }});
 
                 // Add time-off
-                await fetch('http://localhost:8000/api/availability', {{
+                await fetch(`${window.location.origin}/api/availability', {{
                     method: 'POST',
                     headers: {{
                         'Content-Type': 'application/json',
