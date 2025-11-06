@@ -133,11 +133,15 @@ and Intro.js library integrated), unskip these tests.
 import pytest
 from playwright.sync_api import Page, expect
 
+from tests.e2e.helpers import AppConfig
+
+pytestmark = pytest.mark.usefixtures("api_server")
+
 
 @pytest.fixture(scope="function")
-def admin_login(page: Page):
+def admin_login(page: Page, app_config: AppConfig):
     """Login as admin for onboarding dashboard tests."""
-    page.goto("http://localhost:8000/login")
+    page.goto(f"{app_config.app_url}/login")
     page.wait_for_load_state("networkidle")
 
     # Verify login screen is visible
@@ -152,14 +156,14 @@ def admin_login(page: Page):
     page.wait_for_timeout(2000)
 
     # Verify logged in successfully
-    expect(page).to_have_url("http://localhost:8000/app/schedule")
+    expect(page).to_have_url(f"{app_config.app_url}/app/schedule")
     expect(page.locator("#main-app")).to_be_visible()
 
     return page
 
 
 @pytest.mark.skip(reason="Onboarding Dashboard GUI not implemented - backend API exists but frontend pending")
-def test_onboarding_dashboard_displays(admin_login: Page):
+def test_onboarding_dashboard_displays(admin_login: Page, app_config: AppConfig):
     """
     Test that onboarding dashboard displays with all components.
 
@@ -179,7 +183,7 @@ def test_onboarding_dashboard_displays(admin_login: Page):
     page = admin_login
 
     # Navigate to onboarding dashboard
-    page.goto("http://localhost:8000/app/onboarding-dashboard")
+    page.goto(f"{app_config.app_url}/app/onboarding-dashboard")
     page.wait_for_load_state("networkidle")
     page.wait_for_timeout(1000)  # Let dashboard initialize
 
@@ -217,7 +221,7 @@ def test_onboarding_dashboard_displays(admin_login: Page):
 
 
 @pytest.mark.skip(reason="Onboarding Dashboard GUI not implemented - backend API exists but frontend pending")
-def test_checklist_widget_interaction(admin_login: Page):
+def test_checklist_widget_interaction(admin_login: Page, app_config: AppConfig):
     """
     Test checklist widget tracks completion state and enables navigation.
 
@@ -239,7 +243,7 @@ def test_checklist_widget_interaction(admin_login: Page):
     page = admin_login
 
     # Navigate to onboarding dashboard
-    page.goto("http://localhost:8000/app/onboarding-dashboard")
+    page.goto(f"{app_config.app_url}/app/onboarding-dashboard")
     page.wait_for_load_state("networkidle")
     page.wait_for_timeout(1000)
 
@@ -279,7 +283,7 @@ def test_checklist_widget_interaction(admin_login: Page):
 
 
 @pytest.mark.skip(reason="Onboarding Dashboard GUI not implemented - backend API exists but frontend pending")
-def test_video_grid_playback(admin_login: Page):
+def test_video_grid_playback(admin_login: Page, app_config: AppConfig):
     """
     Test video grid displays and video playback modal opens correctly.
 
@@ -301,7 +305,7 @@ def test_video_grid_playback(admin_login: Page):
     page = admin_login
 
     # Navigate to onboarding dashboard
-    page.goto("http://localhost:8000/app/onboarding-dashboard")
+    page.goto(f"{app_config.app_url}/app/onboarding-dashboard")
     page.wait_for_load_state("networkidle")
     page.wait_for_timeout(1000)
 
@@ -337,7 +341,7 @@ def test_video_grid_playback(admin_login: Page):
 
 
 @pytest.mark.skip(reason="Onboarding Dashboard GUI not implemented - backend API exists but frontend pending")
-def test_sample_data_generation(admin_login: Page):
+def test_sample_data_generation(admin_login: Page, app_config: AppConfig):
     """
     Test sample data generation controls work correctly.
 
@@ -364,7 +368,7 @@ def test_sample_data_generation(admin_login: Page):
     org_id = page.evaluate("JSON.parse(localStorage.getItem('currentOrg')).id")
 
     # Navigate to onboarding dashboard
-    page.goto("http://localhost:8000/app/onboarding-dashboard")
+    page.goto(f"{app_config.app_url}/app/onboarding-dashboard")
     page.wait_for_load_state("networkidle")
     page.wait_for_timeout(1000)
 
@@ -404,7 +408,7 @@ def test_sample_data_generation(admin_login: Page):
         expect(success_message.first).to_be_visible(timeout=5000)
 
         # Navigate to admin console to verify sample data was created
-        page.goto("http://localhost:8000/app/admin")
+        page.goto(f"{app_config.app_url}/app/admin")
         page.wait_for_load_state("networkidle")
         page.wait_for_timeout(1000)
 
@@ -417,7 +421,7 @@ def test_sample_data_generation(admin_login: Page):
 
 
 @pytest.mark.skip(reason="Onboarding Dashboard GUI not implemented - backend API exists but frontend pending")
-def test_feature_unlock_progression(admin_login: Page):
+def test_feature_unlock_progression(admin_login: Page, app_config: AppConfig):
     """
     Test that features unlock based on usage milestones.
 
@@ -448,7 +452,7 @@ def test_feature_unlock_progression(admin_login: Page):
     page = admin_login
 
     # Navigate to onboarding dashboard
-    page.goto("http://localhost:8000/app/onboarding-dashboard")
+    page.goto(f"{app_config.app_url}/app/onboarding-dashboard")
     page.wait_for_load_state("networkidle")
     page.wait_for_timeout(1000)
 
@@ -489,7 +493,7 @@ def test_feature_unlock_progression(admin_login: Page):
 
 
 @pytest.mark.skip(reason="Onboarding Dashboard GUI not implemented - backend API exists but frontend pending")
-def test_tutorial_overlay_system(admin_login: Page):
+def test_tutorial_overlay_system(admin_login: Page, app_config: AppConfig):
     """
     Test that tutorial overlay system (Intro.js) is properly integrated.
 
@@ -518,7 +522,7 @@ def test_tutorial_overlay_system(admin_login: Page):
     page = admin_login
 
     # Navigate to onboarding dashboard
-    page.goto("http://localhost:8000/app/onboarding-dashboard")
+    page.goto(f"{app_config.app_url}/app/onboarding-dashboard")
     page.wait_for_load_state("networkidle")
     page.wait_for_timeout(1000)
 
@@ -566,7 +570,7 @@ def test_tutorial_overlay_system(admin_login: Page):
 
 
 @pytest.mark.skip(reason="Onboarding Dashboard GUI not implemented - backend API exists but frontend pending")
-def test_onboarding_complete_integration(admin_login: Page):
+def test_onboarding_complete_integration(admin_login: Page, app_config: AppConfig):
     """
     Test complete onboarding system integration.
 
@@ -597,7 +601,7 @@ def test_onboarding_complete_integration(admin_login: Page):
     page.on('console', log_console_error)
 
     # Navigate to onboarding dashboard
-    page.goto("http://localhost:8000/app/onboarding-dashboard")
+    page.goto(f"{app_config.app_url}/app/onboarding-dashboard")
     page.wait_for_load_state("networkidle")
     page.wait_for_timeout(2000)  # Let all components initialize
 
