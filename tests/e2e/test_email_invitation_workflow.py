@@ -15,6 +15,10 @@ import time
 import requests
 import os
 
+from tests.e2e.helpers import AppConfig, ApiTestClient, login_via_ui
+
+pytestmark = pytest.mark.usefixtures("api_server")
+
 # Check if email is enabled (from environment)
 EMAIL_ENABLED = os.environ.get("EMAIL_ENABLED", "false").lower() == "true"
 
@@ -82,7 +86,11 @@ def get_latest_email(to_email, inbox_id=MAILTRAP_INBOX_ID, account_id=MAILTRAP_A
     not EMAIL_ENABLED,
     reason="Email infrastructure not configured (EMAIL_ENABLED=false). Configure SMTP settings to enable this test."
 )
-def test_admin_sends_invitation_email(page: Page):
+def test_admin_sends_invitation_email(
+    page: Page,
+    app_config: AppConfig,
+    api_client: ApiTestClient,
+):
     """
     Test complete invitation workflow with email sending.
 
@@ -95,44 +103,20 @@ def test_admin_sends_invitation_email(page: Page):
     6. User sees success message
     7. Email appears in Mailtrap inbox
     """
-    # Step 1: Admin logs in
-    page.goto("http://localhost:8000/")
+    # Step 1: Setup - Create test organization and admin user
+    org = api_client.create_org()
+    admin = api_client.create_user(
+        org_id=org["id"],
+        name="Test Admin",
+        roles=["admin"],
+    )
 
-    # Click login/get started
-    get_started = page.locator('[data-i18n="auth.get_started"]')
-    expect(get_started).to_be_visible(timeout=5000)
-    get_started.click()
-
-    # Create new org for testing
-    timestamp = int(time.time())
-    org_name = f"Email Test Org {timestamp}"
-    admin_email = f"admin-email-{timestamp}@test.com"
-
-    # Fill org form
-    create_org_btn = page.locator('[data-i18n="auth.create_new_organization"]')
-    if create_org_btn.is_visible():
-        create_org_btn.click()
-
-        page.fill('[data-i18n-placeholder="auth.placeholder_org_name"]', org_name)
-        page.fill('[data-i18n-placeholder="auth.placeholder_location"]', "Test City")
-        page.locator('[data-i18n="common.buttons.create"]').click()
-
-    # Fill admin profile
-    page.fill('[data-i18n-placeholder="common.placeholder_full_name"]', "Test Admin")
-    page.fill('[data-i18n-placeholder="common.placeholder_email"]', admin_email)
-    page.fill('[data-i18n-placeholder="auth.placeholder_create_password"]', "testpass123")
-
-    # Select admin role
-    page.locator('#role-selector input[value="admin"]').check()
-
-    # Submit profile
-    page.locator('[data-i18n="common.buttons.next"]').click()
-
-    # Wait for main app to load
-    expect(page.locator('h2[data-i18n="schedule.my_schedule"]')).to_be_visible(timeout=10000)
+    # Login as admin
+    login_via_ui(page, app_config.app_url, admin["email"], admin["password"])
+    expect(page.locator('#main-app')).to_be_visible(timeout=10000)
 
     # Step 2: Navigate to Admin Console
-    page.goto("http://localhost:8000/app/admin")
+    page.goto(f"{app_config.app_url}/app/admin")
     expect(page.locator('[data-i18n="admin.title"]')).to_be_visible(timeout=5000)
 
     # Step 3: Go to Invitations tab
@@ -221,7 +205,7 @@ def test_invitation_email_service_handles_errors():
     not EMAIL_ENABLED or not MAILTRAP_API_TOKEN,
     reason="Email infrastructure not configured (EMAIL_ENABLED=false or MAILTRAP_API_TOKEN missing). This test requires SMTP server and Mailtrap API access."
 )
-def test_invitation_email_delivered_to_mailtrap_inbox():
+def test_invitation_email_delivered_to_mailtrap_inbox(app_config: AppConfig):
     """
     Test that invitation email is actually delivered to Mailtrap inbox.
 
@@ -247,7 +231,7 @@ def test_invitation_email_delivered_to_mailtrap_inbox():
         admin_name="API Test Admin",
         org_name="API Test Organization",
         invitation_token=test_token,
-        app_url="http://localhost:8000"
+        app_url=app_config.app_url
     )
 
     assert success, "Email service should send email successfully"
