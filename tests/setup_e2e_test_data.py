@@ -8,7 +8,9 @@ from sqlalchemy.orm import sessionmaker
 
 from api.models import Base, Organization, Person
 
-API_BASE = "http://localhost:8000/api"
+# Use environment variables for API base URL (supports port 8001 for E2E tests)
+APP_URL = os.getenv("E2E_APP_URL", "http://localhost:8000").rstrip("/")
+API_BASE = os.getenv("E2E_API_BASE", f"{APP_URL}/api").rstrip("/")
 
 
 def _resolve_database_url() -> str:

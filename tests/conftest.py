@@ -364,7 +364,9 @@ def setup_test_database():
         Organization, Person, Team, TeamMember, Resource, Event, EventTeam,
         Assignment, Solution, Availability, VacationPeriod, AvailabilityException,
         Holiday, Constraint, Invitation, RecurringSeries, RecurrenceException,
-        OnboardingProgress, Notification, EmailPreference
+        OnboardingProgress, Notification, EmailPreference,
+        # Billing models (required for organization creation auto-subscription)
+        SmsUsage, Subscription, BillingHistory, PaymentMethod, UsageMetrics, SubscriptionEvent
     )
 
     Base.metadata.create_all(bind=engine)
