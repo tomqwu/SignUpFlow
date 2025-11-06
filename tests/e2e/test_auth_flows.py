@@ -3,11 +3,16 @@
 import pytest
 from playwright.sync_api import Page, expect
 
+from tests.e2e.helpers import AppConfig, ApiTestClient, login_via_ui
+
+
+pytestmark = pytest.mark.usefixtures("api_server")
+
 
 @pytest.mark.skip(reason="Join page org-card element not implemented yet - signup via different flow")
-def test_signup_new_user(page: Page):
+def test_signup_new_user(page: Page, app_config: AppConfig):
     """Test complete signup flow for new user."""
-    page.goto("http://localhost:8000/")
+    page.goto(app_config.app_url)
     page.wait_for_load_state("networkidle")
 
     # Click "Get Started" button
@@ -15,7 +20,7 @@ def test_signup_new_user(page: Page):
     page.wait_for_timeout(500)
 
     # Should navigate to join page
-    expect(page).to_have_url("http://localhost:8000/join")
+    expect(page).to_have_url(f"{app_config.app_url}/join")
 
     # Check if organization list loads
     org_card = page.locator(".org-card").first
@@ -27,41 +32,46 @@ def test_signup_new_user(page: Page):
     print("✓ Join page loads and shows organizations")
 
 
-def test_login_existing_user(page: Page):
+def test_login_existing_user(
+    page: Page,
+    app_config: AppConfig,
+    api_client: ApiTestClient,
+):
     """Test login flow with existing user."""
-    page.goto("http://localhost:8000/")
+    # Create test user
+    org = api_client.create_org()
+    user = api_client.create_user(
+        org_id=org["id"],
+        name="Test Pastor",
+        roles=["admin"],
+    )
 
-    # Click "Sign in" link
-    page.get_by_role("link", name="Sign in").click()
-    page.wait_for_timeout(500)
-
-    # Should show login screen
-    expect(page.locator("#login-screen")).to_be_visible()
-
-    # Fill in credentials
-    page.fill("#login-email", "pastor@grace.church")
-    page.fill("#login-password", "password")
-
-    # Submit
-    page.get_by_role("button", name="Sign In").click()
-    page.wait_for_timeout(2000)
+    # Use the login helper
+    login_via_ui(page, app_config.app_url, user["email"], user["password"])
 
     # Should be logged in
-    expect(page).to_have_url("http://localhost:8000/app/schedule")
+    expect(page).to_have_url(f"{app_config.app_url}/app/schedule")
     expect(page.locator("#main-app")).to_be_visible()
 
     # Check if user data loaded
     page.screenshot(path="/tmp/e2e-after-login.png")
 
 
-def test_logout_flow(page: Page):
+def test_logout_flow(
+    page: Page,
+    app_config: AppConfig,
+    api_client: ApiTestClient,
+):
     """Test logout functionality."""
-    # First login
-    page.goto("http://localhost:8000/login")
-    page.fill("#login-email", "pastor@grace.church")
-    page.fill("#login-password", "password")
-    page.get_by_role("button", name="Sign In").click()
-    page.wait_for_timeout(2000)
+    # Create test user and login
+    org = api_client.create_org()
+    user = api_client.create_user(
+        org_id=org["id"],
+        name="Test User",
+        roles=["volunteer"],
+    )
+
+    login_via_ui(page, app_config.app_url, user["email"], user["password"])
 
     # Verify logged in
     expect(page.locator("#main-app")).to_be_visible()
@@ -82,25 +92,32 @@ def test_logout_flow(page: Page):
             expect(page.locator("#onboarding-screen")).to_be_visible()
 
 
-def test_protected_route_redirect(page: Page):
+def test_protected_route_redirect(page: Page, app_config: AppConfig):
     """Test that protected routes redirect to login when not authenticated."""
-    page.goto("http://localhost:8000/app/admin")
+    page.goto(f"{app_config.app_url}/app/admin")
     page.wait_for_load_state("networkidle")
     page.wait_for_timeout(1000)
 
     # Should redirect to login
-    expect(page).to_have_url("http://localhost:8000/login")
+    expect(page).to_have_url(f"{app_config.app_url}/login")
     expect(page.locator("#login-screen")).to_be_visible()
 
 
-def test_session_persistence(page: Page):
+def test_session_persistence(
+    page: Page,
+    app_config: AppConfig,
+    api_client: ApiTestClient,
+):
     """Test that session persists across page reloads."""
-    # Login
-    page.goto("http://localhost:8000/login")
-    page.fill("#login-email", "pastor@grace.church")
-    page.fill("#login-password", "password")
-    page.get_by_role("button", name="Sign In").click()
-    page.wait_for_timeout(2000)
+    # Create test user and login
+    org = api_client.create_org()
+    user = api_client.create_user(
+        org_id=org["id"],
+        name="Test User",
+        roles=["volunteer"],
+    )
+
+    login_via_ui(page, app_config.app_url, user["email"], user["password"])
 
     # Verify logged in
     expect(page.locator("#main-app")).to_be_visible()
@@ -112,12 +129,12 @@ def test_session_persistence(page: Page):
 
     # Should still be logged in
     expect(page.locator("#main-app")).to_be_visible()
-    expect(page).to_have_url("http://localhost:8000/app/schedule")
+    expect(page).to_have_url(f"{app_config.app_url}/app/schedule")
 
 
-def test_invalid_credentials(page: Page):
+def test_invalid_credentials(page: Page, app_config: AppConfig):
     """Test login with invalid credentials shows error."""
-    page.goto("http://localhost:8000/login")
+    page.goto(f"{app_config.app_url}/login")
 
     page.fill("#login-email", "invalid@test.com")
     page.fill("#login-password", "wrongpassword")

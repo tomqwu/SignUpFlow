@@ -3,17 +3,32 @@
 import pytest
 from playwright.sync_api import Page, expect
 
+from tests.e2e.helpers import AppConfig, ApiTestClient, login_via_ui
+
+
+pytestmark = pytest.mark.usefixtures("api_server")
+
 
 @pytest.fixture
-def admin_page(page: Page):
+def admin_page(
+    page: Page,
+    app_config: AppConfig,
+    api_client: ApiTestClient,
+):
     """Login as admin and navigate to admin console."""
-    page.goto("http://localhost:8000/login")
-    page.fill("#login-email", "pastor@grace.church")
-    page.fill("#login-password", "password")
-    page.get_by_role("button", name="Sign In").click()
-    page.wait_for_timeout(2000)
+    # Create admin user
+    org = api_client.create_org()
+    admin_user = api_client.create_user(
+        org_id=org["id"],
+        name="Test Admin",
+        roles=["admin"],
+    )
 
-    page.goto("http://localhost:8000/app/admin")
+    # Login
+    login_via_ui(page, app_config.app_url, admin_user["email"], admin_user["password"])
+
+    # Navigate to admin console
+    page.goto(f"{app_config.app_url}/app/admin")
     page.wait_for_timeout(1000)
 
     return page
@@ -136,13 +151,27 @@ def test_organization_settings(admin_page: Page):
         admin_page.screenshot(path="/tmp/e2e-org-settings.png")
 
 
-def test_non_admin_cannot_access(page: Page):
+def test_non_admin_cannot_access(
+    page: Page,
+    app_config: AppConfig,
+    api_client: ApiTestClient,
+):
     """Test that non-admin users cannot access admin console."""
-    # Would need a non-admin user account
-    # For now, test that the page checks permissions
-    page.goto("http://localhost:8000/app/admin")
+    # Create non-admin user
+    org = api_client.create_org()
+    volunteer = api_client.create_user(
+        org_id=org["id"],
+        name="Test Volunteer",
+        roles=["volunteer"],  # Not admin
+    )
+
+    # Login as volunteer
+    login_via_ui(page, app_config.app_url, volunteer["email"], volunteer["password"])
+
+    # Try to access admin console
+    page.goto(f"{app_config.app_url}/app/admin")
     page.wait_for_timeout(1000)
 
     # Should either redirect or show access denied
-    # (depends on if user is logged in)
+    # (depends on frontend implementation)
     page.screenshot(path="/tmp/e2e-admin-access-check.png")
