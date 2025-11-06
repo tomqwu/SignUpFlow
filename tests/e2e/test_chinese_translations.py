@@ -3,25 +3,28 @@
 import pytest
 from playwright.sync_api import Page, expect
 
+from tests.e2e.helpers import AppConfig, ApiTestClient, login_via_ui
 
-def test_chinese_permission_level_label(page: Page):
+pytestmark = pytest.mark.usefixtures("api_server")
+
+
+def test_chinese_permission_level_label(
+    page: Page,
+    app_config: AppConfig,
+    api_client: ApiTestClient,
+):
     """Test that permission level label displays correctly in Chinese."""
-    # Navigate to app
-    page.goto("http://localhost:8000/")
-    page.wait_for_load_state("networkidle")
-
-    # Click Sign in link
-    page.get_by_role("link", name="Sign in").click()
-    page.wait_for_timeout(500)
+    # Setup: Create test organization and admin user
+    org = api_client.create_org()
+    admin = api_client.create_user(
+        org_id=org["id"],
+        name="Test Admin",
+        roles=["admin"],
+    )
 
     # Login as admin
-    page.fill('[data-i18n-placeholder="auth.placeholder_email"]', "pastor@grace.church")
-    page.fill('[data-i18n-placeholder="auth.placeholder_password"]', "password")
-    page.get_by_role("button", name="Sign in").click()
-    page.wait_for_timeout(2000)
-
-    # Verify we're logged in
-    expect(page.locator("#user-name-display")).to_be_visible(timeout=5000)
+    login_via_ui(page, app_config.app_url, admin["email"], admin["password"])
+    expect(page.locator('#main-app')).to_be_visible(timeout=10000)
 
     # Open settings modal
     page.locator('button.btn-icon:has-text("⚙️")').click()
@@ -63,24 +66,23 @@ def test_chinese_permission_level_label(page: Page):
     print("✅ Chinese permission level label displays correctly")
 
 
-def test_chinese_traditional_permission_level_label(page: Page):
+def test_chinese_traditional_permission_level_label(
+    page: Page,
+    app_config: AppConfig,
+    api_client: ApiTestClient,
+):
     """Test that permission level label displays correctly in Traditional Chinese."""
-    # Navigate to app
-    page.goto("http://localhost:8000/")
-    page.wait_for_load_state("networkidle")
-
-    # Click Sign in link
-    page.get_by_role("link", name="Sign in").click()
-    page.wait_for_timeout(500)
+    # Setup: Create test organization and admin user
+    org = api_client.create_org()
+    admin = api_client.create_user(
+        org_id=org["id"],
+        name="Test Admin",
+        roles=["admin"],
+    )
 
     # Login as admin
-    page.fill('[data-i18n-placeholder="auth.placeholder_email"]', "pastor@grace.church")
-    page.fill('[data-i18n-placeholder="auth.placeholder_password"]', "password")
-    page.get_by_role("button", name="Sign in").click()
-    page.wait_for_timeout(2000)
-
-    # Verify we're logged in
-    expect(page.locator("#user-name-display")).to_be_visible(timeout=5000)
+    login_via_ui(page, app_config.app_url, admin["email"], admin["password"])
+    expect(page.locator('#main-app')).to_be_visible(timeout=10000)
 
     # Open settings modal
     page.locator('button.btn-icon:has-text("⚙️")').click()
