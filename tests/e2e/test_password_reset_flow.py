@@ -8,12 +8,17 @@ Tests the complete user journey:
 4. User logs in with new password
 """
 
+import pytest
 import requests
 import time
 from playwright.sync_api import Page, expect
 
+from tests.e2e.helpers import AppConfig
 
-def test_password_reset_complete_journey(page: Page):
+pytestmark = pytest.mark.usefixtures("api_server")
+
+
+def test_password_reset_complete_journey(page: Page, app_config: AppConfig):
     """
     Test complete password reset flow from forgot password to login with new password.
 
@@ -42,7 +47,7 @@ def test_password_reset_complete_journey(page: Page):
 
     # Create organization
     org_response = requests.post(
-        "http://localhost:8000/api/organizations/",
+        f"{app_config.app_url}/api/organizations/",
         json={
             "id": test_org_id,
             "name": f"Password Reset Test Org {timestamp}",
@@ -53,7 +58,7 @@ def test_password_reset_complete_journey(page: Page):
 
     # Create user with known password
     signup_response = requests.post(
-        "http://localhost:8000/api/auth/signup",
+        f"{app_config.app_url}/api/auth/signup",
         json={
             "email": test_email,
             "password": old_password,
@@ -67,7 +72,7 @@ def test_password_reset_complete_journey(page: Page):
 
     # Step 1: Navigate to forgot password screen
     print("\nStep 1: User navigates to forgot password screen...")
-    page.goto("http://localhost:8000/login")
+    page.goto(f"{app_config.app_url}/login")
 
     # Click "Forgot password?" link
     page.locator('a[data-i18n="auth.forgot_password"]').click()
@@ -153,7 +158,7 @@ def test_password_reset_complete_journey(page: Page):
     print("="*80)
 
 
-def test_password_reset_with_mismatched_passwords(page: Page):
+def test_password_reset_with_mismatched_passwords(page: Page, app_config: AppConfig):
     """
     Test that mismatched passwords show an error.
 
@@ -177,7 +182,7 @@ def test_password_reset_with_mismatched_passwords(page: Page):
 
     # Create organization
     org_response = requests.post(
-        "http://localhost:8000/api/organizations/",
+        f"{app_config.app_url}/api/organizations/",
         json={
             "id": test_org_id,
             "name": f"Mismatch Test Org {timestamp}",
@@ -188,7 +193,7 @@ def test_password_reset_with_mismatched_passwords(page: Page):
 
     # Create user
     signup_response = requests.post(
-        "http://localhost:8000/api/auth/signup",
+        f"{app_config.app_url}/api/auth/signup",
         json={
             "email": test_email,
             "password": test_password,
@@ -201,7 +206,7 @@ def test_password_reset_with_mismatched_passwords(page: Page):
 
     # Request password reset via API
     reset_response = requests.post(
-        "http://localhost:8000/api/auth/forgot-password",
+        f"{app_config.app_url}/api/auth/forgot-password",
         json={"email": test_email}
     )
     reset_data = reset_response.json()
@@ -210,7 +215,7 @@ def test_password_reset_with_mismatched_passwords(page: Page):
 
     # Navigate to reset password screen with token
     print("\nStep 1: Navigating to reset password screen...")
-    page.goto(f"http://localhost:8000/reset-password?token={token}")
+    page.goto(f"{app_config.app_url}/reset-password?token={token}")
 
     # Debug: Wait for page to load and check which screen is visible
     page.wait_for_timeout(1000)  # Give router time to process
@@ -274,7 +279,7 @@ def test_password_reset_with_mismatched_passwords(page: Page):
     print("="*80)
 
 
-def test_password_reset_with_invalid_token(page: Page):
+def test_password_reset_with_invalid_token(page: Page, app_config: AppConfig):
     """
     Test that invalid reset token shows an error.
 
@@ -292,7 +297,7 @@ def test_password_reset_with_invalid_token(page: Page):
     # Navigate to reset password screen with invalid token
     print("\nStep 1: Navigating to reset password screen with invalid token...")
     invalid_token = "invalid_token_12345678901234567890"
-    page.goto(f"http://localhost:8000/reset-password?token={invalid_token}")
+    page.goto(f"{app_config.app_url}/reset-password?token={invalid_token}")
     expect(page.locator('#reset-password-screen')).to_be_visible(timeout=3000)
     print(f"  ✓ Reset password screen visible")
 
