@@ -15,8 +15,9 @@ import pytest
 from playwright.sync_api import Page, expect
 from datetime import datetime, timedelta
 
+from tests.e2e.helpers import AppConfig
 
-APP_URL = "http://localhost:8000"
+pytestmark = pytest.mark.usefixtures("api_server")
 
 
 class TestRecurringEventsCreation:
@@ -29,7 +30,7 @@ class TestRecurringEventsCreation:
     """
 
     @pytest.mark.skip(reason="Recurring event creation UI flow not implemented yet")
-    def test_create_weekly_recurring_event_complete_workflow(self, page: Page, api_server):
+    def test_create_weekly_recurring_event_complete_workflow(self, page: Page, app_config: AppConfig):
         """
         Test complete workflow for creating weekly recurring event.
 
@@ -53,7 +54,7 @@ class TestRecurringEventsCreation:
         THIS TEST WILL FAIL INITIALLY - Feature not implemented yet.
         """
         # Given: Admin is logged in
-        page.goto(APP_URL)
+        page.goto(app_config.app_url)
         page.wait_for_load_state("networkidle")
 
         # Login as admin
@@ -71,7 +72,7 @@ class TestRecurringEventsCreation:
 
         # When: Admin creates new recurring event
         # Navigate to admin console
-        page.goto("http://localhost:8000/app/admin")
+        page.goto(f"{app_config.app_url}/app/admin")
         page.wait_for_timeout(1000)
 
         # Click Events tab
@@ -147,7 +148,7 @@ class TestRecurringEventsCreation:
         # Note: Full verification of created events would require additional implementation
 
     @pytest.mark.skip(reason="Recurring event preview UI flow not implemented yet")
-    def test_calendar_preview_updates_realtime(self, page: Page, api_server):
+    def test_calendar_preview_updates_realtime(self, page: Page, app_config: AppConfig):
         """
         Test calendar preview updates in real-time as pattern changes.
 
@@ -164,12 +165,12 @@ class TestRecurringEventsCreation:
         THIS TEST WILL FAIL INITIALLY - Feature not implemented yet.
         """
         # Given: Admin is on recurring event creation form
-        page.goto(APP_URL)
+        page.goto(app_config.app_url)
         page.wait_for_load_state("networkidle")
 
         # Login and navigate (abbreviated)
-        self._login_as_admin(page)
-        self._open_event_creation_form(page)
+        self._login_as_admin(page, app_config)
+        self._open_event_creation_form(page, app_config)
 
         # Fill event title and start date (required for preview)
         page.locator('#event-title').fill("Weekly Service")
@@ -210,7 +211,7 @@ class TestRecurringEventsCreation:
             f"Preview update took {update_time}s, should be <2s"
 
     @pytest.mark.skip(reason="Feature not implemented: Warning threshold set to 100, test expects 50")
-    def test_preview_warns_on_large_series(self, page: Page, api_server):
+    def test_preview_warns_on_large_series(self, page: Page, app_config: AppConfig):
         """
         Test that calendar preview displays warning for large series.
 
@@ -225,9 +226,9 @@ class TestRecurringEventsCreation:
         THIS TEST WILL FAIL INITIALLY - Feature not implemented yet.
         """
         # Given: Admin configures pattern with many occurrences
-        page.goto(APP_URL)
-        self._login_as_admin(page)
-        self._open_event_creation_form(page)
+        page.goto(app_config.app_url)
+        self._login_as_admin(page, app_config)
+        self._open_event_creation_form(page, app_config)
 
         # Fill event title and start date (required for preview)
         page.locator('#event-title').fill("Multi-day Service")
@@ -263,7 +264,7 @@ class TestRecurringEventsCreation:
             f"Preview should show occurrence information: {preview_text}"
 
     # Helper methods for test setup
-    def _login_as_admin(self, page: Page):
+    def _login_as_admin(self, page: Page, app_config: AppConfig):
         """Helper: Login as admin user."""
         if page.locator('a:has-text("Sign in")').count() > 0:
             page.locator('a:has-text("Sign in")').click()
@@ -276,10 +277,10 @@ class TestRecurringEventsCreation:
 
         expect(page.locator('#main-app')).to_be_visible()
 
-    def _open_event_creation_form(self, page: Page):
+    def _open_event_creation_form(self, page: Page, app_config: AppConfig):
         """Helper: Navigate to event creation form."""
         # Navigate to admin console first
-        page.goto("http://localhost:8000/app/admin")
+        page.goto(f"{app_config.app_url}/app/admin")
         page.wait_for_timeout(1000)
 
         # Click Events tab
@@ -306,7 +307,7 @@ class TestRecurringEventsSingleVsSeriesEditing:
     """
 
     @pytest.mark.skip(reason="Feature not implemented: Edit single occurrence vs entire series dialog")
-    def test_edit_single_occurrence_creates_exception(self, page: Page, api_server):
+    def test_edit_single_occurrence_creates_exception(self, page: Page, app_config: AppConfig):
         """
         Test editing single occurrence creates exception without affecting series.
 
@@ -330,20 +331,21 @@ class TestRecurringEventsSingleVsSeriesEditing:
         """
         # Given: Recurring series exists with 10 occurrences
         # (Prerequisite: Create recurring event first)
-        page.goto(APP_URL)
-        self._login_as_admin(page)
+        page.goto(app_config.app_url)
+        self._login_as_admin(page, app_config)
 
         # Create test recurring series
         start_datetime = (datetime.now() + timedelta(days=7)).strftime("%Y-%m-%dT10:00")
         self._create_weekly_recurring_event(
             page,
+            app_config,
             title="Sunday Worship",
             start_date=start_datetime,
             end_date=(datetime.now() + timedelta(weeks=10)).strftime("%Y-%m-%d")
         )
 
         # Navigate to calendar/schedule view
-        page.goto("http://localhost:8000/app/schedule")
+        page.goto(f"{app_config.app_url}/app/schedule")
         page.wait_for_timeout(1000)
 
         # When: Admin edits 5th occurrence
@@ -401,7 +403,7 @@ class TestRecurringEventsSingleVsSeriesEditing:
             f"Tooltip should indicate exception: {tooltip}"
 
     @pytest.mark.skip(reason="Feature not implemented: Edit entire series functionality")
-    def test_edit_entire_series_updates_all_future(self, page: Page, api_server):
+    def test_edit_entire_series_updates_all_future(self, page: Page, app_config: AppConfig):
         """
         Test editing entire series updates all future occurrences.
 
@@ -421,20 +423,21 @@ class TestRecurringEventsSingleVsSeriesEditing:
         THIS TEST WILL FAIL INITIALLY - Feature not implemented yet.
         """
         # Given: Recurring series exists
-        page.goto(APP_URL)
-        self._login_as_admin(page)
+        page.goto(app_config.app_url)
+        self._login_as_admin(page, app_config)
 
         # Create recurring series starting 2 weeks ago (so we have past occurrences)
         start_datetime = (datetime.now() - timedelta(weeks=2)).strftime("%Y-%m-%dT10:00")
         self._create_weekly_recurring_event(
             page,
+            app_config,
             title="Sunday Worship",
             start_date=start_datetime,
             end_date=(datetime.now() + timedelta(weeks=8)).strftime("%Y-%m-%d")
         )
 
         # Navigate to calendar
-        page.goto("http://localhost:8000/app/schedule")
+        page.goto(f"{app_config.app_url}/app/schedule")
         page.wait_for_timeout(1000)
 
         # When: Admin edits series (click on current/future occurrence)
@@ -469,7 +472,7 @@ class TestRecurringEventsSingleVsSeriesEditing:
             f"Expected at least 2 past 'Sunday Worship' events (historical), got {past_events}"
 
     # Helper methods
-    def _login_as_admin(self, page: Page):
+    def _login_as_admin(self, page: Page, app_config: AppConfig):
         """Helper: Login as admin user."""
         if page.locator('a:has-text("Sign in")').count() > 0:
             page.locator('a:has-text("Sign in")').click()
@@ -483,13 +486,14 @@ class TestRecurringEventsSingleVsSeriesEditing:
     def _create_weekly_recurring_event(
         self,
         page: Page,
+        app_config: AppConfig,
         title: str,
         start_date: str = None,
         end_date: str = None
     ):
         """Helper: Create weekly recurring event via UI."""
         # Navigate to admin console first
-        page.goto("http://localhost:8000/app/admin")
+        page.goto(f"{app_config.app_url}/app/admin")
         page.wait_for_timeout(1000)
 
         # Click Events tab
