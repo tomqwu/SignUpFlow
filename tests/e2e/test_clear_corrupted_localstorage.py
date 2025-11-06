@@ -1,10 +1,17 @@
 """Test to demonstrate and fix corrupted localStorage org_id=xyz issue."""
 
+import pytest
 from playwright.sync_api import Page, expect
 
-BASE_URL = "http://localhost:8000"
+from tests.e2e.helpers import AppConfig
 
-def test_clear_corrupted_localstorage(page: Page):
+pytestmark = pytest.mark.usefixtures("api_server")
+
+
+def test_clear_corrupted_localstorage(
+    page: Page,
+    app_config: AppConfig,
+):
     """
     Simulate corrupted localStorage with org_id=xyz and verify clearing fixes it.
 
@@ -16,7 +23,7 @@ def test_clear_corrupted_localstorage(page: Page):
     print("\n🔍 Test: Corrupted localStorage with org_id=xyz")
 
     # Step 1: Navigate to app
-    page.goto(BASE_URL)
+    page.goto(app_config.app_url)
     page.wait_for_load_state('networkidle')
 
     # Step 2: Inject corrupted localStorage (simulating user's state)
