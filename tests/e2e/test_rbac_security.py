@@ -14,8 +14,9 @@ import requests
 from datetime import datetime, timedelta
 from passlib.context import CryptContext
 
-# Use environment-aware API_BASE to support both local and Docker environments
-API_BASE = os.getenv("E2E_API_BASE", "http://localhost:8000/api")
+from tests.e2e.helpers import AppConfig
+
+pytestmark = pytest.mark.usefixtures("api_server")
 
 # Password hashing
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
@@ -25,7 +26,7 @@ _person_id_cache = {}
 
 
 @pytest.fixture(scope="function")
-def test_organizations():
+def test_organizations(app_config: AppConfig):
     """Create two test organizations for isolation testing."""
     orgs = [
         {
@@ -41,7 +42,7 @@ def test_organizations():
     ]
 
     for org in orgs:
-        resp = requests.post(f"{API_BASE}/organizations/", json=org)
+        resp = requests.post(f"{app_config.app_url}/api/organizations/", json=org)
         if resp.status_code in [200, 201, 409]:
             print(f"✓ Organization ready: {org['name']}")
 
@@ -49,7 +50,7 @@ def test_organizations():
 
 
 @pytest.fixture(scope="function")
-def test_users(test_organizations):
+def test_users(test_organizations, app_config: AppConfig):
     """Create test users with different roles across organizations.
 
     Strategy:
@@ -114,7 +115,7 @@ def test_users(test_organizations):
             "password": user["password"],
             "org_id": user["org_id"],
         }
-        resp = requests.post(f"{API_BASE}/auth/signup", json=signup_data)
+        resp = requests.post(f"{app_config.app_url}/api/auth/signup", json=signup_data)
         if resp.status_code in [200, 201]:
             data = resp.json()
             _person_id_cache[user["email"]] = data["person_id"]
@@ -127,7 +128,7 @@ def test_users(test_organizations):
             # User exists
             if user["is_first"]:
                 try:
-                    token, data = get_auth_token(user["email"], user["password"])
+                    token, data = get_auth_token(app_config, user["email"], user["password"])
                     admin_tokens[user["org_id"]] = token
                     print(f"ℹ User exists, logged in: {user['name']}")
                 except AssertionError as e:
@@ -153,7 +154,7 @@ def test_users(test_organizations):
             if person_id:
                 update_data = {"roles": user["desired_roles"]}
                 resp = requests.put(
-                    f"{API_BASE}/people/{person_id}",
+                    f"{app_config.app_url}/api/people/{person_id}",
                     json=update_data,
                     headers=headers
                 )
@@ -208,10 +209,10 @@ def test_users(test_organizations):
     return all_users
 
 
-def get_auth_token(email: str, password: str) -> tuple[str, dict]:
+def get_auth_token(app_config: AppConfig, email: str, password: str) -> tuple[str, dict]:
     """Login and return JWT token and user data."""
     resp = requests.post(
-        f"{API_BASE}/auth/login",
+        f"{app_config.app_url}/api/auth/login",
         json={"email": email, "password": password}
     )
     assert resp.status_code == 200, f"Login failed for {email}: {resp.text}"
@@ -221,10 +222,10 @@ def get_auth_token(email: str, password: str) -> tuple[str, dict]:
     return data["token"], data
 
 
-def get_person_id(email: str) -> str:
+def get_person_id(app_config: AppConfig, email: str) -> str:
     """Get person_id for an email (must login first)."""
     if email not in _person_id_cache:
-        token, data = get_auth_token(email, "test123")
+        token, data = get_auth_token(app_config, email, "test123")
         return data["person_id"]
     return _person_id_cache[email]
 
@@ -238,12 +239,12 @@ def get_headers(token: str) -> dict:
 # VOLUNTEER USER TESTS (Read-only + Self-edit)
 # ============================================================================
 
-def test_volunteer_can_view_own_organization_people(test_users):
+def test_volunteer_can_view_own_organization_people(test_users, app_config: AppConfig):
     """Volunteer can view people from their own organization."""
-    token, _ = get_auth_token("alice.volunteer@alpha.com", "test123")
+    token, _ = get_auth_token(app_config, "alice.volunteer@alpha.com", "test123")
     headers = get_headers(token)
 
-    resp = requests.get(f"{API_BASE}/people/?org_id=org_alpha", headers=headers)
+    resp = requests.get(f"{app_config.app_url}/api/people/?org_id=org_alpha", headers=headers)
     assert resp.status_code == 200, f"Expected 200, got {resp.status_code}: {resp.text}"
 
     data = resp.json()
@@ -252,20 +253,20 @@ def test_volunteer_can_view_own_organization_people(test_users):
     print("✓ Volunteer can view own organization people")
 
 
-def test_volunteer_cannot_view_other_organization_people(test_users):
+def test_volunteer_cannot_view_other_organization_people(test_users, app_config: AppConfig):
     """Volunteer cannot view people from other organizations."""
-    token, _ = get_auth_token("alice.volunteer@alpha.com", "test123")
+    token, _ = get_auth_token(app_config, "alice.volunteer@alpha.com", "test123")
     headers = get_headers(token)
 
     # Try to access Beta organization data
-    resp = requests.get(f"{API_BASE}/people/?org_id=org_beta", headers=headers)
+    resp = requests.get(f"{app_config.app_url}/api/people/?org_id=org_beta", headers=headers)
     assert resp.status_code == 403, f"Expected 403, got {resp.status_code}: {resp.text}"
     print("✓ Volunteer blocked from viewing other org people")
 
 
-def test_volunteer_can_edit_own_profile(test_users):
+def test_volunteer_can_edit_own_profile(test_users, app_config: AppConfig):
     """Volunteer can edit their own profile (name, timezone, language)."""
-    token, _ = get_auth_token("alice.volunteer@alpha.com", "test123")
+    token, _ = get_auth_token(app_config, "alice.volunteer@alpha.com", "test123")
     headers = get_headers(token)
 
     update_data = {
@@ -275,7 +276,7 @@ def test_volunteer_can_edit_own_profile(test_users):
     }
 
     resp = requests.put(
-        f"{API_BASE}/people/{get_person_id('alice.volunteer@alpha.com')}",
+        f"{app_config.app_url}/api/people/{get_person_id(app_config, 'alice.volunteer@alpha.com')}",
         json=update_data,
         headers=headers
     )
@@ -287,9 +288,9 @@ def test_volunteer_can_edit_own_profile(test_users):
     print("✓ Volunteer can edit own profile")
 
 
-def test_volunteer_cannot_edit_own_roles(test_users):
+def test_volunteer_cannot_edit_own_roles(test_users, app_config: AppConfig):
     """Volunteer cannot escalate their own roles."""
-    token, _ = get_auth_token("alice.volunteer@alpha.com", "test123")
+    token, _ = get_auth_token(app_config, "alice.volunteer@alpha.com", "test123")
     headers = get_headers(token)
 
     # Try to make self admin
@@ -298,7 +299,7 @@ def test_volunteer_cannot_edit_own_roles(test_users):
     }
 
     resp = requests.put(
-        f"{API_BASE}/people/{get_person_id('alice.volunteer@alpha.com')}",
+        f"{app_config.app_url}/api/people/{get_person_id(app_config, 'alice.volunteer@alpha.com')}",
         json=update_data,
         headers=headers
     )
@@ -307,15 +308,15 @@ def test_volunteer_cannot_edit_own_roles(test_users):
     print("✓ Volunteer blocked from role escalation")
 
 
-def test_volunteer_cannot_edit_other_users(test_users):
+def test_volunteer_cannot_edit_other_users(test_users, app_config: AppConfig):
     """Volunteer cannot edit other users."""
-    token, _ = get_auth_token("alice.volunteer@alpha.com", "test123")
+    token, _ = get_auth_token(app_config, "alice.volunteer@alpha.com", "test123")
     headers = get_headers(token)
 
     update_data = {"name": "Hacked Name"}
 
     resp = requests.put(
-        f"{API_BASE}/people/{get_person_id('alex.manager@alpha.com')}",
+        f"{app_config.app_url}/api/people/{get_person_id(app_config, 'alex.manager@alpha.com')}",
         json=update_data,
         headers=headers
     )
@@ -323,9 +324,9 @@ def test_volunteer_cannot_edit_other_users(test_users):
     print("✓ Volunteer blocked from editing other users")
 
 
-def test_volunteer_cannot_create_events(test_users):
+def test_volunteer_cannot_create_events(test_users, app_config: AppConfig):
     """Volunteer cannot create events."""
-    token, _ = get_auth_token("alice.volunteer@alpha.com", "test123")
+    token, _ = get_auth_token(app_config, "alice.volunteer@alpha.com", "test123")
     headers = get_headers(token)
 
     now = datetime.now()
@@ -337,16 +338,16 @@ def test_volunteer_cannot_create_events(test_users):
         "end_time": (now + timedelta(days=1, hours=2)).isoformat(),
     }
 
-    resp = requests.post(f"{API_BASE}/events/", json=event_data, headers=headers)
+    resp = requests.post(f"{app_config.app_url}/api/events/", json=event_data, headers=headers)
     assert resp.status_code == 403, f"Expected 403, got {resp.status_code}: {resp.text}"
     assert "Admin access required" in resp.text
     print("✓ Volunteer blocked from creating events")
 
 
-def test_volunteer_cannot_delete_events(test_users):
+def test_volunteer_cannot_delete_events(test_users, app_config: AppConfig):
     """Volunteer cannot delete events."""
     # First create an event as admin
-    admin_token, _ = get_auth_token("amy.admin@alpha.com", "test123")
+    admin_token, _ = get_auth_token(app_config, "amy.admin@alpha.com", "test123")
     admin_headers = get_headers(admin_token)
 
     now = datetime.now()
@@ -357,25 +358,25 @@ def test_volunteer_cannot_delete_events(test_users):
         "start_time": (now + timedelta(days=2)).isoformat(),
         "end_time": (now + timedelta(days=2, hours=1)).isoformat(),
     }
-    resp = requests.post(f"{API_BASE}/events/", json=event_data, headers=admin_headers)
+    resp = requests.post(f"{app_config.app_url}/api/events/", json=event_data, headers=admin_headers)
     if resp.status_code not in [200, 201, 409]:
         print(f"Warning: Event creation failed: {resp.text}")
 
     # Try to delete as volunteer
-    volunteer_token, _ = get_auth_token("alice.volunteer@alpha.com", "test123")
+    volunteer_token, _ = get_auth_token(app_config, "alice.volunteer@alpha.com", "test123")
     volunteer_headers = get_headers(volunteer_token)
 
     resp = requests.delete(
-        f"{API_BASE}/events/event_to_delete_volunteer",
+        f"{app_config.app_url}/api/events/event_to_delete_volunteer",
         headers=volunteer_headers
     )
     assert resp.status_code == 403, f"Expected 403, got {resp.status_code}: {resp.text}"
     print("✓ Volunteer blocked from deleting events")
 
 
-def test_volunteer_cannot_create_teams(test_users):
+def test_volunteer_cannot_create_teams(test_users, app_config: AppConfig):
     """Volunteer cannot create teams."""
-    token, _ = get_auth_token("alice.volunteer@alpha.com", "test123")
+    token, _ = get_auth_token(app_config, "alice.volunteer@alpha.com", "test123")
     headers = get_headers(token)
 
     team_data = {
@@ -385,14 +386,14 @@ def test_volunteer_cannot_create_teams(test_users):
         "member_ids": []
     }
 
-    resp = requests.post(f"{API_BASE}/teams/", json=team_data, headers=headers)
+    resp = requests.post(f"{app_config.app_url}/api/teams/", json=team_data, headers=headers)
     assert resp.status_code == 403, f"Expected 403, got {resp.status_code}: {resp.text}"
     print("✓ Volunteer blocked from creating teams")
 
 
-def test_volunteer_cannot_run_solver(test_users):
+def test_volunteer_cannot_run_solver(test_users, app_config: AppConfig):
     """Volunteer cannot generate schedules (expensive AI operation)."""
-    token, _ = get_auth_token("alice.volunteer@alpha.com", "test123")
+    token, _ = get_auth_token(app_config, "alice.volunteer@alpha.com", "test123")
     headers = get_headers(token)
 
     from datetime import date
@@ -402,7 +403,7 @@ def test_volunteer_cannot_run_solver(test_users):
         "to_date": (date.today() + timedelta(days=30)).isoformat(),
     }
 
-    resp = requests.post(f"{API_BASE}/solver/solve", json=solve_data, headers=headers)
+    resp = requests.post(f"{app_config.app_url}/api/solver/solve", json=solve_data, headers=headers)
     assert resp.status_code == 403, f"Expected 403, got {resp.status_code}: {resp.text}"
     print("✓ Volunteer blocked from running solver")
 
@@ -411,9 +412,9 @@ def test_volunteer_cannot_run_solver(test_users):
 # ADMIN USER TESTS (Full control within organization)
 # ============================================================================
 
-def test_admin_can_create_events(test_users):
+def test_admin_can_create_events(test_users, app_config: AppConfig):
     """Admin can create events in their organization."""
-    token, _ = get_auth_token("amy.admin@alpha.com", "test123")
+    token, _ = get_auth_token(app_config, "amy.admin@alpha.com", "test123")
     headers = get_headers(token)
 
     now = datetime.now()
@@ -425,14 +426,14 @@ def test_admin_can_create_events(test_users):
         "end_time": (now + timedelta(days=5, hours=2)).isoformat(),
     }
 
-    resp = requests.post(f"{API_BASE}/events/", json=event_data, headers=headers)
+    resp = requests.post(f"{app_config.app_url}/api/events/", json=event_data, headers=headers)
     assert resp.status_code in [200, 201], f"Expected 200/201, got {resp.status_code}: {resp.text}"
     print("✓ Admin can create events")
 
 
-def test_admin_can_edit_events(test_users):
+def test_admin_can_edit_events(test_users, app_config: AppConfig):
     """Admin can edit events in their organization."""
-    token, _ = get_auth_token("amy.admin@alpha.com", "test123")
+    token, _ = get_auth_token(app_config, "amy.admin@alpha.com", "test123")
     headers = get_headers(token)
 
     # Create event first
@@ -445,18 +446,18 @@ def test_admin_can_edit_events(test_users):
         "start_time": (now + timedelta(days=6)).isoformat(),
         "end_time": (now + timedelta(days=6, hours=2)).isoformat(),
     }
-    requests.post(f"{API_BASE}/events/", json=event_data, headers=headers)
+    requests.post(f"{app_config.app_url}/api/events/", json=event_data, headers=headers)
 
     # Edit it
     update_data = {"type": "Edited Event"}
-    resp = requests.put(f"{API_BASE}/events/{event_id}", json=update_data, headers=headers)
+    resp = requests.put(f"{app_config.app_url}/api/events/{event_id}", json=update_data, headers=headers)
     assert resp.status_code == 200, f"Expected 200, got {resp.status_code}: {resp.text}"
     print("✓ Admin can edit events")
 
 
-def test_admin_can_delete_events(test_users):
+def test_admin_can_delete_events(test_users, app_config: AppConfig):
     """Admin can delete events in their organization."""
-    token, _ = get_auth_token("amy.admin@alpha.com", "test123")
+    token, _ = get_auth_token(app_config, "amy.admin@alpha.com", "test123")
     headers = get_headers(token)
 
     # Create event first
@@ -469,17 +470,17 @@ def test_admin_can_delete_events(test_users):
         "start_time": (now + timedelta(days=7)).isoformat(),
         "end_time": (now + timedelta(days=7, hours=1)).isoformat(),
     }
-    requests.post(f"{API_BASE}/events/", json=event_data, headers=headers)
+    requests.post(f"{app_config.app_url}/api/events/", json=event_data, headers=headers)
 
     # Delete it
-    resp = requests.delete(f"{API_BASE}/events/{event_id}", headers=headers)
+    resp = requests.delete(f"{app_config.app_url}/api/events/{event_id}", headers=headers)
     assert resp.status_code == 204, f"Expected 204, got {resp.status_code}: {resp.text}"
     print("✓ Admin can delete events")
 
 
-def test_admin_can_create_teams(test_users):
+def test_admin_can_create_teams(test_users, app_config: AppConfig):
     """Admin can create teams in their organization."""
-    token, _ = get_auth_token("amy.admin@alpha.com", "test123")
+    token, _ = get_auth_token(app_config, "amy.admin@alpha.com", "test123")
     headers = get_headers(token)
 
     now = datetime.now()
@@ -491,14 +492,14 @@ def test_admin_can_create_teams(test_users):
         "member_ids": []
     }
 
-    resp = requests.post(f"{API_BASE}/teams/", json=team_data, headers=headers)
+    resp = requests.post(f"{app_config.app_url}/api/teams/", json=team_data, headers=headers)
     assert resp.status_code in [200, 201], f"Expected 200/201, got {resp.status_code}: {resp.text}"
     print("✓ Admin can create teams")
 
 
-def test_admin_can_edit_user_profiles(test_users):
+def test_admin_can_edit_user_profiles(test_users, app_config: AppConfig):
     """Admin can edit any user in their organization."""
-    token, _ = get_auth_token("amy.admin@alpha.com", "test123")
+    token, _ = get_auth_token(app_config, "amy.admin@alpha.com", "test123")
     headers = get_headers(token)
 
     update_data = {
@@ -507,7 +508,7 @@ def test_admin_can_edit_user_profiles(test_users):
     }
 
     resp = requests.put(
-        f"{API_BASE}/people/{get_person_id('alice.volunteer@alpha.com')}",
+        f"{app_config.app_url}/api/people/{get_person_id(app_config, 'alice.volunteer@alpha.com')}",
         json=update_data,
         headers=headers
     )
@@ -515,9 +516,9 @@ def test_admin_can_edit_user_profiles(test_users):
     print("✓ Admin can edit user profiles")
 
 
-def test_admin_can_modify_user_roles(test_users):
+def test_admin_can_modify_user_roles(test_users, app_config: AppConfig):
     """Admin can modify user roles in their organization."""
-    token, _ = get_auth_token("amy.admin@alpha.com", "test123")
+    token, _ = get_auth_token(app_config, "amy.admin@alpha.com", "test123")
     headers = get_headers(token)
 
     # Promote volunteer to manager
@@ -526,7 +527,7 @@ def test_admin_can_modify_user_roles(test_users):
     }
 
     resp = requests.put(
-        f"{API_BASE}/people/{get_person_id('alice.volunteer@alpha.com')}",
+        f"{app_config.app_url}/api/people/{get_person_id(app_config, 'alice.volunteer@alpha.com')}",
         json=update_data,
         headers=headers
     )
@@ -538,9 +539,9 @@ def test_admin_can_modify_user_roles(test_users):
     print("✓ Admin can modify user roles")
 
 
-def test_admin_can_run_solver(test_users):
+def test_admin_can_run_solver(test_users, app_config: AppConfig):
     """Admin can generate schedules."""
-    token, _ = get_auth_token("amy.admin@alpha.com", "test123")
+    token, _ = get_auth_token(app_config, "amy.admin@alpha.com", "test123")
     headers = get_headers(token)
 
     from datetime import date
@@ -550,7 +551,7 @@ def test_admin_can_run_solver(test_users):
         "to_date": (date.today() + timedelta(days=30)).isoformat(),
     }
 
-    resp = requests.post(f"{API_BASE}/solver/solve", json=solve_data, headers=headers)
+    resp = requests.post(f"{app_config.app_url}/api/solver/solve", json=solve_data, headers=headers)
     # May fail if no events, but should not be 403
     assert resp.status_code != 403, f"Admin should not get 403: {resp.text}"
     print("✓ Admin can run solver (not blocked by permissions)")
@@ -560,9 +561,9 @@ def test_admin_can_run_solver(test_users):
 # ORGANIZATION ISOLATION TESTS
 # ============================================================================
 
-def test_admin_cannot_create_events_in_other_org(test_users):
+def test_admin_cannot_create_events_in_other_org(test_users, app_config: AppConfig):
     """Admin from org A cannot create events in org B."""
-    token, _ = get_auth_token("amy.admin@alpha.com", "test123")
+    token, _ = get_auth_token(app_config, "amy.admin@alpha.com", "test123")
     headers = get_headers(token)
 
     now = datetime.now()
@@ -574,21 +575,21 @@ def test_admin_cannot_create_events_in_other_org(test_users):
         "end_time": (now + timedelta(days=1, hours=1)).isoformat(),
     }
 
-    resp = requests.post(f"{API_BASE}/events/", json=event_data, headers=headers)
+    resp = requests.post(f"{app_config.app_url}/api/events/", json=event_data, headers=headers)
     assert resp.status_code == 403, f"Expected 403, got {resp.status_code}: {resp.text}"
     assert "not a member of this organization" in resp.text
     print("✓ Admin blocked from creating events in other org")
 
 
-def test_admin_cannot_edit_users_in_other_org(test_users):
+def test_admin_cannot_edit_users_in_other_org(test_users, app_config: AppConfig):
     """Admin from org A cannot edit users in org B."""
-    token, _ = get_auth_token("amy.admin@alpha.com", "test123")
+    token, _ = get_auth_token(app_config, "amy.admin@alpha.com", "test123")
     headers = get_headers(token)
 
     update_data = {"name": "Hacked by Alpha Admin"}
 
     resp = requests.put(
-        f"{API_BASE}/people/{get_person_id('bob.volunteer@beta.com')}",  # Beta org user
+        f"{app_config.app_url}/api/people/{get_person_id(app_config, 'bob.volunteer@beta.com')}",  # Beta org user
         json=update_data,
         headers=headers
     )
@@ -596,29 +597,29 @@ def test_admin_cannot_edit_users_in_other_org(test_users):
     print("✓ Admin blocked from editing users in other org")
 
 
-def test_admin_cannot_view_other_org_people(test_users):
+def test_admin_cannot_view_other_org_people(test_users, app_config: AppConfig):
     """Admin from org A cannot view people from org B."""
-    token, _ = get_auth_token("amy.admin@alpha.com", "test123")
+    token, _ = get_auth_token(app_config, "amy.admin@alpha.com", "test123")
     headers = get_headers(token)
 
-    resp = requests.get(f"{API_BASE}/people/?org_id=org_beta", headers=headers)
+    resp = requests.get(f"{app_config.app_url}/api/people/?org_id=org_beta", headers=headers)
     assert resp.status_code == 403, f"Expected 403, got {resp.status_code}: {resp.text}"
     print("✓ Admin blocked from viewing other org people")
 
 
-def test_admin_cannot_view_other_org_teams(test_users):
+def test_admin_cannot_view_other_org_teams(test_users, app_config: AppConfig):
     """Admin from org A cannot view teams from org B."""
-    token, _ = get_auth_token("amy.admin@alpha.com", "test123")
+    token, _ = get_auth_token(app_config, "amy.admin@alpha.com", "test123")
     headers = get_headers(token)
 
-    resp = requests.get(f"{API_BASE}/teams/?org_id=org_beta", headers=headers)
+    resp = requests.get(f"{app_config.app_url}/api/teams/?org_id=org_beta", headers=headers)
     assert resp.status_code == 403, f"Expected 403, got {resp.status_code}: {resp.text}"
     print("✓ Admin blocked from viewing other org teams")
 
 
-def test_admin_cannot_run_solver_for_other_org(test_users):
+def test_admin_cannot_run_solver_for_other_org(test_users, app_config: AppConfig):
     """Admin from org A cannot generate schedules for org B."""
-    token, _ = get_auth_token("amy.admin@alpha.com", "test123")
+    token, _ = get_auth_token(app_config, "amy.admin@alpha.com", "test123")
     headers = get_headers(token)
 
     from datetime import date
@@ -628,7 +629,7 @@ def test_admin_cannot_run_solver_for_other_org(test_users):
         "to_date": (date.today() + timedelta(days=30)).isoformat(),
     }
 
-    resp = requests.post(f"{API_BASE}/solver/solve", json=solve_data, headers=headers)
+    resp = requests.post(f"{app_config.app_url}/api/solver/solve", json=solve_data, headers=headers)
     assert resp.status_code == 403, f"Expected 403, got {resp.status_code}: {resp.text}"
     print("✓ Admin blocked from running solver for other org")
 
@@ -637,13 +638,13 @@ def test_admin_cannot_run_solver_for_other_org(test_users):
 # CROSS-ORG DATA LEAK TESTS
 # ============================================================================
 
-def test_no_cross_org_data_leak_in_people_list(test_users):
+def test_no_cross_org_data_leak_in_people_list(test_users, app_config: AppConfig):
     """Ensure people list only returns users from requester's org."""
-    token, _ = get_auth_token("amy.admin@alpha.com", "test123")
+    token, _ = get_auth_token(app_config, "amy.admin@alpha.com", "test123")
     headers = get_headers(token)
 
     # Get people without org_id filter (should default to user's org)
-    resp = requests.get(f"{API_BASE}/people/", headers=headers)
+    resp = requests.get(f"{app_config.app_url}/api/people/", headers=headers)
     assert resp.status_code == 200, f"Expected 200, got {resp.status_code}: {resp.text}"
 
     data = resp.json()
@@ -656,13 +657,13 @@ def test_no_cross_org_data_leak_in_people_list(test_users):
     print("✓ No cross-org data leak in people list")
 
 
-def test_no_cross_org_data_leak_in_teams_list(test_users):
+def test_no_cross_org_data_leak_in_teams_list(test_users, app_config: AppConfig):
     """Ensure teams list only returns teams from requester's org."""
-    token, _ = get_auth_token("amy.admin@alpha.com", "test123")
+    token, _ = get_auth_token(app_config, "amy.admin@alpha.com", "test123")
     headers = get_headers(token)
 
     # Get teams without org_id filter (should default to user's org)
-    resp = requests.get(f"{API_BASE}/teams/", headers=headers)
+    resp = requests.get(f"{app_config.app_url}/api/teams/", headers=headers)
     assert resp.status_code == 200, f"Expected 200, got {resp.status_code}: {resp.text}"
 
     data = resp.json()
@@ -679,18 +680,18 @@ def test_no_cross_org_data_leak_in_teams_list(test_users):
 # AUTHENTICATION TESTS
 # ============================================================================
 
-def test_unauthenticated_request_fails():
+def test_unauthenticated_request_fails(app_config: AppConfig):
     """Unauthenticated requests should fail with 401 or 403."""
     # Try to list people without token
-    resp = requests.get(f"{API_BASE}/people/")
+    resp = requests.get(f"{app_config.app_url}/api/people/")
     assert resp.status_code in [401, 403], f"Expected 401/403, got {resp.status_code}: {resp.text}"
     print("✓ Unauthenticated request blocked")
 
 
-def test_invalid_token_fails():
+def test_invalid_token_fails(app_config: AppConfig):
     """Invalid token should fail with 401."""
     headers = {"Authorization": "Bearer invalid_token_12345"}
-    resp = requests.get(f"{API_BASE}/people/", headers=headers)
+    resp = requests.get(f"{app_config.app_url}/api/people/", headers=headers)
     assert resp.status_code == 401, f"Expected 401, got {resp.status_code}: {resp.text}"
     print("✓ Invalid token rejected")
 
@@ -699,9 +700,9 @@ def test_invalid_token_fails():
 # COMPREHENSIVE WORKFLOW TESTS
 # ============================================================================
 
-def test_complete_admin_workflow(test_users):
+def test_complete_admin_workflow(test_users, app_config: AppConfig):
     """Test complete admin workflow: create event, assign people, manage team."""
-    token, _ = get_auth_token("amy.admin@alpha.com", "test123")
+    token, _ = get_auth_token(app_config, "amy.admin@alpha.com", "test123")
     headers = get_headers(token)
     now = datetime.now()
 
@@ -714,7 +715,7 @@ def test_complete_admin_workflow(test_users):
         "start_time": (now + timedelta(days=10)).isoformat(),
         "end_time": (now + timedelta(days=10, hours=2)).isoformat(),
     }
-    resp = requests.post(f"{API_BASE}/events/", json=event_data, headers=headers)
+    resp = requests.post(f"{app_config.app_url}/api/events/", json=event_data, headers=headers)
     assert resp.status_code in [200, 201], f"Event creation failed: {resp.text}"
 
     # 2. Create team
@@ -723,49 +724,49 @@ def test_complete_admin_workflow(test_users):
         "id": team_id,
         "org_id": "org_alpha",
         "name": "Workflow Team",
-        "member_ids": [get_person_id('alice.volunteer@alpha.com')]
+        "member_ids": [get_person_id(app_config, 'alice.volunteer@alpha.com')]
     }
-    resp = requests.post(f"{API_BASE}/teams/", json=team_data, headers=headers)
+    resp = requests.post(f"{app_config.app_url}/api/teams/", json=team_data, headers=headers)
     assert resp.status_code in [200, 201], f"Team creation failed: {resp.text}"
 
     # 3. Update event
     resp = requests.put(
-        f"{API_BASE}/events/{event_id}",
+        f"{app_config.app_url}/api/events/{event_id}",
         json={"type": "Updated Workflow Event"},
         headers=headers
     )
     assert resp.status_code == 200, f"Event update failed: {resp.text}"
 
     # 4. Delete event
-    resp = requests.delete(f"{API_BASE}/events/{event_id}", headers=headers)
+    resp = requests.delete(f"{app_config.app_url}/api/events/{event_id}", headers=headers)
     assert resp.status_code == 204, f"Event deletion failed: {resp.text}"
 
     print("✓ Complete admin workflow successful")
 
 
-def test_complete_volunteer_workflow(test_users):
+def test_complete_volunteer_workflow(test_users, app_config: AppConfig):
     """Test complete volunteer workflow: view schedule, edit profile, view team."""
-    token, _ = get_auth_token("alice.volunteer@alpha.com", "test123")
+    token, _ = get_auth_token(app_config, "alice.volunteer@alpha.com", "test123")
     headers = get_headers(token)
 
     # 1. View own profile
-    resp = requests.get(f"{API_BASE}/people/me", headers=headers)
+    resp = requests.get(f"{app_config.app_url}/api/people/me", headers=headers)
     assert resp.status_code == 200, f"View profile failed: {resp.text}"
 
     # 2. Edit own profile
     resp = requests.put(
-        f"{API_BASE}/people/me",
+        f"{app_config.app_url}/api/people/me",
         json={"name": "Alice V (Updated)", "timezone": "UTC"},
         headers=headers
     )
     assert resp.status_code == 200, f"Edit profile failed: {resp.text}"
 
     # 3. View people in organization
-    resp = requests.get(f"{API_BASE}/people/?org_id=org_alpha", headers=headers)
+    resp = requests.get(f"{app_config.app_url}/api/people/?org_id=org_alpha", headers=headers)
     assert resp.status_code == 200, f"View people failed: {resp.text}"
 
     # 4. View teams in organization
-    resp = requests.get(f"{API_BASE}/teams/?org_id=org_alpha", headers=headers)
+    resp = requests.get(f"{app_config.app_url}/api/teams/?org_id=org_alpha", headers=headers)
     assert resp.status_code == 200, f"View teams failed: {resp.text}"
 
     # 5. Verify cannot create event (should fail)
@@ -777,7 +778,7 @@ def test_complete_volunteer_workflow(test_users):
         "start_time": (now + timedelta(days=1)).isoformat(),
         "end_time": (now + timedelta(days=1, hours=1)).isoformat(),
     }
-    resp = requests.post(f"{API_BASE}/events/", json=event_data, headers=headers)
+    resp = requests.post(f"{app_config.app_url}/api/events/", json=event_data, headers=headers)
     assert resp.status_code == 403, f"Volunteer should not create event: {resp.text}"
 
     print("✓ Complete volunteer workflow successful")
