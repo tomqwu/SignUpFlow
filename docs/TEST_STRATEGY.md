@@ -158,17 +158,33 @@ Before marking a feature "complete", verify:
 
 ## Specific Gaps to Address
 
-### 1. Frontend Testing Infrastructure (HIGH PRIORITY)
+### 1. Frontend Testing Strategy
 
-**Current State:** No frontend unit tests exist
+**Current State (January 2025):**
+- ✅ **Playwright E2E Tests:** IMPLEMENTED and working
+  - 15+ E2E test files covering complete user workflows
+  - Browser automation testing full user journeys
+  - Located in `tests/e2e/` directory
+- ❌ **Jest Unit Tests:** NOT YET IMPLEMENTED
+  - Individual JavaScript function testing planned but not started
+  - Would test i18n.js, router.js, app-user.js functions in isolation
 
-**Action Items:**
-- [ ] Set up Jest for JavaScript testing
-- [ ] Add frontend test runner to CI
-- [ ] Write tests for i18n.js
-- [ ] Write tests for app-user.js core functions
-- [ ] Write tests for router.js
-- [ ] Add test coverage reporting
+**Testing Strategy:**
+- **Playwright (E2E):** Tests complete user workflows in real browser
+  - Example: User clicks login → enters credentials → sees dashboard
+  - Catches integration bugs, UI issues, workflow problems
+- **Jest (Unit):** Will test individual JavaScript functions (future)
+  - Example: formatDate(), validateEmail(), parseUserRoles()
+  - Catches logic bugs, edge cases, function-level issues
+- **Complementary, not competing:** Both needed for comprehensive coverage
+
+**Action Items (Q1 2025):**
+- [ ] Set up Jest for JavaScript unit testing
+- [ ] Add frontend unit test runner to CI
+- [ ] Write unit tests for i18n.js
+- [ ] Write unit tests for app-user.js core functions
+- [ ] Write unit tests for router.js
+- [ ] Add frontend unit test coverage reporting
 
 **Implementation:**
 ```bash
