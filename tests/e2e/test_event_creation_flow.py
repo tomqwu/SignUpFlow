@@ -8,12 +8,21 @@ Tests the complete user journey:
 4. Verifies event appears in event list
 """
 
-import requests
+import pytest
 import time
 from playwright.sync_api import Page, expect
 
+from tests.e2e.helpers import AppConfig, ApiTestClient, login_via_ui
 
-def test_create_event_complete_journey(page: Page):
+
+pytestmark = pytest.mark.usefixtures("api_server")
+
+
+def test_create_event_complete_journey(
+    page: Page,
+    app_config: AppConfig,
+    api_client: ApiTestClient,
+):
     """
     Test complete event creation flow from admin login to event appearing in list.
 
@@ -32,69 +41,17 @@ def test_create_event_complete_journey(page: Page):
 
     # Setup: Create test organization and admin user
     print("\nSetup: Creating test organization and admin user...")
-    timestamp = int(time.time())
-    test_org_id = f"org_event_test_{timestamp}"
-    test_email = f"admin{timestamp}@test.com"
-    test_password = "AdminPassword123"
-    test_name = f"Admin User {timestamp}"
-
-    # Create organization
-    org_response = requests.post(
-        "http://localhost:8000/api/organizations/",
-        json={
-            "id": test_org_id,
-            "name": f"Event Test Org {timestamp}",
-            "location": "Test City"
-        }
+    org = api_client.create_org()
+    admin_user = api_client.create_user(
+        org_id=org["id"],
+        name="Test Admin",
+        roles=["admin"],
     )
-    assert org_response.status_code in [200, 201], f"Failed to create org: {org_response.text}"
-
-    # Create admin user
-    signup_response = requests.post(
-        "http://localhost:8000/api/auth/signup",
-        json={
-            "email": test_email,
-            "password": test_password,
-            "name": test_name,
-            "org_id": test_org_id,
-            "timezone": "America/Toronto"
-        }
-    )
-    assert signup_response.status_code == 201, f"Failed to create user: {signup_response.text}"
-
-    # Get user ID and set admin role
-    user_data = signup_response.json()
-    user_id = user_data["person_id"]
-
-    # Set admin role via API
-    login_response = requests.post(
-        "http://localhost:8000/api/auth/login",
-        json={
-            "email": test_email,
-            "password": test_password
-        }
-    )
-    assert login_response.status_code == 200, f"Failed to login: {login_response.text}"
-    auth_token = login_response.json()["token"]
-
-    # Update user to admin
-    update_response = requests.put(
-        f"http://localhost:8000/api/people/{user_id}",
-        headers={"Authorization": f"Bearer {auth_token}"},
-        json={
-            "roles": ["admin", "volunteer"]
-        }
-    )
-    assert update_response.status_code == 200, f"Failed to set admin role: {update_response.text}"
-    print(f"✓ Admin user created: {test_email}")
+    print(f"✓ Admin user created: {admin_user['email']}")
 
     # Step 1: Login as admin
     print("\nStep 1: Admin logs in...")
-    page.goto("http://localhost:8000/login")
-
-    page.locator('#login-email').fill(test_email)
-    page.locator('#login-password').fill(test_password)
-    page.locator('#login-screen button[type="submit"]').click()
+    login_via_ui(page, app_config.app_url, admin_user["email"], admin_user["password"])
 
     # Verify logged in
     expect(page.locator('#main-app')).to_be_visible(timeout=5000)
@@ -163,30 +120,25 @@ def test_create_event_complete_journey(page: Page):
     page.wait_for_timeout(3000)
     print("  ✓ Event list reloaded")
 
-    # Step 8: Verify event via API
-    print("\nStep 8: Verifying event via API...")
+    # Step 8: Verify event appears in UI
+    print("\nStep 8: Verifying event appears in event list...")
 
-    events_api_response = requests.get(
-        f"http://localhost:8000/api/events/?org_id={test_org_id}",
-        headers={"Authorization": f"Bearer {auth_token}"}
-    )
-    assert events_api_response.status_code == 200, f"Failed to get events: {events_api_response.text}"
-
-    events_data = events_api_response.json()
-    # Find event by type since we don't manually specify ID anymore
-    created_event = next((e for e in events_data["events"] if e.get("type") == event_type or e.get("title") == event_type), None)
-
-    assert created_event is not None, f"Event with type '{event_type}' not found in API response"
-    print(f"  ✓ Event verified via API")
-    print(f"  ✓ Event ID: {created_event['id']}")
-    print(f"  ✓ Event type: {created_event.get('type', 'N/A')}")
+    # Event should now be visible in the events list
+    event_card = page.locator(f'text="{event_type}"').first
+    expect(event_card).to_be_visible(timeout=5000)
+    print(f"  ✓ Event verified in UI")
+    print(f"  ✓ Event type: {event_type}")
 
     print("\n" + "="*80)
     print("✅ EVENT CREATION FLOW TEST PASSED")
     print("="*80)
 
 
-def test_create_event_validates_required_fields(page: Page):
+def test_create_event_validates_required_fields(
+    page: Page,
+    app_config: AppConfig,
+    api_client: ApiTestClient,
+):
     """
     Test that event creation validates required fields.
 
@@ -203,57 +155,17 @@ def test_create_event_validates_required_fields(page: Page):
 
     # Setup: Create test organization and admin user
     print("\nSetup: Creating test organization and admin user...")
-    timestamp = int(time.time())
-    test_org_id = f"org_validation_{timestamp}"
-    test_email = f"admin{timestamp}@test.com"
-    test_password = "AdminPassword123"
-    test_name = f"Admin User {timestamp}"
-
-    # Create organization
-    org_response = requests.post(
-        "http://localhost:8000/api/organizations/",
-        json={
-            "id": test_org_id,
-            "name": f"Validation Test Org {timestamp}",
-            "location": "Test City"
-        }
-    )
-    assert org_response.status_code in [200, 201]
-
-    # Create admin user
-    signup_response = requests.post(
-        "http://localhost:8000/api/auth/signup",
-        json={
-            "email": test_email,
-            "password": test_password,
-            "name": test_name,
-            "org_id": test_org_id,
-            "timezone": "America/Toronto"
-        }
-    )
-    assert signup_response.status_code == 201
-    user_id = signup_response.json()["person_id"]
-
-    # Login and set admin role
-    login_response = requests.post(
-        "http://localhost:8000/api/auth/login",
-        json={"email": test_email, "password": test_password}
-    )
-    auth_token = login_response.json()["token"]
-
-    requests.put(
-        f"http://localhost:8000/api/people/{user_id}",
-        headers={"Authorization": f"Bearer {auth_token}"},
-        json={"roles": ["admin", "volunteer"]}
+    org = api_client.create_org()
+    admin_user = api_client.create_user(
+        org_id=org["id"],
+        name="Test Admin",
+        roles=["admin"],
     )
     print(f"✓ Admin user created")
 
     # Step 1: Login and navigate to events tab
     print("\nStep 1: Logging in and navigating to events tab...")
-    page.goto("http://localhost:8000/login")
-    page.locator('#login-email').fill(test_email)
-    page.locator('#login-password').fill(test_password)
-    page.locator('#login-screen button[type="submit"]').click()
+    login_via_ui(page, app_config.app_url, admin_user["email"], admin_user["password"])
 
     expect(page.locator('#main-app')).to_be_visible(timeout=5000)
 
