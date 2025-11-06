@@ -1,11 +1,15 @@
 """
 End-to-end test for organization creation matching frontend behavior.
 """
+import pytest
 import requests
 
-API_BASE = "http://localhost:8000/api"
+from tests.e2e.helpers import AppConfig
 
-def test_create_org():
+pytestmark = pytest.mark.usefixtures("api_server")
+
+
+def test_create_org(app_config: AppConfig):
     """Test creating an organization exactly as the frontend does."""
 
     # This simulates what the frontend sends
@@ -20,7 +24,7 @@ def test_create_org():
     print(f"Request data: {org_data}")
 
     response = requests.post(
-        f"{API_BASE}/organizations/",
+        f"{app_config.app_url}/api/organizations/",
         json=org_data,
         headers={"Content-Type": "application/json"}
     )
@@ -38,7 +42,7 @@ def test_create_org():
         org_data["id"] = f"test_e2e_org_{int(time.time())}"
         print(f"\nRetrying with unique ID: {org_data['id']}")
         response = requests.post(
-            f"{API_BASE}/organizations/",
+            f"{app_config.app_url}/api/organizations/",
             json=org_data,
             headers={"Content-Type": "application/json"}
         )
