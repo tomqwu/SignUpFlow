@@ -8,12 +8,21 @@ Tests the complete workflow:
 4. Language preference persists on page reload
 """
 
+import pytest
 import requests
 import time
 from playwright.sync_api import Page, expect
 
+from tests.e2e.helpers import AppConfig, ApiTestClient, login_via_ui
 
-def test_language_switching_to_chinese(page: Page):
+pytestmark = pytest.mark.usefixtures("api_server")
+
+
+def test_language_switching_to_chinese(
+    page: Page,
+    app_config: AppConfig,
+    api_client: ApiTestClient,
+):
     """
     Test complete language switching workflow from English to Chinese.
 
@@ -32,46 +41,18 @@ def test_language_switching_to_chinese(page: Page):
 
     # Setup: Create test organization and user
     print("\nSetup: Creating test organization and user...")
-    timestamp = int(time.time())
-    test_org_id = f"org_lang_test_{timestamp}"
-    user_email = f"user{timestamp}@test.com"
-    test_password = "Password123"
-
-    # Create organization
-    org_response = requests.post(
-        "http://localhost:8000/api/organizations/",
-        json={
-            "id": test_org_id,
-            "name": f"Language Test Org {timestamp}",
-            "location": "Test City"
-        }
+    org = api_client.create_org()
+    user = api_client.create_user(
+        org_id=org["id"],
+        name="Test User",
+        roles=["volunteer"],
     )
-    assert org_response.status_code in [200, 201], f"Failed to create org: {org_response.text}"
-
-    # Create user
-    signup_response = requests.post(
-        "http://localhost:8000/api/auth/signup",
-        json={
-            "email": user_email,
-            "password": test_password,
-            "name": f"Test User {timestamp}",
-            "org_id": test_org_id,
-            "timezone": "America/Toronto"
-        }
-    )
-    assert signup_response.status_code == 201
-    print(f"✓ User created: {user_email}")
+    print(f"✓ User created: {user['email']}")
 
     # Step 1: User logs in (should be in English by default)
     print("\nStep 1: User logs in (default English)...")
 
-    page.goto("http://localhost:8000/login")
-
-    page.locator('#login-email').fill(user_email)
-    page.locator('#login-password').fill(test_password)
-    page.locator('#login-screen button[type="submit"]').click()
-
-    # Verify logged in
+    login_via_ui(page, app_config.app_url, user["email"], user["password"])
     expect(page.locator('#main-app')).to_be_visible(timeout=5000)
     print("  ✓ User logged in successfully")
 
@@ -148,15 +129,9 @@ def test_language_switching_to_chinese(page: Page):
     # Step 6: Verify via API that language preference is saved
     print("\nStep 6: Verifying language preference saved to user profile...")
 
-    login_response = requests.post(
-        "http://localhost:8000/api/auth/login",
-        json={"email": user_email, "password": test_password}
-    )
-    user_token = login_response.json()["token"]
-
     me_response = requests.get(
-        "http://localhost:8000/api/people/me",
-        headers={"Authorization": f"Bearer {user_token}"}
+        f"{app_config.app_url}/api/people/me",
+        headers={"Authorization": f"Bearer {user['token']}"}
     )
     user_data = me_response.json()
 
@@ -168,7 +143,11 @@ def test_language_switching_to_chinese(page: Page):
     print("="*80)
 
 
-def test_language_switching_to_spanish(page: Page):
+def test_language_switching_to_spanish(
+    page: Page,
+    app_config: AppConfig,
+    api_client: ApiTestClient,
+):
     """
     Test language switching to Spanish.
 
@@ -184,44 +163,17 @@ def test_language_switching_to_spanish(page: Page):
 
     # Setup
     print("\nSetup: Creating test organization and user...")
-    timestamp = int(time.time())
-    test_org_id = f"org_spanish_{timestamp}"
-    user_email = f"user{timestamp}@test.com"
-    test_password = "Password123"
-
-    # Create organization
-    org_response = requests.post(
-        "http://localhost:8000/api/organizations/",
-        json={
-            "id": test_org_id,
-            "name": f"Spanish Test Org {timestamp}",
-            "location": "Test City"
-        }
+    org = api_client.create_org()
+    user = api_client.create_user(
+        org_id=org["id"],
+        name="Spanish User",
+        roles=["volunteer"],
     )
-    assert org_response.status_code in [200, 201]
-
-    # Create user
-    signup_response = requests.post(
-        "http://localhost:8000/api/auth/signup",
-        json={
-            "email": user_email,
-            "password": test_password,
-            "name": f"Spanish User {timestamp}",
-            "org_id": test_org_id,
-            "timezone": "America/Toronto"
-        }
-    )
-    assert signup_response.status_code == 201
-    print(f"✓ User created: {user_email}")
+    print(f"✓ User created: {user['email']}")
 
     # Login
     print("\nStep 1: User logs in...")
-    page.goto("http://localhost:8000/login")
-
-    page.locator('#login-email').fill(user_email)
-    page.locator('#login-password').fill(test_password)
-    page.locator('#login-screen button[type="submit"]').click()
-
+    login_via_ui(page, app_config.app_url, user["email"], user["password"])
     expect(page.locator('#main-app')).to_be_visible(timeout=5000)
     print("  ✓ User logged in")
 
@@ -270,7 +222,11 @@ def test_language_switching_to_spanish(page: Page):
     print("="*80)
 
 
-def test_language_switching_back_to_english(page: Page):
+def test_language_switching_back_to_english(
+    page: Page,
+    app_config: AppConfig,
+    api_client: ApiTestClient,
+):
     """
     Test switching language back to English after changing it.
 
@@ -287,43 +243,17 @@ def test_language_switching_back_to_english(page: Page):
 
     # Setup
     print("\nSetup: Creating test organization and user...")
-    timestamp = int(time.time())
-    test_org_id = f"org_eng_test_{timestamp}"
-    user_email = f"user{timestamp}@test.com"
-    test_password = "Password123"
-
-    # Create organization
-    org_response = requests.post(
-        "http://localhost:8000/api/organizations/",
-        json={
-            "id": test_org_id,
-            "name": f"English Test Org {timestamp}",
-            "location": "Test City"
-        }
+    org = api_client.create_org()
+    user = api_client.create_user(
+        org_id=org["id"],
+        name="Test User",
+        roles=["volunteer"],
     )
-    assert org_response.status_code in [200, 201]
-
-    # Create user
-    signup_response = requests.post(
-        "http://localhost:8000/api/auth/signup",
-        json={
-            "email": user_email,
-            "password": test_password,
-            "name": f"Test User {timestamp}",
-            "org_id": test_org_id,
-            "timezone": "America/Toronto"
-        }
-    )
-    assert signup_response.status_code == 201
-    print(f"✓ User created: {user_email}")
+    print(f"✓ User created: {user['email']}")
 
     # Login
     print("\nStep 1: User logs in...")
-    page.goto("http://localhost:8000/login")
-    page.locator('#login-email').fill(user_email)
-    page.locator('#login-password').fill(test_password)
-    page.locator('#login-screen button[type="submit"]').click()
-
+    login_via_ui(page, app_config.app_url, user["email"], user["password"])
     expect(page.locator('#main-app')).to_be_visible(timeout=5000)
     print("  ✓ User logged in")
 
