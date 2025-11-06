@@ -8,10 +8,18 @@ Uses data-i18n selectors to be language-independent.
 import pytest
 from playwright.sync_api import Page, expect
 
+from tests.e2e.helpers import AppConfig, ApiTestClient, login_via_ui
 
-def test_complete_signup_and_login_workflow(page: Page):
+
+pytestmark = pytest.mark.usefixtures("api_server")
+
+
+def test_complete_signup_and_login_workflow(
+    page: Page,
+    app_config: AppConfig,
+):
     """Test complete user signup, login, and basic navigation."""
-    page.goto("http://localhost:8000/")
+    page.goto(app_config.app_url)
 
     # Should see onboarding screen with i18n selector
     get_started = page.locator('[data-i18n="auth.get_started"]')
@@ -59,16 +67,22 @@ def test_complete_signup_and_login_workflow(page: Page):
     expect(page.locator('[data-i18n="events.title"]')).to_be_visible()
 
 
-def test_page_reload_preserves_state(page: Page):
+def test_page_reload_preserves_state(
+    page: Page,
+    app_config: AppConfig,
+    api_client: ApiTestClient,
+):
     """Test that reloading on different routes works correctly."""
-    # First login
-    page.goto("http://localhost:8000/")
+    # Setup: Create test organization and user
+    org = api_client.create_org()
+    user = api_client.create_user(
+        org_id=org["id"],
+        name="Test User",
+        roles=["volunteer"],
+    )
 
-    # Quick login (assuming we have test data)
-    page.locator('[data-i18n="auth.sign_in_link"]').click()
-    page.fill('[data-i18n-placeholder="auth.placeholder_email"]', "admin@rostio.com")
-    page.fill('[data-i18n-placeholder="auth.placeholder_password"]', "admin123")
-    page.locator('[data-i18n="auth.sign_in"]').click()
+    # Login
+    login_via_ui(page, app_config.app_url, user["email"], user["password"])
 
     # Wait for main app
     expect(page.locator('h2[data-i18n="schedule.my_schedule"]')).to_be_visible(timeout=10000)
@@ -95,15 +109,22 @@ def test_page_reload_preserves_state(page: Page):
     assert len(syntax_errors) == 0, f"Found JavaScript syntax errors: {syntax_errors}"
 
 
-def test_role_display_no_object_object(page: Page):
+def test_role_display_no_object_object(
+    page: Page,
+    app_config: AppConfig,
+    api_client: ApiTestClient,
+):
     """Test that roles are displayed correctly, not as [object Object]."""
-    page.goto("http://localhost:8000/")
+    # Setup: Create test organization and admin user
+    org = api_client.create_org()
+    user = api_client.create_user(
+        org_id=org["id"],
+        name="Test Admin",
+        roles=["admin", "volunteer"],
+    )
 
-    # Login as admin
-    page.locator('[data-i18n="auth.sign_in_link"]').click()
-    page.fill('[data-i18n-placeholder="auth.placeholder_email"]', "admin@rostio.com")
-    page.fill('[data-i18n-placeholder="auth.placeholder_password"]', "admin123")
-    page.locator('[data-i18n="auth.sign_in"]').click()
+    # Login
+    login_via_ui(page, app_config.app_url, user["email"], user["password"])
 
     # Wait for main app
     expect(page.locator('h2[data-i18n="schedule.my_schedule"]')).to_be_visible(timeout=10000)
@@ -125,15 +146,22 @@ def test_role_display_no_object_object(page: Page):
         assert "[object Object]" not in badge, f"Found [object Object] in role badge: {badge}"
 
 
-def test_admin_workflow_complete(page: Page):
+def test_admin_workflow_complete(
+    page: Page,
+    app_config: AppConfig,
+    api_client: ApiTestClient,
+):
     """Test complete admin workflow: create event, assign roles, generate schedule."""
-    page.goto("http://localhost:8000/")
+    # Setup: Create test organization and admin user
+    org = api_client.create_org()
+    user = api_client.create_user(
+        org_id=org["id"],
+        name="Test Admin",
+        roles=["admin"],
+    )
 
-    # Login as admin
-    page.locator('[data-i18n="auth.sign_in_link"]').click()
-    page.fill('[data-i18n-placeholder="auth.placeholder_email"]', "admin@rostio.com")
-    page.fill('[data-i18n-placeholder="auth.placeholder_password"]', "admin123")
-    page.locator('[data-i18n="auth.sign_in"]').click()
+    # Login
+    login_via_ui(page, app_config.app_url, user["email"], user["password"])
 
     # Wait for main app
     expect(page.locator('h2[data-i18n="schedule.my_schedule"]')).to_be_visible(timeout=10000)
@@ -173,18 +201,22 @@ def test_admin_workflow_complete(page: Page):
     page.wait_for_timeout(2000)  # Wait for solver
 
 
-def test_language_switching_works(page: Page):
+def test_language_switching_works(
+    page: Page,
+    app_config: AppConfig,
+    api_client: ApiTestClient,
+):
     """Test that language switching works correctly."""
-    page.goto("http://localhost:8000/")
-
-    # Should see onboarding in English
-    expect(page.locator('[data-i18n="auth.welcome_to_rostio"]')).to_be_visible()
+    # Setup: Create test organization and user
+    org = api_client.create_org()
+    user = api_client.create_user(
+        org_id=org["id"],
+        name="Test User",
+        roles=["volunteer"],
+    )
 
     # Login
-    page.get_by_role("link", name="Sign in").click()
-    page.fill('#login-email', "admin@rostio.com")
-    page.fill('#login-password', "admin123")
-    page.get_by_role("button", name="Sign In").click()
+    login_via_ui(page, app_config.app_url, user["email"], user["password"])
 
     # Wait for main app
     expect(page.locator('h2[data-i18n="schedule.my_schedule"]')).to_be_visible(timeout=10000)
@@ -209,15 +241,22 @@ def test_language_switching_works(page: Page):
     expect(page.locator('text="My Schedule"')).to_be_visible()
 
 
-def test_availability_crud_complete(page: Page):
+def test_availability_crud_complete(
+    page: Page,
+    app_config: AppConfig,
+    api_client: ApiTestClient,
+):
     """Test complete CRUD workflow for availability."""
-    page.goto("http://localhost:8000/")
+    # Setup: Create test organization and user
+    org = api_client.create_org()
+    user = api_client.create_user(
+        org_id=org["id"],
+        name="Test User",
+        roles=["volunteer"],
+    )
 
     # Login
-    page.locator('[data-i18n="auth.sign_in_link"]').click()
-    page.fill('[data-i18n-placeholder="auth.placeholder_email"]', "admin@rostio.com")
-    page.fill('[data-i18n-placeholder="auth.placeholder_password"]', "admin123")
-    page.locator('[data-i18n="auth.sign_in"]').click()
+    login_via_ui(page, app_config.app_url, user["email"], user["password"])
 
     # Navigate to availability
     expect(page.locator('h2[data-i18n="schedule.my_schedule"]')).to_be_visible(timeout=10000)
@@ -251,45 +290,3 @@ def test_availability_crud_complete(page: Page):
 
     # Should be removed from list (or reduced count)
     page.wait_for_timeout(1000)
-
-
-@pytest.fixture(scope="session", autouse=True)
-def setup_test_data():
-    """Setup test data before running E2E tests."""
-    from api.database import get_db
-    from api.models import Person, Organization
-    from api.security import get_password_hash
-
-    db = next(get_db())
-
-    # Check if test org exists
-    test_org = db.query(Organization).filter_by(name="Test Org").first()
-    if not test_org:
-        test_org = Organization(
-            id="test_org",
-            name="Test Org",
-            config={"region": "Test Region", "roles": ["admin", "volunteer"]}
-        )
-        db.add(test_org)
-        db.commit()
-
-    # Check if admin exists
-    admin = db.query(Person).filter_by(email="admin@rostio.com").first()
-    if not admin:
-        admin = Person(
-            id="admin_user",
-            name="Admin User",
-            email="admin@rostio.com",
-            password_hash=get_password_hash("admin123"),
-            org_id=test_org.id,
-            roles=["admin", "volunteer"]
-        )
-        db.add(admin)
-        db.commit()
-
-    db.commit()
-
-    yield
-
-    # Cleanup after tests
-    # (Optional - keep test data for debugging)
