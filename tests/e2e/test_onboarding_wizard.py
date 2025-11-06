@@ -115,9 +115,13 @@ frontend/js/onboarding-wizard.js for logic), unskip these tests.
 import pytest
 from playwright.sync_api import Page, expect
 
+from tests.e2e.helpers import AppConfig
+
+pytestmark = pytest.mark.usefixtures("api_server")
+
 
 @pytest.mark.skip(reason="Onboarding Wizard GUI not implemented - backend API exists but frontend pending")
-def test_wizard_complete_flow(page: Page):
+def test_wizard_complete_flow(page: Page, app_config: AppConfig):
     """
     Test complete 4-step wizard flow from signup to completion.
 
@@ -158,7 +162,7 @@ def test_wizard_complete_flow(page: Page):
     - User redirected to /app/onboarding-dashboard after 3 seconds
     """
     # Navigate to landing page
-    page.goto("http://localhost:8000/")
+    page.goto(f"{app_config.app_url}/")
     page.wait_for_load_state("networkidle")
 
     # Verify Get Started button visible
@@ -325,7 +329,7 @@ def test_wizard_complete_flow(page: Page):
     page.wait_for_timeout(4000)
 
     # Verify redirected to onboarding dashboard
-    expect(page).to_have_url("http://localhost:8000/app/onboarding-dashboard", timeout=5000)
+    expect(page).to_have_url(f"{app_config.app_url}/app/onboarding-dashboard", timeout=5000)
 
     dashboard_container = page.locator('#onboarding-dashboard, .onboarding-dashboard')
     expect(dashboard_container).to_be_visible(timeout=5000)
@@ -335,7 +339,7 @@ def test_wizard_complete_flow(page: Page):
 
 
 @pytest.mark.skip(reason="Onboarding Wizard GUI not implemented - backend API exists but frontend pending")
-def test_wizard_resume_after_logout(page: Page):
+def test_wizard_resume_after_logout(page: Page, app_config: AppConfig):
     """
     Test wizard resume functionality after logging out mid-flow.
 
@@ -370,7 +374,7 @@ def test_wizard_resume_after_logout(page: Page):
     - User can complete wizard from Step 3 onward
     """
     # Navigate to signup
-    page.goto("http://localhost:8000/")
+    page.goto(f"{app_config.app_url}/")
     page.wait_for_load_state("networkidle")
 
     # Click Get Started
@@ -498,7 +502,7 @@ def test_wizard_resume_after_logout(page: Page):
 
 
 @pytest.mark.skip(reason="Onboarding Wizard GUI not implemented - backend API exists but frontend pending")
-def test_wizard_back_button_navigation(page: Page):
+def test_wizard_back_button_navigation(page: Page, app_config: AppConfig):
     """
     Test wizard back button allows navigation to previous steps.
 
@@ -529,7 +533,7 @@ def test_wizard_back_button_navigation(page: Page):
     - Continue button re-saves updated data to backend
     """
     # Navigate to signup
-    page.goto("http://localhost:8000/")
+    page.goto(f"{app_config.app_url}/")
     page.wait_for_load_state("networkidle")
 
     # Quick signup
@@ -631,7 +635,7 @@ def test_wizard_back_button_navigation(page: Page):
 
 
 @pytest.mark.skip(reason="Onboarding Wizard GUI not implemented - backend API exists but frontend pending")
-def test_wizard_validation_prevents_empty_submission(page: Page):
+def test_wizard_validation_prevents_empty_submission(page: Page, app_config: AppConfig):
     """
     Test wizard validation prevents proceeding with empty required fields.
 
@@ -667,7 +671,7 @@ def test_wizard_validation_prevents_empty_submission(page: Page):
     - Wizard proceeds to next step after validation passes
     """
     # Navigate to signup
-    page.goto("http://localhost:8000/")
+    page.goto(f"{app_config.app_url}/")
     page.wait_for_load_state("networkidle")
 
     # Quick signup
