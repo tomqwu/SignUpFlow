@@ -3,26 +3,32 @@
 import pytest
 from playwright.sync_api import Page, expect
 
+from tests.e2e.helpers import AppConfig, ApiTestClient, login_via_ui
 
-def test_settings_permission_console_logs(page: Page):
+
+pytestmark = pytest.mark.usefixtures("api_server")
+
+
+def test_settings_permission_console_logs(
+    page: Page,
+    app_config: AppConfig,
+    api_client: ApiTestClient,
+):
     """Test to capture console logs and see actual role data structure."""
+    # Setup: Create test organization and admin user
+    org = api_client.create_org()
+    user = api_client.create_user(
+        org_id=org["id"],
+        name="Test Admin",
+        roles=["admin", "volunteer"],
+    )
+
     # Capture console messages
     console_messages = []
     page.on("console", lambda msg: console_messages.append(f"{msg.type}: {msg.text}"))
 
-    # Navigate to app
-    page.goto("http://localhost:8000/")
-    page.wait_for_load_state("networkidle")
-
-    # Click Sign in link
-    page.get_by_role("link", name="Sign in").click()
-    page.wait_for_timeout(500)
-
-    # Login as admin
-    page.fill('[data-i18n-placeholder="auth.placeholder_email"]', "pastor@grace.church")
-    page.fill('[data-i18n-placeholder="auth.placeholder_password"]', "password")
-    page.get_by_role("button", name="Sign in").click()
-    page.wait_for_timeout(2000)
+    # Login
+    login_via_ui(page, app_config.app_url, user["email"], user["password"])
 
     # Verify we're logged in
     expect(page.locator("#user-name-display")).to_be_visible(timeout=5000)
@@ -46,21 +52,22 @@ def test_settings_permission_console_logs(page: Page):
     print(current_user.get('roles') if current_user else None)
 
 
-def test_settings_permission_display_no_object_object(page: Page):
+def test_settings_permission_display_no_object_object(
+    page: Page,
+    app_config: AppConfig,
+    api_client: ApiTestClient,
+):
     """Test that settings permission display doesn't show [object Object]."""
-    # Navigate to app
-    page.goto("http://localhost:8000/")
-    page.wait_for_load_state("networkidle")
+    # Setup: Create test organization and admin user
+    org = api_client.create_org()
+    user = api_client.create_user(
+        org_id=org["id"],
+        name="Test Admin",
+        roles=["admin", "volunteer"],
+    )
 
-    # Click Sign in link
-    page.get_by_role("link", name="Sign in").click()
-    page.wait_for_timeout(500)
-
-    # Login as admin
-    page.fill('[data-i18n-placeholder="auth.placeholder_email"]', "pastor@grace.church")
-    page.fill('[data-i18n-placeholder="auth.placeholder_password"]', "password")
-    page.get_by_role("button", name="Sign in").click()
-    page.wait_for_timeout(2000)
+    # Login
+    login_via_ui(page, app_config.app_url, user["email"], user["password"])
 
     # Verify we're logged in
     expect(page.locator("#user-name-display")).to_be_visible(timeout=5000)
