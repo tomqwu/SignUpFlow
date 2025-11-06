@@ -7,26 +7,33 @@ import re
 import pytest
 from playwright.sync_api import Page, expect
 
+from tests.e2e.helpers import AppConfig, ApiTestClient, login_via_ui
 
-def test_admin_panel_persists_on_refresh(page: Page):
+pytestmark = pytest.mark.usefixtures("api_server")
+
+
+def test_admin_panel_persists_on_refresh(
+    page: Page,
+    app_config: AppConfig,
+    api_client: ApiTestClient,
+):
     """Test that admin panel is visible after page refresh.
 
     BUG: When admin user refreshes the page while on /app/admin,
     the admin panel disappears because router.handleRoute() doesn't
     call the code that shows admin-only elements.
     """
-    # Navigate to app
-    page.goto("http://localhost:8000/")
-    page.wait_for_load_state("networkidle")
+    # Setup: Create test organization and admin user
+    org = api_client.create_org()
+    user = api_client.create_user(
+        org_id=org["id"],
+        name="Test Admin",
+        roles=["admin"],
+    )
 
     # Login as admin
-    page.get_by_role("link", name="Sign in").click()
-    page.wait_for_timeout(500)
-
-    page.fill('[data-i18n-placeholder="auth.placeholder_email"]', "pastor@grace.church")
-    page.fill('[data-i18n-placeholder="auth.placeholder_password"]', "password")
-    page.get_by_role("button", name="Sign in").click()
-    page.wait_for_timeout(2000)
+    login_via_ui(page, app_config.app_url, user["email"], user["password"])
+    expect(page.locator('#main-app')).to_be_visible(timeout=10000)
 
     # Verify we're logged in
     expect(page.locator("#user-name-display")).to_be_visible(timeout=5000)
