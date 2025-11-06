@@ -13,8 +13,15 @@ Tests that the application is accessible to users with disabilities:
 import pytest
 from playwright.sync_api import Page, expect
 
+from tests.e2e.helpers import AppConfig, ApiTestClient, login_via_ui
 
-def test_login_page_keyboard_navigation(page: Page):
+pytestmark = pytest.mark.usefixtures("api_server")
+
+
+def test_login_page_keyboard_navigation(
+    page: Page,
+    app_config: AppConfig,
+):
     """
     Test that login page is fully keyboard navigable.
 
@@ -24,7 +31,7 @@ def test_login_page_keyboard_navigation(page: Page):
     - Enter key submits form
     - Focus indicators are visible
     """
-    page.goto("http://localhost:8000/login")
+    page.goto(f"{app_config.app_url}/login")
 
     # Email input should be focusable (use specific login email)
     email_input = page.locator('#login-email')
@@ -43,7 +50,10 @@ def test_login_page_keyboard_navigation(page: Page):
     expect(submit_button).to_be_focused()
 
 
-def test_login_form_labels(page: Page):
+def test_login_form_labels(
+    page: Page,
+    app_config: AppConfig,
+):
     """
     Test that login form has proper labels for screen readers.
 
@@ -53,7 +63,7 @@ def test_login_form_labels(page: Page):
     - Placeholder text is present
     - ARIA labels are used where needed
     """
-    page.goto("http://localhost:8000/login")
+    page.goto(f"{app_config.app_url}/login")
 
     # Email input should have label or aria-label (use specific login email)
     email_input = page.locator('#login-email')
@@ -72,7 +82,11 @@ def test_login_form_labels(page: Page):
     assert password_label is not None, "Password input should have aria-label or placeholder"
 
 
-def test_schedule_keyboard_navigation(page: Page):
+def test_schedule_keyboard_navigation(
+    page: Page,
+    app_config: AppConfig,
+    api_client: ApiTestClient,
+):
     """
     Test keyboard navigation in schedule view.
 
@@ -81,36 +95,20 @@ def test_schedule_keyboard_navigation(page: Page):
     - Focus indicators are visible
     - Settings modal can be opened with keyboard
     """
-    # Create and login
-    import time
-    import requests
-
-    org_id = f"org_a11y_schedule_{int(time.time())}"
-    user_email = f"a11y_schedule_{int(time.time())}@test.com"
-
-    requests.post("http://localhost:8000/api/organizations/", json={
-        "id": org_id,
-        "name": "A11y Schedule Org"
-    })
-
-    signup_response = requests.post("http://localhost:8000/api/auth/signup", json={
-        "email": user_email,
-        "password": "Test123!",
-        "name": "A11y User",
-        "org_id": org_id
-    })
-    token = signup_response.json()["token"]
-    person_id = signup_response.json()["person_id"]
+    # Setup: Create test organization and user
+    org = api_client.create_org()
+    user = api_client.create_user(
+        org_id=org["id"],
+        name="A11y User",
+        roles=["volunteer"],
+    )
 
     # Login
-    page.goto("http://localhost:8000/app/schedule")
-    page.evaluate(f"""
-        localStorage.setItem('authToken', '{token}');
-        localStorage.setItem('currentUser', '{{"id": "{person_id}", "email": "{user_email}", "name": "A11y User"}}');
-        localStorage.setItem('currentOrg', '{{"id": "{org_id}", "name": "A11y Schedule Org"}}');
-    """)
-    page.reload()
+    login_via_ui(page, app_config.app_url, user["email"], user["password"])
+    expect(page.locator('#main-app')).to_be_visible(timeout=10000)
 
+    # Navigate to schedule view
+    page.goto(f"{app_config.app_url}/app/schedule")
     page.wait_for_timeout(2000)
 
     # Settings button should be focusable
@@ -130,7 +128,11 @@ def test_schedule_keyboard_navigation(page: Page):
     expect(settings_modal).to_be_visible(timeout=3000)
 
 
-def test_buttons_have_accessible_labels(page: Page):
+def test_buttons_have_accessible_labels(
+    page: Page,
+    app_config: AppConfig,
+    api_client: ApiTestClient,
+):
     """
     Test that buttons have accessible labels.
 
@@ -139,37 +141,20 @@ def test_buttons_have_accessible_labels(page: Page):
     - Icon-only buttons have aria-label
     - Button purpose is clear to screen readers
     """
-    # Create admin user
-    import time
-    import requests
+    # Setup: Create test organization and admin user
+    org = api_client.create_org()
+    user = api_client.create_user(
+        org_id=org["id"],
+        name="A11y Admin",
+        roles=["admin"],
+    )
 
-    org_id = f"org_a11y_buttons_{int(time.time())}"
-    admin_email = f"a11y_buttons_{int(time.time())}@test.com"
-
-    requests.post("http://localhost:8000/api/organizations/", json={
-        "id": org_id,
-        "name": "A11y Buttons Org"
-    })
-
-    signup_response = requests.post("http://localhost:8000/api/auth/signup", json={
-        "email": admin_email,
-        "password": "Test123!",
-        "name": "A11y Admin",
-        "org_id": org_id,
-        "roles": ["admin"]
-    })
-    token = signup_response.json()["token"]
-    person_id = signup_response.json()["person_id"]
+    # Login as admin
+    login_via_ui(page, app_config.app_url, user["email"], user["password"])
+    expect(page.locator('#main-app')).to_be_visible(timeout=10000)
 
     # Go to admin console
-    page.goto("http://localhost:8000/app/admin")
-    page.evaluate(f"""
-        localStorage.setItem('authToken', '{token}');
-        localStorage.setItem('currentUser', '{{"id": "{person_id}", "email": "{admin_email}", "name": "A11y Admin", "roles": ["admin"]}}');
-        localStorage.setItem('currentOrg', '{{"id": "{org_id}", "name": "A11y Buttons Org"}}');
-    """)
-    page.reload()
-
+    page.goto(f"{app_config.app_url}/app/admin")
     page.wait_for_timeout(2000)
 
     # Check that buttons have accessible text or aria-label
@@ -196,7 +181,11 @@ def test_buttons_have_accessible_labels(page: Page):
         # Full accessibility audit would flag all issues
 
 
-def test_modal_focus_trap(page: Page):
+def test_modal_focus_trap(
+    page: Page,
+    app_config: AppConfig,
+    api_client: ApiTestClient,
+):
     """
     Test that modal dialogs trap focus.
 
@@ -206,36 +195,20 @@ def test_modal_focus_trap(page: Page):
     - Escape closes modal
     - Focus returns to trigger element
     """
-    # Create and login
-    import time
-    import requests
-
-    org_id = f"org_a11y_modal_{int(time.time())}"
-    user_email = f"a11y_modal_{int(time.time())}@test.com"
-
-    requests.post("http://localhost:8000/api/organizations/", json={
-        "id": org_id,
-        "name": "A11y Modal Org"
-    })
-
-    signup_response = requests.post("http://localhost:8000/api/auth/signup", json={
-        "email": user_email,
-        "password": "Test123!",
-        "name": "A11y Modal User",
-        "org_id": org_id
-    })
-    token = signup_response.json()["token"]
-    person_id = signup_response.json()["person_id"]
+    # Setup: Create test organization and user
+    org = api_client.create_org()
+    user = api_client.create_user(
+        org_id=org["id"],
+        name="A11y Modal User",
+        roles=["volunteer"],
+    )
 
     # Login
-    page.goto("http://localhost:8000/app/schedule")
-    page.evaluate(f"""
-        localStorage.setItem('authToken', '{token}');
-        localStorage.setItem('currentUser', '{{"id": "{person_id}", "email": "{user_email}", "name": "A11y Modal User"}}');
-        localStorage.setItem('currentOrg', '{{"id": "{org_id}", "name": "A11y Modal Org"}}');
-    """)
-    page.reload()
+    login_via_ui(page, app_config.app_url, user["email"], user["password"])
+    expect(page.locator('#main-app')).to_be_visible(timeout=10000)
 
+    # Navigate to schedule view
+    page.goto(f"{app_config.app_url}/app/schedule")
     page.wait_for_timeout(2000)
 
     # Open settings modal
@@ -260,7 +233,10 @@ def test_modal_focus_trap(page: Page):
     expect(settings_modal).not_to_be_visible(timeout=3000)
 
 
-def test_form_error_messages_accessible(page: Page):
+def test_form_error_messages_accessible(
+    page: Page,
+    app_config: AppConfig,
+):
     """
     Test that form error messages are accessible.
 
@@ -270,7 +246,7 @@ def test_form_error_messages_accessible(page: Page):
     - aria-invalid is set on invalid fields
     - aria-describedby links to error message
     """
-    page.goto("http://localhost:8000/login")
+    page.goto(f"{app_config.app_url}/login")
 
     # Submit form without filling it out
     submit_button = page.locator('#login-form button[type="submit"]')
@@ -295,7 +271,11 @@ def test_form_error_messages_accessible(page: Page):
         # Both are acceptable
 
 
-def test_skip_to_main_content_link(page: Page):
+def test_skip_to_main_content_link(
+    page: Page,
+    app_config: AppConfig,
+    api_client: ApiTestClient,
+):
     """
     Test that "skip to main content" link exists.
 
@@ -304,36 +284,20 @@ def test_skip_to_main_content_link(page: Page):
     - Skip link is first focusable element
     - Skip link works (jumps to main content)
     """
-    # Create and login
-    import time
-    import requests
-
-    org_id = f"org_a11y_skip_{int(time.time())}"
-    user_email = f"a11y_skip_{int(time.time())}@test.com"
-
-    requests.post("http://localhost:8000/api/organizations/", json={
-        "id": org_id,
-        "name": "A11y Skip Org"
-    })
-
-    signup_response = requests.post("http://localhost:8000/api/auth/signup", json={
-        "email": user_email,
-        "password": "Test123!",
-        "name": "A11y Skip User",
-        "org_id": org_id
-    })
-    token = signup_response.json()["token"]
-    person_id = signup_response.json()["person_id"]
+    # Setup: Create test organization and user
+    org = api_client.create_org()
+    user = api_client.create_user(
+        org_id=org["id"],
+        name="A11y Skip User",
+        roles=["volunteer"],
+    )
 
     # Login
-    page.goto("http://localhost:8000/app/schedule")
-    page.evaluate(f"""
-        localStorage.setItem('authToken', '{token}');
-        localStorage.setItem('currentUser', '{{"id": "{person_id}", "email": "{user_email}", "name": "A11y Skip User"}}');
-        localStorage.setItem('currentOrg', '{{"id": "{org_id}", "name": "A11y Skip Org"}}');
-    """)
-    page.reload()
+    login_via_ui(page, app_config.app_url, user["email"], user["password"])
+    expect(page.locator('#main-app')).to_be_visible(timeout=10000)
 
+    # Navigate to schedule view
+    page.goto(f"{app_config.app_url}/app/schedule")
     page.wait_for_timeout(2000)
 
     # Check for skip link (may be visually hidden with CSS)
@@ -343,7 +307,10 @@ def test_skip_to_main_content_link(page: Page):
     # If it doesn't exist, this test documents that it should be added
 
 
-def test_images_have_alt_text(page: Page):
+def test_images_have_alt_text(
+    page: Page,
+    app_config: AppConfig,
+):
     """
     Test that images have alt text.
 
@@ -352,7 +319,7 @@ def test_images_have_alt_text(page: Page):
     - Alt text is descriptive (not empty or "image")
     - Decorative images have alt=""
     """
-    page.goto("http://localhost:8000/login")
+    page.goto(f"{app_config.app_url}/login")
 
     # Get all images
     images = page.locator('img')
@@ -374,7 +341,11 @@ def test_images_have_alt_text(page: Page):
             pass
 
 
-def test_heading_hierarchy(page: Page):
+def test_heading_hierarchy(
+    page: Page,
+    app_config: AppConfig,
+    api_client: ApiTestClient,
+):
     """
     Test that page has proper heading hierarchy.
 
@@ -383,36 +354,20 @@ def test_heading_hierarchy(page: Page):
     - Headings follow logical order (h1 → h2 → h3)
     - No skipped levels
     """
-    # Create and login
-    import time
-    import requests
-
-    org_id = f"org_a11y_headings_{int(time.time())}"
-    user_email = f"a11y_headings_{int(time.time())}@test.com"
-
-    requests.post("http://localhost:8000/api/organizations/", json={
-        "id": org_id,
-        "name": "A11y Headings Org"
-    })
-
-    signup_response = requests.post("http://localhost:8000/api/auth/signup", json={
-        "email": user_email,
-        "password": "Test123!",
-        "name": "A11y Headings User",
-        "org_id": org_id
-    })
-    token = signup_response.json()["token"]
-    person_id = signup_response.json()["person_id"]
+    # Setup: Create test organization and user
+    org = api_client.create_org()
+    user = api_client.create_user(
+        org_id=org["id"],
+        name="A11y Headings User",
+        roles=["volunteer"],
+    )
 
     # Login
-    page.goto("http://localhost:8000/app/schedule")
-    page.evaluate(f"""
-        localStorage.setItem('authToken', '{token}');
-        localStorage.setItem('currentUser', '{{"id": "{person_id}", "email": "{user_email}", "name": "A11y Headings User"}}');
-        localStorage.setItem('currentOrg', '{{"id": "{org_id}", "name": "A11y Headings Org"}}');
-    """)
-    page.reload()
+    login_via_ui(page, app_config.app_url, user["email"], user["password"])
+    expect(page.locator('#main-app')).to_be_visible(timeout=10000)
 
+    # Navigate to schedule view
+    page.goto(f"{app_config.app_url}/app/schedule")
     page.wait_for_timeout(2000)
 
     # Check for h1 (should be page title)
@@ -432,7 +387,10 @@ def test_heading_hierarchy(page: Page):
     assert h2_count > 0, "Page should have at least one h2 heading"
 
 
-def test_color_contrast_sufficient(page: Page):
+def test_color_contrast_sufficient(
+    page: Page,
+    app_config: AppConfig,
+):
     """
     Test that text has sufficient color contrast.
 
@@ -444,7 +402,7 @@ def test_color_contrast_sufficient(page: Page):
     - Links are distinguishable from text
     - Buttons have sufficient contrast
     """
-    page.goto("http://localhost:8000/login")
+    page.goto(f"{app_config.app_url}/login")
 
     # This test would ideally use axe-core or similar tool
     # For now, we just verify that key elements are visible
@@ -461,7 +419,11 @@ def test_color_contrast_sufficient(page: Page):
     # Real color contrast testing requires tools like axe-core
 
 
-def test_admin_console_keyboard_navigation(page: Page):
+def test_admin_console_keyboard_navigation(
+    page: Page,
+    app_config: AppConfig,
+    api_client: ApiTestClient,
+):
     """
     Test keyboard navigation in admin console.
 
@@ -471,37 +433,20 @@ def test_admin_console_keyboard_navigation(page: Page):
     - Enter/Space activates tab
     - Tables are keyboard navigable
     """
-    # Create admin user
-    import time
-    import requests
+    # Setup: Create test organization and admin user
+    org = api_client.create_org()
+    user = api_client.create_user(
+        org_id=org["id"],
+        name="A11y Admin",
+        roles=["admin"],
+    )
 
-    org_id = f"org_a11y_admin_{int(time.time())}"
-    admin_email = f"a11y_admin_{int(time.time())}@test.com"
-
-    requests.post("http://localhost:8000/api/organizations/", json={
-        "id": org_id,
-        "name": "A11y Admin Org"
-    })
-
-    signup_response = requests.post("http://localhost:8000/api/auth/signup", json={
-        "email": admin_email,
-        "password": "Test123!",
-        "name": "A11y Admin",
-        "org_id": org_id,
-        "roles": ["admin"]
-    })
-    token = signup_response.json()["token"]
-    person_id = signup_response.json()["person_id"]
+    # Login as admin
+    login_via_ui(page, app_config.app_url, user["email"], user["password"])
+    expect(page.locator('#main-app')).to_be_visible(timeout=10000)
 
     # Go to admin console
-    page.goto("http://localhost:8000/app/admin")
-    page.evaluate(f"""
-        localStorage.setItem('authToken', '{token}');
-        localStorage.setItem('currentUser', '{{"id": "{person_id}", "email": "{admin_email}", "name": "A11y Admin", "roles": ["admin"]}}');
-        localStorage.setItem('currentOrg', '{{"id": "{org_id}", "name": "A11y Admin Org"}}');
-    """)
-    page.reload()
-
+    page.goto(f"{app_config.app_url}/app/admin")
     page.wait_for_timeout(2000)
 
     # Admin view should be visible
@@ -517,7 +462,10 @@ def test_admin_console_keyboard_navigation(page: Page):
         expect(tab_buttons.first).to_be_focused()
 
 
-def test_live_regions_for_dynamic_content(page: Page):
+def test_live_regions_for_dynamic_content(
+    page: Page,
+    app_config: AppConfig,
+):
     """
     Test that dynamic content updates are announced to screen readers.
 
@@ -530,7 +478,7 @@ def test_live_regions_for_dynamic_content(page: Page):
     # This test would check for aria-live regions
     # For now, it's a placeholder for future implementation
 
-    page.goto("http://localhost:8000/login")
+    page.goto(f"{app_config.app_url}/login")
 
     # Check for toast/notification container with aria-live
     toast_container = page.locator('[aria-live], [role="status"], [role="alert"]')
