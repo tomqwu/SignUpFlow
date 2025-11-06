@@ -3,9 +3,26 @@
 import pytest
 from playwright.sync_api import Page, expect
 
+from tests.e2e.helpers import AppConfig, ApiTestClient, login_via_ui
 
-def test_change_language_in_settings(page: Page):
+
+pytestmark = pytest.mark.usefixtures("api_server")
+
+
+def test_change_language_in_settings(
+    page: Page,
+    app_config: AppConfig,
+    api_client: ApiTestClient,
+):
     """Test that changing language in settings works without errors."""
+    # Setup: Create test organization and user
+    org = api_client.create_org()
+    user = api_client.create_user(
+        org_id=org["id"],
+        name="Test User",
+        roles=["volunteer"],
+    )
+
     # Set up event listeners BEFORE any navigation
     console_errors = []
     failed_requests = []
@@ -24,19 +41,8 @@ def test_change_language_in_settings(page: Page):
     page.on("console", handle_console)
     page.on("response", handle_response)
 
-    # Navigate to app
-    page.goto("http://localhost:8000/")
-    page.wait_for_load_state("networkidle")
-
-    # Click Sign in link
-    page.get_by_role("link", name="Sign in").click()
-    page.wait_for_timeout(500)
-
-    # Login as admin
-    page.fill('[data-i18n-placeholder="auth.placeholder_email"]', "pastor@grace.church")
-    page.fill('[data-i18n-placeholder="auth.placeholder_password"]', "password")
-    page.get_by_role("button", name="Sign in").click()
-    page.wait_for_timeout(2000)
+    # Login
+    login_via_ui(page, app_config.app_url, user["email"], user["password"])
 
     # Verify we're logged in
     expect(page.locator("#user-name-display")).to_be_visible(timeout=5000)
@@ -82,8 +88,20 @@ def test_change_language_in_settings(page: Page):
     print("✅ Language change saved successfully without errors")
 
 
-def test_change_language_multiple_times(page: Page):
+def test_change_language_multiple_times(
+    page: Page,
+    app_config: AppConfig,
+    api_client: ApiTestClient,
+):
     """Test changing language multiple times in succession."""
+    # Setup: Create test organization and user
+    org = api_client.create_org()
+    user = api_client.create_user(
+        org_id=org["id"],
+        name="Test User",
+        roles=["volunteer"],
+    )
+
     # Set up event listeners BEFORE any navigation
     failed_requests = []
 
@@ -96,17 +114,8 @@ def test_change_language_multiple_times(page: Page):
 
     page.on("response", handle_response)
 
-    # Navigate and login
-    page.goto("http://localhost:8000/")
-    page.wait_for_load_state("networkidle")
-
-    page.get_by_role("link", name="Sign in").click()
-    page.wait_for_timeout(500)
-
-    page.fill('[data-i18n-placeholder="auth.placeholder_email"]', "pastor@grace.church")
-    page.fill('[data-i18n-placeholder="auth.placeholder_password"]', "password")
-    page.get_by_role("button", name="Sign in").click()
-    page.wait_for_timeout(2000)
+    # Login
+    login_via_ui(page, app_config.app_url, user["email"], user["password"])
 
     # Test multiple language changes
     languages = ["zh-CN", "es", "pt", "en"]
