@@ -6,12 +6,17 @@ Tests the complete workflow:
 2. Volunteer logs in and sees assignment in schedule
 """
 
+import pytest
 import requests
 import time
 from playwright.sync_api import Page, expect
 
+from tests.e2e.helpers import AppConfig
 
-def test_volunteer_sees_assigned_event_in_schedule(page: Page):
+pytestmark = pytest.mark.usefixtures("api_server")
+
+
+def test_volunteer_sees_assigned_event_in_schedule(page: Page, app_config: AppConfig):
     """
     Test complete workflow from admin assigning volunteer to volunteer seeing it in schedule.
 
@@ -38,7 +43,7 @@ def test_volunteer_sees_assigned_event_in_schedule(page: Page):
 
     # Create organization
     org_response = requests.post(
-        "http://localhost:8000/api/organizations/",
+        f"{app_config.app_url}/api/organizations/",
         json={
             "id": test_org_id,
             "name": f"Schedule Test Org {timestamp}",
@@ -49,7 +54,7 @@ def test_volunteer_sees_assigned_event_in_schedule(page: Page):
 
     # Create admin user
     admin_signup = requests.post(
-        "http://localhost:8000/api/auth/signup",
+        f"{app_config.app_url}/api/auth/signup",
         json={
             "email": admin_email,
             "password": test_password,
@@ -64,14 +69,14 @@ def test_volunteer_sees_assigned_event_in_schedule(page: Page):
 
     # Set admin role
     requests.put(
-        f"http://localhost:8000/api/people/{admin_id}",
+        f"{app_config.app_url}/api/people/{admin_id}",
         headers={"Authorization": f"Bearer {admin_token}"},
         json={"roles": ["admin", "volunteer"]}
     )
 
     # Create volunteer user
     volunteer_signup = requests.post(
-        "http://localhost:8000/api/auth/signup",
+        f"{app_config.app_url}/api/auth/signup",
         json={
             "email": volunteer_email,
             "password": test_password,
@@ -96,7 +101,7 @@ def test_volunteer_sees_assigned_event_in_schedule(page: Page):
     end_time = time.strftime("%Y-%m-%dT12:00:00", time.localtime(time.time() + 7*24*60*60))
 
     event_response = requests.post(
-        "http://localhost:8000/api/events/",
+        f"{app_config.app_url}/api/events/",
         headers={"Authorization": f"Bearer {admin_token}"},
         json={
             "id": event_id,
@@ -115,7 +120,7 @@ def test_volunteer_sees_assigned_event_in_schedule(page: Page):
     print("\nStep 2: Admin assigns volunteer to event...")
 
     assignment_response = requests.post(
-        f"http://localhost:8000/api/events/{event_id}/assignments",
+        f"{app_config.app_url}/api/events/{event_id}/assignments",
         headers={"Authorization": f"Bearer {admin_token}"},
         json={
             "person_id": volunteer_id,
@@ -129,7 +134,7 @@ def test_volunteer_sees_assigned_event_in_schedule(page: Page):
     # Step 3: Volunteer logs in
     print("\nStep 3: Volunteer logs in...")
 
-    page.goto("http://localhost:8000/login")
+    page.goto(f"{app_config.app_url}/login")
 
     page.locator('#login-email').fill(volunteer_email)
     page.locator('#login-password').fill(test_password)
@@ -167,13 +172,13 @@ def test_volunteer_sees_assigned_event_in_schedule(page: Page):
     print("\nStep 6: Verifying assignment via API...")
 
     volunteer_login = requests.post(
-        "http://localhost:8000/api/auth/login",
+        f"{app_config.app_url}/api/auth/login",
         json={"email": volunteer_email, "password": test_password}
     )
     volunteer_token = volunteer_login.json()["token"]
 
     assignments_response = requests.get(
-        f"http://localhost:8000/api/events/assignments/all?org_id={test_org_id}",
+        f"{app_config.app_url}/api/events/assignments/all?org_id={test_org_id}",
         headers={"Authorization": f"Bearer {volunteer_token}"}
     )
     assert assignments_response.status_code == 200
@@ -191,7 +196,7 @@ def test_volunteer_sees_assigned_event_in_schedule(page: Page):
     print("="*80)
 
 
-def test_volunteer_sees_empty_schedule_when_not_assigned(page: Page):
+def test_volunteer_sees_empty_schedule_when_not_assigned(page: Page, app_config: AppConfig):
     """
     Test that volunteer sees empty state when not assigned to any events.
 
@@ -214,7 +219,7 @@ def test_volunteer_sees_empty_schedule_when_not_assigned(page: Page):
 
     # Create organization
     org_response = requests.post(
-        "http://localhost:8000/api/organizations/",
+        f"{app_config.app_url}/api/organizations/",
         json={
             "id": test_org_id,
             "name": f"Empty Schedule Org {timestamp}",
@@ -225,7 +230,7 @@ def test_volunteer_sees_empty_schedule_when_not_assigned(page: Page):
 
     # Create volunteer user
     volunteer_signup = requests.post(
-        "http://localhost:8000/api/auth/signup",
+        f"{app_config.app_url}/api/auth/signup",
         json={
             "email": volunteer_email,
             "password": test_password,
@@ -240,7 +245,7 @@ def test_volunteer_sees_empty_schedule_when_not_assigned(page: Page):
     # Step 1: Volunteer logs in
     print("\nStep 1: Volunteer logs in...")
 
-    page.goto("http://localhost:8000/login")
+    page.goto(f"{app_config.app_url}/login")
 
     page.locator('#login-email').fill(volunteer_email)
     page.locator('#login-password').fill(test_password)
