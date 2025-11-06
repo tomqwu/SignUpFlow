@@ -6,8 +6,16 @@ import pytest
 from playwright.sync_api import Page, expect
 import time
 
+from tests.e2e.helpers import AppConfig
 
-def test_complete_org_creation_and_signup_flow(page: Page):
+
+pytestmark = pytest.mark.usefixtures("api_server")
+
+
+def test_complete_org_creation_and_signup_flow(
+    page: Page,
+    app_config: AppConfig,
+):
     """Test the complete flow from creating org to being logged in."""
 
     # Use unique timestamp-based data
@@ -27,7 +35,7 @@ def test_complete_org_creation_and_signup_flow(page: Page):
 
     # Step 1: Navigate to app
     print("Step 1: Loading app...")
-    page.goto("http://localhost:8000")
+    page.goto(app_config.app_url)
     page.wait_for_load_state("networkidle")
 
     # Step 2: Click Get Started
