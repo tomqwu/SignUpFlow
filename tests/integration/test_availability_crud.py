@@ -2,53 +2,66 @@
 Comprehensive tests for availability CRUD operations (API + GUI)
 Tests user story: "Update My Availability" workflow
 """
+import os
 import requests
 from playwright.sync_api import sync_playwright
 import pytest
-from api.security import create_access_token
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
+
+from api.models import Organization, Person
+from api.security import hash_password
 
 BASE_URL = "http://localhost:8000"
 API_BASE = f"{BASE_URL}/api"
 
 
 def get_admin_headers_and_create_user(org_id="test-org", user_id="test-admin", email="admin@test.com"):
-    """Create admin user in database and generate authentication headers with JWT token."""
-    from api.security import hash_password
+    """Ensure an admin user exists for the given org and return auth headers."""
+    db_url = os.getenv("DATABASE_URL", "sqlite:///./test_roster.db")
+    connect_args = {"check_same_thread": False} if db_url.startswith("sqlite") else {}
+    engine = create_engine(db_url, connect_args=connect_args)
+    SessionLocal = sessionmaker(bind=engine, autoflush=False, autocommit=False)
 
-    # Create admin user via signup endpoint (this creates the user in the database)
-    signup_data = {
-        "name": "Test Admin",
-        "email": email,
-        "password": "admin123",
-        "org_id": org_id,
-        "roles": ["admin"]
-    }
+    session = SessionLocal()
+    try:
+        org = session.get(Organization, org_id)
+        if org is None:
+            org = Organization(id=org_id, name="Test Organization", region="Test Region", config={"roles": ["admin", "volunteer"]})
+            session.add(org)
+            session.flush()
 
-    # Try to sign up (may already exist)
-    resp = requests.post(f"{API_BASE}/auth/signup", json=signup_data)
-
-    # If user already exists, that's fine - we'll use their credentials
-    if resp.status_code not in [200, 201]:
-        # User might already exist, try to log in to get their ID
-        login_resp = requests.post(f"{API_BASE}/auth/login", json={
-            "email": email,
-            "password": "admin123"
-        })
-
-        if login_resp.status_code == 200:
-            # Use the token from login
-            return {"Authorization": f"Bearer {login_resp.json()['token']}"}
+        person = session.query(Person).filter(Person.email == email).one_or_none()
+        password_hash = hash_password("admin123")
+        if person is None:
+            person = Person(
+                id=user_id,
+                org_id=org_id,
+                name="Test Admin",
+                email=email,
+                password_hash=password_hash,
+                roles=["admin"],
+                extra_data={},
+            )
+            session.add(person)
         else:
-            # Fallback: create token manually (user should exist from previous test runs)
-            token = create_access_token({
-                "sub": user_id,
-                "org_id": org_id,
-                "roles": ["admin"]
-            })
-            return {"Authorization": f"Bearer {token}"}
-    else:
-        # User was created successfully, use the returned token
-        return {"Authorization": f"Bearer {resp.json()['token']}"}
+            person.org_id = org_id
+            person.password_hash = password_hash
+            person.roles = ["admin"]
+        session.commit()
+    finally:
+        session.close()
+
+    login_resp = requests.post(f"{API_BASE}/auth/login", json={
+        "email": email,
+        "password": "admin123"
+    })
+    login_resp.raise_for_status()
+    data = login_resp.json()
+    token = data.get("token") or data.get("access_token")
+    if not token:
+        raise RuntimeError(f"Login response missing token fields: {data}")
+    return {"Authorization": f"Bearer {token}"}
 
 
 def test_availability_api_crud(api_server):

@@ -254,8 +254,19 @@ async function handleLogin(event) {
             router.navigate('/app/schedule', true);
             showMainApp();
         } else {
-            const error = await response.json();
-            errorEl.textContent = error.detail || i18n.t('auth.login.error');
+            let errorMessage = '';
+            try {
+                const error = await response.json();
+                errorMessage = translateApiMessage(error);
+            } catch (parseError) {
+                console.warn('Login error response was not JSON:', parseError);
+            }
+
+            if (typeof errorMessage === 'string' && errorMessage.trim().toLowerCase() === 'invalid email or password') {
+                errorMessage = i18n.t('auth.login.error');
+            }
+
+            errorEl.textContent = errorMessage || i18n.t('auth.login.error');
             errorEl.classList.remove('hidden');
         }
     } catch (error) {
@@ -2906,75 +2917,90 @@ async function leaveEvent(eventId) {
 
 // Onboarding and authentication
 window.startOnboarding = startOnboarding;
-window.showLogin = showLogin;
-window.handleLogin = handleLogin;
-window.showForgotPassword = showForgotPassword;
-window.handleForgotPassword = handleForgotPassword;
-window.handleResetPassword = handleResetPassword;
-window.createProfile = createProfile;
-window.createAndJoinOrg = createAndJoinOrg;
+function exposeToWindow(name, fn) {
+    if (typeof fn === 'function') {
+        window[name] = fn;
+    }
+}
+
+exposeToWindow('showLogin', showLogin);
+exposeToWindow('handleLogin', handleLogin);
+exposeToWindow('showForgotPassword', showForgotPassword);
+exposeToWindow('handleForgotPassword', handleForgotPassword);
+exposeToWindow('handleResetPassword', handleResetPassword);
+exposeToWindow('createProfile', createProfile);
+exposeToWindow('createAndJoinOrg', createAndJoinOrg);
 
 // Navigation
-window.switchView = switchView;
-window.goToHome = goToHome;
+exposeToWindow('switchView', switchView);
+exposeToWindow('goToHome', goToHome);
 
 // Settings and profile
-window.showSettings = showSettings;
-window.closeSettings = closeSettings;
-window.saveSettings = saveSettings;
-window.dismissSetupHint = dismissSetupHint;
-window.logout = logout;
+exposeToWindow('showSettings', showSettings);
+exposeToWindow('closeSettings', closeSettings);
+exposeToWindow('saveSettings', saveSettings);
+exposeToWindow('dismissSetupHint', dismissSetupHint);
+exposeToWindow('logout', logout);
 
 // Calendar
-window.exportMyCalendar = exportMyCalendar;
-window.showCalendarSubscription = showCalendarSubscription;
-window.closeCalendarSubscriptionModal = closeCalendarSubscriptionModal;
-window.resetCalendarToken = resetCalendarToken;
-window.copyToClipboard = copyToClipboard;
+exposeToWindow('exportMyCalendar', exportMyCalendar);
+exposeToWindow('showCalendarSubscription', showCalendarSubscription);
+exposeToWindow('closeCalendarSubscriptionModal', closeCalendarSubscriptionModal);
+exposeToWindow('resetCalendarToken', resetCalendarToken);
+exposeToWindow('copyToClipboard', copyToClipboard);
 
 // Events
-window.joinEvent = joinEvent;
-window.leaveEvent = leaveEvent;
-window.showCreateEventForm = showCreateEventForm;
-window.closeCreateEventForm = closeCreateEventForm;
-window.loadAdminEvents = loadAdminEvents;
-window.showAssignments = showAssignments;
-window.editEvent = editEvent;
-window.deleteEvent = deleteEvent;
-window.closeAssignmentModal = closeAssignmentModal;
-window.toggleAssignment = toggleAssignment;
+exposeToWindow('joinEvent', joinEvent);
+exposeToWindow('leaveEvent', leaveEvent);
+exposeToWindow('showCreateEventForm', typeof showCreateEventForm === 'function' ? showCreateEventForm : undefined);
+exposeToWindow('closeCreateEventForm', typeof closeCreateEventForm === 'function' ? closeCreateEventForm : undefined);
+exposeToWindow('loadAdminEvents', loadAdminEvents);
+exposeToWindow('showAssignments', showAssignments);
+exposeToWindow('editEvent', editEvent);
+exposeToWindow('deleteEvent', deleteEvent);
+exposeToWindow('closeAssignmentModal', closeAssignmentModal);
+exposeToWindow('toggleAssignment', toggleAssignment);
 
 // Time off / blocked dates
-window.closeEditTimeOffModal = closeEditTimeOffModal;
-window.editTimeOffFromButton = editTimeOffFromButton;
-window.removeTimeOff = removeTimeOff;
+exposeToWindow('closeEditTimeOffModal', closeEditTimeOffModal);
+exposeToWindow('editTimeOffFromButton', editTimeOffFromButton);
+exposeToWindow('removeTimeOff', removeTimeOff);
 
 // Admin
-window.switchAdminTab = switchAdminTab;
-window.generateSchedule = generateSchedule;
-window.exportLatestSchedulePDF = exportLatestSchedulePDF;
-window.exportOrgCalendar = exportOrgCalendar;
-window.showScheduleStats = showScheduleStats;
-window.viewSolution = viewSolution;
-window.deleteSolution = deleteSolution;
+exposeToWindow('switchAdminTab', switchAdminTab);
+exposeToWindow('generateSchedule', generateSchedule);
+exposeToWindow('exportLatestSchedulePDF', exportLatestSchedulePDF);
+exposeToWindow('exportOrgCalendar', exportOrgCalendar);
+exposeToWindow('showScheduleStats', showScheduleStats);
+exposeToWindow('viewSolution', viewSolution);
+exposeToWindow('deleteSolution', deleteSolution);
 
 // Organization
-window.showCreateOrg = showCreateOrg;
+exposeToWindow('showCreateOrg', showCreateOrg);
 
 // Roles
-window.showAddRoleForm = showAddRoleForm;
-window.closeAddRoleForm = closeAddRoleForm;
-window.showEditRoleModal = showEditRoleModal;
-window.closeEditRoleModal = closeEditRoleModal;
-window.showManageRolePeopleModal = showManageRolePeopleModal;
-window.closeManageRolePeopleModal = closeManageRolePeopleModal;
-window.deleteRole = deleteRole;
+exposeToWindow('showAddRoleForm', typeof showAddRoleForm === 'function' ? showAddRoleForm : undefined);
+exposeToWindow('closeAddRoleForm', typeof closeAddRoleForm === 'function' ? closeAddRoleForm : undefined);
+exposeToWindow('showEditRoleModal', typeof showEditRoleModal === 'function' ? showEditRoleModal : undefined);
+exposeToWindow('closeEditRoleModal', typeof closeEditRoleModal === 'function' ? closeEditRoleModal : undefined);
+exposeToWindow('showManageRolePeopleModal', typeof showManageRolePeopleModal === 'function' ? showManageRolePeopleModal : undefined);
+exposeToWindow('closeManageRolePeopleModal', typeof closeManageRolePeopleModal === 'function' ? closeManageRolePeopleModal : undefined);
+exposeToWindow('deleteRole', typeof deleteRole === 'function' ? deleteRole : undefined);
 
 // People
-window.showEditPersonModal = showEditPersonModal;
-window.closeEditPersonModal = closeEditPersonModal;
-window.showInviteUserModal = showInviteUserModal;
-window.closeInviteUserModal = closeInviteUserModal;
-window.resendInvitation = resendInvitation;
-window.cancelInvitation = cancelInvitation;
-window.closeSelectRoleModal = closeSelectRoleModal;
+exposeToWindow('showEditPersonModal', showEditPersonModal);
+exposeToWindow('closeEditPersonModal', closeEditPersonModal);
+exposeToWindow('showInviteUserModal', showInviteUserModal);
+exposeToWindow('closeInviteUserModal', closeInviteUserModal);
+exposeToWindow('resendInvitation', resendInvitation);
+exposeToWindow('cancelInvitation', cancelInvitation);
+exposeToWindow('closeSelectRoleModal', closeSelectRoleModal);
+
+// Expose selected functions for testing when running in Node environment
+if (typeof module !== 'undefined' && module.exports) {
+    module.exports = {
+        handleLogin,
+        translateApiMessage,
+        getApiErrorMessage,
+    };
+}

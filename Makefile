@@ -1,8 +1,91 @@
-.PHONY: run dev stop restart setup install migrate test test-frontend test-backend test-integration test-e2e test-e2e-long test-e2e-file test-e2e-quick test-e2e-summary test-email test-email-unit test-all test-coverage test-unit test-unit-fast test-unit-file test-with-timing clean clean-all pre-commit help check-poetry check-npm check-python check-deps install-poetry install-npm install-deps fix-node-libs up down build logs shell db-shell redis-shell test-docker migrate-docker restart-api ps clean-docker
+.PHONY: run dev stop restart setup install migrate test test-frontend test-backend test-integration test-e2e test-e2e-long test-e2e-file test-e2e-quick test-e2e-summary test-email test-email-unit test-all test-coverage test-unit test-unit-fast test-unit-file test-with-timing clean clean-all pre-commit help check-poetry check-npm check-python check-deps install-poetry install-npm install-deps fix-node-libs up down build logs shell db-shell redis-shell test-docker migrate-docker restart-api ps clean-docker check-docker ensure-test-deps prepare-test-data ensure-test-env
+
+TEST_SERVER_HOST ?= 0.0.0.0
+TEST_SERVER_PORT ?= 8000
+TEST_APP_URL ?= http://localhost:$(TEST_SERVER_PORT)
+TEST_API_BASE ?= $(TEST_APP_URL)/api
 
 TEST_SERVER_SCRIPT := ./scripts/run_with_server.sh
 TEST_SERVER_ENV := DISABLE_RATE_LIMITS=true TESTING=true EMAIL_ENABLED=false SMS_ENABLED=false DATABASE_URL=sqlite:///./test_roster.db
-DEFAULT_TEST_SERVER_CMD := $(TEST_SERVER_ENV) poetry run uvicorn api.main:app --host 0.0.0.0 --port 8000 --reload
+TEST_SERVER_ENV += TEST_SERVER_HOST=$(TEST_SERVER_HOST) TEST_SERVER_PORT=$(TEST_SERVER_PORT)
+TEST_SERVER_ENV += APP_URL=$(TEST_APP_URL) API_BASE=$(TEST_API_BASE)
+TEST_SERVER_ENV += E2E_APP_URL=$(TEST_APP_URL) E2E_API_BASE=$(TEST_API_BASE)
+DEFAULT_TEST_SERVER_CMD := $(TEST_SERVER_ENV) poetry run uvicorn api.main:app --host $(TEST_SERVER_HOST) --port $(TEST_SERVER_PORT) --reload
+
+define TEST_ALL_PIPELINE
+set -euo pipefail
+npm test
+printf '\n================================\n   BACKEND TESTS\n================================\n'
+poetry run pytest tests/comprehensive_test_suite.py -v --tb=short
+printf '\n================================\n   INTEGRATION TESTS\n================================\n'
+poetry run pytest tests/test_i18n_integration.py -v --tb=short
+printf '\n================================\n   E2E BROWSER TESTS\n================================\n'
+poetry run pytest tests/e2e/ -v --tb=short
+endef
+export TEST_ALL_PIPELINE
+
+# Detect available Docker Compose command (v1 `docker-compose` or v2 `docker compose`)
+DOCKER_COMPOSE := $(shell \
+	if command -v docker-compose >/dev/null 2>&1; then \
+		echo docker-compose; \
+	elif docker compose version >/dev/null 2>&1; then \
+		echo docker compose; \
+	else \
+		echo missing; \
+	fi)
+
+ifeq ($(DOCKER_COMPOSE),missing)
+$(error Docker Compose is not installed. Install it via https://docs.docker.com/compose/)
+endif
+
+# Ensure Docker CLI and daemon are available before running docker-compose targets
+check-docker:
+	@command -v docker >/dev/null 2>&1 || { \
+		echo "❌ Docker CLI not found. Install Docker Desktop or Docker Engine first."; \
+		exit 1; \
+	}
+	@if [ "$$(uname -s)" != "Windows_NT" ] && [ -f "$$HOME/.docker/config.json" ]; then \
+		if grep -q '"credsStore":[[:space:]]*"desktop\.exe"' "$$HOME/.docker/config.json"; then \
+			echo "❌ Docker credential helper 'desktop.exe' is configured, but this platform ($$(uname -s)) cannot execute it."; \
+			echo "   Remove or replace the 'credsStore' entry in $$HOME/.docker/config.json (e.g. set it to 'secretservice' or delete the key)."; \
+			echo "   After updating the config, rerun 'make up'."; \
+			exit 1; \
+		fi; \
+	fi
+	@docker info >/dev/null 2>&1 || { \
+		echo "❌ Cannot connect to the Docker daemon. Start Docker (Docker Desktop, colima, or 'systemctl start docker') and ensure your user can access /var/run/docker.sock."; \
+		exit 1; \
+	}
+
+DOCKER_TARGETS := up down build rebuild logs logs-api logs-db logs-redis shell db-shell redis-shell \
+	test-docker test-docker-quick test-docker-summary test-docker-solver test-docker-availability \
+	test-docker-auth test-docker-rbac test-docker-file test-docker-email test-docker-calendar \
+	test-docker-i18n test-docker-admin test-docker-unit test-docker-unit-fast test-docker-integration \
+	test-docker-comprehensive test-docker-all test-docker-playwright test-docker-coverage \
+	migrate-docker restart-api ps clean-docker clean-docker-all
+
+$(DOCKER_TARGETS): check-docker
+
+ensure-test-deps: check-poetry check-npm
+	@POETRY_ENV=$$(poetry env info --path 2>/dev/null || true); \
+	if [ -z "$$POETRY_ENV" ] || [ "$${FORCE_POETRY_INSTALL:-0}" = "1" ]; then \
+		echo "📦 Installing Python dependencies via Poetry..."; \
+		poetry install; \
+	else \
+		echo "✅ Poetry dependencies already installed (env: $$POETRY_ENV)"; \
+	fi
+	@if [ ! -d node_modules ] || [ "$${FORCE_NPM_INSTALL:-0}" = "1" ]; then \
+		echo "📦 Installing Node.js dependencies via npm..."; \
+		npm install; \
+	else \
+		echo "✅ npm dependencies already installed"; \
+	fi
+
+prepare-test-data: ensure-test-deps
+	@echo "🧪 Preparing baseline test data..."
+	@poetry run python -m tests.setup_test_data || echo "⚠️  setup_test_data fallback: continuing without direct DB seed"
+
+ensure-test-env: prepare-test-data
 
 # Auto-installation targets
 install-poetry:
@@ -238,7 +321,7 @@ test-email: check-poetry
 		$(TEST_SERVER_SCRIPT) poetry run pytest tests/e2e/test_email_invitation_workflow.py -v --tb=short
 
 # Run ALL tests (frontend + backend + integration + E2E)
-test-all: check-npm check-poetry
+test-all: ensure-test-env
 	@echo "🚀 Running complete test suite..."
 	@echo ""
 	@rm -f test_roster.db test_roster.db-shm test_roster.db-wal
@@ -247,8 +330,12 @@ test-all: check-npm check-poetry
 	@echo "================================"
 	@echo "   FRONTEND TESTS"
 	@echo "================================"
-	@TEST_SERVER_CMD='$(DEFAULT_TEST_SERVER_CMD)' \
-		$(TEST_SERVER_SCRIPT) bash -lc "set -euo pipefail; npm test; echo ''; echo '================================'; echo '   BACKEND TESTS'; echo '================================'; poetry run pytest tests/comprehensive_test_suite.py -v --tb=short; echo ''; echo '================================'; echo '   INTEGRATION TESTS'; echo '================================'; poetry run pytest tests/test_i18n_integration.py -v --tb=short; echo ''; echo '================================'; echo '   E2E BROWSER TESTS'; echo '================================'; poetry run pytest tests/e2e/ -v --tb=short"
+	@bash -lc "set -eo pipefail; \
+		if ! TEST_SERVER_CMD='$(DEFAULT_TEST_SERVER_CMD)' $(TEST_SERVER_SCRIPT) bash -lc \"$$TEST_ALL_PIPELINE\"; then \
+			echo '❌ Test suite failed'; \
+			./scripts/collect_test_logs.sh || true; \
+			exit 1; \
+		fi"
 
 # Run tests with coverage
 test-coverage: check-npm check-poetry
@@ -322,7 +409,7 @@ test-with-timing: check-poetry
 # Start all services (PostgreSQL + Redis + API with hot-reload)
 up:
 	@echo "🐳 Starting SignUpFlow development environment..."
-	@docker-compose -f docker-compose.dev.yml up -d
+	@$(DOCKER_COMPOSE) -f docker-compose.dev.yml up -d
 	@echo ""
 	@echo "✅ Services started!"
 	@echo "   API:        http://localhost:8000"
@@ -336,13 +423,13 @@ up:
 # Stop all services
 down:
 	@echo "🛑 Stopping SignUpFlow development environment..."
-	@docker-compose -f docker-compose.dev.yml down
+	@$(DOCKER_COMPOSE) -f docker-compose.dev.yml down
 	@echo "✅ Services stopped"
 
 # Build Docker images
 build:
 	@echo "🔨 Building Docker images..."
-	@docker-compose -f docker-compose.dev.yml build --no-cache
+	@$(DOCKER_COMPOSE) -f docker-compose.dev.yml build --no-cache
 	@echo "✅ Build complete"
 
 # Rebuild and restart (after dependency changes)
@@ -350,32 +437,32 @@ rebuild: down build up
 
 # View logs from all services
 logs:
-	@docker-compose -f docker-compose.dev.yml logs -f
+	@$(DOCKER_COMPOSE) -f docker-compose.dev.yml logs -f
 
 # View logs from specific service
 logs-api:
-	@docker-compose -f docker-compose.dev.yml logs -f api
+	@$(DOCKER_COMPOSE) -f docker-compose.dev.yml logs -f api
 
 logs-db:
-	@docker-compose -f docker-compose.dev.yml logs -f db
+	@$(DOCKER_COMPOSE) -f docker-compose.dev.yml logs -f db
 
 logs-redis:
-	@docker-compose -f docker-compose.dev.yml logs -f redis
+	@$(DOCKER_COMPOSE) -f docker-compose.dev.yml logs -f redis
 
 # Open shell in API container
 shell:
 	@echo "🐚 Opening shell in API container..."
-	@docker-compose -f docker-compose.dev.yml exec api bash
+	@$(DOCKER_COMPOSE) -f docker-compose.dev.yml exec api bash
 
 # Open PostgreSQL shell
 db-shell:
 	@echo "🐘 Opening PostgreSQL shell..."
-	@docker-compose -f docker-compose.dev.yml exec db psql -U signupflow -d signupflow_dev
+	@$(DOCKER_COMPOSE) -f docker-compose.dev.yml exec db psql -U signupflow -d signupflow_dev
 
 # Open Redis CLI
 redis-shell:
 	@echo "🔴 Opening Redis CLI..."
-	@docker-compose -f docker-compose.dev.yml exec redis redis-cli -a dev_redis_password
+	@$(DOCKER_COMPOSE) -f docker-compose.dev.yml exec redis redis-cli -a dev_redis_password
 
 # ============================================================================
 # Docker-Based E2E Testing (Primary Testing Method)
@@ -384,37 +471,37 @@ redis-shell:
 # Run ALL E2E tests in Docker (use this for daily development)
 test-docker:
 	@echo "🧪 Running ALL E2E tests in Docker container..."
-	@docker-compose -f docker-compose.dev.yml exec -T api pytest tests/e2e/ -v --tb=short
+	@$(DOCKER_COMPOSE) -f docker-compose.dev.yml exec -T api pytest tests/e2e/ -v --tb=short
 
 # Run E2E tests with quick summary (no traceback)
 test-docker-quick:
 	@echo "⚡ Running E2E tests in Docker (quick mode)..."
-	@docker-compose -f docker-compose.dev.yml exec -T api pytest tests/e2e/ -v --tb=no
+	@$(DOCKER_COMPOSE) -f docker-compose.dev.yml exec -T api pytest tests/e2e/ -v --tb=no
 
 # Run E2E tests with summary only
 test-docker-summary:
 	@echo "📊 Running E2E tests in Docker (summary only)..."
-	@docker-compose -f docker-compose.dev.yml exec -T api pytest tests/e2e/ -v --tb=no 2>&1 | grep -E "(PASSED|FAILED|SKIPPED|ERROR|=====|passed|failed|warning)"
+	@$(DOCKER_COMPOSE) -f docker-compose.dev.yml exec -T api pytest tests/e2e/ -v --tb=no 2>&1 | grep -E "(PASSED|FAILED|SKIPPED|ERROR|=====|passed|failed|warning)"
 
 # Phase 1 Task 1: Fix Solver Workflow Tests
 test-docker-solver:
 	@echo "🤖 Running Solver Workflow E2E tests in Docker..."
-	@docker-compose -f docker-compose.dev.yml exec -T api pytest tests/e2e/test_solver_workflow.py -v --tb=short
+	@$(DOCKER_COMPOSE) -f docker-compose.dev.yml exec -T api pytest tests/e2e/test_solver_workflow.py -v --tb=short
 
 # Phase 1 Task 2: Fix Availability Management Tests
 test-docker-availability:
 	@echo "📅 Running Availability Management E2E tests in Docker..."
-	@docker-compose -f docker-compose.dev.yml exec -T api pytest tests/e2e/test_availability_management.py -v --tb=short
+	@$(DOCKER_COMPOSE) -f docker-compose.dev.yml exec -T api pytest tests/e2e/test_availability_management.py -v --tb=short
 
 # Phase 1 Task 3: Test Authentication Flows
 test-docker-auth:
 	@echo "🔐 Running Authentication E2E tests in Docker..."
-	@docker-compose -f docker-compose.dev.yml exec -T api pytest tests/e2e/test_auth_flows.py tests/e2e/test_login_flow.py tests/e2e/test_onboarding_wizard.py -v --tb=short
+	@$(DOCKER_COMPOSE) -f docker-compose.dev.yml exec -T api pytest tests/e2e/test_auth_flows.py tests/e2e/test_login_flow.py tests/e2e/test_onboarding_wizard.py -v --tb=short
 
 # Phase 1 Task 4: Test RBAC Security
 test-docker-rbac:
 	@echo "🛡️  Running RBAC Security E2E tests in Docker..."
-	@docker-compose -f docker-compose.dev.yml exec -T api pytest tests/e2e/test_rbac_security.py -v --tb=short
+	@$(DOCKER_COMPOSE) -f docker-compose.dev.yml exec -T api pytest tests/e2e/test_rbac_security.py -v --tb=short
 
 # Run specific E2E test file in Docker
 test-docker-file:
@@ -423,47 +510,47 @@ test-docker-file:
 		echo "❌ Usage: make test-docker-file FILE=tests/e2e/test_name.py"; \
 		exit 1; \
 	fi
-	@docker-compose -f docker-compose.dev.yml exec -T api pytest $(FILE) -v --tb=short
+	@$(DOCKER_COMPOSE) -f docker-compose.dev.yml exec -T api pytest $(FILE) -v --tb=short
 
 # Run Email Invitation tests in Docker
 test-docker-email:
 	@echo "📧 Running Email Invitation E2E tests in Docker..."
-	@docker-compose -f docker-compose.dev.yml exec -T api pytest tests/e2e/test_email_invitation_workflow.py -v --tb=short
+	@$(DOCKER_COMPOSE) -f docker-compose.dev.yml exec -T api pytest tests/e2e/test_email_invitation_workflow.py -v --tb=short
 
 # Run Calendar tests in Docker
 test-docker-calendar:
 	@echo "📅 Running Calendar E2E tests in Docker..."
-	@docker-compose -f docker-compose.dev.yml exec -T api pytest tests/e2e/test_calendar_features.py -v --tb=short
+	@$(DOCKER_COMPOSE) -f docker-compose.dev.yml exec -T api pytest tests/e2e/test_calendar_features.py -v --tb=short
 
 # Run Language Switching tests in Docker
 test-docker-i18n:
 	@echo "🌍 Running i18n/Language Switching E2E tests in Docker..."
-	@docker-compose -f docker-compose.dev.yml exec -T api pytest tests/e2e/test_language_switching.py -v --tb=short
+	@$(DOCKER_COMPOSE) -f docker-compose.dev.yml exec -T api pytest tests/e2e/test_language_switching.py -v --tb=short
 
 # Run Admin Console tests in Docker
 test-docker-admin:
 	@echo "⚙️  Running Admin Console E2E tests in Docker..."
-	@docker-compose -f docker-compose.dev.yml exec -T api pytest tests/e2e/test_admin_console.py -v --tb=short
+	@$(DOCKER_COMPOSE) -f docker-compose.dev.yml exec -T api pytest tests/e2e/test_admin_console.py -v --tb=short
 
 # Run unit tests in Docker
 test-docker-unit:
 	@echo "🧪 Running unit tests in Docker container..."
-	@docker-compose -f docker-compose.dev.yml exec -T api pytest tests/unit/ -v --tb=short
+	@$(DOCKER_COMPOSE) -f docker-compose.dev.yml exec -T api pytest tests/unit/ -v --tb=short
 
 # Run unit tests (fast mode) in Docker
 test-docker-unit-fast:
 	@echo "⚡ Running fast unit tests in Docker..."
-	@docker-compose -f docker-compose.dev.yml exec -T api pytest tests/unit/ -v --tb=short -m "not slow"
+	@$(DOCKER_COMPOSE) -f docker-compose.dev.yml exec -T api pytest tests/unit/ -v --tb=short -m "not slow"
 
 # Run integration tests in Docker
 test-docker-integration:
 	@echo "🔗 Running integration tests in Docker..."
-	@docker-compose -f docker-compose.dev.yml exec -T api pytest tests/integration/ -v --tb=short
+	@$(DOCKER_COMPOSE) -f docker-compose.dev.yml exec -T api pytest tests/integration/ -v --tb=short
 
 # Run comprehensive test suite in Docker
 test-docker-comprehensive:
 	@echo "🚀 Running comprehensive test suite in Docker..."
-	@docker-compose -f docker-compose.dev.yml exec -T api pytest tests/comprehensive_test_suite.py -v --tb=short
+	@$(DOCKER_COMPOSE) -f docker-compose.dev.yml exec -T api pytest tests/comprehensive_test_suite.py -v --tb=short
 
 # Run ALL tests (unit + integration + E2E) in Docker
 test-docker-all:
@@ -472,56 +559,56 @@ test-docker-all:
 	@echo "================================"
 	@echo "   UNIT TESTS (Docker)"
 	@echo "================================"
-	@docker-compose -f docker-compose.dev.yml exec -T api pytest tests/unit/ -v --tb=short
+	@$(DOCKER_COMPOSE) -f docker-compose.dev.yml exec -T api pytest tests/unit/ -v --tb=short
 	@echo ""
 	@echo "================================"
 	@echo "   INTEGRATION TESTS (Docker)"
 	@echo "================================"
-	@docker-compose -f docker-compose.dev.yml exec -T api pytest tests/integration/ -v --tb=short
+	@$(DOCKER_COMPOSE) -f docker-compose.dev.yml exec -T api pytest tests/integration/ -v --tb=short
 	@echo ""
 	@echo "================================"
 	@echo "   E2E TESTS (Docker)"
 	@echo "================================"
-	@docker-compose -f docker-compose.dev.yml exec -T api pytest tests/e2e/ -v --tb=short
+	@$(DOCKER_COMPOSE) -f docker-compose.dev.yml exec -T api pytest tests/e2e/ -v --tb=short
 	@echo ""
 	@echo "✅ All Docker tests complete!"
 
 # Run tests with Playwright browser automation in Docker
 test-docker-playwright:
 	@echo "🎭 Running Playwright E2E tests in Docker..."
-	@docker-compose -f docker-compose.dev.yml exec -T api pytest tests/e2e/ -v --tb=short --headed
+	@$(DOCKER_COMPOSE) -f docker-compose.dev.yml exec -T api pytest tests/e2e/ -v --tb=short --headed
 
 # Run tests with coverage in Docker
 test-docker-coverage:
 	@echo "📊 Running tests with coverage in Docker..."
-	@docker-compose -f docker-compose.dev.yml exec -T api pytest tests/ --cov=api --cov-report=html --cov-report=term -v --tb=short
+	@$(DOCKER_COMPOSE) -f docker-compose.dev.yml exec -T api pytest tests/ --cov=api --cov-report=html --cov-report=term -v --tb=short
 
 # Run migrations in Docker container
 migrate-docker:
 	@echo "🔄 Running migrations in Docker container..."
-	@docker-compose -f docker-compose.dev.yml exec api alembic upgrade head
+	@$(DOCKER_COMPOSE) -f docker-compose.dev.yml exec api alembic upgrade head
 	@echo "✅ Migrations complete"
 
 # Restart API service only (quick restart after code changes)
 restart-api:
 	@echo "🔄 Restarting API service..."
-	@docker-compose -f docker-compose.dev.yml restart api
+	@$(DOCKER_COMPOSE) -f docker-compose.dev.yml restart api
 	@echo "✅ API restarted"
 
 # Show running services
 ps:
-	@docker-compose -f docker-compose.dev.yml ps
+	@$(DOCKER_COMPOSE) -f docker-compose.dev.yml ps
 
 # Clean Docker volumes and containers
 clean-docker:
 	@echo "🧹 Cleaning Docker volumes and containers..."
-	@docker-compose -f docker-compose.dev.yml down -v
+	@$(DOCKER_COMPOSE) -f docker-compose.dev.yml down -v
 	@echo "✅ Docker cleanup complete"
 
 # Clean everything including Docker images
 clean-docker-all: clean-docker
 	@echo "🧹 Removing Docker images..."
-	@docker-compose -f docker-compose.dev.yml down --rmi all
+	@$(DOCKER_COMPOSE) -f docker-compose.dev.yml down --rmi all
 	@echo "✅ Complete Docker cleanup done"
 
 # Help (default target)

@@ -72,8 +72,23 @@ fi
 if (( TEST_COMMAND_TIMEOUT > 0 )); then
 	require_cmd timeout
 	timeout --preserve-status "${TEST_COMMAND_TIMEOUT}" "$@"
+	EXIT_CODE=$?
 else
 	"$@"
+	EXIT_CODE=$?
+fi
+
+if (( EXIT_CODE != 0 )); then
+	echo "❌ Test command failed with status ${EXIT_CODE}"
+	if command -v bash >/dev/null 2>&1 && [ -f "./scripts/collect_test_logs.sh" ]; then
+		./scripts/collect_test_logs.sh || true
+	else
+		if [[ -f "${TEST_SERVER_LOG}" ]]; then
+			echo "---- Test Server Log (tail) ----"
+			tail -n 200 "${TEST_SERVER_LOG}" || true
+			echo "--------------------------------"
+		fi
+	fi
 fi
 
 # Only tear down the server if we started it and KEEP_ALIVE is disabled.
@@ -81,3 +96,4 @@ if (( SERVER_ALREADY_RUNNING == 1 || TEST_SERVER_KEEP_ALIVE == 1 )); then
 	SPAWNED_SERVER_PID=""
 fi
 
+exit "${EXIT_CODE}"

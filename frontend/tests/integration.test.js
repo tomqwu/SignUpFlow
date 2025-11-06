@@ -5,6 +5,8 @@
  * that unit tests miss.
  */
 
+const { I18n } = require('../js/i18n');
+
 // Mock fetch for testing
 global.fetch = jest.fn();
 
@@ -17,11 +19,52 @@ const localStorageMock = {
 };
 global.localStorage = localStorageMock;
 
+let handleLogin;
+let testI18n;
+
 describe('Frontend Integration Tests', () => {
-    beforeEach(() => {
+    beforeAll(() => {
+        testI18n = new I18n();
+        testI18n.locale = 'en';
+        testI18n.translations = {
+            en: {
+                auth: { login: { error: 'Invalid email or password' } },
+                messages: { errors: { connection_error: 'Connection error. Please try again.' } },
+                common: {}
+            },
+            'zh-CN': {
+                auth: { login: { error: '电子邮件或密码无效' } },
+                messages: { errors: { connection_error: '连接错误。请重试。' } },
+                common: {}
+            }
+        };
+        testI18n.loadedNamespaces = new Set();
+        testI18n.loadNamespaces = jest.fn().mockResolvedValue();
+        testI18n.init = jest.fn().mockResolvedValue(testI18n.locale);
+        testI18n.setLocale = jest.fn(async (locale) => {
+            testI18n.locale = locale;
+            return true;
+        });
+        testI18n.detectLocale = jest.fn(() => testI18n.locale);
+
+        global.i18n = testI18n;
+        global.router = { navigate: jest.fn(), init: jest.fn(), handleRoute: jest.fn() };
+        global.showMainApp = jest.fn();
+        global.saveSession = jest.fn();
+        global.switchView = jest.fn();
+        global.showToast = jest.fn();
+        global.addRecaptchaToken = jest.fn(async (_action, options) => options);
+        global.authFetch = jest.fn();
+
+        ({ handleLogin } = require('../js/app-user'));
+    });
+
+    beforeEach(async () => {
         fetch.mockClear();
         localStorageMock.getItem.mockClear();
         localStorageMock.setItem.mockClear();
+
+        await testI18n.setLocale('en');
 
         // Setup DOM
         document.body.innerHTML = `
@@ -317,8 +360,11 @@ describe('Frontend Integration Tests', () => {
                 }
             };
 
+            const errorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
             const result = await loadUserData(1);
             expect(result).toBeNull();
+            expect(errorSpy).toHaveBeenCalledWith('Failed to load user:', expect.any(Error));
+            errorSpy.mockRestore();
         });
 
         test('should handle 404 responses', async () => {
@@ -331,6 +377,32 @@ describe('Frontend Integration Tests', () => {
             const response = await fetch('/api/people/999');
             expect(response.ok).toBe(false);
             expect(response.status).toBe(404);
+        });
+    });
+
+    describe('Localization Integration', () => {
+        test('should translate invalid login error in zh-CN locale', async () => {
+            await testI18n.setLocale('zh-CN');
+
+            document.body.innerHTML = `
+                <form id="login-form">
+                    <input id="login-email" value="wrong@example.com" />
+                    <input id="login-password" value="wrongpass" />
+                    <div id="login-error" class="error-message hidden"></div>
+                </form>
+            `;
+
+            fetch.mockResolvedValueOnce({
+                ok: false,
+                json: async () => ({ detail: 'Invalid email or password' })
+            });
+
+            const event = { preventDefault: jest.fn() };
+            await handleLogin(event);
+
+            const errorEl = document.getElementById('login-error');
+            expect(errorEl.classList.contains('hidden')).toBe(false);
+            expect(errorEl.textContent).toBe('电子邮件或密码无效');
         });
     });
 });
