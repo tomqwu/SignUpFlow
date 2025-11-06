@@ -8,6 +8,10 @@ viewport sizes and touch interactions.
 import pytest
 from playwright.sync_api import Page, expect
 
+from tests.e2e.helpers import AppConfig, ApiTestClient
+
+pytestmark = pytest.mark.usefixtures("api_server")
+
 
 # Common mobile viewport sizes
 MOBILE_VIEWPORTS = {
@@ -27,7 +31,11 @@ def mobile_page(page: Page):
     return page
 
 
-def test_mobile_login_flow(mobile_page: Page):
+def test_mobile_login_flow(
+    mobile_page: Page,
+    app_config: AppConfig,
+    api_client: ApiTestClient,
+):
     """
     Test complete login flow on mobile device.
 
@@ -40,36 +48,23 @@ def test_mobile_login_flow(mobile_page: Page):
     page = mobile_page
 
     # Create test account
-    import time
-    org_id = f"org_mobile_{int(time.time())}"
-    user_email = f"mobile_user_{int(time.time())}@test.com"
-
-    # Signup via API
-    import requests
-    org_response = requests.post("http://localhost:8000/api/organizations/", json={
-        "id": org_id,
-        "name": "Mobile Test Org"
-    })
-    assert org_response.status_code == 201
-
-    signup_response = requests.post("http://localhost:8000/api/auth/signup", json={
-        "email": user_email,
-        "password": "Test123!",
-        "name": "Mobile User",
-        "org_id": org_id
-    })
-    assert signup_response.status_code == 201
+    org = api_client.create_org()
+    user = api_client.create_user(
+        org_id=org["id"],
+        name="Mobile User",
+        roles=["volunteer"],
+    )
 
     # Test mobile login
-    page.goto("http://localhost:8000/login")
+    page.goto(f"{app_config.app_url}/login")
 
     # Verify form is visible on mobile (use specific login email input)
     email_input = page.locator('#login-email')
     expect(email_input).to_be_visible(timeout=3000)
 
     # Fill login form (simulates mobile keyboard)
-    email_input.fill(user_email)
-    page.locator('#login-password').fill("Test123!")
+    email_input.fill(user["email"])
+    page.locator('#login-password').fill(user["password"])
 
     # Tap login button (touch interaction) - use specific selector
     login_button = page.locator('button[data-i18n="auth.sign_in"]')
@@ -77,7 +72,7 @@ def test_mobile_login_flow(mobile_page: Page):
     login_button.click()
 
     # Verify redirected to schedule (mobile view)
-    expect(page).to_have_url("http://localhost:8000/app/schedule", timeout=5000)
+    expect(page).to_have_url(f"{app_config.app_url}/app/schedule", timeout=5000)
 
     # Verify mobile navigation is visible
     schedule_heading = page.locator('h2[data-i18n="schedule.my_schedule"]')
@@ -317,7 +312,13 @@ def test_mobile_settings_modal(mobile_page: Page):
     ("Pixel 5", MOBILE_VIEWPORTS["pixel_5"]),
     ("Galaxy S21", MOBILE_VIEWPORTS["galaxy_s21"]),
 ])
-def test_multiple_device_sizes_login(page: Page, device_name: str, viewport: dict):
+def test_multiple_device_sizes_login(
+    page: Page,
+    device_name: str,
+    viewport: dict,
+    app_config: AppConfig,
+    api_client: ApiTestClient,
+):
     """
     Test login works on multiple mobile device sizes.
 
@@ -328,26 +329,15 @@ def test_multiple_device_sizes_login(page: Page, device_name: str, viewport: dic
     page.set_viewport_size(viewport)
 
     # Create test account
-    import time
-    import requests
-
-    org_id = f"org_device_{device_name.replace(' ', '_')}_{int(time.time())}"
-    user_email = f"device_{int(time.time())}@test.com"
-
-    requests.post("http://localhost:8000/api/organizations/", json={
-        "id": org_id,
-        "name": f"{device_name} Test Org"
-    })
-
-    requests.post("http://localhost:8000/api/auth/signup", json={
-        "email": user_email,
-        "password": "Test123!",
-        "name": f"{device_name} User",
-        "org_id": org_id
-    })
+    org = api_client.create_org()
+    user = api_client.create_user(
+        org_id=org["id"],
+        name=f"{device_name} User",
+        roles=["volunteer"],
+    )
 
     # Test login on this device
-    page.goto("http://localhost:8000/login")
+    page.goto(f"{app_config.app_url}/login")
 
     # Verify form is visible (use specific login email)
     email_input = page.locator('#login-email')
@@ -358,12 +348,12 @@ def test_multiple_device_sizes_login(page: Page, device_name: str, viewport: dic
     assert actual_width == viewport["width"], f"Device {device_name}: Expected {viewport['width']}px, got {actual_width}px"
 
     # Fill and submit
-    email_input.fill(user_email)
-    page.locator('#login-password').fill("Test123!")
+    email_input.fill(user["email"])
+    page.locator('#login-password').fill(user["password"])
     page.locator('button[data-i18n="auth.sign_in"]').click()
 
     # Verify login succeeded
-    expect(page).to_have_url("http://localhost:8000/app/schedule", timeout=5000)
+    expect(page).to_have_url(f"{app_config.app_url}/app/schedule", timeout=5000)
 
 
 @pytest.mark.skip(reason="App initialization issue: Elements hidden when auth set via localStorage. App requires actual login flow to properly initialize. Core mobile functionality already tested by test_mobile_login_flow.")
