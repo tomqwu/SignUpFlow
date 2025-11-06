@@ -22,6 +22,17 @@ def _get_engine() -> tuple[str, sessionmaker]:
     """
     db_url = os.getenv("DATABASE_URL", "sqlite:///./test_roster.db")
     connect_args = {"check_same_thread": False} if db_url.startswith("sqlite") else {}
+    if db_url.startswith("sqlite:///"):
+        db_path = db_url.replace("sqlite:///", "", 1)
+        if db_path.startswith("./"):
+            db_path = db_path[2:]
+        base_path = os.path.abspath(db_path)
+        if not os.path.exists(base_path):
+            wal_path = f"{base_path}-wal"
+            shm_path = f"{base_path}-shm"
+            for aux_path in (wal_path, shm_path):
+                if os.path.exists(aux_path):
+                    os.remove(aux_path)
     engine = create_engine(db_url, connect_args=connect_args)
     Base.metadata.create_all(bind=engine)
     return db_url, sessionmaker(bind=engine, autoflush=False, autocommit=False)

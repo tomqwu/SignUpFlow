@@ -5,11 +5,13 @@ Covers all API endpoints and critical GUI workflows with blocked dates integrati
 """
 
 import os
+import sys
+import time
+from datetime import datetime, timedelta, date
+
 import pytest
 import requests
-from datetime import datetime, timedelta, date
 from playwright.sync_api import sync_playwright, expect
-import time
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
@@ -33,6 +35,7 @@ def _extract_token_and_context(payload: dict) -> tuple[str | None, list, str | N
 
 def get_auth_headers():
     """Get authentication headers for API requests."""
+    _ensure_admin_user()
     attempts = 0
     while attempts < 3:
         attempts += 1
@@ -43,18 +46,28 @@ def get_auth_headers():
         )
         if response.status_code == 200:
             token, roles, org_id = _extract_token_and_context(response.json())
+            msg = f"[get_auth_headers] attempt {attempts} roles={roles} org={org_id}\n"
+            sys.stdout.write(msg)
+            with open("test-debug.log", "a", encoding="utf-8") as fh:
+                fh.write(msg)
             if "admin" not in roles or org_id != "test_org":
                 _ensure_admin_user()
-                # Retry on next loop iteration
                 continue
             if token:
-                return {"Authorization": f"Bearer {token}"}
+                headers = {"Authorization": f"Bearer {token}"}
+                msg = f"Generated auth headers {headers} roles={roles} org={org_id}\n"
+                sys.stdout.write(msg)
+                with open("test-debug.log", "a", encoding="utf-8") as fh:
+                    fh.write(msg)
+                return headers
         else:
-            print(
-                f"⚠️  Admin login failed: {response.status_code} {response.text}"
-            )
+            msg = f"[get_auth_headers] attempt {attempts} failed with {response.status_code}: {response.text}\n"
+            sys.stdout.write(msg)
+            with open("test-debug.log", "a", encoding="utf-8") as fh:
+                fh.write(msg)
             _bootstrap_admin_via_api()
-    return {}
+            time.sleep(1)
+    raise RuntimeError("Failed to obtain admin auth headers after retries")
 
 
 def _bootstrap_admin_via_api() -> None:
@@ -251,13 +264,15 @@ class TestPeopleAPI:
             "roles": ["volunteer"]
         }
         response = requests.post(f"{API_BASE}/people/", json=data, headers=headers)
-        assert response.status_code in [200, 201, 409]
+        print("create_person response", response.status_code, response.text)
+        assert response.status_code in [200, 201, 409], response.text
 
     def test_list_people(self):
         """List all people in organization"""
         headers = get_auth_headers()
         response = requests.get(f"{API_BASE}/people/?org_id=test_org", headers=headers)
-        assert response.status_code == 200
+        print("list_people response", response.status_code, response.text)
+        assert response.status_code == 200, response.text
         data = response.json()
         assert "people" in data
         assert isinstance(data["people"], list)
@@ -267,7 +282,8 @@ class TestPeopleAPI:
         headers = get_auth_headers()
         # Get first person
         resp = requests.get(f"{API_BASE}/people/?org_id=test_org", headers=headers)
-        assert resp.status_code == 200
+        print("update_person_roles list response", resp.status_code, resp.text)
+        assert resp.status_code == 200, resp.text
         people = resp.json()["people"]
         assert len(people) > 0, "No test person available - setup_test_data() may have failed"
 
@@ -306,12 +322,12 @@ class TestEventsAPI:
             }
         }
         response = requests.post(f"{API_BASE}/events/", json=data, headers=headers)
-        assert response.status_code in [200, 201, 409]
+        assert response.status_code in [200, 201, 409], response.text
 
     def test_list_events(self):
         """List all events"""
         response = requests.get(f"{API_BASE}/events/?org_id=test_org")
-        assert response.status_code == 200
+        assert response.status_code == 200, response.text
         data = response.json()
         assert "events" in data
 
@@ -326,7 +342,7 @@ class TestEventsAPI:
         
         event_id = events[0]["id"]
         response = requests.get(f"{API_BASE}/events/{event_id}/available-people", headers=headers)
-        assert response.status_code == 200
+        assert response.status_code == 200, response.text
         people = response.json()
         assert isinstance(people, list)
         # Check that each person has is_blocked field
@@ -424,7 +440,7 @@ class TestAvailabilityAPI:
                 json=data,
                 headers=headers
             )
-            assert response.status_code == 200
+            assert response.status_code == 200, response.text
     def test_delete_blocked_date(self):
         """Delete a blocked date"""
         headers = get_auth_headers()
@@ -474,7 +490,7 @@ class TestAssignmentsAPI:
             headers=headers
         )
         # 200/201 = success, 409 = already assigned, 400 = validation
-        assert response.status_code in [200, 201, 400, 409]
+        assert response.status_code in [200, 201, 400, 409], response.text
     def test_unassign_person_from_event(self):
         """Unassign a person from an event"""
         headers = get_auth_headers()
@@ -498,7 +514,7 @@ class TestAssignmentsAPI:
             json=data,
             headers=headers
         )
-        assert response.status_code == 200
+        assert response.status_code == 200, response.text
 class TestSolverAPI:
     """Test Schedule Generation (Solver)"""
 
@@ -512,7 +528,7 @@ class TestSolverAPI:
             "mode": "relaxed"
         }
         response = requests.post(f"{API_BASE}/solver/solve", json=data, headers=headers, timeout=30)
-        assert response.status_code in [200, 201]
+        assert response.status_code in [200, 201], response.text
         result = response.json()
         assert "solution_id" in result
 
@@ -576,7 +592,7 @@ class TestPDFExportAPI:
                     headers=headers
                 )
 
-                assert pdf_response.status_code == 200
+                assert pdf_response.status_code == 200, pdf_response.text
                 assert pdf_response.headers["Content-Type"] == "application/pdf"
                 assert len(pdf_response.content) > 0
 

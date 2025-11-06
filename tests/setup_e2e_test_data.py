@@ -218,15 +218,30 @@ def setup_e2e_test_data():
         org_id = event["org_id"]
         if org_id in admin_tokens:
             headers = {"Authorization": f"Bearer {admin_tokens[org_id]}"}
-            resp = requests.post(f"{API_BASE}/events/?org_id={org_id}", json=event, headers=headers)
+            start_dt = datetime.fromisoformat(event["datetime"])
+            end_dt = start_dt + timedelta(minutes=event.get("duration", 60))
+            payload = {
+                "id": event["id"],
+                "org_id": org_id,
+                "type": event.get("type") or event.get("title", "Generated Event"),
+                "start_time": start_dt.isoformat(),
+                "end_time": end_dt.isoformat(),
+                "extra_data": event.get("extra_data") or {"role_counts": {"volunteer": 2, "leader": 1}},
+            }
+            resp = requests.post(
+                f"{API_BASE}/events/",
+                json=payload,
+                headers=headers,
+                timeout=10,
+            )
             if resp.status_code in [200, 201]:
-                print(f"  ✅ Created event: {event['title']}")
+                print(f"  ✅ Created event: {payload['type']}")
             elif resp.status_code == 400:
-                print(f"  ℹ️  Event already exists: {event['title']}")
+                print(f"  ℹ️  Event already exists: {payload['type']}")
             else:
-                print(f"  ⚠️  Failed to create event {event['title']}: {resp.status_code}")
+                print(f"  ⚠️  Failed to create event {payload['type']}: {resp.status_code} - {resp.text}")
         else:
-            print(f"  ⚠️  No admin token for org {org_id}, skipping event {event['title']}")
+            print(f"  ⚠️  No admin token for org {org_id}, skipping event {event.get('title', event['id'])}")
 
     print("\n✅ Comprehensive E2E test data setup complete!\n")
 

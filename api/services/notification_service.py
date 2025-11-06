@@ -6,6 +6,7 @@ triggering Celery tasks for sending emails.
 """
 
 import logging
+import os
 import secrets
 from typing import List, Dict, Any, Optional
 from datetime import datetime
@@ -21,6 +22,26 @@ from api.tasks.notifications import send_email_task
 from api.core.config import settings
 
 logger = logging.getLogger(__name__)
+_TRUTHY_VALUES = {"1", "true", "yes", "on"}
+
+
+def _testing_mode_enabled() -> bool:
+    """Return True when the service is running under a test harness."""
+    env_flag = os.getenv("TESTING")
+    return settings.TESTING or (env_flag is not None and env_flag.lower() in _TRUTHY_VALUES)
+
+
+def _should_queue_email(send_immediately: bool) -> bool:
+    """Centralised gate for deciding whether to enqueue email tasks."""
+    if not send_immediately:
+        return False
+    if _testing_mode_enabled():
+        logger.debug("Notification emails suppressed: testing mode active.")
+        return False
+    if not settings.EMAIL_ENABLED:
+        logger.debug("Notification emails suppressed: EMAIL_ENABLED is false.")
+        return False
+    return True
 
 
 def create_assignment_notifications(
@@ -46,6 +67,13 @@ def create_assignment_notifications(
     created_count = 0
     queued_count = 0
     skipped_count = 0
+
+    queue_emails = _should_queue_email(send_immediately) and settings.EMAIL_SEND_ASSIGNMENT_NOTIFICATIONS
+    logger.debug(
+        "create_assignment_notifications queue_emails=%s send_immediately=%s",
+        queue_emails,
+        send_immediately,
+    )
 
     for assignment_id in assignment_ids:
         # Get assignment details
@@ -117,12 +145,7 @@ def create_assignment_notifications(
         created_count += 1
 
         # Queue email if immediate frequency
-        if (
-            send_immediately
-            and settings.EMAIL_ENABLED
-            and settings.EMAIL_SEND_ASSIGNMENT_NOTIFICATIONS
-            and email_pref.frequency == EmailFrequency.IMMEDIATE
-        ):
+        if queue_emails and email_pref.frequency == EmailFrequency.IMMEDIATE:
             try:
                 send_email_task.delay(notification.id)
                 queued_count += 1
@@ -201,13 +224,10 @@ def create_notification(
     db.add(notification)
     db.flush()
 
+    queue_emails = _should_queue_email(send_immediately) and settings.EMAIL_SEND_UPDATE_NOTIFICATIONS
+
     # Queue email if immediate frequency
-    if (
-        send_immediately
-        and settings.EMAIL_ENABLED
-        and settings.EMAIL_SEND_UPDATE_NOTIFICATIONS
-        and (not email_pref or email_pref.frequency == EmailFrequency.IMMEDIATE)
-    ):
+    if queue_emails and (not email_pref or email_pref.frequency == EmailFrequency.IMMEDIATE):
         try:
             send_email_task.delay(notification.id)
             logger.info(f"Queued email for notification {notification.id}")

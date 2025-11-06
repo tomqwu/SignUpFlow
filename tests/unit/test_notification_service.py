@@ -10,9 +10,12 @@ Tests the core business logic of the notification service including:
 Coverage target: >90% for api/services/notification_service.py
 """
 
-import pytest
 from unittest.mock import Mock, patch
+
+import pytest
 from sqlalchemy.orm import Session
+
+from api.core.config import settings
 from api.services.notification_service import (
     create_assignment_notifications,
     create_notification,
@@ -150,6 +153,81 @@ class TestCreateAssignmentNotifications:
         assert result['skipped'] >= 1
         assert result['created'] == 0
 
+    @patch('api.services.notification_service.send_email_task')
+    def test_suppresses_emails_when_settings_testing_true(self, mock_task, monkeypatch):
+        """Ensure queuing is skipped when global TESTING flag is set."""
+        monkeypatch.setattr(settings, "TESTING", True)
+
+        mock_db = Mock(spec=Session)
+        assignment_id = 1
+
+        mock_assignment = Mock(spec=Assignment)
+        mock_assignment.id = assignment_id
+        mock_assignment.person_id = 1
+        mock_assignment.event_id = 1
+
+        mock_person = Mock(spec=Person)
+        mock_person.id = 1
+        mock_person.org_id = "org_123"
+
+        def query_side_effect(model):
+            mock_query = Mock()
+            if model == Assignment:
+                mock_query.filter.return_value.first.return_value = mock_assignment
+            elif model == Person:
+                mock_query.filter.return_value.first.return_value = mock_person
+            elif model == EmailPreference:
+                mock_pref = Mock(spec=EmailPreference)
+                mock_pref.frequency = EmailFrequency.IMMEDIATE
+                mock_pref.enabled_types = [NotificationType.ASSIGNMENT]
+                mock_query.filter.return_value.first.return_value = mock_pref
+            return mock_query
+
+        mock_db.query.side_effect = query_side_effect
+
+        result = create_assignment_notifications([assignment_id], mock_db, send_immediately=True)
+
+        assert result['queued'] == 0
+        mock_task.delay.assert_not_called()
+
+    @patch('api.services.notification_service.send_email_task')
+    def test_suppresses_emails_when_testing_env_flag(self, mock_task, monkeypatch):
+        """Ensure queuing is skipped when TESTING env var is truthy."""
+        monkeypatch.setattr(settings, "TESTING", False)
+        monkeypatch.setenv("TESTING", "true")
+
+        mock_db = Mock(spec=Session)
+        assignment_id = 1
+
+        mock_assignment = Mock(spec=Assignment)
+        mock_assignment.id = assignment_id
+        mock_assignment.person_id = 1
+        mock_assignment.event_id = 1
+
+        mock_person = Mock(spec=Person)
+        mock_person.id = 1
+        mock_person.org_id = "org_123"
+
+        def query_side_effect(model):
+            mock_query = Mock()
+            if model == Assignment:
+                mock_query.filter.return_value.first.return_value = mock_assignment
+            elif model == Person:
+                mock_query.filter.return_value.first.return_value = mock_person
+            elif model == EmailPreference:
+                mock_pref = Mock(spec=EmailPreference)
+                mock_pref.frequency = EmailFrequency.IMMEDIATE
+                mock_pref.enabled_types = [NotificationType.ASSIGNMENT]
+                mock_query.filter.return_value.first.return_value = mock_pref
+            return mock_query
+
+        mock_db.query.side_effect = query_side_effect
+
+        result = create_assignment_notifications([assignment_id], mock_db, send_immediately=True)
+
+        assert result['queued'] == 0
+        mock_task.delay.assert_not_called()
+
 
 class TestCreateNotification:
     """Test suite for create_notification function."""
@@ -192,6 +270,34 @@ class TestCreateNotification:
         assert notification.status == NotificationStatus.PENDING
         mock_db.add.assert_called_once()
         mock_db.flush.assert_called()
+
+    @patch('api.services.notification_service.send_email_task')
+    def test_create_notification_respects_testing_env(self, mock_task, monkeypatch):
+        """Queue suppression also applies to single notification helper."""
+        monkeypatch.setattr(settings, "TESTING", False)
+        monkeypatch.setenv("TESTING", "true")
+
+        mock_db = Mock(spec=Session)
+
+        mock_pref = Mock(spec=EmailPreference)
+        mock_pref.frequency = EmailFrequency.IMMEDIATE
+        mock_pref.enabled_types = [NotificationType.ASSIGNMENT]
+
+        mock_query = Mock()
+        mock_query.filter.return_value.first.return_value = mock_pref
+        mock_db.query.return_value = mock_query
+
+        notification = create_notification(
+            recipient_id="person_123",
+            org_id="org_123",
+            notification_type=NotificationType.ASSIGNMENT,
+            template_data={},
+            db=mock_db,
+            send_immediately=True
+        )
+
+        assert notification is not None
+        mock_task.delay.assert_not_called()
 
 
 class TestGetPendingNotificationsForDigest:

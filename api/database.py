@@ -2,9 +2,12 @@
 
 import os
 from typing import Generator
+
 from sqlalchemy import create_engine, text
-from sqlalchemy.orm import sessionmaker, Session
+from sqlalchemy.orm import Session, sessionmaker
+
 from api.models import Base
+from api.core.config import settings
 
 # Database URL - can be configured via environment variable
 DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./roster.db")
@@ -30,13 +33,19 @@ SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 def init_db() -> None:
     """Initialize database tables."""
+    if settings.TESTING or os.getenv("TESTING"):
+        print(f"[init_db] cwd={os.getcwd()} DATABASE_URL={DATABASE_URL}")
     Base.metadata.create_all(bind=engine)
 
-    # Enable WAL mode for better concurrency in SQLite
+    # Enable WAL mode for better concurrency in SQLite unless running tests
     if DATABASE_URL.startswith("sqlite"):
+        env_testing = os.getenv("TESTING", "").lower() in {"1", "true", "yes", "on"}
         with engine.connect() as conn:
-            conn.execute(text("PRAGMA journal_mode=WAL"))
-            conn.execute(text("PRAGMA synchronous=NORMAL"))  # Balance between safety and performance
+            if settings.TESTING or env_testing:
+                conn.execute(text("PRAGMA journal_mode=DELETE"))
+            else:
+                conn.execute(text("PRAGMA journal_mode=WAL"))
+                conn.execute(text("PRAGMA synchronous=NORMAL"))  # Balance between safety and performance
             conn.commit()
 
 

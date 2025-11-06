@@ -4,9 +4,17 @@ import os
 from datetime import datetime, timedelta
 from typing import Optional
 
+import bcrypt
+from fastapi import HTTPException, status
 from jose import JWTError, jwt
 from passlib.context import CryptContext
-from fastapi import HTTPException, status
+
+# passlib<1.7.5 expects bcrypt.__about__.__version__; newer bcrypt dropped it.
+if not hasattr(bcrypt, "__about__"):
+    class _BcryptAbout:
+        __version__ = getattr(bcrypt, "__version__", "0")
+
+    bcrypt.__about__ = _BcryptAbout()
 
 # JWT Configuration
 SECRET_KEY = os.getenv("SECRET_KEY", "your-secret-key-change-in-production-use-env-var")
