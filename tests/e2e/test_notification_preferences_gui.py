@@ -57,12 +57,16 @@ import pytest
 from playwright.sync_api import Page, expect
 import time
 
+from tests.e2e.helpers import AppConfig
+
+pytestmark = pytest.mark.usefixtures("api_server")
+
 
 @pytest.fixture(scope="function")
-def user_login(page: Page):
+def user_login(page: Page, app_config: AppConfig):
     """Login as regular user for notification preferences tests."""
     # Navigate directly to login page
-    page.goto("http://localhost:8000/login")
+    page.goto(f"{app_config.app_url}/login")
     page.wait_for_load_state("networkidle")
 
     # Verify login screen is visible
@@ -77,17 +81,17 @@ def user_login(page: Page):
     page.wait_for_timeout(2000)
 
     # Verify logged in
-    expect(page).to_have_url("http://localhost:8000/app/schedule")
+    expect(page).to_have_url(f"{app_config.app_url}/app/schedule")
     expect(page.locator("#main-app")).to_be_visible()
 
     return page
 
 
 @pytest.fixture(scope="function")
-def admin_login(page: Page):
+def admin_login(page: Page, app_config: AppConfig):
     """Login as admin for test notification feature."""
     # Navigate directly to login page
-    page.goto("http://localhost:8000/login")
+    page.goto(f"{app_config.app_url}/login")
     page.wait_for_load_state("networkidle")
 
     # Verify login screen is visible
@@ -102,7 +106,7 @@ def admin_login(page: Page):
     page.wait_for_timeout(2000)
 
     # Verify logged in
-    expect(page).to_have_url("http://localhost:8000/app/schedule")
+    expect(page).to_have_url(f"{app_config.app_url}/app/schedule")
     expect(page.locator("#main-app")).to_be_visible()
 
     return page
