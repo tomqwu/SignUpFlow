@@ -39,7 +39,9 @@ import pytest
 import requests
 from playwright.sync_api import sync_playwright, expect
 
-API_BASE = "http://localhost:8000/api"
+from tests.e2e.helpers import AppConfig
+
+pytestmark = pytest.mark.usefixtures("api_server")
 
 
 @pytest.mark.skip(reason="Infrastructure test requires production environment paths (/home/ubuntu/rostio/). Not applicable to Docker test environment. Test production backup scripts manually on production server.")
@@ -74,7 +76,7 @@ def test_database_backup():
 
 
 @pytest.mark.skip(reason="Test needs auth refactor - creates/queries people without JWT tokens. Infrastructure test, not core user workflow.")
-def test_database_restore():
+def test_database_restore(app_config: AppConfig):
     """Test database restore script restores from backup."""
     # First, create a backup
     subprocess.run(
@@ -92,7 +94,7 @@ def test_database_restore():
 
     # Modify database slightly
     resp = requests.post(
-        f"{API_BASE}/organizations/test_restore_org/people",
+        f"{app_config.app_url}/api/organizations/test_restore_org/people",
         json={"id": "test_restore_person", "name": "Restore Test", "email": "restore@test.com"},
     )
 
@@ -110,7 +112,7 @@ def test_database_restore():
     assert "✅ Database Restored Successfully!" in stdout
 
     # Verify database was restored (person should not exist)
-    resp = requests.get(f"{API_BASE}/people/test_restore_person")
+    resp = requests.get(f"{app_config.app_url}/api/people/test_restore_person")
     assert resp.status_code == 404, "Database was not properly restored"
 
     # Verify safety backup was created
