@@ -19,54 +19,15 @@ import requests
 from playwright.sync_api import Page, expect
 from datetime import datetime, timedelta
 
+from tests.e2e.helpers import AppConfig, ApiTestClient, login_via_ui
 
-@pytest.fixture
-def api_base_url():
-    """API base URL for backend calls."""
-    return "http://localhost:8000/api"
+pytestmark = pytest.mark.usefixtures("api_server")
 
 
-@pytest.fixture
-def admin_token(api_base_url):
-    """
-    Login as admin and return JWT token.
-
-    Uses existing test account: pastor@grace.church / password
-    """
-    response = requests.post(
-        f"{api_base_url}/auth/login",
-        json={
-            "email": "pastor@grace.church",
-            "password": "password"
-        }
-    )
-    assert response.status_code == 200, f"Login failed: {response.text}"
-    data = response.json()
-    return data["token"]
-
-
-@pytest.fixture
-def volunteer_token(api_base_url):
-    """
-    Login as volunteer and return JWT token.
-
-    Uses existing test account (assumes volunteer exists in test data)
-    """
-    # Try to find a volunteer in the organization
-    # If no volunteer exists, this test will skip volunteer verification
-    response = requests.post(
-        f"{api_base_url}/auth/login",
-        json={
-            "email": "volunteer@grace.church",  # Assumes volunteer account exists
-            "password": "password"
-        }
-    )
-    if response.status_code == 200:
-        return response.json()["token"]
-    return None
-
-
-def test_assignment_notification_api_workflow(api_base_url, admin_token):
+def test_assignment_notification_api_workflow(
+    app_config: AppConfig,
+    api_client: ApiTestClient,
+):
     """
     Test assignment notification via API calls (backend-only test).
 
@@ -76,17 +37,17 @@ def test_assignment_notification_api_workflow(api_base_url, admin_token):
     3. Notification has correct type, status, and recipient
     4. Email preferences respected
     """
-    headers = {"Authorization": f"Bearer {admin_token}"}
+    # Setup: Create test organization and users
+    org = api_client.create_org()
+    admin = api_client.create_user(org_id=org["id"], name="Test Admin", roles=["admin"])
+    volunteer = api_client.create_user(org_id=org["id"], name="Test Volunteer", roles=["volunteer"])
 
-    # Step 1: Get admin's organization
-    me_response = requests.get(f"{api_base_url}/people/me", headers=headers)
-    assert me_response.status_code == 200
-    admin_data = me_response.json()
-    org_id = admin_data["org_id"]
+    headers = {"Authorization": f"Bearer {admin['token']}"}
+    org_id = org["id"]
 
     # Step 2: Get or create a test event
     events_response = requests.get(
-        f"{api_base_url}/events/?org_id={org_id}",
+        f"{app_config.api_base}/events/?org_id={org_id}",
         headers=headers
     )
     assert events_response.status_code == 200
@@ -100,7 +61,7 @@ def test_assignment_notification_api_workflow(api_base_url, admin_token):
         end_time = start_time + timedelta(minutes=60)  # 60-minute duration
 
         create_event_response = requests.post(
-            f"{api_base_url}/events/?org_id={org_id}",
+            f"{app_config.api_base}/events/?org_id={org_id}",
             headers=headers,
             json={
                 "id": event_id_unique,
@@ -118,27 +79,11 @@ def test_assignment_notification_api_workflow(api_base_url, admin_token):
         event = events[0]
 
     event_id = event["id"]
+    volunteer_id = volunteer["person_id"]
 
-    # Step 3: Get volunteers from the organization
-    people_response = requests.get(
-        f"{api_base_url}/people/?org_id={org_id}",
-        headers=headers
-    )
-    assert people_response.status_code == 200
-    people_data = people_response.json()
-    people = people_data["people"]  # API returns {"people": [...], "total": X}
-
-    # Find a volunteer (someone who's not admin)
-    volunteers = [p for p in people if "volunteer" in p.get("roles", [])]
-    if not volunteers:
-        pytest.skip("No volunteers in test organization - cannot test assignment notifications")
-
-    volunteer = volunteers[0]
-    volunteer_id = volunteer["id"]
-
-    # Step 4: Assign volunteer to event (this should trigger notification)
+    # Step 3: Assign volunteer to event (this should trigger notification)
     assign_response = requests.post(
-        f"{api_base_url}/events/{event_id}/assignments",
+        f"{app_config.api_base}/events/{event_id}/assignments",
         headers=headers,
         json={
             "person_id": volunteer_id,
@@ -161,20 +106,16 @@ def test_assignment_notification_api_workflow(api_base_url, admin_token):
         assert assign_response.status_code == 200, f"Assignment failed: {assign_response.text}"
         assignment_data = assign_response.json()
 
-    # Step 5: Verify notification created
+    # Step 4: Verify notification created
     notifications_response = requests.get(
-        f"{api_base_url}/notifications/?org_id={org_id}",
-        headers={"Authorization": f"Bearer {admin_token}"}  # Admin viewing as volunteer
+        f"{app_config.api_base}/notifications/?org_id={org_id}",
+        headers={"Authorization": f"Bearer {admin['token']}"}
     )
 
-    # Note: Admin sees their own notifications, not volunteer's
-    # To verify volunteer's notification, we'd need to login as volunteer
-    # For now, we verify notification creation via database directly
-
-    # Step 6: Get organization notification stats (admin-only)
+    # Step 5: Get organization notification stats (admin-only)
     # NOTE: Notification stats endpoint not implemented yet - skip for now
     stats_response = requests.get(
-        f"{api_base_url}/notifications/stats/organization?org_id={org_id}",
+        f"{app_config.api_base}/notifications/stats/organization?org_id={org_id}",
         headers=headers
     )
 
@@ -195,7 +136,11 @@ def test_assignment_notification_api_workflow(api_base_url, admin_token):
         print(f"   - Notification stats endpoint returned: {stats_response.status_code}")
 
 
-def test_assignment_notification_full_e2e(page: Page):
+def test_assignment_notification_full_e2e(
+    page: Page,
+    app_config: AppConfig,
+    api_client: ApiTestClient,
+):
     """
     Test complete assignment notification workflow in browser.
 
@@ -210,17 +155,16 @@ def test_assignment_notification_full_e2e(page: Page):
     which requires Celery worker and Mailtrap/SendGrid.
     Email sending is tested separately in manual validation.
     """
-    # Step 1: Login as admin
-    page.goto("http://localhost:8000/login")
-    page.wait_for_load_state("networkidle")
+    # Setup: Create test organization and admin user
+    org = api_client.create_org()
+    admin = api_client.create_user(org_id=org["id"], name="Test Admin", roles=["admin"])
 
-    page.fill("#login-email", "pastor@grace.church")
-    page.fill("#login-password", "password")
-    page.get_by_role("button", name="Sign In").click()
-    page.wait_for_timeout(2000)
+    # Step 1: Login as admin
+    login_via_ui(page, app_config.app_url, admin["email"], admin["password"])
+    expect(page.locator('#main-app')).to_be_visible(timeout=10000)
 
     # Should be logged in
-    expect(page).to_have_url("http://localhost:8000/app/schedule")
+    expect(page).to_have_url(f"{app_config.app_url}/app/schedule")
 
     # Step 2: Navigate to admin console
     # Look for Admin Console link/button
@@ -245,7 +189,11 @@ def test_assignment_notification_full_e2e(page: Page):
         print("   Backend API test (test_assignment_notification_api_workflow) validates core functionality")
 
 
-def test_volunteer_views_notification(page: Page, api_base_url):
+def test_volunteer_views_notification(
+    page: Page,
+    app_config: AppConfig,
+    api_client: ApiTestClient,
+):
     """
     Test volunteer can view their assignment notification.
 
@@ -257,16 +205,15 @@ def test_volunteer_views_notification(page: Page, api_base_url):
 
     **Note**: This test is optional as notification viewing UI may not be implemented yet.
     """
-    # Try to login as volunteer
-    page.goto("http://localhost:8000/login")
-    page.wait_for_load_state("networkidle")
+    # Setup: Create test organization and volunteer user
+    org = api_client.create_org()
+    volunteer = api_client.create_user(org_id=org["id"], name="Test Volunteer", roles=["volunteer"])
 
-    page.fill("#login-email", "volunteer@grace.church")
-    page.fill("#login-password", "password")
+    # Try to login as volunteer
+    login_via_ui(page, app_config.app_url, volunteer["email"], volunteer["password"])
 
     try:
-        page.get_by_role("button", name="Sign In").click()
-        page.wait_for_timeout(2000)
+        expect(page.locator('#main-app')).to_be_visible(timeout=10000)
 
         # If login successful, volunteer can view their schedule
         if "app/schedule" in page.url:
@@ -281,7 +228,10 @@ def test_volunteer_views_notification(page: Page, api_base_url):
         print("   This is expected if volunteer accounts not set up in test data")
 
 
-def test_notification_preferences_api(api_base_url, admin_token):
+def test_notification_preferences_api(
+    app_config: AppConfig,
+    api_client: ApiTestClient,
+):
     """
     Test email notification preferences management via API.
 
@@ -291,11 +241,15 @@ def test_notification_preferences_api(api_base_url, admin_token):
     3. User gets updated preferences
     4. Preferences are saved correctly
     """
-    headers = {"Authorization": f"Bearer {admin_token}"}
+    # Setup: Create test organization and admin user
+    org = api_client.create_org()
+    admin = api_client.create_user(org_id=org["id"], name="Test Admin", roles=["admin"])
+
+    headers = {"Authorization": f"Bearer {admin['token']}"}
 
     # Step 1: Get current email preferences
     prefs_response = requests.get(
-        f"{api_base_url}/notifications/preferences/me",
+        f"{app_config.api_base}/notifications/preferences/me",
         headers=headers
     )
     assert prefs_response.status_code == 200
@@ -307,7 +261,7 @@ def test_notification_preferences_api(api_base_url, admin_token):
 
     # Step 2: Update preferences
     update_response = requests.put(
-        f"{api_base_url}/notifications/preferences/me",
+        f"{app_config.api_base}/notifications/preferences/me",
         headers=headers,
         json={
             "frequency": "daily",
@@ -328,7 +282,7 @@ def test_notification_preferences_api(api_base_url, admin_token):
 
     # Step 4: Restore original preferences
     restore_response = requests.put(
-        f"{api_base_url}/notifications/preferences/me",
+        f"{app_config.api_base}/notifications/preferences/me",
         headers=headers,
         json={
             "frequency": original_prefs.get("frequency", "immediate"),
