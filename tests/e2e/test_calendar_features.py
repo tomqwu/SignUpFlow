@@ -3,18 +3,32 @@
 import pytest
 from playwright.sync_api import Page, expect
 
+from tests.e2e.helpers import AppConfig, ApiTestClient, login_via_ui
 
-def test_export_personal_calendar(page: Page):
+
+pytestmark = pytest.mark.usefixtures("api_server")
+
+
+def test_export_personal_calendar(
+    page: Page,
+    app_config: AppConfig,
+    api_client: ApiTestClient,
+):
     """Test exporting personal calendar as ICS file."""
+    # Setup: Create test organization and user
+    org = api_client.create_org()
+    user = api_client.create_user(
+        org_id=org["id"],
+        name="Test User",
+        roles=["volunteer"],
+    )
+
     # Login
-    page.goto("http://localhost:8000/login")
-    page.fill("#login-email", "pastor@grace.church")
-    page.fill("#login-password", "password")
-    page.get_by_role("button", name="Sign In").click()
-    page.wait_for_timeout(2000)
+    login_via_ui(page, app_config.app_url, user["email"], user["password"])
+    expect(page.locator('#main-app')).to_be_visible(timeout=10000)
 
     # Navigate to schedule view
-    page.goto("http://localhost:8000/app/schedule")
+    page.goto(f"{app_config.app_url}/app/schedule")
     page.wait_for_timeout(1000)
 
     # Look for export button - check if it exists
@@ -37,17 +51,26 @@ def test_export_personal_calendar(page: Page):
         print("⚠️  Export button not found - feature may not be implemented yet")
 
 
-def test_get_webcal_subscription_url(page: Page):
+def test_get_webcal_subscription_url(
+    page: Page,
+    app_config: AppConfig,
+    api_client: ApiTestClient,
+):
     """Test getting webcal subscription URL."""
+    # Setup: Create test organization and user
+    org = api_client.create_org()
+    user = api_client.create_user(
+        org_id=org["id"],
+        name="Test User",
+        roles=["volunteer"],
+    )
+
     # Login
-    page.goto("http://localhost:8000/login")
-    page.fill("#login-email", "pastor@grace.church")
-    page.fill("#login-password", "password")
-    page.get_by_role("button", name="Sign In").click()
-    page.wait_for_timeout(2000)
+    login_via_ui(page, app_config.app_url, user["email"], user["password"])
+    expect(page.locator('#main-app')).to_be_visible(timeout=10000)
 
     # Navigate to schedule
-    page.goto("http://localhost:8000/app/schedule")
+    page.goto(f"{app_config.app_url}/app/schedule")
     page.wait_for_timeout(1000)
 
     # Look for subscribe button
@@ -64,10 +87,13 @@ def test_get_webcal_subscription_url(page: Page):
             assert 'webcal://' in webcal_url or 'feed' in webcal_url
 
 
-def test_calendar_feed_endpoint(page: Page):
+def test_calendar_feed_endpoint(
+    page: Page,
+    app_config: AppConfig,
+):
     """Test that calendar feed endpoint returns ICS data."""
     # This requires a valid token, so we'll test the endpoint exists
-    response = page.request.get("http://localhost:8000/api/calendar/feed/test_token")
+    response = page.request.get(f"{app_config.api_base}/calendar/feed/test_token")
 
     # Should return 401 for invalid token (security working)
     # or 200 with ICS data for valid token
@@ -75,17 +101,26 @@ def test_calendar_feed_endpoint(page: Page):
     print(f"✅ Calendar feed endpoint status: {response.status}")
 
 
-def test_admin_can_export_org_calendar(page: Page):
+def test_admin_can_export_org_calendar(
+    page: Page,
+    app_config: AppConfig,
+    api_client: ApiTestClient,
+):
     """Test that admin can export organization calendar."""
+    # Setup: Create test organization and admin user
+    org = api_client.create_org()
+    user = api_client.create_user(
+        org_id=org["id"],
+        name="Test Admin",
+        roles=["admin"],
+    )
+
     # Login as admin
-    page.goto("http://localhost:8000/login")
-    page.fill("#login-email", "pastor@grace.church")
-    page.fill("#login-password", "password")
-    page.get_by_role("button", name="Sign In").click()
-    page.wait_for_timeout(2000)
+    login_via_ui(page, app_config.app_url, user["email"], user["password"])
+    expect(page.locator('#main-app')).to_be_visible(timeout=10000)
 
     # Navigate to admin console
-    page.goto("http://localhost:8000/app/admin")
+    page.goto(f"{app_config.app_url}/app/admin")
     page.wait_for_timeout(1000)
 
     # Look for organization export
