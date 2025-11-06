@@ -163,10 +163,11 @@ def test_volunteer_sees_assigned_event_in_schedule(page: Page, app_config: AppCo
     expect(event_card).to_be_visible(timeout=5000)
     print(f"  ✓ Event '{event_type}' appears in volunteer's schedule")
 
-    # Check for role badge
-    role_badge = page.locator('text="usher"').first
-    expect(role_badge).to_be_visible(timeout=3000)
-    print("  ✓ Role 'usher' displayed in schedule")
+    # Check for role display (role is translated/capitalized: "usher" → "Usher")
+    # Role is displayed as: 📋 Role: <strong>Usher</strong>
+    role_text = page.locator('text="Usher"').first
+    expect(role_text).to_be_visible(timeout=3000)
+    print("  ✓ Role 'Usher' displayed in schedule")
 
     # Step 6: Verify assignment via API
     print("\nStep 6: Verifying assignment via API...")
