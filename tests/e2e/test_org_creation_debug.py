@@ -5,8 +5,12 @@ import pytest
 from playwright.sync_api import Page, expect, Route
 import json
 
+from tests.e2e.helpers import AppConfig
 
-def test_create_organization_with_network_inspection(page: Page):
+pytestmark = pytest.mark.usefixtures("api_server")
+
+
+def test_create_organization_with_network_inspection(page: Page, app_config: AppConfig):
     """Test org creation and inspect all network traffic."""
     import time
 
@@ -57,7 +61,7 @@ def test_create_organization_with_network_inspection(page: Page):
     }))
 
     # Navigate to the app
-    page.goto("http://localhost:8000")
+    page.goto(f"{app_config.app_url}/")
     page.wait_for_load_state("networkidle")
 
     # Click "Get Started"
