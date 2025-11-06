@@ -32,31 +32,32 @@ import pytest
 from playwright.sync_api import Page, expect
 import time
 
+from tests.e2e.helpers import AppConfig, ApiTestClient, login_via_ui
+
+pytestmark = pytest.mark.usefixtures("api_server")
+
 
 @pytest.fixture(scope="function")
-def admin_login(page: Page):
+def admin_login(
+    page: Page,
+    app_config: AppConfig,
+    api_client: ApiTestClient,
+):
     """Login as admin for constraints tests."""
-    # Navigate directly to login page
-    page.goto("http://localhost:8000/login")
-    page.wait_for_load_state("networkidle")
+    # Setup: Create test organization and admin user
+    org = api_client.create_org()
+    admin = api_client.create_user(
+        org_id=org["id"],
+        name="Test Admin",
+        roles=["admin"],
+    )
 
-    # Verify login screen is visible
-    expect(page.locator("#login-screen")).to_be_visible(timeout=5000)
-
-    # Fill login form
-    page.fill("#login-email", "pastor@grace.church")
-    page.fill("#login-password", "password")
-
-    # Submit login
-    page.get_by_role("button", name="Sign In").click()
-    page.wait_for_timeout(2000)
-
-    # Verify logged in
-    expect(page).to_have_url("http://localhost:8000/app/schedule")
-    expect(page.locator("#main-app")).to_be_visible()
+    # Login as admin
+    login_via_ui(page, app_config.app_url, admin["email"], admin["password"])
+    expect(page.locator('#main-app')).to_be_visible(timeout=10000)
 
     # Navigate to admin console
-    page.goto("http://localhost:8000/app/admin")
+    page.goto(f"{app_config.app_url}/app/admin")
     page.wait_for_timeout(1000)
 
     # Click Constraints tab
