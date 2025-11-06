@@ -8,37 +8,33 @@ the API returns undefined or empty data.events array.
 import pytest
 from playwright.sync_api import Page, expect
 
+from tests.e2e.helpers import AppConfig, ApiTestClient, login_via_ui
 
-def test_events_view_handles_empty_response(page: Page):
+pytestmark = pytest.mark.usefixtures("api_server")
+
+
+def test_events_view_handles_empty_response(
+    page: Page,
+    app_config: AppConfig,
+    api_client: ApiTestClient,
+):
     """
     Test that Events view doesn't crash with forEach error when API returns empty events.
 
     Bug: "Error: Cannot read properties of undefined (reading 'forEach')"
     Fix: Added defensive array validation in loadAdminEvents() at line 1593 and 1627
     """
-    # Create organization and admin user
-    page.goto("http://localhost:8000/")
+    # Setup: Create test organization and admin user
+    org = api_client.create_org()
+    admin = api_client.create_user(
+        org_id=org["id"],
+        name="Test Admin",
+        roles=["admin"],
+    )
 
-    # Click Get Started
-    page.locator('[data-i18n="auth.get_started"]').click()
-
-    # Fill organization form
-    page.fill('input[name="org_name"]', 'Test Org Events')
-    page.fill('input[name="org_region"]', 'Test Region')
-    page.fill('input[name="org_timezone"]', 'America/New_York')
-    page.click('button[type="submit"]')
-
-    # Wait for signup form
-    page.wait_for_selector('input[name="name"]')
-
-    # Fill signup form
-    page.fill('input[name="name"]', 'Test Admin')
-    page.fill('input[name="email"]', f'admin_events_test_{page.evaluate("Date.now()")}@example.com')
-    page.fill('input[name="password"]', 'Test123!@#')
-    page.click('button[type="submit"]')
-
-    # Wait for main app to load
-    page.wait_for_selector('h2[data-i18n="schedule.my_schedule"]')
+    # Login as admin
+    login_via_ui(page, app_config.app_url, admin["email"], admin["password"])
+    expect(page.locator('#main-app')).to_be_visible(timeout=10000)
 
     # Navigate to Admin Console
     page.click('button[data-i18n="common.buttons.admin_console"]')
@@ -66,33 +62,25 @@ def test_events_view_handles_empty_response(page: Page):
     assert len(foreach_errors) == 0, f"Found forEach errors: {foreach_errors}"
 
 
-def test_events_view_with_actual_events(page: Page):
+def test_events_view_with_actual_events(
+    page: Page,
+    app_config: AppConfig,
+    api_client: ApiTestClient,
+):
     """
     Test that Events view correctly displays events when API returns valid data.
     """
-    # Create organization and admin user
-    page.goto("http://localhost:8000/")
+    # Setup: Create test organization and admin user
+    org = api_client.create_org()
+    admin = api_client.create_user(
+        org_id=org["id"],
+        name="Test Admin",
+        roles=["admin"],
+    )
 
-    # Click Get Started
-    page.locator('[data-i18n="auth.get_started"]').click()
-
-    # Fill organization form
-    page.fill('input[name="org_name"]', 'Test Org With Events')
-    page.fill('input[name="org_region"]', 'Test Region')
-    page.fill('input[name="org_timezone"]', 'America/New_York')
-    page.click('button[type="submit"]')
-
-    # Wait for signup form
-    page.wait_for_selector('input[name="name"]')
-
-    # Fill signup form
-    page.fill('input[name="name"]', 'Test Admin')
-    page.fill('input[name="email"]', f'admin_with_events_{page.evaluate("Date.now()")}@example.com')
-    page.fill('input[name="password"]', 'Test123!@#')
-    page.click('button[type="submit"]')
-
-    # Wait for main app to load
-    page.wait_for_selector('h2[data-i18n="schedule.my_schedule"]')
+    # Login as admin
+    login_via_ui(page, app_config.app_url, admin["email"], admin["password"])
+    expect(page.locator('#main-app')).to_be_visible(timeout=10000)
 
     # Navigate to Admin Console
     page.click('button[data-i18n="common.buttons.admin_console"]')
