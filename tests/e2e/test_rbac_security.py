@@ -11,6 +11,7 @@ Tests comprehensive role-based access control including:
 import os
 import pytest
 import requests
+import time
 from datetime import datetime, timedelta
 from passlib.context import CryptContext
 
@@ -60,11 +61,19 @@ def test_users(test_organizations, app_config: AppConfig):
     """
 
     # All users to create
+    timestamp = int(time.time() * 1000)
+
+    def unique_email(label: str, domain: str) -> str:
+        safe_label = label.replace(" ", ".").lower()
+        return f"{safe_label}.{timestamp}@{domain}"
+
+    _person_id_cache.clear()
+
     all_user_data = [
         # Organization Alpha users
         {
             "name": "Amy Admin",
-            "email": "amy.admin@alpha.com",
+            "email": unique_email("amy.admin", "alpha.com"),
             "password": "test123",
             "org_id": "org_alpha",
             "desired_roles": ["admin"],  # First user, becomes admin automatically
@@ -72,7 +81,7 @@ def test_users(test_organizations, app_config: AppConfig):
         },
         {
             "name": "Alice Volunteer",
-            "email": "alice.volunteer@alpha.com",
+            "email": unique_email("alice.volunteer", "alpha.com"),
             "password": "test123",
             "org_id": "org_alpha",
             "desired_roles": ["volunteer"],
@@ -80,7 +89,7 @@ def test_users(test_organizations, app_config: AppConfig):
         },
         {
             "name": "Alex Manager",
-            "email": "alex.manager@alpha.com",
+            "email": unique_email("alex.manager", "alpha.com"),
             "password": "test123",
             "org_id": "org_alpha",
             "desired_roles": ["manager"],
@@ -89,7 +98,7 @@ def test_users(test_organizations, app_config: AppConfig):
         # Organization Beta users
         {
             "name": "Ben Admin",
-            "email": "ben.admin@beta.com",
+            "email": unique_email("ben.admin", "beta.com"),
             "password": "test123",
             "org_id": "org_beta",
             "desired_roles": ["admin"],  # First user, becomes admin automatically
@@ -97,7 +106,7 @@ def test_users(test_organizations, app_config: AppConfig):
         },
         {
             "name": "Bob Volunteer",
-            "email": "bob.volunteer@beta.com",
+            "email": unique_email("bob.volunteer", "beta.com"),
             "password": "test123",
             "org_id": "org_beta",
             "desired_roles": ["volunteer"],
@@ -164,49 +173,14 @@ def test_users(test_organizations, app_config: AppConfig):
                     print(f"⚠ Failed to update roles for {user['name']}: {resp.status_code}")
 
     # Return all users for reference
-    all_users = [
-        {
-            "name": "Alice Volunteer",
-            "email": "alice.volunteer@alpha.com",
-            "password": "test123",
-            "org_id": "org_alpha",
-            "roles": ["volunteer"],
-            "person_id": "person_alice_volunteer"
-        },
-        {
-            "name": "Alex Manager",
-            "email": "alex.manager@alpha.com",
-            "password": "test123",
-            "org_id": "org_alpha",
-            "roles": ["manager"],
-            "person_id": "person_alex_manager"
-        },
-        {
-            "name": "Amy Admin",
-            "email": "amy.admin@alpha.com",
-            "password": "test123",
-            "org_id": "org_alpha",
-            "roles": ["admin"],
-            "person_id": "person_amy_admin"
-        },
-        {
-            "name": "Bob Volunteer",
-            "email": "bob.volunteer@beta.com",
-            "password": "test123",
-            "org_id": "org_beta",
-            "roles": ["volunteer"],
-            "person_id": "person_bob_volunteer"
-        },
-        {
-            "name": "Ben Admin",
-            "email": "ben.admin@beta.com",
-            "password": "test123",
-            "org_id": "org_beta",
-            "roles": ["admin"],
-            "person_id": "person_ben_admin"
-        },
-    ]
-    return all_users
+    user_lookup = {
+        "alpha_volunteer": next(u for u in all_user_data if u["name"] == "Alice Volunteer"),
+        "alpha_manager": next(u for u in all_user_data if u["name"] == "Alex Manager"),
+        "alpha_admin": next(u for u in all_user_data if u["name"] == "Amy Admin"),
+        "beta_volunteer": next(u for u in all_user_data if u["name"] == "Bob Volunteer"),
+        "beta_admin": next(u for u in all_user_data if u["name"] == "Ben Admin"),
+    }
+    return user_lookup
 
 
 def get_auth_token(app_config: AppConfig, email: str, password: str) -> tuple[str, dict]:
@@ -222,10 +196,10 @@ def get_auth_token(app_config: AppConfig, email: str, password: str) -> tuple[st
     return data["token"], data
 
 
-def get_person_id(app_config: AppConfig, email: str) -> str:
+def get_person_id(app_config: AppConfig, email: str, password: str) -> str:
     """Get person_id for an email (must login first)."""
     if email not in _person_id_cache:
-        token, data = get_auth_token(app_config, email, "test123")
+        token, data = get_auth_token(app_config, email, password)
         return data["person_id"]
     return _person_id_cache[email]
 
@@ -241,10 +215,14 @@ def get_headers(token: str) -> dict:
 
 def test_volunteer_can_view_own_organization_people(test_users, app_config: AppConfig):
     """Volunteer can view people from their own organization."""
-    token, _ = get_auth_token(app_config, "alice.volunteer@alpha.com", "test123")
+    volunteer = test_users["alpha_volunteer"]
+    token, _ = get_auth_token(app_config, volunteer["email"], volunteer["password"])
     headers = get_headers(token)
 
-    resp = requests.get(f"{app_config.app_url}/api/people/?org_id=org_alpha", headers=headers)
+    resp = requests.get(
+        f"{app_config.app_url}/api/people/?org_id={volunteer['org_id']}",
+        headers=headers,
+    )
     assert resp.status_code == 200, f"Expected 200, got {resp.status_code}: {resp.text}"
 
     data = resp.json()
@@ -255,7 +233,8 @@ def test_volunteer_can_view_own_organization_people(test_users, app_config: AppC
 
 def test_volunteer_cannot_view_other_organization_people(test_users, app_config: AppConfig):
     """Volunteer cannot view people from other organizations."""
-    token, _ = get_auth_token(app_config, "alice.volunteer@alpha.com", "test123")
+    volunteer = test_users["alpha_volunteer"]
+    token, _ = get_auth_token(app_config, volunteer["email"], volunteer["password"])
     headers = get_headers(token)
 
     # Try to access Beta organization data
@@ -266,7 +245,8 @@ def test_volunteer_cannot_view_other_organization_people(test_users, app_config:
 
 def test_volunteer_can_edit_own_profile(test_users, app_config: AppConfig):
     """Volunteer can edit their own profile (name, timezone, language)."""
-    token, _ = get_auth_token(app_config, "alice.volunteer@alpha.com", "test123")
+    volunteer = test_users["alpha_volunteer"]
+    token, _ = get_auth_token(app_config, volunteer["email"], volunteer["password"])
     headers = get_headers(token)
 
     update_data = {
@@ -276,7 +256,7 @@ def test_volunteer_can_edit_own_profile(test_users, app_config: AppConfig):
     }
 
     resp = requests.put(
-        f"{app_config.app_url}/api/people/{get_person_id(app_config, 'alice.volunteer@alpha.com')}",
+        f"{app_config.app_url}/api/people/{get_person_id(app_config, volunteer['email'], volunteer['password'])}",
         json=update_data,
         headers=headers
     )
@@ -290,7 +270,8 @@ def test_volunteer_can_edit_own_profile(test_users, app_config: AppConfig):
 
 def test_volunteer_cannot_edit_own_roles(test_users, app_config: AppConfig):
     """Volunteer cannot escalate their own roles."""
-    token, _ = get_auth_token(app_config, "alice.volunteer@alpha.com", "test123")
+    volunteer = test_users["alpha_volunteer"]
+    token, _ = get_auth_token(app_config, volunteer["email"], volunteer["password"])
     headers = get_headers(token)
 
     # Try to make self admin
@@ -299,7 +280,7 @@ def test_volunteer_cannot_edit_own_roles(test_users, app_config: AppConfig):
     }
 
     resp = requests.put(
-        f"{app_config.app_url}/api/people/{get_person_id(app_config, 'alice.volunteer@alpha.com')}",
+        f"{app_config.app_url}/api/people/{get_person_id(app_config, volunteer['email'], volunteer['password'])}",
         json=update_data,
         headers=headers
     )
@@ -310,13 +291,15 @@ def test_volunteer_cannot_edit_own_roles(test_users, app_config: AppConfig):
 
 def test_volunteer_cannot_edit_other_users(test_users, app_config: AppConfig):
     """Volunteer cannot edit other users."""
-    token, _ = get_auth_token(app_config, "alice.volunteer@alpha.com", "test123")
+    volunteer = test_users["alpha_volunteer"]
+    manager = test_users["alpha_manager"]
+    token, _ = get_auth_token(app_config, volunteer["email"], volunteer["password"])
     headers = get_headers(token)
 
     update_data = {"name": "Hacked Name"}
 
     resp = requests.put(
-        f"{app_config.app_url}/api/people/{get_person_id(app_config, 'alex.manager@alpha.com')}",
+        f"{app_config.app_url}/api/people/{get_person_id(app_config, manager['email'], manager['password'])}",
         json=update_data,
         headers=headers
     )
@@ -326,13 +309,14 @@ def test_volunteer_cannot_edit_other_users(test_users, app_config: AppConfig):
 
 def test_volunteer_cannot_create_events(test_users, app_config: AppConfig):
     """Volunteer cannot create events."""
-    token, _ = get_auth_token(app_config, "alice.volunteer@alpha.com", "test123")
+    volunteer = test_users["alpha_volunteer"]
+    token, _ = get_auth_token(app_config, volunteer["email"], volunteer["password"])
     headers = get_headers(token)
 
     now = datetime.now()
     event_data = {
         "id": "event_volunteer_test",
-        "org_id": "org_alpha",
+        "org_id": volunteer["org_id"],
         "type": "Test Event",
         "start_time": (now + timedelta(days=1)).isoformat(),
         "end_time": (now + timedelta(days=1, hours=2)).isoformat(),
@@ -347,13 +331,14 @@ def test_volunteer_cannot_create_events(test_users, app_config: AppConfig):
 def test_volunteer_cannot_delete_events(test_users, app_config: AppConfig):
     """Volunteer cannot delete events."""
     # First create an event as admin
-    admin_token, _ = get_auth_token(app_config, "amy.admin@alpha.com", "test123")
+    admin = test_users["alpha_admin"]
+    admin_token, _ = get_auth_token(app_config, admin["email"], admin["password"])
     admin_headers = get_headers(admin_token)
 
     now = datetime.now()
     event_data = {
         "id": "event_to_delete_volunteer",
-        "org_id": "org_alpha",
+        "org_id": admin["org_id"],
         "type": "Test Event",
         "start_time": (now + timedelta(days=2)).isoformat(),
         "end_time": (now + timedelta(days=2, hours=1)).isoformat(),
@@ -363,7 +348,8 @@ def test_volunteer_cannot_delete_events(test_users, app_config: AppConfig):
         print(f"Warning: Event creation failed: {resp.text}")
 
     # Try to delete as volunteer
-    volunteer_token, _ = get_auth_token(app_config, "alice.volunteer@alpha.com", "test123")
+    volunteer = test_users["alpha_volunteer"]
+    volunteer_token, _ = get_auth_token(app_config, volunteer["email"], volunteer["password"])
     volunteer_headers = get_headers(volunteer_token)
 
     resp = requests.delete(
@@ -376,12 +362,13 @@ def test_volunteer_cannot_delete_events(test_users, app_config: AppConfig):
 
 def test_volunteer_cannot_create_teams(test_users, app_config: AppConfig):
     """Volunteer cannot create teams."""
-    token, _ = get_auth_token(app_config, "alice.volunteer@alpha.com", "test123")
+    volunteer = test_users["alpha_volunteer"]
+    token, _ = get_auth_token(app_config, volunteer["email"], volunteer["password"])
     headers = get_headers(token)
 
     team_data = {
         "id": "team_volunteer_test",
-        "org_id": "org_alpha",
+        "org_id": volunteer["org_id"],
         "name": "Volunteer Team",
         "member_ids": []
     }
@@ -393,7 +380,8 @@ def test_volunteer_cannot_create_teams(test_users, app_config: AppConfig):
 
 def test_volunteer_cannot_run_solver(test_users, app_config: AppConfig):
     """Volunteer cannot generate schedules (expensive AI operation)."""
-    token, _ = get_auth_token(app_config, "alice.volunteer@alpha.com", "test123")
+    volunteer = test_users["alpha_volunteer"]
+    token, _ = get_auth_token(app_config, volunteer["email"], volunteer["password"])
     headers = get_headers(token)
 
     from datetime import date
@@ -414,7 +402,8 @@ def test_volunteer_cannot_run_solver(test_users, app_config: AppConfig):
 
 def test_admin_can_create_events(test_users, app_config: AppConfig):
     """Admin can create events in their organization."""
-    token, _ = get_auth_token(app_config, "amy.admin@alpha.com", "test123")
+    admin = test_users["alpha_admin"]
+    token, _ = get_auth_token(app_config, admin["email"], admin["password"])
     headers = get_headers(token)
 
     now = datetime.now()
@@ -433,7 +422,8 @@ def test_admin_can_create_events(test_users, app_config: AppConfig):
 
 def test_admin_can_edit_events(test_users, app_config: AppConfig):
     """Admin can edit events in their organization."""
-    token, _ = get_auth_token(app_config, "amy.admin@alpha.com", "test123")
+    admin = test_users["alpha_admin"]
+    token, _ = get_auth_token(app_config, admin["email"], admin["password"])
     headers = get_headers(token)
 
     # Create event first
@@ -457,7 +447,8 @@ def test_admin_can_edit_events(test_users, app_config: AppConfig):
 
 def test_admin_can_delete_events(test_users, app_config: AppConfig):
     """Admin can delete events in their organization."""
-    token, _ = get_auth_token(app_config, "amy.admin@alpha.com", "test123")
+    admin = test_users["alpha_admin"]
+    token, _ = get_auth_token(app_config, admin["email"], admin["password"])
     headers = get_headers(token)
 
     # Create event first
@@ -480,7 +471,8 @@ def test_admin_can_delete_events(test_users, app_config: AppConfig):
 
 def test_admin_can_create_teams(test_users, app_config: AppConfig):
     """Admin can create teams in their organization."""
-    token, _ = get_auth_token(app_config, "amy.admin@alpha.com", "test123")
+    admin = test_users["alpha_admin"]
+    token, _ = get_auth_token(app_config, admin["email"], admin["password"])
     headers = get_headers(token)
 
     now = datetime.now()
@@ -499,7 +491,9 @@ def test_admin_can_create_teams(test_users, app_config: AppConfig):
 
 def test_admin_can_edit_user_profiles(test_users, app_config: AppConfig):
     """Admin can edit any user in their organization."""
-    token, _ = get_auth_token(app_config, "amy.admin@alpha.com", "test123")
+    admin = test_users["alpha_admin"]
+    volunteer = test_users["alpha_volunteer"]
+    token, _ = get_auth_token(app_config, admin["email"], admin["password"])
     headers = get_headers(token)
 
     update_data = {
@@ -508,7 +502,7 @@ def test_admin_can_edit_user_profiles(test_users, app_config: AppConfig):
     }
 
     resp = requests.put(
-        f"{app_config.app_url}/api/people/{get_person_id(app_config, 'alice.volunteer@alpha.com')}",
+        f"{app_config.app_url}/api/people/{get_person_id(app_config, volunteer['email'], volunteer['password'])}",
         json=update_data,
         headers=headers
     )
@@ -518,7 +512,9 @@ def test_admin_can_edit_user_profiles(test_users, app_config: AppConfig):
 
 def test_admin_can_modify_user_roles(test_users, app_config: AppConfig):
     """Admin can modify user roles in their organization."""
-    token, _ = get_auth_token(app_config, "amy.admin@alpha.com", "test123")
+    admin = test_users["alpha_admin"]
+    volunteer = test_users["alpha_volunteer"]
+    token, _ = get_auth_token(app_config, admin["email"], admin["password"])
     headers = get_headers(token)
 
     # Promote volunteer to manager
@@ -527,7 +523,7 @@ def test_admin_can_modify_user_roles(test_users, app_config: AppConfig):
     }
 
     resp = requests.put(
-        f"{app_config.app_url}/api/people/{get_person_id(app_config, 'alice.volunteer@alpha.com')}",
+        f"{app_config.app_url}/api/people/{get_person_id(app_config, volunteer['email'], volunteer['password'])}",
         json=update_data,
         headers=headers
     )
@@ -541,7 +537,8 @@ def test_admin_can_modify_user_roles(test_users, app_config: AppConfig):
 
 def test_admin_can_run_solver(test_users, app_config: AppConfig):
     """Admin can generate schedules."""
-    token, _ = get_auth_token(app_config, "amy.admin@alpha.com", "test123")
+    admin = test_users["alpha_admin"]
+    token, _ = get_auth_token(app_config, admin["email"], admin["password"])
     headers = get_headers(token)
 
     from datetime import date
@@ -563,7 +560,8 @@ def test_admin_can_run_solver(test_users, app_config: AppConfig):
 
 def test_admin_cannot_create_events_in_other_org(test_users, app_config: AppConfig):
     """Admin from org A cannot create events in org B."""
-    token, _ = get_auth_token(app_config, "amy.admin@alpha.com", "test123")
+    admin = test_users["alpha_admin"]
+    token, _ = get_auth_token(app_config, admin["email"], admin["password"])
     headers = get_headers(token)
 
     now = datetime.now()
@@ -583,13 +581,15 @@ def test_admin_cannot_create_events_in_other_org(test_users, app_config: AppConf
 
 def test_admin_cannot_edit_users_in_other_org(test_users, app_config: AppConfig):
     """Admin from org A cannot edit users in org B."""
-    token, _ = get_auth_token(app_config, "amy.admin@alpha.com", "test123")
+    admin = test_users["alpha_admin"]
+    token, _ = get_auth_token(app_config, admin["email"], admin["password"])
     headers = get_headers(token)
 
     update_data = {"name": "Hacked by Alpha Admin"}
 
+    beta_volunteer = test_users["beta_volunteer"]
     resp = requests.put(
-        f"{app_config.app_url}/api/people/{get_person_id(app_config, 'bob.volunteer@beta.com')}",  # Beta org user
+        f"{app_config.app_url}/api/people/{get_person_id(app_config, beta_volunteer['email'], beta_volunteer['password'])}",  # Beta org user
         json=update_data,
         headers=headers
     )
@@ -599,7 +599,8 @@ def test_admin_cannot_edit_users_in_other_org(test_users, app_config: AppConfig)
 
 def test_admin_cannot_view_other_org_people(test_users, app_config: AppConfig):
     """Admin from org A cannot view people from org B."""
-    token, _ = get_auth_token(app_config, "amy.admin@alpha.com", "test123")
+    admin = test_users["alpha_admin"]
+    token, _ = get_auth_token(app_config, admin["email"], admin["password"])
     headers = get_headers(token)
 
     resp = requests.get(f"{app_config.app_url}/api/people/?org_id=org_beta", headers=headers)
@@ -609,7 +610,8 @@ def test_admin_cannot_view_other_org_people(test_users, app_config: AppConfig):
 
 def test_admin_cannot_view_other_org_teams(test_users, app_config: AppConfig):
     """Admin from org A cannot view teams from org B."""
-    token, _ = get_auth_token(app_config, "amy.admin@alpha.com", "test123")
+    admin = test_users["alpha_admin"]
+    token, _ = get_auth_token(app_config, admin["email"], admin["password"])
     headers = get_headers(token)
 
     resp = requests.get(f"{app_config.app_url}/api/teams/?org_id=org_beta", headers=headers)
@@ -619,7 +621,8 @@ def test_admin_cannot_view_other_org_teams(test_users, app_config: AppConfig):
 
 def test_admin_cannot_run_solver_for_other_org(test_users, app_config: AppConfig):
     """Admin from org A cannot generate schedules for org B."""
-    token, _ = get_auth_token(app_config, "amy.admin@alpha.com", "test123")
+    admin = test_users["alpha_admin"]
+    token, _ = get_auth_token(app_config, admin["email"], admin["password"])
     headers = get_headers(token)
 
     from datetime import date
@@ -640,7 +643,8 @@ def test_admin_cannot_run_solver_for_other_org(test_users, app_config: AppConfig
 
 def test_no_cross_org_data_leak_in_people_list(test_users, app_config: AppConfig):
     """Ensure people list only returns users from requester's org."""
-    token, _ = get_auth_token(app_config, "amy.admin@alpha.com", "test123")
+    admin = test_users["alpha_admin"]
+    token, _ = get_auth_token(app_config, admin["email"], admin["password"])
     headers = get_headers(token)
 
     # Get people without org_id filter (should default to user's org)
@@ -659,7 +663,8 @@ def test_no_cross_org_data_leak_in_people_list(test_users, app_config: AppConfig
 
 def test_no_cross_org_data_leak_in_teams_list(test_users, app_config: AppConfig):
     """Ensure teams list only returns teams from requester's org."""
-    token, _ = get_auth_token(app_config, "amy.admin@alpha.com", "test123")
+    admin = test_users["alpha_admin"]
+    token, _ = get_auth_token(app_config, admin["email"], admin["password"])
     headers = get_headers(token)
 
     # Get teams without org_id filter (should default to user's org)
@@ -702,7 +707,8 @@ def test_invalid_token_fails(app_config: AppConfig):
 
 def test_complete_admin_workflow(test_users, app_config: AppConfig):
     """Test complete admin workflow: create event, assign people, manage team."""
-    token, _ = get_auth_token(app_config, "amy.admin@alpha.com", "test123")
+    admin = test_users["alpha_admin"]
+    token, _ = get_auth_token(app_config, admin["email"], admin["password"])
     headers = get_headers(token)
     now = datetime.now()
 
@@ -720,11 +726,12 @@ def test_complete_admin_workflow(test_users, app_config: AppConfig):
 
     # 2. Create team
     team_id = f"workflow_team_{int(now.timestamp())}"
+    volunteer = test_users["alpha_volunteer"]
     team_data = {
         "id": team_id,
         "org_id": "org_alpha",
         "name": "Workflow Team",
-        "member_ids": [get_person_id(app_config, 'alice.volunteer@alpha.com')]
+        "member_ids": [get_person_id(app_config, volunteer['email'], volunteer['password'])]
     }
     resp = requests.post(f"{app_config.app_url}/api/teams/", json=team_data, headers=headers)
     assert resp.status_code in [200, 201], f"Team creation failed: {resp.text}"
@@ -746,7 +753,8 @@ def test_complete_admin_workflow(test_users, app_config: AppConfig):
 
 def test_complete_volunteer_workflow(test_users, app_config: AppConfig):
     """Test complete volunteer workflow: view schedule, edit profile, view team."""
-    token, _ = get_auth_token(app_config, "alice.volunteer@alpha.com", "test123")
+    volunteer = test_users["alpha_volunteer"]
+    token, _ = get_auth_token(app_config, volunteer["email"], volunteer["password"])
     headers = get_headers(token)
 
     # 1. View own profile
