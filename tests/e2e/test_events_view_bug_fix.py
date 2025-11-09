@@ -90,14 +90,14 @@ def test_events_view_with_actual_events(
     page.click('button.admin-tab-btn:has-text("Events")')
     page.wait_for_selector('#admin-events-list')
 
-    # Create a new event
-    page.click('button[data-i18n="events.create_event"]')
-    page.wait_for_selector('#event-modal')
+    # Click "+ Create Event" button to open modal (admin.create_event_button, not events.create_event)
+    page.click('button:has-text("+ Create Event")')
+    page.wait_for_selector('#create-event-modal.modal:not(.hidden)', timeout=5000)
 
-    # Fill event form
-    page.fill('input[name="event_type"]', 'Sunday Service')
-    page.fill('input[name="event_datetime"]', '2025-12-25T10:00')
-    page.click('#event-modal button[data-i18n="common.buttons.create"]')
+    # Fill event form (actual field IDs from HTML lines 794, 812, 844)
+    page.select_option('#event-type', 'Sunday Service')  # <select id="event-type">
+    page.fill('#event-start', '2025-12-25T10:00')  # <input type="datetime-local" id="event-start">
+    page.click('#create-event-modal button[type="submit"]')  # Submit button in modal
 
     # Wait for event to appear in list
     page.wait_for_selector('.admin-item:has-text("Sunday Service")')
