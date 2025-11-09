@@ -36,9 +36,9 @@ def test_events_view_handles_empty_response(
     login_via_ui(page, app_config.app_url, admin["email"], admin["password"])
     expect(page.locator('#main-app')).to_be_visible(timeout=10000)
 
-    # Navigate to Admin Console
-    page.click('button[data-i18n="common.buttons.admin_console"]')
-    page.wait_for_selector('.admin-panel')
+    # Navigate directly to Admin Console
+    page.goto(f"{app_config.app_url}/app/admin")
+    page.wait_for_selector('#admin-view', timeout=10000)  # Admin view container (not .admin-panel)
 
     # Click Events tab
     page.click('button.admin-tab-btn:has-text("Events")')
@@ -82,9 +82,9 @@ def test_events_view_with_actual_events(
     login_via_ui(page, app_config.app_url, admin["email"], admin["password"])
     expect(page.locator('#main-app')).to_be_visible(timeout=10000)
 
-    # Navigate to Admin Console
-    page.click('button[data-i18n="common.buttons.admin_console"]')
-    page.wait_for_selector('.admin-panel')
+    # Navigate directly to Admin Console
+    page.goto(f"{app_config.app_url}/app/admin")
+    page.wait_for_selector('#admin-view', timeout=10000)  # Admin view container (not .admin-panel)
 
     # Click Events tab
     page.click('button.admin-tab-btn:has-text("Events")')
