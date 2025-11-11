@@ -85,12 +85,10 @@ def setup_e2e_test_data():
             print(f"  ⚠️  Failed to create {org['name']}: {resp.status_code} - {resp.text}")
 
     # Create test users
+    # NOTE: Skip test_org users (jane, sarah, john) - they're created by setup_test_data.py
+    # with correct roles via direct database insert. Don't try to recreate them via API
+    # because it causes role corruption issues.
     users = [
-        # Test Organization users (admin first)
-        {"name": "Jane Smith", "email": "jane@test.com", "password": "password", "org_id": "test_org", "roles": ["admin"]},
-        {"name": "Sarah Johnson", "email": "sarah@test.com", "password": "password", "org_id": "test_org", "roles": ["volunteer"]},
-        {"name": "John Doe", "email": "john@test.com", "password": "password", "org_id": "test_org", "roles": ["volunteer"]},
-
         # Grace Church users (admin first)
         {"name": "Pastor Grace", "email": "pastor@grace.church", "password": "password", "org_id": "grace_church", "roles": ["admin"]},
         {"name": "Volunteer Grace", "email": "volunteer@grace.church", "password": "password", "org_id": "grace_church", "roles": ["volunteer"]},
@@ -163,6 +161,8 @@ def setup_e2e_test_data():
 
     # Get admin tokens for creating events
     admin_tokens = {}
+
+    # jane@test.com is created by setup_test_data.py with admin role - login directly
     super_admin_resp = requests.post(
         f"{API_BASE}/auth/login",
         json={"email": "jane@test.com", "password": "password"},
@@ -172,8 +172,11 @@ def setup_e2e_test_data():
         super_token = super_admin_resp.json().get("token") or super_admin_resp.json().get("access_token")
         if super_token:
             super_admin_headers = {"Authorization": f"Bearer {super_token}"}
+            admin_tokens["test_org"] = super_token  # Add jane's token for test_org
+            print(f"  ✅ Got admin token for test_org (jane@test.com)")
+
+    # Other admins (need to be checked/fixed if not admin)
     admin_users = [
-        ("jane@test.com", "test_org"),
         ("pastor@grace.church", "grace_church"),
         ("amy.admin@alpha.com", "alpha_org"),
         ("ben.admin@beta.com", "beta_org"),
