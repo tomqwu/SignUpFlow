@@ -17,8 +17,10 @@ from sqlalchemy.orm import sessionmaker
 
 from api.models import Person
 
-API_BASE = "http://localhost:8000/api"
-APP_URL = "http://localhost:8000"
+# Use environment variable for test server port (default 8000)
+TEST_SERVER_PORT = os.getenv("TEST_SERVER_PORT", "8000")
+APP_URL = f"http://localhost:{TEST_SERVER_PORT}"
+API_BASE = f"{APP_URL}/api"
 
 # ============================================================================
 # AUTHENTICATION HELPER
@@ -752,10 +754,17 @@ class TestGUIBlockedDates:
             page.get_by_role("button", name="Sign In").click()
             page.wait_for_timeout(3000)
 
-            # Go to Availability view
-            avail_btn = page.locator('button[data-view="availability"]')
+            page.wait_for_selector('#main-app', timeout=10000)
+
+            # Go to Availability view (handle nav being hidden under drawers)
+            avail_btn = page.locator('button[data-view="availability"]').first
             if avail_btn.count() > 0:
-                avail_btn.click()
+                if not avail_btn.is_visible():
+                    nav_toggle = page.locator('#nav-toggle, button[aria-label="Open Navigation"]').first
+                    if nav_toggle.count() > 0:
+                        nav_toggle.click()
+                        page.wait_for_timeout(500)
+                avail_btn.click(force=True)
                 page.wait_for_timeout(2000)
 
             # Fill in blocked date form

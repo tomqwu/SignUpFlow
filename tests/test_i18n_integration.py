@@ -9,11 +9,14 @@ These tests verify the complete i18n workflow including:
 """
 
 import pytest
+import os
 from fastapi.testclient import TestClient
 from playwright.sync_api import sync_playwright, expect
 from datetime import datetime
 
-APP_URL = "http://localhost:8000"
+# Use environment variable for test server port (default 8000)
+TEST_SERVER_PORT = os.getenv("TEST_SERVER_PORT", "8000")
+APP_URL = f"http://localhost:{TEST_SERVER_PORT}"
 
 
 class TestI18nAPI:

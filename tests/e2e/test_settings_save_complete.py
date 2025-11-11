@@ -84,10 +84,14 @@ def test_settings_save_workflow(
     page.wait_for_timeout(2000)
 
     print("  5. Verify NO errors occurred...")
-    # Check for network errors
-    if network_errors:
-        print(f"     ✗ Network errors: {network_errors}")
-        assert False, f"Network request failed: {network_errors}"
+    # Check for network errors (filter out expected external requests)
+    real_network_errors = [
+        err for err in network_errors
+        if "www.gstatic.com" not in err and "recaptcha" not in err
+    ]
+    if real_network_errors:
+        print(f"     ✗ Network errors: {real_network_errors}")
+        assert False, f"Network request failed: {real_network_errors}"
     else:
         print("     ✓ No network errors")
 
