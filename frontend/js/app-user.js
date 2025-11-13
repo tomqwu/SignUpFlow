@@ -2972,6 +2972,248 @@ exposeToWindow('copyToClipboard', copyToClipboard);
 // Events
 exposeToWindow('joinEvent', joinEvent);
 exposeToWindow('leaveEvent', leaveEvent);
+// Teams Management
+async function loadAdminTeams() {
+    const listEl = document.getElementById('teams-list');
+    const orgSelect = document.getElementById('teams-org-filter');
+    const orgId = orgSelect ? orgSelect.value : (currentUser ? currentUser.org_id : null);
+
+    if (!orgId) {
+        listEl.innerHTML = '<div class="loading">Select an organization to view teams</div>';
+        return;
+    }
+
+    try {
+        const response = await authFetch(`${API_BASE_URL}/teams/?org_id=${orgId}`);
+        const data = await response.json();
+
+        if (data.teams.length === 0) {
+            listEl.innerHTML = '<div class="empty-state"><h3>No Teams</h3><p>Create teams for this organization</p></div>';
+            return;
+        }
+
+        listEl.innerHTML = data.teams.map(team => `
+            <div class="data-card">
+                <div class="data-card-header">
+                    <div>
+                        <div class="data-card-title">${team.name}</div>
+                        <div class="data-card-id">ID: ${team.id}</div>
+                    </div>
+                    <div class="data-card-actions">
+                        <button class="btn btn-sm" onclick="showEditTeamForm('${team.id}')" title="Edit">Edit</button>
+                        <button class="btn btn-sm btn-danger" onclick="deleteTeam('${team.id}', '${team.name.replace(/'/g, "\\'")}', '${orgId}')" title="Delete">Delete</button>
+                    </div>
+                </div>
+                <div class="data-card-meta">
+                    👥 ${team.member_count || 0} members
+                    ${team.description ? `<br>${team.description}` : ''}
+                </div>
+            </div>
+        `).join('');
+    } catch (error) {
+        listEl.innerHTML = `<div class="loading">Error: ${error.message}</div>`;
+    }
+}
+
+async function showEditTeamForm(teamId) {
+    const orgSelect = document.getElementById('teams-org-filter');
+    const orgId = orgSelect ? orgSelect.value : (currentUser ? currentUser.org_id : null);
+
+    try {
+        // Fetch team details
+        const response = await authFetch(`${API_BASE_URL}/teams/${teamId}?org_id=${orgId}`);
+        const team = await response.json();
+
+        // Create modal with edit form
+        const modal = document.createElement('div');
+        modal.id = 'edit-team-modal';
+        modal.className = 'modal';
+        modal.innerHTML = `
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3>Edit Team</h3>
+                    <button class="btn-close" onclick="closeEditTeamModal()">×</button>
+                </div>
+                <div class="modal-body">
+                    <form id="edit-team-form" onsubmit="editTeam(event); return false;">
+                        <input type="hidden" id="edit-team-id" value="${team.id}">
+                        <input type="hidden" id="edit-team-org-id" value="${orgId}">
+                        <div class="form-group">
+                            <label>Team Name</label>
+                            <input type="text" id="team-name" name="name" value="${team.name}" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Description</label>
+                            <textarea id="team-description" name="description" rows="3">${team.description || ''}</textarea>
+                        </div>
+                        <div class="form-actions">
+                            <button type="button" class="btn btn-secondary" onclick="closeEditTeamModal()">Cancel</button>
+                            <button type="submit" class="btn btn-primary">Save Changes</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        `;
+
+        document.body.appendChild(modal);
+        modal.classList.remove('hidden');
+
+        // Focus first input
+        document.getElementById('team-name').focus();
+    } catch (error) {
+        showToast(`Error loading team: ${error.message}`, 'error');
+    }
+}
+
+function closeEditTeamModal() {
+    const modal = document.getElementById('edit-team-modal');
+    if (modal) {
+        modal.remove();
+    }
+}
+
+async function editTeam(event) {
+    event.preventDefault();
+
+    const teamId = document.getElementById('edit-team-id').value;
+    const orgId = document.getElementById('edit-team-org-id').value;
+    const name = document.getElementById('team-name').value;
+    const description = document.getElementById('team-description').value;
+
+    try {
+        const response = await authFetch(`${API_BASE_URL}/teams/${teamId}?org_id=${orgId}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ name, description: description || null })
+        });
+
+        if (response.ok) {
+            closeEditTeamModal();
+            loadAdminTeams();
+            showToast('Team updated successfully!', 'success');
+        } else {
+            const error = await response.json();
+            showToast(`Error: ${error.detail}`, 'error');
+        }
+    } catch (error) {
+        showToast(`Error: ${error.message}`, 'error');
+    }
+}
+
+async function deleteTeam(teamId, teamName, orgId) {
+    if (!confirm(`Delete team "${teamName}"?\n\nThis action cannot be undone.`)) {
+        return;
+    }
+
+    try {
+        const response = await authFetch(`${API_BASE_URL}/teams/${teamId}?org_id=${orgId}`, {
+            method: 'DELETE'
+        });
+
+        if (response.ok) {
+            loadAdminTeams();
+            showToast('Team deleted successfully!', 'success');
+        } else {
+            const error = await response.json();
+            showToast(`Error: ${error.detail}`, 'error');
+        }
+    } catch (error) {
+        showToast(`Error: ${error.message}`, 'error');
+    }
+}
+
+function showCreateTeamForm() {
+    const orgSelect = document.getElementById('teams-org-filter');
+    const orgId = orgSelect ? orgSelect.value : (currentUser ? currentUser.org_id : null);
+
+    if (!orgId) {
+        showToast('Please select an organization first', 'error');
+        return;
+    }
+
+    // Create modal with create form
+    const modal = document.createElement('div');
+    modal.id = 'create-team-modal';
+    modal.className = 'modal';
+    modal.innerHTML = `
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Create Team</h3>
+                <button class="btn-close" onclick="closeCreateTeamModal()">×</button>
+            </div>
+            <div class="modal-body">
+                <form id="create-team-form" onsubmit="createTeam(event); return false;">
+                    <input type="hidden" id="create-team-org-id" value="${orgId}">
+                    <div class="form-group">
+                        <label>Team ID</label>
+                        <input type="text" id="create-team-id" name="id" placeholder="team_example" required>
+                        <small class="form-help">Unique identifier for the team (e.g., team_worship, team_parking)</small>
+                    </div>
+                    <div class="form-group">
+                        <label>Team Name</label>
+                        <input type="text" id="create-team-name" name="name" placeholder="Worship Team" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Description</label>
+                        <textarea id="create-team-description" name="description" rows="3" placeholder="Team description..."></textarea>
+                    </div>
+                    <div class="form-actions">
+                        <button type="button" class="btn btn-secondary" onclick="closeCreateTeamModal()">Cancel</button>
+                        <button type="submit" class="btn btn-primary">Create Team</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    `;
+
+    document.body.appendChild(modal);
+    modal.classList.remove('hidden');
+
+    // Focus first input
+    document.getElementById('create-team-id').focus();
+}
+
+function closeCreateTeamModal() {
+    const modal = document.getElementById('create-team-modal');
+    if (modal) {
+        modal.remove();
+    }
+}
+
+async function createTeam(event) {
+    event.preventDefault();
+
+    const orgId = document.getElementById('create-team-org-id').value;
+    const teamId = document.getElementById('create-team-id').value;
+    const name = document.getElementById('create-team-name').value;
+    const description = document.getElementById('create-team-description').value;
+
+    try {
+        const response = await authFetch(`${API_BASE_URL}/teams/?org_id=${orgId}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                id: teamId,
+                org_id: orgId,
+                name,
+                description: description || null,
+                member_ids: []
+            })
+        });
+
+        if (response.ok) {
+            closeCreateTeamModal();
+            loadAdminTeams();
+            showToast('Team created successfully!', 'success');
+        } else {
+            const error = await response.json();
+            showToast(`Error: ${error.detail}`, 'error');
+        }
+    } catch (error) {
+        showToast(`Error: ${error.message}`, 'error');
+    }
+}
+
 exposeToWindow('showCreateEventForm', typeof showCreateEventForm === 'function' ? showCreateEventForm : undefined);
 exposeToWindow('closeCreateEventForm', typeof closeCreateEventForm === 'function' ? closeCreateEventForm : undefined);
 exposeToWindow('loadAdminEvents', loadAdminEvents);
@@ -2994,6 +3236,16 @@ exposeToWindow('exportOrgCalendar', exportOrgCalendar);
 exposeToWindow('showScheduleStats', showScheduleStats);
 exposeToWindow('viewSolution', viewSolution);
 exposeToWindow('deleteSolution', deleteSolution);
+
+// Teams
+exposeToWindow('loadAdminTeams', loadAdminTeams);
+exposeToWindow('showCreateTeamForm', showCreateTeamForm);
+exposeToWindow('closeCreateTeamModal', closeCreateTeamModal);
+exposeToWindow('createTeam', createTeam);
+exposeToWindow('showEditTeamForm', showEditTeamForm);
+exposeToWindow('closeEditTeamModal', closeEditTeamModal);
+exposeToWindow('editTeam', editTeam);
+exposeToWindow('deleteTeam', deleteTeam);
 
 // Organization
 exposeToWindow('showCreateOrg', showCreateOrg);

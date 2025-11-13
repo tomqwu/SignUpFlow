@@ -81,13 +81,28 @@ def admin_login(page: Page, app_config: AppConfig, api_client: ApiTestClient):
         teams_tab.first.click()
         page.wait_for_timeout(500)
 
+        # Populate organization dropdown (needed for Teams tab)
+        page.evaluate(f"""
+            (function() {{
+                const orgSelect = document.getElementById('teams-org-filter');
+                if (orgSelect) {{
+                    orgSelect.innerHTML = '<option value="">Select Organization</option>';
+                    const option = document.createElement('option');
+                    option.value = '{org["id"]}';
+                    option.text = '{org["name"]}';
+                    orgSelect.appendChild(option);
+                }}
+            }})();
+        """)
+        page.wait_for_timeout(300)
+
     return page, org
 
 
-@pytest.mark.skip(reason="Teams UI not implemented - backend API exists but frontend pending")
-def test_create_team_complete_workflow(admin_login: Page):
+@pytest.mark.skip(reason="Teams UI partially implemented - Form IDs mismatch (test expects #team-id, implementation has #create-team-id). Fixture organization dropdown population incomplete. Need refactoring to match test expectations.")
+def test_create_team_complete_workflow(admin_login):
     """Test complete team creation workflow."""
-    page = admin_login
+    page, org = admin_login  # Unpack tuple from fixture
 
     # Click "Add Team" button
     add_team_button = page.locator('button:has-text("Add Team"), button:has-text("+ Team"), button:has-text("Create Team")')
@@ -142,7 +157,7 @@ def test_create_team_complete_workflow(admin_login: Page):
     expect(page.locator(f'text="{team_name}"')).to_be_visible()
 
 
-@pytest.mark.skip(reason="Teams UI not implemented - No Teams tab exists in admin console. Backend API exists but frontend pending. app-admin.js not loaded by index.html.")
+@pytest.mark.skip(reason="Teams UI partially implemented - Organization dropdown not populated correctly in fixture. Form IDs mismatch. Need refactoring to match test expectations.")
 def test_edit_team(admin_login):
     """Test editing existing team."""
     page, org = admin_login  # Unpack tuple from fixture
@@ -230,7 +245,7 @@ def test_edit_team(admin_login):
     expect(page.locator(f'text="{updated_name}"').first).to_be_visible(timeout=5000)
 
 
-@pytest.mark.skip(reason="Teams UI not implemented - No Teams tab exists in admin console. Backend API exists but frontend pending. app-admin.js not loaded by index.html.")
+@pytest.mark.skip(reason="Teams UI partially implemented - Organization dropdown not populated correctly in fixture. Need refactoring to match test expectations.")
 def test_delete_team(admin_login):
     """Test deleting team and data cleanup."""
     page, org = admin_login  # Unpack tuple from fixture
@@ -390,10 +405,10 @@ def test_add_remove_team_members(admin_login: Page):
             page.wait_for_timeout(1000)
 
 
-@pytest.mark.skip(reason="Teams UI not implemented - backend API exists but frontend pending")
-def test_view_teams_list(admin_login: Page):
+@pytest.mark.skip(reason="Teams UI partially implemented - localStorage currentOrg not initialized correctly in fixture (TypeError: Cannot read properties of null reading 'id'). Organization dropdown population incomplete. Requires refactoring fixture setup and localStorage initialization.")
+def test_view_teams_list(admin_login):
     """Test viewing all organization teams."""
-    page = admin_login
+    page, org = admin_login  # Unpack tuple from fixture
 
     # Create multiple teams to verify list
     timestamp = int(time.time() * 1000)

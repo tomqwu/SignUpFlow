@@ -614,6 +614,9 @@
                     <button class="admin-tab-btn" data-tab="reports" onclick="switchAdminTab('reports')" data-i18n="admin.tabs.reports">
                         Reports
                     </button>
+                    <button class="admin-tab-btn" data-tab="teams" onclick="switchAdminTab('teams')" data-i18n="admin.tabs.teams">
+                        Teams
+                    </button>
                 </div>
 
                 <div class="admin-dashboard">
@@ -773,6 +776,28 @@
                                 <div id="stats-content" class="stats-content">
                                     <div class="loading" data-i18n="admin.loading_statistics">Loading statistics...</div>
                                 </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Teams Tab -->
+                    <div id="admin-tab-teams" class="admin-tab-content">
+                        <div class="admin-section">
+                            <div class="admin-section-header">
+                                <h3><span data-i18n="admin.team_management">Team Management</span></h3>
+                                <div class="admin-controls">
+                                    <button class="btn btn-primary" onclick="showCreateTeamForm()">+ Create Team</button>
+                                    <button class="btn btn-secondary" onclick="loadAdminTeams()">🔄 Refresh</button>
+                                </div>
+                            </div>
+                            <div class="admin-filter">
+                                <label>Organization:</label>
+                                <select id="teams-org-filter" onchange="loadAdminTeams()">
+                                    <option value="">Select Organization</option>
+                                </select>
+                            </div>
+                            <div id="teams-list" class="admin-list">
+                                <div class="loading">Select an organization to view teams</div>
                             </div>
                         </div>
                     </div>
