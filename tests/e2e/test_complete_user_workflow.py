@@ -68,7 +68,6 @@ def test_complete_signup_and_login_workflow(
     expect(page.locator('[data-i18n="events.title"]')).to_be_visible()
 
 
-@pytest.mark.skip(reason="UI visibility issue - availability heading not clickable")
 def test_page_reload_preserves_state(
     page: Page,
     app_config: AppConfig,
@@ -89,15 +88,16 @@ def test_page_reload_preserves_state(
     # Wait for main app
     expect(page.locator('h2[data-i18n="schedule.my_schedule"]')).to_be_visible(timeout=10000)
 
-    # Navigate to availability
-    page.locator('[data-i18n="schedule.availability"]').first.click()
-    expect(page.locator('[data-i18n="schedule.add_time_off"]')).to_be_visible()
+    # Navigate to availability (click button, not heading - button is at index 1)
+    page.locator('button[data-i18n="schedule.availability"]').click()
+    # Check for "Add Time Off" button (not heading) to verify availability view loaded
+    expect(page.locator('button[data-i18n="schedule.add_time_off"]')).to_be_visible()
 
     # Reload page
     page.reload()
 
-    # Should still be on availability page and scripts should load
-    expect(page.locator('[data-i18n="schedule.add_time_off"]')).to_be_visible(timeout=5000)
+    # Should still be on availability page and scripts should load (check button, not heading)
+    expect(page.locator('button[data-i18n="schedule.add_time_off"]')).to_be_visible(timeout=5000)
 
     # Check that JavaScript loaded (no console errors about '<')
     console_errors = []
@@ -111,7 +111,6 @@ def test_page_reload_preserves_state(
     assert len(syntax_errors) == 0, f"Found JavaScript syntax errors: {syntax_errors}"
 
 
-@pytest.mark.skip(reason="Authentication issue - 401 Unauthorized during login (test fixture issue)")
 def test_role_display_no_object_object(
     page: Page,
     app_config: AppConfig,
@@ -140,8 +139,8 @@ def test_role_display_no_object_object(
     permissions_display = page.locator('#settings-permission-display').inner_text()
     assert "[object Object]" not in permissions_display, f"Found [object Object] in permissions: {permissions_display}"
 
-    # Close settings
-    page.locator('[data-i18n="common.buttons.cancel"]').last.click()
+    # Close settings modal (use Escape key - more reliable than finding Cancel button)
+    page.keyboard.press("Escape")
 
     # Check role badges in context panel
     role_badges = page.locator('.role-badge').all_inner_texts()
@@ -149,7 +148,6 @@ def test_role_display_no_object_object(
         assert "[object Object]" not in badge, f"Found [object Object] in role badge: {badge}"
 
 
-@pytest.mark.skip(reason="JavaScript syntax error in page.evaluate() - test code issue")
 def test_admin_workflow_complete(
     page: Page,
     app_config: AppConfig,
@@ -182,30 +180,29 @@ def test_admin_workflow_complete(
     page.select_option('#event-type', 'Sunday Service')
 
     # Set date to tomorrow
-    tomorrow = page.evaluate("""
+    tomorrow = page.evaluate("""() => {
         const d = new Date();
         d.setDate(d.getDate() + 1);
         return d.toISOString().slice(0, 16);
-    """)
+    }""")
     page.fill('#event-start', tomorrow)
 
     # Submit event creation
     page.locator('[data-i18n="events.create_event"]').last.click()
 
-    # Should see event in list
-    expect(page.locator('text="Sunday Service"')).to_be_visible(timeout=5000)
+    # Should see event in list (use heading role to avoid matching dropdown option)
+    expect(page.get_by_role("heading", name="Sunday Service")).to_be_visible(timeout=5000)
 
     # Go to schedule tab
     page.locator('button[data-tab="schedule"]').click()
 
-    # Generate schedule
-    page.locator('text="Generate Schedule"').click()
+    # Generate schedule (button has emoji prefix: 🔄 Generate Schedule)
+    page.locator('text="🔄 Generate Schedule"').click()
 
     # Should see success message or schedule generated
     page.wait_for_timeout(2000)  # Wait for solver
 
 
-@pytest.mark.skip(reason="Test infrastructure issue - needs investigation")
 def test_language_switching_works(
     page: Page,
     app_config: AppConfig,
@@ -232,21 +229,20 @@ def test_language_switching_works(
     # Switch to Chinese (Simplified)
     page.select_option('#settings-language', 'zh-CN')
 
-    # Wait for translation
-    page.wait_for_timeout(1000)
-
-    # Should see Chinese text
-    expect(page.locator('text="我的日程"')).to_be_visible()
+    # Wait for translation to complete - specifically wait for the Chinese text to appear
+    # (more reliable than fixed timeout)
+    # Correct Chinese translation from locales/zh-CN/schedule.json
+    my_schedule_chinese = page.locator('h2[data-i18n="schedule.my_schedule"]')
+    expect(my_schedule_chinese).to_have_text("我的排班", timeout=5000)
 
     # Switch back to English
     page.select_option('#settings-language', 'en')
-    page.wait_for_timeout(1000)
 
-    # Should see English again
-    expect(page.locator('text="My Schedule"')).to_be_visible()
+    # Wait for translation back to English to complete
+    expect(my_schedule_chinese).to_have_text("My Schedule", timeout=5000)
 
 
-@pytest.mark.skip(reason="Test infrastructure issue - needs investigation")
+@pytest.mark.skip(reason="Incomplete UI feature: Time off creation works (201 Created), but edit/delete buttons (✏️, 🗑️) not rendered on page. Requires UI implementation.")
 def test_availability_crud_complete(
     page: Page,
     app_config: AppConfig,
@@ -264,19 +260,19 @@ def test_availability_crud_complete(
     # Login
     login_via_ui(page, app_config.app_url, user["email"], user["password"])
 
-    # Navigate to availability
+    # Navigate to availability (use button selector to avoid matching heading)
     expect(page.locator('h2[data-i18n="schedule.my_schedule"]')).to_be_visible(timeout=10000)
-    page.locator('[data-i18n="schedule.availability"]').first.click()
+    page.locator('button[data-i18n="schedule.availability"]').click()
 
-    # Add time off
-    start_date = page.evaluate("new Date(Date.now() + 86400000).toISOString().slice(0, 10)")
-    end_date = page.evaluate("new Date(Date.now() + 172800000).toISOString().slice(0, 10)")
+    # Add time off (wrap JavaScript in arrow functions)
+    start_date = page.evaluate("() => new Date(Date.now() + 86400000).toISOString().slice(0, 10)")
+    end_date = page.evaluate("() => new Date(Date.now() + 172800000).toISOString().slice(0, 10)")
 
     page.fill('#timeoff-start', start_date)
     page.fill('#timeoff-end', end_date)
     page.fill('#timeoff-reason', 'E2E Test Vacation')
 
-    page.locator('[data-i18n="schedule.add_time_off"]').click()
+    page.locator('button[data-i18n="schedule.add_time_off"]').click()
 
     # Should see time off in list
     expect(page.locator('text="E2E Test Vacation"')).to_be_visible(timeout=5000)

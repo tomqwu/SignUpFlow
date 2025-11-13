@@ -1,16 +1,23 @@
 .PHONY: run dev stop restart setup install migrate test test-frontend test-backend test-integration test-e2e test-e2e-long test-e2e-file test-e2e-quick test-e2e-summary test-email test-email-unit test-all test-coverage test-unit test-unit-fast test-unit-file test-with-timing clean clean-all pre-commit help check-poetry check-npm check-python check-deps install-poetry install-npm install-deps fix-node-libs up down build logs shell db-shell redis-shell test-docker migrate-docker restart-api ps clean-docker check-docker ensure-test-deps prepare-test-data ensure-test-env
 
+export SKIP_TEST_DB_FIXTURES ?= true
+
 TEST_SERVER_HOST ?= 0.0.0.0
 TEST_SERVER_PORT ?= 8000
 TEST_APP_URL ?= http://localhost:$(TEST_SERVER_PORT)
 TEST_API_BASE ?= $(TEST_APP_URL)/api
 
 TEST_SERVER_SCRIPT := ./scripts/run_with_server.sh
-TEST_SERVER_ENV := DISABLE_RATE_LIMITS=true TESTING=true EMAIL_ENABLED=false SMS_ENABLED=false DATABASE_URL=sqlite:///./test_roster.db
+TEST_DB_PATH := $(abspath test_roster.db)
+TEST_DB_PATH_STRIPPED := $(patsubst /%,%,$(TEST_DB_PATH))
+TEST_DB_URL := sqlite:////$(TEST_DB_PATH_STRIPPED)
+export DATABASE_URL ?= $(TEST_DB_URL)
+TEST_SERVER_ENV := DISABLE_RATE_LIMITS=true TESTING=true EMAIL_ENABLED=false SMS_ENABLED=false SKIP_TEST_DB_FIXTURES=true DATABASE_URL=$(TEST_DB_URL)
 TEST_SERVER_ENV += TEST_SERVER_HOST=$(TEST_SERVER_HOST) TEST_SERVER_PORT=$(TEST_SERVER_PORT)
 TEST_SERVER_ENV += APP_URL=$(TEST_APP_URL) API_BASE=$(TEST_API_BASE)
 TEST_SERVER_ENV += E2E_APP_URL=$(TEST_APP_URL) E2E_API_BASE=$(TEST_API_BASE)
 DEFAULT_TEST_SERVER_CMD := $(TEST_SERVER_ENV) poetry run uvicorn api.main:app --host $(TEST_SERVER_HOST) --port $(TEST_SERVER_PORT) --reload
+TEST_ALL_TIMEOUT ?= 5400
 
 define TEST_ALL_PIPELINE
 set -euo pipefail
@@ -325,13 +332,15 @@ test-all: ensure-test-env
 	@echo "🚀 Running complete test suite..."
 	@echo ""
 	@rm -f test_roster.db test_roster.db-shm test_roster.db-wal
+	@echo "🔄 Rebuilding fresh SQLite test database..."
+	@poetry run python -m tests.setup_test_data >/dev/null
 	@echo "🔍 Ensuring API server is available..."
 	@echo ""
 	@echo "================================"
 	@echo "   FRONTEND TESTS"
 	@echo "================================"
 	@bash -lc "set -eo pipefail; \
-		if ! TEST_SERVER_CMD='$(DEFAULT_TEST_SERVER_CMD)' $(TEST_SERVER_SCRIPT) bash -lc \"$$TEST_ALL_PIPELINE\"; then \
+		if ! TEST_COMMAND_TIMEOUT=$(TEST_ALL_TIMEOUT) SKIP_TEST_DB_FIXTURES=true TEST_SERVER_CMD='$(DEFAULT_TEST_SERVER_CMD)' $(TEST_SERVER_SCRIPT) bash -lc \"$$TEST_ALL_PIPELINE\"; then \
 			echo '❌ Test suite failed'; \
 			./scripts/collect_test_logs.sh || true; \
 			exit 1; \

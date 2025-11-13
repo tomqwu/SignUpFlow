@@ -182,7 +182,6 @@ def test_buttons_have_accessible_labels(
         # Full accessibility audit would flag all issues
 
 
-@pytest.mark.skip(reason="Test infrastructure issue - connection refused (server not running consistently)")
 def test_modal_focus_trap(
     page: Page,
     app_config: AppConfig,
@@ -235,7 +234,7 @@ def test_modal_focus_trap(
     expect(settings_modal).not_to_be_visible(timeout=3000)
 
 
-@pytest.mark.skip(reason="Test infrastructure issue - connection refused (server not running consistently)")
+@pytest.mark.skip(reason="Missing accessibility feature: Form validation errors not accessible. Login form uses HTML5 'required' attributes which block submission but don't show custom error messages. The #login-error div only shows server errors, not client-side validation errors. Should implement accessible form validation with ARIA announcements.")
 def test_form_error_messages_accessible(
     page: Page,
     app_config: AppConfig,
@@ -252,7 +251,7 @@ def test_form_error_messages_accessible(
     page.goto(f"{app_config.app_url}/login")
 
     # Submit form without filling it out
-    submit_button = page.locator('#login-form button[type="submit"]')
+    submit_button = page.locator('#login-screen button[type="submit"]')
     submit_button.click()
 
     # Wait for error (if validation is client-side)
@@ -390,7 +389,6 @@ def test_heading_hierarchy(
     assert h2_count > 0, "Page should have at least one h2 heading"
 
 
-@pytest.mark.skip(reason="Test infrastructure issue - connection refused (server not running consistently)")
 def test_color_contrast_sufficient(
     page: Page,
     app_config: AppConfig,
@@ -416,7 +414,7 @@ def test_color_contrast_sufficient(
     expect(email_input).to_be_visible()
 
     # Submit button should be visible
-    submit_button = page.locator('#login-form button[type="submit"]')
+    submit_button = page.locator('#login-screen button[type="submit"]')
     expect(submit_button).to_be_visible()
 
     # Text should be readable (basic check)

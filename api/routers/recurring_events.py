@@ -16,7 +16,7 @@ from datetime import datetime, date, time
 from pydantic import BaseModel, Field
 
 from api.database import get_db
-from api.dependencies import get_current_user, verify_admin_access, verify_org_member
+from api.dependencies import get_current_user, get_current_admin_user, verify_org_member
 from api.models import RecurringSeries, RecurrenceException, Event, Person
 from api.services.recurrence_generator import (
     generate_occurrences,
@@ -122,7 +122,7 @@ class PreviewRequest(BaseModel):
 def create_recurring_series(
     request: RecurringSeriesCreate,
     org_id: str = Query(..., description="Organization ID"),
-    admin: Person = Depends(verify_admin_access),
+    current_admin: Person = Depends(get_current_admin_user),
     db: Session = Depends(get_db)
 ):
     """
@@ -371,7 +371,7 @@ def preview_occurrences(
 @router.delete("/recurring-series/{series_id}")
 def delete_recurring_series(
     series_id: str,
-    admin: Person = Depends(verify_admin_access),
+    current_admin: Person = Depends(get_current_admin_user),
     db: Session = Depends(get_db)
 ):
     """
@@ -390,7 +390,7 @@ def delete_recurring_series(
         raise HTTPException(status_code=404, detail="Recurring series not found")
 
     # Verify admin belongs to same organization
-    verify_org_member(admin, series.org_id)
+    verify_org_member(current_admin, series.org_id)
 
     # Delete all occurrences (cascade will delete exceptions)
     occurrences = db.query(Event).filter(Event.series_id == series_id).all()
@@ -416,7 +416,7 @@ def update_series_template(
     title: Optional[str] = None,
     location: Optional[str] = None,
     role_requirements: Optional[dict] = None,
-    admin: Person = Depends(verify_admin_access),
+    current_admin: Person = Depends(get_current_admin_user),
     db: Session = Depends(get_db)
 ):
     """
@@ -433,7 +433,7 @@ def update_series_template(
         raise HTTPException(status_code=404, detail="Recurring series not found")
 
     # Verify admin belongs to same organization
-    verify_org_member(admin, series.org_id)
+    verify_org_member(current_admin, series.org_id)
 
     # Update template fields
     if title is not None:

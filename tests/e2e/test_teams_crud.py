@@ -30,14 +30,22 @@ import pytest
 from playwright.sync_api import Page, expect
 import time
 
-from tests.e2e.helpers import AppConfig
+from tests.e2e.helpers import AppConfig, ApiTestClient
 
 pytestmark = pytest.mark.usefixtures("api_server")
 
 
 @pytest.fixture(scope="function")
-def admin_login(page: Page, app_config: AppConfig):
-    """Login as admin for teams tests."""
+def admin_login(page: Page, app_config: AppConfig, api_client: ApiTestClient):
+    """Login as admin for teams tests. Returns tuple (page, org)."""
+    # Create test organization and admin user dynamically
+    org = api_client.create_org()
+    admin_user = api_client.create_user(
+        org_id=org["id"],
+        name="Test Admin",
+        roles=["admin"],
+    )
+
     # Navigate directly to login page
     page.goto(f"{app_config.app_url}/login")
     page.wait_for_load_state("networkidle")
@@ -45,9 +53,9 @@ def admin_login(page: Page, app_config: AppConfig):
     # Verify login screen is visible
     expect(page.locator("#login-screen")).to_be_visible(timeout=5000)
 
-    # Fill login form
-    page.fill("#login-email", "pastor@grace.church")
-    page.fill("#login-password", "password")
+    # Fill login form with dynamic user
+    page.fill("#login-email", admin_user["email"])
+    page.fill("#login-password", admin_user["password"])
 
     # Submit login
     page.get_by_role("button", name="Sign In").click()
@@ -59,6 +67,12 @@ def admin_login(page: Page, app_config: AppConfig):
 
     # Navigate to admin console
     page.goto(f"{app_config.app_url}/app/admin")
+    page.wait_for_load_state("networkidle")
+
+    # Wait for admin view to be visible (indicates page loaded)
+    expect(page.locator('#admin-view')).to_be_visible(timeout=5000)
+
+    # Wait for organizations to load (needed for admin functionality)
     page.wait_for_timeout(1000)
 
     # Click Teams tab
@@ -67,7 +81,7 @@ def admin_login(page: Page, app_config: AppConfig):
         teams_tab.first.click()
         page.wait_for_timeout(500)
 
-    return page
+    return page, org
 
 
 @pytest.mark.skip(reason="Teams UI not implemented - backend API exists but frontend pending")
@@ -128,23 +142,23 @@ def test_create_team_complete_workflow(admin_login: Page):
     expect(page.locator(f'text="{team_name}"')).to_be_visible()
 
 
-@pytest.mark.skip(reason="Teams UI not implemented - backend API exists but frontend pending")
-def test_edit_team(admin_login: Page):
+@pytest.mark.skip(reason="Teams UI not implemented - No Teams tab exists in admin console. Backend API exists but frontend pending. app-admin.js not loaded by index.html.")
+def test_edit_team(admin_login):
     """Test editing existing team."""
-    page = admin_login
+    page, org = admin_login  # Unpack tuple from fixture
 
     # First create a team to edit
     timestamp = int(time.time() * 1000)
     team_id = f"team_edit_{timestamp}"
     original_name = f"Team To Edit {timestamp}"
+    org_id = org["id"]  # Get org_id from fixture
 
     # Create team via API for speed
     page.evaluate(f"""
         (async () => {{
             const authToken = localStorage.getItem('authToken');
-            const currentOrg = JSON.parse(localStorage.getItem('currentOrg'));
 
-            await fetch('http://localhost:8000/api/teams/', {{
+            await fetch('/api/teams/', {{
                 method: 'POST',
                 headers: {{
                     'Content-Type': 'application/json',
@@ -152,7 +166,7 @@ def test_edit_team(admin_login: Page):
                 }},
                 body: JSON.stringify({{
                     id: '{team_id}',
-                    org_id: currentOrg.id,
+                    org_id: '{org_id}',
                     name: '{original_name}',
                     description: 'Original description'
                 }})
@@ -162,7 +176,16 @@ def test_edit_team(admin_login: Page):
 
     page.wait_for_timeout(1000)
     page.reload()
-    page.wait_for_timeout(1000)
+    page.wait_for_load_state("networkidle")
+
+    # Click Teams tab to make teams content visible
+    teams_tab = page.locator('button[data-tab="teams"]')
+    teams_tab.click()
+    page.wait_for_timeout(500)
+
+    # Need to set the org filter dropdown for teams to load
+    page.select_option('#teams-org-filter', org_id)
+    page.wait_for_timeout(500)  # Wait for teams to load after filter selection
 
     # Find the team in the list
     team_card = page.locator(f'text="{original_name}"').first
@@ -207,23 +230,23 @@ def test_edit_team(admin_login: Page):
     expect(page.locator(f'text="{updated_name}"').first).to_be_visible(timeout=5000)
 
 
-@pytest.mark.skip(reason="Teams UI not implemented - backend API exists but frontend pending")
-def test_delete_team(admin_login: Page):
+@pytest.mark.skip(reason="Teams UI not implemented - No Teams tab exists in admin console. Backend API exists but frontend pending. app-admin.js not loaded by index.html.")
+def test_delete_team(admin_login):
     """Test deleting team and data cleanup."""
-    page = admin_login
+    page, org = admin_login  # Unpack tuple from fixture
 
     # Create a team to delete
     timestamp = int(time.time() * 1000)
     team_id = f"team_delete_{timestamp}"
     team_name = f"Team To Delete {timestamp}"
+    org_id = org["id"]  # Get org_id from fixture
 
     # Create team via API
     page.evaluate(f"""
         (async () => {{
             const authToken = localStorage.getItem('authToken');
-            const currentOrg = JSON.parse(localStorage.getItem('currentOrg'));
 
-            await fetch('http://localhost:8000/api/teams/', {{
+            await fetch('/api/teams/', {{
                 method: 'POST',
                 headers: {{
                     'Content-Type': 'application/json',
@@ -231,7 +254,7 @@ def test_delete_team(admin_login: Page):
                 }},
                 body: JSON.stringify({{
                     id: '{team_id}',
-                    org_id: currentOrg.id,
+                    org_id: '{org_id}',
                     name: '{team_name}',
                     description: 'Will be deleted'
                 }})
@@ -241,7 +264,16 @@ def test_delete_team(admin_login: Page):
 
     page.wait_for_timeout(1000)
     page.reload()
-    page.wait_for_timeout(1000)
+    page.wait_for_load_state("networkidle")
+
+    # Click Teams tab to make teams content visible
+    teams_tab = page.locator('button[data-tab="teams"]')
+    teams_tab.click()
+    page.wait_for_timeout(500)
+
+    # Need to set the org filter dropdown for teams to load
+    page.select_option('#teams-org-filter', org_id)
+    page.wait_for_timeout(500)  # Wait for teams to load after filter selection
 
     # Find the team
     team_card = page.locator(f'text="{team_name}"').first

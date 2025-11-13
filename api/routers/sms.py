@@ -15,7 +15,7 @@ from typing import List, Optional
 from pydantic import BaseModel, Field
 
 from api.database import get_db
-from api.dependencies import get_current_user, verify_admin_access
+from api.dependencies import get_current_user, get_current_admin_user
 from api.models import Person, Event, Assignment, SmsPreference
 from api.services.sms_service import SMSService
 from api.tasks.sms_tasks import (
@@ -297,7 +297,7 @@ def update_sms_preferences(
 @router.get("/organizations/{org_id}/sms-usage", response_model=SmsUsageStatsResponse)
 def get_sms_usage_stats(
     org_id: int,
-    admin: Person = Depends(verify_admin_access),
+    current_admin: Person = Depends(get_current_admin_user),
     db: Session = Depends(get_db),
 ):
     """
@@ -309,7 +309,7 @@ def get_sms_usage_stats(
     from datetime import datetime
 
     # Verify admin belongs to organization
-    admin_org_id = int(admin.org_id.split("_")[-1])
+    admin_org_id = int(current_admin.org_id.split("_")[-1])
     if admin_org_id != org_id:
         raise HTTPException(status_code=403, detail="Access denied: wrong organization")
 
@@ -369,7 +369,7 @@ def get_sms_usage_stats(
 def send_assignment_notification_api(
     request: SendAssignmentNotificationRequest,
     background_tasks: BackgroundTasks,
-    admin: Person = Depends(verify_admin_access),
+    current_admin: Person = Depends(get_current_admin_user),
     db: Session = Depends(get_db),
 ):
     """
@@ -412,7 +412,7 @@ def send_assignment_notification_api(
 def send_event_reminder_api(
     request: SendEventReminderRequest,
     background_tasks: BackgroundTasks,
-    admin: Person = Depends(verify_admin_access),
+    current_admin: Person = Depends(get_current_admin_user),
     db: Session = Depends(get_db),
 ):
     """
@@ -444,7 +444,7 @@ def send_event_reminder_api(
 @router.post("/send-broadcast", response_model=BroadcastResponse)
 def send_broadcast_api(
     request: SendBroadcastRequest,
-    admin: Person = Depends(verify_admin_access),
+    current_admin: Person = Depends(get_current_admin_user),
     db: Session = Depends(get_db),
 ):
     """
@@ -462,7 +462,7 @@ def send_broadcast_api(
         )
 
     # Get organization ID from admin
-    organization_id = admin.org_id
+    organization_id = current_admin.org_id
 
     # Queue Celery task
     task = send_broadcast_message.delay(

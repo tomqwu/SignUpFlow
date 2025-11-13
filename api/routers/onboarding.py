@@ -14,7 +14,7 @@ from pydantic import BaseModel
 
 from api.database import get_db
 from api.models import OnboardingProgress, Person
-from api.dependencies import get_current_user, verify_admin_access, verify_org_member
+from api.dependencies import get_current_user, get_current_admin_user, verify_org_member
 from api.services.sample_data_generator import (
     generate_sample_data,
     cleanup_sample_data,
@@ -257,7 +257,7 @@ def reset_onboarding(
 @router.post("/onboarding/sample-data/generate")
 def generate_sample_data_endpoint(
     org_id: str,
-    admin: Person = Depends(verify_admin_access),
+    current_admin: Person = Depends(get_current_admin_user),
     db: Session = Depends(get_db)
 ):
     """
@@ -270,7 +270,7 @@ def generate_sample_data_endpoint(
 
     All data is prefixed with "SAMPLE - " for easy identification.
     """
-    verify_org_member(admin, org_id)
+    verify_org_member(current_admin, org_id)
 
     # Check if sample data already exists
     if has_sample_data(org_id, db):
@@ -292,7 +292,7 @@ def generate_sample_data_endpoint(
 @router.delete("/onboarding/sample-data")
 def cleanup_sample_data_endpoint(
     org_id: str,
-    admin: Person = Depends(verify_admin_access),
+    current_admin: Person = Depends(get_current_admin_user),
     db: Session = Depends(get_db)
 ):
     """
@@ -300,7 +300,7 @@ def cleanup_sample_data_endpoint(
 
     Deletes all entities prefixed with "SAMPLE - ".
     """
-    verify_org_member(admin, org_id)
+    verify_org_member(current_admin, org_id)
 
     try:
         deleted_counts = cleanup_sample_data(org_id, db)

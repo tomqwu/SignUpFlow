@@ -76,9 +76,23 @@ def api_server(app_config: AppConfig):
                     print(f"✅ Health check confirmed - server is healthy")
                 else:
                     print(f"⚠️  Health check returned {response.status_code}")
+                    print(f"   Will try to kill and restart server")
+                    server_already_running = False  # Need to restart
             except Exception as e:
                 print(f"⚠️  Health check failed: {type(e).__name__} - {e}")
-                print(f"   Proceeding anyway since port is bound")
+                print(f"   Will kill zombie process and start fresh server")
+                server_already_running = False  # Port bound but server not responding
+                # Kill the zombie process holding the port
+                try:
+                    subprocess.run(["lsof", "-ti", f":{port}"], capture_output=True, text=True, check=True, timeout=5)
+                    result = subprocess.run(["lsof", "-ti", f":{port}"], capture_output=True, text=True)
+                    if result.returncode == 0 and result.stdout.strip():
+                        pid = result.stdout.strip()
+                        subprocess.run(["kill", "-9", pid], timeout=5)
+                        print(f"   Killed zombie process {pid} on port {port}")
+                        time.sleep(1)  # Give OS time to release the port
+                except Exception as kill_error:
+                    print(f"   Failed to kill zombie process: {kill_error}")
         else:
             print(f"   Unexpected socket error: {e}")
             sock.close()
@@ -347,11 +361,17 @@ from api.models import Base
 
 TEST_DB_PATH = Path(__file__).resolve().parent.parent / "test_roster.db"
 TEST_DATABASE_URL = f"sqlite:///{TEST_DB_PATH}"
+SKIP_DB_FIXTURES = os.getenv("SKIP_TEST_DB_FIXTURES", "").lower() in {"1", "true", "yes", "on"}
+if SKIP_DB_FIXTURES:
+    print("🔕 Skipping test DB fixtures (SKIP_TEST_DB_FIXTURES=true)")
 
 
 @pytest.fixture(scope="session", autouse=True)
 def setup_test_database():
     """Setup test database once per test session."""
+    if SKIP_DB_FIXTURES:
+        yield
+        return
     # Remove existing test database
     if TEST_DB_PATH.exists():
         TEST_DB_PATH.unlink()
@@ -391,6 +411,10 @@ def reset_database_between_modules():
     - User roles modified in one test affect other tests
     - Database state persists across test modules
     """
+    if SKIP_DB_FIXTURES:
+        yield
+        return
+
     # Yield first to let the module run
     yield
 
@@ -405,7 +429,9 @@ def reset_database_between_modules():
         Organization, Person, Team, TeamMember, Resource, Event, EventTeam,
         Assignment, Solution, Availability, VacationPeriod, AvailabilityException,
         Holiday, Constraint, Invitation, RecurringSeries, RecurrenceException,
-        OnboardingProgress, Notification, EmailPreference
+        OnboardingProgress, Notification, EmailPreference,
+        # Billing models (required for organization creation auto-subscription)
+        SmsUsage, Subscription, BillingHistory, PaymentMethod, UsageMetrics, SubscriptionEvent
     )
 
     # Delete all data from all tables (in reverse order to handle foreign keys)
@@ -448,6 +474,10 @@ def reset_database_between_tests():
     - Tests become fully independent and order-agnostic
     - Consistent test behavior in isolation vs full suite
     """
+    if SKIP_DB_FIXTURES:
+        yield
+        return
+
     # Clean database BEFORE each test
     # Ensure database and tables exist (create if missing to prevent silent failures)
     engine = create_engine(TEST_DATABASE_URL, connect_args={"check_same_thread": False})
@@ -461,7 +491,9 @@ def reset_database_between_tests():
         Organization, Person, Team, TeamMember, Resource, Event, EventTeam,
         Assignment, Solution, Availability, VacationPeriod, AvailabilityException,
         Holiday, Constraint, Invitation, RecurringSeries, RecurrenceException,
-        OnboardingProgress, Notification, EmailPreference
+        OnboardingProgress, Notification, EmailPreference,
+        # Billing models (required for organization creation auto-subscription)
+        SmsUsage, Subscription, BillingHistory, PaymentMethod, UsageMetrics, SubscriptionEvent
     )
 
     # Delete all data from all tables (in reverse order to handle foreign keys)

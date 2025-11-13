@@ -79,8 +79,11 @@ def test_mobile_login_flow(
     expect(schedule_heading).to_be_visible(timeout=3000)
 
 
-@pytest.mark.skip(reason="App initialization issue: Elements hidden when auth set via localStorage. App requires actual login flow to properly initialize. Core mobile functionality already tested by test_mobile_login_flow.")
-def test_mobile_hamburger_menu(mobile_page: Page):
+def test_mobile_hamburger_menu(
+    mobile_page: Page,
+    app_config: AppConfig,
+    api_client: ApiTestClient,
+):
     """
     Test mobile hamburger menu navigation.
 
@@ -92,36 +95,27 @@ def test_mobile_hamburger_menu(mobile_page: Page):
     """
     page = mobile_page
 
-    # Login first
-    import time
-    import requests
+    # Create test account using proper API client
+    org = api_client.create_org()
+    user = api_client.create_user(
+        org_id=org["id"],
+        name="Menu User",
+        roles=["volunteer"],
+    )
 
-    org_id = f"org_menu_{int(time.time())}"
-    user_email = f"menu_user_{int(time.time())}@test.com"
+    # Login through UI (proper way - not localStorage)
+    page.goto(f"{app_config.app_url}/login")
 
-    requests.post("http://localhost:8000/api/organizations/", json={
-        "id": org_id,
-        "name": "Menu Test Org"
-    })
+    # Fill login form
+    page.locator('#login-email').fill(user["email"])
+    page.locator('#login-password').fill(user["password"])
 
-    signup_response = requests.post("http://localhost:8000/api/auth/signup", json={
-        "email": user_email,
-        "password": "Test123!",
-        "name": "Menu User",
-        "org_id": org_id
-    })
-    token = signup_response.json()["token"]
+    # Click login button
+    login_button = page.locator('button[data-i18n="auth.sign_in"]')
+    login_button.click()
 
-    # Set session storage to login
-    page.goto("http://localhost:8000/")
-    page.evaluate(f"""
-        localStorage.setItem('authToken', '{token}');
-        localStorage.setItem('currentUser', '{{"id": "test", "email": "{user_email}", "name": "Menu User"}}');
-        localStorage.setItem('currentOrg', '{{"id": "{org_id}", "name": "Menu Test Org"}}');
-    """)
-
-    # Navigate to schedule after setting auth
-    page.goto("http://localhost:8000/app/schedule", wait_until="networkidle")
+    # Wait for redirect to schedule
+    expect(page).to_have_url(f"{app_config.app_url}/app/schedule", timeout=5000)
 
     # Wait for page to load
     expect(page.locator('h2[data-i18n="schedule.my_schedule"]')).to_be_visible(timeout=5000)
@@ -139,8 +133,11 @@ def test_mobile_hamburger_menu(mobile_page: Page):
     assert nav_count > 0, "Navigation should be visible on mobile"
 
 
-@pytest.mark.skip(reason="App initialization issue: Elements hidden when auth set via localStorage. App requires actual login flow to properly initialize. Core mobile functionality already tested by test_mobile_login_flow.")
-def test_mobile_schedule_view(mobile_page: Page):
+def test_mobile_schedule_view(
+    mobile_page: Page,
+    app_config: AppConfig,
+    api_client: ApiTestClient,
+):
     """
     Test schedule view on mobile device.
 
@@ -152,66 +149,62 @@ def test_mobile_schedule_view(mobile_page: Page):
     """
     page = mobile_page
 
-    # Create test account with event
-    import time
-    import requests
+    # Create test account with event using API client
     from datetime import datetime, timedelta
+    import time
 
-    org_id = f"org_schedule_{int(time.time())}"
-    user_email = f"schedule_user_{int(time.time())}@test.com"
+    org = api_client.create_org()
+    user = api_client.create_user(
+        org_id=org["id"],
+        name="Schedule User",
+        roles=["volunteer"],
+    )
+    session = api_client.login(email=user["email"], password=user["password"])
+    user_token = user.get("token") or session.get("token")
+    person_id = user.get("person_id") or session.get("person_id")
 
-    requests.post("http://localhost:8000/api/organizations/", json={
-        "id": org_id,
-        "name": "Schedule Test Org"
-    })
-
-    signup_response = requests.post("http://localhost:8000/api/auth/signup", json={
-        "email": user_email,
-        "password": "Test123!",
-        "name": "Schedule User",
-        "org_id": org_id,
-        "roles": ["admin"]  # Admin to create events
-    })
-    token = signup_response.json()["token"]
-    person_id = signup_response.json()["person_id"]
-
-    # Create event
+    # Create event and assignment using token from user creation
     event_time = (datetime.now() + timedelta(days=1)).isoformat()
     event_id = f"event_mobile_{int(time.time())}"
 
-    requests.post(
-        f"http://localhost:8000/api/events?org_id={org_id}",
+    import requests
+    event_response = requests.post(
+        f"{app_config.app_url}/api/events/",  # Trailing slash, no query param
+        headers={"Authorization": f"Bearer {user_token}"},
         json={
             "id": event_id,
-            "org_id": org_id,
+            "org_id": org["id"],  # org_id in JSON body, not query param
             "type": "Sunday Service",
             "start_time": event_time,
             "end_time": (datetime.now() + timedelta(days=1, hours=2)).isoformat(),
-        },
-        headers={"Authorization": f"Bearer {token}"}
+        }
     )
+    assert event_response.status_code == 201, f"Failed to create event: {event_response.text}"
 
     # Assign user to event
     requests.post(
-        f"http://localhost:8000/api/events/{event_id}/assignments",
+        f"{app_config.app_url}/api/events/{event_id}/assignments",
         json={
             "person_id": person_id,
             "action": "assign",
             "role": "usher"
         },
-        headers={"Authorization": f"Bearer {token}"}
+        headers={"Authorization": f"Bearer {user_token}"}
     )
 
-    # Login and view schedule
-    page.goto("http://localhost:8000/")
-    page.evaluate(f"""
-        localStorage.setItem('authToken', '{token}');
-        localStorage.setItem('currentUser', '{{"id": "{person_id}", "email": "{user_email}", "name": "Schedule User"}}');
-        localStorage.setItem('currentOrg', '{{"id": "{org_id}", "name": "Schedule Test Org"}}');
-    """)
+    # Login through UI (proper way - not localStorage)
+    page.goto(f"{app_config.app_url}/login")
 
-    # Navigate to schedule after setting auth
-    page.goto("http://localhost:8000/app/schedule")
+    # Fill login form
+    page.locator('#login-email').fill(user["email"])
+    page.locator('#login-password').fill(user["password"])
+
+    # Click login button
+    login_button = page.locator('button[data-i18n="auth.sign_in"]')
+    login_button.click()
+
+    # Wait for redirect to schedule
+    expect(page).to_have_url(f"{app_config.app_url}/app/schedule", timeout=5000)
 
     # Wait for page to load and show schedule
     expect(page.locator('h2[data-i18n="schedule.my_schedule"]')).to_be_visible(timeout=5000)
@@ -220,8 +213,8 @@ def test_mobile_schedule_view(mobile_page: Page):
     event_card = page.locator(f'text="Sunday Service"').first
     expect(event_card).to_be_visible(timeout=5000)
 
-    # Verify role badge is visible
-    role_badge = page.locator('text="usher"').first
+    # Verify role badge is visible (capitalized due to i18n translation)
+    role_badge = page.locator('text="Usher"').first
     expect(role_badge).to_be_visible(timeout=3000)
 
     # Verify mobile layout (cards should stack vertically)
@@ -230,8 +223,11 @@ def test_mobile_schedule_view(mobile_page: Page):
     assert viewport_width < 768, f"Should be in mobile viewport, got {viewport_width}px"
 
 
-@pytest.mark.skip(reason="App initialization issue: Elements hidden when auth set via localStorage. App requires actual login flow to properly initialize. Core mobile functionality already tested by test_mobile_login_flow.")
-def test_mobile_settings_modal(mobile_page: Page):
+def test_mobile_settings_modal(
+    mobile_page: Page,
+    app_config: AppConfig,
+    api_client: ApiTestClient,
+):
     """
     Test settings modal on mobile device.
 
@@ -243,37 +239,27 @@ def test_mobile_settings_modal(mobile_page: Page):
     """
     page = mobile_page
 
-    # Login first
-    import time
-    import requests
+    # Create test account using proper API client
+    org = api_client.create_org()
+    user = api_client.create_user(
+        org_id=org["id"],
+        name="Settings User",
+        roles=["volunteer"],
+    )
 
-    org_id = f"org_settings_{int(time.time())}"
-    user_email = f"settings_user_{int(time.time())}@test.com"
+    # Login through UI (proper way - not localStorage)
+    page.goto(f"{app_config.app_url}/login")
 
-    requests.post("http://localhost:8000/api/organizations/", json={
-        "id": org_id,
-        "name": "Settings Test Org"
-    })
+    # Fill login form
+    page.locator('#login-email').fill(user["email"])
+    page.locator('#login-password').fill(user["password"])
 
-    signup_response = requests.post("http://localhost:8000/api/auth/signup", json={
-        "email": user_email,
-        "password": "Test123!",
-        "name": "Settings User",
-        "org_id": org_id
-    })
-    token = signup_response.json()["token"]
-    person_id = signup_response.json()["person_id"]
+    # Click login button
+    login_button = page.locator('button[data-i18n="auth.sign_in"]')
+    login_button.click()
 
-    # Go to app
-    page.goto("http://localhost:8000/")
-    page.evaluate(f"""
-        localStorage.setItem('authToken', '{token}');
-        localStorage.setItem('currentUser', '{{"id": "{person_id}", "email": "{user_email}", "name": "Settings User"}}');
-        localStorage.setItem('currentOrg', '{{"id": "{org_id}", "name": "Settings Test Org"}}');
-    """)
-
-    # Navigate to schedule after setting auth
-    page.goto("http://localhost:8000/app/schedule", wait_until="networkidle")
+    # Wait for redirect to schedule
+    expect(page).to_have_url(f"{app_config.app_url}/app/schedule", timeout=5000)
 
     # Wait for page to load
     expect(page.locator('h2[data-i18n="schedule.my_schedule"]')).to_be_visible(timeout=5000)
@@ -356,8 +342,11 @@ def test_multiple_device_sizes_login(
     expect(page).to_have_url(f"{app_config.app_url}/app/schedule", timeout=5000)
 
 
-@pytest.mark.skip(reason="App initialization issue: Elements hidden when auth set via localStorage. App requires actual login flow to properly initialize. Core mobile functionality already tested by test_mobile_login_flow.")
-def test_tablet_layout_ipad(page: Page):
+def test_tablet_layout_ipad(
+    page: Page,
+    app_config: AppConfig,
+    api_client: ApiTestClient,
+):
     """
     Test tablet layout (iPad size).
 
@@ -366,37 +355,27 @@ def test_tablet_layout_ipad(page: Page):
     # Set iPad viewport
     page.set_viewport_size(MOBILE_VIEWPORTS["ipad_mini"])
 
-    # Create and login
-    import time
-    import requests
+    # Create test account using proper API client
+    org = api_client.create_org()
+    user = api_client.create_user(
+        org_id=org["id"],
+        name="iPad User",
+        roles=["volunteer"],
+    )
 
-    org_id = f"org_ipad_{int(time.time())}"
-    user_email = f"ipad_user_{int(time.time())}@test.com"
+    # Login through UI (proper way - not localStorage)
+    page.goto(f"{app_config.app_url}/login")
 
-    requests.post("http://localhost:8000/api/organizations/", json={
-        "id": org_id,
-        "name": "iPad Test Org"
-    })
+    # Fill login form
+    page.locator('#login-email').fill(user["email"])
+    page.locator('#login-password').fill(user["password"])
 
-    signup_response = requests.post("http://localhost:8000/api/auth/signup", json={
-        "email": user_email,
-        "password": "Test123!",
-        "name": "iPad User",
-        "org_id": org_id
-    })
-    token = signup_response.json()["token"]
-    person_id = signup_response.json()["person_id"]
+    # Click login button
+    login_button = page.locator('button[data-i18n="auth.sign_in"]')
+    login_button.click()
 
-    # Go to app
-    page.goto("http://localhost:8000/")
-    page.evaluate(f"""
-        localStorage.setItem('authToken', '{token}');
-        localStorage.setItem('currentUser', '{{"id": "{person_id}", "email": "{user_email}", "name": "iPad User"}}');
-        localStorage.setItem('currentOrg', '{{"id": "{org_id}", "name": "iPad Test Org"}}');
-    """)
-
-    # Navigate to schedule after setting auth
-    page.goto("http://localhost:8000/app/schedule", wait_until="networkidle")
+    # Wait for redirect to schedule
+    expect(page).to_have_url(f"{app_config.app_url}/app/schedule", timeout=5000)
 
     # Verify tablet viewport
     viewport_width = page.evaluate("window.innerWidth")
@@ -407,8 +386,11 @@ def test_tablet_layout_ipad(page: Page):
     expect(schedule_heading).to_be_visible(timeout=5000)
 
 
-@pytest.mark.skip(reason="App initialization issue: Elements hidden when auth set via localStorage. App requires actual login flow to properly initialize. Core mobile functionality already tested by test_mobile_login_flow.")
-def test_mobile_touch_gestures(mobile_page: Page):
+def test_mobile_touch_gestures(
+    mobile_page: Page,
+    app_config: AppConfig,
+    api_client: ApiTestClient,
+):
     """
     Test touch gestures work on mobile.
 
@@ -419,37 +401,27 @@ def test_mobile_touch_gestures(mobile_page: Page):
     """
     page = mobile_page
 
-    # Create and login
-    import time
-    import requests
+    # Create test account using proper API client
+    org = api_client.create_org()
+    user = api_client.create_user(
+        org_id=org["id"],
+        name="Touch User",
+        roles=["volunteer"],
+    )
 
-    org_id = f"org_touch_{int(time.time())}"
-    user_email = f"touch_user_{int(time.time())}@test.com"
+    # Login through UI (proper way - not localStorage)
+    page.goto(f"{app_config.app_url}/login")
 
-    requests.post("http://localhost:8000/api/organizations/", json={
-        "id": org_id,
-        "name": "Touch Test Org"
-    })
+    # Fill login form
+    page.locator('#login-email').fill(user["email"])
+    page.locator('#login-password').fill(user["password"])
 
-    signup_response = requests.post("http://localhost:8000/api/auth/signup", json={
-        "email": user_email,
-        "password": "Test123!",
-        "name": "Touch User",
-        "org_id": org_id
-    })
-    token = signup_response.json()["token"]
-    person_id = signup_response.json()["person_id"]
+    # Click login button
+    login_button = page.locator('button[data-i18n="auth.sign_in"]')
+    login_button.click()
 
-    # Go to app
-    page.goto("http://localhost:8000/")
-    page.evaluate(f"""
-        localStorage.setItem('authToken', '{token}');
-        localStorage.setItem('currentUser', '{{"id": "{person_id}", "email": "{user_email}", "name": "Touch User"}}');
-        localStorage.setItem('currentOrg', '{{"id": "{org_id}", "name": "Touch Test Org"}}');
-    """)
-
-    # Navigate to schedule after setting auth
-    page.goto("http://localhost:8000/app/schedule", wait_until="networkidle")
+    # Wait for redirect to schedule
+    expect(page).to_have_url(f"{app_config.app_url}/app/schedule", timeout=5000)
 
     # Wait for page to load
     expect(page.locator('h2[data-i18n="schedule.my_schedule"]')).to_be_visible(timeout=5000)
@@ -458,8 +430,8 @@ def test_mobile_touch_gestures(mobile_page: Page):
     settings_btn = page.locator('button.btn-icon:has-text("⚙️")')
     expect(settings_btn).to_be_visible(timeout=3000)
 
-    # Simulate touch tap
-    settings_btn.tap()
+    # Simulate touch tap (using click() which works on both desktop and mobile)
+    settings_btn.click()
 
     # Verify modal opened
     settings_modal = page.locator('#settings-modal')
