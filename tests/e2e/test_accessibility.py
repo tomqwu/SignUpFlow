@@ -234,7 +234,6 @@ def test_modal_focus_trap(
     expect(settings_modal).not_to_be_visible(timeout=3000)
 
 
-@pytest.mark.skip(reason="Missing accessibility feature: Form validation errors not accessible. Login form uses HTML5 'required' attributes which block submission but don't show custom error messages. The #login-error div only shows server errors, not client-side validation errors. Should implement accessible form validation with ARIA announcements.")
 def test_form_error_messages_accessible(
     page: Page,
     app_config: AppConfig,

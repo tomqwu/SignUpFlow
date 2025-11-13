@@ -199,11 +199,41 @@ function showLogin() {
 async function handleLogin(event) {
     event.preventDefault();
 
-    const email = document.getElementById('login-email').value;
-    const password = document.getElementById('login-password').value;
+    const emailInput = document.getElementById('login-email');
+    const passwordInput = document.getElementById('login-password');
+    const email = emailInput.value.trim();
+    const password = passwordInput.value.trim();
     const errorEl = document.getElementById('login-error');
 
+    // Reset error state
     errorEl.classList.add('hidden');
+    errorEl.textContent = '';
+    emailInput.removeAttribute('aria-invalid');
+    passwordInput.removeAttribute('aria-invalid');
+
+    // Client-side validation for accessibility
+    const errors = [];
+    if (!email) {
+        errors.push('Email is required');
+        emailInput.setAttribute('aria-invalid', 'true');
+    }
+    if (!password) {
+        errors.push('Password is required');
+        passwordInput.setAttribute('aria-invalid', 'true');
+    }
+
+    // Show accessible error messages
+    if (errors.length > 0) {
+        errorEl.textContent = errors.join('. ');
+        errorEl.classList.remove('hidden');
+        // Focus first invalid field for keyboard users
+        if (!email) {
+            emailInput.focus();
+        } else if (!password) {
+            passwordInput.focus();
+        }
+        return; // Prevent form submission
+    }
 
     try {
         const response = await fetch(`${API_BASE_URL}/auth/login`, {
