@@ -1353,7 +1353,17 @@ async function showSettings() {
 
     // Set current language
     const currentLocale = i18n.getLocale();
-    document.getElementById('settings-language').value = currentLocale;
+    const languageSelect = document.getElementById('settings-language');
+    languageSelect.value = currentLocale;
+
+    // Add event listener for immediate language change on dropdown selection
+    // Remove any existing listener first to prevent duplicates
+    const newLanguageSelect = languageSelect.cloneNode(true);
+    languageSelect.parentNode.replaceChild(newLanguageSelect, languageSelect);
+    newLanguageSelect.addEventListener('change', async (e) => {
+        const newLocale = e.target.value;
+        await changeLanguage(newLocale);
+    });
 
     // Display user's permission roles (read-only)
     const permissionDisplay = document.getElementById('settings-permission-display');
@@ -1427,6 +1437,16 @@ async function showSettings() {
     if (typeof initSmsPreferences === 'function') {
         await initSmsPreferences();
     }
+
+    // Add Escape key handler to close modal (accessibility requirement)
+    const escapeHandler = (event) => {
+        if (event.key === 'Escape' || event.keyCode === 27) {
+            closeSettings();
+            // Remove the listener after closing
+            document.removeEventListener('keydown', escapeHandler);
+        }
+    };
+    document.addEventListener('keydown', escapeHandler);
 }
 
 // Change language immediately
