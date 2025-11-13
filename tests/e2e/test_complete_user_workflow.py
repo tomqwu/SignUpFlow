@@ -242,7 +242,6 @@ def test_language_switching_works(
     expect(my_schedule_chinese).to_have_text("My Schedule", timeout=5000)
 
 
-@pytest.mark.skip(reason="Incomplete UI feature: Time off creation works (201 Created), but edit/delete buttons (✏️, 🗑️) not rendered on page. Requires UI implementation.")
 def test_availability_crud_complete(
     page: Page,
     app_config: AppConfig,
@@ -282,7 +281,8 @@ def test_availability_crud_complete(
     expect(page.locator('[data-i18n="schedule.edit_timeoff"]')).to_be_visible()
 
     page.fill('#edit-timeoff-reason', 'Updated Vacation')
-    page.locator('[data-i18n="common.buttons.save"]').click()
+    # Scope Save button to edit timeoff modal to avoid ambiguity
+    page.locator('#edit-timeoff-modal [data-i18n="common.buttons.save"]').click()
 
     # Should see updated reason
     expect(page.locator('text="Updated Vacation"')).to_be_visible(timeout=5000)

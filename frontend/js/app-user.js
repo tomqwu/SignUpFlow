@@ -1224,8 +1224,8 @@ async function loadTimeOff() {
                             data-start="${startDate}"
                             data-end="${endDate}"
                             data-reason="${escapedReason}"
-                            onclick="editTimeOffFromButton(this)">Edit</button>
-                    <button class="btn btn-small btn-remove" onclick="removeTimeOff(${timeoff.id})">Remove</button>
+                            onclick="editTimeOffFromButton(this)">✏️</button>
+                    <button class="btn btn-small btn-remove" onclick="removeTimeOff(${timeoff.id})">🗑️</button>
                 </div>
             </div>
             `;
