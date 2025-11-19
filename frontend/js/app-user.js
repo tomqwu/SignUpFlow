@@ -3131,7 +3131,8 @@ async function editTeam(event) {
 }
 
 async function deleteTeam(teamId, teamName, orgId) {
-    if (!confirm(`Delete team "${teamName}"?\n\nThis action cannot be undone.`)) {
+    const confirmMessage = i18n.t('admin.teams.deleteTeamConfirm', { teamName }) + '\n\n' + i18n.t('admin.teams.actionCannotBeUndone');
+    if (!confirm(confirmMessage)) {
         return;
     }
 

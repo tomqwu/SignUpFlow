@@ -83,5 +83,9 @@
     "error": "產生排班時發生錯誤",
     "solutions": "產生的方案",
     "assignments": "已建立的分配"
+  },
+  "teams": {
+    "deleteTeamConfirm": "刪除團隊\"{{teamName}}\"？",
+    "actionCannotBeUndone": "此操作無法撤銷。"
   }
 }

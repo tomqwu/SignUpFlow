@@ -83,5 +83,9 @@
   "total_people": "Total de personnes :",
   "pending": "En attente",
   "accepted": "Acceptée",
-  "expired": "Expirée"
+  "expired": "Expirée",
+  "teams": {
+    "deleteTeamConfirm": "Supprimer l'équipe \"{{teamName}}\" ?",
+    "actionCannotBeUndone": "Cette action ne peut pas être annulée."
+  }
 }
