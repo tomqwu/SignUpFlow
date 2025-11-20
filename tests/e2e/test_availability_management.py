@@ -67,7 +67,8 @@ def test_add_time_off_request_complete_workflow(
 
     # Step 2: Delete any existing time-off periods to avoid 409 Conflict
     # This ensures test isolation and prevents overlap errors from previous runs
-    delete_buttons = page.locator('.timeoff-item button:has-text("Delete")').all()
+    # Note: Delete button uses trash emoji 🗑️, so we use CSS class selector
+    delete_buttons = page.locator('.timeoff-item button.btn-remove').all()
     for delete_btn in delete_buttons:
         delete_btn.click()
         page.wait_for_load_state("networkidle")
@@ -137,7 +138,8 @@ def test_edit_time_off_request(
 
     # Delete any existing time-off periods to avoid 409 Conflict
     # This ensures test isolation and prevents overlap errors from previous runs
-    delete_buttons = page.locator('.timeoff-item button:has-text("Delete")').all()
+    # Note: Delete button uses trash emoji 🗑️, so we use CSS class selector
+    delete_buttons = page.locator('.timeoff-item button.btn-remove').all()
     for delete_btn in delete_buttons:
         delete_btn.click()
         page.wait_for_load_state("networkidle")
@@ -162,8 +164,9 @@ def test_edit_time_off_request(
     page.wait_for_load_state("networkidle")
 
     # Now edit the time-off - find the item and click Edit button
+    # Note: Edit button uses pencil emoji ✏️, so we use CSS class selector
     timeoff_entry = page.locator('.timeoff-item').filter(has_text=initial_reason)
-    timeoff_entry.locator('button:has-text("Edit")').click()
+    timeoff_entry.locator('button.btn-secondary').click()
 
     # Wait for modal to appear
     expect(page.locator('#edit-timeoff-modal')).to_be_visible()
@@ -242,7 +245,8 @@ def test_delete_time_off_request(
     initial_count = page.locator('.timeoff-item').count()
 
     # Click Remove button (triggers confirmation dialog)
-    timeoff_entry.locator('button:has-text("Remove")').click()
+    # Note: Delete button uses trash emoji 🗑️, so we use CSS class selector
+    timeoff_entry.locator('button.btn-remove').click()
 
     # Confirm deletion in dialog
     page.locator('#confirm-yes').click()
