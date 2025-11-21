@@ -14,6 +14,7 @@ import requests
 import time
 from datetime import datetime, timedelta
 from passlib.context import CryptContext
+from sqlalchemy import create_engine, text
 
 from tests.e2e.helpers import AppConfig
 
@@ -41,6 +42,21 @@ def test_organizations(app_config: AppConfig):
             "config": {"roles": ["volunteer", "manager", "admin"]},
         },
     ]
+
+    # Clear existing users from test organizations to ensure first-user-gets-admin works
+    # Use direct database access since the Docker PostgreSQL persists between test runs
+    database_url = os.getenv("DATABASE_URL", "postgresql://signupflow:dev_password_change_in_production@db:5432/signupflow_dev")
+    try:
+        engine = create_engine(database_url)
+        with engine.connect() as conn:
+            for org in orgs:
+                # Delete people from test organizations
+                result = conn.execute(text("DELETE FROM people WHERE org_id = :org_id"), {"org_id": org["id"]})
+                conn.commit()
+                if result.rowcount > 0:
+                    print(f"✓ Cleared {result.rowcount} existing users from {org['id']}")
+    except Exception as e:
+        print(f"⚠ Could not clear database users: {e}")
 
     for org in orgs:
         resp = requests.post(f"{app_config.app_url}/api/organizations/", json=org)
@@ -116,13 +132,14 @@ def test_users(test_organizations, app_config: AppConfig):
 
     admin_tokens = {}
 
-    # Step 1: Create all users via signup
+    # Step 1: Create all users via signup with explicit roles
     for user in all_user_data:
         signup_data = {
             "name": user["name"],
             "email": user["email"],
             "password": user["password"],
             "org_id": user["org_id"],
+            "roles": user["desired_roles"],  # Explicitly set roles during signup
         }
         resp = requests.post(f"{app_config.app_url}/api/auth/signup", json=signup_data)
         if resp.status_code in [200, 201]:

@@ -82,6 +82,9 @@ services:
       # Disable rate limiting for E2E tests (prevents HTTP 429 errors during test suite)
       DISABLE_RATE_LIMITS: true
 
+      # Disable usage limits for E2E tests (prevents volunteer limit errors during test suite)
+      DISABLE_USAGE_LIMITS: true
+
       # Runtime overrides (secrets from .env, structure from config/env.dev.yaml)
       # These are the only values that should be here - everything else in YAML
       DATABASE_URL: postgresql://${POSTGRES_USER:-signupflow}:${POSTGRES_PASSWORD:-dev_password_change_in_production}@db:5432/${POSTGRES_DB:-signupflow_dev}
