@@ -9,9 +9,22 @@ def user_page(page: Page, api_server):
     Creates an org, creates a user, logs in, and waits for the dashboard.
     """
     # 1. Create Organization
-    org_name = "Strict User Test Org"
-    page.goto("http://localhost:8001/")
+    import time
+    timestamp = int(time.time())
+    org_name = f"Strict User Test Org {timestamp}"
     
+    # Use APP_URL from env or default
+    import os
+    app_url = os.getenv("E2E_APP_URL", "http://localhost:8001")
+    page.goto(app_url)
+    
+    # Check if we are already logged in (dashboard visible)
+    if page.locator("#main-app").is_visible():
+        # Logout
+        page.locator("#nav-user-menu").click()
+        page.locator("text=Sign Out").click()
+        page.wait_for_selector("text=Get Started")
+
     # Click "Get Started"
     page.locator("text=Get Started").click()
     
@@ -34,7 +47,7 @@ def user_page(page: Page, api_server):
     expect(page.locator("#user-name")).to_be_visible(timeout=10000)
     
     page.fill("#user-name", "Strict User")
-    page.fill("#user-email", "strict_user@test.com")
+    page.fill("#user-email", f"strict_user_{timestamp}@test.com")
     page.fill("#user-password", "password123")
     
     # Click Complete Registration

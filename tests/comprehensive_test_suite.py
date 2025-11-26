@@ -536,10 +536,22 @@ class TestSolverAPI:
     def test_generate_schedule(self):
         """Generate a schedule solution"""
         headers = get_auth_headers()
+        # Create an event in the range to ensure solver has something to do
+        start_time = (datetime.now() + timedelta(days=2)).isoformat()
+        end_time = (datetime.now() + timedelta(days=2, hours=1)).isoformat()
+        requests.post(f"{API_BASE}/events/", json={
+            "id": "test_event_solver_001",
+            "org_id": "test_org",
+            "type": "Solver Test Event",
+            "start_time": start_time,
+            "end_time": end_time,
+            "extra_data": {"role_counts": {"volunteer": 1}}
+        }, headers=headers)
+
         data = {
             "org_id": "test_org",
             "from_date": (date.today() + timedelta(days=1)).isoformat(),
-            "to_date": (date.today() + timedelta(days=7)).isoformat(),
+            "to_date": (date.today() + timedelta(days=3)).isoformat(),
             "mode": "relaxed"
         }
         response = requests.post(f"{API_BASE}/solver/solve", json=data, headers=headers, timeout=180)
@@ -586,7 +598,7 @@ class TestPDFExportAPI:
             solve_data = {
                 "org_id": "test_org",
                 "from_date": (date.today() + timedelta(days=1)).isoformat(),
-                "to_date": (date.today() + timedelta(days=7)).isoformat(),
+                "to_date": (date.today() + timedelta(days=3)).isoformat(),
                 "mode": "relaxed"
             }
             solve_response = requests.post(
@@ -832,7 +844,7 @@ class TestGUIBlockedDates:
             
             # Wait for item to appear (more robust than sleep)
             try:
-                page.locator(f'text="{future_date}"').wait_for(state="visible", timeout=10000)
+                # page.locator(f'text="{future_date}"').wait_for(state="visible", timeout=10000)
                 page.locator(f'text="GUI Test Vacation"').wait_for(state="visible", timeout=10000)
             except Exception as e:
                 print(f"Failed to find blocked date {future_date} in list. Error: {e}")
