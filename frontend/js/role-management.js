@@ -13,9 +13,21 @@ const DEFAULT_ROLES = [
 ];
 
 // Load roles from organization config
+// Load roles from organization config
 async function loadOrgRoles() {
     try {
         const response = await authFetch(`${API_BASE_URL}/organizations/${currentUser.org_id}`);
+
+        if (response.status === 404) {
+            console.warn('Organization not found in loadOrgRoles, logging out...');
+            // Clear session and redirect
+            localStorage.removeItem('authToken');
+            localStorage.removeItem('currentUser');
+            localStorage.removeItem('currentOrg');
+            window.location.href = '/';
+            return DEFAULT_ROLES;
+        }
+
         if (response.ok) {
             const data = await response.json();
             // Try custom_roles first, then roles, then default
@@ -317,7 +329,7 @@ async function saveRolePeople(event) {
 
     const roleName = document.getElementById('manage-role-id').value;
     const checkboxes = document.querySelectorAll('#manage-role-people-checkboxes input[type="checkbox"]');
-    
+
     // Get all people IDs that should have this role
     const selectedPeopleIds = Array.from(checkboxes)
         .filter(cb => cb.checked)

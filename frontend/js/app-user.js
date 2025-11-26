@@ -7,6 +7,7 @@ if (typeof API_BASE_URL === 'undefined') {
 // User State - attach to window so router can access it
 let currentUser = null;
 let currentOrg = null;
+let isCreatingOrg = false;
 
 // Expose to window for router access
 window.currentUser = currentUser;
@@ -110,24 +111,53 @@ async function getApiErrorMessage(error) {
 }
 
 // Session Management
-function checkExistingSession() {
+// Session Management
+async function checkExistingSession() {
     const savedUser = localStorage.getItem('roster_user');
     const savedOrg = localStorage.getItem('roster_org');
     const currentPath = window.location.pathname;
 
     if (savedUser && savedOrg) {
-        currentUser = JSON.parse(savedUser);
-        currentOrg = JSON.parse(savedOrg);
-        window.currentUser = currentUser;
-        window.currentOrg = currentOrg;
+        try {
+            currentUser = JSON.parse(savedUser);
+            currentOrg = JSON.parse(savedOrg);
 
-        // If on a protected /app route, handle it with router
-        if (currentPath.startsWith('/app')) {
-            router.handleRoute(currentPath, false);
-        } else {
-            // Default to schedule view if logged in but on root/login page
-            router.navigate('/app/schedule', true);
-            showMainApp();
+            // Validate organization data structure
+            if (!currentOrg || !currentOrg.id || currentOrg.detail) {
+                console.warn('Invalid organization data in session, clearing...');
+                logout();
+                return;
+            }
+
+            // Verify organization actually exists on server
+            // This prevents "dangling user" issues where org was deleted but user session remains
+            try {
+                const response = await fetch(`${API_BASE_URL}/organizations/${currentOrg.id}`);
+                if (response.status === 404) {
+                    console.warn('Organization no longer exists, logging out...');
+                    showToast('Organization not found. Please log in again.', 'error');
+                    logout();
+                    return;
+                }
+            } catch (netError) {
+                console.warn('Network error verifying organization:', netError);
+                // Don't logout on network error, might be offline
+            }
+
+            window.currentUser = currentUser;
+            window.currentOrg = currentOrg;
+
+            // If on a protected /app route, handle it with router
+            if (currentPath.startsWith('/app')) {
+                router.handleRoute(currentPath, false);
+            } else {
+                // Default to schedule view if logged in but on root/login page
+                router.navigate('/app/schedule', true);
+                showMainApp();
+            }
+        } catch (e) {
+            console.error('Error parsing session data:', e);
+            logout();
         }
     } else {
         // Not logged in - initialize router for auth screens
@@ -247,6 +277,13 @@ async function handleLogin(event) {
 
             // Fetch organization details
             const orgResponse = await fetch(`${API_BASE_URL}/organizations/${data.org_id}`);
+
+            if (!orgResponse.ok) {
+                console.error('Organization not found:', data.org_id);
+                showToast(i18n.t('messages.errors.org_not_found') || 'Organization not found', 'error');
+                return;
+            }
+
             const orgData = await orgResponse.json();
 
             console.log('🔐 handleLogin - Backend response data:', data);
@@ -533,6 +570,12 @@ async function completeInvitationSignup(event) {
 
         // Fetch organization details to get the org name
         const orgResponse = await fetch(`${API_BASE_URL}/organizations/${data.org_id}`);
+
+        if (!orgResponse.ok) {
+            showToast(i18n.t('messages.errors.org_not_found') || 'Organization not found', 'error');
+            return;
+        }
+
         const orgData = await orgResponse.json();
 
         // Save JWT token to localStorage
@@ -599,6 +642,7 @@ async function createAndJoinOrg(event) {
 
         if (response.ok || response.status === 409) {
             currentOrg = { id: orgId, name: orgName };
+            isCreatingOrg = true;
 
             // Clear and prepare the profile form for new org creator signup
             document.getElementById('user-name').value = '';
@@ -647,9 +691,9 @@ async function createProfile(event) {
     // For new org creators, default to admin role
     // Role selector may not exist on profile-screen, so provide fallback
     const roleSelector = document.querySelector('#role-selector');
-    const roles = roleSelector
-        ? Array.from(document.querySelectorAll('#role-selector input:checked')).map(input => input.value)
-        : ['admin'];  // Default role for organization creators
+    const roles = (isCreatingOrg || !roleSelector)
+        ? ['admin']  // Force admin for new org creators or if selector missing
+        : Array.from(document.querySelectorAll('#role-selector input:checked')).map(input => input.value);
 
     try {
         // Use signup endpoint with password
@@ -724,17 +768,18 @@ async function loadUserOrganizations() {
         // Simplified to avoid N+1 query problem
         const dropdown = document.getElementById('org-dropdown');
         const visibleDropdown = document.getElementById('org-dropdown-visible');
+        const teamsFilter = document.getElementById('teams-org-filter');
 
         const singleOrgHTML = `<option value="${currentOrg.id}" selected>${currentOrg.name}</option>`;
         if (dropdown) dropdown.innerHTML = singleOrgHTML;
         if (visibleDropdown) visibleDropdown.innerHTML = singleOrgHTML;
+        if (teamsFilter) teamsFilter.innerHTML = singleOrgHTML;
 
         const orgDisplay = document.getElementById('org-name-display');
         if (orgDisplay) {
-            orgDisplay.textContent = currentOrg.name;
-            orgDisplay.style.display = 'inline-block';
+            orgDisplay.style.display = 'none';
         }
-        if (dropdown) dropdown.style.display = 'none';
+        if (dropdown) dropdown.style.display = 'block';
     } catch (error) {
         console.error('Error loading organizations:', error);
     }
@@ -799,6 +844,33 @@ function switchView(viewName, skipUrlUpdate = false) {
         targetView.classList.add('active');
     }
 
+    // Update Page Title & Subtitle
+    const viewTitles = {
+        'schedule': {
+            title: i18n.t('schedule.my_schedule'),
+            subtitle: i18n.t('schedule.upcoming_assignments') || 'Your upcoming assignments'
+        },
+        'events': {
+            title: i18n.t('events.title'),
+            subtitle: i18n.t('events.see_all_upcoming') || 'All upcoming organization events'
+        },
+        'availability': {
+            title: i18n.t('schedule.availability'),
+            subtitle: i18n.t('schedule.block_off_times') || 'Manage your time off'
+        },
+        'admin': {
+            title: i18n.t('admin.admin_console'),
+            subtitle: i18n.t('admin.manage_your_org') || 'Manage your organization'
+        }
+    };
+
+    const titleInfo = viewTitles[viewName] || { title: 'Dashboard', subtitle: 'Welcome back' };
+    const pageTitleEl = document.getElementById('page-title');
+    const pageSubtitleEl = document.querySelector('.page-subtitle');
+
+    if (pageTitleEl) pageTitleEl.textContent = titleInfo.title;
+    if (pageSubtitleEl) pageSubtitleEl.textContent = titleInfo.subtitle;
+
     // Load data
     if (viewName === 'schedule') loadMySchedule();
     if (viewName === 'events') loadAllEvents();
@@ -853,27 +925,27 @@ async function loadAllEvents() {
                     <h3>${event.type}</h3>
                     <div class="event-actions">
                         ${isUserAssigned ?
-                            `<button class="btn btn-small btn-remove" onclick="leaveEvent('${event.id}')">${i18n.t('events.leave_event')}</button>` :
-                            `<button class="btn btn-small btn-primary" onclick="joinEvent('${event.id}')">${i18n.t('events.join_event')}</button>`
-                        }
+                    `<button class="btn btn-small btn-remove" onclick="leaveEvent('${event.id}')">${i18n.t('events.leave_event')}</button>` :
+                    `<button class="btn btn-small btn-primary" onclick="joinEvent('${event.id}')">${i18n.t('events.join_event')}</button>`
+                }
                     </div>
                 </div>
                 <div class="event-details">
                     <div class="event-time">
                         📅 ${eventDate.toLocaleDateString('en-US', {
-                            weekday: 'long',
-                            month: 'long',
-                            day: 'numeric',
-                            year: 'numeric'
-                        })}
+                    weekday: 'long',
+                    month: 'long',
+                    day: 'numeric',
+                    year: 'numeric'
+                })}
                         <br>
                         ⏰ ${eventDate.toLocaleTimeString('en-US', {
-                            hour: 'numeric',
-                            minute: '2-digit'
-                        })} - ${new Date(event.end_time).toLocaleTimeString('en-US', {
-                            hour: 'numeric',
-                            minute: '2-digit'
-                        })}
+                    hour: 'numeric',
+                    minute: '2-digit'
+                })} - ${new Date(event.end_time).toLocaleTimeString('en-US', {
+                    hour: 'numeric',
+                    minute: '2-digit'
+                })}
                     </div>
                     ${event.location ? `<div class="event-location">📍 ${event.location}</div>` : ''}
                 </div>
@@ -882,14 +954,14 @@ async function loadAllEvents() {
                     ${eventAssignments.length > 0 ? `
                         <ul class="participants-list">
                             ${eventAssignments.map(a => {
-                                const roleBadge = a.role ? ` <span class="role-badge">${a.role}</span>` : '';
-                                return `
+                    const roleBadge = a.role ? ` <span class="role-badge">${a.role}</span>` : '';
+                    return `
                                     <li class="${a.person_id === currentUser.id ? 'participant-me' : ''}">
                                         ${peopleMap[a.person_id] || a.person_id}${roleBadge}
                                         ${a.person_id === currentUser.id ? ' (You)' : ''}
                                     </li>
                                 `;
-                            }).join('')}
+                }).join('')}
                         </ul>
                     ` : `<p class="help-text">${i18n.t('messages.empty.no_volunteers_yet')}</p>`}
                 </div>
@@ -1013,31 +1085,31 @@ async function loadCalendar() {
                 return `
                     <div class="calendar-day has-event ${hasBlockedEvents ? 'has-blocked' : ''}">
                         <div class="calendar-date">${dateObj.toLocaleDateString('en-US', {
-                            weekday: 'long',
-                            month: 'long',
-                            day: 'numeric'
-                        })}</div>
+                    weekday: 'long',
+                    month: 'long',
+                    day: 'numeric'
+                })}</div>
                         ${assignments.map(a => {
-                            const blocked = isBlocked(new Date(a.event_start));
-                            return `
+                    const blocked = isBlocked(new Date(a.event_start));
+                    return `
                             <div class="calendar-event ${blocked ? 'calendar-event-blocked' : ''}">
                                 <div class="event-time">
                                     ${new Date(a.event_start).toLocaleTimeString('en-US', {
-                                        hour: 'numeric',
-                                        minute: '2-digit'
-                                    })}
+                        hour: 'numeric',
+                        minute: '2-digit'
+                    })}
                                 </div>
                                 <div class="event-title">${a.event_type}</div>
                                 ${blocked ? `<div class="event-blocked-badge">⚠️ ${i18n.t('schedule.badges.blocked').toUpperCase()}</div>` : ''}
                             </div>
                             `;
-                        }).join('')}
+                }).join('')}
                     </div>
                 `;
             }).join('');
 
     } catch (error) {
-        calendarEl.innerHTML = `<div class="loading">${i18n.t('messages.error_loading.calendar', {message: error.message})}</div>`;
+        calendarEl.innerHTML = `<div class="loading">${i18n.t('messages.error_loading.calendar', { message: error.message })}</div>`;
     }
 }
 
@@ -1191,19 +1263,19 @@ async function loadMySchedule() {
                     <h3>${a.event_type}</h3>
                     <div class="schedule-meta">
                         📅 ${eventDate.toLocaleDateString('en-US', {
-                            weekday: 'long',
-                            month: 'long',
-                            day: 'numeric',
-                            year: 'numeric'
-                        })}
+                weekday: 'long',
+                month: 'long',
+                day: 'numeric',
+                year: 'numeric'
+            })}
                         <br>
                         ⏰ ${eventDate.toLocaleTimeString('en-US', {
-                            hour: 'numeric',
-                            minute: '2-digit'
-                        })} - ${new Date(a.event_end).toLocaleTimeString('en-US', {
-                            hour: 'numeric',
-                            minute: '2-digit'
-                        })}
+                hour: 'numeric',
+                minute: '2-digit'
+            })} - ${new Date(a.event_end).toLocaleTimeString('en-US', {
+                hour: 'numeric',
+                minute: '2-digit'
+            })}
                         ${roleDisplay}
                     </div>
                 </div>
@@ -1262,7 +1334,7 @@ async function loadTimeOff() {
         }).join('');
 
     } catch (error) {
-        listEl.innerHTML = `<p class="help-text">${i18n.t('messages.error_loading.timeoff', {message: error.message})}</p>`;
+        listEl.innerHTML = `<p class="help-text">${i18n.t('messages.error_loading.timeoff', { message: error.message })}</p>`;
     }
 }
 
@@ -1381,10 +1453,9 @@ async function showSettings() {
     document.getElementById('settings-org').value = currentOrg.name;
     document.getElementById('settings-timezone').value = currentUser.timezone || 'UTC';
 
-    // Set current language
-    const currentLocale = i18n.getLocale();
+    // Set current language - prefer user's saved preference over i18n state
     const languageSelect = document.getElementById('settings-language');
-    languageSelect.value = currentLocale;
+    languageSelect.value = currentUser.language || i18n.getLocale() || 'en';
 
     // Add event listener for immediate language change on dropdown selection
     // Remove any existing listener first to prevent duplicates
@@ -1448,7 +1519,7 @@ async function showSettings() {
             // Map common role names to friendly labels
             const roleLabel = roleStr === 'admin' ? '👑 Administrator'
                 : roleStr === 'volunteer' ? '✓ Volunteer'
-                : roleStr.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase()); // Convert kebab-case to Title Case
+                    : roleStr.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase()); // Convert kebab-case to Title Case
 
             console.log(`    Final roleLabel: "${roleLabel}"`);
             return `<span style="display: inline-block; margin: 5px; padding: 5px 10px; background: var(--primary); color: white; border-radius: 4px;">${roleLabel}</span>`;
@@ -1575,6 +1646,13 @@ function closeSettings() {
 // ============================================================================
 
 async function loadAdminDashboard() {
+    // Security check: Ensure user is admin
+    if (!currentUser || !currentUser.roles || (!currentUser.roles.includes('admin') && !currentUser.roles.includes('super_admin'))) {
+        showToast(i18n.t('messages.errors.admin_required') || 'Admin access required', 'error');
+        router.navigate('/app/schedule');
+        return;
+    }
+
     // Load the current tab from URL hash or default to 'events'
     const hash = window.location.hash.slice(1); // Remove #
     const currentTab = hash.startsWith('admin-') ? hash.replace('admin-', '') : 'events';
@@ -1602,7 +1680,7 @@ function switchAdminTab(tabName) {
     document.getElementById(`admin-tab-${tabName}`).classList.add('active');
 
     // Load content for the tab
-    switch(tabName) {
+    switch (tabName) {
         case 'events':
             loadAdminEvents();
             loadAdminStats();
@@ -1674,14 +1752,14 @@ async function loadAdminEvents() {
                     <h4>${event.type}</h4>
                     <div class="admin-item-meta">
                         📅 ${new Date(event.start_time).toLocaleString('en-US', {
-                            weekday: 'short',
-                            month: 'short',
-                            day: 'numeric',
-                            hour: 'numeric',
-                            minute: '2-digit'
-                        })}
+            weekday: 'short',
+            month: 'short',
+            day: 'numeric',
+            hour: 'numeric',
+            minute: '2-digit'
+        })}
                         ${event.extra_data && event.extra_data.role_counts ?
-                          `<br>📋 Needs: ${Object.entries(event.extra_data.role_counts).map(([role, count]) => `${role} (${count})`).join(', ')}` : ''}
+                `<br>📋 Needs: ${Object.entries(event.extra_data.role_counts).map(([role, count]) => `${role} (${count})`).join(', ')}` : ''}
                     </div>
                     <div id="assignments-${event.id}" class="event-assignments"></div>
                 </div>
@@ -1699,7 +1777,7 @@ async function loadAdminEvents() {
         }
     } catch (error) {
         console.error('[loadAdminEvents] Error loading events:', error);
-        listEl.innerHTML = `<p class="help-text">${i18n.t('messages.error_loading.events', {message: error.message})}</p>`;
+        listEl.innerHTML = `<p class="help-text">${i18n.t('messages.error_loading.events', { message: error.message })}</p>`;
     }
 }
 
@@ -1784,7 +1862,7 @@ async function loadAdminPeople() {
             `;
         }).join('');
     } catch (error) {
-        listEl.innerHTML = `<p class="help-text">${i18n.t('messages.error_loading.people', {message: error.message})}</p>`;
+        listEl.innerHTML = `<p class="help-text">${i18n.t('messages.error_loading.people', { message: error.message })}</p>`;
     }
 }
 
@@ -1820,7 +1898,7 @@ async function loadAdminSolutions() {
             </div>
         `).join('');
     } catch (error) {
-        listEl.innerHTML = `<p class="help-text">${i18n.t('messages.error_loading.schedules', {message: error.message})}</p>`;
+        listEl.innerHTML = `<p class="help-text">${i18n.t('messages.error_loading.schedules', { message: error.message })}</p>`;
     }
 }
 
@@ -2033,8 +2111,8 @@ async function showAssignments(eventId) {
                             </h4>
                             <div class="role-people">
                                 ${rolePeople.length === 0 ?
-                                    '<p class="help-text">No one has this role</p>' :
-                                    rolePeople.map(person => `
+                            '<p class="help-text">No one has this role</p>' :
+                            rolePeople.map(person => `
                                         <div class="person-assignment-item ${person.is_blocked ? 'person-blocked' : ''}">
                                             <div class="person-info">
                                                 <strong>${person.name}</strong>
@@ -2048,7 +2126,7 @@ async function showAssignments(eventId) {
                                             </button>
                                         </div>
                                     `).join('')
-                                }
+                        }
                             </div>
                         </div>
                     `;
@@ -2343,7 +2421,7 @@ function updateRoleBadgesDisplay() {
 function updateOrgDropdownDisplay() {
     const orgDropdown = document.getElementById('org-dropdown-visible');
     const oldOrgDropdown = document.getElementById('org-dropdown');
-    
+
     if (!orgDropdown || !oldOrgDropdown) return;
 
     // Copy options from the old hidden dropdown to the new visible one
@@ -2364,7 +2442,7 @@ function showSetupHint() {
 
     // Show hint if user has no roles or no availability set
     const hasRoles = currentUser && currentUser.roles && currentUser.roles.length > 0;
-    
+
     if (!hasRoles) {
         hint.classList.remove('hidden');
     }
@@ -2385,7 +2463,7 @@ function dismissSetupHint() {
 // Hook into existing functions to update the profile panel
 const originalLoadOrganizations = window.loadOrganizations;
 if (typeof loadOrganizations === 'function') {
-    window.loadOrganizations = async function() {
+    window.loadOrganizations = async function () {
         await originalLoadOrganizations();
         updateOrgDropdownDisplay();
     };
@@ -2394,7 +2472,7 @@ if (typeof loadOrganizations === 'function') {
 // Update profile panel when settings are saved
 const originalSaveSettings = window.saveSettings;
 if (typeof saveSettings === 'function') {
-    window.saveSettings = async function() {
+    window.saveSettings = async function () {
         await originalSaveSettings();
         updateRoleBadgesDisplay();
         updateOrgDropdownDisplay();
@@ -2523,7 +2601,7 @@ async function loadInvitations() {
             </div>
         `).join('');
     } catch (error) {
-        listEl.innerHTML = `<p class="help-text">${i18n.t('messages.error_loading.invitations', {message: error.message})}</p>`;
+        listEl.innerHTML = `<p class="help-text">${i18n.t('messages.error_loading.invitations', { message: error.message })}</p>`;
         document.getElementById('pending-invitations').textContent = '0';
         document.getElementById('accepted-invitations').textContent = '0';
         document.getElementById('expired-invitations').textContent = '0';
@@ -2701,7 +2779,7 @@ async function showScheduleStats() {
             </div>
         `;
     } catch (error) {
-        statsContent.innerHTML = `<p class="help-text">${i18n.t('messages.error_loading.statistics', {message: error.message})}</p>`;
+        statsContent.innerHTML = `<p class="help-text">${i18n.t('messages.error_loading.statistics', { message: error.message })}</p>`;
     }
 }
 
@@ -2752,17 +2830,17 @@ async function loadAdminCalendarView() {
                 return `
                     <div class="calendar-day has-event" style="margin-bottom: 15px;">
                         <div class="calendar-date">${dateObj.toLocaleDateString('en-US', {
-                            weekday: 'long',
-                            month: 'long',
-                            day: 'numeric'
-                        })}</div>
+                    weekday: 'long',
+                    month: 'long',
+                    day: 'numeric'
+                })}</div>
                         ${assignments.map(a => `
                             <div class="calendar-event" style="margin-top: 10px;">
                                 <div class="event-time">
                                     ${new Date(a.event_start).toLocaleTimeString('en-US', {
-                                        hour: 'numeric',
-                                        minute: '2-digit'
-                                    })}
+                    hour: 'numeric',
+                    minute: '2-digit'
+                })}
                                 </div>
                                 <div class="event-title">${a.event_type}</div>
                                 <div style="font-size: 0.85rem; color: var(--text-light); margin-top: 5px;">
@@ -2774,7 +2852,7 @@ async function loadAdminCalendarView() {
                 `;
             }).join('');
     } catch (error) {
-        calendarEl.innerHTML = `<div class="loading">${i18n.t('messages.error_loading.calendar', {message: error.message})}</div>`;
+        calendarEl.innerHTML = `<div class="loading">${i18n.t('messages.error_loading.calendar', { message: error.message })}</div>`;
     }
 }
 
@@ -2871,7 +2949,7 @@ function closeSelectRoleModal() {
 function initRoleSelectHandler() {
     const roleSelect = document.getElementById('event-role-select');
     if (roleSelect && !roleSelect.hasEventListener) {
-        roleSelect.addEventListener('change', function() {
+        roleSelect.addEventListener('change', function () {
             const customRoleGroup = document.getElementById('custom-role-group');
             if (this.value === 'other') {
                 customRoleGroup.style.display = 'block';

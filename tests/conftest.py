@@ -20,7 +20,9 @@ _test_db_session = None
 
 
 # Test server configuration
-APP_URL = os.getenv("E2E_APP_URL", "http://localhost:8000").rstrip("/")
+# Use a different port for tests to avoid conflict with running dev server
+TEST_PORT = 8001
+APP_URL = os.getenv("E2E_APP_URL", f"http://localhost:{TEST_PORT}").rstrip("/")
 API_BASE = os.getenv("E2E_API_BASE", f"{APP_URL}/api").rstrip("/")
 
 
@@ -32,7 +34,7 @@ def app_config() -> AppConfig:
 
 @pytest.fixture(scope="session")
 def api_server(app_config: AppConfig):
-    """Start API server for testing session (or use already-running server in Docker)."""
+    """Start API server for testing session."""
     # Set test database URL environment variable
     test_env = os.environ.copy()
     test_env["DATABASE_URL"] = f"sqlite:///{TEST_DB_PATH}"
@@ -49,88 +51,61 @@ def api_server(app_config: AppConfig):
 
     parsed_url = urlparse(app_config.app_url)
     host = parsed_url.hostname or "0.0.0.0"
-    port = parsed_url.port or (443 if parsed_url.scheme == "https" else 80)
+    port = parsed_url.port or TEST_PORT
 
-    # Check if server is already running (Docker environment)
-    # Try port check first (faster and more reliable than HTTP check)
+    # Always start a new server for tests, don't rely on existing one
+    # This ensures we use the correct TEST_DB_PATH and don't wipe the dev server's DB
+    
+    # Check if port is in use (maybe by a previous test run that didn't cleanup)
     import socket
-
-    server_already_running = False
-    print(f"🔍 Checking if port {port} already in use...")
-
-    # Try to bind to the port - if it fails, something is already using it
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     sock.settimeout(1)
     try:
         sock.bind((host if host != "0.0.0.0" else "127.0.0.1", port))
         sock.close()
-        print(f"   Port {port} is available - need to start server")
-    except OSError as e:
-        if e.errno == 98:  # Address already in use
-            server_already_running = True
-            print(f"✅ Port {port} already in use - server appears to be running")
-            # Double-check with health endpoint
-            try:
-                response = requests.get(f"{app_config.app_url}/health", timeout=5)
-                if response.status_code == 200:
-                    print(f"✅ Health check confirmed - server is healthy")
-                else:
-                    print(f"⚠️  Health check returned {response.status_code}")
-                    print(f"   Will try to kill and restart server")
-                    server_already_running = False  # Need to restart
-            except Exception as e:
-                print(f"⚠️  Health check failed: {type(e).__name__} - {e}")
-                print(f"   Will kill zombie process and start fresh server")
-                server_already_running = False  # Port bound but server not responding
-                # Kill the zombie process holding the port
-                try:
-                    subprocess.run(["lsof", "-ti", f":{port}"], capture_output=True, text=True, check=True, timeout=5)
-                    result = subprocess.run(["lsof", "-ti", f":{port}"], capture_output=True, text=True)
-                    if result.returncode == 0 and result.stdout.strip():
-                        pid = result.stdout.strip()
-                        subprocess.run(["kill", "-9", pid], timeout=5)
-                        print(f"   Killed zombie process {pid} on port {port}")
-                        time.sleep(1)  # Give OS time to release the port
-                except Exception as kill_error:
-                    print(f"   Failed to kill zombie process: {kill_error}")
+    except OSError:
+        # Port in use, try to kill whatever is on it
+        try:
+            subprocess.run(["lsof", "-ti", f":{port}"], capture_output=True, text=True, check=True, timeout=5)
+            result = subprocess.run(["lsof", "-ti", f":{port}"], capture_output=True, text=True)
+            if result.returncode == 0 and result.stdout.strip():
+                pid = result.stdout.strip()
+                subprocess.run(["kill", "-9", pid], timeout=5)
+                time.sleep(1)
+        except Exception:
+            pass
+
+    # Start server with test database
+    process = subprocess.Popen(
+        [
+            "poetry",
+            "run",
+            "uvicorn",
+            "api.main:app",
+            "--host",
+            host,
+            "--port",
+            str(port),
+        ],
+        env=test_env,
+    )
+
+    # Wait for server to be ready
+    server_ready = False
+    for _ in range(60):
+        try:
+            response = requests.get(f"{app_config.app_url}/health", timeout=1)
+            if response.status_code == 200:
+                server_ready = True
+                break
+        except Exception:
+            time.sleep(0.5)
         else:
-            print(f"   Unexpected socket error: {e}")
-            sock.close()
+            time.sleep(0.5)
 
-    # Only start server if not already running
-    process = None
-    if not server_already_running:
-        # Start server with test database
-        process = subprocess.Popen(
-            [
-                "poetry",
-                "run",
-                "uvicorn",
-                "api.main:app",
-                "--host",
-                host,
-                "--port",
-                str(port),
-            ],
-            env=test_env,
-        )
-
-        # Wait for server to be ready
-        server_ready = False
-        for _ in range(60):
-            try:
-                response = requests.get(f"{app_config.app_url}/health", timeout=1)
-                if response.status_code == 200:
-                    server_ready = True
-                    break
-            except Exception:
-                time.sleep(0.5)
-            else:
-                time.sleep(0.5)
-
-        if not server_ready:
-            process.terminate()
-            raise RuntimeError("API server failed to start within timeout window")
+    if not server_ready:
+        process.terminate()
+        raise RuntimeError("API server failed to start within timeout window")
 
     # Setup test data
     # Force complete reload of setup_test_data module to get latest changes
@@ -154,7 +129,7 @@ def api_server(app_config: AppConfig):
 
     yield process
 
-    # Cleanup - only terminate if we started the server
+    # Cleanup
     if process is not None:
         process.terminate()
         try:
@@ -359,7 +334,7 @@ from sqlalchemy import create_engine, text
 from sqlalchemy.orm import sessionmaker
 from api.models import Base
 
-TEST_DB_PATH = Path(__file__).resolve().parent.parent / "test_roster.db"
+TEST_DB_PATH = Path(__file__).resolve().parent.parent / "test_roster_e2e.db"
 TEST_DATABASE_URL = f"sqlite:///{TEST_DB_PATH}"
 SKIP_DB_FIXTURES = os.getenv("SKIP_TEST_DB_FIXTURES", "").lower() in {"1", "true", "yes", "on"}
 if SKIP_DB_FIXTURES:
