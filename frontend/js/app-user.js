@@ -769,11 +769,15 @@ async function loadUserOrganizations() {
         const dropdown = document.getElementById('org-dropdown');
         const visibleDropdown = document.getElementById('org-dropdown-visible');
         const teamsFilter = document.getElementById('teams-org-filter');
+        const peopleFilter = document.getElementById('people-org-filter');
+        const eventsFilter = document.getElementById('events-org-filter');
 
         const singleOrgHTML = `<option value="${currentOrg.id}" selected>${currentOrg.name}</option>`;
         if (dropdown) dropdown.innerHTML = singleOrgHTML;
         if (visibleDropdown) visibleDropdown.innerHTML = singleOrgHTML;
         if (teamsFilter) teamsFilter.innerHTML = singleOrgHTML;
+        if (peopleFilter) peopleFilter.innerHTML = singleOrgHTML;
+        if (eventsFilter) eventsFilter.innerHTML = singleOrgHTML;
 
         const orgDisplay = document.getElementById('org-name-display');
         if (orgDisplay) {

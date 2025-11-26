@@ -22,7 +22,8 @@
     "events": "Events",
     "solver": "Scheduler",
     "invitations": "Invitations",
-    "reports": "Reports"
+    "reports": "Reports",
+    "teams": "Equipes"
   },
   "people": {
     "title": "Manage People",
@@ -87,5 +88,6 @@
   "teams": {
     "deleteTeamConfirm": "Excluir equipe \"{{teamName}}\"?",
     "actionCannotBeUndone": "Esta ação não pode ser desfeita."
-  }
+  },
+  "team_management": "Gestão de Equipes"
 }

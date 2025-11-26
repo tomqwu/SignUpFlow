@@ -738,6 +738,12 @@
                                         <span class="stat-value-inline" id="admin-events-count">0</span>
                                     </div>
                                 </div>
+                                <div class="admin-filter">
+                                    <label>Organization:</label>
+                                    <select id="events-org-filter" onchange="loadAdminEvents()">
+                                        <option value="">Select Organization</option>
+                                    </select>
+                                </div>
                                 <div id="admin-events-list" class="admin-list">
                                     <div class="loading"><span data-i18n="events.loading_events">Loading
                                             events...</span>
@@ -825,6 +831,12 @@
                                             People:</span>
                                         <span class="stat-value-inline" id="admin-people-count">0</span>
                                     </div>
+                                </div>
+                                <div class="admin-filter">
+                                    <label>Organization:</label>
+                                    <select id="people-org-filter" onchange="loadPeople()">
+                                        <option value="">Select Organization</option>
+                                    </select>
                                 </div>
 
                                 <!-- Invitation Status Dashboard -->

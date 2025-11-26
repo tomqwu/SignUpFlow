@@ -111,7 +111,7 @@ class TestDatabaseOverride:
 
         # Check that it's a test database session
         # We can verify by checking the connection URL
-        assert "test_roster.db" in str(db.bind.url)
+        assert "test_roster_e2e.db" in str(db.bind.url)
 
     def test_database_session_can_be_created(self):
         """Verify database session can be created from override."""
@@ -125,7 +125,7 @@ class TestDatabaseOverride:
         assert db.is_active
 
         # Session should use test database
-        assert "test_roster.db" in str(db.bind.url)
+        assert "test_roster_e2e.db" in str(db.bind.url)
 
         db.close()
 

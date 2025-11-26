@@ -96,10 +96,14 @@ class TestEmailService:
         mock_server.sendmail.assert_called_once()
 
     @patch('api.services.email_service.smtplib.SMTP')
-    def test_send_email_handles_smtp_failure(self, mock_smtp):
+    @patch('api.services.email_service.time.sleep')
+    def test_send_email_handles_smtp_failure(self, mock_sleep, mock_smtp):
         """Test that SMTP failure is handled gracefully."""
         # Arrange
         service = EmailService()
+        # Speed up retries
+        service.retry_delay = 0
+        
         recipient_email = "volunteer@example.com"
 
         # Mock SMTP to raise exception
@@ -114,6 +118,8 @@ class TestEmailService:
 
         # Assert - should return None on failure
         assert result is None
+        # Should have retried
+        assert mock_smtp.call_count > 1
 
     @patch('api.services.email_service.smtplib.SMTP')
     def test_send_email_direct_html_content(self, mock_smtp):
