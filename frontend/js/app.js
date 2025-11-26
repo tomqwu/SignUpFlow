@@ -34,12 +34,25 @@ function switchTab(tabName) {
         content.classList.toggle('active', content.id === `${tabName}-tab`);
     });
 
+    // Update Page Title
+    const tabTitles = {
+        'organizations': 'Organizations',
+        'people': 'People',
+        'teams': 'Teams',
+        'events': 'Events',
+        'solver': 'Solver',
+        'solutions': 'Solutions'
+    };
+    const title = tabTitles[tabName] || 'Admin Console';
+    const pageTitleEl = document.querySelector('.page-title h1');
+    if (pageTitleEl) pageTitleEl.textContent = title;
+
     // Load data for tab
     loadTabData(tabName);
 }
 
 function loadTabData(tabName) {
-    switch(tabName) {
+    switch (tabName) {
         case 'people':
             loadPeople();
             populateOrgSelects();
@@ -86,6 +99,7 @@ async function loadOrganizations() {
         const response = await fetch(`${API_BASE_URL}/organizations/`);
         const data = await response.json();
         organizations = data.organizations;
+        console.log('Loaded organizations:', organizations);
 
         // Always populate org selects, even if no list element
         populateOrgSelects();

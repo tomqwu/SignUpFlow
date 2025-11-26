@@ -76,8 +76,8 @@ services:
       # Use service name 'api' for Docker networking (localhost doesn't work inside container)
       E2E_API_BASE: http://api:8000/api
 
-      # Disable email for E2E tests (prevents SMTP timeout issues with invalid credentials)
-      EMAIL_ENABLED: false
+      # Enable email for development/manual testing
+      EMAIL_ENABLED: true
 
       # Disable rate limiting for E2E tests (prevents HTTP 429 errors during test suite)
       DISABLE_RATE_LIMITS: true
@@ -89,6 +89,8 @@ services:
       # These are the only values that should be here - everything else in YAML
       DATABASE_URL: postgresql://${POSTGRES_USER:-signupflow}:${POSTGRES_PASSWORD:-dev_password_change_in_production}@db:5432/${POSTGRES_DB:-signupflow_dev}
       REDIS_URL: redis://:${REDIS_PASSWORD:-dev_redis_password}@redis:6379/0
+      CELERY_BROKER_URL: redis://:${REDIS_PASSWORD:-dev_redis_password}@redis:6379/0
+      CELERY_RESULT_BACKEND: redis://:${REDIS_PASSWORD:-dev_redis_password}@redis:6379/0
 
     ports:
       - "${PORT:-8000}:8000"
@@ -123,6 +125,40 @@ services:
 
     # Override CMD for development with auto-reload
     command: uvicorn api.main:app --host 0.0.0.0 --port 8000 --reload --log-level debug
+
+  # ============================================================================
+  # Celery Worker (Background Tasks)
+  # ============================================================================
+  worker:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    container_name: signupflow-dev-worker
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      api:
+        condition: service_started
+    env_file:
+      - .env
+    environment:
+      CONFIG_PROFILE: dev
+      EMAIL_ENABLED: "true"
+      # Runtime overrides
+      DATABASE_URL: postgresql://${POSTGRES_USER:-signupflow}:${POSTGRES_PASSWORD:-dev_password_change_in_production}@db:5432/${POSTGRES_DB:-signupflow_dev}
+      REDIS_URL: redis://:${REDIS_PASSWORD:-dev_redis_password}@redis:6379/0
+      CELERY_BROKER_URL: redis://:${REDIS_PASSWORD:-dev_redis_password}@redis:6379/0
+      CELERY_RESULT_BACKEND: redis://:${REDIS_PASSWORD:-dev_redis_password}@redis:6379/0
+    volumes:
+      - ./api:/app/api
+      - ./config:/app/config:ro
+      - ./logs:/app/logs
+    networks:
+      - signupflow-dev-network
+    command: celery -A api.celery_app worker --loglevel=info
 
 # ============================================================================
 # Volumes (persistent data storage)

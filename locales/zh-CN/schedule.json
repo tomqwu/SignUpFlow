@@ -43,5 +43,9 @@
   "all_upcoming": "全部即将到来",
   "google_calendar": "Google 日历",
   "apple_calendar": "Apple 日历",
-  "outlook": "Outlook"
+  "outlook": "Outlook",
+  "overview": "概览",
+  "upcoming_assignments": "即将到来的任务",
+  "my_assignments": "我的任务",
+  "quick_actions": "快速操作"
 }

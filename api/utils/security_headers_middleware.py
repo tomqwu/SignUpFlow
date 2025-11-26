@@ -86,9 +86,9 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
         policy_directives = [
             "default-src 'self'",
             "script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://www.google.com https://www.gstatic.com",  # Allow i18next CDN and reCAPTCHA
-            "style-src 'self' 'unsafe-inline'",  # Allow inline styles (used in app)
+            "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",  # Allow inline styles and Google Fonts
             "img-src 'self' data: https:",  # Allow images from same origin, data URIs, and HTTPS
-            "font-src 'self' data:",  # Allow fonts from same origin and data URIs
+            "font-src 'self' data: https://fonts.gstatic.com",  # Allow fonts from same origin, data URIs, and Google Fonts
             "connect-src 'self' https://www.google.com",  # Allow API calls to same origin and reCAPTCHA
             "frame-src 'self' https://www.google.com https://www.gstatic.com",  # Allow Google reCAPTCHA iframes
             "frame-ancestors 'none'",  # Prevent embedding (same as X-Frame-Options: DENY)

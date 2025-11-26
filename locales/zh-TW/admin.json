@@ -22,8 +22,10 @@
     "events": "活动",
     "solver": "调度程序",
     "invitations": "邀请",
-    "reports": "报告"
+    "reports": "报告",
+    "teams": "團隊"
   },
+  "team_management": "團隊管理",
   "people": {
     "title": "管理人员",
     "add_button": "添加人员",

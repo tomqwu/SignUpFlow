@@ -1,29 +1,43 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="SignUpFlow - Volunteer scheduling made simple. AI-powered sign-up management for churches, sports leagues, and non-profits.">
-    <meta name="keywords" content="volunteer signup, church scheduling, sports league management, volunteer coordination, AI scheduling">
+    <meta name="description"
+        content="SignUpFlow - Volunteer scheduling made simple. AI-powered sign-up management for churches, sports leagues, and non-profits.">
+    <meta name="keywords"
+        content="volunteer signup, church scheduling, sports league management, volunteer coordination, AI scheduling">
     <meta name="author" content="SignUpFlow">
 
     <!-- Open Graph / Facebook -->
     <meta property="og:type" content="website">
     <meta property="og:url" content="https://signupflow.io/">
     <meta property="og:title" content="SignUpFlow - Volunteer Scheduling Made Simple">
-    <meta property="og:description" content="AI-powered sign-up management for churches, sports leagues, and non-profits.">
+    <meta property="og:description"
+        content="AI-powered sign-up management for churches, sports leagues, and non-profits.">
     <meta property="og:image" content="/images/signupflow-logo.svg">
 
     <!-- Twitter -->
     <meta property="twitter:card" content="summary_large_image">
     <meta property="twitter:url" content="https://signupflow.io/">
     <meta property="twitter:title" content="SignUpFlow - Volunteer Scheduling Made Simple">
-    <meta property="twitter:description" content="AI-powered sign-up management for churches, sports leagues, and non-profits.">
+    <meta property="twitter:description"
+        content="AI-powered sign-up management for churches, sports leagues, and non-profits.">
 
     <title data-i18n="schedule.title">SignUpFlow - My Schedule</title>
     <link rel="icon" type="image/svg+xml" href="favicon.svg">
     <link rel="canonical" href="https://signupflow.io/">
-    <link rel="stylesheet" href="/css/styles.css">
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@500;700&display=swap"
+        rel="stylesheet">
+
+    <!-- Modern Styles -->
+    <link rel="stylesheet" href="/css/styles-modern.css?v=9">
     <link rel="stylesheet" href="/css/mobile.css">
     <link rel="stylesheet" href="/css/sms.css">
     <script src="/js/debug.js"></script>
@@ -33,6 +47,8 @@
     <script src="/js/search-filter.js"></script>
     <script src="/js/auth-fetch.js"></script>
     <script src="/js/router.js"></script>
+    <script src="/js/sample-data-manager.js?v=9"></script>
+
     <script src="/js/recaptcha.js"></script>
 
     <!-- Structured Data for SEO -->
@@ -60,6 +76,7 @@
     }
     </script>
 </head>
+
 <body>
     <div class="container">
         <!-- Onboarding Screen -->
@@ -75,8 +92,11 @@
                         <option value="vi">Tiếng Việt</option>
                     </select>
                 </div>
-                <h1><img src="/images/signupflow-logo.svg" alt="SignUpFlow" style="height: 60px; vertical-align: middle; margin-right: 20px;"> <span data-i18n="auth.welcome_to_signupflow">Welcome to SignUpFlow</span></h1>
-                <p class="welcome-text" data-i18n="auth.welcome_subtitle">Join your organization and manage your schedule effortlessly</p>
+                <h1><img src="/images/signupflow-logo.svg" alt="SignUpFlow"
+                        style="height: 60px; vertical-align: middle; margin-right: 20px;"> <span
+                        data-i18n="auth.welcome_to_signupflow">Welcome to SignUpFlow</span></h1>
+                <p class="welcome-text" data-i18n="auth.welcome_subtitle">Join your organization and manage your
+                    schedule effortlessly</p>
 
                 <div class="onboarding-steps">
                     <div class="step">
@@ -96,8 +116,10 @@
                     </div>
                 </div>
 
-                <button class="btn btn-primary btn-large" onclick="startOnboarding()" data-i18n="auth.get_started">Get Started →</button>
-                <p class="help-text"><span data-i18n="auth.already_have_account">Already have an account?</span> <a href="#" onclick="showLogin(); return false;" data-i18n="auth.sign_in_link">Sign in</a></p>
+                <button class="btn btn-primary btn-large" onclick="startOnboarding()" data-i18n="auth.get_started">Get
+                    Started →</button>
+                <p class="help-text"><span data-i18n="auth.already_have_account">Already have an account?</span> <a
+                        href="#" onclick="showLogin(); return false;" data-i18n="auth.sign_in_link">Sign in</a></p>
             </div>
         </div>
 
@@ -115,31 +137,38 @@
                     </select>
                 </div>
                 <h2 data-i18n="auth.sign_in_title">Sign In</h2>
-                <p class="subtitle" data-i18n="auth.welcome_back_subtitle">Welcome back! Sign in to access your schedule</p>
+                <p class="subtitle" data-i18n="auth.welcome_back_subtitle">Welcome back! Sign in to access your schedule
+                </p>
 
                 <form onsubmit="handleLogin(event)">
                     <div class="form-group">
                         <label data-i18n="common.labels.email">Email Address</label>
-                        <input type="email" id="login-email" data-i18n-placeholder="auth.placeholder_email" placeholder="your@email.com" autofocus>
+                        <input type="email" id="login-email" data-i18n-placeholder="auth.placeholder_email"
+                            placeholder="your@email.com" autofocus>
                     </div>
 
                     <div class="form-group">
                         <label data-i18n="auth.password">Password</label>
-                        <input type="password" id="login-password" data-i18n-placeholder="auth.placeholder_password" placeholder="Enter your password">
+                        <input type="password" id="login-password" data-i18n-placeholder="auth.placeholder_password"
+                            placeholder="Enter your password">
                     </div>
 
                     <div id="login-error" class="error-message hidden" role="alert"></div>
 
                     <div class="form-actions">
-                        <button type="submit" class="btn btn-primary btn-large" data-i18n="auth.sign_in">Sign In →</button>
+                        <button type="submit" class="btn btn-primary btn-large" data-i18n="auth.sign_in">Sign In
+                            →</button>
                     </div>
 
                     <p class="help-text" style="text-align: center; margin-top: 10px;">
-                        <a href="#" onclick="showForgotPassword(); return false;" data-i18n="auth.forgot_password">Forgot password?</a>
+                        <a href="#" onclick="showForgotPassword(); return false;"
+                            data-i18n="auth.forgot_password">Forgot password?</a>
                     </p>
                 </form>
 
-                <p class="help-text"><span data-i18n="auth.no_account">Don't have an account?</span> <a href="#" onclick="startOnboarding(); return false;"><span data-i18n="auth.signup_link">Sign up</span></a></p>
+                <p class="help-text"><span data-i18n="auth.no_account">Don't have an account?</span> <a href="#"
+                        onclick="startOnboarding(); return false;"><span data-i18n="auth.signup_link">Sign up</span></a>
+                </p>
             </div>
         </div>
 
@@ -147,23 +176,27 @@
         <div id="forgot-password-screen" class="screen hidden">
             <div class="form-container">
                 <h2 data-i18n="auth.reset_password">Reset Password</h2>
-                <p class="subtitle" data-i18n="auth.reset_password_subtitle">Enter your email address and we'll send you a reset link</p>
+                <p class="subtitle" data-i18n="auth.reset_password_subtitle">Enter your email address and we'll send you
+                    a reset link</p>
 
                 <form onsubmit="handleForgotPassword(event)">
                     <div class="form-group">
                         <label data-i18n="common.labels.email">Email Address</label>
-                        <input type="email" id="forgot-email" data-i18n-placeholder="auth.placeholder_email" placeholder="your@email.com" required autofocus>
+                        <input type="email" id="forgot-email" data-i18n-placeholder="auth.placeholder_email"
+                            placeholder="your@email.com" required autofocus>
                     </div>
 
                     <div id="forgot-error" class="error-message hidden"></div>
                     <div id="forgot-success" class="success-message hidden"></div>
 
                     <div class="form-actions">
-                        <button type="submit" class="btn btn-primary btn-large" data-i18n="auth.send_reset_link">Send Reset Link →</button>
+                        <button type="submit" class="btn btn-primary btn-large" data-i18n="auth.send_reset_link">Send
+                            Reset Link →</button>
                     </div>
                 </form>
 
-                <p class="help-text"><span data-i18n="auth.remember_password">Remember your password?</span> <a href="#" onclick="showLogin(); return false;" data-i18n="auth.back_to_login">Back to login</a></p>
+                <p class="help-text"><span data-i18n="auth.remember_password">Remember your password?</span> <a href="#"
+                        onclick="showLogin(); return false;" data-i18n="auth.back_to_login">Back to login</a></p>
             </div>
         </div>
 
@@ -178,20 +211,24 @@
 
                     <div class="form-group">
                         <label data-i18n="auth.new_password">New Password</label>
-                        <input type="password" id="reset-password" data-i18n-placeholder="auth.placeholder_new_password" placeholder="Enter new password" minlength="8" required autofocus>
+                        <input type="password" id="reset-password" data-i18n-placeholder="auth.placeholder_new_password"
+                            placeholder="Enter new password" minlength="8" required autofocus>
                         <p class="help-text" data-i18n="auth.password_requirements">At least 8 characters</p>
                     </div>
 
                     <div class="form-group">
                         <label data-i18n="auth.confirm_password">Confirm Password</label>
-                        <input type="password" id="reset-password-confirm" data-i18n-placeholder="auth.placeholder_confirm_password" placeholder="Confirm new password" minlength="8" required>
+                        <input type="password" id="reset-password-confirm"
+                            data-i18n-placeholder="auth.placeholder_confirm_password" placeholder="Confirm new password"
+                            minlength="8" required>
                     </div>
 
                     <div id="reset-error" class="error-message hidden"></div>
                     <div id="reset-success" class="success-message hidden"></div>
 
                     <div class="form-actions">
-                        <button type="submit" class="btn btn-primary btn-large" data-i18n="auth.reset_password_button">Reset Password →</button>
+                        <button type="submit" class="btn btn-primary btn-large"
+                            data-i18n="auth.reset_password_button">Reset Password →</button>
                     </div>
                 </form>
             </div>
@@ -201,18 +238,23 @@
         <div id="join-screen" class="screen hidden">
             <div class="form-container">
                 <h2 data-i18n="auth.join_org_invitation">Join with Invitation</h2>
-                <p class="subtitle" data-i18n="auth.enter_invitation_code">Enter the invitation code you received via email</p>
+                <p class="subtitle" data-i18n="auth.enter_invitation_code">Enter the invitation code you received via
+                    email</p>
 
                 <!-- Invitation Token Entry -->
                 <form onsubmit="verifyInvitationToken(event)" id="invitation-form">
                     <div class="form-group">
                         <label data-i18n="auth.invitation_token">Invitation Code</label>
-                        <input type="text" id="invitation-token" data-i18n-placeholder="auth.placeholder_invitation_token" placeholder="Enter your invitation code" required autofocus>
-                        <p class="help-text" data-i18n="auth.invitation_help">This was sent to your email by your organization administrator</p>
+                        <input type="text" id="invitation-token"
+                            data-i18n-placeholder="auth.placeholder_invitation_token"
+                            placeholder="Enter your invitation code" required autofocus>
+                        <p class="help-text" data-i18n="auth.invitation_help">This was sent to your email by your
+                            organization administrator</p>
                     </div>
                     <div id="invitation-error" class="error-message hidden"></div>
                     <div class="form-actions">
-                        <button type="submit" class="btn btn-primary btn-large" data-i18n="auth.verify_invitation">Verify Invitation →</button>
+                        <button type="submit" class="btn btn-primary btn-large"
+                            data-i18n="auth.verify_invitation">Verify Invitation →</button>
                     </div>
                 </form>
 
@@ -220,16 +262,21 @@
                     <span data-i18n="common.or">or</span>
                 </div>
 
-                <button class="btn btn-secondary" onclick="showCreateOrg()"><span data-i18n="auth.create_new_organization">Create New Organization</span></button>
+                <button class="btn btn-secondary" onclick="showCreateOrg()"><span
+                        data-i18n="auth.create_new_organization">Create New Organization</span></button>
 
                 <div id="create-org-section" class="hidden">
                     <h3 data-i18n="auth.create_org">Create Your Organization</h3>
-                    <p class="help-text" data-i18n="auth.first_user_becomes_admin">You'll be the first member and administrator</p>
+                    <p class="help-text" data-i18n="auth.first_user_becomes_admin">You'll be the first member and
+                        administrator</p>
                     <form onsubmit="createAndJoinOrg(event)">
-                        <input type="text" id="new-org-name" data-i18n-placeholder="auth.placeholder_org_name" placeholder="Organization Name" required>
-                        <input type="text" id="new-org-region" data-i18n-placeholder="auth.placeholder_location" placeholder="Location (optional)">
+                        <input type="text" id="new-org-name" data-i18n-placeholder="auth.placeholder_org_name"
+                            placeholder="Organization Name" required>
+                        <input type="text" id="new-org-region" data-i18n-placeholder="auth.placeholder_location"
+                            placeholder="Location (optional)">
                         <div class="form-actions">
-                            <button type="submit" class="btn btn-primary" data-i18n="common.buttons.create">Create & Continue</button>
+                            <button type="submit" class="btn btn-primary" data-i18n="common.buttons.create">Create &
+                                Continue</button>
                         </div>
                     </form>
                 </div>
@@ -245,7 +292,8 @@
         <div id="profile-screen" class="screen hidden">
             <div class="form-container">
                 <h2 data-i18n="auth.complete_signup">Complete Your Signup</h2>
-                <p class="subtitle" data-i18n="auth.almost_there">Almost there! Just set your password to complete registration</p>
+                <p class="subtitle" data-i18n="auth.almost_there">Almost there! Just set your password to complete
+                    registration</p>
 
                 <form onsubmit="completeInvitationSignup(event)">
                     <!-- Hidden field for invitation token -->
@@ -254,17 +302,21 @@
                     <!-- Pre-filled from invitation -->
                     <div class="form-group">
                         <label data-i18n="common.labels.full_name">Full Name</label>
-                        <input type="text" id="user-name" data-i18n-placeholder="common.placeholder_full_name" placeholder="Your Full Name" required>
+                        <input type="text" id="user-name" data-i18n-placeholder="common.placeholder_full_name"
+                            placeholder="Your Full Name" required>
                     </div>
 
                     <div class="form-group">
                         <label data-i18n="common.labels.email">Email Address</label>
-                        <input type="email" id="user-email" data-i18n-placeholder="common.placeholder_email" placeholder="Email Address" required>
+                        <input type="email" id="user-email" data-i18n-placeholder="common.placeholder_email"
+                            placeholder="Email Address" required>
                     </div>
 
                     <div class="form-group">
                         <label data-i18n="auth.create_password">Create Password</label>
-                        <input type="password" id="user-password" data-i18n-placeholder="auth.placeholder_create_password" placeholder="Create Password (min 6 characters)" minlength="6" required autofocus>
+                        <input type="password" id="user-password"
+                            data-i18n-placeholder="auth.placeholder_create_password"
+                            placeholder="Create Password (min 6 characters)" minlength="6" required autofocus>
                     </div>
 
                     <div class="form-group">
@@ -313,7 +365,8 @@
                                 <option value="Pacific/Auckland">Auckland</option>
                             </optgroup>
                         </select>
-                        <p class="help-text" data-i18n="settings.timezone_auto_detected">Auto-detected from your browser</p>
+                        <p class="help-text" data-i18n="settings.timezone_auto_detected">Auto-detected from your browser
+                        </p>
                     </div>
 
                     <div class="form-group">
@@ -321,488 +374,562 @@
                         <div id="invitation-roles-display" class="role-badges">
                             <!-- Pre-assigned roles from invitation will be displayed here -->
                         </div>
-                        <p class="help-text" data-i18n="auth.roles_assigned_by_admin">These roles were assigned by your organization administrator</p>
+                        <p class="help-text" data-i18n="auth.roles_assigned_by_admin">These roles were assigned by your
+                            organization administrator</p>
                     </div>
 
                     <div class="form-actions">
-                        <button type="submit" class="btn btn-primary btn-large" data-i18n="auth.complete_registration">Complete Registration →</button>
+                        <button type="submit" class="btn btn-primary btn-large"
+                            data-i18n="auth.complete_registration">Complete Registration →</button>
                     </div>
                 </form>
             </div>
         </div>
 
         <!-- Main App -->
-        <div id="main-app" class="screen hidden">
-            <header class="app-header">
-                <div class="header-content">
-                    <div class="header-left">
-                        <div class="logo-container" onclick="goToHome()" style="cursor: pointer;"><img src="/images/signupflow-logo-white.svg" alt="SignUpFlow" class="header-logo"></div>
-                        <div class="org-selector">
-                            <select id="org-dropdown" onchange="switchOrganization()" style="display: none;">
+        <div id="main-app" class="app-shell hidden">
+            <!-- Sidebar Navigation -->
+            <aside class="sidebar">
+                <div class="sidebar-header">
+                    <div class="logo-icon">S</div>
+                    <span class="app-title">SignUpFlow</span>
+                </div>
+
+                <nav class="nav-links">
+                    <button class="nav-item nav-btn active" data-view="schedule" onclick="switchView('schedule')">
+                        <svg class="nav-icon" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                            <line x1="16" y1="2" x2="16" y2="6"></line>
+                            <line x1="8" y1="2" x2="8" y2="6"></line>
+                            <line x1="3" y1="10" x2="21" y2="10"></line>
+                        </svg>
+                        My Schedule
+                    </button>
+                    <button class="nav-item nav-btn" data-view="events" onclick="switchView('events')">
+                        <svg class="nav-icon" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                            <line x1="16" y1="2" x2="16" y2="6"></line>
+                            <line x1="8" y1="2" x2="8" y2="6"></line>
+                            <line x1="3" y1="10" x2="21" y2="10"></line>
+                            <path d="M8 14h.01"></path>
+                            <path d="M12 14h.01"></path>
+                            <path d="M16 14h.01"></path>
+                            <path d="M8 18h.01"></path>
+                            <path d="M12 18h.01"></path>
+                            <path d="M16 18h.01"></path>
+                        </svg>
+                        All Events
+                    </button>
+                    <button class="nav-item nav-btn" data-view="availability" onclick="switchView('availability')">
+                        <svg class="nav-icon" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <polyline points="12 6 12 12 16 14"></polyline>
+                        </svg>
+                        Availability
+                    </button>
+                    <button class="nav-item nav-btn admin-only hidden" data-view="admin" onclick="switchView('admin')">
+                        <svg class="nav-icon" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="3"></circle>
+                            <path
+                                d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z">
+                            </path>
+                        </svg>
+                        Admin
+                    </button>
+                </nav>
+
+                <div class="sidebar-footer">
+                    <div class="user-avatar" id="user-avatar">U</div>
+                    <div class="user-info-mini">
+                        <span class="user-name" id="user-name-display">User</span>
+                        <span class="user-role" id="user-role-display">Volunteer</span>
+                    </div>
+                    <button class="btn-icon" onclick="logout()" title="Logout" style="margin-left: auto;">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                            <polyline points="16 17 21 12 16 7"></polyline>
+                            <line x1="21" y1="12" x2="9" y2="12"></line>
+                        </svg>
+                    </button>
+                </div>
+            </aside>
+
+            <!-- Main Content Area -->
+            <main class="main-content">
+                <!-- Top Bar -->
+                <div class="top-bar">
+                    <div class="page-title">
+                        <div style="display: flex; align-items: center; gap: 1rem;">
+                            <button class="mobile-menu-btn" onclick="toggleSidebar()">☰</button>
+                            <div>
+                                <h1 id="page-title">Dashboard</h1>
+                                <p class="page-subtitle" id="current-date">Welcome back</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="global-actions" style="display: flex; gap: 0.75rem; align-items: center;">
+                        <div class="action-btn">
+                            <span style="font-size: 1.1rem;">🏢</span>
+                            <select id="org-dropdown" onchange="switchOrganization()"
+                                style="border:none; outline:none; background:none;">
                                 <!-- Organizations will be loaded here -->
                             </select>
-                            <span id="org-name-display" class="org-badge"></span>
+                            <span id="org-name-display" class="org-badge" style="display:none;"></span>
                         </div>
-                    </div>
-                    <div class="user-info">
-                        <select id="header-language" onchange="changeLanguage(this.value)" class="language-dropdown-header">
-                            <option value="en">🌐 EN</option>
-                            <option value="es">🌐 ES</option>
-                            <option value="zh-CN">🌐 中文</option>
-                            <option value="ko">🌐 한국어</option>
-                            <option value="tl">🌐 TL</option>
-                            <option value="vi">🌐 VI</option>
-                        </select>
-                        <span id="user-name-display"></span>
-                        <button class="btn-icon" onclick="showSettings()">⚙️</button>
-                    </div>
-                </div>
-            </header>
-
-            <!-- Onboarding Dashboard -->
-            <section id="onboarding-dashboard" class="dashboard-section hidden" data-section="onboarding-dashboard">
-                <div class="dashboard-card">
-                    <h2 data-i18n="onboarding.dashboard_title">🎯 Welcome to Your Onboarding Dashboard</h2>
-                    <p class="help-text" data-i18n="onboarding.dashboard_subtitle">
-                        Follow these quick actions to get your organization ready.
-                    </p>
-
-                    <div id="dashboard-sample-data-controls" class="dashboard-controls">
-                        <h3 data-i18n="onboarding.sample_data_title">Sample Data</h3>
-                        <p class="help-text" data-i18n="onboarding.sample_data_description">
-                            Generate demo teams, volunteers, and events to explore SignUpFlow.
-                        </p>
-                        <div class="control-buttons">
-                            <button class="btn btn-secondary" onclick="generateSampleData()" data-i18n="onboarding.generate_sample_data">
-                                📦 Generate Sample Data
-                            </button>
-                            <button class="btn btn-link" onclick="clearSampleData()" data-i18n="onboarding.clear_sample_data">
-                                🧹 Clear Sample Data
-                            </button>
-                        </div>
-                    </div>
-
-                    <div id="dashboard-video-grid" class="dashboard-grid video-grid">
-                        <article class="video-card">
-                            <h4 data-i18n="onboarding.video_getting_started_title">Getting Started</h4>
-                            <p class="help-text" data-i18n="onboarding.video_getting_started_description">
-                                Learn the basics of creating organizations, teams, and events.
-                            </p>
-                            <button class="btn btn-link" onclick="playQuickStartVideo('getting_started')" data-i18n="onboarding.watch_video">
-                                ▶️ Watch Video
-                            </button>
-                        </article>
-                        <article class="video-card">
-                            <h4 data-i18n="onboarding.video_events_title">Creating Events</h4>
-                            <p class="help-text" data-i18n="onboarding.video_events_description">
-                                Step-by-step guide to scheduling recurring events with teams.
-                            </p>
-                            <button class="btn btn-link" onclick="playQuickStartVideo('creating_events')" data-i18n="onboarding.watch_video">
-                                ▶️ Watch Video
-                            </button>
-                        </article>
-                    </div>
-                </div>
-            </section>
-
-            <!-- Quick Profile & Context Panel -->
-            <div class="profile-context-panel">
-                <div class="context-card">
-                    <div class="context-header">
-                        <h3><span data-i18n="common.your_context">📍 Your Context</span></h3>
-                        <button class="btn-link" onclick="showSettings()"><span data-i18n="common.edit_profile">Edit Profile →</span></button>
-                    </div>
-
-                    <div class="context-grid">
-                        <!-- Organization Section -->
-                        <div class="context-item">
-                            <label class="context-label" data-i18n="common.labels.organization">Organization</label>
-                            <select id="org-dropdown-visible" onchange="switchOrganization()" class="org-select">
-                                <option value="" data-i18n="common.loading">Loading...</option>
+                        <div class="action-btn">
+                            <span style="font-size: 1.1rem;">🌐</span>
+                            <select id="header-language" onchange="changeLanguage(this.value)">
+                                <option value="en">EN</option>
+                                <option value="es">ES</option>
+                                <option value="zh-CN">中文</option>
+                                <option value="ko">한국어</option>
+                                <option value="tl">TL</option>
+                                <option value="vi">VI</option>
                             </select>
-                            <p class="context-help"><span data-i18n="common.your_current_org">Your current organization</span></p>
                         </div>
+                        <button class="action-btn" onclick="showSettings()">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <circle cx="12" cy="12" r="3"></circle>
+                                <path
+                                    d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z">
+                                </path>
+                            </svg>
+                            Settings
+                        </button>
+                    </div>
+                </div>
 
-                        <!-- Roles Section -->
-                        <div class="context-item">
-                            <label class="context-label"><span data-i18n="common.your_active_roles">Your Active Roles</span></label>
-                            <div id="active-roles-display" class="role-badges">
-                                <!-- Roles will be populated dynamically -->
-                            </div>
-                            <button class="btn-link btn-sm" onclick="showSettings()"><span data-i18n="common.add_edit_roles">+ Add/Edit Roles</span></button>
-                            <p class="context-help"><span data-i18n="common.roles_determine_events">These determine which events you'll be scheduled for</p>
-                        </div>
+                <!-- Onboarding Dashboard (Legacy ID kept for compatibility) -->
+                <section id="onboarding-dashboard" class="dashboard-section hidden" data-section="onboarding-dashboard">
+                    <div class="dashboard-card">
+                        <h2 data-i18n="onboarding.dashboard_title">🎯 Welcome to Your Onboarding Dashboard</h2>
+                        <p class="help-text" data-i18n="onboarding.dashboard_subtitle">
+                            Follow these quick actions to get your organization ready.
+                        </p>
 
-                        <!-- <span data-i18n="common.quick_actions">Quick Actions</span> -->
-                        <div class="context-item">
-                            <label class="context-label"><span data-i18n="common.quick_actions">Quick Actions</span></label>
-                            <div class="quick-actions">
-                                <button class="btn btn-sm btn-secondary" onclick="switchView('availability')">
-                                    <span data-i18n="common.set_availability">⏰ Set Availability</span>
+                        <div id="dashboard-sample-data-controls" class="dashboard-controls">
+                            <h3 data-i18n="onboarding.sample_data_title">Sample Data</h3>
+                            <p class="help-text" data-i18n="onboarding.sample_data_description">
+                                Generate demo teams, volunteers, and events to explore SignUpFlow.
+                            </p>
+                            <div class="control-buttons">
+                                <button class="btn btn-secondary" onclick="generateSampleData()"
+                                    data-i18n="onboarding.generate_sample_data">
+                                    📦 Generate Sample Data
                                 </button>
-                                <button class="btn btn-sm btn-secondary" onclick="exportMyCalendar()">
-                                    <span data-i18n="common.export_calendar">📥 Export Calendar</span>
+                                <button class="btn btn-link" onclick="clearSampleData()"
+                                    data-i18n="onboarding.clear_sample_data">
+                                    🧹 Clear Sample Data
                                 </button>
                             </div>
-                            <p class="context-help"><span data-i18n="common.manage_schedule_prefs">Manage your schedule preferences</span></p>
+                        </div>
+
+                        <div id="dashboard-video-grid" class="dashboard-grid video-grid">
+                            <article class="video-card">
+                                <h4 data-i18n="onboarding.video_getting_started_title">Getting Started</h4>
+                                <p class="help-text" data-i18n="onboarding.video_getting_started_description">
+                                    Learn the basics of creating organizations, teams, and events.
+                                </p>
+                                <button class="btn btn-link" onclick="playQuickStartVideo('getting_started')"
+                                    data-i18n="onboarding.watch_video">
+                                    ▶️ Watch Video
+                                </button>
+                            </article>
+                            <article class="video-card">
+                                <h4 data-i18n="onboarding.video_events_title">Creating Events</h4>
+                                <p class="help-text" data-i18n="onboarding.video_events_description">
+                                    Step-by-step guide to scheduling recurring events with teams.
+                                </p>
+                                <button class="btn btn-link" onclick="playQuickStartVideo('creating_events')"
+                                    data-i18n="onboarding.watch_video">
+                                    ▶️ Watch Video
+                                </button>
+                            </article>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- My Schedule View -->
+                <!-- My Schedule View -->
+                <div id="schedule-view" class="view-content active">
+                    <div class="dashboard-grid">
+                        <!-- Stats Card -->
+                        <div class="dashboard-card">
+                            <div class="dashboard-card-header">
+                                <div class="dashboard-card-title" data-i18n="schedule.overview">Overview</div>
+                            </div>
+                            <div class="stats-grid" style="margin-bottom: 0; grid-template-columns: 1fr 1fr;">
+                                <div class="stat-item text-center">
+                                    <div class="stat-value" id="upcoming-count">0</div>
+                                    <div class="stat-label" data-i18n="schedule.upcoming">Upcoming</div>
+                                </div>
+                                <div class="stat-item text-center">
+                                    <div class="stat-value" id="this-month-count">0</div>
+                                    <div class="stat-label" data-i18n="schedule.this_month">This Month</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Actions Card -->
+                        <div class="dashboard-card">
+                            <div class="dashboard-card-header">
+                                <div class="dashboard-card-title" data-i18n="schedule.quick_actions">Quick Actions</div>
+                            </div>
+                            <div class="action-list" style="display: flex; flex-direction: column; gap: 0.75rem;">
+                                <button class="btn btn-secondary" onclick="showCalendarSubscription()"
+                                    style="width: 100%; justify-content: flex-start;">
+                                    <span class="btn-icon">🔗</span> <span data-i18n="schedule.subscribe">Subscribe to
+                                        Calendar</span>
+                                </button>
+                                <button class="btn btn-primary" onclick="exportMyCalendar()"
+                                    style="width: 100%; justify-content: flex-start;">
+                                    <span class="btn-icon">📥</span> <span data-i18n="schedule.download_ics">Download
+                                        ICS File</span>
+                                </button>
+                            </div>
                         </div>
                     </div>
 
-                    <!-- First-time user hint -->
-                    <div id="setup-hint" class="setup-hint hidden">
-                        <div class="hint-content">
-                            <span class="hint-icon">💡</span>
-                            <div>
-                                <strong data-i18n="auth.new_here">New here?</strong> <span data-i18n="auth.make_sure_to">Make sure to:</span>
-                                <ol>
-                                    <li data-i18n="auth.select_roles_above">Select your roles above</li>
-                                    <li data-i18n="auth.set_availability_hint">Set your availability (click "Set Availability")</li>
-                                    <li data-i18n="auth.check_schedule">Check your upcoming schedule</li>
-                                </ol>
-                            </div>
-                            <button class="btn-close" onclick="dismissSetupHint()">×</button>
+                    <!-- Schedule List Card -->
+                    <div class="dashboard-card">
+                        <div class="dashboard-card-header">
+                            <div class="dashboard-card-title" data-i18n="schedule.my_assignments">My Assignments</div>
                         </div>
-                    </div>
-                </div>
-            </div>
-
-            <nav class="main-nav">
-                <button class="nav-btn active" data-view="schedule" onclick="switchView('schedule')" data-i18n="schedule.my_schedule">
-                    📅 My Schedule
-                </button>
-                <button class="nav-btn" data-view="events" onclick="switchView('events')" data-i18n="events.events">
-                    📆 All Events
-                </button>
-                <button class="nav-btn" data-view="availability" onclick="switchView('availability')" data-i18n="schedule.availability">
-                    ⏰ Availability
-                </button>
-                <button class="nav-btn admin-only hidden" data-view="admin" onclick="switchView('admin')" data-i18n="admin.dashboard">
-                    👑 Admin Dashboard
-                </button>
-            </nav>
-
-            <!-- My Schedule View -->
-            <div id="schedule-view" class="view-content active">
-                <div class="view-header">
-                    <h2 data-i18n="schedule.my_schedule">My Schedule</h2>
-                    <div class="schedule-controls">
-                        <div class="schedule-stats">
-                            <div class="stat-card">
-                                <div class="stat-value" id="upcoming-count">0</div>
-                                <div class="stat-label" data-i18n="schedule.upcoming">Upcoming</div>
-                            </div>
-                            <div class="stat-card">
-                                <div class="stat-value" id="this-month-count">0</div>
-                                <div class="stat-label" data-i18n="schedule.this_month">This Month</div>
-                            </div>
-                        </div>
-                        <div class="schedule-actions">
-                            <button class="btn btn-secondary" onclick="showCalendarSubscription()" data-i18n="schedule.subscribe">🔗 Subscribe</button>
-                            <button class="btn btn-primary" onclick="exportMyCalendar()" data-i18n="schedule.download_ics">📥 Export ICS</button>
+                        <div id="schedule-list" class="schedule-timeline">
+                            <div class="loading"><span data-i18n="schedule.loading_schedule">Loading your
+                                    schedule...</span></div>
                         </div>
                     </div>
                 </div>
 
-                <div id="schedule-list" class="schedule-timeline">
-                    <div class="loading"><span data-i18n="schedule.loading_schedule">Loading your schedule...</span></div>
-                </div>
-            </div>
+                <!-- All Events View -->
+                <div id="events-view" class="view-content">
 
-            <!-- All Events View -->
-            <div id="events-view" class="view-content">
-                <div class="view-header">
-                    <h2 data-i18n="events.title">All Organization Events</h2>
-                    <p class="help-text"><span data-i18n="events.see_all_upcoming">See all upcoming events and who's scheduled</p>
-                </div>
 
-                <div class="events-filter">
-                    <select id="events-month-filter" onchange="loadAllEvents()">
-                        <option value="current" data-i18n="schedule.this_month">This Month</option>
-                        <option value="next" data-i18n="schedule.next_month">Next Month</option>
-                        <option value="all" data-i18n="schedule.all_upcoming">All Upcoming</option>
-                    </select>
-                </div>
+                    <div class="events-filter">
+                        <select id="events-month-filter" onchange="loadAllEvents()">
+                            <option value="current" data-i18n="schedule.this_month">This Month</option>
+                            <option value="next" data-i18n="schedule.next_month">Next Month</option>
+                            <option value="all" data-i18n="schedule.all_upcoming">All Upcoming</option>
+                        </select>
+                    </div>
 
-                <div id="all-events-list" class="events-list">
-                    <div class="loading"><span data-i18n="events.loading_events">Loading events...</span></div>
-                </div>
-            </div>
-
-            <!-- Availability View -->
-            <div id="availability-view" class="view-content">
-                <div class="view-header">
-                    <h2 data-i18n="schedule.availability">Set Your Availability</h2>
-                    <p class="help-text" data-i18n="schedule.block_off_times">Block off times when you can't serve</p>
-                </div>
-
-                <div class="availability-form">
-                    <h3 data-i18n="schedule.add_time_off">Add Time Off</h3>
-                    <form onsubmit="addTimeOff(event)">
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label data-i18n="common.labels.from_date">From Date</label>
-                                <input type="date" id="timeoff-start" required>
-                            </div>
-                            <div class="form-group">
-                                <label data-i18n="common.labels.to_date">To Date</label>
-                                <input type="date" id="timeoff-end" required>
-                            </div>
-                        </div>
-                        <input type="text" id="timeoff-reason" data-i18n-placeholder="schedule.placeholder_reason" placeholder="Reason (optional)">
-                        <button type="submit" class="btn btn-primary" data-i18n="schedule.add_time_off">Add Time Off</button>
-                    </form>
-
-                    <div id="timeoff-list" class="timeoff-list">
-                        <h3 data-i18n="schedule.blocked_dates">Your Blocked Dates</h3>
-                        <div class="loading" data-i18n="common.loading">Loading...</div>
+                    <div id="all-events-list" class="events-list">
+                        <div class="loading"><span data-i18n="events.loading_events">Loading events...</span></div>
                     </div>
                 </div>
-            </div>
 
-            <!-- Edit Time Off Modal -->
-            <div id="edit-timeoff-modal" class="modal hidden">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h3 data-i18n="schedule.edit_timeoff">Edit Blocked Date</h3>
-                        <button class="btn-close" onclick="closeEditTimeOffModal()">×</button>
-                    </div>
-                    <div class="modal-body">
-                        <form id="edit-timeoff-form" onsubmit="saveEditedTimeOff(event)">
-                            <input type="hidden" id="edit-timeoff-id">
-                            <div class="form-group">
-                                <label data-i18n="common.labels.from_date">From Date</label>
-                                <input type="date" id="edit-timeoff-start" required>
+                <!-- Availability View -->
+                <div id="availability-view" class="view-content">
+
+
+                    <div class="availability-form">
+                        <h3 data-i18n="schedule.add_time_off">Add Time Off</h3>
+                        <form onsubmit="addTimeOff(event)">
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label data-i18n="common.labels.from_date">From Date</label>
+                                    <input type="date" id="timeoff-start" required>
+                                </div>
+                                <div class="form-group">
+                                    <label data-i18n="common.labels.to_date">To Date</label>
+                                    <input type="date" id="timeoff-end" required>
+                                </div>
                             </div>
-                            <div class="form-group">
-                                <label data-i18n="common.labels.to_date">To Date</label>
-                                <input type="date" id="edit-timeoff-end" required>
-                            </div>
-                            <div class="form-group">
-                                <label data-i18n="schedule.reason_optional">Reason (optional)</label>
-                                <input type="text" id="edit-timeoff-reason" data-i18n-placeholder="schedule.placeholder_reason_example" placeholder="e.g., Vacation, Family event">
-                            </div>
-                            <div class="modal-footer">
-                                <button type="button" class="btn btn-secondary" onclick="closeEditTimeOffModal()" data-i18n="common.buttons.cancel">Cancel</button>
-                                <button type="submit" class="btn btn-primary" data-i18n="common.buttons.save">Save Changes</button>
-                            </div>
+                            <input type="text" id="timeoff-reason" data-i18n-placeholder="schedule.placeholder_reason"
+                                placeholder="Reason (optional)">
+                            <button type="submit" class="btn btn-primary" data-i18n="schedule.add_time_off">Add Time
+                                Off</button>
                         </form>
+
+                        <div id="timeoff-list" class="timeoff-list">
+                            <h3 data-i18n="schedule.blocked_dates">Your Blocked Dates</h3>
+                            <div class="loading" data-i18n="common.loading">Loading...</div>
+                        </div>
                     </div>
                 </div>
-            </div>
 
-            <!-- Admin Dashboard View -->
-            <div id="admin-view" class="view-content">
-                <div class="view-header">
-                    <h2 data-i18n="admin.admin_console">Admin Console</h2>
-                    <p class="help-text"><span data-i18n="admin.manage_your_org">Manage your organization</span></p>
+                <!-- Edit Time Off Modal -->
+                <div id="edit-timeoff-modal" class="modal hidden">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h3 data-i18n="schedule.edit_timeoff">Edit Blocked Date</h3>
+                            <button class="btn-close" onclick="closeEditTimeOffModal()">×</button>
+                        </div>
+                        <div class="modal-body">
+                            <form id="edit-timeoff-form" onsubmit="saveEditedTimeOff(event)">
+                                <input type="hidden" id="edit-timeoff-id">
+                                <div class="form-group">
+                                    <label data-i18n="common.labels.from_date">From Date</label>
+                                    <input type="date" id="edit-timeoff-start" required>
+                                </div>
+                                <div class="form-group">
+                                    <label data-i18n="common.labels.to_date">To Date</label>
+                                    <input type="date" id="edit-timeoff-end" required>
+                                </div>
+                                <div class="form-group">
+                                    <label data-i18n="schedule.reason_optional">Reason (optional)</label>
+                                    <input type="text" id="edit-timeoff-reason"
+                                        data-i18n-placeholder="schedule.placeholder_reason_example"
+                                        placeholder="e.g., Vacation, Family event">
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-secondary" onclick="closeEditTimeOffModal()"
+                                        data-i18n="common.buttons.cancel">Cancel</button>
+                                    <button type="submit" class="btn btn-primary" data-i18n="common.buttons.save">Save
+                                        Changes</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
                 </div>
 
-                <!-- Admin Tabs Navigation -->
-                <div class="admin-tabs">
-                    <button class="admin-tab-btn active" data-tab="events" onclick="switchAdminTab('events')" data-i18n="events.events">
-                        Events
-                    </button>
-                    <button class="admin-tab-btn" data-tab="roles" onclick="switchAdminTab('roles')" data-i18n="admin.roles">
-                        Roles
-                    </button>
-                    <button class="admin-tab-btn" data-tab="schedule" onclick="switchAdminTab('schedule')" data-i18n="schedule.schedule">
-                        Schedule
-                    </button>
-                    <button class="admin-tab-btn" data-tab="people" onclick="switchAdminTab('people')" data-i18n="admin.tabs.people">
-                        People
-                    </button>
-                    <button class="admin-tab-btn" data-tab="reports" onclick="switchAdminTab('reports')" data-i18n="admin.tabs.reports">
-                        Reports
-                    </button>
-                    <button class="admin-tab-btn" data-tab="teams" onclick="switchAdminTab('teams')" data-i18n="admin.tabs.teams">
-                        Teams
-                    </button>
-                </div>
+                <!-- Admin Dashboard View -->
+                <div id="admin-view" class="view-content">
 
-                <div class="admin-dashboard">
-                    <!-- Events Tab -->
-                    <div id="admin-tab-events" class="admin-tab-content active">
-                        <div class="admin-section">
-                            <div class="admin-section-header">
-                                <h3><span data-i18n="admin.event_management">Event Management</span></h3>
-                                <div class="admin-controls">
-                                    <button class="btn btn-primary" onclick="showCreateEventForm()"><span data-i18n="admin.create_event_button">+ Create Event</span></button>
-                                    <button class="btn btn-secondary" onclick="loadAdminEvents()"><span data-i18n="common.refresh">🔄 Refresh</span></button>
-                                </div>
-                            </div>
-                            <div class="admin-stats-inline">
-                                <div class="stat-card-inline">
-                                    <span class="stat-label-inline"><span data-i18n="admin.total_events">Total Events:</span></span>
-                                    <span class="stat-value-inline" id="admin-events-count">0</span>
-                                </div>
-                            </div>
-                            <div id="admin-events-list" class="admin-list">
-                                <div class="loading"><span data-i18n="events.loading_events">Loading events...</span></div>
-                            </div>
-                        </div>
+
+                    <!-- Admin Tabs Navigation -->
+                    <div class="admin-tabs">
+                        <button class="admin-tab-btn active" data-tab="events" onclick="switchAdminTab('events')"
+                            data-i18n="events.events">
+                            Events
+                        </button>
+                        <button class="admin-tab-btn" data-tab="roles" onclick="switchAdminTab('roles')"
+                            data-i18n="admin.roles">
+                            Roles
+                        </button>
+                        <button class="admin-tab-btn" data-tab="schedule" onclick="switchAdminTab('schedule')"
+                            data-i18n="schedule.schedule">
+                            Schedule
+                        </button>
+                        <button class="admin-tab-btn" data-tab="people" onclick="switchAdminTab('people')"
+                            data-i18n="admin.tabs.people">
+                            People
+                        </button>
+                        <button class="admin-tab-btn" data-tab="reports" onclick="switchAdminTab('reports')"
+                            data-i18n="admin.tabs.reports">
+                            Reports
+                        </button>
+                        <button class="admin-tab-btn" data-tab="teams" onclick="switchAdminTab('teams')"
+                            data-i18n="admin.tabs.teams">
+                            Teams
+                        </button>
                     </div>
 
-                    <!-- Roles Tab -->
-                    <div id="admin-tab-roles" class="admin-tab-content">
-                        <div class="admin-section">
-                            <div class="admin-section-header">
-                                <h3><span data-i18n="admin.role_management">Role Management</span></h3>
-                                <div class="admin-controls">
-                                    <button class="btn btn-primary" onclick="showAddRoleForm()">+ Add Role</button>
-                                </div>
-                            </div>
-                            <p class="help-text"><span data-i18n="admin.define_custom_roles">Define custom roles for your organization</span></p>
-                            <div id="admin-roles-list" class="roles-list">
-                                <div class="loading"><span data-i18n="admin.loading_roles">Loading roles...</span></div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Schedule Tab -->
-                    <div id="admin-tab-schedule" class="admin-tab-content">
-                        <div class="admin-section">
-                            <div class="admin-section-header">
-                                <h3 data-i18n="solver.schedule_generation">Schedule Generation</h3>
-                            </div>
-                            <div class="solver-controls">
-                                <button class="btn btn-primary btn-large" onclick="generateSchedule()">
-                                    🔄 Generate Schedule
-                                </button>
-                                <p class="help-text" data-i18n="solver.create_assignments_desc">This will create assignments for all upcoming events</p>
-                            </div>
-                            <div id="solver-status" class="solver-status"></div>
-
-                            <!-- Calendar View -->
-                            <div class="admin-calendar-section">
-                                <h4 data-i18n="solver.schedule_calendar">Schedule Calendar</h4>
-                                <div id="admin-calendar-view" class="admin-calendar">
-                                    <div class="loading" data-i18n="solver.generate_first">Generate a schedule to see the calendar</div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Generated Schedules List -->
-                        <div class="admin-section">
-                            <div class="admin-section-header">
-                                <h3 data-i18n="solver.generated_schedules">Generated Schedules</h3>
-                            </div>
-                            <div class="admin-stats-inline">
-                                <div class="stat-card-inline">
-                                    <span class="stat-label-inline" data-i18n="solver.total_schedules">Total Schedules:</span>
-                                    <span class="stat-value-inline" id="admin-solutions-count">0</span>
-                                </div>
-                            </div>
-                            <div id="admin-solutions-list" class="admin-list">
-                                <div class="loading" data-i18n="solver.loading_schedules">Loading schedules...</div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- People Tab -->
-                    <div id="admin-tab-people" class="admin-tab-content">
-                        <div class="admin-section">
-                            <div class="admin-section-header">
-                                <h3 data-i18n="admin.people_invitations">People <h3>People & Invitations</h3> Invitations</h3>
-                                <div class="admin-controls">
-                                    <button class="btn btn-primary" onclick="showInviteUserModal()">+ Invite User</button>
-                                </div>
-                            </div>
-                            <div class="admin-stats-inline">
-                                <div class="stat-card-inline">
-                                    <span class="stat-label-inline" data-i18n="admin.total_people">Total People:</span>
-                                    <span class="stat-value-inline" id="admin-people-count">0</span>
-                                </div>
-                            </div>
-
-                            <!-- Invitation Status Dashboard -->
-                            <div class="invitations-dashboard">
-                                <h4 data-i18n="admin.invitation_status">Invitation Status</h4>
-                                <div id="invitations-summary" class="invitations-summary">
-                                    <div class="invitation-stat">
-                                        <span class="invitation-count" id="pending-invitations">0</span>
-                                        <span class="invitation-label" data-i18n="admin.pending">Pending</span>
-                                    </div>
-                                    <div class="invitation-stat">
-                                        <span class="invitation-count" id="accepted-invitations">0</span>
-                                        <span class="invitation-label" data-i18n="admin.accepted">Accepted</span>
-                                    </div>
-                                    <div class="invitation-stat">
-                                        <span class="invitation-count" id="expired-invitations">0</span>
-                                        <span class="invitation-label" data-i18n="admin.expired">Expired</span>
+                    <div class="admin-dashboard">
+                        <!-- Events Tab -->
+                        <div id="admin-tab-events" class="admin-tab-content active">
+                            <div class="admin-section">
+                                <div class="admin-section-header">
+                                    <h3><span data-i18n="admin.event_management">Event Management</span></h3>
+                                    <div class="admin-controls">
+                                        <button class="btn btn-primary" onclick="showCreateEventForm()"><span
+                                                data-i18n="admin.create_event_button">+ Create Event</span></button>
+                                        <button class="btn btn-secondary" onclick="loadAdminEvents()"><span
+                                                data-i18n="common.refresh">🔄 Refresh</span></button>
                                     </div>
                                 </div>
-                                <div id="invitations-list" class="invitations-list">
-                                    <div class="loading" data-i18n="admin.loading_invitations">Loading invitations...</div>
+                                <div class="admin-stats-inline">
+                                    <div class="stat-card-inline">
+                                        <span class="stat-label-inline"><span data-i18n="admin.total_events">Total
+                                                Events:</span></span>
+                                        <span class="stat-value-inline" id="admin-events-count">0</span>
+                                    </div>
                                 </div>
-                            </div>
-
-                            <!-- People List -->
-                            <h4 data-i18n="admin.team_members">Team Members</h4>
-                            <div id="admin-people-list" class="admin-list">
-                                <div class="loading" data-i18n="admin.loading_people">Loading people...</div>
+                                <div id="admin-events-list" class="admin-list">
+                                    <div class="loading"><span data-i18n="events.loading_events">Loading
+                                            events...</span>
+                                    </div>
+                                </div>
                             </div>
                         </div>
-                    </div>
 
-                    <!-- Reports Tab -->
-                    <div id="admin-tab-reports" class="admin-tab-content">
-                        <div class="admin-section">
-                            <div class="admin-section-header">
-                                <h3 data-i18n="admin.reports_export">Reports <h3>Reports & Export</h3> Export</h3>
+                        <!-- Roles Tab -->
+                        <div id="admin-tab-roles" class="admin-tab-content">
+                            <div class="admin-section">
+                                <div class="admin-section-header">
+                                    <h3><span data-i18n="admin.role_management">Role Management</span></h3>
+                                    <div class="admin-controls">
+                                        <button class="btn btn-primary" onclick="showAddRoleForm()">+ Add Role</button>
+                                    </div>
+                                </div>
+                                <p class="help-text"><span data-i18n="admin.define_custom_roles">Define custom roles for
+                                        your organization</span></p>
+                                <div id="admin-roles-list" class="roles-list">
+                                    <div class="loading"><span data-i18n="admin.loading_roles">Loading roles...</span>
+                                    </div>
+                                </div>
                             </div>
-                            <p class="help-text" data-i18n="admin.export_schedules_desc">Export schedules and generate reports</p>
+                        </div>
 
-                            <div class="reports-grid">
-                                <div class="report-card">
-                                    <h4 data-i18n="admin.pdf_schedule_export">PDF Schedule Export</h4>
-                                    <p data-i18n="admin.download_printable">Download a printable schedule for distribution</p>
-                                    <button class="btn btn-primary" onclick="exportLatestSchedulePDF()">📥 Export PDF</button>
+                        <!-- Schedule Tab -->
+                        <div id="admin-tab-schedule" class="admin-tab-content">
+                            <div class="admin-section">
+                                <div class="admin-section-header">
+                                    <h3 data-i18n="solver.schedule_generation">Schedule Generation</h3>
                                 </div>
-                                <div class="report-card">
-                                    <h4 data-i18n="admin.calendar_export_ics">Calendar Export (ICS)</h4>
-                                    <p data-i18n="admin.export_all_events">Export all organization events to calendar</p>
-                                    <button class="btn btn-primary" onclick="exportOrgCalendar()">📅 Export ICS</button>
+                                <div class="solver-controls">
+                                    <button class="btn btn-primary btn-large" onclick="generateSchedule()">
+                                        🔄 Generate Schedule
+                                    </button>
+                                    <p class="help-text" data-i18n="solver.create_assignments_desc">This will create
+                                        assignments for all upcoming events</p>
                                 </div>
-                                <div class="report-card">
+                                <div id="solver-status" class="solver-status"></div>
+
+                                <!-- Calendar View -->
+                                <div class="admin-calendar-section">
+                                    <h4 data-i18n="solver.schedule_calendar">Schedule Calendar</h4>
+                                    <div id="admin-calendar-view" class="admin-calendar">
+                                        <div class="loading" data-i18n="solver.generate_first">Generate a schedule to
+                                            see
+                                            the calendar</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Generated Schedules List -->
+                            <div class="admin-section">
+                                <div class="admin-section-header">
+                                    <h3 data-i18n="solver.generated_schedules">Generated Schedules</h3>
+                                </div>
+                                <div class="admin-stats-inline">
+                                    <div class="stat-card-inline">
+                                        <span class="stat-label-inline" data-i18n="solver.total_schedules">Total
+                                            Schedules:</span>
+                                        <span class="stat-value-inline" id="admin-solutions-count">0</span>
+                                    </div>
+                                </div>
+                                <div id="admin-solutions-list" class="admin-list">
+                                    <div class="loading" data-i18n="solver.loading_schedules">Loading schedules...</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- People Tab -->
+                        <div id="admin-tab-people" class="admin-tab-content">
+                            <div class="admin-section">
+                                <div class="admin-section-header">
+                                    <h3 data-i18n="admin.people_invitations">People <h3>People & Invitations</h3>
+                                        Invitations</h3>
+                                    <div class="admin-controls">
+                                        <button class="btn btn-primary" onclick="showInviteUserModal()">+ Invite
+                                            User</button>
+                                    </div>
+                                </div>
+                                <div class="admin-stats-inline">
+                                    <div class="stat-card-inline">
+                                        <span class="stat-label-inline" data-i18n="admin.total_people">Total
+                                            People:</span>
+                                        <span class="stat-value-inline" id="admin-people-count">0</span>
+                                    </div>
+                                </div>
+
+                                <!-- Invitation Status Dashboard -->
+                                <div class="invitations-dashboard">
+                                    <h4 data-i18n="admin.invitation_status">Invitation Status</h4>
+                                    <div id="invitations-summary" class="invitations-summary">
+                                        <div class="invitation-stat">
+                                            <span class="invitation-count" id="pending-invitations">0</span>
+                                            <span class="invitation-label" data-i18n="admin.pending">Pending</span>
+                                        </div>
+                                        <div class="invitation-stat">
+                                            <span class="invitation-count" id="accepted-invitations">0</span>
+                                            <span class="invitation-label" data-i18n="admin.accepted">Accepted</span>
+                                        </div>
+                                        <div class="invitation-stat">
+                                            <span class="invitation-count" id="expired-invitations">0</span>
+                                            <span class="invitation-label" data-i18n="admin.expired">Expired</span>
+                                        </div>
+                                    </div>
+                                    <div id="invitations-list" class="invitations-list">
+                                        <div class="loading" data-i18n="admin.loading_invitations">Loading
+                                            invitations...
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- People List -->
+                                <h4 data-i18n="admin.team_members">Team Members</h4>
+                                <div id="admin-people-list" class="admin-list">
+                                    <div class="loading" data-i18n="admin.loading_people">Loading people...</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Reports Tab -->
+                        <div id="admin-tab-reports" class="admin-tab-content">
+                            <div class="admin-section">
+                                <div class="admin-section-header">
+                                    <h3 data-i18n="admin.reports_export">Reports <h3>Reports & Export</h3> Export</h3>
+                                </div>
+                                <p class="help-text" data-i18n="admin.export_schedules_desc">Export schedules and
+                                    generate
+                                    reports</p>
+
+                                <div class="reports-grid">
+                                    <div class="report-card">
+                                        <h4 data-i18n="admin.pdf_schedule_export">PDF Schedule Export</h4>
+                                        <p data-i18n="admin.download_printable">Download a printable schedule for
+                                            distribution</p>
+                                        <button class="btn btn-primary" onclick="exportLatestSchedulePDF()">📥 Export
+                                            PDF</button>
+                                    </div>
+                                    <div class="report-card">
+                                        <h4 data-i18n="admin.calendar_export_ics">Calendar Export (ICS)</h4>
+                                        <p data-i18n="admin.export_all_events">Export all organization events to
+                                            calendar
+                                        </p>
+                                        <button class="btn btn-primary" onclick="exportOrgCalendar()">📅 Export
+                                            ICS</button>
+                                    </div>
+                                    <div class="report-card">
+                                        <h4 data-i18n="admin.schedule_statistics">Schedule Statistics</h4>
+                                        <p data-i18n="admin.view_distribution">View assignment distribution and metrics
+                                        </p>
+                                        <button class="btn btn-secondary" onclick="showScheduleStats()">📊 View
+                                            Stats</button>
+                                    </div>
+                                </div>
+
+                                <!-- Statistics Display -->
+                                <div id="schedule-stats-display" class="stats-display hidden">
                                     <h4 data-i18n="admin.schedule_statistics">Schedule Statistics</h4>
-                                    <p data-i18n="admin.view_distribution">View assignment distribution and metrics</p>
-                                    <button class="btn btn-secondary" onclick="showScheduleStats()">📊 View Stats</button>
-                                </div>
-                            </div>
-
-                            <!-- Statistics Display -->
-                            <div id="schedule-stats-display" class="stats-display hidden">
-                                <h4 data-i18n="admin.schedule_statistics">Schedule Statistics</h4>
-                                <div id="stats-content" class="stats-content">
-                                    <div class="loading" data-i18n="admin.loading_statistics">Loading statistics...</div>
+                                    <div id="stats-content" class="stats-content">
+                                        <div class="loading" data-i18n="admin.loading_statistics">Loading statistics...
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
-                    </div>
 
-                    <!-- Teams Tab -->
-                    <div id="admin-tab-teams" class="admin-tab-content">
-                        <div class="admin-section">
-                            <div class="admin-section-header">
-                                <h3><span data-i18n="admin.team_management">Team Management</span></h3>
-                                <div class="admin-controls">
-                                    <button class="btn btn-primary" onclick="showCreateTeamForm()">+ Create Team</button>
-                                    <button class="btn btn-secondary" onclick="loadAdminTeams()">🔄 Refresh</button>
+                        <!-- Teams Tab -->
+                        <div id="admin-tab-teams" class="admin-tab-content">
+                            <div class="admin-section">
+                                <div class="admin-section-header">
+                                    <h3><span data-i18n="admin.team_management">Team Management</span></h3>
+                                    <div class="admin-controls">
+                                        <button class="btn btn-primary" onclick="showCreateTeamForm()">+ Create
+                                            Team</button>
+                                        <button class="btn btn-secondary" onclick="loadAdminTeams()">🔄 Refresh</button>
+                                    </div>
                                 </div>
-                            </div>
-                            <div class="admin-filter">
-                                <label>Organization:</label>
-                                <select id="teams-org-filter" onchange="loadAdminTeams()">
-                                    <option value="">Select Organization</option>
-                                </select>
-                            </div>
-                            <div id="teams-list" class="admin-list">
-                                <div class="loading">Select an organization to view teams</div>
+                                <div class="admin-filter">
+                                    <label>Organization:</label>
+                                    <select id="teams-org-filter" onchange="loadAdminTeams()">
+                                        <option value="">Select Organization</option>
+                                    </select>
+                                </div>
+                                <div id="teams-list" class="admin-list">
+                                    <div class="loading">Select an organization to view teams</div>
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
-            </div>
+            </main>
         </div>
 
         <!-- Create Event Modal -->
@@ -818,19 +945,26 @@
                             <label data-i18n="events.event_type">Event Type</label>
                             <select id="event-type" required>
                                 <option value="" data-i18n="events.select_type">Select type...</option>
-                                <option value="Sunday Service" data-i18n="events.type_sunday_service">Sunday Service</option>
-                                <option value="Worship Service" data-i18n="events.type_worship_service">Worship Service</option>
+                                <option value="Sunday Service" data-i18n="events.type_sunday_service">Sunday Service
+                                </option>
+                                <option value="Worship Service" data-i18n="events.type_worship_service">Worship Service
+                                </option>
                                 <option value="Bible Study" data-i18n="events.type_bible_study">Bible Study</option>
-                                <option value="Prayer Meeting" data-i18n="events.type_prayer_meeting">Prayer Meeting</option>
+                                <option value="Prayer Meeting" data-i18n="events.type_prayer_meeting">Prayer Meeting
+                                </option>
                                 <option value="Youth Group" data-i18n="events.type_youth_group">Youth Group</option>
-                                <option value="Board Meeting" data-i18n="events.type_board_meeting">Board Meeting</option>
-                                <option value="Special Event" data-i18n="events.type_special_event">Special Event</option>
-                                <option value="Other" data-i18n="events.type_other_specify">Other (specify in title)</option>
+                                <option value="Board Meeting" data-i18n="events.type_board_meeting">Board Meeting
+                                </option>
+                                <option value="Special Event" data-i18n="events.type_special_event">Special Event
+                                </option>
+                                <option value="Other" data-i18n="events.type_other_specify">Other (specify in title)
+                                </option>
                             </select>
                         </div>
                         <div class="form-group">
                             <label data-i18n="events.title_optional">Title (optional, override type name)</label>
-                            <input type="text" id="event-title" data-i18n-placeholder="events.placeholder_title" placeholder="e.g., Christmas Service">
+                            <input type="text" id="event-title" data-i18n-placeholder="events.placeholder_title"
+                                placeholder="e.g., Christmas Service">
                         </div>
                         <div class="form-group">
                             <label data-i18n="events.date_time">Date & Time</label>
@@ -852,11 +986,13 @@
                         <div id="recurrence-options" class="form-group" style="display: none;">
                             <label data-i18n="events.end_date">End Date</label>
                             <input type="date" id="event-end-date">
-                            <small style="color: var(--text-light); display: block; margin-top: 5px;" data-i18n="events.end_date_hint">Leave blank for 1 year from start</small>
+                            <small style="color: var(--text-light); display: block; margin-top: 5px;"
+                                data-i18n="events.end_date_hint">Leave blank for 1 year from start</small>
                         </div>
                         <div class="form-group">
                             <label data-i18n="events.location">Location</label>
-                            <input type="text" id="event-location" data-i18n-placeholder="events.placeholder_location" placeholder="Main Sanctuary, Fellowship Hall">
+                            <input type="text" id="event-location" data-i18n-placeholder="events.placeholder_location"
+                                placeholder="Main Sanctuary, Fellowship Hall">
                         </div>
                         <div class="form-group">
                             <label data-i18n="events.roles_needed">Roles Needed - Select all that apply</label>
@@ -865,8 +1001,10 @@
                             </div>
                         </div>
                         <div class="modal-footer">
-                            <button type="button" class="btn btn-secondary" onclick="closeCreateEventForm()" data-i18n="common.buttons.cancel">Cancel</button>
-                            <button type="submit" class="btn btn-primary" data-i18n="events.create_event">Create Event</button>
+                            <button type="button" class="btn btn-secondary" onclick="closeCreateEventForm()"
+                                data-i18n="common.buttons.cancel">Cancel</button>
+                            <button type="submit" class="btn btn-primary" data-i18n="events.create_event">Create
+                                Event</button>
                         </div>
                     </form>
                 </div>
@@ -927,11 +1065,13 @@
                     </div>
                     <div class="setting-item">
                         <label data-i18n="settings.permission_level">Permission Level</label>
-                        <div id="settings-permission-display" style="padding: 10px; background: var(--surface); border-radius: 4px; color: var(--text-light);">
+                        <div id="settings-permission-display"
+                            style="padding: 10px; background: var(--surface); border-radius: 4px; color: var(--text-light);">
                             <!-- Permissions are set by administrators -->
                         </div>
                         <p class="help-text">
-                            <span data-i18n="settings.permission_note">Your permission level is set by an administrator. Event-specific roles are selected when you join individual events.</span>
+                            <span data-i18n="settings.permission_note">Your permission level is set by an administrator.
+                                Event-specific roles are selected when you join individual events.</span>
                         </p>
                     </div>
 
@@ -940,8 +1080,10 @@
                 </div>
                 <div class="modal-footer">
                     <button class="btn btn-secondary" onclick="logout()" data-i18n="settings.logout">Sign Out</button>
-                    <button class="btn btn-primary" onclick="saveSettings()" data-i18n="settings.save_changes">Save Changes</button>
-                    <button class="btn btn-secondary" onclick="closeSettings()" data-i18n="common.buttons.cancel">Cancel</button>
+                    <button class="btn btn-primary" onclick="saveSettings()" data-i18n="settings.save_changes">Save
+                        Changes</button>
+                    <button class="btn btn-secondary" onclick="closeSettings()"
+                        data-i18n="common.buttons.cancel">Cancel</button>
                 </div>
             </div>
         </div>
@@ -957,14 +1099,17 @@
                     <form onsubmit="addCustomRole(event)">
                         <div class="form-group">
                             <label data-i18n="admin.role_name">Role Name</label>
-                            <input type="text" id="role-name" data-i18n-placeholder="admin.placeholder_role_name" placeholder="e.g., Usher, Greeter" required>
+                            <input type="text" id="role-name" data-i18n-placeholder="admin.placeholder_role_name"
+                                placeholder="e.g., Usher, Greeter" required>
                         </div>
                         <div class="form-group">
                             <label data-i18n="admin.description_optional">Description (optional)</label>
-                            <textarea id="role-description" rows="3" data-i18n-placeholder="admin.placeholder_role_desc" placeholder="Brief description of this role"></textarea>
+                            <textarea id="role-description" rows="3" data-i18n-placeholder="admin.placeholder_role_desc"
+                                placeholder="Brief description of this role"></textarea>
                         </div>
                         <div class="modal-footer">
-                            <button type="button" class="btn btn-secondary" onclick="closeAddRoleForm()" data-i18n="common.buttons.cancel">Cancel</button>
+                            <button type="button" class="btn btn-secondary" onclick="closeAddRoleForm()"
+                                data-i18n="common.buttons.cancel">Cancel</button>
                             <button type="submit" class="btn btn-primary" data-i18n="admin.add_role">Add Role</button>
                         </div>
                     </form>
@@ -989,8 +1134,10 @@
                             </div>
                         </div>
                         <div class="modal-footer">
-                            <button type="button" class="btn btn-secondary" onclick="closeEditPersonModal()" data-i18n="common.buttons.cancel">Cancel</button>
-                            <button type="submit" class="btn btn-primary" data-i18n="common.buttons.save">Save Changes</button>
+                            <button type="button" class="btn btn-secondary" onclick="closeEditPersonModal()"
+                                data-i18n="common.buttons.cancel">Cancel</button>
+                            <button type="submit" class="btn btn-primary" data-i18n="common.buttons.save">Save
+                                Changes</button>
                         </div>
                     </form>
                 </div>
@@ -1010,15 +1157,20 @@
                         <div class="form-group">
                             <label for="edit-role-name" data-i18n="admin.role_name">Role Name</label>
                             <input type="text" id="edit-role-name" class="form-control" required>
-                            <small class="form-help" data-i18n="admin.role_name_hint">Use lowercase with underscores (e.g., worship_leader)</small>
+                            <small class="form-help" data-i18n="admin.role_name_hint">Use lowercase with underscores
+                                (e.g., worship_leader)</small>
                         </div>
                         <div class="form-group">
                             <label for="edit-role-description" data-i18n="admin.description">Description</label>
-                            <textarea id="edit-role-description" class="form-control" rows="3" data-i18n-placeholder="admin.placeholder_optional_desc" placeholder="Optional description"></textarea>
+                            <textarea id="edit-role-description" class="form-control" rows="3"
+                                data-i18n-placeholder="admin.placeholder_optional_desc"
+                                placeholder="Optional description"></textarea>
                         </div>
                         <div class="modal-footer">
-                            <button type="button" class="btn btn-secondary" onclick="closeEditRoleModal()" data-i18n="common.buttons.cancel">Cancel</button>
-                            <button type="submit" class="btn btn-primary" data-i18n="common.buttons.save">Save Changes</button>
+                            <button type="button" class="btn btn-secondary" onclick="closeEditRoleModal()"
+                                data-i18n="common.buttons.cancel">Cancel</button>
+                            <button type="submit" class="btn btn-primary" data-i18n="common.buttons.save">Save
+                                Changes</button>
                         </div>
                     </form>
                 </div>
@@ -1036,14 +1188,17 @@
                     <form id="manage-role-people-form" onsubmit="saveRolePeople(event)">
                         <input type="hidden" id="manage-role-id">
                         <div class="form-group">
-                            <label data-i18n="admin.select_people_with_role">Select people who should have this role:</label>
+                            <label data-i18n="admin.select_people_with_role">Select people who should have this
+                                role:</label>
                             <div id="manage-role-people-checkboxes" class="role-selector">
                                 <!-- People checkboxes will be dynamically populated -->
                             </div>
                         </div>
                         <div class="modal-footer">
-                            <button type="button" class="btn btn-secondary" onclick="closeManageRolePeopleModal()" data-i18n="common.buttons.cancel">Cancel</button>
-                            <button type="submit" class="btn btn-primary" data-i18n="common.buttons.save">Save Changes</button>
+                            <button type="button" class="btn btn-secondary" onclick="closeManageRolePeopleModal()"
+                                data-i18n="common.buttons.cancel">Cancel</button>
+                            <button type="submit" class="btn btn-primary" data-i18n="common.buttons.save">Save
+                                Changes</button>
                         </div>
                     </form>
                 </div>
@@ -1061,7 +1216,8 @@
                     <div id="assignment-people-list"></div>
                 </div>
                 <div class="modal-footer">
-                    <button class="btn btn-secondary" onclick="closeAssignmentModal()" data-i18n="common.buttons.done">Done</button>
+                    <button class="btn btn-secondary" onclick="closeAssignmentModal()"
+                        data-i18n="common.buttons.done">Done</button>
                 </div>
             </div>
         </div>
@@ -1077,17 +1233,20 @@
                     <form id="invite-user-form" onsubmit="sendInvitation(event)">
                         <div class="form-group">
                             <label data-i18n="common.labels.email">Email Address</label>
-                            <input type="email" id="invite-email" data-i18n-placeholder="admin.placeholder_email" placeholder="user@example.com" required>
+                            <input type="email" id="invite-email" data-i18n-placeholder="admin.placeholder_email"
+                                placeholder="user@example.com" required>
                         </div>
                         <div class="form-group">
                             <label data-i18n="common.labels.full_name">Full Name</label>
-                            <input type="text" id="invite-name" data-i18n-placeholder="admin.placeholder_name" placeholder="John Doe" required>
+                            <input type="text" id="invite-name" data-i18n-placeholder="admin.placeholder_name"
+                                placeholder="John Doe" required>
                         </div>
                         <div class="form-group">
                             <label data-i18n="admin.assign_roles">Assign Roles</label>
                             <div class="role-selector" id="invite-role-selector">
                                 <label class="role-option">
-                                    <input type="checkbox" value="volunteer"> <span data-i18n="common.volunteer">Volunteer</span>
+                                    <input type="checkbox" value="volunteer"> <span
+                                        data-i18n="common.volunteer">Volunteer</span>
                                 </label>
                                 <label class="role-option">
                                     <input type="checkbox" value="admin"> <span data-i18n="common.admin">Admin</span>
@@ -1095,8 +1254,10 @@
                             </div>
                         </div>
                         <div class="modal-footer">
-                            <button type="button" class="btn btn-secondary" onclick="closeInviteUserModal()" data-i18n="common.buttons.cancel">Cancel</button>
-                            <button type="submit" class="btn btn-primary" data-i18n="admin.send_invitation">Send Invitation</button>
+                            <button type="button" class="btn btn-secondary" onclick="closeInviteUserModal()"
+                                data-i18n="common.buttons.cancel">Cancel</button>
+                            <button type="submit" class="btn btn-primary" data-i18n="admin.send_invitation">Send
+                                Invitation</button>
                         </div>
                     </form>
                 </div>
@@ -1112,7 +1273,8 @@
                 </div>
                 <div class="modal-body">
                     <p class="help-text" data-i18n="schedule.subscription_help">
-                        Subscribe to your schedule in Google Calendar, Apple Calendar, Outlook, or any other calendar app.
+                        Subscribe to your schedule in Google Calendar, Apple Calendar, Outlook, or any other calendar
+                        app.
                         Your calendar will automatically update when your schedule changes.
                     </p>
 
@@ -1120,36 +1282,47 @@
                         <label data-i18n="schedule.subscription_url_webcal">Subscription URL (webcal://)</label>
                         <div class="input-group">
                             <input type="text" id="webcal-url" readonly class="subscription-url">
-                            <button class="btn btn-secondary" onclick="copyToClipboard('webcal-url')" data-i18n="common.buttons.copy">Copy</button>
+                            <button class="btn btn-secondary" onclick="copyToClipboard('webcal-url')"
+                                data-i18n="common.buttons.copy">Copy</button>
                         </div>
-                        <small class="help-text" data-i18n="schedule.webcal_hint">Use this URL in most calendar apps</small>
+                        <small class="help-text" data-i18n="schedule.webcal_hint">Use this URL in most calendar
+                            apps</small>
                     </div>
 
                     <div class="form-group">
                         <label data-i18n="schedule.alternative_url_https">Alternative URL (https://)</label>
                         <div class="input-group">
                             <input type="text" id="https-url" readonly class="subscription-url">
-                            <button class="btn btn-secondary" onclick="copyToClipboard('https-url')" data-i18n="common.buttons.copy">Copy</button>
+                            <button class="btn btn-secondary" onclick="copyToClipboard('https-url')"
+                                data-i18n="common.buttons.copy">Copy</button>
                         </div>
-                        <small class="help-text" data-i18n="schedule.https_hint">Use this if webcal:// doesn't work</small>
+                        <small class="help-text" data-i18n="schedule.https_hint">Use this if webcal:// doesn't
+                            work</small>
                     </div>
 
                     <div class="calendar-instructions">
                         <h4 data-i18n="schedule.how_to_subscribe">How to subscribe:</h4>
                         <ul>
-                            <li><strong data-i18n="schedule.google_calendar">Google Calendar:</strong> Settings → Add calendar → From URL</li>
-                            <li><strong data-i18n="schedule.apple_calendar">Apple Calendar:</strong> File → New Calendar Subscription</li>
-                            <li><strong data-i18n="schedule.outlook">Outlook:</strong> Calendar → Add calendar → Subscribe from web</li>
+                            <li><strong data-i18n="schedule.google_calendar">Google Calendar:</strong> Settings → Add
+                                calendar → From URL</li>
+                            <li><strong data-i18n="schedule.apple_calendar">Apple Calendar:</strong> File → New Calendar
+                                Subscription</li>
+                            <li><strong data-i18n="schedule.outlook">Outlook:</strong> Calendar → Add calendar →
+                                Subscribe from web</li>
                         </ul>
                     </div>
 
                     <div class="alert alert-warning">
-                        <strong data-i18n="schedule.security_note_title">Security Note:</strong> <span data-i18n="schedule.security_note_text">Keep this URL private. Anyone with this URL can view your schedule.</span>
-                        <button class="btn btn-link" onclick="resetCalendarToken()" data-i18n="schedule.reset_url">Reset URL</button> <span data-i18n="schedule.if_compromised">if compromised.</span>
+                        <strong data-i18n="schedule.security_note_title">Security Note:</strong> <span
+                            data-i18n="schedule.security_note_text">Keep this URL private. Anyone with this URL can view
+                            your schedule.</span>
+                        <button class="btn btn-link" onclick="resetCalendarToken()" data-i18n="schedule.reset_url">Reset
+                            URL</button> <span data-i18n="schedule.if_compromised">if compromised.</span>
                     </div>
 
                     <div class="modal-footer">
-                        <button class="btn btn-secondary" onclick="closeCalendarSubscriptionModal()" data-i18n="common.buttons.close">Close</button>
+                        <button class="btn btn-secondary" onclick="closeCalendarSubscriptionModal()"
+                            data-i18n="common.buttons.close">Close</button>
                     </div>
                 </div>
             </div>
@@ -1172,9 +1345,12 @@
                                 <option value="">-- Select a role --</option>
                                 <option value="usher" data-i18n="events.role_usher">Usher</option>
                                 <option value="greeter" data-i18n="events.role_greeter">Greeter</option>
-                                <option value="sound_tech"><span data-i18n="events.role_sound_tech">Sound Tech</span></option>
-                                <option value="video_tech"><span data-i18n="events.role_video_tech">Video Tech</span></option>
-                                <option value="worship_leader"><span data-i18n="events.role_worship_leader">Worship Leader</span></option>
+                                <option value="sound_tech"><span data-i18n="events.role_sound_tech">Sound Tech</span>
+                                </option>
+                                <option value="video_tech"><span data-i18n="events.role_video_tech">Video Tech</span>
+                                </option>
+                                <option value="worship_leader"><span data-i18n="events.role_worship_leader">Worship
+                                        Leader</span></option>
                                 <option value="speaker" data-i18n="events.role_speaker">Speaker</option>
                                 <option value="nursery" data-i18n="events.role_nursery">Nursery</option>
                                 <option value="parking" data-i18n="events.role_parking">Parking</option>
@@ -1184,11 +1360,14 @@
                         </div>
                         <div class="form-group" id="custom-role-group" style="display: none;">
                             <label for="custom-role-input" data-i18n="events.custom_role_name">Custom Role Name</label>
-                            <input type="text" id="custom-role-input" class="form-control" data-i18n-placeholder="events.placeholder_custom_role" placeholder="Enter custom role">
+                            <input type="text" id="custom-role-input" class="form-control"
+                                data-i18n-placeholder="events.placeholder_custom_role" placeholder="Enter custom role">
                         </div>
                         <div class="modal-footer">
-                            <button type="button" class="btn btn-secondary" onclick="closeSelectRoleModal()" data-i18n="common.buttons.cancel">Cancel</button>
-                            <button type="submit" class="btn btn-primary" data-i18n="events.join_event">Join Event</button>
+                            <button type="button" class="btn btn-secondary" onclick="closeSelectRoleModal()"
+                                data-i18n="common.buttons.cancel">Cancel</button>
+                            <button type="submit" class="btn btn-primary" data-i18n="events.join_event">Join
+                                Event</button>
                         </div>
                     </form>
                 </div>
@@ -1212,6 +1391,11 @@
         document.write('<script src="/js/sms-preferences.js?t=' + cacheBust + '"><\/script>');
         document.write('<script src="/js/admin-sms-broadcast.js?t=' + cacheBust + '"><\/script>');
         document.write('<script src="/js/app-user.js?t=' + cacheBust + '"><\/script>');
+
+        function toggleSidebar() {
+            document.querySelector('.sidebar').classList.toggle('open');
+        }
     </script>
 </body>
+
 </html>

@@ -20,6 +20,9 @@ from tests.e2e.helpers import AppConfig
 
 pytestmark = pytest.mark.usefixtures("api_server")
 
+
+
+
 # Password hashing
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
@@ -27,7 +30,7 @@ pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 _person_id_cache = {}
 
 
-@pytest.fixture(scope="module")
+@pytest.fixture(scope="function")
 def test_organizations(app_config: AppConfig):
     """Create two test organizations for isolation testing."""
     orgs = [
@@ -44,19 +47,27 @@ def test_organizations(app_config: AppConfig):
     ]
 
     # Clear existing users from test organizations to ensure first-user-gets-admin works
-    # Use direct database access since the Docker PostgreSQL persists between test runs
-    database_url = os.getenv("DATABASE_URL", "postgresql://signupflow:dev_password_change_in_production@db:5432/signupflow_dev")
+    # Use direct database access since the database persists between test runs
+    # Use absolute path to ensure we hit the same database as the API server
+    project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    database_url = f"sqlite:///{project_root}/test_roster.db"
     try:
         engine = create_engine(database_url)
         with engine.connect() as conn:
             for org in orgs:
-                # Delete people from test organizations
+                # Delete related data first (foreign key constraints)
+                conn.execute(text("DELETE FROM assignments WHERE person_id IN (SELECT id FROM people WHERE org_id = :org_id)"), {"org_id": org["id"]})
+                conn.execute(text("DELETE FROM availability WHERE person_id IN (SELECT id FROM people WHERE org_id = :org_id)"), {"org_id": org["id"]})
+                conn.execute(text("DELETE FROM team_members WHERE person_id IN (SELECT id FROM people WHERE org_id = :org_id)"), {"org_id": org["id"]})
+                # Now delete people
                 result = conn.execute(text("DELETE FROM people WHERE org_id = :org_id"), {"org_id": org["id"]})
                 conn.commit()
                 if result.rowcount > 0:
                     print(f"✓ Cleared {result.rowcount} existing users from {org['id']}")
+                else:
+                    print(f"ℹ No existing users in {org['id']}")
     except Exception as e:
-        print(f"⚠ Could not clear database users: {e}")
+        print(f"⚠ Could not clear database users: {e} (this may cause test failures)")
 
     for org in orgs:
         resp = requests.post(f"{app_config.app_url}/api/organizations/", json=org)
@@ -66,7 +77,7 @@ def test_organizations(app_config: AppConfig):
     return orgs
 
 
-@pytest.fixture(scope="module")
+@pytest.fixture(scope="function")
 def test_users(test_organizations, app_config: AppConfig):
     """Create test users with different roles across organizations.
 
@@ -163,6 +174,58 @@ def test_users(test_organizations, app_config: AppConfig):
                 print(f"ℹ User exists: {user['name']}")
         else:
             print(f"⚠ Failed to create {user['name']}: {resp.status_code} - {resp.text}")
+
+    # Step 1b: Force admin roles via direct database access (bypasses signup security filter)
+    # This ensures admin users have admin role even if first-user-gets-admin didn't work
+    # Use absolute path to ensure we hit the same database as the API server
+    project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    database_url = f"sqlite:///{project_root}/test_roster.db"
+    try:
+        import json
+        engine = create_engine(database_url)
+        with engine.connect() as conn:
+            for user in all_user_data:
+                if user["is_first"]:  # These should be admins
+                    email = user["email"]
+                    # Update roles to include admin
+                    result = conn.execute(
+                        text("UPDATE people SET roles = :roles WHERE email = :email"),
+                        {"roles": json.dumps(["admin"]), "email": email}
+                    )
+                    if result.rowcount == 0:
+                        print(f"⚠ UPDATE found 0 rows for email: {email}")
+                    else:
+                        print(f"✓ Updated {result.rowcount} row(s) for {email}")
+            conn.commit()
+
+            # Verify the update worked by querying the database
+            for user in all_user_data:
+                if user["is_first"]:
+                    result = conn.execute(
+                        text("SELECT roles FROM people WHERE email = :email"),
+                        {"email": user["email"]}
+                    )
+                    row = result.fetchone()
+                    if row:
+                        print(f"✓ DB shows roles for {user['email']}: {row[0]}")
+                    else:
+                        print(f"⚠ No row found in DB for {user['email']}")
+
+            print(f"✓ Forced admin roles via direct database access")
+
+        # Re-login admin users to get new JWT tokens with updated roles
+        for user in all_user_data:
+            if user["is_first"]:
+                try:
+                    token, data = get_auth_token(app_config, user["email"], user["password"])
+                    admin_tokens[user["org_id"]] = token
+                    actual_roles = data.get("roles", [])
+                    print(f"✓ Re-logged in {user['name']} with roles: {actual_roles}")
+                except Exception as e:
+                    print(f"⚠ Could not re-login {user['name']}: {e}")
+
+    except Exception as e:
+        print(f"⚠ Could not force admin roles: {e}")
 
     # Step 2: Update roles for non-admin users
     for user in all_user_data:

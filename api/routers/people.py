@@ -181,7 +181,7 @@ def update_person(
             person.roles = person_data.roles
         if person_data.timezone is not None:
             person.timezone = person_data.timezone
-        if hasattr(person_data, 'language') and person_data.language is not None:
+        if person_data.language is not None:
             person.language = person_data.language
         if person_data.extra_data is not None:
             person.extra_data = person_data.extra_data

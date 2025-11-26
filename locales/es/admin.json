@@ -22,8 +22,10 @@
     "events": "Eventos",
     "solver": "Programador",
     "invitations": "Invitaciones",
-    "reports": "Informes"
+    "reports": "Informes",
+    "teams": "Equipos"
   },
+  "team_management": "Gestión de equipos",
   "people": {
     "title": "Gestionar personas",
     "add_button": "Agregar persona",

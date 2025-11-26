@@ -43,5 +43,9 @@
   "all_upcoming": "All Upcoming",
   "google_calendar": "Google Calendar",
   "apple_calendar": "Apple Calendar",
-  "outlook": "Outlook"
+  "outlook": "Outlook",
+  "overview": "Resumen",
+  "upcoming_assignments": "Próximas asignaciones",
+  "my_assignments": "Mis asignaciones",
+  "quick_actions": "Acciones rápidas"
 }

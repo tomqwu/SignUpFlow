@@ -156,7 +156,7 @@ def _send_assignment_notification(
     org = db.query(Organization).filter(Organization.id == event.org_id).first()
 
     # Format event datetime
-    event_datetime = event.datetime.strftime("%A, %B %d, %Y at %I:%M %p")
+    event_datetime = event.start_time.strftime("%A, %B %d, %Y at %I:%M %p")
 
     # Get unsubscribe token
     unsubscribe_token = email_pref.unsubscribe_token if email_pref else None
@@ -165,10 +165,10 @@ def _send_assignment_notification(
     return email_service.send_assignment_email(
         volunteer_email=recipient.email,
         volunteer_name=recipient.name,
-        event_title=event.title,
+        event_title=(event.extra_data or {}).get("title", event.type),
         role=assignment.role,
         event_datetime=event_datetime,
-        event_location=event.location,
+        event_location=((event.extra_data or {}).get("location") or (event.resource.location if event.resource else None)),
         event_duration=f"{event.duration_minutes} minutes" if hasattr(event, 'duration_minutes') else None,
         additional_info=notification.template_data.get("additional_info") if notification.template_data else None,
         unsubscribe_token=unsubscribe_token,
@@ -204,10 +204,10 @@ def _send_reminder_notification(
 
     # Calculate hours remaining
     now = datetime.utcnow()
-    hours_remaining = int((event.datetime - now).total_seconds() / 3600)
+    hours_remaining = int((event.start_time - now).total_seconds() / 3600)
 
     # Format event datetime
-    event_datetime = event.datetime.strftime("%A, %B %d, %Y at %I:%M %p")
+    event_datetime = event.start_time.strftime("%A, %B %d, %Y at %I:%M %p")
 
     # Get unsubscribe token
     unsubscribe_token = email_pref.unsubscribe_token if email_pref else None
@@ -219,11 +219,11 @@ def _send_reminder_notification(
     return email_service.send_reminder_email(
         volunteer_email=recipient.email,
         volunteer_name=recipient.name,
-        event_title=event.title,
+        event_title=(event.extra_data or {}).get("title", event.type),
         role=assignment.role if hasattr(assignment, 'role') else template_data.get("role", "Volunteer"),
         event_datetime=event_datetime,
         hours_remaining=hours_remaining,
-        event_location=event.location if hasattr(event, 'location') else None,
+        event_location=((event.extra_data or {}).get("location") or (event.resource.location if event.resource else None)),
         event_duration=f"{event.duration_minutes} minutes" if hasattr(event, 'duration_minutes') else None,
         what_to_bring=template_data.get("what_to_bring"),
         additional_info=template_data.get("additional_info"),
@@ -259,7 +259,7 @@ def _send_update_notification(
         return None
 
     # Format event datetime
-    new_datetime = event.datetime.strftime("%A, %B %d, %Y at %I:%M %p")
+    new_datetime = event.start_time.strftime("%A, %B %d, %Y at %I:%M %p")
 
     # Get unsubscribe token
     unsubscribe_token = email_pref.unsubscribe_token if email_pref else None
@@ -274,11 +274,11 @@ def _send_update_notification(
     return email_service.send_update_email(
         volunteer_email=recipient.email,
         volunteer_name=recipient.name,
-        event_title=event.title,
+        event_title=(event.extra_data or {}).get("title", event.type),
         role=assignment.role if hasattr(assignment, 'role') else template_data.get("role", "Volunteer"),
         new_datetime=new_datetime,
         old_datetime=old_datetime,
-        new_location=event.location if hasattr(event, 'location') else None,
+        new_location=((event.extra_data or {}).get("location") or (event.resource.location if event.resource else None)),
         old_location=old_location,
         event_duration=f"{event.duration_minutes} minutes" if hasattr(event, 'duration_minutes') else None,
         other_changes=other_changes,
@@ -304,7 +304,7 @@ def _send_cancellation_notification(
         return None
 
     # Format event datetime
-    event_datetime = event.datetime.strftime("%A, %B %d, %Y at %I:%M %p")
+    event_datetime = event.start_time.strftime("%A, %B %d, %Y at %I:%M %p")
 
     # Get unsubscribe token
     unsubscribe_token = email_pref.unsubscribe_token if email_pref else None
@@ -319,10 +319,10 @@ def _send_cancellation_notification(
     return email_service.send_cancellation_email(
         volunteer_email=recipient.email,
         volunteer_name=recipient.name,
-        event_title=event.title,
+        event_title=(event.extra_data or {}).get("title", event.type),
         role=role,
         event_datetime=event_datetime,
-        event_location=event.location if hasattr(event, 'location') else None,
+        event_location=((event.extra_data or {}).get("location") or (event.resource.location if event.resource else None)),
         cancellation_reason=cancellation_reason,
         apology_message=apology_message,
         unsubscribe_token=unsubscribe_token,
@@ -358,8 +358,8 @@ def send_reminder_emails() -> Dict[str, Any]:
         reminder_end = now + timedelta(hours=25)
 
         events = db.query(Event).filter(
-            Event.datetime >= reminder_start,
-            Event.datetime <= reminder_end
+            Event.start_time >= reminder_start,
+            Event.start_time <= reminder_end
         ).all()
 
         logger.info(f"Found {len(events)} events in 24-hour reminder window")
@@ -410,7 +410,7 @@ def send_reminder_emails() -> Dict[str, Any]:
                     template_data={
                         "assignment_id": assignment.id,
                         "role": assignment.role if hasattr(assignment, 'role') else None,
-                        "hours_remaining": int((event.datetime - now).total_seconds() / 3600)
+                        "hours_remaining": int((event.start_time - now).total_seconds() / 3600)
                     },
                     created_at=datetime.utcnow()
                 )

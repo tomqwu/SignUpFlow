@@ -11,7 +11,7 @@
 /**
  * Generate sample data for organization
  */
-window.generateSampleData = async function() {
+window.generateSampleData = async function () {
     const currentUser = JSON.parse(localStorage.getItem('currentUser') || '{}');
     const orgId = currentUser.org_id;
 
@@ -53,7 +53,7 @@ window.generateSampleData = async function() {
 /**
  * Clear all sample data for organization
  */
-window.clearSampleData = async function() {
+window.clearSampleData = async function () {
     const currentUser = JSON.parse(localStorage.getItem('currentUser') || '{}');
     const orgId = currentUser.org_id;
 
@@ -106,7 +106,7 @@ window.clearSampleData = async function() {
 /**
  * Check if organization has sample data
  */
-window.hasSampleData = async function() {
+window.hasSampleData = async function () {
     const currentUser = JSON.parse(localStorage.getItem('currentUser') || '{}');
     const orgId = currentUser.org_id;
 
@@ -128,7 +128,7 @@ window.hasSampleData = async function() {
 /**
  * Get sample data summary counts
  */
-window.getSampleDataSummary = async function() {
+window.getSampleDataSummary = async function () {
     const currentUser = JSON.parse(localStorage.getItem('currentUser') || '{}');
     const orgId = currentUser.org_id;
 
@@ -150,7 +150,7 @@ window.getSampleDataSummary = async function() {
 /**
  * Render sample data control panel
  */
-window.renderSampleDataControls = async function(containerId) {
+window.renderSampleDataControls = async function (containerId) {
     const container = document.getElementById(containerId);
     if (!container) return;
 
@@ -202,7 +202,7 @@ window.renderSampleDataControls = async function(containerId) {
 /**
  * Add SAMPLE badge to entity name in UI
  */
-window.addSampleBadge = function(entityName, isSample) {
+window.addSampleBadge = function (entityName, isSample) {
     if (!isSample) return entityName;
 
     return `<span class="sample-badge-inline" style="background: #fef3c7; color: #92400e; padding: 2px 6px; border-radius: 3px; font-size: 0.75rem; margin-right: 6px;">SAMPLE</span>${entityName}`;
@@ -234,7 +234,7 @@ function showMessage(type, message) {
 /**
  * Initialize sample data manager on page load
  */
-export function initSampleDataManager() {
+window.initSampleDataManager = function () {
     // Check if sample data controls container exists
     const container = document.getElementById('sample-data-controls');
     if (container) {

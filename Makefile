@@ -218,6 +218,11 @@ run: check-poetry
 	@echo "🚀 Starting SignUpFlow development server..."
 	@poetry run uvicorn api.main:app --host 0.0.0.0 --port 8000 --reload
 
+# Run Celery worker
+celery: check-poetry
+	@echo "🚀 Starting Celery worker..."
+	@poetry run celery -A api.celery_app worker --loglevel=info
+
 # Alias for run
 dev: run
 
@@ -457,6 +462,9 @@ logs-db:
 
 logs-redis:
 	@$(DOCKER_COMPOSE) -f docker-compose.dev.yml logs -f redis
+
+logs-worker:
+	@$(DOCKER_COMPOSE) -f docker-compose.dev.yml logs -f worker
 
 # Open shell in API container
 shell:
