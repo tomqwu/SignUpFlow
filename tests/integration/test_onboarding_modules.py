@@ -140,7 +140,11 @@ def test_all_js_modules_loaded_in_order(client):
     assert videos_pos > 0, "quick-start-videos.js not found"
     assert tutorials_pos > 0, "tutorial-overlays.js not found"
     assert features_pos > 0, "feature-unlocks.js not found"
-    assert app_user_pos > 0, "app-user.js not found"
+    
+    # Check for either app-user.js or app-user-v2.js
+    if app_user_pos == -1:
+        app_user_pos = html_content.find("app-user-v2.js")
+    assert app_user_pos > 0, "app-user.js or app-user-v2.js not found"
 
     # Verify order (i18n before all, app-user last)
     assert i18n_pos < sample_data_pos, "i18n.js must load before sample-data-manager.js"
@@ -150,10 +154,50 @@ def test_all_js_modules_loaded_in_order(client):
     assert i18n_pos < features_pos, "i18n.js must load before feature-unlocks.js"
 
     # app-user.js should be last (or near last)
-    assert app_user_pos > features_pos, "feature-unlocks.js must load before app-user.js"
+    # Note: app-user.js was renamed to app-user-v2.js
+    app_user_found = app_user_pos > 0 or html_content.find("app-user-v2.js") > 0
+    assert app_user_found, "app-user.js or app-user-v2.js not found"
+    
+    if app_user_pos > 0:
+        assert app_user_pos > features_pos, "feature-unlocks.js must load before app-user.js"
+    else:
+        app_user_v2_pos = html_content.find("app-user-v2.js")
+        assert app_user_v2_pos > features_pos, "feature-unlocks.js must load before app-user-v2.js"
 
 
-def test_onboarding_backend_integration_complete(client, auth_headers):
+@pytest.fixture
+def real_auth_headers(db):
+    """Create a real user and return valid auth headers."""
+    from api.models import Person, Organization
+    from api.security import create_access_token, hash_password
+    import time
+    
+    # Create org if not exists
+    org = db.query(Organization).filter(Organization.id == "test_org").first()
+    if not org:
+        org = Organization(id="test_org", name="Test Org", region="US", config={})
+        db.add(org)
+        db.commit()
+    
+    # Create user
+    user_id = f"test_user_{int(time.time())}"
+    user = Person(
+        id=user_id,
+        org_id="test_org",
+        name="Test User",
+        email=f"{user_id}@test.com",
+        password_hash=hash_password("password"),
+        roles=["admin"]
+    )
+    db.add(user)
+    db.commit()
+    
+    # Generate token
+    token = create_access_token({"sub": user_id, "org_id": "test_org", "roles": ["admin"]})
+    return {"Authorization": f"Bearer {token}"}
+
+
+def test_onboarding_backend_integration_complete(client, real_auth_headers):
     """
     Test complete backend integration for onboarding system.
 
@@ -165,7 +209,7 @@ def test_onboarding_backend_integration_complete(client, auth_headers):
     # Get progress (should create if not exists)
     response = client.get(
         "/api/onboarding/progress",
-        headers=auth_headers
+        headers=real_auth_headers
     )
     assert response.status_code == 200
 
@@ -180,14 +224,14 @@ def test_onboarding_backend_integration_complete(client, auth_headers):
     response = client.put(
         "/api/onboarding/progress",
         json={"checklist_state": {"create_event": True, "add_team": True}},
-        headers=auth_headers
+        headers=real_auth_headers
     )
     assert response.status_code == 200
 
     # Verify update persisted
     response = client.get(
         "/api/onboarding/progress",
-        headers=auth_headers
+        headers=real_auth_headers
     )
     assert response.status_code == 200
     progress = response.json()
@@ -198,14 +242,14 @@ def test_onboarding_backend_integration_complete(client, auth_headers):
     response = client.put(
         "/api/onboarding/progress",
         json={"tutorials_completed": ["event_creation", "team_management"]},
-        headers=auth_headers
+        headers=real_auth_headers
     )
     assert response.status_code == 200
 
     # Verify tutorials persisted
     response = client.get(
         "/api/onboarding/progress",
-        headers=auth_headers
+        headers=real_auth_headers
     )
     assert response.status_code == 200
     progress = response.json()
@@ -216,14 +260,14 @@ def test_onboarding_backend_integration_complete(client, auth_headers):
     response = client.put(
         "/api/onboarding/progress",
         json={"features_unlocked": ["recurring_events", "manual_editing"]},
-        headers=auth_headers
+        headers=real_auth_headers
     )
     assert response.status_code == 200
 
     # Verify features persisted
     response = client.get(
         "/api/onboarding/progress",
-        headers=auth_headers
+        headers=real_auth_headers
     )
     assert response.status_code == 200
     progress = response.json()
@@ -234,14 +278,14 @@ def test_onboarding_backend_integration_complete(client, auth_headers):
     response = client.put(
         "/api/onboarding/progress",
         json={"videos_watched": ["getting_started", "creating_events"]},
-        headers=auth_headers
+        headers=real_auth_headers
     )
     assert response.status_code == 200
 
     # Verify videos persisted
     response = client.get(
         "/api/onboarding/progress",
-        headers=auth_headers
+        headers=real_auth_headers
     )
     assert response.status_code == 200
     progress = response.json()

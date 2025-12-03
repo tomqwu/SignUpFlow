@@ -48,7 +48,7 @@ def test_change_language_in_settings(
     expect(page.locator("#user-name-display")).to_be_visible(timeout=5000)
 
     # Open settings modal by clicking the gear icon
-    page.locator('button.btn-icon:has-text("⚙️")').click()
+    page.locator('button.action-btn:has-text("Settings")').click()
     page.wait_for_timeout(500)
 
     # Check the settings modal is visible
@@ -127,7 +127,7 @@ def test_change_language_multiple_times(
         failed_requests.clear()
 
         # Open settings
-        page.locator('button.btn-icon:has-text("⚙️")').click()
+        page.locator('button.action-btn:has-text("Settings")').click()
         page.wait_for_timeout(500)
 
         # Change language

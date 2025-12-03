@@ -47,11 +47,22 @@ def admin_login(page: Page, app_config: AppConfig, api_client: ApiTestClient):
     )
 
     # Navigate directly to login page
+    page.on("console", lambda msg: print(f"CONSOLE: {msg.text}"))
+    page.on("pageerror", lambda err: print(f"PAGE ERROR: {err}"))
+    page.on("requestfailed", lambda req: print(f"REQUEST FAILED: {req.url} - {req.failure}"))
+    page.on("response", lambda res: print(f"RESPONSE: {res.url} - {res.status}") if res.status >= 400 else None)
     page.goto(f"{app_config.app_url}/login")
+    
     page.wait_for_load_state("networkidle")
 
     # Verify login screen is visible
-    expect(page.locator("#login-screen")).to_be_visible(timeout=5000)
+    try:
+        expect(page.locator("#login-screen")).to_be_visible(timeout=5000)
+    except AssertionError:
+        print(f"DEBUG: Login screen hidden. Current URL: {page.url}")
+        print(f"DEBUG: localStorage: {page.evaluate('JSON.stringify(localStorage)')}")
+        print(f"DEBUG: visible screens: {page.locator('.screen:not(.hidden)').evaluate_all('els => els.map(e => e.id)')}")
+        raise
 
     # Fill login form with dynamic user
     page.fill("#login-email", admin_user["email"])
@@ -91,15 +102,17 @@ def admin_login(page: Page, app_config: AppConfig, api_client: ApiTestClient):
                     option.value = '{org["id"]}';
                     option.text = '{org["name"]}';
                     orgSelect.appendChild(option);
+                    orgSelect.value = '{org["id"]}'; // Select the org
+                    orgSelect.dispatchEvent(new Event('change')); // Trigger loadAdminTeams
                 }}
             }})();
         """)
-        page.wait_for_timeout(300)
+        page.wait_for_timeout(500)
 
     return page, org
 
 
-@pytest.mark.skip(reason="Teams UI partially implemented - Form IDs mismatch (test expects #team-id, implementation has #create-team-id). Fixture organization dropdown population incomplete. Need refactoring to match test expectations.")
+
 def test_create_team_complete_workflow(admin_login):
     """Test complete team creation workflow."""
     page, org = admin_login  # Unpack tuple from fixture
@@ -114,11 +127,18 @@ def test_create_team_complete_workflow(admin_login):
         if teams_container.count() > 0:
             teams_container.click()
             page.wait_for_timeout(300)
-            add_team_button = page.locator('button:has-text("Add Team"), button:has-text("+ Team"), button:has-text("Create Team")')
+            add_team_button = page.locator('button:has-text("Create Team")')
 
     expect(add_team_button.first).to_be_visible(timeout=5000)
+    print(f"DEBUG: Add Team Button HTML: {add_team_button.first.evaluate('el => el.outerHTML')}")
     add_team_button.first.click()
-    page.wait_for_timeout(500)
+    page.wait_for_timeout(1000) # Wait longer for modal
+
+    # Debug modal state
+    modal_classes = page.locator('#create-team-modal').get_attribute('class')
+    print(f"DEBUG: Modal classes: {modal_classes}")
+    modal_visible = page.locator('#create-team-modal').is_visible()
+    print(f"DEBUG: Modal visible: {modal_visible}")
 
     # Fill team form
     timestamp = int(time.time() * 1000)
@@ -127,22 +147,22 @@ def test_create_team_complete_workflow(admin_login):
     team_description = "Team created by E2E test"
 
     # Fill team ID
-    team_id_input = page.locator('#team-id, input[name="id"]')
+    team_id_input = page.locator('#team-id')
     if team_id_input.count() > 0:
         team_id_input.fill(team_id)
 
     # Fill team name
-    team_name_input = page.locator('#team-name, input[name="name"]')
+    team_name_input = page.locator('#team-name')
     expect(team_name_input).to_be_visible(timeout=5000)
     team_name_input.fill(team_name)
 
     # Fill team description
-    team_description_input = page.locator('#team-description, textarea[name="description"]')
+    team_description_input = page.locator('#team-description')
     if team_description_input.count() > 0:
         team_description_input.fill(team_description)
 
     # Submit form
-    submit_button = page.locator('button:has-text("Create"), button:has-text("Create Team"), button[type="submit"]')
+    submit_button = page.locator('#create-team-form button[type="submit"]')
     expect(submit_button.first).to_be_visible()
     submit_button.first.click()
 
@@ -157,7 +177,7 @@ def test_create_team_complete_workflow(admin_login):
     expect(page.locator(f'text="{team_name}"')).to_be_visible()
 
 
-@pytest.mark.skip(reason="Teams UI partially implemented - Organization dropdown not populated correctly in fixture. Form IDs mismatch. Need refactoring to match test expectations.")
+
 def test_edit_team(admin_login):
     """Test editing existing team."""
     page, org = admin_login  # Unpack tuple from fixture
@@ -188,64 +208,59 @@ def test_edit_team(admin_login):
             }});
         }})();
     """)
-
+    
     page.wait_for_timeout(1000)
     page.reload()
     page.wait_for_load_state("networkidle")
-
+    
     # Click Teams tab to make teams content visible
     teams_tab = page.locator('button[data-tab="teams"]')
     teams_tab.click()
     page.wait_for_timeout(500)
-
+    
     # Need to set the org filter dropdown for teams to load
     page.select_option('#teams-org-filter', org_id)
     page.wait_for_timeout(500)  # Wait for teams to load after filter selection
-
+    
     # Find the team in the list
     team_card = page.locator(f'text="{original_name}"').first
     expect(team_card).to_be_visible(timeout=5000)
-
-    # Click edit button (look for Edit button near the team)
+    
+    # Click edit button
+    # Look for button in the same card
     team_container = team_card.locator('..').locator('..')
-    edit_button = team_container.locator('button:has-text("Edit"), button[title="Edit"]')
-
-    if edit_button.count() == 0:
-        # Try clicking on the team card itself to reveal edit option
-        team_card.click()
-        page.wait_for_timeout(300)
-        edit_button = page.locator('button:has-text("Edit"), button[title="Edit"]')
-
+    edit_button = team_container.locator('button:has-text("Edit")')
     expect(edit_button.first).to_be_visible(timeout=5000)
     edit_button.first.click()
+    
+    # Wait for modal
     page.wait_for_timeout(500)
-
+    
     # Update team name
     updated_name = f"Updated Team {timestamp}"
-    team_name_input = page.locator('#team-name, input[name="name"]')
-    expect(team_name_input).to_be_visible()
-    team_name_input.fill("")  # Clear first
+    team_name_input = page.locator('#edit-team-name')
+    expect(team_name_input).to_be_visible(timeout=5000)
     team_name_input.fill(updated_name)
-
+    
     # Update description
     updated_description = "Updated description"
-    team_description_input = page.locator('#team-description, textarea[name="description"]')
+    team_description_input = page.locator('#edit-team-description')
     if team_description_input.count() > 0:
-        team_description_input.fill("")
         team_description_input.fill(updated_description)
-
+        
     # Submit update
-    save_button = page.locator('button:has-text("Save"), button:has-text("Update"), button[type="submit"]')
+    save_button = page.locator('#edit-team-form button[type="submit"]')
     expect(save_button.first).to_be_visible()
     save_button.first.click()
-
-    page.wait_for_timeout(2000)
-
+    
+    # Wait for update
+    page.wait_for_timeout(1000)
+    
     # Verify updated name appears
     expect(page.locator(f'text="{updated_name}"').first).to_be_visible(timeout=5000)
 
 
-@pytest.mark.skip(reason="Teams UI partially implemented - Organization dropdown not populated correctly in fixture. Need refactoring to match test expectations.")
+
 def test_delete_team(admin_login):
     """Test deleting team and data cleanup."""
     page, org = admin_login  # Unpack tuple from fixture
@@ -304,6 +319,11 @@ def test_delete_team(admin_login):
         delete_button = page.locator('button:has-text("Delete"), button[title="Delete"]')
 
     expect(delete_button.first).to_be_visible(timeout=5000)
+    
+    # Debug: Check button onclick
+    button_html = delete_button.first.evaluate("el => el.outerHTML")
+    print(f"DEBUG: Button HTML = {button_html}")
+
     delete_button.first.click()
     page.wait_for_timeout(500)
 
@@ -318,10 +338,10 @@ def test_delete_team(admin_login):
     expect(page.locator(f'text="{team_name}"')).not_to_be_visible()
 
 
-@pytest.mark.skip(reason="Teams UI not implemented - backend API exists but frontend pending")
+
 def test_add_remove_team_members(admin_login: Page):
     """Test adding and removing team members."""
-    page = admin_login
+    page, org = admin_login
 
     # Create a team
     timestamp = int(time.time() * 1000)
@@ -332,9 +352,9 @@ def test_add_remove_team_members(admin_login: Page):
     team_response = page.evaluate(f"""
         (async () => {{
             const authToken = localStorage.getItem('authToken');
-            const currentOrg = JSON.parse(localStorage.getItem('currentOrg'));
+            const currentOrg = JSON.parse(localStorage.getItem('roster_org'));
 
-            const teamResponse = await fetch('http://localhost:8000/api/teams/', {{
+            const teamResponse = await fetch('/api/teams/', {{
                 method: 'POST',
                 headers: {{
                     'Content-Type': 'application/json',
@@ -356,6 +376,10 @@ def test_add_remove_team_members(admin_login: Page):
     page.reload()
     page.wait_for_timeout(1000)
 
+    # Select org filter to ensure teams are visible
+    page.select_option('#teams-org-filter', org["id"])
+    page.wait_for_timeout(500)
+
     # Find and click on the team to open member management
     team_card = page.locator(f'text="{team_name}"').first
     expect(team_card).to_be_visible(timeout=5000)
@@ -370,7 +394,7 @@ def test_add_remove_team_members(admin_login: Page):
         page.wait_for_timeout(500)
 
         # Select a person from dropdown or list
-        member_select = page.locator('select[name="person"], #member-select')
+        member_select = page.locator('select[name="person"], #member-select, #add-team-member-select')
         if member_select.count() > 0:
             # Select first available person
             member_select.select_option(index=1)
@@ -381,7 +405,7 @@ def test_add_remove_team_members(admin_login: Page):
                 person_item.click()
 
         # Confirm adding member
-        add_button = page.locator('button:has-text("Add"), button[type="submit"]')
+        add_button = page.locator('button:text-is("Add")')
         if add_button.count() > 0:
             add_button.first.click()
             page.wait_for_timeout(1000)
@@ -405,7 +429,7 @@ def test_add_remove_team_members(admin_login: Page):
             page.wait_for_timeout(1000)
 
 
-@pytest.mark.skip(reason="Teams UI partially implemented - localStorage currentOrg not initialized correctly in fixture (TypeError: Cannot read properties of null reading 'id'). Organization dropdown population incomplete. Requires refactoring fixture setup and localStorage initialization.")
+
 def test_view_teams_list(admin_login):
     """Test viewing all organization teams."""
     page, org = admin_login  # Unpack tuple from fixture
@@ -420,9 +444,9 @@ def test_view_teams_list(admin_login):
         page.evaluate(f"""
             (async () => {{
                 const authToken = localStorage.getItem('authToken');
-                const currentOrg = JSON.parse(localStorage.getItem('currentOrg'));
+                const currentOrg = JSON.parse(localStorage.getItem('roster_org'));
 
-                await fetch('http://localhost:8000/api/teams/', {{
+                await fetch('/api/teams/', {{
                     method: 'POST',
                     headers: {{
                         'Content-Type': 'application/json',
@@ -443,6 +467,10 @@ def test_view_teams_list(admin_login):
     page.reload()
     page.wait_for_timeout(1000)
 
+    # Select org filter to ensure teams are visible
+    page.select_option('#teams-org-filter', org["id"])
+    page.wait_for_timeout(500)
+
     # Verify at least 3 teams are visible
     team_cards = page.locator('.data-card, .team-card, [data-team-id]')
     assert team_cards.count() >= 3, "Should have at least 3 teams visible"
@@ -453,10 +481,10 @@ def test_view_teams_list(admin_login):
         expect(page.locator(f'text="{team_name}"')).to_be_visible()
 
 
-@pytest.mark.skip(reason="Teams UI not implemented - backend API exists but frontend pending")
+
 def test_filter_teams_by_role(admin_login: Page):
     """Test filtering teams by role."""
-    page = admin_login
+    page, org = admin_login
 
     # This test verifies that team filtering works if implemented
     # If no filter UI exists, test will check that all teams are shown

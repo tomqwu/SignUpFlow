@@ -9,7 +9,9 @@ def get_frontend_files():
     frontend_dir = Path("/home/ubuntu/SignUpFlow/frontend")
     files = []
     for ext in ["*.html", "*.js"]:
-        files.extend(frontend_dir.rglob(ext))
+        for file in frontend_dir.rglob(ext):
+            if "tests/" not in str(file):
+                files.append(file)
     return files
 
 def extract_keys_from_file(file_path):

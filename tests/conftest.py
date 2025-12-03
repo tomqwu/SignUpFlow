@@ -35,6 +35,13 @@ def app_config() -> AppConfig:
 @pytest.fixture(scope="session")
 def api_server(app_config: AppConfig):
     """Start API server for testing session."""
+    # If running against port 8000 (make test-all), don't start a second server
+    # This prevents SQLite locking issues since both would try to use test_roster.db
+    if "8000" in app_config.app_url:
+        print("ℹ️  Skipping api_server fixture start (using existing server on port 8000)")
+        yield None
+        return
+
     # Set test database URL environment variable
     test_env = os.environ.copy()
     test_env["DATABASE_URL"] = f"sqlite:///{TEST_DB_PATH}"
@@ -47,7 +54,9 @@ def api_server(app_config: AppConfig):
     test_env["RATE_LIMIT_LOGIN_MAX"] = "1000"
     test_env["RATE_LIMIT_CREATE_INVITATION_MAX"] = "1000"
     test_env["RATE_LIMIT_VERIFY_INVITATION_MAX"] = "1000"
+    test_env["RATE_LIMIT_VERIFY_INVITATION_MAX"] = "1000"
     test_env["DISABLE_RATE_LIMITS"] = "true"
+    test_env["SECURITY_CSP_ENABLED"] = "false"  # Disable CSP to prevent upgrade-insecure-requests issues in tests
 
     parsed_url = urlparse(app_config.app_url)
     host = parsed_url.hostname or "0.0.0.0"
@@ -335,6 +344,10 @@ from sqlalchemy.orm import sessionmaker
 from api.models import Base
 
 TEST_DB_PATH = Path(__file__).resolve().parent.parent / "test_roster_e2e.db"
+# If running against port 8000 (make test-all), use test_roster.db
+if "8000" in APP_URL:
+    TEST_DB_PATH = Path(__file__).resolve().parent.parent / "test_roster.db"
+
 TEST_DATABASE_URL = f"sqlite:///{TEST_DB_PATH}"
 SKIP_DB_FIXTURES = os.getenv("SKIP_TEST_DB_FIXTURES", "").lower() in {"1", "true", "yes", "on"}
 if SKIP_DB_FIXTURES:
@@ -365,6 +378,7 @@ def setup_test_database():
     )
 
     Base.metadata.create_all(bind=engine)
+    engine.dispose()
 
     yield
 
@@ -424,11 +438,13 @@ def reset_database_between_modules():
 
         # Re-enable foreign key constraints
         conn.execute(text("PRAGMA foreign_keys = ON"))
+        conn.execute(text("PRAGMA foreign_keys = ON"))
         conn.commit()
+    engine.dispose()
 
 
 @pytest.fixture(scope="function", autouse=True)
-def reset_database_between_tests():
+def reset_database_between_tests(request):
     """
     Reset database data before EACH test function to ensure complete test isolation.
 
@@ -450,6 +466,12 @@ def reset_database_between_tests():
     - Consistent test behavior in isolation vs full suite
     """
     if SKIP_DB_FIXTURES:
+        yield
+        return
+
+    # Skip for comprehensive test suite as it manages its own data and state
+    # and the DB wipe causes locking/race conditions with the API server
+    if "comprehensive_test_suite.py" in str(request.path):
         yield
         return
 
@@ -486,7 +508,9 @@ def reset_database_between_tests():
 
         # Re-enable foreign key constraints
         conn.execute(text("PRAGMA foreign_keys = ON"))
+        conn.execute(text("PRAGMA foreign_keys = ON"))
         conn.commit()
+    engine.dispose()
 
     yield
 
@@ -505,7 +529,7 @@ def auth_headers():
 
 
 @pytest.fixture(scope="function", autouse=True)
-def override_get_db():
+def override_get_db(request):
     """Override database dependency to use test database for unit tests."""
     from fastapi import Depends
     from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
@@ -586,9 +610,15 @@ def override_get_db():
         # In tests, allow access to all orgs
         pass
 
+    # Only override auth dependencies for unit tests, NOT integration tests
+    # Integration tests need real auth to test permissions
+    is_integration = "integration" in str(request.path) or "e2e" in str(request.path)
+    
     app.dependency_overrides[get_db] = override_get_db_dependency
-    app.dependency_overrides[get_current_admin_user] = override_get_admin_user
-    app.dependency_overrides[get_current_user] = override_get_user
+    
+    if not is_integration:
+        app.dependency_overrides[get_current_admin_user] = override_get_admin_user
+        app.dependency_overrides[get_current_user] = override_get_user
 
     # Override verify_org_member function (not a dependency, so we monkey patch it)
     import api.routers.people
@@ -599,15 +629,16 @@ def override_get_db():
     # Store original function
     original_verify = api.dependencies.verify_org_member
 
-    # Replace with mock
-    api.dependencies.verify_org_member = override_verify_org_member
-    api.routers.people.verify_org_member = override_verify_org_member
-    if hasattr(api.routers.events, 'verify_org_member'):
-        api.routers.events.verify_org_member = override_verify_org_member
-    if hasattr(api.routers.teams, 'verify_org_member'):
-        api.routers.teams.verify_org_member = override_verify_org_member
-    if hasattr(api.routers.notifications, 'verify_org_member'):
-        api.routers.notifications.verify_org_member = override_verify_org_member
+    # Replace with mock only for unit tests
+    if not is_integration:
+        api.dependencies.verify_org_member = override_verify_org_member
+        api.routers.people.verify_org_member = override_verify_org_member
+        if hasattr(api.routers.events, 'verify_org_member'):
+            api.routers.events.verify_org_member = override_verify_org_member
+        if hasattr(api.routers.teams, 'verify_org_member'):
+            api.routers.teams.verify_org_member = override_verify_org_member
+        if hasattr(api.routers.notifications, 'verify_org_member'):
+            api.routers.notifications.verify_org_member = override_verify_org_member
 
     yield
 

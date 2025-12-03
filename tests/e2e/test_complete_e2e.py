@@ -49,7 +49,7 @@ def test_complete_user_journey(
     print("\n⚙️  Test 2: Settings Modal")
 
     # Open settings using gear icon
-    settings_btn = page.get_by_role("button", name="⚙️")
+    settings_btn = page.locator('button.action-btn:has-text("Settings")')
     settings_btn.click()
     page.wait_for_timeout(500)
 

@@ -1,13 +1,8 @@
 /**
  * Admin SMS Broadcast Module
- *
- * Handles:
- * - Broadcast message composition
- * - Recipient selection
- * - Cost estimation
- * - Broadcast sending
- * - Usage statistics
  */
+console.log('admin-sms-broadcast.js loaded');
+
 
 // Assumes authFetch, showToast, i18n, and API_BASE_URL are loaded globally
 

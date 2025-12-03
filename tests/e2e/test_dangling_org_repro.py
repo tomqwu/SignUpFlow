@@ -5,10 +5,13 @@ import pytest
 from playwright.sync_api import sync_playwright, expect
 
 # Configuration
-API_BASE = "http://localhost:8000/api"
-APP_URL = "http://localhost:8000"
-
-def test_dangling_org_login_handled_gracefully():
+def test_dangling_org_login_handled_gracefully(api_server, app_config):
+    """
+    Test that logging in as a user whose organization has been deleted
+    results in a clear error message, not a broken dashboard.
+    """
+    API_BASE = app_config.api_base
+    APP_URL = app_config.app_url
     """
     Test that logging in as a user whose organization has been deleted
     results in a clear error message, not a broken dashboard.

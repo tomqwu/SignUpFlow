@@ -14,8 +14,10 @@ def browser_context():
         yield context
         browser.close()
 
-def test_teams_dropdown_populated(browser_context, api_server):
+def test_teams_dropdown_populated(browser_context, api_server, app_config):
     page = browser_context.new_page()
+    APP_URL = app_config.app_url
+    API_URL = app_config.api_base
     
     # 1. Setup: Create Org and User via API
     org_id = f"test-org-teams-{os.urandom(4).hex()}"
@@ -41,8 +43,13 @@ def test_teams_dropdown_populated(browser_context, api_server):
     
     # 2. Login
     page.goto(APP_URL)
-    page.wait_for_selector('input[type="email"]')
-    page.fill('input[type="email"]', email)
+    
+    # Click Sign In if present (landing page might show signup by default)
+    if page.locator('a:has-text("Sign in")').count() > 0:
+        page.locator('a:has-text("Sign in")').click()
+        
+    page.wait_for_selector('#login-email')
+    page.fill('#login-email', email)
     page.fill('input[type="password"]', password)
     
     # Use robust click for sign in

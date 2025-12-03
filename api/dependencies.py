@@ -16,8 +16,12 @@ security = HTTPBearer()
 def check_admin_permission(person: Person) -> bool:
     """Check if person has admin or super_admin role."""
     if not person or not person.roles:
+        print(f"DEBUG: check_admin_permission failed. Person: {person}, Roles: {person.roles if person else 'None'}")
         return False
-    return "admin" in person.roles or "super_admin" in person.roles
+    is_admin = "admin" in person.roles or "super_admin" in person.roles
+    if not is_admin:
+        print(f"DEBUG: check_admin_permission failed. Person: {person.email}, Roles: {person.roles}")
+    return is_admin
 
 
 def get_person_by_id(
@@ -68,6 +72,7 @@ def verify_org_member(
 ) -> None:
     """Verify person belongs to the specified organization."""
     if person.org_id != org_id:
+        print(f"DEBUG: verify_org_member failed. Person: {person.email}, Person Org: '{person.org_id}', Requested Org: '{org_id}'")
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Access denied: not a member of this organization"

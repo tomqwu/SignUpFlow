@@ -174,7 +174,7 @@ def test_assignment_notification_full_e2e(
         page.wait_for_timeout(1000)
 
         # Should be on admin console
-        expect(page.locator("#admin-console, #admin-panel")).to_be_visible(timeout=5000)
+        expect(page.locator("#admin-view")).to_be_visible(timeout=5000)
 
         print("✅ E2E test: Successfully navigated to admin console")
         print("   - Login successful")

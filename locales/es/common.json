@@ -22,7 +22,11 @@
     "upload": "Subir",
     "copy": "Copiar",
     "done": "Hecho",
-    "edit_roles": "Editar Roles"
+    "edit_roles": "Editar Roles",
+    "apply": "Aplicar",
+    "dismiss": "Descartar",
+    "view": "Ver",
+    "start": "Comenzar"
   },
   "actions": {
     "loading": "Cargando...",
@@ -103,5 +107,9 @@
   "role_greeter": "Recepcionista",
   "role_usher": "Ujier",
   "role_kids_ministry": "Ministerio Infantil",
-  "role_prayer_team": "Equipo de Oración"
+  "role_prayer_team": "Equipo de Oración",
+  "hello": "Hola",
+  "popular": "Popular",
+  "save": "Guardar",
+  "date": "Fecha"
 }

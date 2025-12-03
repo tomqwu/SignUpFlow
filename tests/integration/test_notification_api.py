@@ -231,6 +231,20 @@ class TestNotificationEndpoints:
         # Notification in org2 (different org)
         notif2 = Notification(org_id=org2_id, recipient_id="other_vol", type=NotificationType.ASSIGNMENT, status=NotificationStatus.SENT)
         test_db.add_all([notif1, notif2])
+        
+        # Create the volunteer user so auth works
+        from api.models import Person
+        from api.security import hash_password
+        volunteer = Person(
+            id=volunteer_id,
+            org_id=org1_id,
+            name="Volunteer In Org1",
+            email="vol1@example.com",
+            password_hash=hash_password("password"),
+            roles=["volunteer"]
+        )
+        test_db.add(volunteer)
+        
         test_db.commit()
         test_db.refresh(notif1)
         test_db.refresh(notif2)

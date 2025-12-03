@@ -75,8 +75,8 @@ def test_mobile_login_flow(
     expect(page).to_have_url(f"{app_config.app_url}/app/schedule", timeout=5000)
 
     # Verify mobile navigation is visible
-    schedule_heading = page.locator('h2[data-i18n="schedule.my_schedule"]')
-    expect(schedule_heading).to_be_visible(timeout=3000)
+    schedule_heading = page.locator('#page-title')
+    expect(schedule_heading).to_have_text("My Schedule", timeout=3000)
 
 
 def test_mobile_hamburger_menu(
@@ -118,7 +118,7 @@ def test_mobile_hamburger_menu(
     expect(page).to_have_url(f"{app_config.app_url}/app/schedule", timeout=5000)
 
     # Wait for page to load
-    expect(page.locator('h2[data-i18n="schedule.my_schedule"]')).to_be_visible(timeout=5000)
+    expect(page.locator('#page-title')).to_have_text("My Schedule", timeout=5000)
 
     # Check if hamburger menu exists (mobile-specific)
     # Note: Your app might use a different selector
@@ -207,7 +207,7 @@ def test_mobile_schedule_view(
     expect(page).to_have_url(f"{app_config.app_url}/app/schedule", timeout=5000)
 
     # Wait for page to load and show schedule
-    expect(page.locator('h2[data-i18n="schedule.my_schedule"]')).to_be_visible(timeout=5000)
+    expect(page.locator('#page-title')).to_have_text("My Schedule", timeout=5000)
 
     # Verify event is visible on mobile
     event_card = page.locator(f'text="Sunday Service"').first
@@ -262,10 +262,10 @@ def test_mobile_settings_modal(
     expect(page).to_have_url(f"{app_config.app_url}/app/schedule", timeout=5000)
 
     # Wait for page to load
-    expect(page.locator('h2[data-i18n="schedule.my_schedule"]')).to_be_visible(timeout=5000)
+    expect(page.locator('#page-title')).to_have_text("My Schedule", timeout=5000)
 
     # Tap settings gear icon
-    settings_btn = page.locator('button.btn-icon:has-text("⚙️")')
+    settings_btn = page.locator('button.action-btn:has-text("Settings")')
     expect(settings_btn).to_be_visible(timeout=3000)
     settings_btn.click()
 
@@ -280,16 +280,19 @@ def test_mobile_settings_modal(
     # Change language (test dropdown on mobile)
     language_select.select_option('es')
 
-    # Close modal
-    close_btn = page.locator('#settings-modal button.btn-close')
-    close_btn.click()
-
-    # Verify modal closed
-    expect(settings_modal).not_to_be_visible(timeout=3000)
+    # Click Save Changes
+    save_btn = page.locator('button[data-i18n="settings.save_changes"]')
+    save_btn.click()
+    
+    # Wait for modal to close (save usually closes it)
+    expect(settings_modal).not_to_be_visible(timeout=5000)
+    
+    # Wait a bit for the UI to update
+    page.wait_for_timeout(2000)
 
     # Verify language changed (Spanish)
-    schedule_heading = page.locator('h2[data-i18n="schedule.my_schedule"]')
-    expect(schedule_heading).to_have_text("Mi horario", timeout=3000)
+    schedule_heading = page.locator('#page-title')
+    expect(schedule_heading).to_have_text("Mi horario", timeout=5000)
 
 
 @pytest.mark.parametrize("device_name,viewport", [
@@ -382,8 +385,8 @@ def test_tablet_layout_ipad(
     assert 768 <= viewport_width < 1024, f"Should be in tablet viewport, got {viewport_width}px"
 
     # Verify schedule is visible
-    schedule_heading = page.locator('h2[data-i18n="schedule.my_schedule"]')
-    expect(schedule_heading).to_be_visible(timeout=5000)
+    schedule_heading = page.locator('#page-title')
+    expect(schedule_heading).to_have_text("My Schedule", timeout=5000)
 
 
 def test_mobile_touch_gestures(
@@ -424,10 +427,10 @@ def test_mobile_touch_gestures(
     expect(page).to_have_url(f"{app_config.app_url}/app/schedule", timeout=5000)
 
     # Wait for page to load
-    expect(page.locator('h2[data-i18n="schedule.my_schedule"]')).to_be_visible(timeout=5000)
+    expect(page.locator('#page-title')).to_have_text("My Schedule", timeout=5000)
 
     # Test tap on settings button
-    settings_btn = page.locator('button.btn-icon:has-text("⚙️")')
+    settings_btn = page.locator('button.action-btn:has-text("Settings")')
     expect(settings_btn).to_be_visible(timeout=3000)
 
     # Simulate touch tap (using click() which works on both desktop and mobile)

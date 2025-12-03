@@ -51,7 +51,9 @@
     "billing_history": "Billing History",
     "payment_method": "Payment Method",
     "usage": "Usage",
-    "invoices": "Invoices"
+    "invoices": "Invoices",
+    "amount": "Amount",
+    "next_invoice": "Next Invoice"
   },
   "buttons": {
     "upgrade": "Upgrade",
@@ -69,7 +71,8 @@
     "trialing": "Trial",
     "past_due": "Past Due",
     "cancelled": "Cancelled",
-    "incomplete": "Incomplete"
+    "incomplete": "Incomplete",
+    "current_plan": "Current Plan"
   },
   "messages": {
     "upgrade_success": "Successfully upgraded to {{plan}} plan",
@@ -78,7 +81,8 @@
     "cancel_immediate_success": "Subscription cancelled immediately",
     "payment_method_added": "Payment method added successfully",
     "payment_method_updated": "Payment method updated successfully",
-    "trial_started": "Your 14-day free trial has started"
+    "trial_started": "Your 14-day free trial has started",
+    "upgrade_cancelled": "Upgrade cancelled"
   },
   "error_messages": {
     "upgrade_failed": "Failed to upgrade subscription. Please try again.",
@@ -87,7 +91,10 @@
     "payment_failed": "Payment failed. Please update your payment method.",
     "payment_method_invalid": "Invalid payment method. Please try again.",
     "volunteer_limit_exceeded": "Volunteer limit exceeded. Please upgrade your plan.",
-    "stripe_error": "Payment processing error. Please try again or contact support."
+    "stripe_error": "Payment processing error. Please try again or contact support.",
+    "admin_required": "Administrator privileges required",
+    "load_failed": "Failed to load billing information",
+    "trial_failed": "Failed to start trial"
   },
   "confirmation": {
     "upgrade_title": "Confirm Upgrade",
@@ -107,6 +114,7 @@
     "api_calls": "API Calls",
     "percentage_used": "{{percent}}% used",
     "approaching_limit": "Approaching limit",
-    "over_limit": "Over limit"
+    "over_limit": "Over limit",
+    "used": "Used"
   }
 }

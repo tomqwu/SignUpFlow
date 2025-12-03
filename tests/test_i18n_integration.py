@@ -14,16 +14,15 @@ import requests
 from playwright.sync_api import sync_playwright, expect
 from datetime import datetime
 
-# Use environment variable for test server port (default 8000)
-TEST_SERVER_PORT = os.getenv("TEST_SERVER_PORT", "8000")
-APP_URL = f"http://localhost:{TEST_SERVER_PORT}"
-API_BASE = f"{APP_URL}/api"
+from tests.e2e.helpers import AppConfig
+
+# Globals removed in favor of app_config fixture
 
 
 class TestI18nAPI:
     """Test i18n backend functionality using running server (avoids SQLite locking)"""
 
-    def test_person_has_language_field(self, client, test_org_setup):
+    def test_person_has_language_field(self, client, test_org_setup, app_config):
         """Verify Person model has language field"""
         # Login to get auth token
         login_resp = client.post(
@@ -46,7 +45,7 @@ class TestI18nAPI:
             # Default should be 'en' or a valid locale
             assert person["language"] in ["en", "es", "pt", "fr", "zh-CN", "zh-TW", None]
 
-    def test_update_person_language(self, client, test_org_setup):
+    def test_update_person_language(self, client, test_org_setup, app_config):
         """Verify language can be updated via PUT /people/{id}"""
         # Login to get auth token
         login_resp = client.post(
@@ -78,7 +77,7 @@ class TestI18nAPI:
             headers=headers
         )
 
-    def test_auth_login_returns_language(self, client, test_org_setup):
+    def test_auth_login_returns_language(self, client, test_org_setup, app_config):
         """Verify login response includes language field"""
         # Use test admin user
         login_resp = client.post(
@@ -172,7 +171,7 @@ class TestI18nTranslationFiles:
 class TestI18nGUI:
     """Test i18n GUI functionality"""
 
-    def test_language_switching_workflow(self, api_server, test_org_setup):
+    def test_language_switching_workflow(self, api_server, test_org_setup, app_config):
         """Test complete language switching workflow via GUI"""
         # Create a fresh user via API to ensure they exist in the server's DB
         # This bypasses DB sync issues between test runner and api_server process
@@ -187,7 +186,7 @@ class TestI18nGUI:
         
         # Create organization first
         org_resp = requests.post(
-            f"{API_BASE}/organizations/",
+            f"{app_config.api_base}/organizations/",
             json={
                 "id": org_id,
                 "name": "GUI Test Org",
@@ -197,7 +196,7 @@ class TestI18nGUI:
         assert org_resp.status_code == 201, f"Create org failed: {org_resp.text}"
 
         signup_resp = requests.post(
-            f"{API_BASE}/auth/signup",
+            f"{app_config.api_base}/auth/signup",
             json={
                 "org_id": org_id,
                 "name": "GUI Test User",
@@ -214,7 +213,7 @@ class TestI18nGUI:
 
             try:
                 # 1. Login
-                page.goto(APP_URL)
+                page.goto(app_config.app_url)
                 page.wait_for_load_state("networkidle")
 
                 # Click sign in if needed
@@ -266,7 +265,7 @@ class TestI18nGUI:
             finally:
                 browser.close()
 
-    def test_no_object_object_in_ui(self, api_server, test_org_setup):
+    def test_no_object_object_in_ui(self, api_server, test_org_setup, app_config):
         """Test that no [object Object] appears in the UI"""
         with sync_playwright() as p:
             browser = p.chromium.launch(headless=True)
@@ -274,7 +273,7 @@ class TestI18nGUI:
 
             try:
                 # Navigate to login
-                page.goto(f"{APP_URL}/login")
+                page.goto(f"{app_config.app_url}/login")
                 page.wait_for_load_state("networkidle")
 
                 # Check for [object Object]
@@ -318,7 +317,7 @@ class TestI18nGUI:
             assert element in html_content or element.replace('"', "'") in html_content, \
                 f"Missing i18n attribute: {element}"
 
-    def test_url_routing_works(self, api_server):
+    def test_url_routing_works(self, api_server, app_config):
         """Test that URL-based routing works correctly"""
         with sync_playwright() as p:
             browser = p.chromium.launch(headless=True)
@@ -326,12 +325,12 @@ class TestI18nGUI:
 
             try:
                 # Test direct navigation to /login
-                page.goto(f"{APP_URL}/login")
+                page.goto(f"{app_config.app_url}/login")
                 page.wait_for_load_state("networkidle")
                 assert '/login' in page.url
 
                 # Test navigation to root
-                page.goto(APP_URL)
+                page.goto(app_config.app_url)
                 page.wait_for_load_state("networkidle")
                 # Should show onboarding or redirect
                 assert page.locator('body').is_visible()

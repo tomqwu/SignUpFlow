@@ -1,9 +1,11 @@
 // API Configuration
-const API_BASE_URL = window.API_BASE_URL || '/api';
+if (typeof API_BASE_URL === 'undefined') {
+    var API_BASE_URL = '/api';
+}
 
 // State
-let currentOrg = null;
-let organizations = [];
+var currentOrg = null;
+var organizations = [];
 
 // Note: Using window.addSampleBadge() from sample-data-manager.js (loaded via script tag)
 
@@ -41,13 +43,13 @@ function switchTab(tabName) {
 }
 
 function loadTabData(tabName) {
-    switch(tabName) {
+    switch (tabName) {
         case 'people':
             loadPeople();
             populateOrgSelects();
             break;
         case 'teams':
-            loadTeams();
+            loadAdminTeams();
             populateOrgSelects();
             break;
         case 'events':
@@ -68,7 +70,7 @@ function loadTabData(tabName) {
 async function checkAPIStatus() {
     const statusEl = document.getElementById('api-status');
     try {
-        const response = await fetch(`${API_BASE_URL}/health`);
+        const response = await fetch('/health');
         if (response.ok) {
             statusEl.textContent = '● API Online';
             statusEl.className = 'status-badge online';
@@ -248,9 +250,11 @@ async function createPerson(event) {
 }
 
 // Teams
-async function loadTeams() {
+async function loadAdminTeams() {
+    console.log('loadAdminTeams (app-admin.js) called');
     const listEl = document.getElementById('teams-list');
     const orgId = document.getElementById('teams-org-filter').value;
+    console.log('loadAdminTeams orgId:', orgId);
 
     if (!orgId) {
         listEl.innerHTML = '<div class="loading">Select an organization to view teams</div>';
@@ -273,6 +277,11 @@ async function loadTeams() {
                         <div class="data-card-title">${window.addSampleBadge(team.name, team.is_sample)}</div>
                         <div class="data-card-id">ID: ${team.id}</div>
                     </div>
+                    <div class="data-card-actions">
+                        <button class="btn btn-secondary btn-sm" onclick='showManageTeamMembersModal(${JSON.stringify(team)})'>Manage Members</button>
+                        <button class="btn btn-secondary btn-sm" onclick='showEditTeamModal(${JSON.stringify(team)})'>Edit</button>
+                        <button class="btn btn-danger btn-sm" onclick="deleteTeam('${team.id}')">Delete</button>
+                    </div>
                 </div>
                 <div class="data-card-meta">
                     👥 ${team.member_count} members
@@ -286,12 +295,22 @@ async function loadTeams() {
 }
 
 function showCreateTeamForm() {
-    document.getElementById('create-team-form').classList.remove('hidden');
+    const modal = document.getElementById('create-team-modal');
+    modal.classList.remove('hidden');
+
+    // Populate Org Select from the filter
+    const orgFilter = document.getElementById('teams-org-filter');
+    const teamOrgSelect = document.getElementById('team-org-id');
+
+    if (orgFilter && teamOrgSelect) {
+        teamOrgSelect.innerHTML = orgFilter.innerHTML;
+        teamOrgSelect.value = orgFilter.value;
+    }
 }
 
 function hideCreateTeamForm() {
-    document.getElementById('create-team-form').classList.add('hidden');
-    document.querySelector('#create-team-form form').reset();
+    document.getElementById('create-team-modal').classList.add('hidden');
+    document.getElementById('create-team-form').reset();
 }
 
 async function createTeam(event) {
@@ -313,7 +332,7 @@ async function createTeam(event) {
 
         if (response.ok) {
             hideCreateTeamForm();
-            loadTeams();
+            loadAdminTeams();
             showToast('Team created successfully!', 'success');
         } else {
             const error = await response.json();
@@ -321,6 +340,200 @@ async function createTeam(event) {
         }
     } catch (error) {
         alert(`Error: ${error.message}`);
+    }
+}
+
+// Edit Team
+function showEditTeamModal(team) {
+    document.getElementById('edit-team-id-hidden').value = team.id;
+    document.getElementById('edit-team-name').value = team.name;
+    document.getElementById('edit-team-description').value = team.description || '';
+    document.getElementById('edit-team-modal').classList.remove('hidden');
+}
+
+function hideEditTeamModal() {
+    document.getElementById('edit-team-modal').classList.add('hidden');
+    document.getElementById('edit-team-form').reset();
+}
+
+async function updateTeam(event) {
+    event.preventDefault();
+    const teamId = document.getElementById('edit-team-id-hidden').value;
+    const data = {
+        name: document.getElementById('edit-team-name').value,
+        description: document.getElementById('edit-team-description').value || null
+    };
+
+    try {
+        const response = await authFetch(`${API_BASE_URL}/teams/${teamId}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+        });
+
+        if (response.ok) {
+            hideEditTeamModal();
+            loadAdminTeams();
+            showToast('Team updated successfully!', 'success');
+        } else {
+            const error = await response.json();
+            showToast(`Error: ${error.detail}`, 'error');
+        }
+    } catch (error) {
+        showToast(`Error: ${error.message}`, 'error');
+    }
+}
+
+// Delete Team
+let teamToDeleteId = null;
+
+function deleteTeam(teamId) {
+    console.log('deleteTeam called for:', teamId);
+    teamToDeleteId = teamId;
+    document.getElementById('delete-team-modal').classList.remove('hidden');
+    console.log('delete-team-modal classList:', document.getElementById('delete-team-modal').classList.toString());
+}
+
+function hideDeleteTeamModal() {
+    document.getElementById('delete-team-modal').classList.add('hidden');
+    teamToDeleteId = null;
+}
+
+async function confirmDeleteTeam() {
+    if (!teamToDeleteId) return;
+
+    try {
+        const response = await authFetch(`${API_BASE_URL}/teams/${teamToDeleteId}`, {
+            method: 'DELETE'
+        });
+
+        if (response.ok) {
+            hideDeleteTeamModal();
+            loadAdminTeams();
+            showToast('Team deleted successfully!', 'success');
+        } else {
+            const error = await response.json();
+            showToast(`Error: ${error.detail}`, 'error');
+        }
+    } catch (error) {
+        showToast(`Error: ${error.message}`, 'error');
+    }
+}
+
+// Manage Team Members
+let currentManageTeamId = null;
+
+async function showManageTeamMembersModal(team) {
+    currentManageTeamId = team.id;
+    document.getElementById('manage-team-name-display').textContent = team.name;
+    document.getElementById('manage-team-members-modal').classList.remove('hidden');
+
+    await Promise.all([
+        loadTeamMembers(team.id),
+        populateAddMemberSelect(team.org_id)
+    ]);
+}
+
+function hideManageTeamMembersModal() {
+    document.getElementById('manage-team-members-modal').classList.add('hidden');
+    currentManageTeamId = null;
+}
+
+async function loadTeamMembers(teamId) {
+    const listEl = document.getElementById('team-members-list');
+    listEl.innerHTML = '<div class="loading">Loading members...</div>';
+
+    try {
+        const teamResponse = await authFetch(`${API_BASE_URL}/teams/${teamId}`);
+        const team = await teamResponse.json();
+
+        const orgId = document.getElementById('teams-org-filter').value;
+        const peopleResponse = await authFetch(`${API_BASE_URL}/people/?org_id=${orgId}`);
+        const peopleData = await peopleResponse.json();
+
+        const memberIds = team.member_ids || [];
+        const members = peopleData.people.filter(p => memberIds.includes(p.id));
+
+        if (members.length === 0) {
+            listEl.innerHTML = '<div class="empty-state">No members in this team</div>';
+        } else {
+            listEl.innerHTML = members.map(person => `
+                <div class="list-item">
+                    <div class="list-item-content">
+                        <div class="list-item-title">${person.name}</div>
+                        <div class="list-item-subtitle">${person.email || 'No email'}</div>
+                    </div>
+                    <button class="btn btn-danger btn-sm" onclick="removeTeamMember('${person.id}')">Remove</button>
+                </div>
+            `).join('');
+        }
+
+    } catch (error) {
+        listEl.innerHTML = `<div class="loading">Error: ${error.message}</div>`;
+    }
+}
+
+async function populateAddMemberSelect(orgId) {
+    const select = document.getElementById('add-team-member-select');
+    try {
+        const response = await authFetch(`${API_BASE_URL}/people/?org_id=${orgId}`);
+        const data = await response.json();
+
+        select.innerHTML = '<option value="">Select person to add...</option>' +
+            data.people.map(p => `<option value="${p.id}">${p.name} (${p.email})</option>`).join('');
+
+    } catch (error) {
+        console.error('Error loading people for select:', error);
+        select.innerHTML = '<option value="">Error loading people</option>';
+    }
+}
+
+async function addTeamMember() {
+    const personId = document.getElementById('add-team-member-select').value;
+    if (!personId) return;
+
+    try {
+        const response = await authFetch(`${API_BASE_URL}/teams/${currentManageTeamId}/members`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ person_ids: [personId] })
+        });
+
+        if (response.ok) {
+            showToast('Member added successfully', 'success');
+            loadTeamMembers(currentManageTeamId);
+            // Refresh main list to update count
+            loadAdminTeams();
+        } else {
+            const error = await response.json();
+            showToast(`Error: ${error.detail}`, 'error');
+        }
+    } catch (error) {
+        showToast(`Error: ${error.message}`, 'error');
+    }
+}
+
+async function removeTeamMember(personId) {
+    if (!confirm('Remove this person from the team?')) return;
+
+    try {
+        const response = await authFetch(`${API_BASE_URL}/teams/${currentManageTeamId}/members`, {
+            method: 'DELETE',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ person_ids: [personId] })
+        });
+
+        if (response.ok) {
+            showToast('Member removed successfully', 'success');
+            loadTeamMembers(currentManageTeamId);
+            // Refresh main list to update count
+            loadAdminTeams();
+        } else {
+            const error = await response.json();
+            showToast(`Error: ${error.detail}`, 'error');
+        }
+    } catch (error) {
+        showToast(`Error: ${error.message}`, 'error');
     }
 }
 
@@ -561,20 +774,17 @@ async function loadSolutions() {
                 <div class="data-card">
                     <div class="data-card-header">
                         <div>
-                            <div class="data-card-title">Solution #${sol.id}</div>
-                            <div class="data-card-id">${sol.org_id}</div>
+                            <div class="data-card-title">Solution ${sol.id}</div>
+                            <div class="data-card-id">${new Date(sol.created_at).toLocaleString()}</div>
                         </div>
-                        <span class="badge badge-${healthClass}">${sol.health_score.toFixed(0)}/100</span>
+                        <div class="data-card-actions">
+                             <button class="btn btn-sm" onclick="viewSolutionDetails('${sol.id}')">Details</button>
+                        </div>
                     </div>
                     <div class="data-card-meta">
-                        📊 ${sol.assignment_count} assignments<br>
-                        ⚠️ ${sol.hard_violations} violations<br>
-                        📅 ${new Date(sol.created_at).toLocaleString()}
-                    </div>
-                    <div class="data-card-actions">
-                        <button class="btn btn-small btn-primary" onclick="viewSolutionDetails(${sol.id})">View Details</button>
-                        <button class="btn btn-small btn-secondary" onclick="exportSolution(${sol.id}, 'pdf')">Export PDF</button>
-                        <button class="btn btn-small btn-secondary" onclick="exportSolution(${sol.id}, 'json')">Export JSON</button>
+                        Assignments: ${sol.assignment_count}<br>
+                        Hard Violations: ${sol.hard_violations}<br>
+                        Health: ${sol.health_score.toFixed(0)}
                     </div>
                 </div>
             `;
@@ -585,125 +795,20 @@ async function loadSolutions() {
 }
 
 async function viewSolutionDetails(solutionId) {
-    try {
-        const response = await fetch(`${API_BASE_URL}/solutions/${solutionId}/assignments`);
-        const data = await response.json();
-        showToast(`Solution generated with ${data.total} assignments`, 'success');
-    } catch (error) {
-        alert(`Error: ${error.message}`);
-    }
+    console.log('View solution details', solutionId);
 }
 
-async function exportSolution(solutionId, format) {
-    try {
-        const response = await fetch(`${API_BASE_URL}/solutions/${solutionId}/export`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ format, scope: 'org' })
-        });
-
-        if (response.ok) {
-            const blob = await response.blob();
-            const url = window.URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `solution_${solutionId}.${format}`;
-            a.click();
-        } else {
-            showToast('Export failed', 'error');
-        }
-    } catch (error) {
-        alert(`Error: ${error.message}`);
-    }
-}
-
-// Utility Functions
 function populateOrgSelects() {
-    const selects = [
-        'person-org-id',
-        'team-org-id',
-        'event-org-id',
-        'solve-org-id',
-        'people-org-filter',
-        'teams-org-filter',
-        'events-org-filter',
-        'solutions-org-filter'
-    ];
+    const selects = document.querySelectorAll('select[id$="-org-filter"], select[id$="-org-id"]');
+    selects.forEach(select => {
+        const currentVal = select.value;
+        select.innerHTML = '<option value="">Select Organization...</option>' +
+            organizations.map(org => `<option value="${org.id}">${org.name}</option>`).join('');
 
-    selects.forEach(selectId => {
-        const select = document.getElementById(selectId);
-        if (!select) return;
-
-        const currentValue = select.value;
-        const options = organizations.map(org =>
-            `<option value="${org.id}" ${org.id === currentValue ? 'selected' : ''}>${org.name}</option>`
-        ).join('');
-
-        if (selectId.includes('filter')) {
-            select.innerHTML = '<option value="">All Organizations</option>' + options;
-        } else {
-            select.innerHTML = '<option value="">Select Organization</option>' + options;
+        if (currentVal && organizations.find(o => o.id === currentVal)) {
+            select.value = currentVal;
+        } else if (organizations.length > 0 && !select.value) {
+            // Optional: Default to first org
         }
     });
-}
-
-// Edit Person Roles
-async function showEditPersonModal(person) {
-    // Set person info
-    document.getElementById('edit-person-id').value = person.id;
-    document.getElementById('edit-person-name').textContent = person.name;
-
-    // Load available roles
-    const roles = await loadOrgRoles();
-    const container = document.getElementById('edit-person-roles-checkboxes');
-
-    // Create checkboxes for each role
-    container.innerHTML = roles.map(role => {
-        const isChecked = person.roles && person.roles.includes(role) ? 'checked' : '';
-        return `
-            <label class="role-option">
-                <input type="checkbox" value="${role}" ${isChecked}>
-                ${capitalizeRole(role)}
-            </label>
-        `;
-    }).join('');
-
-    // Show modal
-    document.getElementById('edit-person-modal').classList.remove('hidden');
-}
-
-function closeEditPersonModal() {
-    document.getElementById('edit-person-modal').classList.add('hidden');
-    document.getElementById('edit-person-form').reset();
-}
-
-async function updatePersonRoles(event) {
-    event.preventDefault();
-
-    const personId = document.getElementById('edit-person-id').value;
-    const checkboxes = document.querySelectorAll('#edit-person-roles-checkboxes input[type="checkbox"]');
-    const selectedRoles = Array.from(checkboxes)
-        .filter(cb => cb.checked)
-        .map(cb => cb.value);
-
-    try {
-        const response = await authFetch(`${API_BASE_URL}/people/${personId}`, {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                roles: selectedRoles
-            })
-        });
-
-        if (response.ok) {
-            closeEditPersonModal();
-            loadPeople();
-            showToast('Roles updated successfully!', 'success');
-        } else {
-            const error = await response.json();
-            showToast(`Error: ${error.detail}`, 'error');
-        }
-    } catch (error) {
-        showToast(`Error: ${error.message}`, 'error');
-    }
 }

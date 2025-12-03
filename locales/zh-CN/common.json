@@ -22,7 +22,11 @@
     "upload": "上传",
     "copy": "复制",
     "done": "完成",
-    "edit_roles": "编辑角色"
+    "edit_roles": "编辑角色",
+    "apply": "应用",
+    "dismiss": "忽略",
+    "start": "开始",
+    "view": "查看"
   },
   "actions": {
     "loading": "加载中...",
@@ -103,5 +107,9 @@
   "role_greeter": "接待员",
   "role_usher": "招待员",
   "role_kids_ministry": "儿童事工",
-  "role_prayer_team": "祷告团队"
+  "role_prayer_team": "祷告团队",
+  "hello": "你好",
+  "save": "保存",
+  "popular": "热门",
+  "date": "日期"
 }

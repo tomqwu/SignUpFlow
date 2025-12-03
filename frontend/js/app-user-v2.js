@@ -5,29 +5,24 @@ if (typeof API_BASE_URL === 'undefined') {
 }
 
 // User State - attach to window so router can access it
-let currentUser = null;
-let currentOrg = null;
-let isCreatingOrg = false;
+var currentUser = null;
+var currentOrg = null;
+var isCreatingOrg = false;
 
 // Expose to window for router access
 window.currentUser = currentUser;
 window.currentOrg = currentOrg;
 
 // Initialize
-console.log('app-user.js loaded');
 document.addEventListener('DOMContentLoaded', async () => {
-    console.log('app-user.js DOMContentLoaded fired');
     // Initialize i18n first
     await i18n.init();
 
     // Check if user has a saved language preference
     const savedUser = localStorage.getItem('roster_user');
-    console.log('🔄 DOMContentLoaded - localStorage roster_user:', savedUser ? JSON.parse(savedUser) : null);
     if (savedUser) {
         const user = JSON.parse(savedUser);
-        console.log('🌐 DOMContentLoaded - User language from localStorage:', user.language, 'Current i18n locale:', i18n.getLocale());
         if (user.language && user.language !== i18n.getLocale()) {
-            console.log('🔧 DOMContentLoaded - Setting locale to:', user.language);
             await i18n.setLocale(user.language);
         }
     }
@@ -163,16 +158,11 @@ async function checkExistingSession() {
         }
     } else {
         // Not logged in - initialize router for auth screens
-        // router.init() handles all routing including protected routes
         router.init();
     }
 }
 
 function saveSession() {
-    console.log('💿 saveSession - Saving to localStorage:', {
-        user: { id: currentUser.id, name: currentUser.name, timezone: currentUser.timezone, language: currentUser.language },
-        org: currentOrg.name
-    });
     localStorage.setItem('roster_user', JSON.stringify(currentUser));
     localStorage.setItem('roster_org', JSON.stringify(currentOrg));
 }
@@ -1308,6 +1298,7 @@ async function loadTimeOff() {
         // Defensive check: data.timeoff might be undefined or not an array
         if (data.total === 0 || !data.timeoff || !Array.isArray(data.timeoff) || data.timeoff.length === 0) {
             listEl.innerHTML = `<p class="help-text">${i18n.t('messages.empty.no_timeoff')}</p>`;
+            renderAvailabilityCalendar([]);
             return;
         }
 
@@ -1339,8 +1330,104 @@ async function loadTimeOff() {
             `;
         }).join('');
 
+        renderAvailabilityCalendar(data.timeoff);
     } catch (error) {
         listEl.innerHTML = `<p class="help-text">${i18n.t('messages.error_loading.timeoff', { message: error.message })}</p>`;
+    }
+}
+
+function renderAvailabilityCalendar(timeoffData) {
+    const calendarEl = document.getElementById('availability-calendar');
+    if (!calendarEl) return;
+
+    const now = new Date();
+    const currentMonth = now.getMonth();
+    const currentYear = now.getFullYear();
+
+    const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+    const firstDay = new Date(currentYear, currentMonth, 1).getDay();
+
+    let html = `
+        <div class="calendar-header">
+            <h4>${now.toLocaleString('default', { month: 'long' })} ${currentYear}</h4>
+        </div>
+        <div class="calendar-grid">
+            <div class="calendar-day-header">Sun</div>
+            <div class="calendar-day-header">Mon</div>
+            <div class="calendar-day-header">Tue</div>
+            <div class="calendar-day-header">Wed</div>
+            <div class="calendar-day-header">Thu</div>
+            <div class="calendar-day-header">Fri</div>
+            <div class="calendar-day-header">Sat</div>
+    `;
+
+    // Empty cells for days before start of month
+    for (let i = 0; i < firstDay; i++) {
+        html += '<div class="calendar-day empty"></div>';
+    }
+
+    // Days of the month
+    for (let day = 1; day <= daysInMonth; day++) {
+        const dateStr = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+        const isToday = day === now.getDate();
+
+        let isBlocked = false;
+        if (timeoffData && Array.isArray(timeoffData)) {
+            isBlocked = timeoffData.some(t => {
+                const start = t.start_date.split('T')[0];
+                const end = t.end_date.split('T')[0];
+                return dateStr >= start && dateStr <= end;
+            });
+        }
+
+        const classes = [
+            'calendar-day',
+            isToday ? 'today' : '',
+            isBlocked ? 'blocked' : ''
+        ].filter(Boolean).join(' ');
+
+        html += `<div class="${classes}">${day}</div>`;
+    }
+
+    html += '</div>';
+    calendarEl.innerHTML = html;
+}
+
+async function validateTimeOff(start, end, ignoreId = null) {
+    const startDate = new Date(start);
+    const endDate = new Date(end);
+    const now = new Date();
+    now.setHours(0, 0, 0, 0);
+
+    if (startDate < now) {
+        throw new Error("Cannot add time off for past dates");
+    }
+
+    if (endDate < startDate) {
+        throw new Error("End date cannot be before start date");
+    }
+
+    // Fetch existing time-off to check overlap
+    const response = await fetch(`${API_BASE_URL}/availability/${currentUser.id}/timeoff?_=${Date.now()}`);
+    const data = await response.json();
+
+    if (data.timeoff && Array.isArray(data.timeoff)) {
+        const hasOverlap = data.timeoff.some(t => {
+            if (ignoreId && t.id == ignoreId) return false;
+
+            // Parse dates as YYYY-MM-DD to avoid timezone issues
+            const tStart = new Date(t.start_date.split('T')[0]);
+            const tEnd = new Date(t.end_date.split('T')[0]);
+            const checkStart = new Date(start);
+            const checkEnd = new Date(end);
+
+            const overlaps = (checkStart <= tEnd && checkEnd >= tStart);
+            return overlaps;
+        });
+
+        if (hasOverlap) {
+            throw new Error("Time off overlaps with existing request");
+        }
     }
 }
 
@@ -1352,6 +1439,8 @@ async function addTimeOff(event) {
     const reason = document.getElementById('timeoff-reason').value;
 
     try {
+        await validateTimeOff(start, end);
+
         const response = await fetch(`${API_BASE_URL}/availability/${currentUser.id}/timeoff`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -1364,7 +1453,7 @@ async function addTimeOff(event) {
 
         if (response.ok) {
             event.target.reset();
-            loadTimeOff();
+            await loadTimeOff();
             showToast(i18n.t('messages.success.timeoff_added'), 'success');
         } else {
             const error = await response.json();
@@ -1403,6 +1492,8 @@ async function saveEditedTimeOff(event) {
     const reason = document.getElementById('edit-timeoff-reason').value;
 
     try {
+        await validateTimeOff(startDate, endDate, timeoffId);
+
         const response = await fetch(
             `${API_BASE_URL}/availability/${currentUser.id}/timeoff/${timeoffId}`,
             {
@@ -3111,205 +3202,7 @@ exposeToWindow('joinEvent', joinEvent);
 exposeToWindow('leaveEvent', leaveEvent);
 
 
-async function showEditTeamForm(teamId) {
-    const orgSelect = document.getElementById('teams-org-filter');
-    const orgId = orgSelect ? orgSelect.value : (currentUser ? currentUser.org_id : null);
-
-    try {
-        // Fetch team details
-        const response = await authFetch(`${API_BASE_URL}/teams/${teamId}?org_id=${orgId}`);
-        const team = await response.json();
-
-        // Create modal with edit form
-        const modal = document.createElement('div');
-        modal.id = 'edit-team-modal';
-        modal.className = 'modal';
-        modal.innerHTML = `
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h3>Edit Team</h3>
-                    <button class="btn-close" onclick="closeEditTeamModal()">×</button>
-                </div>
-                <div class="modal-body">
-                    <form id="edit-team-form" onsubmit="editTeam(event); return false;">
-                        <input type="hidden" id="edit-team-id" value="${team.id}">
-                        <input type="hidden" id="edit-team-org-id" value="${orgId}">
-                        <div class="form-group">
-                            <label>Team Name</label>
-                            <input type="text" id="team-name" name="name" value="${team.name}" required>
-                        </div>
-                        <div class="form-group">
-                            <label>Description</label>
-                            <textarea id="team-description" name="description" rows="3">${team.description || ''}</textarea>
-                        </div>
-                        <div class="form-actions">
-                            <button type="button" class="btn btn-secondary" onclick="closeEditTeamModal()">Cancel</button>
-                            <button type="submit" class="btn btn-primary">Save Changes</button>
-                        </div>
-                    </form>
-                </div>
-            </div>
-        `;
-
-        document.body.appendChild(modal);
-        modal.classList.remove('hidden');
-
-        // Focus first input
-        document.getElementById('team-name').focus();
-    } catch (error) {
-        showToast(`Error loading team: ${error.message}`, 'error');
-    }
-}
-
-function closeEditTeamModal() {
-    const modal = document.getElementById('edit-team-modal');
-    if (modal) {
-        modal.remove();
-    }
-}
-
-async function editTeam(event) {
-    event.preventDefault();
-
-    const teamId = document.getElementById('edit-team-id').value;
-    const orgId = document.getElementById('edit-team-org-id').value;
-    const name = document.getElementById('team-name').value;
-    const description = document.getElementById('team-description').value;
-
-    try {
-        const response = await authFetch(`${API_BASE_URL}/teams/${teamId}?org_id=${orgId}`, {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ name, description: description || null })
-        });
-
-        if (response.ok) {
-            closeEditTeamModal();
-            loadAdminTeams();
-            showToast('Team updated successfully!', 'success');
-        } else {
-            const error = await response.json();
-            showToast(`Error: ${error.detail}`, 'error');
-        }
-    } catch (error) {
-        showToast(`Error: ${error.message}`, 'error');
-    }
-}
-
-async function _deprecated_deleteTeam(teamId, teamName, orgId) {
-    const confirmMessage = i18n.t('admin.teams.deleteTeamConfirm', { teamName }) + '\n\n' + i18n.t('admin.teams.actionCannotBeUndone');
-    if (!confirm(confirmMessage)) {
-        return;
-    }
-
-    try {
-        const response = await authFetch(`${API_BASE_URL}/teams/${teamId}?org_id=${orgId}`, {
-            method: 'DELETE'
-        });
-
-        if (response.ok) {
-            loadAdminTeams();
-            showToast('Team deleted successfully!', 'success');
-        } else {
-            const error = await response.json();
-            showToast(`Error: ${error.detail}`, 'error');
-        }
-    } catch (error) {
-        showToast(`Error: ${error.message}`, 'error');
-    }
-}
-
-function showCreateTeamForm() {
-    const orgSelect = document.getElementById('teams-org-filter');
-    const orgId = orgSelect ? orgSelect.value : (currentUser ? currentUser.org_id : null);
-
-    if (!orgId) {
-        showToast('Please select an organization first', 'error');
-        return;
-    }
-
-    // Create modal with create form
-    const modal = document.createElement('div');
-    modal.id = 'create-team-modal';
-    modal.className = 'modal';
-    modal.innerHTML = `
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3>Create Team</h3>
-                <button class="btn-close" onclick="closeCreateTeamModal()">×</button>
-            </div>
-            <div class="modal-body">
-                <form id="create-team-form" onsubmit="createTeam(event); return false;">
-                    <input type="hidden" id="create-team-org-id" value="${orgId}">
-                    <div class="form-group">
-                        <label>Team ID</label>
-                        <input type="text" id="create-team-id" name="id" placeholder="team_example" required>
-                        <small class="form-help">Unique identifier for the team (e.g., team_worship, team_parking)</small>
-                    </div>
-                    <div class="form-group">
-                        <label>Team Name</label>
-                        <input type="text" id="create-team-name" name="name" placeholder="Worship Team" required>
-                    </div>
-                    <div class="form-group">
-                        <label>Description</label>
-                        <textarea id="create-team-description" name="description" rows="3" placeholder="Team description..."></textarea>
-                    </div>
-                    <div class="form-actions">
-                        <button type="button" class="btn btn-secondary" onclick="closeCreateTeamModal()">Cancel</button>
-                        <button type="submit" class="btn btn-primary">Create Team</button>
-                    </div>
-                </form>
-            </div>
-        </div>
-    `;
-
-    document.body.appendChild(modal);
-    modal.classList.remove('hidden');
-
-    // Focus first input
-    document.getElementById('create-team-id').focus();
-}
-
-function closeCreateTeamModal() {
-    const modal = document.getElementById('create-team-modal');
-    if (modal) {
-        modal.remove();
-    }
-}
-
-async function _deprecated_createTeam(event) {
-    event.preventDefault();
-
-    const orgId = document.getElementById('create-team-org-id').value;
-    const teamId = document.getElementById('create-team-id').value;
-    const name = document.getElementById('create-team-name').value;
-    const description = document.getElementById('create-team-description').value;
-
-    try {
-        const response = await authFetch(`${API_BASE_URL}/teams/?org_id=${orgId}`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                id: teamId,
-                org_id: orgId,
-                name,
-                description: description || null,
-                member_ids: []
-            })
-        });
-
-        if (response.ok) {
-            closeCreateTeamModal();
-            loadAdminTeams();
-            showToast('Team created successfully!', 'success');
-        } else {
-            const error = await response.json();
-            showToast(`Error: ${error.detail}`, 'error');
-        }
-    } catch (error) {
-        showToast(`Error: ${error.message}`, 'error');
-    }
-}
+// Teams functions removed to avoid conflict with app-admin.js
 
 exposeToWindow('showCreateEventForm', typeof showCreateEventForm === 'function' ? showCreateEventForm : undefined);
 exposeToWindow('closeCreateEventForm', typeof closeCreateEventForm === 'function' ? closeCreateEventForm : undefined);

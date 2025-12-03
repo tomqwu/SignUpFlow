@@ -27,7 +27,7 @@ def test_chinese_permission_level_label(
     expect(page.locator('#main-app')).to_be_visible(timeout=10000)
 
     # Open settings modal
-    page.locator('button.btn-icon:has-text("⚙️")').click()
+    page.locator('button.action-btn:has-text("Settings")').click()
     page.wait_for_timeout(500)
 
     # Change to Chinese (Simplified)
@@ -41,7 +41,7 @@ def test_chinese_permission_level_label(
     page.wait_for_timeout(1500)  # Wait for save and translation to apply
 
     # Re-open settings to verify the translation
-    page.locator('button.btn-icon:has-text("⚙️")').click()
+    page.locator('button.action-btn:has-text("Settings")').click()
     page.wait_for_timeout(500)
 
     # Find the permission level label
@@ -85,7 +85,7 @@ def test_chinese_traditional_permission_level_label(
     expect(page.locator('#main-app')).to_be_visible(timeout=10000)
 
     # Open settings modal
-    page.locator('button.btn-icon:has-text("⚙️")').click()
+    page.locator('button.action-btn:has-text("Settings")').click()
     page.wait_for_timeout(500)
 
     # Change to Chinese (Traditional)
@@ -99,7 +99,7 @@ def test_chinese_traditional_permission_level_label(
     page.wait_for_timeout(1500)  # Wait for save and translation to apply
 
     # Re-open settings to verify the translation
-    page.locator('button.btn-icon:has-text("⚙️")').click()
+    page.locator('button.action-btn:has-text("Settings")').click()
     page.wait_for_timeout(500)
 
     # Find the permission level label

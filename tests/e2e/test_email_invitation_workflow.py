@@ -188,6 +188,9 @@ def test_invitation_email_service_handles_errors():
         smtp_user="invalid",
         smtp_password="invalid"
     )
+    # Disable retries to prevent long test duration
+    bad_service.max_retries = 0
+    bad_service.retry_delay = 0
 
     # Attempt to send email (should fail gracefully)
     success = bad_service.send_email(

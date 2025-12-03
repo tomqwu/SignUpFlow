@@ -4,11 +4,13 @@ import requests
 import os
 
 # Use environment variable for test server port (default 8000)
-TEST_SERVER_PORT = os.getenv("TEST_SERVER_PORT", "8000")
-APP_URL = f"http://localhost:{TEST_SERVER_PORT}"
-API_BASE = f"{APP_URL}/api"
-
-def test_admin_org_access_flow(api_server):
+def test_admin_org_access_flow(api_server, app_config):
+    """
+    Reproduction test for 'Admin Org not working' (404/403 errors).
+    Simulates a user signing up with a new organization and accessing the Admin Dashboard.
+    """
+    API_BASE = app_config.api_base
+    APP_URL = app_config.app_url
     """
     Reproduction test for 'Admin Org not working' (404/403 errors).
     Simulates a user signing up with a new organization and accessing the Admin Dashboard.

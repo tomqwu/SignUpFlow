@@ -22,7 +22,11 @@
     "upload": "Carregar",
     "copy": "Copiar",
     "done": "Concluído",
-    "edit_roles": "Editar Funções"
+    "edit_roles": "Editar Funções",
+    "apply": "Aplicar",
+    "dismiss": "Dispensar",
+    "view": "Visualizar",
+    "start": "Começar"
   },
   "actions": {
     "loading": "Carregando...",
@@ -103,5 +107,9 @@
   "role_greeter": "Recepcionista",
   "role_usher": "Porteiro",
   "role_kids_ministry": "Ministério Infantil",
-  "role_prayer_team": "Equipe de Oração"
+  "role_prayer_team": "Equipe de Oração",
+  "hello": "Olá",
+  "popular": "Popular",
+  "save": "Salvar",
+  "date": "Data"
 }

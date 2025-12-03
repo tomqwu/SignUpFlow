@@ -57,14 +57,14 @@ def test_complete_signup_and_login_workflow(
     page.locator('[data-i18n="common.buttons.next"]').click()
 
     # Should navigate to main app
-    expect(page.locator('h2[data-i18n="schedule.my_schedule"]')).to_be_visible(timeout=10000)
+    expect(page.locator('#page-title')).to_be_visible(timeout=10000)
 
     # Verify we can navigate between views
-    page.locator('[data-i18n="schedule.availability"]').first.click()
+    page.locator('button[data-view="availability"]').click()
     expect(page.locator('[data-i18n="schedule.add_time_off"]')).to_be_visible()
 
     # Navigate to events
-    page.locator('[data-i18n="events.events"]').click()
+    page.locator('button[data-view="events"]').click()
     expect(page.locator('[data-i18n="events.title"]')).to_be_visible()
 
 
@@ -86,10 +86,10 @@ def test_page_reload_preserves_state(
     login_via_ui(page, app_config.app_url, user["email"], user["password"])
 
     # Wait for main app
-    expect(page.locator('h2[data-i18n="schedule.my_schedule"]')).to_be_visible(timeout=10000)
+    expect(page.locator('#page-title')).to_be_visible(timeout=10000)
 
     # Navigate to availability (click button, not heading - button is at index 1)
-    page.locator('button[data-i18n="schedule.availability"]').click()
+    page.locator('button[data-view="availability"]').click()
     # Check for "Add Time Off" button (not heading) to verify availability view loaded
     expect(page.locator('button[data-i18n="schedule.add_time_off"]')).to_be_visible()
 
@@ -129,10 +129,10 @@ def test_role_display_no_object_object(
     login_via_ui(page, app_config.app_url, user["email"], user["password"])
 
     # Wait for main app
-    expect(page.locator('h2[data-i18n="schedule.my_schedule"]')).to_be_visible(timeout=10000)
+    expect(page.locator('#page-title')).to_be_visible(timeout=10000)
 
     # Open settings to check role display
-    page.locator('button:has-text("⚙️")').click()
+    page.locator('button.action-btn:has-text("Settings")').click()
     expect(page.locator('[data-i18n="settings.title"]')).to_be_visible()
 
     # Check that permissions display doesn't contain [object Object]
@@ -166,11 +166,11 @@ def test_admin_workflow_complete(
     login_via_ui(page, app_config.app_url, user["email"], user["password"])
 
     # Wait for main app
-    expect(page.locator('h2[data-i18n="schedule.my_schedule"]')).to_be_visible(timeout=10000)
+    expect(page.locator('#page-title')).to_be_visible(timeout=10000)
 
     # Navigate to admin dashboard
-    page.locator('[data-i18n="admin.dashboard"]').click()
-    expect(page.locator('[data-i18n="admin.admin_console"]')).to_be_visible()
+    page.locator('button[data-view="admin"]').click()
+    expect(page.locator('#admin-view')).to_be_visible()
 
     # Create new event
     page.locator('[data-i18n="admin.create_event_button"]').click()
@@ -221,10 +221,10 @@ def test_language_switching_works(
     login_via_ui(page, app_config.app_url, user["email"], user["password"])
 
     # Wait for main app
-    expect(page.locator('h2[data-i18n="schedule.my_schedule"]')).to_be_visible(timeout=10000)
+    expect(page.locator('#page-title')).to_be_visible(timeout=10000)
 
     # Open settings
-    page.locator('button:has-text("⚙️")').click()
+    page.locator('button.action-btn:has-text("Settings")').click()
 
     # Switch to Chinese (Simplified)
     page.select_option('#settings-language', 'zh-CN')
@@ -232,7 +232,7 @@ def test_language_switching_works(
     # Wait for translation to complete - specifically wait for the Chinese text to appear
     # (more reliable than fixed timeout)
     # Correct Chinese translation from locales/zh-CN/schedule.json
-    my_schedule_chinese = page.locator('h2[data-i18n="schedule.my_schedule"]')
+    my_schedule_chinese = page.locator('#page-title')
     expect(my_schedule_chinese).to_have_text("我的排班", timeout=5000)
 
     # Switch back to English
@@ -260,8 +260,8 @@ def test_availability_crud_complete(
     login_via_ui(page, app_config.app_url, user["email"], user["password"])
 
     # Navigate to availability (use button selector to avoid matching heading)
-    expect(page.locator('h2[data-i18n="schedule.my_schedule"]')).to_be_visible(timeout=10000)
-    page.locator('button[data-i18n="schedule.availability"]').click()
+    expect(page.locator('#page-title')).to_be_visible(timeout=10000)
+    page.locator('button[data-view="availability"]').click()
 
     # Add time off (wrap JavaScript in arrow functions)
     start_date = page.evaluate("() => new Date(Date.now() + 86400000).toISOString().slice(0, 10)")

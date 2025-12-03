@@ -1358,6 +1358,72 @@ textarea:focus {
     color: var(--text-main);
 }
 
+/* Calendar */
+.calendar-container {
+    display: grid;
+    gap: 15px;
+}
+
+.calendar-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+.calendar-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 10px;
+}
+
+.calendar-day-header {
+    text-align: center;
+    font-weight: 600;
+    color: var(--text-secondary);
+    padding: 10px;
+}
+
+.calendar-day {
+    background: var(--bg-surface);
+    min-height: 100px;
+    padding: 10px;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border-color);
+    position: relative;
+}
+
+.calendar-day.other-month {
+    opacity: 0.5;
+    background: var(--bg-body);
+}
+
+.calendar-day.today {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 2px var(--primary-glass);
+}
+
+.calendar-date {
+    font-weight: 600;
+    margin-bottom: 5px;
+    font-size: 0.9rem;
+}
+
+.calendar-event {
+    font-size: 0.8rem;
+    padding: 4px 8px;
+    border-radius: 4px;
+    margin-bottom: 4px;
+    background: var(--primary-light);
+    color: var(--primary);
+    font-weight: 500;
+}
+
+.calendar-event.blocked {
+    background: var(--danger-bg);
+    color: var(--danger);
+}
+
 /* Grids */
 .dashboard-grid,
 .video-grid,

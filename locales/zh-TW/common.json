@@ -22,7 +22,11 @@
     "upload": "上傳",
     "copy": "複製",
     "done": "完成",
-    "edit_roles": "編輯角色"
+    "edit_roles": "編輯角色",
+    "apply": "套用",
+    "dismiss": "忽略",
+    "start": "開始",
+    "view": "檢視"
   },
   "actions": {
     "loading": "加载中...",
@@ -103,5 +107,9 @@
   "role_greeter": "接待員",
   "role_usher": "招待員",
   "role_kids_ministry": "兒童事工",
-  "role_prayer_team": "禱告團隊"
+  "role_prayer_team": "禱告團隊",
+  "hello": "您好",
+  "save": "儲存",
+  "popular": "熱門",
+  "date": "日期"
 }

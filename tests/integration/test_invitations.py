@@ -16,11 +16,8 @@ import httpx
 from datetime import datetime
 import time
 
-API_BASE = "http://localhost:8000/api"
-
-
 @pytest.fixture
-def setup_test_org(api_server):
+def setup_test_org(api_server, app_config):
     """Create a test organization with an admin user."""
     # api_server ensures the server is running
     client = httpx.Client()
@@ -30,7 +27,7 @@ def setup_test_org(api_server):
     admin_email = f"admin_{timestamp}@test.com"
 
     # Create organization
-    org_response = client.post(f"{API_BASE}/organizations/", json={
+    org_response = client.post(f"{app_config.api_base}/organizations/", json={
         "id": org_id,
         "name": "Test Organization",
         "region": "US",
@@ -41,7 +38,7 @@ def setup_test_org(api_server):
         raise Exception(f"Failed to create org (status {org_response.status_code}): {org_response.text}")
 
     # Create admin user
-    signup_response = client.post(f"{API_BASE}/auth/signup", json={
+    signup_response = client.post(f"{app_config.api_base}/auth/signup", json={
         "org_id": org_id,
         "name": "Admin User",
         "email": admin_email,
@@ -63,6 +60,7 @@ def setup_test_org(api_server):
         "org_id": org_id,
         "admin_id": admin_data["person_id"],
         "admin_email": admin_email,
+        "api_base": app_config.api_base,
     }
 
 
@@ -73,11 +71,12 @@ class TestCreateInvitation:
         """Test successful invitation creation by admin."""
         data = setup_test_org
         client = data["client"]
+        api_base = data["api_base"]
 
         invitee_email = f"invitee_{int(time.time())}@test.com"
 
         response = client.post(
-            f"{API_BASE}/invitations",
+            f"{api_base}/invitations",
             params={
                 "org_id": data["org_id"],
                 "person_id": data["admin_id"]  # Changed from person_id to person_id
@@ -102,10 +101,11 @@ class TestCreateInvitation:
         """Test cannot create invitation for existing user."""
         data = setup_test_org
         client = data["client"]
+        api_base = data["api_base"]
 
         # Try to invite the admin (who already exists)
         response = client.post(
-            f"{API_BASE}/invitations",
+            f"{api_base}/invitations",
             params={
                 "org_id": data["org_id"],
                 "person_id": data["admin_id"]
@@ -123,10 +123,11 @@ class TestCreateInvitation:
     def test_create_invitation_non_admin(self, setup_test_org):
         """Test non-admin cannot create invitations."""
         data = setup_test_org
+        api_base = data["api_base"]
 
         # Create a volunteer (non-admin) user
         volunteer_email = f"volunteer_{int(time.time())}@test.com"
-        volunteer_response = httpx.Client(base_url=API_BASE).post(f"{API_BASE}/auth/signup", json={
+        volunteer_response = httpx.Client(base_url=api_base).post(f"{api_base}/auth/signup", json={
             "org_id": data["org_id"],
             "name": "Volunteer User",
             "email": volunteer_email,
@@ -136,13 +137,13 @@ class TestCreateInvitation:
         volunteer_data = volunteer_response.json()
 
         # Create a new client with volunteer's JWT token
-        volunteer_client = httpx.Client(base_url=API_BASE)
+        volunteer_client = httpx.Client(base_url=api_base)
         volunteer_jwt_token = volunteer_data["token"]
         volunteer_client.headers["Authorization"] = f"Bearer {volunteer_jwt_token}"
 
         # Try to create invitation as volunteer (should fail)
         response = volunteer_client.post(
-            f"{API_BASE}/invitations",
+            f"{api_base}/invitations",
             params={
                 "org_id": data["org_id"]
             },
@@ -163,12 +164,13 @@ class TestCreateInvitation:
         """Test cannot create duplicate pending invitation."""
         data = setup_test_org
         client = data["client"]
+        api_base = data["api_base"]
 
         invitee_email = f"duplicate_inv_{int(time.time())}@test.com"
 
         # Create first invitation
         client.post(
-            f"{API_BASE}/invitations",
+            f"{api_base}/invitations",
             params={
                 "org_id": data["org_id"],
                 "person_id": data["admin_id"]
@@ -182,7 +184,7 @@ class TestCreateInvitation:
 
         # Try to create second invitation with same email
         response = client.post(
-            f"{API_BASE}/invitations",
+            f"{api_base}/invitations",
             params={
                 "org_id": data["org_id"],
                 "person_id": data["admin_id"]
@@ -205,11 +207,12 @@ class TestListInvitations:
         """Test admin can list invitations."""
         data = setup_test_org
         client = data["client"]
+        api_base = data["api_base"]
 
         # Create a few invitations
         for i in range(3):
             client.post(
-                f"{API_BASE}/invitations",
+                f"{api_base}/invitations",
                 params={
                     "org_id": data["org_id"],
                     "person_id": data["admin_id"]
@@ -223,7 +226,7 @@ class TestListInvitations:
 
         # List invitations
         response = client.get(
-            f"{API_BASE}/invitations",
+            f"{api_base}/invitations",
             params={
                 "org_id": data["org_id"],
                 "person_id": data["admin_id"]
@@ -239,10 +242,11 @@ class TestListInvitations:
         """Test filtering invitations by status."""
         data = setup_test_org
         client = data["client"]
+        api_base = data["api_base"]
 
         # Create invitation
         inv_response = client.post(
-            f"{API_BASE}/invitations",
+            f"{api_base}/invitations",
             params={
                 "org_id": data["org_id"],
                 "person_id": data["admin_id"]
@@ -257,13 +261,13 @@ class TestListInvitations:
 
         # Cancel it
         client.delete(
-            f"{API_BASE}/invitations/{invitation['id']}",
+            f"{api_base}/invitations/{invitation['id']}",
             params={"person_id": data["admin_id"]}
         )
 
         # List cancelled invitations
         response = client.get(
-            f"{API_BASE}/invitations",
+            f"{api_base}/invitations",
             params={
                 "org_id": data["org_id"],
                 "person_id": data["admin_id"],
@@ -283,10 +287,11 @@ class TestVerifyInvitation:
         """Test verifying a valid invitation token."""
         data = setup_test_org
         client = data["client"]
+        api_base = data["api_base"]
 
         # Create invitation
         inv_response = client.post(
-            f"{API_BASE}/invitations",
+            f"{api_base}/invitations",
             params={
                 "org_id": data["org_id"],
                 "person_id": data["admin_id"]
@@ -301,7 +306,7 @@ class TestVerifyInvitation:
         token = invitation["token"]
 
         # Verify token
-        response = client.get(f"{API_BASE}/invitations/{token}")
+        response = client.get(f"{api_base}/invitations/{token}")
 
         assert response.status_code == 200
         result = response.json()
@@ -312,8 +317,9 @@ class TestVerifyInvitation:
         """Test verifying an invalid token."""
         data = setup_test_org
         client = data["client"]
+        api_base = data["api_base"]
 
-        response = client.get(f"{API_BASE}/invitations/invalid_token_12345")
+        response = client.get(f"{api_base}/invitations/invalid_token_12345")
 
         assert response.status_code == 200
         result = response.json()
@@ -324,10 +330,11 @@ class TestVerifyInvitation:
         """Test verifying a cancelled invitation."""
         data = setup_test_org
         client = data["client"]
+        api_base = data["api_base"]
 
         # Create invitation
         inv_response = client.post(
-            f"{API_BASE}/invitations",
+            f"{api_base}/invitations",
             params={
                 "org_id": data["org_id"],
                 "person_id": data["admin_id"]
@@ -342,12 +349,12 @@ class TestVerifyInvitation:
 
         # Cancel it
         client.delete(
-            f"{API_BASE}/invitations/{invitation['id']}",
+            f"{api_base}/invitations/{invitation['id']}",
             params={"person_id": data["admin_id"]}
         )
 
         # Verify token
-        response = client.get(f"{API_BASE}/invitations/{invitation['token']}")
+        response = client.get(f"{api_base}/invitations/{invitation['token']}")
 
         assert response.status_code == 200
         result = response.json()
@@ -362,12 +369,13 @@ class TestAcceptInvitation:
         """Test successful invitation acceptance."""
         data = setup_test_org
         client = data["client"]
+        api_base = data["api_base"]
 
         invitee_email = f"accept_{int(time.time())}@test.com"
 
         # Create invitation
         inv_response = client.post(
-            f"{API_BASE}/invitations",
+            f"{api_base}/invitations",
             params={
                 "org_id": data["org_id"],
                 "person_id": data["admin_id"]
@@ -383,7 +391,7 @@ class TestAcceptInvitation:
 
         # Accept invitation
         response = client.post(
-            f"{API_BASE}/invitations/{token}/accept",
+            f"{api_base}/invitations/{token}/accept",
             json={
                 "password": "newpassword123",
                 "timezone": "America/New_York"
@@ -399,7 +407,7 @@ class TestAcceptInvitation:
         assert "token" in result  # Auth token for immediate login
 
         # Verify user can login
-        login_response = client.post(f"{API_BASE}/auth/login", json={
+        login_response = client.post(f"{api_base}/auth/login", json={
             "email": invitee_email,
             "password": "newpassword123"
         })
@@ -409,9 +417,10 @@ class TestAcceptInvitation:
         """Test accepting with invalid token."""
         data = setup_test_org
         client = data["client"]
+        api_base = data["api_base"]
 
         response = client.post(
-            f"{API_BASE}/invitations/invalid_token/accept",
+            f"{api_base}/invitations/invalid_token/accept",
             json={
                 "password": "password123",
                 "timezone": "UTC"
@@ -424,10 +433,11 @@ class TestAcceptInvitation:
         """Test cannot accept same invitation twice."""
         data = setup_test_org
         client = data["client"]
+        api_base = data["api_base"]
 
         # Create invitation
         inv_response = client.post(
-            f"{API_BASE}/invitations",
+            f"{api_base}/invitations",
             params={
                 "org_id": data["org_id"],
                 "person_id": data["admin_id"]
@@ -442,13 +452,13 @@ class TestAcceptInvitation:
 
         # Accept first time
         client.post(
-            f"{API_BASE}/invitations/{token}/accept",
+            f"{api_base}/invitations/{token}/accept",
             json={"password": "pass123", "timezone": "UTC"}
         )
 
         # Try to accept again
         response = client.post(
-            f"{API_BASE}/invitations/{token}/accept",
+            f"{api_base}/invitations/{token}/accept",
             json={"password": "pass456", "timezone": "UTC"}
         )
 
@@ -463,10 +473,11 @@ class TestCancelInvitation:
         """Test admin can cancel invitation."""
         data = setup_test_org
         client = data["client"]
+        api_base = data["api_base"]
 
         # Create invitation
         inv_response = client.post(
-            f"{API_BASE}/invitations",
+            f"{api_base}/invitations",
             params={
                 "org_id": data["org_id"],
                 "person_id": data["admin_id"]
@@ -481,14 +492,14 @@ class TestCancelInvitation:
 
         # Cancel invitation
         response = client.delete(
-            f"{API_BASE}/invitations/{invitation['id']}",
+            f"{api_base}/invitations/{invitation['id']}",
             params={"person_id": data["admin_id"]}
         )
 
         assert response.status_code == 204
 
         # Verify it's cancelled
-        verify_response = client.get(f"{API_BASE}/invitations/{invitation['token']}")
+        verify_response = client.get(f"{api_base}/invitations/{invitation['token']}")
         assert verify_response.json()["invitation"]["status"] == "cancelled"
 
 
@@ -499,10 +510,11 @@ class TestResendInvitation:
         """Test admin can resend invitation."""
         data = setup_test_org
         client = data["client"]
+        api_base = data["api_base"]
 
         # Create invitation
         inv_response = client.post(
-            f"{API_BASE}/invitations",
+            f"{api_base}/invitations",
             params={
                 "org_id": data["org_id"],
                 "person_id": data["admin_id"]
@@ -518,7 +530,7 @@ class TestResendInvitation:
 
         # Resend invitation
         response = client.post(
-            f"{API_BASE}/invitations/{invitation['id']}/resend",
+            f"{api_base}/invitations/{invitation['id']}/resend",
             params={"person_id": data["admin_id"]}
         )
 
@@ -530,17 +542,18 @@ class TestResendInvitation:
         assert new_token != old_token
 
         # Verify new token works
-        verify_response = client.get(f"{API_BASE}/invitations/{new_token}")
+        verify_response = client.get(f"{api_base}/invitations/{new_token}")
         assert verify_response.json()["valid"] is True
 
     def test_resend_accepted_invitation_fails(self, setup_test_org):
         """Test cannot resend accepted invitation."""
         data = setup_test_org
         client = data["client"]
+        api_base = data["api_base"]
 
         # Create and accept invitation
         inv_response = client.post(
-            f"{API_BASE}/invitations",
+            f"{api_base}/invitations",
             params={
                 "org_id": data["org_id"],
                 "person_id": data["admin_id"]
@@ -554,13 +567,13 @@ class TestResendInvitation:
         invitation = inv_response.json()
 
         client.post(
-            f"{API_BASE}/invitations/{invitation['token']}/accept",
+            f"{api_base}/invitations/{invitation['token']}/accept",
             json={"password": "pass123", "timezone": "UTC"}
         )
 
         # Try to resend
         response = client.post(
-            f"{API_BASE}/invitations/{invitation['id']}/resend",
+            f"{api_base}/invitations/{invitation['id']}/resend",
             params={"person_id": data["admin_id"]}
         )
 
@@ -575,12 +588,13 @@ class TestInvitationWorkflow:
         """Test end-to-end invitation workflow."""
         data = setup_test_org
         client = data["client"]
+        api_base = data["api_base"]
 
         invitee_email = f"workflow_{int(time.time())}@test.com"
 
         # Step 1: Admin creates invitation
         inv_response = client.post(
-            f"{API_BASE}/invitations",
+            f"{api_base}/invitations",
             params={
                 "org_id": data["org_id"],
                 "person_id": data["admin_id"]
@@ -596,13 +610,13 @@ class TestInvitationWorkflow:
         token = invitation["token"]
 
         # Step 2: Invitee verifies token
-        verify_response = client.get(f"{API_BASE}/invitations/{token}")
+        verify_response = client.get(f"{api_base}/invitations/{token}")
         assert verify_response.status_code == 200
         assert verify_response.json()["valid"] is True
 
         # Step 3: Invitee accepts invitation
         accept_response = client.post(
-            f"{API_BASE}/invitations/{token}/accept",
+            f"{api_base}/invitations/{token}/accept",
             json={
                 "password": "workflow123",
                 "timezone": "America/Los_Angeles"
@@ -612,7 +626,7 @@ class TestInvitationWorkflow:
         user_data = accept_response.json()
 
         # Step 4: User can login
-        login_response = client.post(f"{API_BASE}/auth/login", json={
+        login_response = client.post(f"{api_base}/auth/login", json={
             "email": invitee_email,
             "password": "workflow123"
         })
@@ -620,7 +634,7 @@ class TestInvitationWorkflow:
 
         # Step 5: Admin can see accepted invitation
         list_response = client.get(
-            f"{API_BASE}/invitations",
+            f"{api_base}/invitations",
             params={
                 "org_id": data["org_id"],
                 "person_id": data["admin_id"],

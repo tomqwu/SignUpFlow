@@ -76,10 +76,16 @@ def setup_e2e_test_data():
     ]
 
     for org in organizations:
+        # Check if org exists first to avoid 409 logs
+        check_resp = requests.get(f"{API_BASE}/organizations/{org['id']}")
+        if check_resp.status_code == 200:
+            print(f"  ℹ️  Organization already exists: {org['name']}")
+            continue
+
         resp = requests.post(f"{API_BASE}/organizations/", json=org)
         if resp.status_code in [200, 201]:
             print(f"  ✅ Created organization: {org['name']}")
-        elif resp.status_code == 400:
+        elif resp.status_code in [400, 409]:
             print(f"  ℹ️  Organization already exists: {org['name']}")
         else:
             print(f"  ⚠️  Failed to create {org['name']}: {resp.status_code} - {resp.text}")
@@ -107,7 +113,7 @@ def setup_e2e_test_data():
         resp = requests.post(f"{API_BASE}/auth/signup", json=user)
         if resp.status_code in [200, 201]:
             print(f"  ✅ Created user: {user['name']} ({user['email']})")
-        elif resp.status_code == 400 and ("already registered" in resp.text or "already exists" in resp.text):
+        elif resp.status_code == 409 or (resp.status_code == 400 and ("already registered" in resp.text or "already exists" in resp.text)):
             print(f"  ℹ️  User already exists: {user['name']}")
         else:
             print(f"  ⚠️  Failed to create {user['name']}: {resp.status_code} - {resp.text}")
@@ -222,6 +228,12 @@ def setup_e2e_test_data():
     for event in events:
         org_id = event["org_id"]
         if org_id in admin_tokens:
+            # Check if event exists first to avoid 409 logs
+            check_resp = requests.get(f"{API_BASE}/events/{event['id']}")
+            if check_resp.status_code == 200:
+                print(f"  ℹ️  Event already exists: {event.get('title', event['id'])}")
+                continue
+
             headers = {"Authorization": f"Bearer {admin_tokens[org_id]}"}
             start_dt = datetime.fromisoformat(event["datetime"])
             end_dt = start_dt + timedelta(minutes=event.get("duration", 60))
@@ -241,7 +253,7 @@ def setup_e2e_test_data():
             )
             if resp.status_code in [200, 201]:
                 print(f"  ✅ Created event: {payload['type']}")
-            elif resp.status_code == 400:
+            elif resp.status_code in [400, 409]:
                 print(f"  ℹ️  Event already exists: {payload['type']}")
             else:
                 print(f"  ⚠️  Failed to create event {payload['type']}: {resp.status_code} - {resp.text}")

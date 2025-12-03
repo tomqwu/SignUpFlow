@@ -34,7 +34,7 @@ def test_settings_permission_console_logs(
     expect(page.locator("#user-name-display")).to_be_visible(timeout=5000)
 
     # Open settings modal by clicking the gear icon
-    page.locator('button.btn-icon:has-text("⚙️")').click()
+    page.locator('button.action-btn:has-text("Settings")').click()
     page.wait_for_timeout(1000)
 
     # Print all console messages related to showSettings
@@ -73,7 +73,7 @@ def test_settings_permission_display_no_object_object(
     expect(page.locator("#user-name-display")).to_be_visible(timeout=5000)
 
     # Open settings modal by clicking the gear icon
-    page.locator('button.btn-icon:has-text("⚙️")').click()
+    page.locator('button.action-btn:has-text("Settings")').click()
     page.wait_for_timeout(500)
 
     # Check the settings modal is visible

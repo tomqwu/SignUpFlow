@@ -22,7 +22,11 @@
     "upload": "Upload",
     "copy": "Copy",
     "done": "Done",
-    "edit_roles": "Edit Roles"
+    "edit_roles": "Edit Roles",
+    "apply": "Apply",
+    "dismiss": "Dismiss",
+    "start": "Start",
+    "view": "View"
   },
   "actions": {
     "loading": "Loading...",
@@ -103,5 +107,9 @@
   "role_greeter": "Greeter",
   "role_usher": "Usher",
   "role_kids_ministry": "Kids Ministry",
-  "role_prayer_team": "Prayer Team"
+  "role_prayer_team": "Prayer Team",
+  "save": "Save",
+  "hello": "Hello",
+  "popular": "Popular",
+  "date": "Date"
 }

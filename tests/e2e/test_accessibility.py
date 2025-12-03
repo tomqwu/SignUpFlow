@@ -113,7 +113,7 @@ def test_schedule_keyboard_navigation(
     page.wait_for_timeout(2000)
 
     # Settings button should be focusable
-    settings_btn = page.locator('button.btn-icon:has-text("⚙️")')
+    settings_btn = page.locator('button.action-btn:has-text("Settings")')
     expect(settings_btn).to_be_visible(timeout=3000)
 
     # Use keyboard to navigate to settings button
@@ -213,7 +213,7 @@ def test_modal_focus_trap(
     page.wait_for_timeout(2000)
 
     # Open settings modal
-    settings_btn = page.locator('button.btn-icon:has-text("⚙️")')
+    settings_btn = page.locator('button.action-btn:has-text("Settings")')
     expect(settings_btn).to_be_visible(timeout=3000)
     settings_btn.click()
 

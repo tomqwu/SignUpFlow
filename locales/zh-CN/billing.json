@@ -41,7 +41,9 @@
   },
   "billing_portal": {
     "title": "Billing & Subscription",
-    "current_plan": "Current Plan",
+    "current_plan": "当前计划",
+    "next_invoice": "下次账单",
+    "amount": "金额",
     "change_plan": "Change Plan",
     "cancel_subscription": "Cancel Subscription",
     "billing_history": "Billing History",
@@ -61,6 +63,7 @@
     "contact_sales": "Contact Sales"
   },
   "status": {
+    "current_plan": "当前计划",
     "active": "Active",
     "trialing": "Trial",
     "past_due": "Past Due",
@@ -69,6 +72,7 @@
   },
   "messages": {
     "upgrade_success": "Successfully upgraded to {{plan}} plan",
+    "upgrade_cancelled": "升级已取消",
     "downgrade_success": "Successfully downgraded to {{plan}} plan",
     "cancel_success": "Subscription cancelled. You'll have access until {{end_date}}",
     "cancel_immediate_success": "Subscription cancelled immediately",
@@ -77,6 +81,9 @@
     "trial_started": "Your 14-day free trial has started"
   },
   "error_messages": {
+    "admin_required": "需要管理员权限",
+    "load_failed": "加载失败",
+    "trial_failed": "试用启动失败",
     "upgrade_failed": "Failed to upgrade subscription. Please try again.",
     "downgrade_failed": "Failed to downgrade subscription. Please try again.",
     "cancel_failed": "Failed to cancel subscription. Please contact support.",
@@ -95,6 +102,7 @@
     "cancel_immediate_warning": "Cancelling immediately will result in immediate loss of access."
   },
   "usage_tracking": {
+    "used": "已使用",
     "current_usage": "Current Usage",
     "plan_limits": "Plan Limits",
     "volunteers": "Volunteers",

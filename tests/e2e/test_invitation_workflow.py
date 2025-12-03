@@ -20,27 +20,38 @@ from datetime import datetime, timedelta
 # NOTE: Running in docker-compose with server already started
 # No need for api_server fixture which tries to start a new server on port 8000
 
-API_BASE = "http://localhost:8000/api"
+from tests.e2e.helpers import AppConfig
 
-
-@pytest.fixture(scope="module", autouse=True)
-def setup_invitation_test_data():
+@pytest.fixture(scope="function", autouse=True)
+def setup_invitation_test_data(api_server, app_config: AppConfig):
     """Set up test data for invitation workflow tests (docker-compose mode)."""
-    import sys
+    import os
+    from urllib.parse import urlparse
 
-    # Force fresh import of setup_test_data to get latest changes
-    if 'tests.setup_test_data' in sys.modules:
-        del sys.modules['tests.setup_test_data']
-
+    # Determine DB based on port
+    port = 8000
+    if app_config.app_url:
+        parsed = urlparse(app_config.app_url)
+        if parsed.port:
+            port = parsed.port
+            
+    db_filename = "test_roster.db"
+    if port == 8001:
+        db_filename = "test_roster_e2e.db"
+        
+    # Set DATABASE_URL for setup_test_data to use
+    project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    os.environ["DATABASE_URL"] = f"sqlite:///{project_root}/{db_filename}"
+    
     import tests.setup_test_data
     setup_test_data = tests.setup_test_data.setup_test_data
-    setup_test_data(API_BASE)
+    setup_test_data() # No argument needed as it uses env var
     yield
 
 
-def get_auth_token(email: str, password: str) -> str:
+def get_auth_token(app_config: AppConfig, email: str, password: str) -> str:
     """Login and return JWT token."""
-    resp = requests.post(f"{API_BASE}/auth/login", json={
+    resp = requests.post(f"{app_config.api_base}/auth/login", json={
         "email": email,
         "password": password
     })
@@ -48,7 +59,7 @@ def get_auth_token(email: str, password: str) -> str:
     return resp.json()["token"]
 
 
-def test_complete_invitation_workflow(page: Page):
+def test_complete_invitation_workflow(page: Page, app_config: AppConfig):
     """
     BDD Scenario: User accepts invitation and completes registration.
 
@@ -66,18 +77,18 @@ def test_complete_invitation_workflow(page: Page):
     # ========================================
     # GIVEN: Admin creates invitation
     # ========================================
-    admin_token = get_auth_token("jane@test.com", "password")
+    admin_token = get_auth_token(app_config, "jane@test.com", "password")
     headers = {"Authorization": f"Bearer {admin_token}"}
 
     # Get admin's org_id
-    me_resp = requests.get(f"{API_BASE}/people/me", headers=headers)
+    me_resp = requests.get(f"{app_config.api_base}/people/me", headers=headers)
     assert me_resp.status_code == 200, f"Failed to get current user: {me_resp.text}"
     admin_user = me_resp.json()
     admin_org_id = admin_user.get("org_id")
 
     # Create invitation via API
     create_resp = requests.post(
-        f"{API_BASE}/invitations?org_id={admin_org_id}",
+        f"{app_config.api_base}/invitations?org_id={admin_org_id}",
         headers=headers,
         json={
             "email": test_email,
@@ -96,7 +107,7 @@ def test_complete_invitation_workflow(page: Page):
     # ========================================
     # WHEN: User visits signup page and enters invitation code
     # ========================================
-    page.goto("http://localhost:8000/")
+    page.goto(app_config.app_url)
     page.wait_for_timeout(1000)
 
     # Click "Get Started" to show join screen
@@ -178,7 +189,7 @@ def test_complete_invitation_workflow(page: Page):
     # AND: Verify invitation status changed to "accepted"
     # ========================================
     invitation_check_resp = requests.get(
-        f"{API_BASE}/invitations?org_id={admin_org_id}",
+        f"{app_config.api_base}/invitations?org_id={admin_org_id}",
         headers=headers
     )
     assert invitation_check_resp.status_code == 200
@@ -191,16 +202,16 @@ def test_complete_invitation_workflow(page: Page):
     print("✅ Complete invitation workflow test passed!")
 
 
-def test_invitation_validation():
+def test_invitation_validation(app_config: AppConfig):
     """Test that invitation endpoints require authentication."""
 
     # Try to list invitations without auth
-    resp = requests.get(f"{API_BASE}/invitations?org_id=test_org")
+    resp = requests.get(f"{app_config.api_base}/invitations?org_id=test_org")
     assert resp.status_code in [401, 403], "Invitations list should require auth"
 
     # Try to create invitation without auth
     # Note: 422 is acceptable as FastAPI validates request body before auth
-    resp = requests.post(f"{API_BASE}/invitations?org_id=test_org", json={
+    resp = requests.post(f"{app_config.api_base}/invitations?org_id=test_org", json={
         "email": "test@example.com",
         "name": "Test User",
         "roles": ["volunteer"]
@@ -210,7 +221,7 @@ def test_invitation_validation():
     print("✅ Invitation endpoints properly secured")
 
 
-def test_invalid_invitation_token(page: Page):
+def test_invalid_invitation_token(page: Page, app_config: AppConfig):
     """
     BDD Scenario: User tries invalid invitation code.
 
@@ -220,7 +231,7 @@ def test_invalid_invitation_token(page: Page):
     Then: I see an error message "Invalid or expired invitation code"
     And: The registration form does not appear
     """
-    page.goto("http://localhost:8000/")
+    page.goto(app_config.app_url)
     page.wait_for_timeout(1000)
 
     # Click "Get Started" to show join screen
@@ -259,7 +270,7 @@ def test_invalid_invitation_token(page: Page):
     print("✅ Invalid invitation token test passed!")
 
 
-def test_admin_resends_invitation(page: Page):
+def test_admin_resends_invitation(page: Page, app_config: AppConfig):
     """
     BDD Scenario: Admin resends invitation.
 
@@ -275,14 +286,14 @@ def test_admin_resends_invitation(page: Page):
     test_email = f"resend_test_{timestamp}@test.com"
 
     # Create invitation via API
-    admin_token = get_auth_token("jane@test.com", "password")
+    admin_token = get_auth_token(app_config, "jane@test.com", "password")
     headers = {"Authorization": f"Bearer {admin_token}"}
 
-    me_resp = requests.get(f"{API_BASE}/people/me", headers=headers)
+    me_resp = requests.get(f"{app_config.api_base}/people/me", headers=headers)
     admin_org_id = me_resp.json()["org_id"]
 
     create_resp = requests.post(
-        f"{API_BASE}/invitations?org_id={admin_org_id}",
+        f"{app_config.api_base}/invitations?org_id={admin_org_id}",
         headers=headers,
         json={
             "email": test_email,
@@ -298,7 +309,7 @@ def test_admin_resends_invitation(page: Page):
 
     # Resend invitation via API
     resend_resp = requests.post(
-        f"{API_BASE}/invitations/{invitation_id}/resend",
+        f"{app_config.api_base}/invitations/{invitation_id}/resend",
         headers=headers
     )
     assert resend_resp.status_code == 200, f"Resend failed: {resend_resp.text}"
@@ -314,11 +325,11 @@ def test_admin_resends_invitation(page: Page):
     print(f"✅ Invitation status: {resent_data['status']}")
 
     # Cleanup
-    requests.delete(f"{API_BASE}/invitations/{invitation_id}", headers=headers)
+    requests.delete(f"{app_config.api_base}/invitations/{invitation_id}", headers=headers)
     print("✅ Admin resend invitation test passed!")
 
 
-def test_admin_cancels_invitation(page: Page):
+def test_admin_cancels_invitation(page: Page, app_config: AppConfig):
     """
     BDD Scenario: Admin cancels invitation.
 
@@ -333,14 +344,14 @@ def test_admin_cancels_invitation(page: Page):
     test_email = f"cancel_test_{timestamp}@test.com"
 
     # Create invitation via API
-    admin_token = get_auth_token("jane@test.com", "password")
+    admin_token = get_auth_token(app_config, "jane@test.com", "password")
     headers = {"Authorization": f"Bearer {admin_token}"}
 
-    me_resp = requests.get(f"{API_BASE}/people/me", headers=headers)
+    me_resp = requests.get(f"{app_config.api_base}/people/me", headers=headers)
     admin_org_id = me_resp.json()["org_id"]
 
     create_resp = requests.post(
-        f"{API_BASE}/invitations?org_id={admin_org_id}",
+        f"{app_config.api_base}/invitations?org_id={admin_org_id}",
         headers=headers,
         json={
             "email": test_email,
@@ -355,7 +366,7 @@ def test_admin_cancels_invitation(page: Page):
 
     # Cancel invitation via API
     cancel_resp = requests.delete(
-        f"{API_BASE}/invitations/{invitation_id}",
+        f"{app_config.api_base}/invitations/{invitation_id}",
         headers=headers
     )
     assert cancel_resp.status_code == 204, f"Cancel failed: {cancel_resp.status_code}"
@@ -363,7 +374,7 @@ def test_admin_cancels_invitation(page: Page):
 
     # Verify invitation status changed
     list_resp = requests.get(
-        f"{API_BASE}/invitations?org_id={admin_org_id}",
+        f"{app_config.api_base}/invitations?org_id={admin_org_id}",
         headers=headers
     )
     invitations = list_resp.json().get("invitations", [])
@@ -378,7 +389,7 @@ def test_admin_cancels_invitation(page: Page):
     print("✅ Admin cancel invitation test passed!")
 
 
-def test_expired_invitation_token():
+def test_expired_invitation_token(app_config: AppConfig):
     """
     BDD Scenario: User tries expired invitation code.
 
@@ -391,14 +402,14 @@ def test_expired_invitation_token():
     test_email = f"expired_test_{timestamp}@test.com"
 
     # Create invitation via API
-    admin_token = get_auth_token("jane@test.com", "password")
+    admin_token = get_auth_token(app_config, "jane@test.com", "password")
     headers = {"Authorization": f"Bearer {admin_token}"}
 
-    me_resp = requests.get(f"{API_BASE}/people/me", headers=headers)
+    me_resp = requests.get(f"{app_config.api_base}/people/me", headers=headers)
     admin_org_id = me_resp.json()["org_id"]
 
     create_resp = requests.post(
-        f"{API_BASE}/invitations?org_id={admin_org_id}",
+        f"{app_config.api_base}/invitations?org_id={admin_org_id}",
         headers=headers,
         json={
             "email": test_email,
@@ -416,18 +427,18 @@ def test_expired_invitation_token():
     # the expiry logic works correctly
 
     # For now, verify that a valid invitation returns valid=True
-    verify_resp = requests.get(f"{API_BASE}/invitations/{invitation_token}")
+    verify_resp = requests.get(f"{app_config.api_base}/invitations/{invitation_token}")
     assert verify_resp.status_code == 200
     verify_data = verify_resp.json()
     assert verify_data["valid"] is True, "New invitation should be valid"
     print(f"✅ Valid invitation verified")
 
     # Cleanup
-    requests.delete(f"{API_BASE}/invitations/{invitation_id}", headers=headers)
+    requests.delete(f"{app_config.api_base}/invitations/{invitation_id}", headers=headers)
     print("✅ Expired invitation token test passed (expiry logic verified)!")
 
 
-def test_used_invitation_token():
+def test_used_invitation_token(app_config: AppConfig):
     """
     BDD Scenario: User tries already-used invitation code.
 
@@ -440,14 +451,14 @@ def test_used_invitation_token():
     test_email = f"used_test_{timestamp}@test.com"
 
     # Create invitation via API
-    admin_token = get_auth_token("jane@test.com", "password")
+    admin_token = get_auth_token(app_config, "jane@test.com", "password")
     headers = {"Authorization": f"Bearer {admin_token}"}
 
-    me_resp = requests.get(f"{API_BASE}/people/me", headers=headers)
+    me_resp = requests.get(f"{app_config.api_base}/people/me", headers=headers)
     admin_org_id = me_resp.json()["org_id"]
 
     create_resp = requests.post(
-        f"{API_BASE}/invitations?org_id={admin_org_id}",
+        f"{app_config.api_base}/invitations?org_id={admin_org_id}",
         headers=headers,
         json={
             "email": test_email,
@@ -463,7 +474,7 @@ def test_used_invitation_token():
 
     # Accept the invitation
     accept_resp = requests.post(
-        f"{API_BASE}/invitations/{invitation_token}/accept",
+        f"{app_config.api_base}/invitations/{invitation_token}/accept",
         json={
             "password": "TestPass123",
             "timezone": "UTC"
@@ -473,7 +484,7 @@ def test_used_invitation_token():
     print(f"✅ Invitation accepted")
 
     # Try to verify the used token
-    verify_resp = requests.get(f"{API_BASE}/invitations/{invitation_token}")
+    verify_resp = requests.get(f"{app_config.api_base}/invitations/{invitation_token}")
     assert verify_resp.status_code == 200
     verify_data = verify_resp.json()
     assert verify_data["valid"] is False, "Accepted invitation should not be valid"
@@ -481,7 +492,7 @@ def test_used_invitation_token():
     print(f"✅ Used invitation correctly rejected: {verify_data['message']}")
 
     # Cleanup
-    requests.delete(f"{API_BASE}/invitations/{invitation_id}", headers=headers)
+    requests.delete(f"{app_config.api_base}/invitations/{invitation_id}", headers=headers)
     print("✅ Used invitation token test passed!")
 
 

@@ -50,7 +50,23 @@ def test_organizations(app_config: AppConfig):
     # Use direct database access since the database persists between test runs
     # Use absolute path to ensure we hit the same database as the API server
     project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-    database_url = f"sqlite:///{project_root}/test_roster.db"
+    
+    # Determine which database to use based on the port
+    # make test-all uses port 8000 and test_roster.db
+    # make test-e2e-file uses port 8001 and test_roster_e2e.db
+    from urllib.parse import urlparse
+    port = 8000
+    if app_config.app_url:
+        parsed = urlparse(app_config.app_url)
+        if parsed.port:
+            port = parsed.port
+            
+    db_filename = "test_roster.db"
+    if port == 8001:
+        db_filename = "test_roster_e2e.db"
+        
+    database_url = f"sqlite:///{project_root}/{db_filename}"
+    print(f"DEBUG: Using database {database_url} for port {port}")
     try:
         engine = create_engine(database_url)
         with engine.connect() as conn:
@@ -179,7 +195,20 @@ def test_users(test_organizations, app_config: AppConfig):
     # This ensures admin users have admin role even if first-user-gets-admin didn't work
     # Use absolute path to ensure we hit the same database as the API server
     project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-    database_url = f"sqlite:///{project_root}/test_roster.db"
+    
+    # Determine which database to use based on the port
+    from urllib.parse import urlparse
+    port = 8000
+    if app_config.app_url:
+        parsed = urlparse(app_config.app_url)
+        if parsed.port:
+            port = parsed.port
+            
+    db_filename = "test_roster.db"
+    if port == 8001:
+        db_filename = "test_roster_e2e.db"
+        
+    database_url = f"sqlite:///{project_root}/{db_filename}"
     try:
         import json
         engine = create_engine(database_url)

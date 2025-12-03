@@ -79,7 +79,7 @@ function loadTabData(tabName) {
 async function checkAPIStatus() {
     const statusEl = document.getElementById('api-status');
     try {
-        const response = await fetch(`${API_BASE_URL}/health`);
+        const response = await fetch('/health');
         if (response.ok) {
             statusEl.textContent = '● API Online';
             statusEl.className = 'status-badge online';

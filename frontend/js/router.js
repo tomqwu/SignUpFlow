@@ -2,6 +2,7 @@
  * URL-based Router for SignUpFlow
  * Handles navigation with proper URL updates and browser history
  */
+console.log("🚀 router.js loaded!");
 
 // Define API_BASE_URL if not already defined
 if (typeof API_BASE_URL === 'undefined') {
@@ -144,6 +145,14 @@ class Router {
             // Switch to specific view
             const view = this.viewRoutes[path];
             if (view) {
+                // Use switchView if available to handle UI updates (title, nav, content)
+                if (typeof window.switchView === 'function') {
+                    console.log(`🛣️  Delegating to switchView('${view}', true)`);
+                    window.switchView(view, true);
+                    return;
+                }
+
+                // Fallback manual update if switchView not available
                 // Update nav buttons
                 document.querySelectorAll('.nav-btn').forEach(btn => {
                     btn.classList.toggle('active', btn.dataset.view === view);

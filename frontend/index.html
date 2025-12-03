@@ -47,7 +47,7 @@
     <script src="/js/search-filter.js"></script>
     <script src="/js/auth-fetch.js"></script>
     <script src="/js/router.js"></script>
-    <script src="/js/sample-data-manager.js?v=9"></script>
+    <script src="/js/i18n.js"></script>
 
     <script src="/js/recaptcha.js"></script>
 
@@ -591,20 +591,12 @@
                             </div>
                         </div>
                     </div>
-
-                    <!-- Schedule List Card -->
-                    <div class="dashboard-card">
-                        <div class="dashboard-card-header">
-                            <div class="dashboard-card-title" data-i18n="schedule.my_assignments">My Assignments</div>
-                        </div>
-                        <div id="schedule-list" class="schedule-timeline">
-                            <div class="loading"><span data-i18n="schedule.loading_schedule">Loading your
-                                    schedule...</span></div>
-                        </div>
+                    <div id="schedule-list" class="schedule-list">
+                        <div class="loading" data-i18n="messages.loading.schedule">Loading schedule...</div>
                     </div>
                 </div>
 
-                <!-- All Events View -->
+                <!-- Events View -->
                 <div id="events-view" class="view-content">
 
 
@@ -617,7 +609,8 @@
                     </div>
 
                     <div id="all-events-list" class="events-list">
-                        <div class="loading"><span data-i18n="events.loading_events">Loading events...</span></div>
+                        <div class="loading"><span data-i18n="events.loading_events">Loading events...</span>
+                        </div>
                     </div>
                 </div>
 
@@ -640,9 +633,14 @@
                             </div>
                             <input type="text" id="timeoff-reason" data-i18n-placeholder="schedule.placeholder_reason"
                                 placeholder="Reason (optional)">
-                            <button type="submit" class="btn btn-primary" data-i18n="schedule.add_time_off">Add Time
+                            <button type="submit" class="btn btn-primary" data-i18n="schedule.add_time_off">Add
+                                Time
                                 Off</button>
                         </form>
+
+                        <div id="availability-calendar" class="calendar-container">
+                            <!-- Calendar will be rendered here -->
+                        </div>
 
                         <div id="timeoff-list" class="timeoff-list">
                             <h3 data-i18n="schedule.blocked_dates">Your Blocked Dates</h3>
@@ -726,7 +724,8 @@
                                     <h3><span data-i18n="admin.event_management">Event Management</span></h3>
                                     <div class="admin-controls">
                                         <button class="btn btn-primary" onclick="showCreateEventForm()"><span
-                                                data-i18n="admin.create_event_button">+ Create Event</span></button>
+                                                data-i18n="admin.create_event_button">+ Create
+                                                Event</span></button>
                                         <button class="btn btn-secondary" onclick="loadAdminEvents()"><span
                                                 data-i18n="common.refresh">🔄 Refresh</span></button>
                                     </div>
@@ -758,13 +757,16 @@
                                 <div class="admin-section-header">
                                     <h3><span data-i18n="admin.role_management">Role Management</span></h3>
                                     <div class="admin-controls">
-                                        <button class="btn btn-primary" onclick="showAddRoleForm()">+ Add Role</button>
+                                        <button class="btn btn-primary" onclick="showAddRoleForm()">+ Add
+                                            Role</button>
                                     </div>
                                 </div>
-                                <p class="help-text"><span data-i18n="admin.define_custom_roles">Define custom roles for
+                                <p class="help-text"><span data-i18n="admin.define_custom_roles">Define custom
+                                        roles for
                                         your organization</span></p>
                                 <div id="admin-roles-list" class="roles-list">
-                                    <div class="loading"><span data-i18n="admin.loading_roles">Loading roles...</span>
+                                    <div class="loading"><span data-i18n="admin.loading_roles">Loading
+                                            roles...</span>
                                     </div>
                                 </div>
                             </div>
@@ -780,7 +782,8 @@
                                     <button class="btn btn-primary btn-large" onclick="generateSchedule()">
                                         🔄 Generate Schedule
                                     </button>
-                                    <p class="help-text" data-i18n="solver.create_assignments_desc">This will create
+                                    <p class="help-text" data-i18n="solver.create_assignments_desc">This will
+                                        create
                                         assignments for all upcoming events</p>
                                 </div>
                                 <div id="solver-status" class="solver-status"></div>
@@ -789,7 +792,8 @@
                                 <div class="admin-calendar-section">
                                     <h4 data-i18n="solver.schedule_calendar">Schedule Calendar</h4>
                                     <div id="admin-calendar-view" class="admin-calendar">
-                                        <div class="loading" data-i18n="solver.generate_first">Generate a schedule to
+                                        <div class="loading" data-i18n="solver.generate_first">Generate a
+                                            schedule to
                                             see
                                             the calendar</div>
                                     </div>
@@ -809,7 +813,8 @@
                                     </div>
                                 </div>
                                 <div id="admin-solutions-list" class="admin-list">
-                                    <div class="loading" data-i18n="solver.loading_schedules">Loading schedules...</div>
+                                    <div class="loading" data-i18n="solver.loading_schedules">Loading
+                                        schedules...</div>
                                 </div>
                             </div>
                         </div>
@@ -818,7 +823,8 @@
                         <div id="admin-tab-people" class="admin-tab-content">
                             <div class="admin-section">
                                 <div class="admin-section-header">
-                                    <h3 data-i18n="admin.people_invitations">People <h3>People & Invitations</h3>
+                                    <h3 data-i18n="admin.people_invitations">People <h3>People & Invitations
+                                        </h3>
                                         Invitations</h3>
                                     <div class="admin-controls">
                                         <button class="btn btn-primary" onclick="showInviteUserModal()">+ Invite
@@ -866,7 +872,8 @@
                                 <!-- People List -->
                                 <h4 data-i18n="admin.team_members">Team Members</h4>
                                 <div id="admin-people-list" class="admin-list">
-                                    <div class="loading" data-i18n="admin.loading_people">Loading people...</div>
+                                    <div class="loading" data-i18n="admin.loading_people">Loading people...
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -875,18 +882,22 @@
                         <div id="admin-tab-reports" class="admin-tab-content">
                             <div class="admin-section">
                                 <div class="admin-section-header">
-                                    <h3 data-i18n="admin.reports_export">Reports <h3>Reports & Export</h3> Export</h3>
+                                    <h3 data-i18n="admin.reports_export">Reports <h3>Reports & Export</h3>
+                                        Export</h3>
                                 </div>
-                                <p class="help-text" data-i18n="admin.export_schedules_desc">Export schedules and
+                                <p class="help-text" data-i18n="admin.export_schedules_desc">Export schedules
+                                    and
                                     generate
                                     reports</p>
 
                                 <div class="reports-grid">
                                     <div class="report-card">
                                         <h4 data-i18n="admin.pdf_schedule_export">PDF Schedule Export</h4>
-                                        <p data-i18n="admin.download_printable">Download a printable schedule for
+                                        <p data-i18n="admin.download_printable">Download a printable schedule
+                                            for
                                             distribution</p>
-                                        <button class="btn btn-primary" onclick="exportLatestSchedulePDF()">📥 Export
+                                        <button class="btn btn-primary" onclick="exportLatestSchedulePDF()">📥
+                                            Export
                                             PDF</button>
                                     </div>
                                     <div class="report-card">
@@ -899,7 +910,8 @@
                                     </div>
                                     <div class="report-card">
                                         <h4 data-i18n="admin.schedule_statistics">Schedule Statistics</h4>
-                                        <p data-i18n="admin.view_distribution">View assignment distribution and metrics
+                                        <p data-i18n="admin.view_distribution">View assignment distribution and
+                                            metrics
                                         </p>
                                         <button class="btn btn-secondary" onclick="showScheduleStats()">📊 View
                                             Stats</button>
@@ -910,7 +922,8 @@
                                 <div id="schedule-stats-display" class="stats-display hidden">
                                     <h4 data-i18n="admin.schedule_statistics">Schedule Statistics</h4>
                                     <div id="stats-content" class="stats-content">
-                                        <div class="loading" data-i18n="admin.loading_statistics">Loading statistics...
+                                        <div class="loading" data-i18n="admin.loading_statistics">Loading
+                                            statistics...
                                         </div>
                                     </div>
                                 </div>
@@ -925,7 +938,8 @@
                                     <div class="admin-controls">
                                         <button class="btn btn-primary" onclick="showCreateTeamForm()">+ Create
                                             Team</button>
-                                        <button class="btn btn-secondary" onclick="loadAdminTeams()">🔄 Refresh</button>
+                                        <button class="btn btn-secondary" onclick="loadAdminTeams()">🔄
+                                            Refresh</button>
                                     </div>
                                 </div>
                                 <div class="admin-filter">
@@ -1385,25 +1399,143 @@
                 </div>
             </div>
         </div>
+        <!-- Create Team Modal -->
+        <div id="create-team-modal" class="modal hidden">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3 data-i18n="admin.create_team">Create Team</h3>
+                    <button class="btn-close" onclick="hideCreateTeamForm()">×</button>
+                </div>
+                <div class="modal-body">
+                    <form id="create-team-form" onsubmit="createTeam(event)">
+                        <div class="form-group">
+                            <label data-i18n="admin.team_id">Team ID</label>
+                            <input type="text" id="team-id" data-i18n-placeholder="admin.placeholder_team_id"
+                                placeholder="e.g., worship_team" required pattern="[a-z0-9_]+"
+                                title="Lowercase letters, numbers, and underscores only">
+                        </div>
+                        <div class="form-group">
+                            <label data-i18n="admin.organization">Organization</label>
+                            <select id="team-org-id" required>
+                                <!-- Populated dynamically -->
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label data-i18n="admin.team_name">Team Name</label>
+                            <input type="text" id="team-name" data-i18n-placeholder="admin.placeholder_team_name"
+                                placeholder="e.g., Worship Team" required>
+                        </div>
+                        <div class="form-group">
+                            <label data-i18n="admin.description_optional">Description (optional)</label>
+                            <textarea id="team-description" rows="3" data-i18n-placeholder="admin.placeholder_team_desc"
+                                placeholder="Brief description of this team"></textarea>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" onclick="hideCreateTeamForm()"
+                                data-i18n="common.buttons.cancel">Cancel</button>
+                            <button type="submit" class="btn btn-primary" data-i18n="admin.create_team">Create
+                                Team</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Edit Team Modal -->
+        <div id="edit-team-modal" class="modal hidden">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3 data-i18n="admin.edit_team">Edit Team</h3>
+                    <button class="btn-close" onclick="hideEditTeamModal()">×</button>
+                </div>
+                <div class="modal-body">
+                    <form id="edit-team-form" onsubmit="updateTeam(event)">
+                        <input type="hidden" id="edit-team-id-hidden">
+                        <div class="form-group">
+                            <label data-i18n="admin.team_name">Team Name</label>
+                            <input type="text" id="edit-team-name" required>
+                        </div>
+                        <div class="form-group">
+                            <label data-i18n="admin.description_optional">Description (optional)</label>
+                            <textarea id="edit-team-description" rows="3"></textarea>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" onclick="hideEditTeamModal()"
+                                data-i18n="common.buttons.cancel">Cancel</button>
+                            <button type="submit" class="btn btn-primary" data-i18n="common.buttons.save">Save
+                                Changes</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Manage Team Members Modal -->
+        <div id="manage-team-members-modal" class="modal hidden">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3 data-i18n="admin.manage_team_members">Manage Team Members</h3>
+                    <button class="btn-close" onclick="hideManageTeamMembersModal()">×</button>
+                </div>
+                <div class="modal-body">
+                    <div class="team-members-header">
+                        <h4 id="manage-team-name-display">Team Name</h4>
+                        <div class="add-member-control">
+                            <select id="add-team-member-select">
+                                <option value="">Select person to add...</option>
+                            </select>
+                            <button class="btn btn-primary btn-sm" onclick="addTeamMember()">Add</button>
+                        </div>
+                    </div>
+                    <div id="team-members-list" class="team-members-list">
+                        <div class="loading">Loading members...</div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" onclick="hideManageTeamMembersModal()"
+                        data-i18n="common.buttons.close">Close</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Delete Team Modal -->
+        <div id="delete-team-modal" class="modal hidden">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3 data-i18n="admin.delete_team">Delete Team</h3>
+                    <button class="btn-close" onclick="hideDeleteTeamModal()">×</button>
+                </div>
+                <div class="modal-body">
+                    <p data-i18n="admin.delete_team_confirm">Are you sure you want to delete this team? This action
+                        cannot be undone.</p>
+                    <p class="help-text" id="delete-team-name-display"></p>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" onclick="hideDeleteTeamModal()"
+                        data-i18n="common.buttons.cancel">Cancel</button>
+                    <button class="btn btn-danger" onclick="confirmDeleteTeam()"
+                        data-i18n="common.buttons.delete">Delete</button>
+                </div>
+            </div>
+        </div>
     </div>
 
-    <script>
-        // Timestamp-based cache busting
-        const cacheBust = Date.now();
-        document.write('<script src="/js/i18n.js?t=' + cacheBust + '"><\/script>');
-        document.write('<script src="/js/role-management.js?t=' + cacheBust + '"><\/script>');
-        document.write('<script src="/js/edit-role-functions.js?t=' + cacheBust + '"><\/script>');
-        document.write('<script src="/js/recurring-events.js?t=' + cacheBust + '"><\/script>');
-        document.write('<script src="/js/sample-data-manager.js?t=' + cacheBust + '"><\/script>');
-        document.write('<script src="/js/onboarding-wizard.js?t=' + cacheBust + '"><\/script>');
-        document.write('<script src="/js/onboarding-checklist.js?t=' + cacheBust + '"><\/script>');
-        document.write('<script src="/js/quick-start-videos.js?t=' + cacheBust + '"><\/script>');
-        document.write('<script src="/js/tutorial-overlays.js?t=' + cacheBust + '"><\/script>');
-        document.write('<script src="/js/feature-unlocks.js?t=' + cacheBust + '"><\/script>');
-        document.write('<script src="/js/sms-preferences.js?t=' + cacheBust + '"><\/script>');
-        document.write('<script src="/js/admin-sms-broadcast.js?t=' + cacheBust + '"><\/script>');
-        document.write('<script src="/js/app-user.js?t=' + cacheBust + '"><\/script>');
+    <script src="/js/app-admin.js"></script>
 
+
+    <script src="/js/role-management.js"></script>
+    <script src="/js/edit-role-functions.js"></script>
+    <script src="/js/recurring-events.js"></script>
+    <script src="/js/sample-data-manager.js"></script>
+    <script src="/js/onboarding-wizard.js"></script>
+    <script src="/js/onboarding-checklist.js"></script>
+    <script src="/js/quick-start-videos.js"></script>
+    <script src="/js/tutorial-overlays.js"></script>
+    <script src="/js/feature-unlocks.js"></script>
+    <script src="/js/sms-preferences.js"></script>
+    <script src="/js/admin-sms-broadcast.js"></script>
+    <script src="/js/app-user-v2.js"></script>
+    <script>
         function toggleSidebar() {
             document.querySelector('.sidebar').classList.toggle('open');
         }

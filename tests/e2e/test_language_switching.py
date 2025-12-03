@@ -57,7 +57,7 @@ def test_language_switching_to_chinese(
     print("  ✓ User logged in successfully")
 
     # Verify English UI
-    my_schedule_heading = page.locator('h2[data-i18n="schedule.my_schedule"]')
+    my_schedule_heading = page.locator('#page-title')
     expect(my_schedule_heading).to_be_visible(timeout=3000)
     # In English, it should say "My Schedule"
     expect(my_schedule_heading).to_have_text("My Schedule")
@@ -67,7 +67,7 @@ def test_language_switching_to_chinese(
     print("\nStep 2: Opening settings...")
 
     # Click settings button (gear icon ⚙️)
-    settings_btn = page.locator('button.btn-icon:has-text("⚙️")')
+    settings_btn = page.locator('button.action-btn:has-text("Settings")')
     expect(settings_btn).to_be_visible(timeout=3000)
     settings_btn.click()
 
@@ -100,7 +100,7 @@ def test_language_switching_to_chinese(
     print("\nStep 4: Verifying UI is now in Chinese...")
 
     # Check that "My Schedule" is now in Chinese: "我的排班"
-    my_schedule_heading_chinese = page.locator('h2[data-i18n="schedule.my_schedule"]')
+    my_schedule_heading_chinese = page.locator('#page-title')
     expect(my_schedule_heading_chinese).to_be_visible(timeout=3000)
     expect(my_schedule_heading_chinese).to_have_text("我的排班")
     print("  ✓ 'My Schedule' heading is now '我的排班' (Chinese)")
@@ -121,7 +121,7 @@ def test_language_switching_to_chinese(
     page.wait_for_timeout(1000)
 
     # Check that language is still Chinese
-    my_schedule_heading_after_reload = page.locator('h2[data-i18n="schedule.my_schedule"]')
+    my_schedule_heading_after_reload = page.locator('#page-title')
     expect(my_schedule_heading_after_reload).to_be_visible(timeout=3000)
     expect(my_schedule_heading_after_reload).to_have_text("我的排班")
     print("  ✓ Language persisted after reload (still Chinese)")
@@ -179,7 +179,7 @@ def test_language_switching_to_spanish(
 
     # Open settings
     print("\nStep 2: Opening settings and switching to Spanish...")
-    settings_btn = page.locator('button.btn-icon:has-text("⚙️")')
+    settings_btn = page.locator('button.action-btn:has-text("Settings")')
     expect(settings_btn).to_be_visible(timeout=3000)
     settings_btn.click()
 
@@ -202,7 +202,7 @@ def test_language_switching_to_spanish(
     print("\nStep 3: Verifying Spanish translations...")
 
     # Check Spanish translation - "My Schedule" should be "Mi horario"
-    my_schedule_heading = page.locator('h2[data-i18n="schedule.my_schedule"]')
+    my_schedule_heading = page.locator('#page-title')
     expect(my_schedule_heading).to_be_visible(timeout=3000)
     expect(my_schedule_heading).to_have_text("Mi horario")
     print("  ✓ 'My Schedule' is now 'Mi horario' (Spanish)")
@@ -213,7 +213,7 @@ def test_language_switching_to_spanish(
     expect(page.locator('#main-app')).to_be_visible(timeout=5000)
     page.wait_for_timeout(1000)
 
-    my_schedule_after_reload = page.locator('h2[data-i18n="schedule.my_schedule"]')
+    my_schedule_after_reload = page.locator('#page-title')
     expect(my_schedule_after_reload).to_have_text("Mi horario")
     print("  ✓ Language persisted (still Spanish)")
 
@@ -259,7 +259,7 @@ def test_language_switching_back_to_english(
 
     # Switch to Chinese first
     print("\nStep 2: Switching to Chinese...")
-    settings_btn = page.locator('button.btn-icon:has-text("⚙️")')
+    settings_btn = page.locator('button.action-btn:has-text("Settings")')
     expect(settings_btn).to_be_visible(timeout=3000)
     settings_btn.click()
     expect(page.locator('#settings-modal')).to_be_visible(timeout=3000)
@@ -274,7 +274,7 @@ def test_language_switching_back_to_english(
     page.wait_for_timeout(1000)
     print("  ✓ Switched to Chinese")
 
-    my_schedule_chinese = page.locator('h2[data-i18n="schedule.my_schedule"]')
+    my_schedule_chinese = page.locator('#page-title')
     expect(my_schedule_chinese).to_have_text("我的排班")
     print("  ✓ Verified UI is in Chinese")
 
@@ -294,7 +294,7 @@ def test_language_switching_back_to_english(
     # Verify English
     print("\nStep 4: Verifying English translations restored...")
 
-    my_schedule_english = page.locator('h2[data-i18n="schedule.my_schedule"]')
+    my_schedule_english = page.locator('#page-title')
     expect(my_schedule_english).to_have_text("My Schedule")
     print("  ✓ 'My Schedule' is back to English")
 

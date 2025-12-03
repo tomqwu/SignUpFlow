@@ -1,0 +1,66 @@
+{
+    "dashboard_title": "欢迎来到 Rostio",
+    "dashboard_subtitle": "接下来您需要做什么。",
+    "watch_video": "观看视频",
+    "video_getting_started_title": "入门指南",
+    "video_getting_started_description": "应用程序快速浏览。",
+    "video_events_title": "管理活动",
+    "video_events_description": "了解如何创建和管理活动。",
+    "generate_sample_data": "生成示例数据",
+    "clear_sample_data": "清除示例数据",
+    "sample_data_title": "示例数据",
+    "sample_data_description": "使用示例数据测试应用程序。",
+    "tutorials": {
+        "replay": "重播教程",
+        "dismiss_message": "不再显示",
+        "dont_show": "不再显示",
+        "list_title": "教程",
+        "completed": "已完成",
+        "remind_later": "稍后提醒",
+        "dismiss_title": "忽略教程"
+    },
+    "sample_data": {
+        "clear": "清除示例数据",
+        "generate": "生成示例数据",
+        "description": "生成示例数据以探索应用程序功能。"
+    },
+    "wizard": {
+        "title": "入门向导",
+        "step1": {
+            "title": "欢迎",
+            "description": "让我们开始设置。"
+        },
+        "step2": {
+            "title": "组织",
+            "description": "告诉我们关于您的组织。"
+        },
+        "step3": {
+            "title": "偏好",
+            "description": "设置您的偏好。"
+        },
+        "step4": {
+            "title": "完成",
+            "description": "一切准备就绪！"
+        },
+        "complete": {
+            "title": "设置完成",
+            "message": "您已成功完成入门设置。",
+            "explore": "探索仪表板",
+            "sample_data_intro": "想看看它是如何工作的？生成示例数据。"
+        }
+    },
+    "unlocks": {
+        "explore": "探索功能",
+        "milestone": "达到里程碑！",
+        "new_badge": "解锁新徽章",
+        "new_feature": "解锁新功能"
+    },
+    "checklist": {
+        "title": "入门清单",
+        "dismiss": "忽略",
+        "celebration": {
+            "title": "恭喜！",
+            "message": "您已完成所有任务！"
+        }
+    }
+}

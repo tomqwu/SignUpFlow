@@ -27,7 +27,7 @@ def test_validation_messages_translated_chinese(
     expect(page.locator('#main-app')).to_be_visible(timeout=10000)
 
     # Change language to Chinese (Simplified)
-    page.locator('button.btn-icon:has-text("⚙️")').click()
+    page.locator('button.action-btn:has-text("Settings")').click()
     page.wait_for_timeout(500)
 
     language_select = page.locator("#settings-language")
@@ -69,7 +69,7 @@ def test_assignment_messages_translated_spanish(
     expect(page.locator('#main-app')).to_be_visible(timeout=10000)
 
     # Change language to Spanish
-    page.locator('button.btn-icon:has-text("⚙️")').click()
+    page.locator('button.action-btn:has-text("Settings")').click()
     page.wait_for_timeout(500)
 
     language_select = page.locator("#settings-language")
@@ -110,7 +110,7 @@ def test_backend_message_keys_structure(
     expect(page.locator('#main-app')).to_be_visible(timeout=10000)
 
     # Change language to Portuguese
-    page.locator('button.btn-icon:has-text("⚙️")').click()
+    page.locator('button.action-btn:has-text("Settings")').click()
     page.wait_for_timeout(500)
 
     language_select = page.locator("#settings-language")

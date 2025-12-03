@@ -3,30 +3,49 @@
 import pytest
 from playwright.sync_api import Page, expect
 
-from tests.e2e.helpers import AppConfig
+from tests.e2e.helpers import AppConfig, ApiTestClient
 
 pytestmark = pytest.mark.usefixtures("api_server")
 
 
 @pytest.fixture
-def user_page(page: Page, app_config: AppConfig):
-    """Login as regular user."""
+def user_page(page: Page, app_config: AppConfig, api_client: ApiTestClient):
+    """
+    Login as a regular user (volunteer) and return the page.
+    Uses api_client to create the user, ensuring API visibility.
+    """
+    # Create test organization and user
+    org = api_client.create_org()
+    user = api_client.create_user(
+        org_id=org["id"],
+        name="Sarah Volunteer",
+        roles=["volunteer"]
+    )
+
+    # Login
     page.goto(f"{app_config.app_url}/login")
-    page.fill("#login-email", "pastor@grace.church")
-    page.fill("#login-password", "password")
-    page.get_by_role("button", name="Sign In").click()
-    page.wait_for_timeout(2000)
+    page.fill("#login-email", user["email"])
+    page.fill("#login-password", user["password"])
+    page.click('button[data-i18n="auth.sign_in"]')
+    
+    # Wait for redirect to app
+    expect(page).to_have_url(f"{app_config.app_url}/app/schedule", timeout=10000)
     return page
 
 
 def test_view_schedule(user_page: Page, app_config: AppConfig):
-    """Test viewing personal schedule."""
+    """
+    Test that a user can view their schedule.
+    """
+    # Navigate to schedule view
     user_page.goto(f"{app_config.app_url}/app/schedule")
     user_page.wait_for_timeout(1000)
 
     # Should show schedule view
     expect(user_page.locator("#schedule-view, .schedule-container")).to_be_visible(timeout=5000)
-    user_page.screenshot(path="/tmp/e2e-schedule-view.png")
+    
+    # Verify page title
+    expect(user_page.locator("#page-title")).to_have_text("My Schedule")
 
 
 def test_set_availability(user_page: Page, app_config: AppConfig):
@@ -90,7 +109,7 @@ def test_change_language(user_page: Page, app_config: AppConfig):
     user_page.wait_for_timeout(1000)
 
     # Open settings modal (use the gear icon button)
-    settings_btn = user_page.get_by_role("button", name="⚙️")
+    settings_btn = user_page.locator('button.action-btn:has-text("Settings")')
     settings_btn.click()
     user_page.wait_for_timeout(500)
 
@@ -120,7 +139,7 @@ def test_change_language(user_page: Page, app_config: AppConfig):
 def test_update_profile(user_page: Page):
     """Test updating user profile."""
     # Look for profile/settings button
-    profile_button = user_page.locator("button:has-text('Profile'), button:has-text('Settings'), button:has-text('⚙️')")
+    profile_button = user_page.locator("button:has-text('Settings'), button:has-text('Profile')")
     if profile_button.count() > 0:
         profile_button.first.click()
         user_page.wait_for_timeout(500)
@@ -146,7 +165,7 @@ def test_timezone_support(user_page: Page, app_config: AppConfig):
     user_page.wait_for_timeout(1000)
 
     # Open settings modal (use the gear icon button)
-    settings_btn = user_page.get_by_role("button", name="⚙️")
+    settings_btn = user_page.locator('button.action-btn:has-text("Settings")')
     settings_btn.click()
     user_page.wait_for_timeout(500)
 

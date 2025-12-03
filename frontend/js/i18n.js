@@ -4,6 +4,7 @@
  * Lightweight i18n solution for multi-language support
  * Supports: translation, interpolation, pluralization, fallback
  */
+console.log('i18n.js loaded');
 
 class I18n {
     constructor() {
@@ -272,6 +273,7 @@ class I18n {
 
 // Create global instance
 const i18n = new I18n();
+window.i18n = i18n;
 
 // Note: i18n.init() is called manually in app-user.js after checking user preferences
 
