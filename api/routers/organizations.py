@@ -64,6 +64,10 @@ def create_organization(org_data: OrganizationCreate, db: Session = Depends(get_
 @router.get("/", response_model=OrganizationList)
 def list_organizations(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
     """List all organizations."""
+    try:
+        print(f"DEBUG: DB URL is {db.bind.url}")
+    except Exception as e:
+        print(f"DEBUG: Could not get DB URL: {e}")
     orgs = db.query(Organization).offset(skip).limit(limit).all()
     total = db.query(Organization).count()
     return {"organizations": orgs, "total": total}

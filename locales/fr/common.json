@@ -48,7 +48,9 @@
     "organization": "Organisation",
     "from_date": "Date de début",
     "to_date": "Date de fin",
-    "full_name": "Nom complet"
+    "full_name": "Nom complet",
+    "volunteer": "Bénévole",
+    "actions": "Actions"
   },
   "your_context": "📍 Votre contexte",
   "edit_profile": "Modifier le profil →",

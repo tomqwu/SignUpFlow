@@ -51,8 +51,10 @@
     "role": "Rol",
     "organization": "Organización",
     "from_date": "Fecha de Inicio",
-    "to_date": "Fecha de Fin",
-    "full_name": "Nombre Completo"
+    "to_date": "Hasta la fecha",
+    "full_name": "Nombre completo",
+    "volunteer": "Voluntario",
+    "actions": "Acciones"
   },
   "your_context": "📍 Mi Información",
   "edit_profile": "Editar Perfil →",

@@ -322,8 +322,24 @@ class EmailService:
 
         # Send email (with 5-second timeout to prevent hangs)
         with smtplib.SMTP(self.smtp_host, self.smtp_port, timeout=5) as server:
-            server.starttls()
-            server.login(self.smtp_user, self.smtp_password)
+            # Skip TLS and login for local mock SMTP (e.g., MailHog, Mailtrap mock, or internal test mock)
+            is_mock_server = self.smtp_host in ["127.0.0.1", "localhost"] and str(self.smtp_port) in ["1025", "8025"]
+            
+            if not is_mock_server:
+                # Production/Standard SMTP
+                try:
+                    server.starttls()
+                    server.login(self.smtp_user, self.smtp_password)
+                except smtplib.SMTPNotSupportedError:
+                    # Some servers might not support STARTTLS or are already secure
+                    pass
+            elif self.smtp_user and self.smtp_password:
+                # If credentials provided for mock, try login but ignore TLS
+                try: 
+                    server.login(self.smtp_user, self.smtp_password)
+                except Exception:
+                    pass
+
             server.sendmail(self.from_email, to_email, message.as_string())
 
         # Generate pseudo message ID for SMTP (since SMTP doesn't return message IDs)

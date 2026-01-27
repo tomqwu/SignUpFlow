@@ -157,10 +157,15 @@ class TestRateLimitProduction:
 
     def test_rate_limit_enforced_in_production(self):
         """Test that rate limits are enforced when TESTING is not set."""
-        # Temporarily unset TESTING
+
+        # Temporarily unset TESTING and DISABLE_RATE_LIMITS
         original_testing = os.getenv("TESTING")
         if "TESTING" in os.environ:
             del os.environ["TESTING"]
+
+        original_disable = os.getenv("DISABLE_RATE_LIMITS")
+        if "DISABLE_RATE_LIMITS" in os.environ:
+            del os.environ["DISABLE_RATE_LIMITS"]
 
         try:
             class MockClient:
@@ -188,12 +193,18 @@ class TestRateLimitProduction:
             assert exc_info.value.status_code == 429
             assert "Rate limit exceeded" in exc_info.value.detail
 
+
         finally:
-            # Restore TESTING environment variable
+            # Restore TESTING and DISABLE_RATE_LIMITS environment variables
             if original_testing:
                 os.environ["TESTING"] = original_testing
             else:
                 os.environ.pop("TESTING", None)
+
+            if original_disable:
+                os.environ["DISABLE_RATE_LIMITS"] = original_disable
+            else:
+                os.environ.pop("DISABLE_RATE_LIMITS", None)
 
 
 if __name__ == "__main__":

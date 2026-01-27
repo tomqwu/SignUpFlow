@@ -1,7 +1,9 @@
+"""Tests for verifying the teams dropdown functionality."""
 import os
 import json
 import pytest
-from playwright.sync_api import sync_playwright, expect
+from playwright.sync_api import sync_playwright, expect, Page
+from tests.e2e.helpers import AppConfig, ApiTestClient
 
 APP_URL = os.getenv("E2E_APP_URL", "http://localhost:8001")
 API_URL = f"{APP_URL}/api"
@@ -14,8 +16,15 @@ def browser_context():
         yield context
         browser.close()
 
-def test_teams_dropdown_populated(browser_context, api_server, app_config):
-    page = browser_context.new_page()
+def test_teams_dropdown_populated(page: Page, app_config: AppConfig, api_client: ApiTestClient):
+    """
+    Test teams dropdown population.
+
+    Verifies that the teams dropdown is correctly populated with the teams
+    created in the organization.
+    """
+    # Setup data
+    org = api_client.create_org()
     APP_URL = app_config.app_url
     API_URL = app_config.api_base
     

@@ -61,6 +61,14 @@ function loadTabData(tabName) {
             loadTeams();
             populateOrgSelects();
             break;
+        case 'invitations':
+            if (typeof loadInvitations === 'function') {
+                loadInvitations();
+            } else {
+                console.error('loadInvitations not defined');
+            }
+            populateOrgSelects();
+            break;
         case 'events':
             loadEvents();
             populateOrgSelects();

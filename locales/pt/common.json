@@ -52,7 +52,9 @@
     "organization": "Organização",
     "from_date": "Data de Início",
     "to_date": "Data de Término",
-    "full_name": "Nome Completo"
+    "full_name": "Nome Completo",
+    "volunteer": "Voluntário",
+    "actions": "Ações"
   },
   "your_context": "📍 Minhas Informações",
   "edit_profile": "Editar Perfil →",

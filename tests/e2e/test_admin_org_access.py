@@ -1,3 +1,4 @@
+"""Reproduction tests for admin organization access issues."""
 import pytest
 from playwright.sync_api import sync_playwright, expect
 import requests

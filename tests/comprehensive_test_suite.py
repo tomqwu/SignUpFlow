@@ -540,8 +540,11 @@ class TestSolverAPI:
         # Create an event in the range to ensure solver has something to do
         start_time = (datetime.now() + timedelta(days=2)).isoformat()
         end_time = (datetime.now() + timedelta(days=2, hours=1)).isoformat()
+        # Use unique ID to avoid conflicts
+        import uuid
+        event_id = f"test_event_solver_{uuid.uuid4().hex[:8]}"
         requests.post(f"{app_config.api_base}/events/", json={
-            "id": "test_event_solver_001",
+            "id": event_id,
             "org_id": "test_org",
             "type": "Solver Test Event",
             "start_time": start_time,

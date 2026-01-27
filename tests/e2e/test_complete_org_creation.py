@@ -187,5 +187,33 @@ def test_complete_org_creation_and_signup_flow(
         raise
 
 
+def test_create_organization_validates_empty_form(page: Page, app_config: AppConfig):
+    """Test that empty form shows validation error."""
+
+    page.goto(f"{app_config.app_url}/")
+    page.wait_for_load_state("networkidle")
+
+    # Click through to join screen
+    page.locator('button:has-text("Get Started")').click()
+    expect(page.locator('#join-screen')).to_be_visible()
+
+    # Click "Create New Organization"
+    page.locator('button:has-text("Create New Organization")').click()
+    time.sleep(0.5)
+
+    # Try to submit without filling anything
+    create_org_section = page.locator('#create-org-section')
+    submit_btn = create_org_section.locator('button[type="submit"]')
+    submit_btn.click()
+
+    # HTML5 validation should prevent submission
+    # The form should still be visible
+    expect(create_org_section).to_be_visible()
+
+    # Check that we haven't navigated away
+    expect(page.locator('#join-screen')).to_be_visible()
+
+
+
 if __name__ == "__main__":
     pytest.main([__file__, "-v", "-s"])

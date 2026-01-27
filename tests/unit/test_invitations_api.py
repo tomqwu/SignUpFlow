@@ -13,6 +13,8 @@ API_BASE = "http://localhost:8000/api"
 class TestInvitationsAPI:
     """Test invitations API endpoints."""
 
+
+    @pytest.mark.no_mock_auth
     def test_list_invitations_requires_authentication_no_org(self, client):
         """Test that listing invitations requires authentication (no org_id)."""
         # Try to list invitations without auth
@@ -22,6 +24,7 @@ class TestInvitationsAPI:
         # Note: In unit tests, auth is mocked so validation may happen first
         assert response.status_code in [403, 422]
 
+    @pytest.mark.no_mock_auth
     def test_list_invitations_requires_authentication_with_org(self, client):
         """Test that listing invitations requires authentication (with org_id)."""
         # Create test org
@@ -85,6 +88,7 @@ class TestInvitationsAPI:
         # assert "total" in data
         # assert isinstance(data["invitations"], list)
 
+    @pytest.mark.no_mock_auth
     def test_create_invitation_requires_authentication(self, client):
         """Test that creating invitations requires authentication."""
         # Try to create invitation without authentication

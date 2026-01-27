@@ -143,6 +143,11 @@ async function checkExistingSession() {
 
             window.currentUser = currentUser;
             window.currentOrg = currentOrg;
+            console.log('✅ checkExistingSession - Restored user:', currentUser.email, 'Roles:', currentUser.roles);
+
+            // Initialize UI state (roles, orgs, etc.)
+            console.log('🔄 Calling initializeUIState from checkExistingSession...');
+            await initializeUIState();
 
             // If on a protected /app route, handle it with router
             if (currentPath.startsWith('/app')) {
@@ -150,7 +155,7 @@ async function checkExistingSession() {
             } else {
                 // Default to schedule view if logged in but on root/login page
                 router.navigate('/app/schedule', true);
-                showMainApp();
+                showMainApp(); // This calls showScreen('main-app')
             }
         } catch (e) {
             console.error('Error parsing session data:', e);
@@ -732,14 +737,32 @@ async function createProfile(event) {
 // Main App
 async function showMainApp() {
     showScreen('main-app');
+
+    // UI State is initialized either by checkExistingSession or below if logging in fresh
+    await initializeUIState();
+
     router.navigate('/app/schedule', true);  // Update URL to /app/schedule
+
+    loadMySchedule();
+    loadTimeOff();
+}
+
+// Initialize UI state based on current user/org
+// Initialize UI state based on current user/org
+async function initializeUIState() {
+    // console.log('🏗️ initializeUIState called');
+
+    if (!currentUser) return;
+
     document.getElementById('user-name-display').textContent = currentUser.name;
 
     // Load and display organization(s)
     await loadUserOrganizations();
 
     // Update role badges display
-    updateRoleBadgesDisplay();
+    if (typeof updateRoleBadgesDisplay === 'function') {
+        updateRoleBadgesDisplay();
+    }
 
     // Show admin features if user is admin
     if (currentUser.roles && currentUser.roles.includes('admin')) {
@@ -748,9 +771,6 @@ async function showMainApp() {
             el.classList.add('visible');
         });
     }
-
-    loadMySchedule();
-    loadTimeOff();
 }
 
 // Load all organizations user belongs to
@@ -1820,6 +1840,9 @@ function switchAdminTab(tabName) {
             break;
         case 'reports':
             // Reports tab is static, no loading needed
+            break;
+        case 'analytics':
+            loadAnalytics();
             break;
     }
 }

@@ -18,7 +18,7 @@ class TestPasswordResetSecurity:
         client = TestClient(app)
 
         # Get database session
-        db_gen = app.dependency_overrides[get_db]()
+        db_gen = get_db()
         db = next(db_gen)
 
         # Create test organization
@@ -89,8 +89,9 @@ class TestPasswordResetSecurity:
         """Verify that bcrypt hash is different from SHA256 hash."""
         client = TestClient(app)
 
+
         # Get database session
-        db_gen = app.dependency_overrides[get_db]()
+        db_gen = get_db()
         db = next(db_gen)
 
         # Create test organization
@@ -151,7 +152,7 @@ class TestPasswordResetSecurity:
         client = TestClient(app)
 
         # Get database session
-        db_gen = app.dependency_overrides[get_db]()
+        db_gen = get_db()
         db = next(db_gen)
 
         # Create test organization

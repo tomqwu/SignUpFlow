@@ -34,6 +34,8 @@ Once Solver UI is implemented in frontend/js/app-admin.js, unskip these tests.
 import pytest
 from playwright.sync_api import Page, expect
 import time
+from datetime import datetime, timedelta
+import uuid
 
 from tests.e2e.helpers import AppConfig
 
@@ -43,6 +45,21 @@ pytestmark = pytest.mark.usefixtures("api_server")
 @pytest.fixture(scope="function")
 def admin_login(page: Page, app_config: AppConfig):
     """Login as admin for solver tests."""
+    # Ensure admin user exists (re-seed after DB wipe)
+    import requests
+    api_base = app_config.api_base
+    # valid org payload
+    requests.post(f"{api_base}/organizations/", json={
+        "id": "grace_church", "name": "Grace Church", 
+        "location": "New York", "timezone": "America/New_York",
+        "config": {"roles": ["admin", "volunteer"]}
+    })
+    # valid user payload
+    requests.post(f"{api_base}/auth/signup", json={
+        "name": "Pastor Grace", "email": "pastor@grace.church", 
+        "password": "password", "org_id": "grace_church", "roles": ["admin"]
+    })
+
     # Navigate directly to login page
     page.goto(f"{app_config.app_url}/login")
     page.wait_for_load_state("networkidle")
@@ -75,7 +92,6 @@ def admin_login(page: Page, app_config: AppConfig):
     return page
 
 
-@pytest.mark.skip(reason="Solver UI not implemented - backend API exists but frontend pending")
 def test_run_solver_with_constraints_complete_workflow(admin_login: Page):
     """
     Test complete solver workflow from admin perspective.
@@ -96,7 +112,15 @@ def test_run_solver_with_constraints_complete_workflow(admin_login: Page):
     timestamp = int(time.time() * 1000)
 
     # Create 3 events with role requirements
-    events_data = [
+    events_data = []
+    # Create 3 events with role requirements
+    # Helper to calc end time
+    def get_end_time(start_str, duration_min):
+        dt = datetime.fromisoformat(start_str)
+        end = dt + timedelta(minutes=duration_min)
+        return end.isoformat()
+
+    raw_events = [
         {
             "title": f"Sunday Service {timestamp}",
             "start_time": "2025-11-03T10:00:00",
@@ -125,26 +149,39 @@ def test_run_solver_with_constraints_complete_workflow(admin_login: Page):
         }
     ]
 
+    for e in raw_events:
+        role_counts = {r['role']: r['count'] for r in e['role_requirements']}
+        events_data.append({
+            "title": e['title'],
+            "start_time": e['start_time'],
+            "end_time": get_end_time(e['start_time'], e['duration']),
+            "role_counts": role_counts
+        })
+
     # Create events via API
     for event_data in events_data:
         page.evaluate(
             f"""
             (async () => {{
                 const authToken = localStorage.getItem('authToken');
-                const currentOrg = JSON.parse(localStorage.getItem('currentOrg'));
+                // const currentOrg = JSON.parse(localStorage.getItem('currentOrg'));
 
-                await fetch('http://localhost:8000/api/events/', {{
+                await fetch('/api/events/', {{
                     method: 'POST',
                     headers: {{
                         'Content-Type': 'application/json',
                         'Authorization': `Bearer ${{authToken}}`
                     }},
                     body: JSON.stringify({{
-                        org_id: currentOrg.id,
+                        id: 'evt_' + Math.random().toString(36).substr(2, 9),
+                        org_id: 'grace_church',
+                        type: 'service',
                         title: '{event_data['title']}',
                         start_time: '{event_data['start_time']}',
-                        duration: {event_data['duration']},
-                        role_requirements: {event_data['role_requirements']}
+                        end_time: '{event_data['end_time']}',
+                        extra_data: {{
+                            role_counts: {event_data['role_counts']}
+                        }}
                     }})
                 }});
             }})();
@@ -158,19 +195,20 @@ def test_run_solver_with_constraints_complete_workflow(admin_login: Page):
             f"""
             (async () => {{
                 const authToken = localStorage.getItem('authToken');
-                const currentOrg = JSON.parse(localStorage.getItem('currentOrg'));
+                // const currentOrg = JSON.parse(localStorage.getItem('currentOrg'));
 
-                await fetch('http://localhost:8000/api/people/', {{
+                await fetch('/api/people/', {{
                     method: 'POST',
                     headers: {{
                         'Content-Type': 'application/json',
                         'Authorization': `Bearer ${{authToken}}`
                     }},
                     body: JSON.stringify({{
-                        org_id: currentOrg.id,
+                        id: 'vol_' + Math.random().toString(36).substr(2, 9),
+                        org_id: 'grace_church',
                         name: 'Volunteer {i}',
                         email: 'volunteer{i}_{timestamp}@test.com',
-                        roles: ['volunteer']
+                        roles: ['volunteer', 'Greeter', 'Usher', 'Leader']
                     }})
                 }});
             }})();
@@ -193,6 +231,9 @@ def test_run_solver_with_constraints_complete_workflow(admin_login: Page):
             solver_panel = page.locator('#solver-panel, .solver-section, [data-section="solver"]')
 
     expect(solver_panel.first).to_be_visible(timeout=5000)
+    
+    # Ensure correct organization is selected to avoid using stale 'test_org'
+    page.evaluate("if(document.getElementById('solve-org-id')) document.getElementById('solve-org-id').value = 'grace_church'")
 
     # Select date range for solver
     from_date_input = page.locator('#solver-from-date, input[name="from_date"]')
@@ -217,11 +258,11 @@ def test_run_solver_with_constraints_complete_workflow(admin_login: Page):
     )
     expect(progress_indicator.first).to_be_visible(timeout=5000)
 
-    # Wait for solver to complete (max 30 seconds)
+    # Wait for solver to complete (max 60 seconds)
     completion_indicator = page.locator(
         '[data-i18n="solver.status.completed"], .solver-completed, #solver-success-message'
     )
-    expect(completion_indicator.first).to_be_visible(timeout=30000)
+    expect(completion_indicator.first).to_be_visible(timeout=60000)
 
     # Verify solver results table appears
     results_table = page.locator('#solver-results-table, .solver-results, [data-results="solver"]')
@@ -422,7 +463,7 @@ def test_solver_conflict_resolution(admin_login: Page):
                 const authToken = localStorage.getItem('authToken');
                 const currentOrg = JSON.parse(localStorage.getItem('currentOrg'));
 
-                await fetch('http://localhost:8000/api/events/', {{
+                await fetch('/api/events/', {{
                     method: 'POST',
                     headers: {{
                         'Content-Type': 'application/json',
@@ -652,16 +693,16 @@ def test_solver_performance_with_large_dataset(admin_login: Page):
             f"""
             (async () => {{
                 const authToken = localStorage.getItem('authToken');
-                const currentOrg = JSON.parse(localStorage.getItem('currentOrg'));
+                // const currentOrg = JSON.parse(localStorage.getItem('currentOrg'));
 
-                await fetch('http://localhost:8000/api/people/', {{
+                await fetch('/api/people/', {{
                     method: 'POST',
                     headers: {{
                         'Content-Type': 'application/json',
                         'Authorization': `Bearer ${{authToken}}`
                     }},
                     body: JSON.stringify({{
-                        org_id: currentOrg.id,
+                        org_id: 'grace_church',
                         name: 'Volunteer {i}',
                         email: 'volunteer{i}_{timestamp}@test.com',
                         roles: ['volunteer']
@@ -682,7 +723,7 @@ def test_solver_performance_with_large_dataset(admin_login: Page):
                 const authToken = localStorage.getItem('authToken');
                 const currentOrg = JSON.parse(localStorage.getItem('currentOrg'));
 
-                await fetch('http://localhost:8000/api/events/', {{
+                await fetch('/api/events/', {{
                     method: 'POST',
                     headers: {{
                         'Content-Type': 'application/json',

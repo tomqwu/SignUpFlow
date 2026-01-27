@@ -125,7 +125,9 @@ class ApiTestClient:
         extra_payload: Optional[Dict[str, Any]] = None,
     ) -> Dict[str, Any]:
         event_id = event_id or self._unique_id("event")
-        base_time = datetime(2026, 1, 5, 9, 0, 0)
+        # Use tomorrow 9am as base time to ensure it falls in future range
+        now = datetime.now()
+        base_time = (now + timedelta(days=1)).replace(hour=9, minute=0, second=0, microsecond=0)
         start_time = start_time or base_time.isoformat()
         end_time = end_time or (base_time + timedelta(hours=2)).isoformat()
 

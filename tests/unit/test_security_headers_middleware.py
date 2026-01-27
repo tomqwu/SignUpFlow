@@ -126,14 +126,20 @@ class TestSecurityHeadersMiddleware:
 class TestSecurityHeadersConfiguration:
     """Test SecurityHeadersMiddleware configuration via environment variables."""
 
+
     def test_default_configuration(self):
         """Test middleware with default configuration."""
-        middleware = SecurityHeadersMiddleware(app=Mock())
+        # Ensure SECURITY_CSP_ENABLED is not set (it might be set by session fixures)
+        with patch.dict(os.environ):
+            if "SECURITY_CSP_ENABLED" in os.environ:
+                del os.environ["SECURITY_CSP_ENABLED"]
 
-        # Defaults should be set
-        assert middleware.hsts_enabled is False  # Default in development
-        assert middleware.csp_enabled is True
-        assert middleware.frame_options == "DENY"
+            middleware = SecurityHeadersMiddleware(app=Mock())
+
+            # Defaults should be set
+            assert middleware.hsts_enabled is False  # Default in development
+            assert middleware.csp_enabled is True
+            assert middleware.frame_options == "DENY"
 
     @patch.dict(os.environ, {
         "ENVIRONMENT": "production",

@@ -5,5 +5,15 @@
   "generate_first": "Generate a schedule to see the calendar",
   "loading_schedules": "Loading schedules...",
   "create_assignments_desc": "This will create assignments for all upcoming events",
-  "total_schedules": "Total Schedules:"
+  "total_schedules": "Horarios Totales:",
+  "tab_title": "Solver",
+  "results_title": "Horario Generado",
+  "mode": "Modo de Optimización",
+  "run": "Ejecutar Solver",
+  "status": {
+    "solving": "Resolviendo...",
+    "running": "Ejecutando...",
+    "completed": "Completado",
+    "failed": "Fallido"
+  }
 }

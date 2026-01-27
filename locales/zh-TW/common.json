@@ -29,10 +29,10 @@
     "view": "檢視"
   },
   "actions": {
-    "loading": "加载中...",
-    "saving": "保存中...",
-    "deleting": "删除中...",
-    "processing": "处理中..."
+    "loading": "載入中...",
+    "saving": "儲存中...",
+    "deleting": "刪除中...",
+    "processing": "處理中..."
   },
   "labels": {
     "yes": "是",
@@ -52,7 +52,9 @@
     "organization": "組織",
     "from_date": "開始日期",
     "to_date": "結束日期",
-    "full_name": "全名"
+    "full_name": "全名",
+    "volunteer": "志願者",
+    "actions": "操作"
   },
   "your_context": "📍 我的資訊",
   "edit_profile": "編輯資料 →",
@@ -60,15 +62,15 @@
   "loading_orgs": "載入組織中...",
   "or": "或",
   "your_current_org": "目前組織",
-  "your_active_roles": "您的活跃角色",
-  "add_edit_roles": "+ 添加/编辑角色",
+  "your_active_roles": "您的活躍角色",
+  "add_edit_roles": "+ 新增/編輯角色",
   "roles_determine_events": "系統會根據您的角色安排活動",
   "quick_actions": "常用功能",
   "manage_schedule_prefs": "日程設定",
   "refresh": "🔄 重新整理",
   "placeholder_full_name": "您的全名",
-  "placeholder_email": "电子邮件地址",
-  "placeholder_phone": "电话号码（可选）",
+  "placeholder_email": "電子郵件地址",
+  "placeholder_phone": "電話號碼（可選）",
   "time": {
     "today": "今天",
     "tomorrow": "明天",
@@ -79,11 +81,11 @@
     "next_month": "下月"
   },
   "errors": {
-    "required_field": "此字段为必填项",
-    "invalid_email": "电子邮件地址无效",
-    "invalid_date": "日期无效",
-    "network_error": "网络错误。请重试。",
-    "unknown_error": "发生未知错误"
+    "required_field": "此欄位為必填項",
+    "invalid_email": "電子郵件地址無效",
+    "invalid_date": "日期無效",
+    "network_error": "網路錯誤。請重試。",
+    "unknown_error": "發生未知錯誤"
   },
   "note": "注意",
   "next_month": "下個月",

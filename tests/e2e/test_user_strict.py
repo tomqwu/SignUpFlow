@@ -1,3 +1,4 @@
+"""Strict tests for user navigation and view components."""
 import pytest
 from playwright.sync_api import Page, expect
 import time

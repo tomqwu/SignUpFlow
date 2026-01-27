@@ -5,5 +5,15 @@
   "generate_first": "生成日程以查看日历",
   "loading_schedules": "正在加载日程...",
   "create_assignments_desc": "这将为所有即将到来的活动创建分配",
-  "total_schedules": "日程总数："
+  "total_schedules": "时间表总数：",
+  "tab_title": "生成器",
+  "results_title": "生成的计划",
+  "mode": "优化模式",
+  "run": "运行",
+  "status": {
+    "solving": "正在求解...",
+    "running": "正在运行...",
+    "completed": "已完成",
+    "failed": "失败"
+  }
 }

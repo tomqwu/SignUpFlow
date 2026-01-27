@@ -100,5 +100,14 @@ celerybeat-schedule.db
 celerybeat.pid
 celery-task-meta-*
 
+
 # Spec-kit / Claude Code local settings
 .claude/settings.local.json
+
+# Debug and Temporary Files
+mock_smtp_emails.json
+debug_*.py
+debug_*.txt
+test_*output*.txt
+__diffs__/
+tests/archived/

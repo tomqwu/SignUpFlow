@@ -22,6 +22,8 @@ def _get_engine() -> tuple[str, sessionmaker]:
     """
     db_url = os.getenv("DATABASE_URL", "sqlite:///./test_roster.db")
     connect_args = {"check_same_thread": False} if db_url.startswith("sqlite") else {}
+    if "mode=memory" in db_url or ":memory:" in db_url:
+        connect_args["uri"] = True
     if db_url.startswith("sqlite:///"):
         db_path = db_url.replace("sqlite:///", "", 1)
         if db_path.startswith("./"):
@@ -31,6 +33,7 @@ def _get_engine() -> tuple[str, sessionmaker]:
             # WAL/SHM cleanup removed to avoid interfering with running server
             pass
     engine = create_engine(db_url, connect_args=connect_args)
+    print(f"DEBUG: setup_test_data tables: {list(Base.metadata.tables.keys())}")
     Base.metadata.create_all(bind=engine)
     return db_url, sessionmaker(bind=engine, autoflush=False, autocommit=False)
 

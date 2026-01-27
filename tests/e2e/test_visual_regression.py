@@ -189,7 +189,7 @@ from tests.e2e.helpers import AppConfig, ApiTestClient, login_via_ui
 
 pytestmark = [
     pytest.mark.usefixtures("api_server"),
-    pytest.mark.skip(reason="Visual regression baseline snapshots not created - need to establish baseline images before enabling these tests")
+
 ]
 
 
@@ -253,7 +253,7 @@ def _provision_admin(api_client: ApiTestClient, name: str) -> Tuple[dict, dict]:
     return org, admin
 
 
-@pytest.mark.skip(reason="Visual regression baseline snapshots not created - need to establish baseline images before enabling these tests")
+
 def test_login_page_visual(page: Page, app_config: AppConfig) -> None:
     """
     Test login page visual appearance (full page + login form).
@@ -301,7 +301,7 @@ def test_login_page_visual(page: Page, app_config: AppConfig) -> None:
     _assert_snapshot(login_screen, "login-form.png")
 
 
-@pytest.mark.skip(reason="Visual regression baseline snapshots not created - need to establish baseline images before enabling these tests")
+
 def test_schedule_view_visual(
     page: Page,
     app_config: AppConfig,
@@ -371,7 +371,10 @@ def test_schedule_view_visual(
         page.goto(f"{app_config.app_url}/app/schedule", wait_until="networkidle")
 
     # Wait for schedule page to load
-    expect(page.locator('h2[data-i18n="schedule.my_schedule"]')).to_be_visible()
+    # Verify schedule view is visible
+    expect(page.locator("#schedule-view")).to_be_visible()
+    # Check for Overview card instead of non-existent header
+    expect(page.locator('[data-i18n="schedule.overview"]')).to_be_visible()
 
     _disable_animations(page)
 
@@ -387,7 +390,7 @@ def test_schedule_view_visual(
     _assert_snapshot(schedule_item, "schedule-event-card.png")
 
 
-@pytest.mark.skip(reason="Visual regression baseline snapshots not created - need to establish baseline images before enabling these tests")
+
 def test_admin_console_visual(
     page: Page,
     app_config: AppConfig,
@@ -465,7 +468,7 @@ def test_admin_console_visual(
             _assert_snapshot(admin_view, f"admin-{tab_key}-tab.png")
 
 
-@pytest.mark.skip(reason="Visual regression baseline snapshots not created - need to establish baseline images before enabling these tests")
+
 def test_settings_modal_visual(
     page: Page,
     app_config: AppConfig,
@@ -512,7 +515,7 @@ def test_settings_modal_visual(
     login_via_ui(page, app_config.app_url, admin["email"], admin["password"])
 
     # Click settings button (gear emoji)
-    settings_button = page.get_by_role("button", name="⚙️")
+    settings_button = page.locator('button.action-btn[onclick="showSettings()"]')
     expect(settings_button).to_be_visible()
     settings_button.click()
 

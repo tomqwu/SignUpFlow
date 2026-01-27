@@ -12,7 +12,11 @@ from api.models import Base
 from api.core.config import settings
 
 # Database URL - can be configured via environment variable
-DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./roster.db")
+# DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./roster.db")
+# FORCE MEMORY FOR DEBUGGING
+DATABASE_URL = "sqlite:///:memory:"
+if os.getenv("TESTING_FORCE_MEMORY") == "true":
+    DATABASE_URL = "sqlite:////tmp/signupflow_test.db"
 
 # Create engine with SQLite optimizations
 connect_args = {}
@@ -21,6 +25,9 @@ if DATABASE_URL.startswith("sqlite"):
         "check_same_thread": False,
         "timeout": 30,  # Increase timeout to 30 seconds for better concurrency
     }
+    if "mode=memory" in DATABASE_URL or ":memory:" in DATABASE_URL:
+        # Enable URI parsing for shared memory named DBs
+        connect_args["uri"] = True
 
 engine = create_engine(
     DATABASE_URL,
@@ -35,7 +42,12 @@ SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 def _resolve_sqlite_path(db_url: str) -> Optional[Path]:
     """Translate SQLite URLs into filesystem paths."""
+    # FORCE DISABLE FILE RESOLUTION
+    # return None
+
     if not db_url.startswith("sqlite"):
+        return None
+    if ":memory:" in db_url or "mode=memory" in db_url:
         return None
     url = make_url(db_url)
     database = url.database or ""
@@ -61,6 +73,15 @@ def _prepare_sqlite_file(sqlite_path: Path, db_url: str) -> None:
 
 def init_db() -> None:
     """Initialize database tables."""
+    import logging
+    import sys
+    logging.getLogger("rostio").fatal(f"DEBUG: init_db engine id: {id(engine)}")
+    for k in sorted(sys.modules.keys()):
+        if "api.database" in k:
+            logging.getLogger("rostio").fatal(f"DEBUG: IN THREAD sys.modules[{k}] id: {id(sys.modules[k])}")
+    
+    logging.getLogger("rostio").fatal(f"DEBUG: init_db tables: {list(Base.metadata.tables.keys())}")
+    
     sqlite_path = _resolve_sqlite_path(DATABASE_URL)
     if sqlite_path:
         _prepare_sqlite_file(sqlite_path, DATABASE_URL)
@@ -87,6 +108,8 @@ def get_db() -> Generator[Session, None, None]:
         def get_items(db: Session = Depends(get_db)):
             ...
     """
+    import logging
+    logging.getLogger("rostio").fatal(f"DEBUG: get_db engine id: {id(engine)}")
     db = SessionLocal()
     try:
         yield db

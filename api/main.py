@@ -256,6 +256,12 @@ async def serve_spa(full_path: str):
 
         return FileResponse(file_path, media_type=media_type)
 
+    # Special handling for admin console - DISABLED (Allow SPA to handle /app/admin)
+    # if full_path.startswith("app/admin"):
+    #     admin_index = os.path.join(frontend_path, "index-admin.html")
+    #     if os.path.exists(admin_index):
+    #         return FileResponse(admin_index)
+
     # Otherwise serve index.html (SPA fallback)
     index_path = os.path.join(frontend_path, "index.html")
     if os.path.exists(index_path):

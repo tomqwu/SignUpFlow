@@ -63,8 +63,10 @@ def test_complete_signup_and_login_workflow(
     page.locator('button[data-view="availability"]').click()
     expect(page.locator('[data-i18n="schedule.add_time_off"]')).to_be_visible()
 
-    # Navigate to events
-    page.locator('button[data-view="events"]').click()
+    # 3. Navigate tabs using strict selectors
+    # Verify we can click the Events tab (Admin console doesn't have 'schedule')
+    page.locator('button[data-tab="events"]').click()
+    expect(page.locator('#admin-tab-events')).to_be_visible()
     expect(page.locator('[data-i18n="events.title"]')).to_be_visible()
 
 
@@ -194,10 +196,10 @@ def test_admin_workflow_complete(
     expect(page.get_by_role("heading", name="Sunday Service")).to_be_visible(timeout=5000)
 
     # Go to schedule tab
-    page.locator('button[data-tab="schedule"]').click()
+    page.locator('button[data-tab="solver"]').click()
 
-    # Generate schedule (button has emoji prefix: 🔄 Generate Schedule)
-    page.locator('text="🔄 Generate Schedule"').click()
+    # Generate schedule (button has emoji prefix: ✨ Run Solver)
+    page.locator('button[data-i18n="solver.run"], button:has-text("Run Solver")').click()
 
     # Should see success message or schedule generated
     page.wait_for_timeout(2000)  # Wait for solver

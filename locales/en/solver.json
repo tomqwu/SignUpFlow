@@ -5,5 +5,15 @@
   "generate_first": "Generate a schedule to see the calendar",
   "loading_schedules": "Loading schedules...",
   "create_assignments_desc": "This will create assignments for all upcoming events",
-  "total_schedules": "Total Schedules:"
+  "total_schedules": "Total Schedules:",
+  "tab_title": "Solver",
+  "results_title": "Generated Schedule",
+  "mode": "Optimization Mode",
+  "run": "Run Solver",
+  "status": {
+    "solving": "Solving...",
+    "running": "Running...",
+    "completed": "Solver Completed",
+    "failed": "Solver Failed"
+  }
 }

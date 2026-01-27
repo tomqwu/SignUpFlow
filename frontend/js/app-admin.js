@@ -4,8 +4,20 @@ if (typeof API_BASE_URL === 'undefined') {
 }
 
 // State
+// State
 var currentOrg = null;
+var currentUser = null;
 var organizations = [];
+
+try {
+    const storedOrg = localStorage.getItem('currentOrg');
+    if (storedOrg) currentOrg = JSON.parse(storedOrg);
+
+    const storedUser = localStorage.getItem('currentUser');
+    if (storedUser) currentUser = JSON.parse(storedUser);
+} catch (e) {
+    console.warn('Failed to restore state from localStorage', e);
+}
 
 // Note: Using window.addSampleBadge() from sample-data-manager.js (loaded via script tag)
 
@@ -52,17 +64,71 @@ function loadTabData(tabName) {
             loadAdminTeams();
             populateOrgSelects();
             break;
+        case 'invitations':
+            loadInvitations();
+            populateOrgSelects();
+            break;
         case 'events':
             loadEvents();
             populateOrgSelects();
             break;
         case 'solver':
+        case 'schedule': // Verify this matches the tab name in index.html
             populateOrgSelects();
+            // detailed init for solver if needed
+            const today = new Date();
+            const nextMonth = new Date();
+            nextMonth.setMonth(nextMonth.getMonth() + 1);
+
+            const fromDateEl = document.getElementById('solve-from-date');
+            const toDateEl = document.getElementById('solve-to-date');
+
+            if (fromDateEl && !fromDateEl.value) fromDateEl.valueAsDate = today;
+            if (toDateEl && !toDateEl.value) toDateEl.valueAsDate = nextMonth;
             break;
         case 'solutions':
             loadSolutions();
             populateOrgSelects();
             break;
+        case 'analytics':
+            loadAnalytics();
+            break;
+        case 'solutions':
+            loadSolutions();
+            break;
+        case 'constraints':
+            loadConstraints();
+            break;
+    }
+}
+
+// Ensure populateOrgSelects updates the solver org id too
+function populateOrgSelects() {
+    const orgs = window.organizations || []; // Assuming global
+    const options = '<option value="">Select Organization</option>' +
+        orgs.map(o => `<option value="${o.id}">${o.name}</option>`).join('');
+
+    const selects = [
+        'events-org-filter',
+        'people-org-filter',
+        'teams-org-filter',
+        'solutions-org-filter',
+        // 'solve-org-id' is a hidden input, we set it differently or use a select if visible
+    ];
+
+    selects.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) {
+            const currentVal = el.value;
+            el.innerHTML = options;
+            if (currentVal) el.value = currentVal;
+        }
+    });
+
+    // Sync hidden solver org ID with the first available org if not set
+    const solveOrgInput = document.getElementById('solve-org-id');
+    if (solveOrgInput && orgs.length > 0 && !solveOrgInput.value) {
+        solveOrgInput.value = orgs[0].id; // Default to first
     }
 }
 
@@ -87,12 +153,26 @@ async function checkAPIStatus() {
 async function loadOrganizations() {
     const listEl = document.getElementById('organizations-list');
     try {
-        const response = await fetch(`${API_BASE_URL}/organizations/`);
+        const response = await authFetch(`${API_BASE_URL}/organizations/`);
+        if (!response.ok) throw new Error(`API Error: ${response.status}`);
         const data = await response.json();
-        organizations = data.organizations;
+        organizations = data.organizations || [];
 
         // Always populate org selects, even if no list element
         populateOrgSelects();
+
+        // One-time initialization of currentOrg to the first organization
+        // Also persist to localStorage for other scripts
+        if (organizations.length > 0) {
+            if (!currentOrg) {
+                currentOrg = organizations[0];
+            }
+            // Always update storage if currentOrg is valid (sync state)
+            if (currentOrg) {
+                localStorage.setItem('currentOrg', JSON.stringify(currentOrg));
+                console.log('Persisted currentOrg:', currentOrg);
+            }
+        }
 
         // Only update UI if list element exists
         if (!listEl) return;
@@ -684,8 +764,19 @@ async function createEvent(event) {
 async function solveSchedule(event) {
     event.preventDefault();
 
+    // Get org ID from hidden input or global filter or first org
+    let orgId = document.getElementById('solve-org-id').value;
+    if (!orgId && window.organizations && window.organizations.length > 0) {
+        orgId = window.organizations[0].id;
+    }
+
+    if (!orgId) {
+        showToast('Please create or select an organization first', 'error');
+        return;
+    }
+
     const data = {
-        org_id: document.getElementById('solve-org-id').value,
+        org_id: orgId,
         from_date: document.getElementById('solve-from-date').value,
         to_date: document.getElementById('solve-to-date').value,
         mode: document.getElementById('solve-mode').value,
@@ -693,10 +784,24 @@ async function solveSchedule(event) {
     };
 
     const resultsEl = document.getElementById('solve-results');
+    const statusEl = document.getElementById('solver-status');
     const metricsEl = document.getElementById('solution-metrics');
+    const btn = document.getElementById('run-solver-button');
 
-    resultsEl.classList.remove('hidden');
-    metricsEl.innerHTML = '<div class="loading">Solving schedule...</div>';
+    statusEl.classList.remove('hidden');
+    statusEl.innerHTML = '<span id="solver-running-indicator" class="loading-spinner"></span> <span data-i18n="solver.status.solving">Solving schedule... please wait.</span>';
+    statusEl.className = 'solver-status info';
+
+    // Disable button
+    if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = '<span class="loading-spinner"></span> Solving...';
+    }
+
+    // Clear previous
+    metricsEl.innerHTML = '';
+    document.getElementById('solver-results-body').innerHTML = '';
+    resultsEl.classList.add('hidden');
 
     try {
         const response = await authFetch(`${API_BASE_URL}/solver/solve`, {
@@ -707,13 +812,67 @@ async function solveSchedule(event) {
 
         if (response.ok) {
             const result = await response.json();
+            statusEl.innerHTML = '<span id="solver-success-message" data-i18n="solver.status.completed">Schedule generated successfully!</span>';
+            statusEl.className = 'solver-status success';
+            showToast('Schedule generated successfully!', 'success');
+
             displaySolutionMetrics(result);
+            await loadSolutionAssignments(result.solution_id);
+
+            resultsEl.classList.remove('hidden');
         } else {
             const error = await response.json();
-            metricsEl.innerHTML = `<div class="loading">Error: ${error.detail}</div>`;
+            statusEl.textContent = `Error: ${error.detail}`;
+            statusEl.className = 'solver-status error';
         }
     } catch (error) {
-        metricsEl.innerHTML = `<div class="loading">Error: ${error.message}</div>`;
+        statusEl.textContent = `Error: ${error.message}`;
+        statusEl.className = 'solver-status error';
+    } finally {
+        if (btn) {
+            btn.disabled = false;
+            btn.innerHTML = '<span class="btn-icon">✨</span> <span data-i18n="solver.run">Run Solver</span>';
+        }
+    }
+}
+
+async function loadSolutionAssignments(solutionId) {
+    const tbody = document.getElementById('solver-results-body');
+    tbody.innerHTML = '<tr><td colspan="6" class="loading">Loading assignments...</td></tr>';
+
+    try {
+        // We need to fetch assignments. The API might be /solutions/{id}/assignments or similar.
+        // Based on previous code in loadEvents, it seems to be supported.
+        const response = await authFetch(`${API_BASE_URL}/solutions/${solutionId}/assignments`);
+        if (!response.ok) throw new Error('Failed to load assignments');
+
+        const data = await response.json();
+        const assignments = data.assignments || [];
+
+        if (assignments.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="6" class="text-center">No assignments generated.</td></tr>';
+            return;
+        }
+
+        // Sort by date/time
+        assignments.sort((a, b) => new Date(a.event_start) - new Date(b.event_start));
+
+        tbody.innerHTML = assignments.map(a => `
+            <tr>
+                <td>${a.event_type || 'Event'}</td>
+                <td>${new Date(a.event_start).toLocaleDateString()}</td>
+                <td>${new Date(a.event_start).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</td>
+                <td><strong>${a.person_name}</strong></td>
+                <td><span class="badge badge-primary">${a.role}</span></td>
+                <td>
+                    <button class="btn btn-sm btn-secondary" onclick="alert('Edit implementation pending')">Edit</button>
+                </td>
+            </tr>
+        `).join('');
+
+    } catch (e) {
+        console.error(e);
+        tbody.innerHTML = `<tr><td colspan="6" class="error">Error loading assignments: ${e.message}</td></tr>`;
     }
 }
 
@@ -721,11 +880,11 @@ function displaySolutionMetrics(solution) {
     const metricsEl = document.getElementById('solution-metrics');
     const m = solution.metrics;
 
-    const healthClass = m.hard_violations === 0 ? 'success' : 'danger';
+    const healthClass = m.hard_violations === 0 ? 'metric-good' : 'metric-bad';
 
     metricsEl.innerHTML = `
         <div class="metric-grid">
-            <div class="metric-item ${healthClass}">
+            <div class="metric-item">
                 <div class="metric-value">${solution.assignment_count}</div>
                 <div class="metric-label">Assignments</div>
             </div>
@@ -733,7 +892,7 @@ function displaySolutionMetrics(solution) {
                 <div class="metric-value">${m.hard_violations}</div>
                 <div class="metric-label">Hard Violations</div>
             </div>
-            <div class="metric-item ${healthClass}">
+            <div class="metric-item">
                 <div class="metric-value">${m.health_score.toFixed(0)}</div>
                 <div class="metric-label">Health Score</div>
             </div>
@@ -742,12 +901,8 @@ function displaySolutionMetrics(solution) {
                 <div class="metric-label">Solve Time</div>
             </div>
         </div>
-        <p style="margin-top: 20px; text-align: center;">
-            <strong>Solution ID: ${solution.solution_id}</strong><br>
-            ${solution.message}
-        </p>
-        <div style="margin-top: 20px; text-align: center;">
-            <button class="btn btn-primary" onclick="switchTab('solutions')">View Solutions →</button>
+        <div class="solution-message">
+            ${solution.message} (ID: ${solution.solution_id})
         </div>
     `;
 }
@@ -796,19 +951,4 @@ async function loadSolutions() {
 
 async function viewSolutionDetails(solutionId) {
     console.log('View solution details', solutionId);
-}
-
-function populateOrgSelects() {
-    const selects = document.querySelectorAll('select[id$="-org-filter"], select[id$="-org-id"]');
-    selects.forEach(select => {
-        const currentVal = select.value;
-        select.innerHTML = '<option value="">Select Organization...</option>' +
-            organizations.map(org => `<option value="${org.id}">${org.name}</option>`).join('');
-
-        if (currentVal && organizations.find(o => o.id === currentVal)) {
-            select.value = currentVal;
-        } else if (organizations.length > 0 && !select.value) {
-            // Optional: Default to first org
-        }
-    });
 }

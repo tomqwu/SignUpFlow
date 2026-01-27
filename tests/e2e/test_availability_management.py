@@ -263,10 +263,13 @@ def test_view_availability_calendar(
     app_config: AppConfig,
     api_client: ApiTestClient,
 ):
+    """
+    Test viewing the availability calendar.
+
+    Verifies that a user can access the availability calendar view and see
+    time-off requests or availability status.
+    """
     print("TEST STARTED: test_view_availability_calendar")
-    """
-    Test viewing availability in calendar format.
-    """
     # 1. Setup: Create volunteer user
     org = api_client.create_org(name="Test Org Calendar")
     volunteer = api_client.create_user(

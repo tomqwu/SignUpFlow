@@ -1,0 +1,151 @@
+/* Solver UI Styles */
+.solver-panel {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.solver-form .form-row {
+    display: flex;
+    gap: 1.5rem;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    margin-bottom: 1.5rem;
+}
+
+.solver-form .form-group {
+    flex: 1;
+    min-width: 200px;
+}
+
+.solver-form label {
+    display: block;
+    font-weight: 500;
+    margin-bottom: 0.5rem;
+    color: #475569;
+}
+
+.solver-form input,
+.solver-form select {
+    width: 100%;
+    padding: 0.6rem 0.75rem;
+    border: 1px solid #cbd5e1;
+    border-radius: 6px;
+    font-size: 0.95rem;
+    line-height: 1.5;
+}
+
+.solver-controls {
+    display: flex;
+    justify-content: flex-end;
+}
+
+/* Status & Metrics */
+.solver-status {
+    padding: 1rem;
+    border-radius: 6px;
+    margin-bottom: 1.5rem;
+    font-weight: 500;
+    text-align: center;
+}
+
+.solver-status.info {
+    background: #eff6ff;
+    color: #1e40af;
+    border: 1px solid #bfdbfe;
+}
+
+.solver-status.success {
+    background: #f0fdf4;
+    color: #166534;
+    border: 1px solid #bbf7d0;
+}
+
+.solver-status.error {
+    background: #fef2f2;
+    color: #991b1b;
+    border: 1px solid #fecaca;
+}
+
+.solution-metrics {
+    margin-bottom: 2rem;
+}
+
+.metric-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.metric-item {
+    background: white;
+    padding: 1rem;
+    border-radius: 8px;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+    border: 1px solid #e2e8f0;
+    text-align: center;
+}
+
+.metric-item.metric-good {
+    border-top: 4px solid #22c55e;
+}
+
+.metric-item.metric-bad {
+    border-top: 4px solid #ef4444;
+}
+
+.metric-value {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #0f172a;
+}
+
+.metric-label {
+    font-size: 0.8rem;
+    color: #64748b;
+    margin-top: 0.25rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.solution-message {
+    text-align: center;
+    color: #64748b;
+    font-size: 0.9rem;
+    font-style: italic;
+}
+
+/* Results Table */
+.solver-results {
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+    border: 1px solid #e2e8f0;
+}
+
+.solver-results h4 {
+    margin-top: 0;
+    margin-bottom: 1rem;
+    color: #1e293b;
+    font-size: 1.1rem;
+}
+
+.loading-spinner {
+    display: inline-block;
+    width: 1rem;
+    height: 1rem;
+    border: 2px solid currentColor;
+    border-radius: 50%;
+    border-right-color: transparent;
+    animation: spin 0.75s linear infinite;
+    vertical-align: text-bottom;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}

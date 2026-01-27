@@ -38,12 +38,13 @@ class TestAuthenticationMocking:
 
         assert "admin" in mock_user.roles, "Mock user should have admin role to allow unit tests to pass"
 
+
     def test_protected_endpoint_accessible_without_jwt(self):
         """Verify protected endpoints are accessible without JWT tokens in tests."""
         client = TestClient(app)
 
-        # Use the overridden get_db to access test database
-        db_gen = app.dependency_overrides[get_db]()
+        # Use get_db directly (it uses patched SessionLocal)
+        db_gen = get_db()
         db = next(db_gen)
 
         # Create test org
@@ -106,26 +107,27 @@ class TestDatabaseOverride:
         """Verify tests use test database, not production database."""
         from api.database import get_db
 
-        # Get database session
-        db = next(app.dependency_overrides[get_db]())
+        # Get database session directly
+        db = next(get_db())
 
         # Check that it's a test database session
         # We can verify by checking the connection URL
-        assert "test_roster_e2e.db" in str(db.bind.url)
+        # Note: In-memory DB URL might be sqlite:////tmp/signupflow_test.db or similar
+        assert "signupflow_test.db" in str(db.bind.url) or ":memory:" in str(db.bind.url)
 
     def test_database_session_can_be_created(self):
         """Verify database session can be created from override."""
         from api.database import get_db
 
         # Get database session
-        db_generator = app.dependency_overrides[get_db]()
+        db_generator = get_db()
         db = next(db_generator)
 
         # Session should be active
         assert db.is_active
 
         # Session should use test database
-        assert "test_roster_e2e.db" in str(db.bind.url)
+        assert "signupflow_test.db" in str(db.bind.url) or ":memory:" in str(db.bind.url)
 
         db.close()
 
@@ -134,7 +136,7 @@ class TestDatabaseOverride:
         from api.database import get_db
         from sqlalchemy import inspect
 
-        db = next(app.dependency_overrides[get_db]())
+        db = next(get_db())
         inspector = inspect(db.bind)
         tables = inspector.get_table_names()
 
@@ -161,10 +163,12 @@ class TestDependencyOverrideCleanup:
         from api.dependencies import get_current_admin_user, get_current_user
         from api.database import get_db
 
-        # All three dependencies should be overridden
-        assert get_db in app.dependency_overrides
+        # Auth dependencies should be overridden
         assert get_current_admin_user in app.dependency_overrides
         assert get_current_user in app.dependency_overrides
+        
+        # DB dependence is NOT overridden (it's patched at lower level)
+        # assert get_db in app.dependency_overrides # Removed assertion
 
     def test_monkey_patching_is_active(self):
         """Verify that verify_org_member is monkey-patched."""
@@ -195,7 +199,8 @@ class TestMockingIntegration:
     def test_create_resource_without_auth_header(self):
         """Verify we can create resources without Authorization header."""
         client = TestClient(app)
-        db_gen = app.dependency_overrides[get_db]()
+        # Use get_db directly
+        db_gen = get_db()
         db = next(db_gen)
 
         # Create org first
@@ -220,10 +225,11 @@ class TestMockingIntegration:
         db.commit()
         db.close()
 
+
     def test_update_resource_without_auth_header(self):
         """Verify we can update resources without Authorization header."""
         client = TestClient(app)
-        db_gen = app.dependency_overrides[get_db]()
+        db_gen = get_db()
         db = next(db_gen)
 
         # Create test data
@@ -258,7 +264,7 @@ class TestMockingIntegration:
     def test_delete_resource_without_auth_header(self):
         """Verify we can delete resources without Authorization header."""
         client = TestClient(app)
-        db_gen = app.dependency_overrides[get_db]()
+        db_gen = get_db()
         db = next(db_gen)
 
         # Create test data

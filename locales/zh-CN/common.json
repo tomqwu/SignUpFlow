@@ -52,7 +52,9 @@
     "organization": "组织",
     "from_date": "开始日期",
     "to_date": "结束日期",
-    "full_name": "全名"
+    "full_name": "全名",
+    "volunteer": "志愿者",
+    "actions": "操作"
   },
   "your_context": "📍 我的信息",
   "edit_profile": "编辑资料 →",

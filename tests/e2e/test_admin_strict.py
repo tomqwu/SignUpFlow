@@ -1,3 +1,4 @@
+"""Strict tests for admin console functionality and UI elements."""
 import os
 import pytest
 from playwright.sync_api import Page, expect
@@ -56,12 +57,16 @@ def admin_page(
 
 def test_admin_tabs_strict(admin_page: Page):
     """Strictly verify all admin tabs exist and are clickable."""
-    # Updated to match actual tabs in index.html
-    tabs = ["events", "roles", "schedule", "people", "reports", "teams"]
+    # 3. Verify tabs exist (Admin View in User App)
+    # Tabs found in index.html: events, roles, solver, people, reports, teams
+    tabs = ["events", "roles", "solver", "people", "reports", "teams"]
     
     for tab in tabs:
         btn = admin_page.locator(f'button[data-tab="{tab}"]')
         expect(btn).to_be_visible()
+        
+    # Verify we are on default tab (likely organizations or events) or can switch
+    # We don't enforce which one is active initially, just that they exist
         expect(btn).to_be_enabled()
 
 def test_people_tab_strict(admin_page: Page):

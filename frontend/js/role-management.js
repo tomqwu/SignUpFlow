@@ -16,6 +16,10 @@ const DEFAULT_ROLES = [
 // Load roles from organization config
 async function loadOrgRoles() {
     try {
+        if (!currentUser || !currentUser.org_id) {
+            console.warn('No current user or org ID, skipping role load');
+            return DEFAULT_ROLES;
+        }
         const response = await authFetch(`${API_BASE_URL}/organizations/${currentUser.org_id}`);
 
         if (response.status === 404) {

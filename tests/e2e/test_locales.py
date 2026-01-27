@@ -1,3 +1,4 @@
+"""Tests for verifying locale keys exist in translation files."""
 import pytest
 import json
 import os

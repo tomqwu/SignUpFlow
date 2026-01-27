@@ -154,23 +154,33 @@ def test_mobile_schedule_view(
     import time
 
     org = api_client.create_org()
+
+    # Create admin user first (to ensure they have admin rights and subsequent users don't auto-get it)
+    admin = api_client.create_user(
+        org_id=org["id"],
+        name="Admin User",
+        roles=["admin"],
+    )
+    admin_token = admin.get("token")
+
+    # Create volunteer user
     user = api_client.create_user(
         org_id=org["id"],
         name="Schedule User",
         roles=["volunteer"],
     )
     session = api_client.login(email=user["email"], password=user["password"])
-    user_token = user.get("token") or session.get("token")
+    # user_token = user.get("token") or session.get("token") # Not needed for assignment anymore
     person_id = user.get("person_id") or session.get("person_id")
 
-    # Create event and assignment using token from user creation
+    # Create event and assignment using admin token
     event_time = (datetime.now() + timedelta(days=1)).isoformat()
     event_id = f"event_mobile_{int(time.time())}"
 
     import requests
     event_response = requests.post(
         f"{app_config.app_url}/api/events/",  # Trailing slash, no query param
-        headers={"Authorization": f"Bearer {user_token}"},
+        headers={"Authorization": f"Bearer {admin_token}"},
         json={
             "id": event_id,
             "org_id": org["id"],  # org_id in JSON body, not query param
@@ -181,16 +191,17 @@ def test_mobile_schedule_view(
     )
     assert event_response.status_code == 201, f"Failed to create event: {event_response.text}"
 
-    # Assign user to event
-    requests.post(
+    # Assign user to event using admin token
+    response = requests.post(
         f"{app_config.app_url}/api/events/{event_id}/assignments",
         json={
             "person_id": person_id,
             "action": "assign",
             "role": "usher"
         },
-        headers={"Authorization": f"Bearer {user_token}"}
+        headers={"Authorization": f"Bearer {admin_token}"}
     )
+    assert response.status_code in (200, 201), f"Assignment failed: {response.status_code} {response.text}"
 
     # Login through UI (proper way - not localStorage)
     page.goto(f"{app_config.app_url}/login")
