@@ -40,20 +40,30 @@ def test_get_onboarding_progress_creates_if_not_exists(db: Session):
         db.commit()
 
     # Create the mocked admin user
-    user = create_test_user(db, "test_org", roles=["admin"], email="admin@test.com")
-    # Override the ID to match what the mock returns
-    user.id = "test_admin"
-    db.merge(user)
-    db.commit()
+    user = db.query(Person).filter(Person.id == "test_admin").first()
+    if not user:
+        user = create_test_user(db, "test_org", roles=["admin"], email="admin@test.com")
+        # Override the ID to match what the mock returns
+        user.id = "test_admin"
+        db.merge(user)
+        db.commit()
 
     # Delete any existing onboarding progress
     db.query(OnboardingProgress).filter(OnboardingProgress.person_id == "test_admin").delete()
     db.commit()
 
-    # Get onboarding progress (auth is mocked, no need for real login)
+    # Get auth token
+    login_response = client.post("/api/auth/login", json={
+        "email": user.email,
+        "password": "password"  # Password used in seeded test_admin
+    })
+    assert login_response.status_code == 200
+    token = login_response.json()["token"]
+
+    # Get onboarding progress
     response = client.get(
         "/api/onboarding/progress",
-        headers={"Authorization": "Bearer fake_token"}  # Token is ignored due to mock
+        headers={"Authorization": f"Bearer {token}"}
     )
 
     assert response.status_code == 200

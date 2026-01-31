@@ -8,6 +8,7 @@ import threading
 import shutil
 import asyncio
 import logging
+import uuid
 from typing import Generator, AsyncGenerator
 from unittest.mock import MagicMock, patch
 
@@ -311,6 +312,56 @@ def api_server(app_config: AppConfig, setup_test_database):
 # -----------------------------------------------------------------------------
 # Testing Utility Fixtures (Isolation & Clients)
 # -----------------------------------------------------------------------------
+
+def create_test_org(db: Session, org_id: str = None, name: str = None) -> Organization:
+    """Helper to create a test organization directly in DB."""
+    if not org_id:
+        org_id = f"org_{uuid.uuid4().hex[:8]}"
+    org = Organization(
+        id=org_id,
+        name=name or f"Test Org {org_id}",
+        region="US",
+        config={}
+    )
+    db.add(org)
+    db.commit()
+    return org
+
+
+def create_test_user(
+    db: Session, 
+    org_id: str, 
+    roles: list = None, 
+    email: str = None, 
+    password: str = None
+) -> Person:
+    """Helper to create a test user directly in DB."""
+    if not email:
+        email = f"user_{uuid.uuid4().hex[:8]}@test.com"
+    user = Person(
+        id=f"person_{uuid.uuid4().hex[:8]}",
+        org_id=org_id,
+        name="Test User",
+        email=email,
+        password_hash=hash_password(password or "TestPassword123!"),
+        roles=roles or ["volunteer"],
+        status="active"
+    )
+    db.add(user)
+    db.commit()
+    return user
+
+
+@pytest.fixture(scope="function")
+def db(setup_test_database):
+    """Provides a transactional database session for tests."""
+    from api.database import SessionLocal
+    session = SessionLocal()
+    try:
+        yield session
+    finally:
+        session.close()
+
 
 @pytest.fixture(scope="function", autouse=True)
 def reset_database_between_tests(request, setup_test_database):
