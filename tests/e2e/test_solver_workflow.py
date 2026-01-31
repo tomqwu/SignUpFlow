@@ -490,7 +490,7 @@ def test_solver_conflict_resolution(admin_login: Page):
             const currentOrg = JSON.parse(localStorage.getItem('currentOrg'));
 
             // Create person
-            const personResponse = await fetch('http://localhost:8000/api/people/', {{
+            const personResponse = await fetch('/api/people/', {{
                 method: 'POST',
                 headers: {{
                     'Content-Type': 'application/json',
@@ -507,7 +507,7 @@ def test_solver_conflict_resolution(admin_login: Page):
             const person = await personResponse.json();
 
             // Add time-off for this person
-            await fetch('http://localhost:8000/api/availability/', {{
+            await fetch('/api/availability/', {{
                 method: 'POST',
                 headers: {{
                     'Content-Type': 'application/json',
@@ -617,7 +617,7 @@ def test_solver_with_different_constraint_priorities(admin_login: Page):
                 const authToken = localStorage.getItem('authToken');
                 const currentOrg = JSON.parse(localStorage.getItem('currentOrg'));
 
-                await fetch('http://localhost:8000/api/constraints/', {{
+                await fetch('/api/constraints/', {{
                     method: 'POST',
                     headers: {{
                         'Content-Type': 'application/json',

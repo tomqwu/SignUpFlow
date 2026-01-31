@@ -12,9 +12,9 @@ from api.models import Base
 from api.core.config import settings
 
 # Database URL - can be configured via environment variable
-# DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./roster.db")
+DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./roster.db")
 # FORCE MEMORY FOR DEBUGGING
-DATABASE_URL = "sqlite:///:memory:"
+# DATABASE_URL = "sqlite:///:memory:"
 if os.getenv("TESTING_FORCE_MEMORY") == "true":
     DATABASE_URL = "sqlite:////tmp/signupflow_test.db"
 

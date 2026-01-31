@@ -6,7 +6,19 @@ async function loadAnalytics() {
     if (!container) return;
 
     // Get filter values
-    const daysFilter = document.getElementById('date-range-filter')?.value || '30';
+    const daysFilterEl = document.getElementById('date-range-filter');
+    const daysFilter = daysFilterEl?.value || '30';
+    
+    // Toggle custom date inputs visibility
+    const customDateInputs = document.getElementById('custom-date-inputs');
+    if (customDateInputs) {
+        if (daysFilter === 'custom') {
+            customDateInputs.classList.remove('hidden');
+        } else {
+            customDateInputs.classList.add('hidden');
+        }
+    }
+
     // Note: API doesn't support team/person filters yet in spec, but valid mocks would
 
     // Show loading state if it's the first load or explicit refresh (optional optimization)
@@ -39,9 +51,37 @@ async function loadAnalytics() {
     }
 }
 
-function populateAnalyticsFilters() {
+async function populateAnalyticsFilters() {
     // Populate team/person selects if empty
     // This assumes specific selectors exist in HTML: #filter-team, #filter-person
+    const teamSelect = document.getElementById('filter-team');
+    const personSelect = document.getElementById('filter-person');
+
+    if (teamSelect && teamSelect.options.length <= 1) {
+        try {
+            const response = await authFetch(`${API_BASE_URL}/teams/?org_id=${currentOrg.id}`);
+            const data = await response.json();
+            if (data.teams) {
+                const options = data.teams.map(t => `<option value="${t.id}">${t.name}</option>`).join('');
+                teamSelect.innerHTML += options;
+            }
+        } catch (e) {
+            console.warn('Failed to load teams for filter', e);
+        }
+    }
+
+    if (personSelect && personSelect.options.length <= 1) {
+        try {
+            const response = await authFetch(`${API_BASE_URL}/people/?org_id=${currentOrg.id}`);
+            const data = await response.json();
+            if (data.people) {
+                const options = data.people.map(p => `<option value="${p.id}">${p.name}</option>`).join('');
+                personSelect.innerHTML += options;
+            }
+        } catch (e) {
+            console.warn('Failed to load people for filter', e);
+        }
+    }
 }
 
 function renderAnalyticsDashboard(container, stats, health, burnout) {
@@ -49,22 +89,22 @@ function renderAnalyticsDashboard(container, stats, health, burnout) {
         <!-- Top Stats Cards -->
         <div class="stats-grid">
             <div class="stat-card">
-                <div class="stat-title">Total Volunteers</div>
+                <div class="stat-title">Total Volunteers:</div>
                 <div class="stat-value" id="total-volunteers">${stats.total_volunteers}</div>
                 <div class="stat-subtitle">All time</div>
             </div>
             <div class="stat-card">
-                <div class="stat-title">Active Volunteers</div>
+                <div class="stat-title">Active Volunteers:</div>
                 <div class="stat-value">${stats.active_volunteers}</div>
                 <div class="stat-subtitle">with assignments</div>
             </div>
             <div class="stat-card">
-                <div class="stat-title">Participation Rate</div>
+                <div class="stat-title">Participation Rate:</div>
                 <div class="stat-value">${stats.participation_rate}%</div>
                 <div class="stat-subtitle">engagement</div>
             </div>
             <div class="stat-card">
-                <div class="stat-title">Total Assignments</div>
+                <div class="stat-title">Total Assignments:</div>
                 <div class="stat-value" id="total-assignments">${stats.total_assignments}</div>
                 <div class="stat-subtitle">in period</div>
             </div>
@@ -99,19 +139,19 @@ function renderAnalyticsDashboard(container, stats, health, burnout) {
                 <h3>Schedule Health</h3>
                 <div class="health-metrics">
                     <div class="metric-row">
-                        <span class="metric-label">Upcoming Events</span>
+                        <span class="metric-label">Upcoming Events:</span>
                         <span id="upcoming-events" class="metric-value">${health.upcoming_events}</span>
                     </div>
                      <div class="metric-row">
-                        <span class="metric-label">Events with Assignments</span>
+                        <span class="metric-label">Events with Assignments:</span>
                         <span id="events-with-assignments" class="metric-value">${health.events_with_assignments}</span>
                     </div>
                     <div class="metric-row">
-                        <span class="metric-label">Coverage Rate</span>
+                        <span class="metric-label">Coverage Rate:</span>
                         <span id="coverage-rate" class="metric-value">${health.coverage_rate}%</span>
                     </div>
                     <div class="metric-row">
-                        <span class="metric-label">Latest Solution Health</span>
+                        <span class="metric-label">Latest Solution Health:</span>
                         <span id="health-score" class="metric-value">${health.latest_solution ? health.latest_solution.health_score : 'N/A'}</span>
                     </div>
                 </div>
@@ -147,19 +187,19 @@ function renderAnalyticsDashboard(container, stats, health, burnout) {
             <div class="card" id="fairness-metrics">
                 <h3>Fairness Metrics</h3>
                 <div class="metric-row">
-                    <span class="metric-label">Gini Coefficient</span>
+                    <span class="metric-label">Gini Coefficient:</span>
                     <span id="gini-coefficient" class="metric-value">0.15</span>
                 </div>
                  <div class="metric-row">
-                    <span class="metric-label">Max Assignments</span>
+                    <span class="metric-label">Max Assignments:</span>
                     <span id="max-assignments" class="metric-value">5</span>
                 </div>
                  <div class="metric-row">
-                    <span class="metric-label">Min Assignments</span>
+                    <span class="metric-label">Min Assignments:</span>
                     <span id="min-assignments" class="metric-value">1</span>
                 </div>
                  <div class="metric-row">
-                    <span class="metric-label">Avg Assignments</span>
+                    <span class="metric-label">Avg Assignments:</span>
                     <span id="avg-assignments" class="metric-value">2.4</span>
                 </div>
             </div>

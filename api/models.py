@@ -566,6 +566,8 @@ class Assignment(Base):
     event_id = Column(String, ForeignKey("events.id"), nullable=False)
     person_id = Column(String, ForeignKey("people.id"), nullable=False)
     role = Column(String, nullable=True)  # Event-specific role (e.g., "usher", "greeter", "sound_tech")
+    status = Column(String, default="confirmed", nullable=False)  # confirmed, declined, swap_requested
+    decline_reason = Column(String, nullable=True)
     assigned_at = Column(DateTime, default=datetime.utcnow)
 
     # Relationships

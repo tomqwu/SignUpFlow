@@ -458,7 +458,7 @@ def test_auto_detect_overlapping_assignments(admin_login: Page):
     page.wait_for_timeout(1000)
 
     # Navigate to Events tab
-    page.goto("http://localhost:8000/app/admin#events")
+    page.goto("/app/admin#events")
     page.wait_for_timeout(1000)
 
     events_tab = page.locator('button:has-text("Events"), [data-i18n*="events"]')

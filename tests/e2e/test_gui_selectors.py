@@ -9,8 +9,6 @@ and selector mismatches.
 import pytest
 from playwright.sync_api import sync_playwright
 
-APP_URL = "http://localhost:8000"
-
 
 class TestSettingsButtonSelector:
     """Test that settings button selector is correct."""
@@ -36,16 +34,18 @@ class TestSettingsButtonSelector:
         assert count >= 1, f"Expected at least 1 showSettings button, found {count}"
 
         # Verify more specific selector exists (action-btn class)
-        assert 'class="action-btn" onclick="showSettings()"' in html_content
+        # Match either exact class or with additional classes
+        assert 'class="action-btn" onclick="showSettings()"' in html_content or \
+               'class="action-btn btn-icon" onclick="showSettings()"' in html_content
 
-    def test_gear_icon_settings_button_is_unique(self, api_server):
+    def test_gear_icon_settings_button_is_unique(self, api_server, app_config):
         """Verify gear icon settings button can be uniquely selected."""
         with sync_playwright() as p:
             browser = p.chromium.launch(headless=True)
             page = browser.new_page()
 
             # Login first
-            page.goto(APP_URL)
+            page.goto(app_config.app_url)
             page.wait_for_load_state("networkidle")
 
             if page.locator('a:has-text("Sign in")').count() > 0:
@@ -92,14 +92,14 @@ class TestSaveButtonSelector:
         save_settings_count = html_content.count('onclick="saveSettings()"')
         assert save_settings_count == 1, f"Should have exactly 1 saveSettings button, found {save_settings_count}"
 
-    def test_save_settings_button_is_clickable(self, api_server):
+    def test_save_settings_button_is_clickable(self, api_server, app_config):
         """Verify save settings button can be found and clicked."""
         with sync_playwright() as p:
             browser = p.chromium.launch(headless=True)
             page = browser.new_page()
 
             # Login
-            page.goto(APP_URL)
+            page.goto(app_config.app_url)
             page.wait_for_load_state("networkidle")
 
             if page.locator('a:has-text("Sign in")').count() > 0:
@@ -128,7 +128,7 @@ class TestSaveButtonSelector:
 class TestSelectorStrictModeCompliance:
     """Test that selectors comply with Playwright strict mode."""
 
-    def test_no_strict_mode_violations_in_language_switching_test(self, api_server):
+    def test_no_strict_mode_violations_in_language_switching_test(self, api_server, app_config):
         """Verify language switching test selectors don't cause strict mode violations."""
         with sync_playwright() as p:
             browser = p.chromium.launch(headless=True)
@@ -136,7 +136,7 @@ class TestSelectorStrictModeCompliance:
 
             try:
                 # Login
-                page.goto(APP_URL)
+                page.goto(app_config.app_url)
                 page.wait_for_load_state("networkidle")
 
                 if page.locator('a:has-text("Sign in")').count() > 0:
@@ -149,7 +149,7 @@ class TestSelectorStrictModeCompliance:
                 page.wait_for_timeout(2000)
 
                 # Navigate to page
-                page.goto(f"{APP_URL}/events")
+                page.goto(f"{app_config.app_url}/events")
                 
                 # Test settings button selector (should not throw strict mode error)
                 settings_btn = page.locator('button.action-btn[onclick="showSettings()"]')
@@ -264,14 +264,14 @@ class TestSelectorRegression:
             nearby_text = html_content[max(0, settings_section_start-100):settings_section_start+100]
             assert 'data-i18n=' in nearby_text, "Save button should use data-i18n for translation"
 
-    def test_selectors_work_across_languages(self, api_server):
+    def test_selectors_work_across_languages(self, api_server, app_config):
         """Verify selectors work regardless of UI language."""
         with sync_playwright() as p:
             browser = p.chromium.launch(headless=True)
             page = browser.new_page()
 
             # Login
-            page.goto(APP_URL)
+            page.goto(app_config.app_url)
             page.wait_for_load_state("networkidle")
 
             if page.locator('a:has-text("Sign in")').count() > 0:

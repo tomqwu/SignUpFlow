@@ -285,7 +285,7 @@ def test_compare_solutions(admin_login: Page):
                 const authToken = localStorage.getItem('authToken');
                 const currentOrg = JSON.parse(localStorage.getItem('currentOrg'));
 
-                await fetch('http://localhost:8000/api/solutions/', {{
+                await fetch('/api/solutions/', {{
                     method: 'POST',
                     headers: {{
                         'Content-Type': 'application/json',
@@ -366,7 +366,7 @@ def test_rollback_to_previous_solution(admin_login: Page):
             const authToken = localStorage.getItem('authToken');
             const currentOrg = JSON.parse(localStorage.getItem('currentOrg'));
 
-            const solutionResponse = await fetch('http://localhost:8000/api/solutions/', {
+            const solutionResponse = await fetch('/api/solutions/', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -458,7 +458,7 @@ def test_delete_solution(admin_login: Page):
             const authToken = localStorage.getItem('authToken');
             const currentOrg = JSON.parse(localStorage.getItem('currentOrg'));
 
-            await fetch('http://localhost:8000/api/solutions/', {{
+            await fetch('/api/solutions/', {{
                 method: 'POST',
                 headers: {{
                     'Content-Type': 'application/json',
@@ -544,7 +544,7 @@ def test_view_solution_metadata(admin_login: Page):
             const authToken = localStorage.getItem('authToken');
             const currentOrg = JSON.parse(localStorage.getItem('currentOrg'));
 
-            const solutionResponse = await fetch('http://localhost:8000/api/solutions/', {
+            const solutionResponse = await fetch('/api/solutions/', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

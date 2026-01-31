@@ -50,7 +50,7 @@ check_prerequisite() {
 echo -e "${BLUE}━━━ Step 1: System Requirements ━━━${NC}"
 check_prerequisite \
     "Python 3.10+" \
-    "python3 --version | grep -E 'Python 3\.(10|11|12|13)'" \
+    "python3 --version | grep -E 'Python 3\.(10|11|12|13|14)'" \
     "Install Python 3.10+: sudo apt-get install python3"
 
 # Check Poetry
@@ -64,14 +64,17 @@ echo ""
 echo -e "${BLUE}━━━ Step 2: Redis (REQUIRED for Celery) ━━━${NC}"
 if ! command -v redis-cli &> /dev/null; then
     echo -e "${RED}${CROSS} Redis CLI not found${NC}"
-    echo -e "${YELLOW}Installing Redis...${NC}"
-
-    sudo apt-get update -qq
-    sudo apt-get install -y redis-server
-
-    # Start Redis
-    sudo systemctl start redis-server
-    sudo systemctl enable redis-server
+    if [[ "$OSTYPE" == "darwin"* ]]; then
+        echo -e "${YELLOW}Installing Redis via brew...${NC}"
+        brew install redis
+        brew services start redis
+    else
+        echo -e "${YELLOW}Installing Redis...${NC}"
+        sudo apt-get update -qq
+        sudo apt-get install -y redis-server
+        sudo systemctl start redis-server
+        sudo systemctl enable redis-server
+    fi
 
     echo -e "${GREEN}${CHECK} Redis installed and started${NC}"
 fi
@@ -81,13 +84,17 @@ if redis-cli ping | grep -q "PONG"; then
     echo -e "${GREEN}${CHECK} Redis is running${NC}"
 else
     echo -e "${YELLOW}${WARN} Redis not running, attempting to start...${NC}"
-    sudo systemctl start redis-server
+    if [[ "$OSTYPE" == "darwin"* ]]; then
+        brew services start redis
+    else
+        sudo systemctl start redis-server
+    fi
 
     if redis-cli ping | grep -q "PONG"; then
         echo -e "${GREEN}${CHECK} Redis started successfully${NC}"
     else
         echo -e "${RED}${CROSS} Failed to start Redis${NC}"
-        echo -e "${YELLOW}Manual fix: sudo systemctl start redis-server${NC}"
+        echo -e "${YELLOW}Manual fix: brew services start redis (macOS) or sudo systemctl start redis-server (Linux)${NC}"
         ALL_PASSED=false
     fi
 fi
@@ -95,7 +102,9 @@ fi
 # Check dependencies
 echo ""
 echo -e "${BLUE}━━━ Step 3: Python Dependencies ━━━${NC}"
-cd /home/ubuntu/SignUpFlow
+# Use current directory instead of hardcoded path
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
+cd "$SCRIPT_DIR/.."
 
 if [ ! -d ".venv" ]; then
     echo -e "${YELLOW}${WARN} Virtual environment not found, installing dependencies...${NC}"

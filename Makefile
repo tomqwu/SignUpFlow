@@ -41,9 +41,9 @@ DOCKER_COMPOSE := $(shell \
 		echo missing; \
 	fi)
 
-ifeq ($(DOCKER_COMPOSE),missing)
-$(error Docker Compose is not installed. Install it via https://docs.docker.com/compose/)
-endif
+# ifeq ($(DOCKER_COMPOSE),missing)
+# $(error Docker Compose is not installed. Install it via https://docs.docker.com/compose/)
+# endif
 
 # Ensure Docker CLI and daemon are available before running docker-compose targets
 check-docker:

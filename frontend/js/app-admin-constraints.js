@@ -7,10 +7,21 @@ let loadedConstraints = [];
 async function loadConstraints() {
     console.log('loadConstraints called');
     const listEl = document.getElementById('constraints-list');
+    
+    // Debug: Check if currentOrg is available
+    console.log('loadConstraints currentOrg:', currentOrg);
 
     if (!currentOrg) {
-        listEl.innerHTML = '<div class="loading">Please select an organization first.</div>';
-        return;
+        // Try to recover from localStorage if possible (redundant but safe)
+        try {
+            const stored = localStorage.getItem('currentOrg');
+            if (stored) currentOrg = JSON.parse(stored);
+        } catch (e) { console.error(e); }
+        
+        if (!currentOrg) {
+            listEl.innerHTML = '<div class="loading">Please select an organization first.</div>';
+            return;
+        }
     }
 
     try {
@@ -160,23 +171,11 @@ async function deleteConstraint(key) {
     }
 }
 
-function toggleConstraint(key) {
-    // Optimistic toggle
-    const c = loadedConstraints.find(x => x.key === key);
-    if (c) {
-        c.params = c.params || {};
-        c.params.active = !c.params.active;
-        // In real app, verify with backend save
-        // For now, allow UI to reflect state
-
-        // Update styling
-        const card = document.querySelector(`[data-constraint-id="${key}"]`);
-        if (card) {
-            if (c.params.active) {
-                // remove inactive class
-            } else {
-                // add inactive class
-            }
-        }
-    }
-}
+// Expose functions to window
+exposeToWindow('loadConstraints', loadConstraints);
+exposeToWindow('showAddConstraintModal', showAddConstraintModal);
+exposeToWindow('closeConstraintModal', closeConstraintModal);
+exposeToWindow('saveConstraint', saveConstraint);
+exposeToWindow('openEditConstraintModal', openEditConstraintModal);
+exposeToWindow('deleteConstraint', deleteConstraint);
+exposeToWindow('toggleConstraint', toggleConstraint);

@@ -95,6 +95,43 @@ def get_solution_assignments(solution_id: int, db: Session = Depends(get_db)):
     return {"assignments": result, "total": len(result)}
 
 
+@router.post("", response_model=SolutionResponse, status_code=status.HTTP_201_CREATED)
+def create_manual_solution(
+    solution_data: dict,
+    db: Session = Depends(get_db),
+):
+    """
+    Create a manual solution record (for testing or external import).
+    Note: This does not create assignments, just the solution metadata.
+    """
+    # Verify organization exists
+    org_id = solution_data.get("org_id")
+    if not org_id:
+        raise HTTPException(status_code=400, detail="org_id is required")
+        
+    org = db.query(Organization).filter(Organization.id == org_id).first()
+    if not org:
+        raise HTTPException(status_code=404, detail=f"Organization {org_id} not found")
+
+    new_solution = Solution(
+        org_id=org_id,
+        solve_ms=solution_data.get("solve_ms", 0.0),
+        hard_violations=solution_data.get("hard_violations", 0),
+        soft_score=solution_data.get("soft_score", 0.0),
+        health_score=solution_data.get("health_score", 0.0),
+        metrics=solution_data.get("metrics", {}),
+        created_at=datetime.utcnow()
+    )
+    
+    db.add(new_solution)
+    db.commit()
+    db.refresh(new_solution)
+    
+    response = SolutionResponse.model_validate(new_solution)
+    response.assignment_count = 0
+    return response
+
+
 @router.post("/{solution_id}/export")
 def export_solution(
     solution_id: int,

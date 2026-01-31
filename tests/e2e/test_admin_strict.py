@@ -88,7 +88,7 @@ def test_people_tab_strict(admin_page: Page):
     expect(admin_page.locator('#admin-people-list')).to_be_visible()
     
     # Verify "Invite User" button (from index.html)
-    add_btn = admin_page.locator('button[onclick="showInviteUserModal()"]')
+    add_btn = admin_page.locator('#admin-tab-people button[onclick="showInviteUserModal()"]')
     expect(add_btn).to_be_visible()
     
     # Verify Invite Modal

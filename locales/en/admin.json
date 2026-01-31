@@ -23,6 +23,8 @@
     "solver": "Scheduler",
     "invitations": "Invitations",
     "reports": "Reports",
+    "analytics": "Analytics",
+    "constraints": "Constraints",
     "teams": "Teams"
   },
   "people": {
@@ -55,7 +57,11 @@
   },
   "admin_console": "Admin Console",
   "manage_your_org": "Manage your organization",
+  "analytics_dashboard": "Analytics Dashboard",
+  "constraints_management": "Constraints Management",
   "event_management": "Event Management",
+  "reports_export": "Reports & Export",
+  "people_invitations": "People & Invitations",
   "create_event_button": "+ Create Event",
   "total_events": "Total Events:",
   "role_management": "Role Management",

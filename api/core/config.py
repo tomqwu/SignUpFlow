@@ -47,6 +47,11 @@ class Settings(BaseSettings):
     # SendGrid (Production Email Delivery)
     SENDGRID_API_KEY: Optional[str] = None
 
+    # Stripe Billing
+    STRIPE_SECRET_KEY: Optional[str] = None
+    STRIPE_WEBHOOK_SECRET: Optional[str] = None
+    BILLING_ENABLED: bool = True
+
     # Celery Task Queue
     CELERY_BROKER_URL: str = "redis://localhost:6379/0"
     CELERY_RESULT_BACKEND: str = "redis://localhost:6379/0"

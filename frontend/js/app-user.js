@@ -1727,8 +1727,23 @@ function switchAdminTab(tabName) {
             // populateOrgSelects is defined in app-admin.js, make sure it's available or handled
             if (typeof populateOrgSelects === 'function') populateOrgSelects();
             break;
+        case 'constraints':
+            if (typeof loadConstraints === 'function') {
+                loadConstraints();
+            }
+            break;
         case 'reports':
             // Reports tab is static, no loading needed
+            break;
+        case 'analytics':
+            if (typeof loadAnalytics === 'function') {
+                loadAnalytics();
+            }
+            break;
+        case 'invitations':
+            if (typeof loadInvitations === 'function') {
+                loadInvitations();
+            }
             break;
     }
 }
