@@ -1790,7 +1790,7 @@ async function loadAdminDashboard() {
 }
 
 // Switch between admin tabs
-function switchAdminTab(tabName) {
+window.switchAdminTab = function(tabName) {
     // Update URL hash for bookmarking
     window.location.hash = `admin-${tabName}`;
 
@@ -1818,9 +1818,29 @@ function switchAdminTab(tabName) {
             loadAdminRoles();
             break;
         case 'schedule':
-            loadAdminSolutions();
+        case 'solutions':
+            if (typeof loadSolutions === 'function') {
+                loadSolutions();
+            } else {
+                loadAdminSolutions();
+            }
             loadAdminStats();
             loadAdminCalendarView();
+            break;
+        case 'solver':
+            loadAdminStats();
+            // Solver might need initialization
+            const solveFromDate = document.getElementById('solve-from-date');
+            const solveToDate = document.getElementById('solve-to-date');
+            if (solveFromDate && !solveFromDate.value) {
+                const today = new Date();
+                solveFromDate.value = today.toISOString().split('T')[0];
+            }
+            if (solveToDate && !solveToDate.value) {
+                const nextMonth = new Date();
+                nextMonth.setMonth(nextMonth.getMonth() + 1);
+                solveToDate.value = nextMonth.toISOString().split('T')[0];
+            }
             break;
         case 'people':
             loadAdminPeople();
@@ -1843,6 +1863,11 @@ function switchAdminTab(tabName) {
             break;
         case 'analytics':
             loadAnalytics();
+            break;
+        case 'constraints':
+            if (typeof loadConstraints === 'function') {
+                loadConstraints();
+            }
             break;
     }
 }

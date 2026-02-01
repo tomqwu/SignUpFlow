@@ -1,5 +1,8 @@
 # CLAUDE.md
 
+**Read the constitution:** `.specify/memory/constitution.md`
+That file is your single source of truth for this project.
+
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
 ---

@@ -95,7 +95,7 @@ def get_solution_assignments(solution_id: int, db: Session = Depends(get_db)):
     return {"assignments": result, "total": len(result)}
 
 
-@router.post("", response_model=SolutionResponse, status_code=status.HTTP_201_CREATED)
+@router.post("/", response_model=SolutionResponse, status_code=status.HTTP_201_CREATED)
 def create_manual_solution(
     solution_data: dict,
     db: Session = Depends(get_db),

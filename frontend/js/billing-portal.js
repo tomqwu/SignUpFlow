@@ -17,6 +17,20 @@ import i18n from './i18n.js';
 export async function initBillingPortal() {
     console.log('Initializing billing portal...');
 
+    // Check if billing is enabled
+    try {
+        const configResponse = await fetch(`${API_BASE_URL}/config/safe-flags`);
+        if (configResponse.ok) {
+            const config = await configResponse.json();
+            if (config.BILLING_ENABLED === false) {
+                displayBillingDisabled();
+                return;
+            }
+        }
+    } catch (error) {
+        console.warn('Could not load safety config, proceeding with defaults:', error);
+    }
+
     const currentUser = JSON.parse(localStorage.getItem('currentUser'));
     if (!currentUser) {
         console.error('No current user found');
@@ -35,6 +49,31 @@ export async function initBillingPortal() {
 
     setupEventListeners();
     handleCheckoutReturn();
+}
+
+/**
+ * Display message when billing is disabled
+ */
+function displayBillingDisabled() {
+    const containers = [
+        'current-subscription',
+        'pricing-plans',
+        'billing-history',
+        'payment-methods'
+    ];
+
+    containers.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) {
+            el.innerHTML = `
+                <div style="text-align: center; padding: 40px; color: #6b7280; background: #f9fafb; border-radius: 8px; border: 1px dashed #d1d5db;">
+                    <div style="font-size: 2rem; margin-bottom: 1rem;">🛡️</div>
+                    <h3 style="margin-bottom: 0.5rem;">Billing Disabled</h3>
+                    <p>Payments and subscriptions are currently disabled in this environment for safety.</p>
+                </div>
+            `;
+        }
+    });
 }
 
 /**

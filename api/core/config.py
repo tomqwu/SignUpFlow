@@ -34,6 +34,7 @@ class Settings(BaseSettings):
     EMAIL_FROM: str = "noreply@signupflow.io"
     EMAIL_FROM_NAME: str = "SignUpFlow"
     EMAIL_ENABLED: bool = True
+    SMS_ENABLED: bool = False
 
     # Mailtrap (Development Email Testing)
     MAILTRAP_SMTP_HOST: str = "sandbox.smtp.mailtrap.io"

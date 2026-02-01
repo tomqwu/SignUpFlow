@@ -1,5 +1,8 @@
 # Repository Guidelines
 
+**Read the constitution:** `.specify/memory/constitution.md`
+That file is your single source of truth for this project.
+
 ## Project Structure & Module Organization
 The FastAPI service lives in `api/`, with `routers/` segmented by domain (events, people, onboarding, etc.) and shared logic in `services/`, `tasks/`, and `utils/`. SQLAlchemy models and Pydantic schemas are split between `models/` and `schemas/`. Static web assets ship from `frontend/`, where `js/` holds feature modules and `css/` the shared theme. Automated checks sit in `tests/` (unit, integration, e2e, frontend, performance), while Alembic migrations reside in `alembic/` and long-form documentation in `docs/`.
 

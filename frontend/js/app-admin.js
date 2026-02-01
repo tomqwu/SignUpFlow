@@ -30,24 +30,24 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 // Tab Navigation
 function initTabs() {
-    const tabButtons = document.querySelectorAll('.tab-btn');
+    const tabButtons = document.querySelectorAll('.admin-tab-btn');
     tabButtons.forEach(btn => {
         btn.addEventListener('click', () => {
             const tabName = btn.dataset.tab;
-            switchTab(tabName);
+            switchAdminTab(tabName);
         });
     });
 }
 
-function switchTab(tabName) {
+window.switchAdminTab = function(tabName) {
     // Update buttons
-    document.querySelectorAll('.tab-btn').forEach(btn => {
+    document.querySelectorAll('.admin-tab-btn').forEach(btn => {
         btn.classList.toggle('active', btn.dataset.tab === tabName);
     });
 
     // Update content
-    document.querySelectorAll('.tab-content').forEach(content => {
-        content.classList.toggle('active', content.id === `${tabName}-tab`);
+    document.querySelectorAll('.admin-tab-content').forEach(content => {
+        content.classList.toggle('active', content.id === `admin-tab-${tabName}`);
     });
 
     // Load data for tab
@@ -92,9 +92,6 @@ function loadTabData(tabName) {
             break;
         case 'analytics':
             loadAnalytics();
-            break;
-        case 'solutions':
-            loadSolutions();
             break;
         case 'constraints':
             loadConstraints();

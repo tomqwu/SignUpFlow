@@ -39,17 +39,21 @@ class SMSService:
 
     def __init__(self):
         """Initialize Twilio client with credentials from environment."""
+        self.enabled = os.getenv("SMS_ENABLED", "false").lower() == "true"
         self.account_sid = os.getenv("TWILIO_ACCOUNT_SID")
         self.auth_token = os.getenv("TWILIO_AUTH_TOKEN")
         self.from_phone = os.getenv("TWILIO_PHONE_NUMBER")
 
-        if not all([self.account_sid, self.auth_token, self.from_phone]):
+        if self.enabled and not all([self.account_sid, self.auth_token, self.from_phone]):
             raise ValueError(
                 "Missing Twilio credentials. Please set TWILIO_ACCOUNT_SID, "
                 "TWILIO_AUTH_TOKEN, and TWILIO_PHONE_NUMBER in environment."
             )
 
-        self.client = Client(self.account_sid, self.auth_token)
+        if self.enabled:
+            self.client = Client(self.account_sid, self.auth_token)
+        else:
+            self.client = None
 
         # Initialize utility classes
         self.rate_limiter = SmsRateLimiter()
@@ -69,24 +73,12 @@ class SMSService:
     ) -> Dict[str, Any]:
         """
         Send SMS message to single recipient.
-
-        Args:
-            db: Database session
-            recipient_id: Person ID of recipient
-            message_text: SMS message content
-            message_type: Type of message ('assignment', 'reminder', 'broadcast', 'system')
-            organization_id: Organization ID for multi-tenancy
-            event_id: Optional event ID for assignment/reminder messages
-            template_id: Optional template ID if using template
-            is_urgent: Whether message bypasses rate limits and quiet hours
-
-        Returns:
-            Dictionary with message_id, status, twilio_message_sid, phone_number, cost_cents
-
-        Raises:
-            ValueError: If recipient doesn't have verified phone or is opted out
-            TwilioRestException: If Twilio API call fails
         """
+        if not self.enabled:
+            import logging
+            logging.getLogger("sms_service").warning(f"SMS sending disabled - would send to {recipient_id}")
+            return {"status": "disabled", "message": "SMS sending disabled"}
+
         # 1. Get recipient SMS preferences
         sms_pref = (
             db.query(SmsPreference)

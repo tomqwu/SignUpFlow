@@ -703,6 +703,10 @@
                             data-i18n="solver.tab_title">
                             Solver
                         </button>
+                        <button class="admin-tab-btn" data-tab="solutions" onclick="switchAdminTab('solutions')"
+                            data-i18n="admin.tabs.solutions">
+                            Solutions
+                        </button>
                         <button class="admin-tab-btn" data-tab="people" onclick="switchAdminTab('people')"
                             data-i18n="admin.tabs.people">
                             People
@@ -785,7 +789,6 @@
                             </div>
                         </div>
 
-                        <!-- Solver Tab -->
                         <div id="admin-tab-solver" class="admin-tab-content">
                             <div class="admin-section">
                                 <div class="admin-section-header">
@@ -864,21 +867,36 @@
                                     </div>
                                 </div>
                             </div>
-                        </div> <!-- Generated Schedules List -->
-                        <div class="admin-section">
-                            <div class="admin-section-header">
-                                <h3 data-i18n="solver.generated_schedules">Generated Schedules</h3>
-                            </div>
-                            <div class="admin-stats-inline">
-                                <div class="stat-card-inline">
-                                    <span class="stat-label-inline" data-i18n="solver.total_schedules">Total
-                                        Schedules:</span>
-                                    <span class="stat-value-inline" id="admin-solutions-count">0</span>
+                        </div>
+
+                        <!-- Solutions Tab -->
+                        <div id="admin-tab-solutions" class="admin-tab-content">
+                            <div class="admin-section">
+                                <div class="admin-section-header">
+                                    <h3 data-i18n="solver.generated_schedules">Generated Schedules</h3>
+                                    <div class="admin-controls">
+                                        <button id="btn-compare-solutions" class="btn btn-secondary" onclick="compareSolutions()" disabled>
+                                            Compare Solutions
+                                        </button>
+                                    </div>
                                 </div>
-                            </div>
-                            <div id="admin-solutions-list" class="admin-list">
-                                <div class="loading" data-i18n="solver.loading_schedules">Loading
-                                    schedules...</div>
+                                <div class="admin-stats-inline">
+                                    <div class="stat-card-inline">
+                                        <span class="stat-label-inline" data-i18n="solver.total_schedules">Total Schedules:</span>
+                                        <span class="stat-value-inline" id="admin-solutions-count">0</span>
+                                    </div>
+                                </div>
+                                <div id="solutions-list" class="admin-list">
+                                    <div class="loading" data-i18n="solver.loading_schedules">Loading schedules...</div>
+                                </div>
+
+                                <!-- Comparison View -->
+                                <div id="solution-comparison" class="comparison-container hidden"></div>
+
+                                <!-- Details View -->
+                                <div id="solution-details-container" class="details-container hidden">
+                                    <div id="solution-details"></div>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -1693,6 +1711,7 @@
     </div>
 
     <script src="/js/app-admin.js"></script>
+    <script src="/js/app-admin-solutions.js"></script>
 
 
     <script src="/js/role-management.js"></script>

@@ -88,7 +88,7 @@ def admin_login(page: Page, app_config: AppConfig):
     # Wait for currentOrg to be set in localStorage (Critical for admin app)
     page.wait_for_function("""
         () => {
-            const org = localStorage.getItem('currentOrg');
+            const org = localStorage.getItem('roster_org');
             return org && JSON.parse(org) && JSON.parse(org).id;
         }
     """)
@@ -117,7 +117,7 @@ def test_save_solver_solution(admin_login: Page, app_config: AppConfig):
     # Seed minimal data for solver to work
     api_client = ApiTestClient(app_config.api_base)
     # Get current org and token from localStorage
-    storage_state = page.evaluate("() => ({ token: localStorage.getItem('authToken'), org: JSON.parse(localStorage.getItem('currentOrg')) })")
+    storage_state = page.evaluate("() => ({ token: localStorage.getItem('authToken'), org: JSON.parse(localStorage.getItem('roster_org')) })")
     org_id = storage_state["org"]["id"]
     token = storage_state["token"]
     
@@ -198,7 +198,7 @@ def test_load_previous_solution(admin_login: Page, app_config: AppConfig):
     # Create test solution via Solver (simulating real workflow as POST /solutions is read-only)
     api_client = ApiTestClient(app_config.api_base)
     # Get token/org from page
-    storage_state = page.evaluate("() => ({ token: localStorage.getItem('authToken'), org: JSON.parse(localStorage.getItem('currentOrg')) })")
+    storage_state = page.evaluate("() => ({ token: localStorage.getItem('authToken'), org: JSON.parse(localStorage.getItem('roster_org')) })")
     org_id = storage_state["org"]["id"]
     token = storage_state["token"]
     
@@ -283,7 +283,7 @@ def test_compare_solutions(admin_login: Page):
         page.evaluate(f"""
             (async () => {{
                 const authToken = localStorage.getItem('authToken');
-                const currentOrg = JSON.parse(localStorage.getItem('currentOrg'));
+                const currentOrg = JSON.parse(localStorage.getItem('roster_org'));
 
                 await fetch('/api/solutions/', {{
                     method: 'POST',
@@ -364,7 +364,7 @@ def test_rollback_to_previous_solution(admin_login: Page):
     solution_response = page.evaluate("""
         (async () => {
             const authToken = localStorage.getItem('authToken');
-            const currentOrg = JSON.parse(localStorage.getItem('currentOrg'));
+            const currentOrg = JSON.parse(localStorage.getItem('roster_org'));
 
             const solutionResponse = await fetch('/api/solutions/', {
                 method: 'POST',
@@ -456,7 +456,7 @@ def test_delete_solution(admin_login: Page):
     page.evaluate(f"""
         (async () => {{
             const authToken = localStorage.getItem('authToken');
-            const currentOrg = JSON.parse(localStorage.getItem('currentOrg'));
+            const currentOrg = JSON.parse(localStorage.getItem('roster_org'));
 
             await fetch('/api/solutions/', {{
                 method: 'POST',
@@ -542,7 +542,7 @@ def test_view_solution_metadata(admin_login: Page):
     solution_response = page.evaluate("""
         (async () => {
             const authToken = localStorage.getItem('authToken');
-            const currentOrg = JSON.parse(localStorage.getItem('currentOrg'));
+            const currentOrg = JSON.parse(localStorage.getItem('roster_org'));
 
             const solutionResponse = await fetch('/api/solutions/', {
                 method: 'POST',

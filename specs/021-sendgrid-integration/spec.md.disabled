@@ -1,0 +1,31 @@
+# Feature Specification: SendGrid Email Provider Integration
+
+**Feature Branch**: `feat/sendgrid-integration`
+**Created**: 2026-02-01
+**Status**: Draft
+**Priority**: P1
+
+## User Scenario
+
+When the application is configured with a SendGrid API key, all transactional emails (assignments, reminders, etc.) should be delivered via SendGrid's API instead of SMTP, ensuring higher deliverability and tracking.
+
+## Acceptance Criteria
+
+1. **Given** a valid `SENDGRID_API_KEY` is set in `.env`, **When** the `EmailService` is initialized, **Then** `use_sendgrid` is `True` and `sendgrid_client` is not `None`.
+2. **Given** `use_sendgrid` is `True`, **When** `send_email` is called, **Then** the `_send_via_sendgrid` method is executed.
+3. **Given** a SendGrid API error occurs, **When** sending an email, **Then** the service retries according to the retry policy.
+4. **Given** an email is sent via SendGrid, **When** successful, **Then** the SendGrid message ID (X-Message-Id) is captured and logged.
+
+## Implementation Plan
+
+1. Update `.env.example` to include `SENDGRID_API_KEY`.
+2. Create a test case to verify `EmailService` uses SendGrid when API key is present.
+3. Mock SendGrid API to verify the call is made correctly.
+4. Verify that the current `EmailService` implementation correctly handles the `SENDGRID_API_KEY` environment variable.
+
+## Completion Signal
+
+Output `<promise>DONE</promise>` when:
+- SendGrid integration is verified with unit tests.
+- `.env.example` is updated.
+- Documentation in `docs/EMAIL_SETUP.md` is updated to include SendGrid instructions.

@@ -191,6 +191,18 @@ app.include_router(billing.router, prefix="/api")
 app.include_router(webhooks.router, prefix="/api")
 
 # API Info endpoint
+@app.get("/api/config/safe-flags", tags=["config"])
+def get_safe_flags():
+    """Get safety configuration flags for frontend UI."""
+    from api.core.config import settings
+    return {
+        "EMAIL_ENABLED": settings.EMAIL_ENABLED,
+        "SMS_ENABLED": settings.SMS_ENABLED,
+        "BILLING_ENABLED": settings.BILLING_ENABLED,
+        "ENVIRONMENT": os.getenv("ENVIRONMENT", "development")
+    }
+
+# API Info endpoint
 @app.get("/api", tags=["root"])
 def api_info():
     """API information endpoint."""

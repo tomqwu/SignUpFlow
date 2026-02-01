@@ -103,10 +103,10 @@ def test_admin_sends_invitation_email(
 
     # Step 3: Fill invitation form
     # Debug: Check tab content class and styles
-    tab_content = page.locator("#invitations-tab")
+    tab_content = page.locator("#admin-tab-invitations")
     print(f"DEBUG: Tab content classes: {tab_content.get_attribute('class')}")
-    display = page.evaluate('document.getElementById("invitations-tab").style.display')
-    computed_display = page.evaluate('window.getComputedStyle(document.getElementById("invitations-tab")).display')
+    display = page.evaluate('document.getElementById("admin-tab-invitations").style.display')
+    computed_display = page.evaluate('window.getComputedStyle(document.getElementById("admin-tab-invitations")).display')
     # Step 3: Fill invitation form
     # Note: Use force=True because Playwright sometimes fails visibility check on tab switch
     # even when element is interactive. We verify functionality by checking email receipt.
