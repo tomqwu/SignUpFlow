@@ -70,11 +70,32 @@ def admin_login(page: Page, app_config: AppConfig, api_client: ApiTestClient):
 
     # Submit login
     page.get_by_role("button", name="Sign In").click()
-    page.wait_for_timeout(2000)
+
+    # Wait for auth token then skip onboarding (admins get redirected to /wizard if setup incomplete)
+    page.wait_for_function(
+        """() => {
+            const t = localStorage.getItem('authToken');
+            return !!t && t.length > 10;
+        }""",
+        timeout=10000,
+    )
+
+    page.evaluate(
+        """async () => {
+            const token = localStorage.getItem('authToken');
+            if (!token) return;
+            await fetch('/api/onboarding/skip', {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+        }"""
+    )
+
+    page.goto(f"{app_config.app_url}/app/schedule", wait_until="networkidle")
 
     # Verify logged in
-    expect(page).to_have_url(f"{app_config.app_url}/app/schedule")
-    expect(page.locator("#main-app")).to_be_visible()
+    expect(page).to_have_url(f"{app_config.app_url}/app/schedule", timeout=10000)
+    expect(page.locator("#main-app")).to_be_visible(timeout=10000)
 
     # Navigate to admin console
     page.goto(f"{app_config.app_url}/app/admin")

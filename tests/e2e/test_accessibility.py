@@ -106,11 +106,11 @@ def test_schedule_keyboard_navigation(
 
     # Login
     login_via_ui(page, app_config.app_url, user["email"], user["password"])
-    expect(page.locator('#main-app')).to_be_visible(timeout=10000)
 
-    # Navigate to schedule view
+    # Navigate to schedule view (onboarding may be shown initially; schedule forces app shell)
     page.goto(f"{app_config.app_url}/app/schedule")
-    page.wait_for_timeout(2000)
+    expect(page.locator('#main-app')).to_be_visible(timeout=10000)
+    page.wait_for_timeout(500)
 
     # Settings button should be focusable
     settings_btn = page.locator('button.action-btn:has-text("Settings")')
@@ -152,11 +152,11 @@ def test_buttons_have_accessible_labels(
 
     # Login as admin
     login_via_ui(page, app_config.app_url, user["email"], user["password"])
-    expect(page.locator('#main-app')).to_be_visible(timeout=10000)
 
     # Go to admin console
     page.goto(f"{app_config.app_url}/app/admin")
-    page.wait_for_timeout(2000)
+    expect(page.locator('#main-app')).to_be_visible(timeout=10000)
+    page.wait_for_timeout(500)
 
     # Check that buttons have accessible text or aria-label
     buttons = page.locator('button')
@@ -206,11 +206,11 @@ def test_modal_focus_trap(
 
     # Login
     login_via_ui(page, app_config.app_url, user["email"], user["password"])
-    expect(page.locator('#main-app')).to_be_visible(timeout=10000)
 
     # Navigate to schedule view
     page.goto(f"{app_config.app_url}/app/schedule")
-    page.wait_for_timeout(2000)
+    expect(page.locator('#main-app')).to_be_visible(timeout=10000)
+    page.wait_for_timeout(500)
 
     # Open settings modal
     settings_btn = page.locator('button.action-btn:has-text("Settings")')
@@ -295,11 +295,11 @@ def test_skip_to_main_content_link(
 
     # Login
     login_via_ui(page, app_config.app_url, user["email"], user["password"])
-    expect(page.locator('#main-app')).to_be_visible(timeout=10000)
 
     # Navigate to schedule view
     page.goto(f"{app_config.app_url}/app/schedule")
-    page.wait_for_timeout(2000)
+    expect(page.locator('#main-app')).to_be_visible(timeout=10000)
+    page.wait_for_timeout(500)
 
     # Check for skip link (may be visually hidden with CSS)
     skip_link = page.locator('a[href="#main-content"], a:has-text("Skip to main content")')
@@ -365,11 +365,11 @@ def test_heading_hierarchy(
 
     # Login
     login_via_ui(page, app_config.app_url, user["email"], user["password"])
-    expect(page.locator('#main-app')).to_be_visible(timeout=10000)
 
     # Navigate to schedule view
     page.goto(f"{app_config.app_url}/app/schedule")
-    page.wait_for_timeout(2000)
+    expect(page.locator('#main-app')).to_be_visible(timeout=10000)
+    page.wait_for_timeout(500)
 
     # Check for h1 (should be page title)
     h1 = page.locator('h1')
@@ -444,11 +444,11 @@ def test_admin_console_keyboard_navigation(
 
     # Login as admin
     login_via_ui(page, app_config.app_url, user["email"], user["password"])
-    expect(page.locator('#main-app')).to_be_visible(timeout=10000)
 
     # Go to admin console
     page.goto(f"{app_config.app_url}/app/admin")
-    page.wait_for_timeout(2000)
+    expect(page.locator('#main-app')).to_be_visible(timeout=10000)
+    page.wait_for_timeout(500)
 
     # Admin view should be visible
     admin_view = page.locator('#admin-view')

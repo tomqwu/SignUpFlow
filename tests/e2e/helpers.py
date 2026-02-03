@@ -225,12 +225,40 @@ def submit_login_form(page: Page, email: str, password: str) -> Response:
 
 
 def login_via_ui(page: Page, app_url: str, email: str, password: str) -> Response:
-    """Perform a full login via the UI and assert the main app loads."""
+    """Perform a full login via the UI.
+
+    Note: for brand new orgs/users, the app may route into onboarding first which keeps
+    #main-app hidden. To keep E2E tests stable, we auto-skip onboarding when needed.
+    """
     navigate_to_login(page, app_url)
     response = submit_login_form(page, email, password)
     if response.status not in (200, 201):
         raise AssertionError(f"Login failed with status {response.status}")
-    expect(page.locator("#main-app")).to_be_visible(timeout=5000)
+
+    # Always use the login response token to skip onboarding for E2E stability,
+    # then navigate to a canonical app route.
+    token = None
+    try:
+        payload = response.json()
+        if isinstance(payload, dict):
+            token = payload.get("token")
+    except Exception:
+        pass
+
+    if token:
+        # Ensure the request completes before we proceed.
+        page.evaluate(
+            """async (token) => {
+                await fetch('/api/onboarding/skip', {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+            }""",
+            token,
+        )
+
+    page.goto(f"{app_url}/app/schedule", wait_until="networkidle")
+    expect(page.locator("#main-app")).to_be_visible(timeout=10000)
     return response
 
 
@@ -242,7 +270,10 @@ def open_invitation(page: Page, app_url: str, token: str) -> None:
 
 
 def complete_invitation_signup(page: Page, password: str) -> Response:
-    """Fill the invitation signup form and wait for completion."""
+    """Fill the invitation signup form and wait for completion.
+
+    Similar to login, a freshly invited user may be routed to onboarding first.
+    """
     password_input = page.locator("#user-password")
     expect(password_input).to_be_visible()
     password_input.fill(password)
@@ -262,6 +293,35 @@ def complete_invitation_signup(page: Page, password: str) -> Response:
         submit_button.click()
 
     response = invitation_response.value
+
+    try:
+        expect(page.locator("#main-app")).to_be_visible(timeout=1500)
+        return response
+    except Exception:
+        pass
+
+    # If the backend returned a token (signup), use it to skip onboarding.
+    token = None
+    try:
+        payload = response.json()
+        if isinstance(payload, dict):
+            token = payload.get("token")
+    except Exception:
+        pass
+
+    if token:
+        page.evaluate(
+            """async (token) => {
+                await fetch('/api/onboarding/skip', {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+            }""",
+            token,
+        )
+
+    # Refresh current page; callers can navigate afterward.
+    page.reload(wait_until="networkidle")
     expect(page.locator("#main-app")).to_be_visible(timeout=5000)
     return response
 

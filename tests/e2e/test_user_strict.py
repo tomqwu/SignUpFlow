@@ -55,13 +55,31 @@ def user_page(page: Page, api_server):
     complete_btn = page.locator("button:has-text('Complete Registration')")
     expect(complete_btn).to_be_visible()
     complete_btn.click()
-    
-    # 3. Verify Dashboard Loaded
+
+    # 3. New users may be routed into onboarding first, which keeps #main-app hidden.
+    # For strict UI assertions below, skip onboarding and navigate to a canonical app route.
+    page.wait_for_function(
+        """() => {
+            const token = localStorage.getItem('authToken');
+            return !!token && token.length > 10;
+        }""",
+        timeout=10000,
+    )
+
+    page.evaluate(
+        """async () => {
+            const token = localStorage.getItem('authToken');
+            if (!token) return;
+            await fetch('/api/onboarding/skip', {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+        }"""
+    )
+
+    page.goto(f"{app_url}/app/schedule", wait_until="networkidle")
     expect(page.locator("#main-app")).to_be_visible(timeout=10000)
-    
-    # Wait for network idle
-    page.wait_for_load_state("networkidle")
-    
+
     return page
 
 def test_user_navigation_strict(user_page: Page):

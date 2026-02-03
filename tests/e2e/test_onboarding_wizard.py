@@ -113,6 +113,7 @@ frontend/js/onboarding-wizard.js for logic), unskip these tests.
 """
 
 import pytest
+import re
 from playwright.sync_api import Page, expect
 
 from tests.e2e.helpers import AppConfig
@@ -120,79 +121,56 @@ from tests.e2e.helpers import AppConfig
 pytestmark = pytest.mark.usefixtures("api_server")
 
 
-@pytest.mark.skip(reason="Onboarding Wizard GUI not implemented - backend API exists but frontend pending")
 def test_wizard_complete_flow(page: Page, app_config: AppConfig):
     """
     Test complete 4-step wizard flow from signup to completion.
-
-    User Journey:
-    1. User navigates to landing page
-    2. User clicks "Get Started"
-    3. User fills signup form (org name, location, timezone, personal info)
-    4. User submits signup
-    5. Wizard automatically loads at Step 1 (Organization Profile)
-    6. User verifies pre-filled data and clicks Continue
-    7. User fills Step 2 (First Event) and clicks Continue
-    8. User fills Step 3 (First Team) and clicks Continue
-    9. User fills Step 4 (Invite Volunteers) and clicks Continue
-    10. User sees success message "Setup Complete!"
-    11. User is automatically redirected to onboarding dashboard
-
-    Backend Integration:
-    - POST /api/auth/signup creates user and initializes wizard_step_completed to 1
-    - GET /api/onboarding/progress loads wizard state (should be step 1 after signup)
-    - PUT /api/onboarding/progress updates wizard_data and wizard_step_completed after each step:
-      * Step 1 → 2: Save org_name, org_location, org_timezone
-      * Step 2 → 3: Save event_title, event_date, event_time
-      * Step 3 → 4: Save team_name, team_role
-      * Step 4 → complete: Save invitation_emails, set wizard_step_completed to 4
-    - Wizard completion triggers creation of:
-      * Organization record (already created during signup)
-      * First event record (from wizard_data.event_*)
-      * First team record (from wizard_data.team_*)
-      * Invitation records (from wizard_data.invitation_emails)
-
-    Assertions:
-    - Each step displays correct heading and step indicator
-    - Progress bar updates correctly (0% → 25% → 50% → 75% → 100%)
-    - Pre-filled data from signup appears in Step 1
-    - Continue button disabled until required fields filled
-    - Backend API called after each step to save progress
-    - Success message appears after Step 4
-    - User redirected to /app/onboarding-dashboard after 3 seconds
     """
-    # Navigate to landing page
+    # Clear session/localStorage to ensure clean state
+    page.goto(f"{app_config.app_url}/")
+    page.evaluate("localStorage.clear()")
+    page.evaluate("sessionStorage.clear()")
+    
+    # Navigate to landing page again
     page.goto(f"{app_config.app_url}/")
     page.wait_for_load_state("networkidle")
 
     # Verify Get Started button visible
-    get_started_button = page.locator('button:has-text("Get Started"), a:has-text("Get Started")')
+    get_started_button = page.locator('button:has-text("Get Started →"), a:has-text("Get Started →")')
     expect(get_started_button.first).to_be_visible(timeout=5000)
     get_started_button.first.click()
 
-    # Should navigate to signup page
+    # Should navigate to join page
     page.wait_for_timeout(1000)
-    signup_screen = page.locator('#signup-screen, .signup-container')
-    expect(signup_screen).to_be_visible(timeout=5000)
+    join_screen = page.locator('#join-screen')
+    expect(join_screen).to_be_visible(timeout=5000)
 
-    # Fill signup form
-    # Generate unique email using timestamp
-    unique_email = f"wizard.complete.{int(page.evaluate('Date.now()'))}@example.com"
+    # Click Create New Organization
+    create_org_btn = page.locator('button:has-text("Create New Organization")')
+    create_org_btn.click()
+    
+    # Fill create org form
+    unique_suffix = int(page.evaluate('Date.now()'))
+    org_name = f"SAMPLE - Church {unique_suffix}"
+    page.locator('#new-org-name').fill(org_name)
+    page.locator('#new-org-region').fill("Toronto, ON")
+    
+    # Use the button in create-org-section
+    page.locator('#create-org-section button[type="submit"]').click()
 
-    page.locator('#signup-org-name, input[name="org_name"]').fill("SAMPLE - Complete Wizard Test Church")
-    page.locator('#signup-location, input[name="location"]').fill("Toronto, ON")
+    # Should navigate to profile screen
+    page.wait_for_timeout(1000)
+    profile_screen = page.locator('#profile-screen')
+    expect(profile_screen).to_be_visible(timeout=5000)
 
-    # Timezone selection (dropdown)
-    timezone_select = page.locator('#signup-timezone, select[name="timezone"]')
-    timezone_select.select_option("America/Toronto")
-
-    page.locator('#signup-name, input[name="name"]').fill("Complete Test Admin")
-    page.locator('#signup-email, input[name="email"]').fill(unique_email)
-    page.locator('#signup-password, input[name="password"]').fill("TestPassword123!")
-    page.locator('#signup-confirm-password, input[name="confirm_password"]').fill("TestPassword123!")
+    # Fill profile info
+    unique_email = f"wizard.complete.{unique_suffix}@example.com"
+    page.locator('#user-name').fill("Complete Test Admin")
+    page.locator('#user-email').fill(unique_email)
+    page.locator('#user-password').fill("TestPassword123!")
+    page.locator('#user-timezone').select_option("America/Toronto")
 
     # Submit signup
-    submit_button = page.locator('button[type="submit"]:has-text("Create"), button:has-text("Sign Up")')
+    submit_button = page.locator('#profile-screen button[type="submit"]')
     expect(submit_button.first).to_be_visible()
     submit_button.first.click()
 
@@ -200,7 +178,7 @@ def test_wizard_complete_flow(page: Page, app_config: AppConfig):
     page.wait_for_timeout(2000)
 
     # Verify wizard container visible
-    wizard_container = page.locator('.onboarding-wizard, #wizard-container')
+    wizard_container = page.locator('#wizard-screen')
     expect(wizard_container).to_be_visible(timeout=5000)
 
     # Step 1: Organization Profile
@@ -211,15 +189,15 @@ def test_wizard_complete_flow(page: Page, app_config: AppConfig):
     expect(step_indicator).to_contain_text("Step 1 of 4")
 
     # Verify pre-filled data from signup
-    org_name_input = page.locator('#org-name, input[name="org_name"]')
+    org_name_input = page.locator('#wizard-org-name')
     org_name_value = org_name_input.input_value()
-    assert "Complete Wizard Test Church" in org_name_value
+    assert str(unique_suffix) in org_name_value
 
-    org_location_input = page.locator('#org-location, input[name="location"]')
+    org_location_input = page.locator('#wizard-org-location')
     org_location_value = org_location_input.input_value()
     assert "Toronto" in org_location_value
 
-    org_timezone_input = page.locator('#org-timezone, select[name="timezone"]')
+    org_timezone_input = page.locator('#wizard-org-timezone')
     org_timezone_value = org_timezone_input.input_value()
     assert "America/Toronto" in org_timezone_value
 
@@ -230,7 +208,7 @@ def test_wizard_complete_flow(page: Page, app_config: AppConfig):
         assert "25" in progress_width  # Should be 25%
 
     # Click Continue to Step 2
-    continue_button = page.locator('#wizard-continue, button:has-text("Continue")')
+    continue_button = page.locator('#wizard-continue')
     expect(continue_button).to_be_visible()
     continue_button.click()
 
@@ -241,7 +219,7 @@ def test_wizard_complete_flow(page: Page, app_config: AppConfig):
     expect(step_indicator).to_contain_text("Step 2 of 4")
 
     # Fill event details
-    page.locator('#event-title, input[name="event_title"]').fill("Sunday Service 10am")
+    page.locator('#wizard-event-title').fill("Sunday Service 10am")
 
     # Calculate next Sunday
     next_sunday = page.evaluate("""
@@ -253,11 +231,11 @@ def test_wizard_complete_flow(page: Page, app_config: AppConfig):
         }
     """)
 
-    page.locator('#event-date, input[name="event_date"]').fill(next_sunday)
-    page.locator('#event-time, input[name="event_time"]').fill("10:00")
+    page.locator('#wizard-event-date').fill(next_sunday)
+    page.locator('#wizard-event-time').fill("10:00")
 
     # Optional duration field
-    duration_input = page.locator('#event-duration, input[name="duration"]')
+    duration_input = page.locator('#wizard-event-duration')
     if duration_input.count() > 0:
         duration_input.fill("60")  # 60 minutes
 
@@ -276,11 +254,11 @@ def test_wizard_complete_flow(page: Page, app_config: AppConfig):
     expect(step_indicator).to_contain_text("Step 3 of 4")
 
     # Fill team details
-    page.locator('#team-name, input[name="team_name"]').fill("Greeters")
-    page.locator('#team-role, input[name="team_role"]').fill("greeter")
+    page.locator('#wizard-team-name').fill("Greeters")
+    page.locator('#wizard-team-role').fill("greeter")
 
     # Optional description
-    team_description = page.locator('#team-description, textarea[name="description"]')
+    team_description = page.locator('#wizard-team-description')
     if team_description.count() > 0:
         team_description.fill("Welcome team for Sunday services")
 
@@ -290,7 +268,7 @@ def test_wizard_complete_flow(page: Page, app_config: AppConfig):
         assert "75" in progress_width
 
     # Back button should be visible on Step 3
-    back_button = page.locator('#wizard-back, button:has-text("Back")')
+    back_button = page.locator('#wizard-back')
     expect(back_button).to_be_visible()
 
     # Click Continue to Step 4
@@ -303,7 +281,7 @@ def test_wizard_complete_flow(page: Page, app_config: AppConfig):
     expect(step_indicator).to_contain_text("Step 4 of 4")
 
     # Fill invitation emails (newline-separated)
-    invite_emails_textarea = page.locator('#invite-emails, textarea[name="emails"]')
+    invite_emails_textarea = page.locator('#wizard-invite-emails')
     expect(invite_emails_textarea).to_be_visible()
     invite_emails_textarea.fill("volunteer1@example.com\nvolunteer2@example.com\nvolunteer3@example.com")
 
@@ -315,30 +293,27 @@ def test_wizard_complete_flow(page: Page, app_config: AppConfig):
     # Click Continue to complete wizard
     continue_button.click()
 
-    # Wait for completion
-    page.wait_for_timeout(2000)
+    # Wait for completion message to show (Step 5 celebration)
+    page.wait_for_timeout(1000)
 
-    # Verify success screen
-    success_screen = page.locator('.wizard-success, #wizard-success')
-    expect(success_screen).to_be_visible(timeout=5000)
+    # Verify success screen/message is visible
+    success_msg = page.locator('#wizard-success')
+    expect(success_msg).to_be_visible(timeout=5000)
 
-    success_heading = page.locator('h1:has-text("Setup Complete!"), h2:has-text("Success")')
-    expect(success_heading).to_be_visible()
+    # Wait for automatic redirect to onboarding dashboard (happens after 2 seconds)
+    expect(page).to_have_url(re.compile(r".*/app/onboarding-dashboard"), timeout=15000)
 
-    # Wait for automatic redirect to onboarding dashboard (should happen after 3 seconds)
-    page.wait_for_timeout(4000)
+    # Verify the onboarding dashboard content is showing
+    onboarding_view = page.locator('#onboarding-dashboard-view')
+    expect(onboarding_view).to_have_class(re.compile(r".*active.*"), timeout=10000)
 
-    # Verify redirected to onboarding dashboard
-    expect(page).to_have_url(f"{app_config.app_url}/app/onboarding-dashboard", timeout=5000)
+    welcome_heading = page.locator('#onboarding-dashboard-view .onboarding-dashboard h1')
+    expect(welcome_heading).to_be_visible(timeout=10000)
 
-    dashboard_container = page.locator('#onboarding-dashboard, .onboarding-dashboard')
-    expect(dashboard_container).to_be_visible(timeout=5000)
-
-    welcome_heading = page.locator('h1:has-text("Welcome to SignUpFlow"), h2:has-text("Welcome")')
-    expect(welcome_heading).to_be_visible()
+    # Verify checklist container exists
+    expect(page.locator('#onboarding-checklist-container')).to_be_visible(timeout=5000)
 
 
-@pytest.mark.skip(reason="Onboarding Wizard GUI not implemented - backend API exists but frontend pending")
 def test_wizard_resume_after_logout(page: Page, app_config: AppConfig):
     """
     Test wizard resume functionality after logging out mid-flow.
@@ -390,7 +365,6 @@ def test_wizard_resume_after_logout(page: Page, app_config: AppConfig):
     page.locator('#signup-name, input[name="name"]').fill("Resume Test User")
     page.locator('#signup-email, input[name="email"]').fill(unique_email)
     page.locator('#signup-password, input[name="password"]').fill("TestPassword123!")
-    page.locator('#signup-confirm-password, input[name="confirm_password"]').fill("TestPassword123!")
 
     # Submit signup
     page.locator('button[type="submit"]:has-text("Create"), button:has-text("Sign Up")').first.click()
@@ -501,7 +475,6 @@ def test_wizard_resume_after_logout(page: Page, app_config: AppConfig):
     assert event_time_value == "14:00"
 
 
-@pytest.mark.skip(reason="Onboarding Wizard GUI not implemented - backend API exists but frontend pending")
 def test_wizard_back_button_navigation(page: Page, app_config: AppConfig):
     """
     Test wizard back button allows navigation to previous steps.
@@ -548,7 +521,6 @@ def test_wizard_back_button_navigation(page: Page, app_config: AppConfig):
     page.locator('#signup-name, input[name="name"]').fill("Back Nav User")
     page.locator('#signup-email, input[name="email"]').fill(unique_email)
     page.locator('#signup-password, input[name="password"]').fill("TestPassword123!")
-    page.locator('#signup-confirm-password, input[name="confirm_password"]').fill("TestPassword123!")
     page.locator('button[type="submit"]:has-text("Create")').first.click()
 
     # Wait for wizard
@@ -634,7 +606,6 @@ def test_wizard_back_button_navigation(page: Page, app_config: AppConfig):
     assert event_title_value == "Edited Event Title"
 
 
-@pytest.mark.skip(reason="Onboarding Wizard GUI not implemented - backend API exists but frontend pending")
 def test_wizard_validation_prevents_empty_submission(page: Page, app_config: AppConfig):
     """
     Test wizard validation prevents proceeding with empty required fields.
@@ -686,7 +657,6 @@ def test_wizard_validation_prevents_empty_submission(page: Page, app_config: App
     page.locator('#signup-name, input[name="name"]').fill("Validation Test User")
     page.locator('#signup-email, input[name="email"]').fill(unique_email)
     page.locator('#signup-password, input[name="password"]').fill("TestPassword123!")
-    page.locator('#signup-confirm-password, input[name="confirm_password"]').fill("TestPassword123!")
     page.locator('button[type="submit"]:has-text("Create")').first.click()
 
     # Wait for wizard

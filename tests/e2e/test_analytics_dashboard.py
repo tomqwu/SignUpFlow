@@ -169,7 +169,8 @@ def test_view_schedule_analytics(api_server, admin_login: Page):
     expect(analytics_dashboard).to_be_visible(timeout=5000)
 
     # Wait for the stats grid to be injected by JS
-    page.wait_for_selector('.stats-grid', timeout=5000)
+    # (There can be multiple .stats-grid nodes; wait for a visible one.)
+    page.wait_for_selector('.stats-grid:visible', timeout=10000)
 
     # Verify volunteer stats cards
     # Use exact text match or more permissive regex

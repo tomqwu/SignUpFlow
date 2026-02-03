@@ -26,9 +26,30 @@ def user_page(page: Page, app_config: AppConfig, api_client: ApiTestClient):
     page.goto(f"{app_config.app_url}/login")
     page.fill("#login-email", user["email"])
     page.fill("#login-password", user["password"])
+
+    # Click sign-in and wait for auth token to be persisted
     page.click('button[data-i18n="auth.sign_in"]')
-    
-    # Wait for redirect to app
+    page.wait_for_function(
+        """() => {
+            const t = localStorage.getItem('authToken');
+            return !!t && t.length > 10;
+        }""",
+        timeout=10000,
+    )
+
+    # New users can be routed into onboarding (e.g. /wizard). For E2E stability, skip it.
+    page.evaluate(
+        """async () => {
+            const token = localStorage.getItem('authToken');
+            if (!token) return;
+            await fetch('/api/onboarding/skip', {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+        }"""
+    )
+
+    page.goto(f"{app_config.app_url}/app/schedule", wait_until="networkidle")
     expect(page).to_have_url(f"{app_config.app_url}/app/schedule", timeout=10000)
     return page
 
