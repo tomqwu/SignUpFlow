@@ -150,9 +150,26 @@ async function checkExistingSession() {
             window.currentOrg = currentOrg;
 
             // If on a protected /app route, handle it with router
-            if (currentPath.startsWith('/app')) {
+            if (currentPath.startsWith('/app') || currentPath === '/wizard') {
                 router.handleRoute(currentPath, false);
             } else {
+                // Check onboarding status for admins before defaulting to schedule
+                const user = window.currentUser || currentUser;
+                if (user && user.roles && user.roles.includes('admin')) {
+                    try {
+                        const response = await authFetch('/api/onboarding/progress');
+                        if (response.ok) {
+                            const progress = await response.json();
+                            if (progress.wizard_step_completed < 4 && !progress.onboarding_skipped) {
+                                router.navigate('/wizard', true);
+                                return;
+                            }
+                        }
+                    } catch (error) {
+                        console.error('Failed to check onboarding progress:', error);
+                    }
+                }
+                
                 // Default to schedule view if logged in but on root/login page
                 router.navigate('/app/schedule', true);
                 showMainApp();
@@ -727,7 +744,7 @@ async function createProfile(event) {
             window.currentUser = currentUser;
             console.log('🔐 Auth token saved to localStorage');
             saveSession();
-            showMainApp();
+            await showMainApp();
         } else if (response.status === 409) {
             showToast(i18n.t('messages.errors.email_already_registered'), 'error');
         } else {
@@ -741,9 +758,31 @@ async function createProfile(event) {
 
 // Main App
 async function showMainApp() {
+    const user = window.currentUser || currentUser;
+    console.log('🏁 showMainApp - current user:', user?.name, 'roles:', user?.roles);
+    
+    // Check onboarding status for admins
+    if (user && user.roles && user.roles.includes('admin')) {
+        try {
+            const response = await authFetch('/api/onboarding/progress');
+            if (response.ok) {
+                const progress = await response.json();
+                console.log('🚀 Onboarding progress:', progress.wizard_step_completed);
+                if (progress.wizard_step_completed < 4 && !progress.onboarding_skipped) {
+                    console.log('🚀 Redirecting to Wizard...');
+                    router.navigate('/wizard', true);
+                    return;
+                }
+            }
+        } catch (error) {
+            console.error('Failed to check onboarding progress:', error);
+        }
+    }
+
+    console.log('🏁 showMainApp - proceeding to main app');
     showScreen('main-app');
-    router.navigate('/app/schedule', true);  // Update URL to /app/schedule
-    document.getElementById('user-name-display').textContent = currentUser.name;
+    router.navigate('/app/schedule', true);
+    document.getElementById('user-name-display').textContent = user.name;
 
     // Load and display organization(s)
     await loadUserOrganizations();

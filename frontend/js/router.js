@@ -18,12 +18,14 @@ class Router {
             '/reset-password': 'reset-password-screen',
             '/join': 'join-screen',
             '/profile': 'profile-screen',
+            '/wizard': 'wizard-screen',
             '/app': 'main-app',
             '/app/schedule': 'main-app',
             '/app/events': 'main-app',
             '/app/availability': 'main-app',
             '/app/admin': 'main-app',
-            '/app/billing': 'main-app'
+            '/app/billing': 'main-app',
+            '/app/onboarding-dashboard': 'main-app'
         };
 
         this.viewRoutes = {
@@ -31,7 +33,8 @@ class Router {
             '/app/events': 'events',
             '/app/availability': 'availability',
             '/app/admin': 'admin',
-            '/app/billing': 'billing'
+            '/app/billing': 'billing',
+            '/app/onboarding-dashboard': 'onboarding-dashboard'
         };
 
         this.pageTitles = {
@@ -41,11 +44,13 @@ class Router {
             '/reset-password': 'Create New Password - SignUpFlow',
             '/join': 'Join Organization - SignUpFlow',
             '/profile': 'Create Profile - SignUpFlow',
+            '/wizard': 'Setup Wizard - SignUpFlow',
             '/app/schedule': 'My Schedule - SignUpFlow',
             '/app/events': 'Events - SignUpFlow',
             '/app/availability': 'Availability - SignUpFlow',
             '/app/admin': 'Admin Console - SignUpFlow',
-            '/app/billing': 'Billing & Subscription - SignUpFlow'
+            '/app/billing': 'Billing & Subscription - SignUpFlow',
+            '/app/onboarding-dashboard': 'Onboarding Dashboard - SignUpFlow'
         };
 
         // Listen for browser back/forward
@@ -78,9 +83,15 @@ class Router {
         this.updateMetaDescription(path);
 
         // Handle authentication screens
-        if (path === '/' || path === '/login' || path === '/forgot-password' || path === '/reset-password' || path === '/join' || path === '/profile') {
+        if (path === '/' || path === '/login' || path === '/forgot-password' || path === '/reset-password' || path === '/join' || path === '/profile' || path === '/wizard') {
             const screenId = this.routes[path];
-            console.log(`🛣️  Auth screen detected. Path: ${path}, screenId: ${screenId}`);
+            console.log(`🛣️  Auth/Wizard screen detected. Path: ${path}, screenId: ${screenId}`);
+
+            // Initialize wizard if on wizard screen
+            if (path === '/wizard' && typeof window.initWizard === 'function') {
+                console.log('🧙 Initializing wizard...');
+                window.initWizard();
+            }
 
             // Special handling for /join route with invitation token
             if (path === '/join' && window.location.search) {
@@ -116,8 +127,24 @@ class Router {
 
         // Handle app views
         if (path.startsWith('/app')) {
-            // Make sure user is logged in
+            console.log(`🛣️  App view detected: ${path}`);
+            // Make sure user is logged in (try restoring from localStorage first)
             if (!window.currentUser) {
+                try {
+                    const storedUser = JSON.parse(localStorage.getItem('roster_user') || 'null');
+                    const storedOrg = JSON.parse(localStorage.getItem('roster_org') || 'null');
+                    if (storedUser && storedUser.id) {
+                        window.currentUser = storedUser;
+                        window.currentOrg = storedOrg;
+                        console.log('🔐 Restored session for router from localStorage:', storedUser.email);
+                    }
+                } catch (e) {
+                    console.warn('🔐 Failed to restore session in router:', e);
+                }
+            }
+
+            if (!window.currentUser) {
+                console.warn('🔐 User not logged in, redirecting to /login');
                 this.navigate('/login', true);
                 return;
             }
@@ -144,12 +171,15 @@ class Router {
 
             // Switch to specific view
             const view = this.viewRoutes[path];
+            console.log(`🛣️  Mapped view: ${view}`);
             if (view) {
                 // Use switchView if available to handle UI updates (title, nav, content)
                 if (typeof window.switchView === 'function') {
                     console.log(`🛣️  Delegating to switchView('${view}', true)`);
                     window.switchView(view, true);
                     return;
+                } else {
+                    console.warn('🛣️  window.switchView not found!');
                 }
 
                 // Fallback manual update if switchView not available
@@ -184,14 +214,19 @@ class Router {
      */
     showScreen(screenId) {
         console.log(`🎬 router.showScreen called with: ${screenId}`);
-        document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden'));
         const screen = document.getElementById(screenId);
-        if (screen) {
-            screen.classList.remove('hidden');
-            console.log(`🎬 router.showScreen: ${screenId} is now visible`);
-        } else {
+        if (!screen) {
             console.error(`🎬 router.showScreen: ${screenId} not found!`);
+            return;
         }
+
+        const allScreens = document.querySelectorAll('.screen');
+        allScreens.forEach(s => {
+            s.classList.add('hidden');
+        });
+        
+        screen.classList.remove('hidden');
+        console.log(`🎬 router.showScreen: ${screenId} is now visible.`);
     }
 
     /**
@@ -342,3 +377,4 @@ class Router {
 
 // Create global router instance
 const router = new Router();
+window.router = router;

@@ -37,10 +37,11 @@
         rel="stylesheet">
 
     <!-- Modern Styles -->
-    <link rel="stylesheet" href="/css/styles-modern.css?v=9">
+    <link rel="stylesheet" href="/css/styles-modern.css?v=11">
     <link rel="stylesheet" href="/css/solver.css?v=9">
     <link rel="stylesheet" href="/css/mobile.css">
     <link rel="stylesheet" href="/css/sms.css">
+    <link rel="stylesheet" href="/css/wizard.css">
     <script src="/js/debug.js"></script>
     <script src="/js/toast.js"></script>
     <script src="/js/form-validation.js"></script>
@@ -388,7 +389,14 @@
         </div>
 
         <!-- Main App -->
-        <div id="main-app" class="app-shell hidden">
+        <!-- Onboarding Wizard -->
+        <div id="wizard-screen" class="screen hidden">
+            <div id="wizard-container" class="onboarding-wizard">
+                <!-- Content injected by onboarding-wizard.js -->
+            </div>
+        </div>
+
+        <div id="main-app" class="app-shell screen hidden">
             <!-- Sidebar Navigation -->
             <aside class="sidebar">
                 <div class="sidebar-header">
@@ -502,8 +510,8 @@
                     </div>
                 </div>
 
-                <!-- Onboarding Dashboard (Legacy ID kept for compatibility) -->
-                <section id="onboarding-dashboard" class="dashboard-section hidden" data-section="onboarding-dashboard">
+                <!-- Legacy Onboarding Dashboard (Kept for compatibility) -->
+                <div id="legacy-onboarding-dashboard" class="dashboard-section hidden" data-section="onboarding-dashboard">
                     <div class="dashboard-card">
                         <h2 data-i18n="onboarding.dashboard_title">🎯 Welcome to Your Onboarding Dashboard</h2>
                         <p class="help-text" data-i18n="onboarding.dashboard_subtitle">
@@ -550,7 +558,7 @@
                             </article>
                         </div>
                     </div>
-                </section>
+                </div>
 
                 <!-- My Schedule View -->
                 <!-- My Schedule View -->
@@ -1099,6 +1107,20 @@
                             <div id="teams-list" class="admin-list">
                                 <div class="loading">Select an organization to view teams</div>
                             </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Onboarding Dashboard View -->
+                <div id="onboarding-dashboard-view" class="view-content">
+                    <div id="onboarding-dashboard" class="onboarding-dashboard">
+                        <div class="dashboard-header">
+                            <h1 data-i18n="onboarding.dashboard_title">Welcome to SignUpFlow</h1>
+                            <p data-i18n="onboarding.dashboard_subtitle">Master the basics with our onboarding checklist.</p>
+                        </div>
+                        <div id="onboarding-checklist-container">
+                            <!-- Checklist items will be injected here -->
+                            <p data-i18n="onboarding.loading_checklist">Loading your checklist...</p>
                         </div>
                     </div>
                 </div>

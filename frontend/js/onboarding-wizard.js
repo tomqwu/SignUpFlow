@@ -68,11 +68,11 @@ window.saveProgress = async function(step, data) {
  * Render the wizard UI
  */
 function renderWizard() {
-    const container = document.getElementById('main-app');
+    const container = document.getElementById('wizard-container');
     if (!container) return;
 
     container.innerHTML = `
-        <div class="onboarding-wizard">
+        <div class="wizard-card">
             <div class="wizard-header">
                 <h1 data-i18n="onboarding.wizard.title">Welcome to SignUpFlow</h1>
                 <div class="wizard-progress">
@@ -84,9 +84,9 @@ function renderWizard() {
                 <!-- Step content will be rendered here -->
             </div>
             <div class="wizard-actions">
-                <button id="wizard-back" class="btn-secondary" style="display: none;">Back</button>
-                <button id="wizard-save-later" class="btn-secondary">Save & Continue Later</button>
-                <button id="wizard-continue" class="btn-primary">Continue</button>
+                <button id="wizard-back" class="btn btn-secondary" style="display: none;">Back</button>
+                <button id="wizard-save-later" class="btn btn-secondary">Save & Continue Later</button>
+                <button id="wizard-continue" class="btn btn-primary">Continue</button>
             </div>
         </div>
     `;
@@ -145,12 +145,12 @@ window.renderStep1 = function() {
     const contentDiv = document.getElementById('wizard-step-content');
 
     // Get current user/org from session for pre-filling
-    const currentUser = JSON.parse(localStorage.getItem('currentUser') || '{}');
-    const currentOrg = JSON.parse(localStorage.getItem('currentOrg') || '{}');
+    const currentUser = JSON.parse(localStorage.getItem('roster_user') || '{}');
+    const currentOrg = JSON.parse(localStorage.getItem('roster_org') || '{}');
 
     // Pre-fill from wizard data or current org
     const orgName = wizardData.org?.name || currentOrg.name || '';
-    const orgLocation = wizardData.org?.location || currentOrg.location || '';
+    const orgLocation = wizardData.org?.location || currentOrg.region || currentOrg.location || '';
     const orgTimezone = wizardData.org?.timezone || currentOrg.timezone || currentUser.timezone || 'America/New_York';
 
     contentDiv.innerHTML = `
@@ -158,17 +158,18 @@ window.renderStep1 = function() {
         <p data-i18n="onboarding.wizard.step1.description">Let's set up your organization profile.</p>
         <form id="step1-form">
             <div class="form-group">
-                <label for="org-name">Organization Name *</label>
-                <input type="text" id="org-name" value="${orgName}" required>
+                <label for="wizard-org-name">Organization Name *</label>
+                <input type="text" id="wizard-org-name" value="${orgName}" required>
             </div>
             <div class="form-group">
-                <label for="org-location">Location</label>
-                <input type="text" id="org-location" value="${orgLocation}" placeholder="City, State">
+                <label for="wizard-org-location">Location</label>
+                <input type="text" id="wizard-org-location" value="${orgLocation}" placeholder="City, State">
             </div>
             <div class="form-group">
-                <label for="org-timezone">Timezone *</label>
-                <select id="org-timezone" required>
+                <label for="wizard-org-timezone">Timezone *</label>
+                <select id="wizard-org-timezone" required>
                     <option value="America/New_York" ${orgTimezone === 'America/New_York' ? 'selected' : ''}>Eastern Time</option>
+                    <option value="America/Toronto" ${orgTimezone === 'America/Toronto' ? 'selected' : ''}>Toronto</option>
                     <option value="America/Chicago" ${orgTimezone === 'America/Chicago' ? 'selected' : ''}>Central Time</option>
                     <option value="America/Denver" ${orgTimezone === 'America/Denver' ? 'selected' : ''}>Mountain Time</option>
                     <option value="America/Los_Angeles" ${orgTimezone === 'America/Los_Angeles' ? 'selected' : ''}>Pacific Time</option>
@@ -191,16 +192,20 @@ window.renderStep2 = function() {
         <p data-i18n="onboarding.wizard.step2.description">Create an event to start scheduling volunteers.</p>
         <form id="step2-form">
             <div class="form-group">
-                <label for="event-title">Event Title *</label>
-                <input type="text" id="event-title" placeholder="Sunday Service" required>
+                <label for="wizard-event-title">Event Title *</label>
+                <input type="text" id="wizard-event-title" placeholder="Sunday Service" required>
             </div>
             <div class="form-group">
-                <label for="event-date">Date *</label>
-                <input type="date" id="event-date" required>
+                <label for="wizard-event-date">Date *</label>
+                <input type="date" id="wizard-event-date" required>
             </div>
             <div class="form-group">
-                <label for="event-time">Time *</label>
-                <input type="time" id="event-time" value="10:00" required>
+                <label for="wizard-event-time">Time *</label>
+                <input type="time" id="wizard-event-time" value="10:00" required>
+            </div>
+            <div class="form-group">
+                <label for="wizard-event-duration">Duration (minutes)</label>
+                <input type="number" id="wizard-event-duration" value="90">
             </div>
         </form>
     `;
@@ -216,12 +221,16 @@ window.renderStep3 = function() {
         <p data-i18n="onboarding.wizard.step3.description">Teams help organize volunteers by role.</p>
         <form id="step3-form">
             <div class="form-group">
-                <label for="team-name">Team Name *</label>
-                <input type="text" id="team-name" placeholder="Greeters" required>
+                <label for="wizard-team-name">Team Name *</label>
+                <input type="text" id="wizard-team-name" placeholder="Greeters" required>
             </div>
             <div class="form-group">
-                <label for="team-role">Role *</label>
-                <input type="text" id="team-role" placeholder="greeter" required>
+                <label for="wizard-team-role">Role *</label>
+                <input type="text" id="wizard-team-role" placeholder="greeter" required>
+            </div>
+            <div class="form-group">
+                <label for="wizard-team-description">Description</label>
+                <textarea id="wizard-team-description" placeholder="Optional team description"></textarea>
             </div>
         </form>
     `;
@@ -237,8 +246,8 @@ window.renderStep4 = function() {
         <p data-i18n="onboarding.wizard.step4.description">Invite your team members to join.</p>
         <form id="step4-form">
             <div class="form-group">
-                <label for="invite-emails">Email Addresses (one per line) *</label>
-                <textarea id="invite-emails" rows="5" placeholder="john@example.com&#10;jane@example.com&#10;bob@example.com" required></textarea>
+                <label for="wizard-invite-emails">Email Addresses (one per line) *</label>
+                <textarea id="wizard-invite-emails" rows="5" placeholder="john@example.com&#10;jane@example.com&#10;bob@example.com" required></textarea>
             </div>
         </form>
     `;
@@ -286,29 +295,31 @@ async function saveStepData() {
         case 1:
             // Organization Profile
             wizardData.org = {
-                name: document.getElementById('org-name')?.value || '',
-                location: document.getElementById('org-location')?.value || '',
-                timezone: document.getElementById('org-timezone')?.value || 'UTC'
+                name: document.getElementById('wizard-org-name')?.value || '',
+                location: document.getElementById('wizard-org-location')?.value || '',
+                timezone: document.getElementById('wizard-org-timezone')?.value || 'UTC'
             };
             break;
         case 2:
             // First Event
             wizardData.event = {
-                title: document.getElementById('event-title')?.value || '',
-                date: document.getElementById('event-date')?.value || '',
-                time: document.getElementById('event-time')?.value || '10:00'
+                title: document.getElementById('wizard-event-title')?.value || '',
+                date: document.getElementById('wizard-event-date')?.value || '',
+                time: document.getElementById('wizard-event-time')?.value || '10:00',
+                duration: document.getElementById('wizard-event-duration')?.value || '90'
             };
             break;
         case 3:
             // First Team
             wizardData.team = {
-                name: document.getElementById('team-name')?.value || '',
-                role: document.getElementById('team-role')?.value || ''
+                name: document.getElementById('wizard-team-name')?.value || '',
+                role: document.getElementById('wizard-team-role')?.value || '',
+                description: document.getElementById('wizard-team-description')?.value || ''
             };
             break;
         case 4:
             // Invite Volunteers
-            const emails = document.getElementById('invite-emails')?.value || '';
+            const emails = document.getElementById('wizard-invite-emails')?.value || '';
             wizardData.invitations = emails.split('\n').filter(e => e.trim());
             break;
     }
@@ -345,42 +356,78 @@ window.resumeWizard = async function() {
  */
 window.completeWizard = async function() {
     try {
+        console.log('🧙 completeWizard started');
         // Save final progress
         await window.saveProgress(4, wizardData);
 
         // Get current org and user
-        const currentUser = JSON.parse(localStorage.getItem('currentUser') || '{}');
+        const currentUser = JSON.parse(localStorage.getItem('roster_user') || '{}');
         const orgId = currentUser.org_id;
 
-        // Create event from wizard data (Step 2)
+        // 1. Update Org Profile (Step 1)
+        if (wizardData.org && wizardData.org.name) {
+            console.log('🧙 Updating org profile...');
+            await window.authFetch(`/api/organizations/${orgId}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    name: wizardData.org.name,
+                    region: wizardData.org.location,
+                    config: { timezone: wizardData.org.timezone }
+                })
+            });
+            
+            // Also update admin's timezone
+            await window.authFetch(`/api/people/me`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    timezone: wizardData.org.timezone
+                })
+            });
+        }
+
+        // 2. Create event from wizard data (Step 2)
         if (wizardData.event && wizardData.event.title) {
-            const eventDatetime = `${wizardData.event.date}T${wizardData.event.time}:00`;
-            await window.authFetch(`/api/events?org_id=${orgId}`, {
+            console.log('🧙 Creating first event...');
+            const startStr = `${wizardData.event.date}T${wizardData.event.time}:00`;
+            const startDate = new Date(startStr);
+            const duration = parseInt(wizardData.event.duration) || 90;
+            const endDate = new Date(startDate.getTime() + duration * 60 * 1000);
+            
+            await window.authFetch(`/api/events/?org_id=${orgId}`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    title: wizardData.event.title,
-                    datetime: eventDatetime,
-                    duration: 90,  // Default 90 minutes
-                    role_requirements: {}
+                    id: `event_${Date.now()}`,
+                    org_id: orgId,
+                    type: 'service',
+                    start_time: startDate.toISOString(),
+                    end_time: endDate.toISOString(),
+                    extra_data: { title: wizardData.event.title }
                 })
             });
         }
 
-        // Create team from wizard data (Step 3)
+        // 3. Create team from wizard data (Step 3)
         if (wizardData.team && wizardData.team.name) {
-            await window.authFetch(`/api/teams?org_id=${orgId}`, {
+            console.log('🧙 Creating first team...');
+            const teamId = wizardData.team.name.toLowerCase().replace(/\s+/g, '_') + '_' + Date.now();
+            await window.authFetch(`/api/teams/?org_id=${orgId}`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
+                    id: teamId,
+                    org_id: orgId,
                     name: wizardData.team.name,
-                    role: wizardData.team.role
+                    description: wizardData.team.description || `First team created during setup`
                 })
             });
         }
 
-        // Send invitations from wizard data (Step 4)
+        // 4. Send invitations from wizard data (Step 4)
         if (wizardData.invitations && wizardData.invitations.length > 0) {
+            console.log('🧙 Sending invitations...');
             for (const email of wizardData.invitations) {
                 if (email.trim()) {
                     await window.authFetch(`/api/invitations?org_id=${orgId}`, {
@@ -388,6 +435,7 @@ window.completeWizard = async function() {
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
                             email: email.trim(),
+                            name: email.split('@')[0], // Default name to email prefix
                             roles: ['volunteer']
                         })
                     });
@@ -395,11 +443,15 @@ window.completeWizard = async function() {
             }
         }
 
+        console.log('🧙 All API calls complete. Showing success message.');
         // Show success and redirect
         showSuccessMessage();
+        
+        // Wait 3 seconds for the user to celebrate, then go to dashboard
         setTimeout(() => {
+            console.log('🧙 Redirecting to onboarding dashboard...');
             window.router.navigate('/app/onboarding-dashboard');
-        }, 2000);
+        }, 3000);
 
     } catch (error) {
         console.error('Failed to complete wizard:', error);
@@ -411,26 +463,40 @@ window.completeWizard = async function() {
  * Show wizard completion success message
  */
 window.showSuccessMessage = function() {
-    const container = document.getElementById('main-app');
-    container.innerHTML = `
-        <div class="wizard-success">
-            <div class="success-icon">✓</div>
-            <h1 data-i18n="onboarding.wizard.complete.title">Setup Complete!</h1>
-            <p data-i18n="onboarding.wizard.complete.message">Your organization is ready. Redirecting to dashboard...</p>
+    console.log('🎉 showSuccessMessage called');
+    const screen = document.getElementById('wizard-screen');
+    if (screen) {
+        screen.classList.remove('hidden');
+        screen.style.display = 'block';
+    }
+    
+    const container = document.getElementById('wizard-container');
+    if (container) {
+        container.innerHTML = `
+            <div id="wizard-success" class="wizard-success" style="display: block !important; visibility: visible !important; opacity: 1 !important;">
+                <div class="success-icon">✓</div>
+                <h1 data-i18n="onboarding.wizard.complete.title">Setup Complete!</h1>
+                <p data-i18n="onboarding.wizard.complete.message">Your organization is ready. Redirecting to dashboard...</p>
 
-            <div class="success-next-steps">
-                <h2 data-i18n="onboarding.wizard.complete.explore">Explore Features</h2>
-                <p data-i18n="onboarding.wizard.complete.sample_data_intro">
-                    Want to try out features before adding real data? Generate sample data to explore.
-                </p>
-                <div id="wizard-sample-data-controls"></div>
+                <div class="success-next-steps">
+                    <h2 data-i18n="onboarding.wizard.complete.explore">Explore Features</h2>
+                    <p data-i18n="onboarding.wizard.complete.sample_data_intro">
+                        Want to try out features before adding real data? Generate sample data to explore.
+                    </p>
+                    <div id="wizard-sample-data-controls"></div>
+                </div>
             </div>
-        </div>
-    `;
+        `;
+        console.log('✅ Wizard success message injected into container');
+    } else {
+        console.error('❌ wizard-container not found for success message!');
+    }
 
     // Initialize sample data controls after a brief delay
     setTimeout(() => {
-        window.renderSampleDataControls('wizard-sample-data-controls');
+        if (typeof window.renderSampleDataControls === 'function') {
+            window.renderSampleDataControls('wizard-sample-data-controls');
+        }
     }, 500);
 }
 

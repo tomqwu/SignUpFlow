@@ -150,9 +150,27 @@ async function checkExistingSession() {
             await initializeUIState();
 
             // If on a protected /app route, handle it with router
-            if (currentPath.startsWith('/app')) {
+            if (currentPath.startsWith('/app') || currentPath === '/wizard') {
                 router.handleRoute(currentPath, false);
             } else {
+                // Check onboarding status for admins before defaulting to schedule
+                if (currentUser.roles && currentUser.roles.includes('admin')) {
+                    try {
+                        const response = await authFetch('/api/onboarding/progress');
+                        if (response.ok) {
+                            const progress = await response.json();
+                            if (progress.wizard_step_completed < 4 && !progress.onboarding_skipped) {
+                                if (currentPath !== '/wizard' && !currentPath.includes('onboarding-dashboard')) {
+                                    router.navigate('/wizard', true);
+                                    return;
+                                }
+                            }
+                        }
+                    } catch (error) {
+                        console.error('Failed to check onboarding progress:', error);
+                    }
+                }
+
                 // Default to schedule view if logged in but on root/login page
                 router.navigate('/app/schedule', true);
                 showMainApp(); // This calls showScreen('main-app')
@@ -198,14 +216,18 @@ function goToHome() {
 
 // Screen Navigation (Note: router.js also has a showScreen method)
 function showScreen(screenId) {
-    console.log(`📺 showScreen called with: ${screenId}`);
-    document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden'));
-    const screen = document.getElementById(screenId);
-    if (screen) {
-        screen.classList.remove('hidden');
-        console.log(`📺 Showing screen: ${screenId}`);
+    if (window.router && typeof window.router.showScreen === 'function') {
+        window.router.showScreen(screenId);
     } else {
-        console.error(`📺 Screen not found: ${screenId}`);
+        console.log(`📺 fallback showScreen called with: ${screenId}`);
+        document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden'));
+        const screen = document.getElementById(screenId);
+        if (screen) {
+            screen.classList.remove('hidden');
+            console.log(`📺 Showing screen: ${screenId}`);
+        } else {
+            console.error(`📺 Screen not found: ${screenId}`);
+        }
     }
 }
 
@@ -638,7 +660,7 @@ async function createAndJoinOrg(event) {
         const response = await fetch(`${API_BASE_URL}/organizations/`, fetchOptions);
 
         if (response.ok || response.status === 409) {
-            currentOrg = { id: orgId, name: orgName };
+            currentOrg = { id: orgId, name: orgName, region: orgRegion };
             isCreatingOrg = true;
 
             // Clear and prepare the profile form for new org creator signup
@@ -684,6 +706,8 @@ async function createProfile(event) {
     const name = document.getElementById('user-name').value;
     const email = document.getElementById('user-email').value;
     const password = document.getElementById('user-password').value;
+    const timezone = document.getElementById('user-timezone').value;
+    const language = i18n.getLocale();
 
     // For new org creators, default to admin role
     // Role selector may not exist on profile-screen, so provide fallback
@@ -702,7 +726,9 @@ async function createProfile(event) {
                 name: name,
                 email: email,
                 password: password,
-                roles: roles
+                roles: roles,
+                timezone: timezone,
+                language: language
             })
         });
 
@@ -717,12 +743,13 @@ async function createProfile(event) {
                 name: data.name,
                 email: data.email,
                 org_id: data.org_id,
-                roles: data.roles
+                roles: data.roles,
+                timezone: data.timezone
             };
             window.currentUser = currentUser;
             console.log('🔐 Auth token saved to localStorage');
             saveSession();
-            showMainApp();
+            await showMainApp();
         } else if (response.status === 409) {
             showToast(i18n.t('messages.errors.email_already_registered'), 'error');
         } else {
@@ -736,6 +763,44 @@ async function createProfile(event) {
 
 // Main App
 async function showMainApp() {
+    const user = window.currentUser || currentUser;
+    console.log('🏁 showMainApp - current user:', user?.name, 'roles:', user?.roles);
+    
+    // Check onboarding status for admins
+    if (user && user.roles && user.roles.includes('admin')) {
+        try {
+            console.log('🏁 showMainApp - Checking onboarding progress for admin...');
+            const response = await authFetch('/api/onboarding/progress');
+            if (response.ok) {
+                const progress = await response.json();
+                console.log('🚀 Onboarding progress state:', JSON.stringify(progress));
+                
+                // ONLY redirect if we are NOT already on the dashboard or wizard
+                const currentPath = window.location.pathname;
+                console.log('🏁 showMainApp - current path:', currentPath);
+                
+                if (progress.wizard_step_completed < 4 && !progress.onboarding_skipped) {
+                    if (currentPath !== '/wizard' && !currentPath.includes('onboarding-dashboard')) {
+                        console.log('🚀 Redirecting to Wizard because setup is incomplete.');
+                        router.navigate('/wizard', true);
+                        return;
+                    } else {
+                        console.log('🧙 Setup is incomplete, but user is already on a valid setup page. Staying here.');
+                        // If we're on /wizard or onboarding-dashboard, we should show the screen
+                        if (currentPath.includes('onboarding-dashboard')) {
+                            showScreen('main-app');
+                            switchView('onboarding-dashboard', true);
+                            return;
+                        }
+                    }
+                }
+            }
+        } catch (error) {
+            console.error('Failed to check onboarding progress:', error);
+        }
+    }
+
+    console.log('🏁 showMainApp - proceeding to main app');
     showScreen('main-app');
 
     // UI State is initialized either by checkExistingSession or below if logging in fresh
@@ -858,6 +923,9 @@ function switchView(viewName, skipUrlUpdate = false) {
     const targetView = document.getElementById(`${viewName}-view`);
     if (targetView) {
         targetView.classList.add('active');
+        // Defensive: ensure view is actually visible (some animations/CSS can leave opacity at 0)
+        targetView.style.opacity = '1';
+        targetView.style.transform = 'none';
     }
 
     // Update Page Title & Subtitle
@@ -877,6 +945,10 @@ function switchView(viewName, skipUrlUpdate = false) {
         'admin': {
             title: i18n.t('admin.admin_console'),
             subtitle: i18n.t('admin.manage_your_org') || 'Manage your organization'
+        },
+        'onboarding-dashboard': {
+            title: 'Onboarding',
+            subtitle: 'Complete your setup'
         }
     };
 
@@ -892,6 +964,12 @@ function switchView(viewName, skipUrlUpdate = false) {
     if (viewName === 'events') loadAllEvents();
     if (viewName === 'availability') loadTimeOff();
     if (viewName === 'admin') loadAdminDashboard();
+    if (viewName === 'onboarding-dashboard') {
+        console.log('🚀 Loading Onboarding Dashboard...');
+        if (typeof window.loadOnboardingChecklist === 'function') {
+            window.loadOnboardingChecklist();
+        }
+    }
 }
 
 // All Events View

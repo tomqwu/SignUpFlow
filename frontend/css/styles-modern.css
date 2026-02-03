@@ -430,6 +430,9 @@ textarea:focus {
 
 .view-content.active {
     display: block;
+    opacity: 1 !important;
+    animation: none !important;
+    transform: none !important;
 }
 
 @keyframes fadeIn {

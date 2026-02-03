@@ -1,0 +1,100 @@
+/* Onboarding Wizard Styles */
+
+.onboarding-wizard {
+    max-width: 800px;
+    margin: 40px auto;
+    padding: 30px;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+    animation: fadeIn 0.5s ease-out;
+}
+
+.wizard-header {
+    text-align: center;
+    margin-bottom: 30px;
+}
+
+.wizard-progress {
+    height: 8px;
+    background: #e5e7eb;
+    border-radius: 4px;
+    margin: 20px 0;
+    overflow: hidden;
+}
+
+.progress-bar {
+    height: 100%;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    transition: width 0.3s ease-in-out;
+}
+
+.step-indicator {
+    font-size: 0.875rem;
+    color: #6b7280;
+    font-weight: 500;
+}
+
+.wizard-content {
+    margin-bottom: 30px;
+    min-height: 250px;
+}
+
+.wizard-content h2 {
+    margin-bottom: 10px;
+    color: #1f2937;
+}
+
+.wizard-content p {
+    color: #4b5563;
+    margin-bottom: 25px;
+}
+
+.wizard-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 15px;
+    padding-top: 20px;
+    border-top: 1px solid #e5e7eb;
+}
+
+.wizard-success {
+    text-align: center;
+    padding: 40px;
+    min-height: 200px;
+    min-width: 300px;
+    border: 1px solid transparent;
+}
+
+.success-icon {
+    font-size: 4rem;
+    color: #10b981;
+    margin-bottom: 20px;
+}
+
+.success-next-steps {
+    margin-top: 30px;
+    padding: 20px;
+    background: #f9fafb;
+    border-radius: 8px;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* Onboarding Dashboard */
+.onboarding-dashboard {
+    padding: 20px;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+}
+
+.dashboard-header {
+    margin-bottom: 30px;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 20px;
+}
+

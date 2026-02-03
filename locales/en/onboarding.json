@@ -1,66 +1,32 @@
 {
-    "dashboard_title": "Welcome to Rostio",
-    "dashboard_subtitle": "Here's what you need to do next.",
-    "watch_video": "Watch Video",
-    "video_getting_started_title": "Getting Started",
-    "video_getting_started_description": "A quick tour of the application.",
-    "video_events_title": "Managing Events",
-    "video_events_description": "Learn how to create and manage events.",
-    "generate_sample_data": "Generate Sample Data",
-    "clear_sample_data": "Clear Sample Data",
-    "sample_data_title": "Sample Data",
-    "sample_data_description": "Use sample data to test the application.",
-    "tutorials": {
-        "replay": "Replay Tutorial",
-        "dismiss_message": "Don't show this again",
-        "dont_show": "Don't show again",
-        "list_title": "Tutorials",
-        "completed": "Completed",
-        "remind_later": "Remind me later",
-        "dismiss_title": "Dismiss Tutorial"
-    },
-    "sample_data": {
-        "clear": "Clear Sample Data",
-        "generate": "Generate Sample Data",
-        "description": "Generate sample data to explore the application features."
-    },
+  "onboarding": {
     "wizard": {
-        "title": "Onboarding Wizard",
-        "step1": {
-            "title": "Welcome",
-            "description": "Let's get you set up."
-        },
-        "step2": {
-            "title": "Organization",
-            "description": "Tell us about your organization."
-        },
-        "step3": {
-            "title": "Preferences",
-            "description": "Set your preferences."
-        },
-        "step4": {
-            "title": "Finish",
-            "description": "You're all set!"
-        },
-        "complete": {
-            "title": "Setup Complete",
-            "message": "You have successfully completed the onboarding.",
-            "explore": "Explore Dashboard",
-            "sample_data_intro": "Want to see how it works? Generate sample data."
-        }
-    },
-    "unlocks": {
+      "title": "Welcome to SignUpFlow",
+      "step1": {
+        "title": "Organization Profile",
+        "description": "Let's set up your organization profile."
+      },
+      "step2": {
+        "title": "Create Your First Event",
+        "description": "Create an event to start scheduling volunteers."
+      },
+      "step3": {
+        "title": "Create Your First Team",
+        "description": "Teams help organize volunteers by role."
+      },
+      "step4": {
+        "title": "Invite Volunteers",
+        "description": "Invite your team members to join."
+      },
+      "complete": {
+        "title": "Setup Complete!",
+        "message": "Your organization is ready. Redirecting to dashboard...",
         "explore": "Explore Features",
-        "milestone": "Milestone Reached!",
-        "new_badge": "New Badge Unlocked",
-        "new_feature": "New Feature Unlocked"
-    },
-    "checklist": {
-        "title": "Getting Started Checklist",
-        "dismiss": "Dismiss",
-        "celebration": {
-            "title": "Congratulations!",
-            "message": "You've completed all tasks!"
-        }
+        "sample_data_intro": "Want to try out features before adding real data? Generate sample data to explore."
+      },
+      "dashboard_title": "Welcome to SignUpFlow",
+      "dashboard_subtitle": "Master the basics with our onboarding checklist.",
+      "loading_checklist": "Loading your checklist..."
     }
+  }
 }

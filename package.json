@@ -18,7 +18,14 @@
     "type": "git",
     "url": "git+https://github.com/tomqwu/signupflow.git"
   },
-  "keywords": ["volunteer", "scheduling", "signup", "church", "sports-league", "ai-scheduling"],
+  "keywords": [
+    "volunteer",
+    "scheduling",
+    "signup",
+    "church",
+    "sports-league",
+    "ai-scheduling"
+  ],
   "author": "SignUpFlow Team",
   "license": "MIT",
   "bugs": {
@@ -32,6 +39,7 @@
     "jsdom": "^27.0.0"
   },
   "dependencies": {
-    "intro.js": "^7.2.0"
+    "intro.js": "^7.2.0",
+    "shepherd.js": "^14.5.1"
   }
 }

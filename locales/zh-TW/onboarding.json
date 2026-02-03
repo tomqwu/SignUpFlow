@@ -1,66 +1,29 @@
 {
-    "dashboard_title": "歡迎來到 Rostio",
-    "dashboard_subtitle": "接下來您需要做什麼。",
-    "watch_video": "觀看影片",
-    "video_getting_started_title": "入門指南",
-    "video_getting_started_description": "應用程式快速瀏覽。",
-    "video_events_title": "管理活動",
-    "video_events_description": "了解如何建立和管理活動。",
-    "generate_sample_data": "產生範例資料",
-    "clear_sample_data": "清除範例資料",
-    "sample_data_title": "範例資料",
-    "sample_data_description": "使用範例資料測試應用程式。",
-    "tutorials": {
-        "replay": "重播教學",
-        "dismiss_message": "不再顯示",
-        "dont_show": "不再顯示",
-        "list_title": "教學",
-        "completed": "已完成",
-        "remind_later": "稍後提醒",
-        "dismiss_title": "忽略教學"
-    },
-    "sample_data": {
-        "clear": "清除範例資料",
-        "generate": "產生範例資料",
-        "description": "產生範例資料以探索應用程式功能。"
-    },
+  "onboarding": {
     "wizard": {
-        "title": "入門精靈",
-        "step1": {
-            "title": "歡迎",
-            "description": "讓我們開始設定。"
-        },
-        "step2": {
-            "title": "組織",
-            "description": "告訴我們關於您的組織。"
-        },
-        "step3": {
-            "title": "偏好",
-            "description": "設定您的偏好。"
-        },
-        "step4": {
-            "title": "完成",
-            "description": "一切準備就緒！"
-        },
-        "complete": {
-            "title": "設定完成",
-            "message": "您已成功完成入門設定。",
-            "explore": "探索儀表板",
-            "sample_data_intro": "想看看它是如何運作的？產生範例資料。"
-        }
-    },
-    "unlocks": {
-        "explore": "探索功能",
-        "milestone": "達到里程碑！",
-        "new_badge": "解鎖新徽章",
-        "new_feature": "解鎖新功能"
-    },
-    "checklist": {
-        "title": "入門清單",
-        "dismiss": "忽略",
-        "celebration": {
-            "title": "恭喜！",
-            "message": "您已完成所有任務！"
-        }
+      "title": "Welcome to SignUpFlow",
+      "step1": {
+        "title": "Organization Profile",
+        "description": "Let's set up your organization profile."
+      },
+      "step2": {
+        "title": "Create Your First Event",
+        "description": "Create an event to start scheduling volunteers."
+      },
+      "step3": {
+        "title": "Create Your First Team",
+        "description": "Teams help organize volunteers by role."
+      },
+      "step4": {
+        "title": "Invite Volunteers",
+        "description": "Invite your team members to join."
+      },
+      "complete": {
+        "title": "Setup Complete!",
+        "message": "Your organization is ready. Redirecting to dashboard...",
+        "explore": "Explore Features",
+        "sample_data_intro": "Want to try out features before adding real data? Generate sample data to explore."
+      }
     }
+  }
 }
