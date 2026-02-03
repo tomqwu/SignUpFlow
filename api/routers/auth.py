@@ -5,6 +5,7 @@ from fastapi import APIRouter, Depends, HTTPException, status, Request
 from sqlalchemy.orm import Session
 from pydantic import BaseModel, EmailStr, Field
 import time
+import os
 
 from api.database import get_db
 from api.dependencies import get_organization_by_id
@@ -25,6 +26,8 @@ class SignupRequest(BaseModel):
     email: EmailStr = Field(..., description="Email address")
     password: str = Field(..., min_length=6, description="Password (min 6 characters)")
     roles: Optional[list[str]] = Field(default_factory=list, description="User roles")
+    timezone: Optional[str] = Field(default="UTC", description="User timezone")
+    language: Optional[str] = Field(default="en", description="User language")
 
 
 class LoginRequest(BaseModel):
@@ -103,6 +106,8 @@ def signup(request: SignupRequest, db: Session = Depends(get_db)):
         email=request.email,
         password_hash=password_hash,
         roles=roles,
+        timezone=request.timezone,
+        language=request.language,
         extra_data={}
     )
 
@@ -175,10 +180,10 @@ def check_email(email: EmailStr, db: Session = Depends(get_db)):
 def get_recaptcha_config():
     """
     Get reCAPTCHA site key for frontend use.
-
-    Returns:
-        dict: Contains site_key and enabled status
     """
+    if os.getenv("TESTING") == "true":
+        return {"site_key": None, "enabled": False}
+
     site_key = get_recaptcha_site_key()
     return {
         "site_key": site_key,

@@ -15,6 +15,7 @@ from pydantic import BaseModel
 from api.database import get_db
 from api.models import OnboardingProgress, Person
 from api.dependencies import get_current_user, get_current_admin_user, verify_org_member
+from api.services.onboarding_service import OnboardingService
 from api.services.sample_data_generator import (
     generate_sample_data,
     cleanup_sample_data,
@@ -67,39 +68,9 @@ def get_onboarding_progress(
 ):
     """
     Get current user's onboarding progress.
-
-    Returns onboarding state including:
-    - Wizard step completion (0-4)
-    - Checklist item states
-    - Completed tutorials
-    - Unlocked features
-    - Skip/dismiss flags
     """
-    # Get or create onboarding progress for user
-    progress = db.query(OnboardingProgress).filter(
-        OnboardingProgress.person_id == current_user.id
-    ).first()
-
-    if not progress:
-        # Create initial progress record
-        progress = OnboardingProgress(
-            person_id=current_user.id,
-            org_id=current_user.org_id,
-            wizard_step_completed=0,
-            wizard_data={},
-            checklist_state={},
-            tutorials_completed=[],
-            features_unlocked=[],
-            videos_watched=[],
-            onboarding_skipped=False,
-            checklist_dismissed=False,
-            tutorials_dismissed=False
-        )
-        db.add(progress)
-        db.commit()
-        db.refresh(progress)
-
-    return progress
+    service = OnboardingService(db)
+    return service.get_progress(current_user.id)
 
 
 @router.put("/onboarding/progress", response_model=OnboardingProgressResponse)
@@ -110,86 +81,9 @@ def update_onboarding_progress(
 ):
     """
     Update current user's onboarding progress.
-
-    Supports partial updates - only provided fields will be updated.
-
-    Fields:
-    - wizard_step_completed: 0-4 (0=not started, 4=completed)
-    - wizard_data: Free-form data from wizard (org, event, team, invitations)
-    - checklist_state: Dict of checklist items {"complete_profile": True, ...}
-    - tutorials_completed: List of completed tutorial IDs
-    - features_unlocked: List of unlocked feature IDs
-    - onboarding_skipped: Whether user skipped onboarding
-    - checklist_dismissed: Whether checklist widget was dismissed
-    - tutorials_dismissed: Whether all tutorials were dismissed
     """
-    # Get existing progress or create new
-    progress = db.query(OnboardingProgress).filter(
-        OnboardingProgress.person_id == current_user.id
-    ).first()
-
-    if not progress:
-        # Create new progress record
-        progress = OnboardingProgress(
-            person_id=current_user.id,
-            org_id=current_user.org_id,
-            wizard_step_completed=0,
-            wizard_data={},
-            checklist_state={},
-            tutorials_completed=[],
-            features_unlocked=[],
-            videos_watched=[],
-            onboarding_skipped=False,
-            checklist_dismissed=False,
-            tutorials_dismissed=False
-        )
-        db.add(progress)
-
-    # Update fields (only if provided in request)
-    if update.wizard_step_completed is not None:
-        # Validate wizard step (0-4)
-        if not 0 <= update.wizard_step_completed <= 4:
-            raise HTTPException(
-                status_code=422,
-                detail="wizard_step_completed must be between 0 and 4"
-            )
-        progress.wizard_step_completed = update.wizard_step_completed
-
-    if update.wizard_data is not None:
-        # Store wizard form data for resume functionality
-        progress.wizard_data = update.wizard_data
-        flag_modified(progress, "wizard_data")
-
-    if update.checklist_state is not None:
-        # Merge with existing checklist state
-        current_state = progress.checklist_state or {}
-        current_state.update(update.checklist_state)
-        progress.checklist_state = current_state
-        # Flag as modified so SQLAlchemy detects the change
-        flag_modified(progress, "checklist_state")
-
-    if update.tutorials_completed is not None:
-        progress.tutorials_completed = update.tutorials_completed
-
-    if update.features_unlocked is not None:
-        progress.features_unlocked = update.features_unlocked
-
-    if update.videos_watched is not None:
-        progress.videos_watched = update.videos_watched
-
-    if update.onboarding_skipped is not None:
-        progress.onboarding_skipped = update.onboarding_skipped
-
-    if update.checklist_dismissed is not None:
-        progress.checklist_dismissed = update.checklist_dismissed
-
-    if update.tutorials_dismissed is not None:
-        progress.tutorials_dismissed = update.tutorials_dismissed
-
-    db.commit()
-    db.refresh(progress)
-
-    return progress
+    service = OnboardingService(db)
+    return service.update_progress(current_user.id, update.dict(exclude_unset=True))
 
 
 @router.post("/onboarding/skip")
@@ -199,31 +93,9 @@ def skip_onboarding(
 ):
     """
     Mark onboarding as skipped for experienced users.
-
-    Sets wizard_step_completed to 4 (completed) and onboarding_skipped flag.
     """
-    progress = db.query(OnboardingProgress).filter(
-        OnboardingProgress.person_id == current_user.id
-    ).first()
-
-    if not progress:
-        progress = OnboardingProgress(
-            person_id=current_user.id,
-            org_id=current_user.org_id,
-            wizard_step_completed=4,  # Mark as completed
-            checklist_state={},
-            tutorials_completed=[],
-            features_unlocked=[],
-            onboarding_skipped=True
-        )
-        db.add(progress)
-    else:
-        progress.wizard_step_completed = 4
-        progress.onboarding_skipped = True
-
-    db.commit()
-    db.refresh(progress)
-
+    service = OnboardingService(db)
+    service.skip_onboarding(current_user.id)
     return {"message": "Onboarding skipped successfully"}
 
 
@@ -233,24 +105,10 @@ def reset_onboarding(
     db: Session = Depends(get_db)
 ):
     """
-    Reset onboarding progress (for testing or re-enabling).
-
-    Clears all progress and allows user to go through onboarding again.
+    Reset onboarding progress.
     """
-    progress = db.query(OnboardingProgress).filter(
-        OnboardingProgress.person_id == current_user.id
-    ).first()
-
-    if progress:
-        progress.wizard_step_completed = 0
-        progress.checklist_state = {}
-        progress.tutorials_completed = []
-        progress.features_unlocked = []
-        progress.onboarding_skipped = False
-
-        db.commit()
-        db.refresh(progress)
-
+    service = OnboardingService(db)
+    service.reset_onboarding(current_user.id)
     return {"message": "Onboarding progress reset successfully"}
 
 
