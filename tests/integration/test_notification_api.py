@@ -18,7 +18,7 @@ import uuid
 class TestNotificationEndpoints:
     """Integration tests for notification API endpoints."""
 
-    def test_get_notifications_as_volunteer(self, client: TestClient, test_db: Session, auth_headers_volunteer: dict):
+    def test_get_notifications_as_volunteer(self, client: TestClient, db: Session, auth_headers_volunteer: dict):
         """Test GET /api/notifications/ as volunteer (see only own notifications)."""
         # Arrange: Create test data
         volunteer_id = "test_volunteer"
@@ -32,8 +32,8 @@ class TestNotificationEndpoints:
             status=NotificationStatus.SENT,
             template_data={"event_title": "Sunday Service"}
         )
-        test_db.add(notification)
-        test_db.commit()
+        db.add(notification)
+        db.commit()
 
         # Act
         response = client.get(f"/api/notifications/?org_id={org_id}", headers=auth_headers_volunteer)
@@ -47,7 +47,7 @@ class TestNotificationEndpoints:
         assert len(data["notifications"]) >= 1
         assert data["notifications"][0]["recipient_id"] == volunteer_id
 
-    def test_get_notifications_as_admin_sees_all(self, client: TestClient, test_db: Session, auth_headers_admin: dict):
+    def test_get_notifications_as_admin_sees_all(self, client: TestClient, db: Session, auth_headers_admin: dict):
         """Test GET /api/notifications/ as admin (see all org notifications)."""
         # Arrange
         org_id = "test_org"
@@ -55,8 +55,8 @@ class TestNotificationEndpoints:
         # Create notifications for different volunteers
         notif1 = Notification(org_id=org_id, recipient_id="vol_1", type=NotificationType.ASSIGNMENT, status=NotificationStatus.SENT)
         notif2 = Notification(org_id=org_id, recipient_id="vol_2", type=NotificationType.ASSIGNMENT, status=NotificationStatus.SENT)
-        test_db.add_all([notif1, notif2])
-        test_db.commit()
+        db.add_all([notif1, notif2])
+        db.commit()
 
         # Act
         response = client.get(f"/api/notifications/?org_id={org_id}", headers=auth_headers_admin)
@@ -66,7 +66,7 @@ class TestNotificationEndpoints:
         data = response.json()
         assert len(data["notifications"]) >= 2  # Admin sees all
 
-    def test_get_single_notification(self, client: TestClient, test_db: Session, auth_headers_volunteer: dict):
+    def test_get_single_notification(self, client: TestClient, db: Session, auth_headers_volunteer: dict):
         """Test GET /api/notifications/{notification_id}."""
         # Arrange
         volunteer_id = "test_volunteer"
@@ -79,9 +79,9 @@ class TestNotificationEndpoints:
             status=NotificationStatus.DELIVERED,
             template_data={"event_title": "Bible Study"}
         )
-        test_db.add(notification)
-        test_db.commit()
-        test_db.refresh(notification)  # Get auto-generated ID
+        db.add(notification)
+        db.commit()
+        db.refresh(notification)  # Get auto-generated ID
         notification_id = notification.id
 
         # Act
@@ -94,7 +94,7 @@ class TestNotificationEndpoints:
         assert data["type"] == "reminder"
         assert data["status"] == "delivered"
 
-    def test_get_email_preferences(self, client: TestClient, test_db: Session, auth_headers_volunteer: dict):
+    def test_get_email_preferences(self, client: TestClient, db: Session, auth_headers_volunteer: dict):
         """Test GET /api/notifications/preferences/me."""
         # Arrange
         volunteer_id = "test_volunteer"
@@ -108,8 +108,8 @@ class TestNotificationEndpoints:
             enabled_types=["assignment", "reminder"],
             unsubscribe_token=str(uuid.uuid4())
         )
-        test_db.add(pref)
-        test_db.commit()
+        db.add(pref)
+        db.commit()
 
         # Act
         response = client.get("/api/notifications/preferences/me", headers=auth_headers_volunteer)
@@ -121,7 +121,7 @@ class TestNotificationEndpoints:
         assert data["frequency"] == "immediate"
         assert "assignment" in data["enabled_types"]
 
-    def test_update_email_preferences(self, client: TestClient, test_db: Session, auth_headers_volunteer: dict):
+    def test_update_email_preferences(self, client: TestClient, db: Session, auth_headers_volunteer: dict):
         """Test PUT /api/notifications/preferences/me."""
         # Arrange
         volunteer_id = "test_volunteer"
@@ -135,8 +135,8 @@ class TestNotificationEndpoints:
             enabled_types=["assignment"],
             unsubscribe_token=str(uuid.uuid4())
         )
-        test_db.add(pref)
-        test_db.commit()
+        db.add(pref)
+        db.commit()
 
         # Act: Update to daily digest
         update_data = {
@@ -153,7 +153,7 @@ class TestNotificationEndpoints:
         assert data["digest_hour"] == 8
         assert len(data["enabled_types"]) == 3
 
-    def test_get_org_stats_as_admin(self, client: TestClient, test_db: Session, auth_headers_admin: dict):
+    def test_get_org_stats_as_admin(self, client: TestClient, db: Session, auth_headers_admin: dict):
         """Test GET /api/notifications/stats/organization (admin-only)."""
         # Arrange
         org_id = "test_org"
@@ -165,8 +165,8 @@ class TestNotificationEndpoints:
         ]
         notifications[0].status = NotificationStatus.DELIVERED
         notifications[1].status = NotificationStatus.OPENED
-        test_db.add_all(notifications)
-        test_db.commit()
+        db.add_all(notifications)
+        db.commit()
 
         # Act
         response = client.get(f"/api/notifications/stats/organization?org_id={org_id}", headers=auth_headers_admin)
@@ -192,7 +192,7 @@ class TestNotificationEndpoints:
         # Assert
         assert response.status_code == 403  # Forbidden
 
-    def test_post_test_notification_as_admin(self, client: TestClient, test_db: Session, auth_headers_admin: dict):
+    def test_post_test_notification_as_admin(self, client: TestClient, db: Session, auth_headers_admin: dict):
         """Test POST /api/notifications/test/send (admin-only, for testing)."""
         # Arrange
         recipient_email = "test@example.com"
@@ -219,7 +219,7 @@ class TestNotificationEndpoints:
         assert data["notification_id"] == 'notif_123'
         assert data["status"] == 'sent'
 
-    def test_notifications_multi_tenant_isolation(self, client: TestClient, test_db: Session):
+    def test_notifications_multi_tenant_isolation(self, client: TestClient, db: Session):
         """Test that volunteers can only see notifications from their own org."""
         # Arrange: Create 2 orgs with notifications
         org1_id = "org_1"
@@ -230,7 +230,7 @@ class TestNotificationEndpoints:
         notif1 = Notification(org_id=org1_id, recipient_id=volunteer_id, type=NotificationType.ASSIGNMENT, status=NotificationStatus.SENT)
         # Notification in org2 (different org)
         notif2 = Notification(org_id=org2_id, recipient_id="other_vol", type=NotificationType.ASSIGNMENT, status=NotificationStatus.SENT)
-        test_db.add_all([notif1, notif2])
+        db.add_all([notif1, notif2])
         
         # Create the volunteer user so auth works
         from api.models import Person
@@ -243,11 +243,11 @@ class TestNotificationEndpoints:
             password_hash=hash_password("password"),
             roles=["volunteer"]
         )
-        test_db.add(volunteer)
+        db.add(volunteer)
         
-        test_db.commit()
-        test_db.refresh(notif1)
-        test_db.refresh(notif2)
+        db.commit()
+        db.refresh(notif1)
+        db.refresh(notif2)
         notif1_id = notif1.id
         notif2_id = notif2.id
 
@@ -268,50 +268,56 @@ class TestNotificationEndpoints:
 
 # Pytest fixtures
 @pytest.fixture
-def test_org(test_db: Session):
-    """Create test organization."""
-    org = Organization(id="test_org", name="Test Organization", region="US", config={})
-    test_db.add(org)
-    test_db.commit()
-    test_db.refresh(org)
+def test_org(db: Session):
+    """Create test organization (idempotent)."""
+    org = db.get(Organization, "test_org")
+    if org is None:
+        org = Organization(id="test_org", name="Test Organization", region="US", config={})
+        db.add(org)
+        db.commit()
+        db.refresh(org)
     return org
 
 
 @pytest.fixture
-def volunteer_user(test_db: Session, test_org):
-    """Create volunteer user in database."""
+def volunteer_user(db: Session, test_org):
+    """Create volunteer user in database (idempotent)."""
     from api.security import hash_password
 
-    user = Person(
-        id="test_volunteer",
-        org_id="test_org",
-        name="Volunteer User",
-        email="volunteer@example.com",
-        password_hash=hash_password("password"),
-        roles=["volunteer"]
-    )
-    test_db.add(user)
-    test_db.commit()
-    test_db.refresh(user)
+    user = db.get(Person, "test_volunteer")
+    if user is None:
+        user = Person(
+            id="test_volunteer",
+            org_id="test_org",
+            name="Volunteer User",
+            email="volunteer@example.com",
+            password_hash=hash_password("password"),
+            roles=["volunteer"]
+        )
+        db.add(user)
+        db.commit()
+        db.refresh(user)
     return user
 
 
 @pytest.fixture
-def admin_user(test_db: Session, test_org):
-    """Create admin user in database."""
+def admin_user(db: Session, test_org):
+    """Create admin user in database (idempotent)."""
     from api.security import hash_password
 
-    user = Person(
-        id="test_admin",
-        org_id="test_org",
-        name="Admin User",
-        email="admin@example.com",
-        password_hash=hash_password("admin123"),
-        roles=["admin"]
-    )
-    test_db.add(user)
-    test_db.commit()
-    test_db.refresh(user)
+    user = db.get(Person, "test_admin")
+    if user is None:
+        user = Person(
+            id="test_admin",
+            org_id="test_org",
+            name="Admin User",
+            email="admin@example.com",
+            password_hash=hash_password("admin123"),
+            roles=["admin"]
+        )
+        db.add(user)
+        db.commit()
+        db.refresh(user)
     return user
 
 
