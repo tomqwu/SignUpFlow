@@ -1,6 +1,8 @@
 """Database models for roster system using SQLAlchemy."""
 
 from datetime import datetime, date
+
+from api.timeutils import utcnow
 from typing import Optional
 import json
 
@@ -51,8 +53,8 @@ class Organization(Base):
     name = Column(String, nullable=False)
     region = Column(String, nullable=True)
     config = Column(JSONType, nullable=True)
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = Column(DateTime, default=utcnow)
+    updated_at = Column(DateTime, default=utcnow, onupdate=utcnow)
 
     # Cancellation and data retention fields
     cancelled_at = Column(DateTime, nullable=True)  # When subscription was cancelled
@@ -123,8 +125,8 @@ class Person(Base):
     calendar_token = Column(String, unique=True, nullable=True)  # Unique token for calendar subscription
     is_sample = Column(Boolean, default=False, nullable=False)  # For sample/demo data
     extra_data = Column(JSONType, nullable=True)
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = Column(DateTime, default=utcnow)
+    updated_at = Column(DateTime, default=utcnow, onupdate=utcnow)
 
     # Relationships
     organization = relationship("Organization", back_populates="people")
@@ -157,8 +159,8 @@ class Team(Base):
     description = Column(String, nullable=True)
     is_sample = Column(Boolean, default=False, nullable=False)  # For sample/demo data
     extra_data = Column(JSONType, nullable=True)
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = Column(DateTime, default=utcnow)
+    updated_at = Column(DateTime, default=utcnow, onupdate=utcnow)
 
     # Relationships
     organization = relationship("Organization", back_populates="teams")
@@ -179,7 +181,7 @@ class TeamMember(Base):
     id = Column(Integer, primary_key=True, autoincrement=True)
     team_id = Column(String, ForeignKey("teams.id"), nullable=False)
     person_id = Column(String, ForeignKey("people.id"), nullable=False)
-    joined_at = Column(DateTime, default=datetime.utcnow)
+    joined_at = Column(DateTime, default=utcnow)
 
     # Relationships
     team = relationship("Team", back_populates="members")
@@ -203,8 +205,8 @@ class Resource(Base):
     location = Column(String, nullable=False)
     capacity = Column(Integer, nullable=True)
     extra_data = Column(JSONType, nullable=True)
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = Column(DateTime, default=utcnow)
+    updated_at = Column(DateTime, default=utcnow, onupdate=utcnow)
 
     # Relationships
     organization = relationship("Organization", back_populates="resources")
@@ -235,8 +237,8 @@ class Event(Base):
     occurrence_sequence = Column(Integer, nullable=True)  # Position in series (1, 2, 3...)
     is_exception = Column(Boolean, default=False, nullable=False)  # Single occurrence modified
 
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = Column(DateTime, default=utcnow)
+    updated_at = Column(DateTime, default=utcnow, onupdate=utcnow)
 
     # Relationships
     organization = relationship("Organization", back_populates="events")
@@ -285,8 +287,8 @@ class RecurringSeries(Base):
 
     # Status
     active = Column(Boolean, default=True, nullable=False)
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = Column(DateTime, default=utcnow)
+    updated_at = Column(DateTime, default=utcnow, onupdate=utcnow)
 
     # Relationships
     organization = relationship("Organization", back_populates="recurring_series")
@@ -327,7 +329,7 @@ class RecurrenceException(Base):
     custom_end_time = Column(DateTime, nullable=True)
     custom_location = Column(String, nullable=True)
 
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, default=utcnow)
 
     # Relationships
     occurrence = relationship("Event", back_populates="recurrence_exception")
@@ -369,8 +371,8 @@ class Availability(Base):
     person_id = Column(String, ForeignKey("people.id"), nullable=False)
     rrule = Column(String, nullable=True)
     extra_data = Column(JSONType, nullable=True)
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = Column(DateTime, default=utcnow)
+    updated_at = Column(DateTime, default=utcnow, onupdate=utcnow)
 
     # Relationships
     person = relationship("Person", back_populates="availability")
@@ -433,7 +435,7 @@ class Holiday(Base):
     date = Column(Date, nullable=False)
     label = Column(String, nullable=False)
     is_long_weekend = Column(Boolean, default=False)
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, default=utcnow)
 
     # Relationships
     organization = relationship("Organization", back_populates="holidays")
@@ -457,8 +459,8 @@ class Constraint(Base):
     weight = Column(Integer, nullable=True)
     predicate = Column(String, nullable=False)
     params = Column(JSONType, nullable=True)
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = Column(DateTime, default=utcnow)
+    updated_at = Column(DateTime, default=utcnow, onupdate=utcnow)
 
     # Relationships
     organization = relationship("Organization", back_populates="constraints")
@@ -482,7 +484,7 @@ class Solution(Base):
     soft_score = Column(Float, nullable=False)
     health_score = Column(Float, nullable=False)
     metrics = Column(JSONType, nullable=True)
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, default=utcnow)
 
     # Relationships
     organization = relationship("Organization", back_populates="solutions")
@@ -509,7 +511,7 @@ class Invitation(Base):
     token = Column(String, unique=True, nullable=False)
     status = Column(String, default="pending", nullable=False)  # pending, accepted, expired, cancelled
     expires_at = Column(DateTime, nullable=False)
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, default=utcnow)
     accepted_at = Column(DateTime, nullable=True)
 
     # Relationships
@@ -542,8 +544,8 @@ class OnboardingProgress(Base):
     onboarding_skipped = Column(Boolean, default=False)
     checklist_dismissed = Column(Boolean, default=False)
     tutorials_dismissed = Column(Boolean, default=False)
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = Column(DateTime, default=utcnow)
+    updated_at = Column(DateTime, default=utcnow, onupdate=utcnow)
 
     # Relationships
     person = relationship("Person", back_populates="onboarding_progress")
@@ -568,7 +570,7 @@ class Assignment(Base):
     role = Column(String, nullable=True)  # Event-specific role (e.g., "usher", "greeter", "sound_tech")
     status = Column(String, default="confirmed", nullable=False)  # confirmed, declined, swap_requested
     decline_reason = Column(String, nullable=True)
-    assigned_at = Column(DateTime, default=datetime.utcnow)
+    assigned_at = Column(DateTime, default=utcnow)
 
     # Relationships
     solution = relationship("Solution", back_populates="assignments")
@@ -647,7 +649,7 @@ class Notification(Base):
     retry_count = Column(Integer, default=0, nullable=False)
     sendgrid_message_id = Column(String, nullable=True, unique=True)  # SendGrid message ID
     error_message = Column(Text, nullable=True)
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, default=utcnow)
     sent_at = Column(DateTime, nullable=True)
     delivered_at = Column(DateTime, nullable=True)
     opened_at = Column(DateTime, nullable=True)
@@ -682,7 +684,7 @@ class EmailPreference(Base):
     timezone = Column(String, default="UTC", nullable=False)  # For digest scheduling
     digest_hour = Column(Integer, default=8, nullable=False)  # Hour to send digests (0-23)
     unsubscribe_token = Column(String, unique=True, nullable=False)  # Unique unsubscribe token
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    updated_at = Column(DateTime, default=utcnow, onupdate=utcnow)
 
     # Relationships
     person = relationship("Person", back_populates="email_preferences", uselist=False)
@@ -707,7 +709,7 @@ class DeliveryLog(Base):
     timestamp = Column(DateTime, nullable=False)
     reason = Column(Text, nullable=True)  # Bounce reason, error message, etc.
     raw_event = Column(JSONType, nullable=True)  # Full SendGrid webhook payload
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, default=utcnow)
 
     # Relationships
     notification = relationship("Notification", backref="delivery_logs")
@@ -819,8 +821,8 @@ class SmsPreference(Base):
     opt_out_date = Column(DateTime, nullable=True)
     language = Column(String(5), nullable=False, default="en")
     timezone = Column(String(50), nullable=False, default="UTC")
-    created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
-    updated_at = Column(DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = Column(DateTime, nullable=False, default=utcnow)
+    updated_at = Column(DateTime, nullable=False, default=utcnow, onupdate=utcnow)
 
     # Indexes
     __table_args__ = (
@@ -849,7 +851,7 @@ class SmsMessage(Base):
     sent_at = Column(DateTime, nullable=True)
     delivered_at = Column(DateTime, nullable=True)
     failed_at = Column(DateTime, nullable=True)
-    created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
+    created_at = Column(DateTime, nullable=False, default=utcnow)
 
     # Indexes
     __table_args__ = (
@@ -876,8 +878,8 @@ class SmsTemplate(Base):
     is_system = Column(Boolean, nullable=False, default=False)
     usage_count = Column(Integer, nullable=False, default=0)
     created_by = Column(String, ForeignKey("people.id", ondelete="CASCADE"), nullable=False)
-    created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
-    updated_at = Column(DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = Column(DateTime, nullable=False, default=utcnow)
+    updated_at = Column(DateTime, nullable=False, default=utcnow, onupdate=utcnow)
 
     # Indexes
     __table_args__ = (
@@ -903,8 +905,8 @@ class SmsUsage(Base):
     alert_sent_at_80 = Column(Boolean, nullable=False, default=False)
     alert_sent_at_100 = Column(Boolean, nullable=False, default=False)
     auto_pause_enabled = Column(Boolean, nullable=False, default=True)
-    created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
-    updated_at = Column(DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = Column(DateTime, nullable=False, default=utcnow)
+    updated_at = Column(DateTime, nullable=False, default=utcnow, onupdate=utcnow)
 
     # Indexes
     __table_args__ = (
@@ -922,7 +924,7 @@ class SmsVerificationCode(Base):
     verification_code = Column(Integer, nullable=False)  # 6-digit: 100000-999999
     attempts = Column(Integer, nullable=False, default=0)
     expires_at = Column(DateTime, nullable=False)
-    created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
+    created_at = Column(DateTime, nullable=False, default=utcnow)
 
     # Indexes
     __table_args__ = (
@@ -945,7 +947,7 @@ class SmsReply(Base):
     action_taken = Column(String(50), nullable=False)  # 'confirmed', 'declined', 'opted_out', 'help_sent', etc.
     twilio_message_sid = Column(String(34), unique=True, nullable=True)
     processed_at = Column(DateTime, nullable=True)
-    created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
+    created_at = Column(DateTime, nullable=False, default=utcnow)
 
     # Indexes
     __table_args__ = (
@@ -977,8 +979,8 @@ class Subscription(Base):
     current_period_end = Column(DateTime, nullable=True)  # Current billing period end
     cancel_at_period_end = Column(Boolean, nullable=False, default=False)  # Scheduled cancellation
     pending_downgrade = Column(JSONType, nullable=True)  # Scheduled downgrade: {"new_plan": "starter", "effective_date": "2025-11-01"}
-    created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
-    updated_at = Column(DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = Column(DateTime, nullable=False, default=utcnow)
+    updated_at = Column(DateTime, nullable=False, default=utcnow, onupdate=utcnow)
 
     # Relationships
     organization = relationship("Organization", back_populates="subscription")
@@ -1009,7 +1011,7 @@ class BillingHistory(Base):
     invoice_pdf_url = Column(String(500), nullable=True)  # URL to invoice PDF
     description = Column(Text, nullable=True)
     extra_metadata = Column(JSONType, nullable=True)  # Additional event metadata
-    event_timestamp = Column(DateTime, nullable=False, default=datetime.utcnow)
+    event_timestamp = Column(DateTime, nullable=False, default=utcnow)
 
     # Relationships
     subscription = relationship("Subscription", back_populates="billing_history")
@@ -1036,7 +1038,7 @@ class PaymentMethod(Base):
     billing_address = Column(JSONType, nullable=True)  # {street, city, state, zip, country}
     is_primary = Column(Boolean, nullable=False, default=False)
     is_active = Column(Boolean, nullable=False, default=True)
-    added_at = Column(DateTime, nullable=False, default=datetime.utcnow)
+    added_at = Column(DateTime, nullable=False, default=utcnow)
 
     # Indexes
     __table_args__ = (
@@ -1056,7 +1058,7 @@ class UsageMetrics(Base):
     current_value = Column(Integer, nullable=False, default=0)
     plan_limit = Column(Integer, nullable=True)  # null = unlimited
     percentage_used = Column(Float, nullable=False, default=0.0)  # Calculated field
-    last_updated = Column(DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow)
+    last_updated = Column(DateTime, nullable=False, default=utcnow, onupdate=utcnow)
 
     # Indexes
     __table_args__ = (
@@ -1078,7 +1080,7 @@ class SubscriptionEvent(Base):
     reason = Column(Text, nullable=True)  # Reason for change (optional)
     notes = Column(Text, nullable=True)  # Additional notes
     extra_metadata = Column(JSONType, nullable=True)  # Additional metadata
-    event_timestamp = Column(DateTime, nullable=False, default=datetime.utcnow)
+    event_timestamp = Column(DateTime, nullable=False, default=utcnow)
 
     # Indexes
     __table_args__ = (

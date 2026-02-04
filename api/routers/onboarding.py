@@ -10,7 +10,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from sqlalchemy.orm.attributes import flag_modified
 from typing import Optional, Dict, List, Any
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 from api.database import get_db
 from api.models import OnboardingProgress, Person
@@ -43,8 +43,7 @@ class OnboardingProgressResponse(BaseModel):
     checklist_dismissed: Optional[bool] = False
     tutorials_dismissed: Optional[bool] = False
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class OnboardingProgressUpdate(BaseModel):
@@ -83,7 +82,7 @@ def update_onboarding_progress(
     Update current user's onboarding progress.
     """
     service = OnboardingService(db)
-    return service.update_progress(current_user.id, update.dict(exclude_unset=True))
+    return service.update_progress(current_user.id, update.model_dump(exclude_unset=True))
 
 
 @router.post("/onboarding/skip")

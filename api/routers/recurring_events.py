@@ -13,7 +13,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 from typing import List, Optional
 from datetime import datetime, date, time
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 
 from api.database import get_db
 from api.dependencies import get_current_user, get_current_admin_user, verify_org_member
@@ -82,8 +82,7 @@ class RecurringSeriesResponse(BaseModel):
     # Computed fields
     occurrence_preview_count: Optional[int] = None
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class OccurrencePreview(BaseModel):

@@ -4,6 +4,8 @@ from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.orm import Session
 from datetime import datetime, timedelta
+
+from api.timeutils import utcnow
 import secrets
 import time
 
@@ -67,7 +69,7 @@ def create_invitation(
     # Create invitation
     invitation_id = f"inv_{int(time.time())}_{secrets.token_hex(4)}"
     token = generate_invitation_token()
-    expires_at = datetime.utcnow() + timedelta(days=7)  # 7 day expiry
+    expires_at = utcnow() + timedelta(days=7)  # 7 day expiry
 
     invitation = Invitation(
         id=invitation_id,
@@ -126,7 +128,7 @@ async def list_invitations(
         query = query.filter(Invitation.status == status_filter)
 
     # Update expired invitations
-    now = datetime.utcnow()
+    now = utcnow()
     expired_invitations = query.filter(
         Invitation.status == "pending",
         Invitation.expires_at < now
@@ -168,7 +170,7 @@ def verify_invitation(token: str, db: Session = Depends(get_db)):
             message=f"Invitation is {invitation.status}"
         )
 
-    if invitation.expires_at < datetime.utcnow():
+    if invitation.expires_at < utcnow():
         invitation.status = "expired"
         db.commit()
         return InvitationVerify(
@@ -210,7 +212,7 @@ def accept_invitation(
             detail=f"Invitation is {invitation.status}"
         )
 
-    if invitation.expires_at < datetime.utcnow():
+    if invitation.expires_at < utcnow():
         invitation.status = "expired"
         db.commit()
         raise HTTPException(
@@ -250,7 +252,7 @@ def accept_invitation(
 
     # Update invitation status
     invitation.status = "accepted"
-    invitation.accepted_at = datetime.utcnow()
+    invitation.accepted_at = utcnow()
 
     db.commit()
     db.refresh(person)
@@ -329,7 +331,7 @@ def resend_invitation(
 
     # Generate new token and extend expiry
     invitation.token = generate_invitation_token()
-    invitation.expires_at = datetime.utcnow() + timedelta(days=7)
+    invitation.expires_at = utcnow() + timedelta(days=7)
     invitation.status = "pending"
 
     db.commit()

@@ -4,6 +4,8 @@ from __future__ import annotations
 
 import os
 from datetime import datetime, timedelta
+
+from api.timeutils import utcnow
 from typing import Iterable
 
 from sqlalchemy import create_engine
@@ -164,7 +166,7 @@ def setup_test_data(_: str | None = None) -> None:
                 roles=person["roles"],
             )
 
-        now = datetime.utcnow()
+        now = utcnow()
         events = [
             {
                 "event_id": "event_001",
