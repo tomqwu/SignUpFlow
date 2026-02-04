@@ -94,8 +94,10 @@ def get_latest_email(to_email, subject_contains=None, timeout=15):
 
 
 @pytest.mark.skipif(
-    not MAILTRAP_SMTP_USER or not MAILTRAP_SMTP_PASSWORD,
-    reason="MAILTRAP_SMTP_USER and MAILTRAP_SMTP_PASSWORD must be set"
+    os.getenv("RUN_MAILTRAP_INTEGRATION", "").lower() not in {"1", "true", "yes"}
+    or not MAILTRAP_SMTP_USER
+    or not MAILTRAP_SMTP_PASSWORD,
+    reason="Real Mailtrap SMTP integration tests disabled (set RUN_MAILTRAP_INTEGRATION=1 and MAILTRAP_SMTP_USER/MAILTRAP_SMTP_PASSWORD)"
 )
 class TestEmailServiceMailtrapSMTP:
     """Integration tests for EmailService with real Mailtrap SMTP sandbox."""
@@ -119,6 +121,9 @@ class TestEmailServiceMailtrapSMTP:
             from_email="test@signupflow.io",
             from_name="SignUpFlow Test"
         )
+        # Avoid long sleeps on failure during test runs
+        service.retry_delay = 0
+        service.max_retries = 0
 
         test_email = "volunteer@example.com"
         template_data = {
@@ -182,6 +187,9 @@ class TestEmailServiceMailtrapSMTP:
             smtp_user=MAILTRAP_SMTP_USER,
             smtp_password=MAILTRAP_SMTP_PASSWORD
         )
+        # Avoid long sleeps on failure during test runs
+        service.retry_delay = 0
+        service.max_retries = 0
 
         languages = ["en", "es", "pt"]
 
@@ -220,6 +228,9 @@ class TestEmailServiceMailtrapSMTP:
             smtp_user="invalid_user",
             smtp_password="invalid_password"
         )
+        # Avoid long sleeps on failure during test runs
+        service.retry_delay = 0
+        service.max_retries = 0
 
         template_data = {
             "volunteer_name": "Test User",
@@ -253,6 +264,9 @@ class TestEmailServiceMailtrapSMTP:
             smtp_user=MAILTRAP_SMTP_USER,
             smtp_password=MAILTRAP_SMTP_PASSWORD
         )
+        # Avoid long sleeps on failure during test runs
+        service.retry_delay = 0
+        service.max_retries = 0
 
         test_email = "reminder-test@example.com"
         template_data = {
@@ -301,6 +315,9 @@ class TestEmailServiceMailtrapSMTP:
             smtp_user=MAILTRAP_SMTP_USER,
             smtp_password=MAILTRAP_SMTP_PASSWORD
         )
+        # Avoid long sleeps on failure during test runs
+        service.retry_delay = 0
+        service.max_retries = 0
 
         test_email = "update-test@example.com"
         template_data = {
