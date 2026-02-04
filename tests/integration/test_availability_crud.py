@@ -6,8 +6,7 @@ import os
 import requests
 from playwright.sync_api import sync_playwright
 import pytest
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
+# (DB engine/session provided by api.database.SessionLocal)
 
 from api.models import Organization, Person
 from api.security import hash_password
@@ -18,10 +17,8 @@ API_BASE = f"{BASE_URL}/api"
 
 def get_admin_headers_and_create_user(org_id="test-org", user_id="test-admin", email="admin@test.com"):
     """Ensure an admin user exists for the given org and return auth headers."""
-    db_url = os.getenv("DATABASE_URL", "sqlite:///./test_roster.db")
-    connect_args = {"check_same_thread": False} if db_url.startswith("sqlite") else {}
-    engine = create_engine(db_url, connect_args=connect_args)
-    SessionLocal = sessionmaker(bind=engine, autoflush=False, autocommit=False)
+    # Use the app's SessionLocal so we write into the same DB the test server is using.
+    from api.database import SessionLocal
 
     session = SessionLocal()
     try:
