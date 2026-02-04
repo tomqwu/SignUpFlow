@@ -12,7 +12,7 @@ import pytest
 import httpx
 from datetime import datetime
 
-API_BASE = "http://localhost:8000/api"
+API_BASE = "http://localhost:8001/api"
 
 
 class TestAuthSignup:

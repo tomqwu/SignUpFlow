@@ -16,7 +16,7 @@ import httpx
 from datetime import datetime, timedelta
 import json
 
-API_BASE = "http://localhost:8000/api"
+API_BASE = "http://localhost:8001/api"
 
 
 class TestRunner:
