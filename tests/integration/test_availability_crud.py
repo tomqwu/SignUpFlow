@@ -12,7 +12,7 @@ from sqlalchemy.orm import sessionmaker
 from api.models import Organization, Person
 from api.security import hash_password
 
-BASE_URL = "http://localhost:8000"
+BASE_URL = "http://localhost:8001"
 API_BASE = f"{BASE_URL}/api"
 
 
