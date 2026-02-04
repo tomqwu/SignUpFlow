@@ -150,14 +150,9 @@ def test_complete_org_creation_and_signup_flow(
             print("✓ Signup successful")
 
     try:
-        # Should be on main app screen
-        expect(page.locator('#main-app')).to_be_visible(timeout=5000)
-        print("✓ Main app is visible")
-
-        # User name should be displayed
-        user_display = page.locator('#user-name-display')
-        expect(user_display).to_have_text(user_name)
-        print(f"✓ User name '{user_name}' is displayed")
+        # After signup we now land on the onboarding wizard
+        expect(page.locator('#wizard-screen')).to_be_visible(timeout=5000)
+        print("✓ Wizard is visible")
 
         # Should have auth token in localStorage
         auth_token = page.evaluate("() => localStorage.getItem('authToken')")
