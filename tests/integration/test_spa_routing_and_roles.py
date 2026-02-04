@@ -51,11 +51,12 @@ async def test_absolute_paths_in_html():
         # Should have absolute paths (starting with /)
         assert 'src="/js/toast.js"' in content
         assert 'src="/js/router.js"' in content
-        assert 'href="/css/styles.css"' in content
+        # CSS entrypoint (modern)
+        assert 'href="/css/styles-modern.css' in content
 
         # Should NOT have relative paths
         assert 'src="js/toast.js"' not in content
-        assert 'href="css/styles.css"' not in content
+        assert 'href="css/' not in content
 
 
 @pytest.mark.asyncio
