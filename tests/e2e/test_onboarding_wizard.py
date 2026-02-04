@@ -348,7 +348,7 @@ def test_wizard_resume_after_logout(page: Page, app_config: AppConfig):
     - User can navigate back to Step 2 and see filled data
     - User can complete wizard from Step 3 onward
     """
-    # Navigate to signup
+    # Navigate to landing
     page.goto(f"{app_config.app_url}/")
     page.wait_for_load_state("networkidle")
 
@@ -356,33 +356,46 @@ def test_wizard_resume_after_logout(page: Page, app_config: AppConfig):
     page.locator('button:has-text("Get Started")').first.click()
     page.wait_for_timeout(1000)
 
-    # Fill signup form with unique email
-    unique_email = f"wizard.resume.{int(page.evaluate('Date.now()'))}@example.com"
+    # Join screen
+    join_screen = page.locator('#join-screen')
+    expect(join_screen).to_be_visible(timeout=5000)
 
-    page.locator('#signup-org-name, input[name="org_name"]').fill("SAMPLE - Resume Test Organization")
-    page.locator('#signup-location, input[name="location"]').fill("Calgary, AB")
-    page.locator('#signup-timezone, select[name="timezone"]').select_option("America/Edmonton")
-    page.locator('#signup-name, input[name="name"]').fill("Resume Test User")
-    page.locator('#signup-email, input[name="email"]').fill(unique_email)
-    page.locator('#signup-password, input[name="password"]').fill("TestPassword123!")
+    # Create New Organization
+    page.locator('button:has-text("Create New Organization")').click()
+
+    unique_suffix = int(page.evaluate('Date.now()'))
+    unique_email = f"wizard.resume.{unique_suffix}@example.com"
+
+    page.locator('#new-org-name').fill("SAMPLE - Resume Test Organization")
+    page.locator('#new-org-region').fill("Calgary, AB")
+    page.locator('#create-org-section button[type="submit"]').click()
+
+    # Profile screen
+    profile_screen = page.locator('#profile-screen')
+    expect(profile_screen).to_be_visible(timeout=5000)
+
+    page.locator('#user-name').fill("Resume Test User")
+    page.locator('#user-email').fill(unique_email)
+    page.locator('#user-password').fill("TestPassword123!")
+    page.locator('#user-timezone').select_option("America/Toronto")
 
     # Submit signup
-    page.locator('button[type="submit"]:has-text("Create"), button:has-text("Sign Up")').first.click()
+    page.locator('#profile-screen button[type="submit"]').first.click()
     page.wait_for_timeout(2000)
 
     # Verify wizard loads
-    wizard_container = page.locator('.onboarding-wizard, #wizard-container')
+    wizard_container = page.locator('#wizard-screen')
     expect(wizard_container).to_be_visible(timeout=5000)
 
     # Step 1: Organization Profile - Click Continue (data already pre-filled)
     expect(page.locator('h2:has-text("Organization Profile")')).to_be_visible()
-    page.locator('#wizard-continue, button:has-text("Continue")').click()
+    page.locator('#wizard-continue').click()
 
     # Step 2: Create First Event - Fill and Continue
     page.wait_for_timeout(1000)
     expect(page.locator('h2:has-text("Create Your First Event"), h1:has-text("First Event")')).to_be_visible(timeout=3000)
 
-    page.locator('#event-title, input[name="event_title"]').fill("Test Event for Resume")
+    page.locator('#wizard-event-title').fill("Test Event for Resume")
 
     next_sunday = page.evaluate("""
         () => {
@@ -393,10 +406,10 @@ def test_wizard_resume_after_logout(page: Page, app_config: AppConfig):
         }
     """)
 
-    page.locator('#event-date, input[name="event_date"]').fill(next_sunday)
-    page.locator('#event-time, input[name="event_time"]').fill("14:00")
+    page.locator('#wizard-event-date').fill(next_sunday)
+    page.locator('#wizard-event-time').fill("14:00")
 
-    page.locator('#wizard-continue, button:has-text("Continue")').click()
+    page.locator('#wizard-continue').click()
 
     # Now at Step 3 - Click "Save & Continue Later"
     page.wait_for_timeout(1000)
@@ -430,7 +443,7 @@ def test_wizard_resume_after_logout(page: Page, app_config: AppConfig):
 
     # Should be back at onboarding/login screen
     page.wait_for_timeout(2000)
-    expect(page.locator('#onboarding-screen, #login-screen')).to_be_visible(timeout=5000)
+    expect(page.locator('#onboarding-screen')).to_be_visible(timeout=5000)
 
     # Log back in
     sign_in_link = page.locator('a:has-text("Sign in"), a:has-text("Sign In"), button:has-text("Sign In")')
@@ -468,10 +481,10 @@ def test_wizard_resume_after_logout(page: Page, app_config: AppConfig):
     expect(page.locator('h2:has-text("Create Your First Event"), h1:has-text("First Event")')).to_be_visible(timeout=3000)
 
     # Verify previous data is still filled
-    event_title_value = page.locator('#event-title, input[name="event_title"]').input_value()
+    event_title_value = page.locator('#wizard-event-title').input_value()
     assert event_title_value == "Test Event for Resume"
 
-    event_time_value = page.locator('#event-time, input[name="event_time"]').input_value()
+    event_time_value = page.locator('#wizard-event-time').input_value()
     assert event_time_value == "14:00"
 
 
@@ -505,27 +518,36 @@ def test_wizard_back_button_navigation(page: Page, app_config: AppConfig):
     - User can edit previous data and continue forward
     - Continue button re-saves updated data to backend
     """
-    # Navigate to signup
+    # Navigate to landing
     page.goto(f"{app_config.app_url}/")
     page.wait_for_load_state("networkidle")
 
-    # Quick signup
+    # Click Get Started
     page.locator('button:has-text("Get Started")').first.click()
     page.wait_for_timeout(1000)
 
-    unique_email = f"wizard.back.{int(page.evaluate('Date.now()'))}@example.com"
+    # Join screen → Create New Organization
+    expect(page.locator('#join-screen')).to_be_visible(timeout=5000)
+    page.locator('button:has-text("Create New Organization")').click()
 
-    page.locator('#signup-org-name, input[name="org_name"]').fill("SAMPLE - Back Nav Test Org")
-    page.locator('#signup-location, input[name="location"]').fill("Vancouver, BC")
-    page.locator('#signup-timezone, select[name="timezone"]').select_option("America/Vancouver")
-    page.locator('#signup-name, input[name="name"]').fill("Back Nav User")
-    page.locator('#signup-email, input[name="email"]').fill(unique_email)
-    page.locator('#signup-password, input[name="password"]').fill("TestPassword123!")
-    page.locator('button[type="submit"]:has-text("Create")').first.click()
+    unique_suffix = int(page.evaluate('Date.now()'))
+    unique_email = f"wizard.back.{unique_suffix}@example.com"
+
+    page.locator('#new-org-name').fill(f"SAMPLE - Back Nav Test Org {unique_suffix}")
+    page.locator('#new-org-region').fill("Vancouver, BC")
+    page.locator('#create-org-section button[type="submit"]').click()
+
+    # Profile screen
+    expect(page.locator('#profile-screen')).to_be_visible(timeout=5000)
+    page.locator('#user-name').fill("Back Nav User")
+    page.locator('#user-email').fill(unique_email)
+    page.locator('#user-password').fill("TestPassword123!")
+    page.locator('#user-timezone').select_option("America/Toronto")
+    page.locator('#profile-screen button[type="submit"]').first.click()
 
     # Wait for wizard
     page.wait_for_timeout(2000)
-    wizard_container = page.locator('.onboarding-wizard, #wizard-container')
+    wizard_container = page.locator('#wizard-screen')
     expect(wizard_container).to_be_visible(timeout=5000)
 
     # Step 1: Verify Back button is hidden or disabled
@@ -538,13 +560,13 @@ def test_wizard_back_button_navigation(page: Page, app_config: AppConfig):
         assert is_disabled, "Back button should be disabled on Step 1"
 
     # Step 1 → Continue to Step 2
-    page.locator('#wizard-continue, button:has-text("Continue")').click()
+    page.locator('#wizard-continue').click()
 
     # Step 2: Fill event details
     page.wait_for_timeout(1000)
     expect(page.locator('h2:has-text("Create Your First Event"), h1:has-text("First Event")')).to_be_visible(timeout=3000)
 
-    page.locator('#event-title, input[name="event_title"]').fill("Back Nav Test Event")
+    page.locator('#wizard-event-title').fill("Back Nav Test Event")
 
     next_sunday = page.evaluate("""
         () => {
@@ -555,15 +577,15 @@ def test_wizard_back_button_navigation(page: Page, app_config: AppConfig):
         }
     """)
 
-    page.locator('#event-date, input[name="event_date"]').fill(next_sunday)
-    page.locator('#event-time, input[name="event_time"]').fill("11:00")
+    page.locator('#wizard-event-date').fill(next_sunday)
+    page.locator('#wizard-event-time').fill("11:00")
 
     # Verify Back button is now visible on Step 2
     expect(back_button).to_be_visible()
     expect(back_button).to_be_enabled()
 
     # Step 2 → Continue to Step 3
-    page.locator('#wizard-continue, button:has-text("Continue")').click()
+    page.locator('#wizard-continue').click()
 
     # Step 3: Verify we're on Step 3
     page.wait_for_timeout(1000)
@@ -584,15 +606,15 @@ def test_wizard_back_button_navigation(page: Page, app_config: AppConfig):
     expect(step_indicator).to_contain_text("Step 2 of 4")
 
     # Verify previous data is still filled
-    event_title_value = page.locator('#event-title, input[name="event_title"]').input_value()
+    event_title_value = page.locator('#wizard-event-title').input_value()
     assert event_title_value == "Back Nav Test Event"
 
-    event_time_value = page.locator('#event-time, input[name="event_time"]').input_value()
+    event_time_value = page.locator('#wizard-event-time').input_value()
     assert event_time_value == "11:00"
 
     # Edit data and continue forward again
-    page.locator('#event-title, input[name="event_title"]').fill("Edited Event Title")
-    page.locator('#wizard-continue, button:has-text("Continue")').click()
+    page.locator('#wizard-event-title').fill("Edited Event Title")
+    page.locator('#wizard-continue').click()
 
     # Should be back at Step 3
     page.wait_for_timeout(1000)
@@ -602,7 +624,7 @@ def test_wizard_back_button_navigation(page: Page, app_config: AppConfig):
     back_button.click()
     page.wait_for_timeout(1000)
 
-    event_title_value = page.locator('#event-title, input[name="event_title"]').input_value()
+    event_title_value = page.locator('#wizard-event-title').input_value()
     assert event_title_value == "Edited Event Title"
 
 
@@ -641,32 +663,41 @@ def test_wizard_validation_prevents_empty_submission(page: Page, app_config: App
     - Continue button enabled after filling fields
     - Wizard proceeds to next step after validation passes
     """
-    # Navigate to signup
+    # Navigate to landing
     page.goto(f"{app_config.app_url}/")
     page.wait_for_load_state("networkidle")
 
-    # Quick signup
+    # Click Get Started
     page.locator('button:has-text("Get Started")').first.click()
     page.wait_for_timeout(1000)
 
-    unique_email = f"wizard.validation.{int(page.evaluate('Date.now()'))}@example.com"
+    # Join screen → Create New Organization
+    expect(page.locator('#join-screen')).to_be_visible(timeout=5000)
+    page.locator('button:has-text("Create New Organization")').click()
 
-    page.locator('#signup-org-name, input[name="org_name"]').fill("SAMPLE - Validation Test Org")
-    page.locator('#signup-location, input[name="location"]').fill("Montreal, QC")
-    page.locator('#signup-timezone, select[name="timezone"]').select_option("America/Montreal")
-    page.locator('#signup-name, input[name="name"]').fill("Validation Test User")
-    page.locator('#signup-email, input[name="email"]').fill(unique_email)
-    page.locator('#signup-password, input[name="password"]').fill("TestPassword123!")
-    page.locator('button[type="submit"]:has-text("Create")').first.click()
+    unique_suffix = int(page.evaluate('Date.now()'))
+    unique_email = f"wizard.validation.{unique_suffix}@example.com"
+
+    page.locator('#new-org-name').fill(f"SAMPLE - Validation Test Org {unique_suffix}")
+    page.locator('#new-org-region').fill("Montreal, QC")
+    page.locator('#create-org-section button[type="submit"]').click()
+
+    # Profile screen
+    expect(page.locator('#profile-screen')).to_be_visible(timeout=5000)
+    page.locator('#user-name').fill("Validation Test User")
+    page.locator('#user-email').fill(unique_email)
+    page.locator('#user-password').fill("TestPassword123!")
+    page.locator('#user-timezone').select_option("America/Toronto")
+    page.locator('#profile-screen button[type="submit"]').first.click()
 
     # Wait for wizard
     page.wait_for_timeout(2000)
-    wizard_container = page.locator('.onboarding-wizard, #wizard-container')
+    wizard_container = page.locator('#wizard-screen')
     expect(wizard_container).to_be_visible(timeout=5000)
 
     # Step 1: Continue (org data pre-filled, should pass)
     expect(page.locator('h2:has-text("Organization Profile")')).to_be_visible()
-    page.locator('#wizard-continue, button:has-text("Continue")').click()
+    page.locator('#wizard-continue').click()
 
     # Step 2: Try to continue with empty required fields
     page.wait_for_timeout(1000)
@@ -676,30 +707,24 @@ def test_wizard_validation_prevents_empty_submission(page: Page, app_config: App
     expect(step_indicator).to_contain_text("Step 2 of 4")
 
     # Ensure fields are empty (clear any pre-filled data)
-    event_title_input = page.locator('#event-title, input[name="event_title"]')
+    event_title_input = page.locator('#wizard-event-title')
     event_title_input.fill("")
 
-    event_date_input = page.locator('#event-date, input[name="event_date"]')
+    event_date_input = page.locator('#wizard-event-date')
     event_date_input.fill("")
 
-    event_time_input = page.locator('#event-time, input[name="event_time"]')
+    event_time_input = page.locator('#wizard-event-time')
     event_time_input.fill("")
 
     # Click Continue with empty fields
-    continue_button = page.locator('#wizard-continue, button:has-text("Continue")')
+    continue_button = page.locator('#wizard-continue')
     continue_button.click()
 
     # Wait for validation error
     page.wait_for_timeout(500)
 
-    # Check for error message (could be alert dialog or inline error)
-    # Option 1: Alert dialog
-    # (Playwright auto-dismisses alerts, but we can check if one appeared)
-
-    # Option 2: Inline error message
-    error_message = page.locator('.error-message, .validation-error, [role="alert"]')
-    if error_message.count() > 0:
-        expect(error_message.first).to_be_visible()
+    # Validation feedback may be an alert() or an inline error message.
+    # We assert behaviorally (wizard should not advance) below.
 
     # Verify wizard is still on Step 2 (did not proceed)
     expect(page.locator('h2:has-text("Create Your First Event"), h1:has-text("First Event")')).to_be_visible()
