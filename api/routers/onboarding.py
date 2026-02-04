@@ -10,7 +10,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from sqlalchemy.orm.attributes import flag_modified
 from typing import Optional, Dict, List, Any
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, field_validator
 
 from api.database import get_db
 from api.models import OnboardingProgress, Person
@@ -58,6 +58,15 @@ class OnboardingProgressUpdate(BaseModel):
     onboarding_skipped: Optional[bool] = None
     checklist_dismissed: Optional[bool] = None
     tutorials_dismissed: Optional[bool] = None
+
+    @field_validator("wizard_step_completed")
+    @classmethod
+    def validate_wizard_step_completed(cls, v):
+        if v is None:
+            return v
+        if v < 0 or v > 4:
+            raise ValueError("must be between 0 and 4")
+        return v
 
 
 @router.get("/onboarding/progress", response_model=OnboardingProgressResponse)

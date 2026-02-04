@@ -412,7 +412,9 @@ def test_wizard_step_validation(db: Session):
     )
 
     assert response.status_code == 422
-    assert "must be between 0 and 4" in response.json()["detail"]
+    # Pydantic v2 returns a structured list in detail
+    detail = response.json()["detail"]
+    assert any("must be between 0 and 4" in err.get("msg", "") for err in detail)
 
     # Try negative step
     response2 = client.put(
