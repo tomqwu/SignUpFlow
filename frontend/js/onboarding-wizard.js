@@ -23,14 +23,22 @@ let wizardData = {
 window.initWizard = async function() {
     try {
         const progress = await loadProgress();
-        if (progress && progress.wizard_step_completed > 0) {
-            currentStep = progress.wizard_step_completed + 1;
-            if (currentStep > 4) {
-                // Wizard already completed
-                window.router.navigate('/app/onboarding-dashboard');
-                return;
-            }
+
+        if (progress && progress.wizard_data) {
+            wizardData = progress.wizard_data;
         }
+
+        // wizard_step_completed is the last COMPLETED step (0-4)
+        if (progress && typeof progress.wizard_step_completed === 'number') {
+            currentStep = progress.wizard_step_completed + 1;
+        }
+
+        if (currentStep > 4) {
+            // Wizard already completed
+            window.router.navigate('/app/onboarding-dashboard');
+            return;
+        }
+
         renderWizard();
     } catch (error) {
         console.error('Failed to initialize wizard:', error);
@@ -187,25 +195,32 @@ window.renderStep1 = function() {
  */
 window.renderStep2 = function() {
     const contentDiv = document.getElementById('wizard-step-content');
+
+    const event = (wizardData && wizardData.event) ? wizardData.event : {};
+    const eventTitle = event.title || '';
+    const eventDate = event.date || '';
+    const eventTime = event.time || '10:00';
+    const eventDuration = event.duration || '90';
+
     contentDiv.innerHTML = `
         <h2 data-i18n="onboarding.wizard.step2.title">Create Your First Event</h2>
         <p data-i18n="onboarding.wizard.step2.description">Create an event to start scheduling volunteers.</p>
         <form id="step2-form">
             <div class="form-group">
                 <label for="wizard-event-title">Event Title *</label>
-                <input type="text" id="wizard-event-title" placeholder="Sunday Service" required>
+                <input type="text" id="wizard-event-title" placeholder="Sunday Service" value="${eventTitle}" required>
             </div>
             <div class="form-group">
                 <label for="wizard-event-date">Date *</label>
-                <input type="date" id="wizard-event-date" required>
+                <input type="date" id="wizard-event-date" value="${eventDate}" required>
             </div>
             <div class="form-group">
                 <label for="wizard-event-time">Time *</label>
-                <input type="time" id="wizard-event-time" value="10:00" required>
+                <input type="time" id="wizard-event-time" value="${eventTime}" required>
             </div>
             <div class="form-group">
                 <label for="wizard-event-duration">Duration (minutes)</label>
-                <input type="number" id="wizard-event-duration" value="90">
+                <input type="number" id="wizard-event-duration" value="${eventDuration}">
             </div>
         </form>
     `;
@@ -216,21 +231,27 @@ window.renderStep2 = function() {
  */
 window.renderStep3 = function() {
     const contentDiv = document.getElementById('wizard-step-content');
+
+    const team = (wizardData && wizardData.team) ? wizardData.team : {};
+    const teamName = team.name || '';
+    const teamRole = team.role || '';
+    const teamDescription = team.description || '';
+
     contentDiv.innerHTML = `
         <h2 data-i18n="onboarding.wizard.step3.title">Create Your First Team</h2>
         <p data-i18n="onboarding.wizard.step3.description">Teams help organize volunteers by role.</p>
         <form id="step3-form">
             <div class="form-group">
                 <label for="wizard-team-name">Team Name *</label>
-                <input type="text" id="wizard-team-name" placeholder="Greeters" required>
+                <input type="text" id="wizard-team-name" placeholder="Greeters" value="${teamName}" required>
             </div>
             <div class="form-group">
                 <label for="wizard-team-role">Role *</label>
-                <input type="text" id="wizard-team-role" placeholder="greeter" required>
+                <input type="text" id="wizard-team-role" placeholder="greeter" value="${teamRole}" required>
             </div>
             <div class="form-group">
                 <label for="wizard-team-description">Description</label>
-                <textarea id="wizard-team-description" placeholder="Optional team description"></textarea>
+                <textarea id="wizard-team-description" placeholder="Optional team description">${teamDescription}</textarea>
             </div>
         </form>
     `;
@@ -286,7 +307,7 @@ async function handleContinue() {
 /**
  * Save current step data
  */
-async function saveStepData() {
+async function saveStepData({ completedStep = currentStep } = {}) {
     // Collect data from current step
     const form = document.querySelector(`#step${currentStep}-form`);
     if (!form) return;
@@ -325,14 +346,17 @@ async function saveStepData() {
     }
 
     // Save to API
-    await window.saveProgress(currentStep, wizardData);
+    await window.saveProgress(completedStep, wizardData);
 }
 
 /**
  * Handle "Save & Continue Later"
  */
 window.saveLater = async function() {
-    await saveStepData();
+    // "Save & Continue Later" should NOT mark the current step as completed.
+    // Example: If user is on Step 3, last completed step is still Step 2.
+    const completedStep = Math.max(currentStep - 1, 0);
+    await saveStepData({ completedStep });
     alert('Progress saved! You can continue later.');
     window.router.navigate('/app/dashboard');
 }
@@ -516,11 +540,18 @@ function attachWizardEvents() {
         saveLaterBtn.addEventListener('click', window.saveLater);
     }
 
-    if (backBtn && currentStep > 1) {
-        backBtn.style.display = 'inline-block';
-        backBtn.addEventListener('click', () => {
-            currentStep--;
-            renderWizard();
-        });
+    if (backBtn) {
+        if (currentStep > 1) {
+            backBtn.style.display = 'inline-block';
+            backBtn.disabled = false;
+            backBtn.addEventListener('click', () => {
+                currentStep--;
+                renderWizard();
+            });
+        } else {
+            // Keep it disabled on Step 1 (tests may still find it in the DOM)
+            backBtn.style.display = 'none';
+            backBtn.disabled = true;
+        }
     }
 }
