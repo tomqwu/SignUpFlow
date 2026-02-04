@@ -34,14 +34,16 @@ class TestEmailService:
         mock_server = Mock()
         mock_smtp.return_value.__enter__.return_value = mock_server
 
-        # Act
-        result = service.send_email(
-            to_email=recipient_email,
-            subject="New Assignment: Sunday Service",
-            template_name="assignment",
-            template_data=template_data,
-            language="en"
-        )
+        # Act (force email enabled for unit test)
+        with patch.dict('os.environ', {"EMAIL_ENABLED": "true", "MAILTRAP_SMTP_USER": "test", "MAILTRAP_SMTP_PASSWORD": "test"}):
+            service = EmailService()
+            result = service.send_email(
+                to_email=recipient_email,
+                subject="New Assignment: Sunday Service",
+                template_name="assignment",
+                template_data=template_data,
+                language="en"
+            )
 
         # Assert
         assert result is not None  # Should return message ID
@@ -61,13 +63,15 @@ class TestEmailService:
         mock_smtp.return_value.__enter__.return_value = mock_server
 
         # Act
-        service.send_email(
-            to_email=recipient_email,
-            subject="Nueva Asignación",
-            template_name="assignment",
-            template_data=template_data,
-            language="es"
-        )
+        with patch.dict('os.environ', {"EMAIL_ENABLED": "true", "MAILTRAP_SMTP_USER": "test", "MAILTRAP_SMTP_PASSWORD": "test"}):
+            service = EmailService()
+            service.send_email(
+                to_email=recipient_email,
+                subject="Nueva Asignación",
+                template_name="assignment",
+                template_data=template_data,
+                language="es"
+            )
 
         # Assert - should not raise, Spanish template should render
         mock_server.sendmail.assert_called_once()
@@ -84,13 +88,15 @@ class TestEmailService:
         mock_smtp.return_value.__enter__.return_value = mock_server
 
         # Act - use unsupported language
-        service.send_email(
-            to_email=recipient_email,
-            subject="Assignment",
-            template_name="assignment",
-            template_data=template_data,
-            language="unsupported_language"
-        )
+        with patch.dict('os.environ', {"EMAIL_ENABLED": "true", "MAILTRAP_SMTP_USER": "test", "MAILTRAP_SMTP_PASSWORD": "test"}):
+            service = EmailService()
+            service.send_email(
+                to_email=recipient_email,
+                subject="Assignment",
+                template_name="assignment",
+                template_data=template_data,
+                language="unsupported_language"
+            )
 
         # Assert - should fall back to English and still send
         mock_server.sendmail.assert_called_once()
@@ -100,10 +106,12 @@ class TestEmailService:
     def test_send_email_handles_smtp_failure(self, mock_sleep, mock_smtp):
         """Test that SMTP failure is handled gracefully."""
         # Arrange
-        service = EmailService()
+        with patch.dict('os.environ', {"EMAIL_ENABLED": "true", "MAILTRAP_SMTP_USER": "test", "MAILTRAP_SMTP_PASSWORD": "test"}):
+            service = EmailService()
+
         # Speed up retries
         service.retry_delay = 0
-        
+
         recipient_email = "volunteer@example.com"
 
         # Mock SMTP to raise exception
@@ -125,7 +133,9 @@ class TestEmailService:
     def test_send_email_direct_html_content(self, mock_smtp):
         """Test sending email with direct HTML content (no template)."""
         # Arrange
-        service = EmailService()
+        with patch.dict('os.environ', {"EMAIL_ENABLED": "true", "MAILTRAP_SMTP_USER": "test", "MAILTRAP_SMTP_PASSWORD": "test"}):
+            service = EmailService()
+
         recipient_email = "test@example.com"
         html_content = "<h1>Test Email</h1><p>This is a test.</p>"
 

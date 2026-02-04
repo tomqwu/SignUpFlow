@@ -23,7 +23,10 @@
     "solver": "调度程序",
     "invitations": "邀请",
     "reports": "报告",
-    "teams": "团队"
+    "teams": "团队",
+    "analytics": "Analytics",
+    "constraints": "Constraints",
+    "solutions": "Solutions"
   },
   "team_management": "团队管理",
   "people": {
@@ -132,5 +135,7 @@
     "cost_note": "注意：实际成本可能因消息长度而异。",
     "selected": "已选择",
     "recipients": "收件人"
-  }
+  },
+  "analytics_dashboard": "Analytics Dashboard",
+  "constraints_management": "Constraints Management"
 }

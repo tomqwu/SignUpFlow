@@ -23,7 +23,10 @@
     "solver": "Programador",
     "invitations": "Invitaciones",
     "reports": "Informes",
-    "teams": "Equipos"
+    "teams": "Equipos",
+    "analytics": "Analytics",
+    "constraints": "Constraints",
+    "solutions": "Solutions"
   },
   "team_management": "Gestión de equipos",
   "people": {
@@ -132,5 +135,7 @@
     "preview_cost": "Costo estimado:",
     "confirm_send": "Confirmar y enviar",
     "no_volunteers": "No se encontraron voluntarios"
-  }
+  },
+  "analytics_dashboard": "Analytics Dashboard",
+  "constraints_management": "Constraints Management"
 }

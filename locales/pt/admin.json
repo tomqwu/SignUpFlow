@@ -23,7 +23,10 @@
     "solver": "Scheduler",
     "invitations": "Invitations",
     "reports": "Reports",
-    "teams": "Equipes"
+    "teams": "Equipes",
+    "analytics": "Analytics",
+    "constraints": "Constraints",
+    "solutions": "Solutions"
   },
   "people": {
     "title": "Manage People",
@@ -132,5 +135,7 @@
     "confirm_send": "Confirmar e enviar",
     "no_volunteers": "Nenhum voluntário encontrado"
   },
-  "team_management": "Gestão de Equipes"
+  "team_management": "Gestão de Equipes",
+  "analytics_dashboard": "Analytics Dashboard",
+  "constraints_management": "Constraints Management"
 }

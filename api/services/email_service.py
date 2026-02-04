@@ -18,6 +18,8 @@ from typing import Optional, Dict, Any, List
 from pathlib import Path
 import logging
 
+from api.timeutils import utcnow
+
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 from sqlalchemy.orm import Session
 
@@ -344,7 +346,7 @@ class EmailService:
 
         # Generate pseudo message ID for SMTP (since SMTP doesn't return message IDs)
         import datetime
-        message_id = f"smtp-{int(datetime.datetime.utcnow().timestamp())}"
+        message_id = f"smtp-{int(utcnow().timestamp())}"
         return message_id
 
     def _render_template(
