@@ -87,21 +87,23 @@ def create_invitation(
     db.commit()
     db.refresh(invitation)
 
-    # Send invitation email
-    email_sent = email_service.send_invitation_email(
-        to_email=request.email,
-        admin_name=inviter.name,
-        org_name=org.name,
-        invitation_token=token,
-        app_url="http://localhost:8000"  # TODO: Use environment variable for production
-    )
+    # Email sending is optional and must never block invitation creation.
+    # For now (product decision), we skip outbound email entirely when disabled.
+    if email_service.enabled:
+        email_sent = email_service.send_invitation_email(
+            to_email=request.email,
+            admin_name=inviter.name,
+            org_name=org.name,
+            invitation_token=token,
+            app_url="http://localhost:8000"  # TODO: Use environment variable for production
+        )
 
-    if not email_sent:
-        # Log warning but don't fail the invitation creation
-        # (invitation can still be accepted via direct link)
-        import logging
-        logger = logging.getLogger("invitations")
-        logger.warning(f"Failed to send invitation email to {request.email}")
+        if not email_sent:
+            # Log warning but don't fail the invitation creation
+            # (invitation can still be accepted via direct link)
+            import logging
+            logger = logging.getLogger("invitations")
+            logger.warning(f"Failed to send invitation email to {request.email}")
 
     return invitation
 
