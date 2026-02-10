@@ -8,7 +8,7 @@ viewport sizes and touch interactions.
 import pytest
 from playwright.sync_api import Page, expect
 
-from tests.e2e.helpers import AppConfig, ApiTestClient
+from tests.e2e.helpers import AppConfig, ApiTestClient, skip_onboarding_from_storage
 
 pytestmark = pytest.mark.usefixtures("api_server")
 
@@ -71,12 +71,21 @@ def test_mobile_login_flow(
     expect(login_button).to_be_visible()
     login_button.click()
 
-    # Verify redirected to schedule (mobile view)
-    expect(page).to_have_url(f"{app_config.app_url}/app/schedule", timeout=5000)
+    # Verify redirected (some accounts may be sent to onboarding wizard first)
+    import re
+    expect(page).to_have_url(
+        re.compile(rf"^{re.escape(app_config.app_url)}/(app/schedule|wizard)$"),
+        timeout=5000,
+    )
+
+    # If redirected to wizard, skip onboarding and proceed to schedule
+    if page.url.endswith("/wizard"):
+        skip_onboarding_from_storage(page)
+        page.goto(f"{app_config.app_url}/app/schedule")
 
     # Verify mobile navigation is visible
     schedule_heading = page.locator('#page-title')
-    expect(schedule_heading).to_have_text("My Schedule", timeout=3000)
+    expect(schedule_heading).to_have_text("My Schedule", timeout=5000)
 
 
 def test_mobile_hamburger_menu(
@@ -114,8 +123,16 @@ def test_mobile_hamburger_menu(
     login_button = page.locator('button[data-i18n="auth.sign_in"]')
     login_button.click()
 
-    # Wait for redirect to schedule
-    expect(page).to_have_url(f"{app_config.app_url}/app/schedule", timeout=5000)
+    # Wait for redirect (schedule or onboarding wizard)
+    import re
+    expect(page).to_have_url(
+        re.compile(rf"^{re.escape(app_config.app_url)}/(app/schedule|wizard)$"),
+        timeout=5000,
+    )
+
+    if page.url.endswith("/wizard"):
+        skip_onboarding_from_storage(page)
+        page.goto(f"{app_config.app_url}/app/schedule")
 
     # Wait for page to load
     expect(page.locator('#page-title')).to_have_text("My Schedule", timeout=5000)
@@ -214,8 +231,16 @@ def test_mobile_schedule_view(
     login_button = page.locator('button[data-i18n="auth.sign_in"]')
     login_button.click()
 
-    # Wait for redirect to schedule
-    expect(page).to_have_url(f"{app_config.app_url}/app/schedule", timeout=5000)
+    # Wait for redirect (schedule or onboarding wizard)
+    import re
+    expect(page).to_have_url(
+        re.compile(rf"^{re.escape(app_config.app_url)}/(app/schedule|wizard)$"),
+        timeout=5000,
+    )
+
+    if page.url.endswith("/wizard"):
+        skip_onboarding_from_storage(page)
+        page.goto(f"{app_config.app_url}/app/schedule")
 
     # Wait for page to load and show schedule
     expect(page.locator('#page-title')).to_have_text("My Schedule", timeout=5000)
@@ -269,8 +294,16 @@ def test_mobile_settings_modal(
     login_button = page.locator('button[data-i18n="auth.sign_in"]')
     login_button.click()
 
-    # Wait for redirect to schedule
-    expect(page).to_have_url(f"{app_config.app_url}/app/schedule", timeout=5000)
+    # Wait for redirect (schedule or onboarding wizard)
+    import re
+    expect(page).to_have_url(
+        re.compile(rf"^{re.escape(app_config.app_url)}/(app/schedule|wizard)$"),
+        timeout=5000,
+    )
+
+    if page.url.endswith("/wizard"):
+        skip_onboarding_from_storage(page)
+        page.goto(f"{app_config.app_url}/app/schedule")
 
     # Wait for page to load
     expect(page.locator('#page-title')).to_have_text("My Schedule", timeout=5000)
@@ -352,8 +385,15 @@ def test_multiple_device_sizes_login(
     page.locator('#login-password').fill(user["password"])
     page.locator('button[data-i18n="auth.sign_in"]').click()
 
-    # Verify login succeeded
-    expect(page).to_have_url(f"{app_config.app_url}/app/schedule", timeout=5000)
+    # Verify login succeeded (some accounts may be sent to onboarding wizard first)
+    import re
+    expect(page).to_have_url(
+        re.compile(rf"^{re.escape(app_config.app_url)}/(app/schedule|wizard)$"),
+        timeout=5000,
+    )
+    if page.url.endswith("/wizard"):
+        skip_onboarding_from_storage(page)
+        page.goto(f"{app_config.app_url}/app/schedule")
 
 
 def test_tablet_layout_ipad(
@@ -388,8 +428,16 @@ def test_tablet_layout_ipad(
     login_button = page.locator('button[data-i18n="auth.sign_in"]')
     login_button.click()
 
-    # Wait for redirect to schedule
-    expect(page).to_have_url(f"{app_config.app_url}/app/schedule", timeout=5000)
+    # Wait for redirect (schedule or onboarding wizard)
+    import re
+    expect(page).to_have_url(
+        re.compile(rf"^{re.escape(app_config.app_url)}/(app/schedule|wizard)$"),
+        timeout=5000,
+    )
+
+    if page.url.endswith("/wizard"):
+        skip_onboarding_from_storage(page)
+        page.goto(f"{app_config.app_url}/app/schedule")
 
     # Verify tablet viewport
     viewport_width = page.evaluate("window.innerWidth")

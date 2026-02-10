@@ -37,7 +37,7 @@ import time
 from datetime import datetime, timedelta
 import uuid
 
-from tests.e2e.helpers import AppConfig
+from tests.e2e.helpers import AppConfig, skip_onboarding_from_storage
 
 pytestmark = pytest.mark.usefixtures("api_server")
 
@@ -75,9 +75,17 @@ def admin_login(page: Page, app_config: AppConfig):
     page.get_by_role("button", name="Sign In").click()
     page.wait_for_timeout(2000)
 
-    # Verify logged in
-    expect(page).to_have_url(f"{app_config.app_url}/app/schedule")
-    expect(page.locator("#main-app")).to_be_visible()
+    # Verify logged in (admin may be redirected to /wizard if onboarding not completed)
+    import re
+    expect(page).to_have_url(re.compile(rf"^{re.escape(app_config.app_url)}/(app/.*|wizard)$"))
+    # If redirected to wizard, skip onboarding so solver/admin tests can proceed
+    if page.url.endswith("/wizard"):
+        skip_onboarding_from_storage(page)
+        page.goto(f"{app_config.app_url}/app/schedule")
+        page.wait_for_load_state("networkidle")
+
+    # Now the main app shell should be visible
+    expect(page.locator("#main-app")).to_be_visible(timeout=10000)
 
     # Navigate to admin console
     page.goto(f"{app_config.app_url}/app/admin")

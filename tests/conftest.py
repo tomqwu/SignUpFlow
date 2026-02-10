@@ -318,9 +318,14 @@ def api_server(app_config: AppConfig, setup_test_database, test_port: int):
     # Setup E2E Test Data (using the internal setup script logic)
     # We call this AFTER server is ready to ensure the DB is definitely init'd
     try:
+        # Ensure any helper scripts that read these env vars at import-time
+        # point at the dynamically-selected test server port.
+        os.environ["E2E_APP_URL"] = app_config.app_url
+        os.environ["E2E_API_BASE"] = app_config.api_base
+
         import tests.setup_test_data
         tests.setup_test_data.setup_test_data(app_config.api_base)
-        
+
         from tests.setup_e2e_test_data import setup_e2e_test_data
         setup_e2e_test_data()
     except Exception as e:
