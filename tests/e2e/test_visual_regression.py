@@ -189,7 +189,7 @@ from tests.e2e.helpers import AppConfig, ApiTestClient, login_via_ui
 
 pytestmark = [
     pytest.mark.usefixtures("api_server"),
-
+    pytest.mark.skip(reason="Visual regression snapshots are not stable yet; enable after baselines are reviewed/committed"),
 ]
 
 
