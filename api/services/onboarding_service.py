@@ -7,6 +7,8 @@ and checklist evaluations.
 
 import logging
 from typing import Optional, Dict, List, Any
+
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 from sqlalchemy.orm.attributes import flag_modified
 
@@ -48,8 +50,20 @@ class OnboardingService:
                 onboarding_skipped=False
             )
             self.db.add(progress)
-            self.db.commit()
-            self.db.refresh(progress)
+            try:
+                self.db.commit()
+            except IntegrityError:
+                # If multiple concurrent requests try to create progress for the same
+                # person, the UNIQUE(person_id) constraint can race. Make this
+                # operation idempotent by rolling back and loading the existing row.
+                self.db.rollback()
+                progress = self.db.query(OnboardingProgress).filter(
+                    OnboardingProgress.person_id == person_id
+                ).first()
+                if not progress:
+                    raise
+            else:
+                self.db.refresh(progress)
 
         # Evaluate checklist tasks dynamically if needed
         self._evaluate_checklist(progress)
