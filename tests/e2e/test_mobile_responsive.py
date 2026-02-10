@@ -482,8 +482,16 @@ def test_mobile_touch_gestures(
     login_button = page.locator('button[data-i18n="auth.sign_in"]')
     login_button.click()
 
-    # Wait for redirect to schedule
-    expect(page).to_have_url(f"{app_config.app_url}/app/schedule", timeout=5000)
+    # Wait for redirect (schedule or onboarding wizard)
+    import re
+    expect(page).to_have_url(
+        re.compile(rf"^{re.escape(app_config.app_url)}/(app/schedule|wizard)$"),
+        timeout=5000,
+    )
+
+    if page.url.endswith("/wizard"):
+        skip_onboarding_from_storage(page)
+        page.goto(f"{app_config.app_url}/app/schedule")
 
     # Wait for page to load
     expect(page.locator('#page-title')).to_have_text("My Schedule", timeout=5000)
