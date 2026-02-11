@@ -11,7 +11,7 @@ import requests
 import time
 from playwright.sync_api import Page, expect
 
-from tests.e2e.helpers import AppConfig
+from tests.e2e.helpers import AppConfig, login_via_ui
 
 pytestmark = pytest.mark.usefixtures("api_server")
 
@@ -134,13 +134,11 @@ def test_volunteer_sees_assigned_event_in_schedule(page: Page, app_config: AppCo
     # Step 3: Volunteer logs in
     print("\nStep 3: Volunteer logs in...")
 
-    page.goto(f"{app_config.app_url}/login")
-
-    page.locator('#login-email').fill(volunteer_email)
-    page.locator('#login-password').fill(test_password)
-    page.locator('#login-screen button[type="submit"]').click()
+    login_via_ui(page, app_config.app_url, volunteer_email, test_password)
 
     # Verify logged in
+    if "/wizard" in page.url:
+        page.goto(f"{app_config.app_url}/app/schedule")
     expect(page.locator('#main-app')).to_be_visible(timeout=5000)
     print("  ✓ Volunteer logged in successfully")
 
@@ -246,13 +244,11 @@ def test_volunteer_sees_empty_schedule_when_not_assigned(page: Page, app_config:
     # Step 1: Volunteer logs in
     print("\nStep 1: Volunteer logs in...")
 
-    page.goto(f"{app_config.app_url}/login")
-
-    page.locator('#login-email').fill(volunteer_email)
-    page.locator('#login-password').fill(test_password)
-    page.locator('#login-screen button[type="submit"]').click()
+    login_via_ui(page, app_config.app_url, volunteer_email, test_password)
 
     # Verify logged in
+    if "/wizard" in page.url:
+        page.goto(f"{app_config.app_url}/app/schedule")
     expect(page.locator('#main-app')).to_be_visible(timeout=5000)
     print("  ✓ Volunteer logged in successfully")
 
