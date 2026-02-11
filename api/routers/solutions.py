@@ -113,6 +113,8 @@ def create_manual_solution(
     if not org:
         raise HTTPException(status_code=404, detail=f"Organization {org_id} not found")
 
+    from api.timeutils import utcnow
+
     new_solution = Solution(
         org_id=org_id,
         solve_ms=solution_data.get("solve_ms", 0.0),
@@ -120,7 +122,7 @@ def create_manual_solution(
         soft_score=solution_data.get("soft_score", 0.0),
         health_score=solution_data.get("health_score", 0.0),
         metrics=solution_data.get("metrics", {}),
-        created_at=datetime.utcnow()
+        created_at=utcnow(),
     )
     
     db.add(new_solution)
