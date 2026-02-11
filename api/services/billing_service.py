@@ -13,7 +13,7 @@ Example Usage:
 
 from typing import Optional, Dict, Any, List
 from sqlalchemy.orm import Session, joinedload
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, UTC
 
 from api.models import (
     Organization,
@@ -218,7 +218,7 @@ class BillingService:
                 metric.current_value = volunteer_count
                 metric.plan_limit = plan_limit
                 metric.percentage_used = percentage_used
-                metric.last_updated = datetime.utcnow()
+                metric.last_updated = datetime.now(UTC)
             else:
                 metric = UsageMetrics(
                     org_id=org_id,
