@@ -14,6 +14,7 @@ Example Usage:
 from typing import Optional, Dict, Any, List
 from sqlalchemy.orm import Session, joinedload
 from datetime import datetime, timedelta, UTC
+from api.timeutils import utcnow
 
 from api.models import (
     Organization,
@@ -541,13 +542,13 @@ class BillingService:
             previous_plan = subscription.plan_tier
 
             # Calculate trial end date
-            trial_end = datetime.utcnow() + timedelta(days=trial_days)
+            trial_end = utcnow() + timedelta(days=trial_days)
 
             # Update subscription to trial status
             subscription.plan_tier = plan_tier
             subscription.status = "trialing"
             subscription.trial_end_date = trial_end
-            subscription.current_period_start = datetime.utcnow()
+            subscription.current_period_start = utcnow()
             subscription.current_period_end = trial_end
 
             self.db.commit()
@@ -614,7 +615,7 @@ class BillingService:
             # Called daily by Celery task
         """
         try:
-            now = datetime.utcnow()
+            now = utcnow()
 
             # Find all expired trials
             expired_trials = self.db.query(Subscription).filter(
@@ -921,7 +922,7 @@ class BillingService:
                 - Positive: Charge (monthly → annual)
                 - Negative: Credit (annual → monthly)
         """
-        now = datetime.utcnow()
+        now = utcnow()
         current_cycle = subscription.billing_cycle
         plan_tier = subscription.plan_tier
 
@@ -1032,7 +1033,7 @@ class BillingService:
                 }
 
             # Calculate effective date (end of current period)
-            effective_date = subscription.current_period_end or datetime.utcnow()
+            effective_date = subscription.current_period_end or utcnow()
 
             # Calculate credit for unused time
             credit_amount = self._calculate_downgrade_credit(
@@ -1046,7 +1047,7 @@ class BillingService:
                 "effective_date": effective_date.isoformat(),
                 "credit_amount_cents": credit_amount,
                 "reason": reason,
-                "scheduled_at": datetime.utcnow().isoformat()
+                "scheduled_at": utcnow().isoformat()
             }
 
             self.db.commit()
@@ -1099,7 +1100,7 @@ class BillingService:
         Returns:
             int: Credit amount in cents
         """
-        now = datetime.utcnow()
+        now = utcnow()
         current_plan = subscription.plan_tier
         billing_cycle = subscription.billing_cycle
 
@@ -1154,7 +1155,7 @@ class BillingService:
             }
         """
         try:
-            now = datetime.utcnow()
+            now = utcnow()
             applied_downgrades = []
 
             # Find all subscriptions with pending downgrades
@@ -1443,7 +1444,7 @@ class BillingService:
                     "message": "Subscription was not cancelled or retention period has expired"
                 }
 
-            now = datetime.utcnow()
+            now = utcnow()
 
             if now > org.data_retention_until:
                 return {

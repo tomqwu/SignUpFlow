@@ -15,6 +15,7 @@ from typing import Dict, List
 from sqlalchemy.orm import Session
 
 from api.models import Organization, Person, Team, Event, Availability
+from api.timeutils import utcnow
 from api.security import hash_password
 import random
 
@@ -116,7 +117,7 @@ def generate_sample_data(org_id: str, db: Session) -> Dict[str, List[str]]:
 
         # Add some random availability (time off)
         if random.random() < 0.3:  # 30% of people have time off
-            start_date = datetime.utcnow() + timedelta(days=random.randint(7, 30))
+            start_date = utcnow() + timedelta(days=random.randint(7, 30))
             end_date = start_date + timedelta(days=random.randint(1, 7))
             availability = Availability(
                 person_id=person.id,
@@ -127,7 +128,7 @@ def generate_sample_data(org_id: str, db: Session) -> Dict[str, List[str]]:
             db.add(availability)
 
     # Generate sample events
-    base_date = datetime.utcnow() + timedelta(days=7)  # Start 1 week from now
+    base_date = utcnow() + timedelta(days=7)  # Start 1 week from now
     events_data = [
         {
             "title": "SAMPLE - Sunday Service 10am",
