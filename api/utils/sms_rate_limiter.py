@@ -116,7 +116,8 @@ class SmsRateLimiter:
 
     def _seconds_until_midnight(self) -> int:
         """Calculate seconds until midnight for expiration."""
-        now = datetime.utcnow()
+        from api.timeutils import utcnow
+        now = utcnow()
         midnight = (now + timedelta(days=1)).replace(
             hour=0, minute=0, second=0, microsecond=0
         )

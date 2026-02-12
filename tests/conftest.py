@@ -45,9 +45,7 @@ from tests.e2e.helpers import AppConfig, ApiTestClient, safe_artifact_name
 # Test Configuration & Constants
 # -----------------------------------------------------------------------------
 
-TEST_PORT = 8001
-APP_URL = os.getenv("E2E_APP_URL", f"http://localhost:{TEST_PORT}").rstrip("/")
-API_BASE = os.getenv("E2E_API_BASE", f"{APP_URL}/api").rstrip("/")
+DEFAULT_TEST_PORT = 8001
 SKIP_DB_FIXTURES = os.getenv("SKIP_TEST_DB_FIXTURES", "").lower() in {"1", "true", "yes", "on"}
 
 # Module-level variable to store the current test's database session
@@ -65,9 +63,32 @@ def pytest_configure(config):
 
 
 @pytest.fixture(scope="session")
-def app_config() -> AppConfig:
+def test_port() -> int:
+    """Pick a port for the threaded test API server.
+
+    - If E2E_APP_URL is provided, we respect it.
+    - Otherwise, choose an ephemeral free port to avoid collisions.
+    """
+    env_url = os.getenv("E2E_APP_URL")
+    if env_url:
+        try:
+            return urlparse(env_url).port or DEFAULT_TEST_PORT
+        except Exception:
+            return DEFAULT_TEST_PORT
+
+    import socket
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+        s.bind(("127.0.0.1", 0))
+        s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        return int(s.getsockname()[1])
+
+
+@pytest.fixture(scope="session")
+def app_config(test_port: int) -> AppConfig:
     """Expose shared application endpoints to tests."""
-    return AppConfig(app_url=APP_URL, api_base=API_BASE)
+    app_url = os.getenv("E2E_APP_URL", f"http://localhost:{test_port}").rstrip("/")
+    api_base = os.getenv("E2E_API_BASE", f"{app_url}/api").rstrip("/")
+    return AppConfig(app_url=app_url, api_base=api_base)
 
 
 @pytest.fixture(autouse=True)
@@ -228,7 +249,7 @@ def setup_test_database():
         if not session.query(Person).filter_by(id="test_admin").first():
             admin = Person(
                 id="test_admin", org_id="test_org", name="Test Admin",
-                email="jane@test.com", password_hash=hash_password("password"), roles=["admin"]
+                email="admin@test.com", password_hash=hash_password("password"), roles=["admin"]
             )
             session.add(admin)
             
@@ -251,7 +272,7 @@ def setup_test_database():
 
 
 @pytest.fixture(scope="session")
-def api_server(app_config: AppConfig, setup_test_database):
+def api_server(app_config: AppConfig, setup_test_database, test_port: int):
     """
     Start Threaded API server for testing session.
     Uses the patched in-memory database configuration.
@@ -273,7 +294,7 @@ def api_server(app_config: AppConfig, setup_test_database):
     # Start Uvicorn in a daemon thread
     def run_server():
         # log_level="critical" reduces noise in test output
-        uvicorn.run(api.main.app, host="127.0.0.1", port=TEST_PORT, log_level="info")
+        uvicorn.run(api.main.app, host="127.0.0.1", port=test_port, log_level="info")
 
     t = threading.Thread(target=run_server)
     t.daemon = True
@@ -292,14 +313,19 @@ def api_server(app_config: AppConfig, setup_test_database):
         time.sleep(0.5)
 
     if not server_ready:
-        raise RuntimeError(f"API server failed to start on port {TEST_PORT}")
+        raise RuntimeError(f"API server failed to start on port {test_port}")
 
     # Setup E2E Test Data (using the internal setup script logic)
     # We call this AFTER server is ready to ensure the DB is definitely init'd
     try:
+        # Ensure any helper scripts that read these env vars at import-time
+        # point at the dynamically-selected test server port.
+        os.environ["E2E_APP_URL"] = app_config.app_url
+        os.environ["E2E_API_BASE"] = app_config.api_base
+
         import tests.setup_test_data
         tests.setup_test_data.setup_test_data(app_config.api_base)
-        
+
         from tests.setup_e2e_test_data import setup_e2e_test_data
         setup_e2e_test_data()
     except Exception as e:
@@ -365,30 +391,20 @@ def db(setup_test_database):
 
 @pytest.fixture(scope="function", autouse=True)
 def reset_database_between_tests(request, setup_test_database):
-    """
-    Triggers DB cleanup between tests.
-    Since we are using In-Memory DB with Shared Engine, we just DELETE data.
+    """Reset DB state *before* each test.
+
+    This keeps integration/E2E tests deterministic and avoids auth/test-data drift.
     """
     if SKIP_DB_FIXTURES:
         yield
         return
-        
+
     # Skip for comprehensive suite (manages its own state)
     if "comprehensive_test_suite.py" in str(request.path):
         yield
         return
 
-    yield # Verify test runs first? No, usually before.
-    
-    # Wait, usually we want to clean BEFORE the test. 
-    # But `autouse=True` runs expected setup -> yield -> teardown.
-    # The previous implementation cleaned BEFORE. Let's stick to that pattern if needed.
-    # However, for E2E, it's often safer to clean AFTER to leave system clean.
-    # PROPOSAL: Clean BEFORE to guarantee state.
-    pass # Currently relying on logic being inserted... 
-    
-    # Actually, let's implement the Clean BEFORE logic:
-    # We use the patched engine
+    # Clean BEFORE the test
     engine = api.database.engine
     with engine.connect() as conn:
         conn.execute(text("PRAGMA foreign_keys = OFF"))
@@ -399,24 +415,39 @@ def reset_database_between_tests(request, setup_test_database):
                 pass
         conn.execute(text("PRAGMA foreign_keys = ON"))
         conn.commit()
-    
+
     # Re-seed basic data because tests depend on it
-    # DEFENSIVE: Ensure tables exist!
     Base.metadata.create_all(bind=engine)
-    
+
     session = api.database.SessionLocal()
     try:
         org = Organization(id="test_org", name="Test Org", region="US", config={})
         session.add(org)
-        admin = Person(id="test_admin", org_id="test_org", name="Test Admin", email="jane@test.com", password_hash=hash_password("password"), roles=["admin"])
+        admin = Person(
+            id="test_admin",
+            org_id="test_org",
+            name="Test Admin",
+            email="admin@test.com",
+            password_hash=hash_password("password"),
+            roles=["admin"],
+        )
         session.add(admin)
-        volunteer = Person(id="test_volunteer", org_id="test_org", name="Test Volunteer", email="sarah@test.com", password_hash=hash_password("password"), roles=["volunteer"])
+        volunteer = Person(
+            id="test_volunteer",
+            org_id="test_org",
+            name="Test Volunteer",
+            email="sarah@test.com",
+            password_hash=hash_password("password"),
+            roles=["volunteer"],
+        )
         session.add(volunteer)
         session.commit()
     except Exception:
         session.rollback()
     finally:
         session.close()
+
+    yield
 
 
 
@@ -522,3 +553,11 @@ def pytest_runtest_makereport(item, call):
     outcome = yield
     report = outcome.get_result()
     setattr(item, f"rep_{report.when}", report)
+
+@pytest.fixture(scope="function")
+def test_org_setup(reset_database_between_tests):
+    """
+    Alias for database reset to satisfy legacy test dependencies.
+    Ensures 'test_org', 'test_admin', and 'test_volunteer' exist.
+    """
+    return reset_database_between_tests

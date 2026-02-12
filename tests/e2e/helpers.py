@@ -224,6 +224,36 @@ def submit_login_form(page: Page, email: str, password: str) -> Response:
     return login_response.value
 
 
+def skip_onboarding(page: Page, token: str) -> None:
+    """Skip onboarding for the currently-authenticated user.
+
+    This endpoint is used in E2E to avoid flaky redirects to /wizard.
+    """
+    if not token:
+        return
+
+    page.evaluate(
+        """async (token) => {
+            await fetch('/api/onboarding/skip', {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+        }""",
+        token,
+    )
+
+
+def skip_onboarding_from_storage(page: Page) -> None:
+    """Skip onboarding using authToken stored in localStorage (best-effort)."""
+    try:
+        token = page.evaluate("localStorage.getItem('authToken')")
+    except Exception:
+        token = None
+
+    if token:
+        skip_onboarding(page, token)
+
+
 def login_via_ui(page: Page, app_url: str, email: str, password: str) -> Response:
     """Perform a full login via the UI.
 
@@ -235,8 +265,7 @@ def login_via_ui(page: Page, app_url: str, email: str, password: str) -> Respons
     if response.status not in (200, 201):
         raise AssertionError(f"Login failed with status {response.status}")
 
-    # Always use the login response token to skip onboarding for E2E stability,
-    # then navigate to a canonical app route.
+    # Prefer the login response token to skip onboarding deterministically.
     token = None
     try:
         payload = response.json()
@@ -246,16 +275,10 @@ def login_via_ui(page: Page, app_url: str, email: str, password: str) -> Respons
         pass
 
     if token:
-        # Ensure the request completes before we proceed.
-        page.evaluate(
-            """async (token) => {
-                await fetch('/api/onboarding/skip', {
-                    method: 'POST',
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
-            }""",
-            token,
-        )
+        skip_onboarding(page, token)
+    else:
+        # Fallback: try localStorage token.
+        skip_onboarding_from_storage(page)
 
     page.goto(f"{app_url}/app/schedule", wait_until="networkidle")
     expect(page.locator("#main-app")).to_be_visible(timeout=10000)
