@@ -178,8 +178,29 @@ class ApiTestClient:
         timeout: float = 10,
         **kwargs: Any,
     ) -> requests.Response:
+        """Perform an API request with a small readiness retry.
+
+        E2E harnesses sometimes start the backend on an ephemeral port; when running a single
+        test in isolation, the first request can race server startup and get ConnectionRefused.
+
+        We retry connection errors briefly (best-effort) to avoid flaking on startup.
+        """
         url = f"{self.base_url}{path}"
-        response = self.session.request(method, url, timeout=timeout, **kwargs)
+
+        # Total wall time for connection retries. Keep this short so genuine failures surface.
+        deadline = time.time() + 5.0
+        last_exc: Exception | None = None
+
+        while True:
+            try:
+                response = self.session.request(method, url, timeout=timeout, **kwargs)
+                break
+            except requests.exceptions.ConnectionError as exc:  # pragma: no cover
+                last_exc = exc
+                if time.time() >= deadline:
+                    raise
+                time.sleep(0.2)
+
         if expected_status and response.status_code not in expected_status:
             raise AssertionError(
                 f"{method.upper()} {url} failed with status "

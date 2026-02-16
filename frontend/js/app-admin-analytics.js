@@ -51,36 +51,38 @@ async function loadAnalytics() {
     }
 }
 
+let filtersPopulating = false;
 async function populateAnalyticsFilters() {
+    if (filtersPopulating) return;
+    filtersPopulating = true;
+
     // Populate team/person selects if empty
     // This assumes specific selectors exist in HTML: #filter-team, #filter-person
     const teamSelect = document.getElementById('filter-team');
     const personSelect = document.getElementById('filter-person');
 
-    if (teamSelect && teamSelect.options.length <= 1) {
-        try {
+    try {
+        if (teamSelect && teamSelect.options.length <= 1) {
             const response = await authFetch(`${API_BASE_URL}/teams/?org_id=${currentOrg.id}`);
             const data = await response.json();
-            if (data.teams) {
+            if (data.teams && teamSelect.options.length <= 1) {
                 const options = data.teams.map(t => `<option value="${t.id}">${t.name}</option>`).join('');
                 teamSelect.innerHTML += options;
             }
-        } catch (e) {
-            console.warn('Failed to load teams for filter', e);
         }
-    }
 
-    if (personSelect && personSelect.options.length <= 1) {
-        try {
+        if (personSelect && personSelect.options.length <= 1) {
             const response = await authFetch(`${API_BASE_URL}/people/?org_id=${currentOrg.id}`);
             const data = await response.json();
-            if (data.people) {
+            if (data.people && personSelect.options.length <= 1) {
                 const options = data.people.map(p => `<option value="${p.id}">${p.name}</option>`).join('');
                 personSelect.innerHTML += options;
             }
-        } catch (e) {
-            console.warn('Failed to load people for filter', e);
         }
+    } catch (e) {
+        console.warn('Failed to load filters', e);
+    } finally {
+        filtersPopulating = false;
     }
 }
 
@@ -205,6 +207,18 @@ function renderAnalyticsDashboard(container, stats, health, burnout) {
             </div>
         </div>
     `;
+}
+
+function resetAnalyticsFilters() {
+    const teamSelect = document.getElementById('filter-team');
+    const personSelect = document.getElementById('filter-person');
+    const daysFilter = document.getElementById('date-range-filter');
+
+    if (teamSelect) teamSelect.value = '';
+    if (personSelect) personSelect.value = '';
+    if (daysFilter) daysFilter.value = '30';
+
+    loadAnalytics();
 }
 
 function toggleExportMenu() {

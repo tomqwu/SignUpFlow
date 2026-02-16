@@ -1032,12 +1032,19 @@
                                 <h3 data-i18n="admin.analytics_dashboard">Analytics Dashboard</h3>
                                 <div class="admin-controls">
                                     <div class="date-range-filter">
+                                        <select id="filter-team" class="form-control" onchange="loadAnalytics()">
+                                            <option value="">All Teams</option>
+                                        </select>
+                                        <select id="filter-person" class="form-control" onchange="loadAnalytics()">
+                                            <option value="">All People</option>
+                                        </select>
                                         <select id="date-range-filter" class="form-control" onchange="loadAnalytics()">
                                             <option value="7">Last 7 days</option>
                                             <option value="30" selected>Last 30 days</option>
                                             <option value="90">Last 90 days</option>
                                             <option value="custom">Custom Range</option>
                                         </select>
+                                        <button class="btn btn-secondary btn-sm" onclick="resetAnalyticsFilters()">Clear</button>
                                         <div id="custom-date-inputs" class="hidden">
                                             <input type="date" id="analytics-date-from" class="form-control"
                                                 placeholder="From">
