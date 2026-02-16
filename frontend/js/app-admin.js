@@ -3,18 +3,18 @@ if (typeof API_BASE_URL === 'undefined') {
     var API_BASE_URL = '/api';
 }
 
-// State
-// State
-var currentOrg = null;
-var currentUser = null;
+// State - Share with app-user-v2.js if already defined
+if (typeof currentOrg === 'undefined') var currentOrg = null;
+if (typeof currentUser === 'undefined') var currentUser = null;
 var organizations = [];
 
 try {
-    const storedOrg = localStorage.getItem('currentOrg');
-    if (storedOrg) currentOrg = JSON.parse(storedOrg);
+    // Standardize on roster_* keys used by v2 app
+    const storedOrg = localStorage.getItem('roster_org') || localStorage.getItem('currentOrg');
+    if (storedOrg && !currentOrg) currentOrg = JSON.parse(storedOrg);
 
-    const storedUser = localStorage.getItem('currentUser');
-    if (storedUser) currentUser = JSON.parse(storedUser);
+    const storedUser = localStorage.getItem('roster_user') || localStorage.getItem('currentUser');
+    if (storedUser && !currentUser) currentUser = JSON.parse(storedUser);
 } catch (e) {
     console.warn('Failed to restore state from localStorage', e);
 }

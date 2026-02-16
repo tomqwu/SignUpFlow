@@ -5,8 +5,8 @@ if (typeof API_BASE_URL === 'undefined') {
 }
 
 // User State - attach to window so router can access it
-var currentUser = null;
-var currentOrg = null;
+if (typeof currentUser === 'undefined') var currentUser = null;
+if (typeof currentOrg === 'undefined') var currentOrg = null;
 var isCreatingOrg = false;
 
 // Expose to window for router access
@@ -43,8 +43,8 @@ function translatePage() {
         // Handle placeholders
         if (el.hasAttribute('placeholder')) {
             el.setAttribute('placeholder', translated);
-        } else if (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') {
-            // Don't change value, only placeholder
+        } else if (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.tagName === 'SELECT') {
+            // Don't change value/content of interactive elements via textContent
         } else {
             el.textContent = translated;
         }
@@ -1650,16 +1650,9 @@ async function showSettings() {
 
     // Set current language - prefer user's saved preference over i18n state
     const languageSelect = document.getElementById('settings-language');
-    languageSelect.value = currentUser.language || i18n.getLocale() || 'en';
-
-    // Add event listener for immediate language change on dropdown selection
-    // Remove any existing listener first to prevent duplicates
-    const newLanguageSelect = languageSelect.cloneNode(true);
-    languageSelect.parentNode.replaceChild(newLanguageSelect, languageSelect);
-    newLanguageSelect.addEventListener('change', async (e) => {
-        const newLocale = e.target.value;
-        await changeLanguage(newLocale);
-    });
+    if (languageSelect) {
+        languageSelect.value = currentUser.language || i18n.getLocale() || 'en';
+    }
 
     // Display user's permission roles (read-only)
     const permissionDisplay = document.getElementById('settings-permission-display');
