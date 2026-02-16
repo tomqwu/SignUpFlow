@@ -1706,6 +1706,7 @@
             </div>
             <div class="modal-body">
                 <form id="constraint-form" onsubmit="saveConstraint(event)">
+                    <input type="hidden" id="constraint-id">
                     <div class="form-group">
                         <label for="constraint-key">Constraint Key</label>
                         <input type="text" id="constraint-key" required placeholder="e.g., max_shifts_per_week">
