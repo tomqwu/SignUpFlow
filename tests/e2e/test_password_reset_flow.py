@@ -13,7 +13,7 @@ import requests
 import time
 from playwright.sync_api import Page, expect
 
-from tests.e2e.helpers import AppConfig
+from tests.e2e.helpers import AppConfig, login_via_ui
 
 pytestmark = pytest.mark.usefixtures("api_server")
 
@@ -131,16 +131,13 @@ def test_password_reset_complete_journey(page: Page, app_config: AppConfig):
 
     # Step 6: Login with new password
     print("\nStep 6: User logs in with new password...")
-    page.locator('#login-email').fill(test_email)
-    page.locator('#login-password').fill(new_password)
-    print(f"  Email: {test_email}")
-    print(f"  Password: {'*' * len(new_password)}")
 
-    page.locator('#login-screen button[type="submit"]').click()
+    # Use the shared login helper so we consistently handle onboarding redirects (/wizard)
+    # and land on an authenticated page with #main-app visible.
+    login_via_ui(page, app_config.app_url, test_email, new_password)
 
     # Step 7: Verify login successful
     print("\nStep 7: Verifying login successful...")
-    expect(page.locator('#main-app')).to_be_visible(timeout=5000)
     print("  ✓ Main app visible")
 
     # Verify user name displayed

@@ -6,7 +6,7 @@ and admin summaries asynchronously.
 """
 
 import logging
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, UTC
 from typing import List, Dict, Any, Optional
 
 from sqlalchemy.orm import Session
@@ -203,7 +203,7 @@ def _send_reminder_notification(
         return None
 
     # Calculate hours remaining
-    now = datetime.utcnow()
+    now = datetime.now(UTC).replace(tzinfo=None)
     hours_remaining = int((event.start_time - now).total_seconds() / 3600)
 
     # Format event datetime
@@ -353,7 +353,7 @@ def send_reminder_emails() -> Dict[str, Any]:
 
     try:
         # Find events happening in 23-25 hours (24-hour window with 1-hour buffer)
-        now = datetime.utcnow()
+        now = datetime.now(UTC).replace(tzinfo=None)
         reminder_start = now + timedelta(hours=23)
         reminder_end = now + timedelta(hours=25)
 
@@ -412,7 +412,7 @@ def send_reminder_emails() -> Dict[str, Any]:
                         "role": assignment.role if hasattr(assignment, 'role') else None,
                         "hours_remaining": int((event.start_time - now).total_seconds() / 3600)
                     },
-                    created_at=datetime.utcnow()
+                    created_at=datetime.now(UTC).replace(tzinfo=None)
                 )
                 db.add(notification)
                 db.flush()

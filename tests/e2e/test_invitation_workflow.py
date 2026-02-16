@@ -17,35 +17,17 @@ import requests
 from playwright.sync_api import Page, expect
 from datetime import datetime, timedelta
 
-# NOTE: Running in docker-compose with server already started
-# No need for api_server fixture which tries to start a new server on port 8000
+# Note: These tests rely on the pytest-managed test server via `api_server`.
 
 from tests.e2e.helpers import AppConfig
 
 @pytest.fixture(scope="function", autouse=True)
 def setup_invitation_test_data(api_server, app_config: AppConfig):
-    """Set up test data for invitation workflow tests (docker-compose mode)."""
-    import os
-    from urllib.parse import urlparse
-
-    # Determine DB based on port
-    port = 8000
-    if app_config.app_url:
-        parsed = urlparse(app_config.app_url)
-        if parsed.port:
-            port = parsed.port
-            
-    db_filename = "test_roster.db"
-    if port == 8001:
-        db_filename = "test_roster_e2e.db"
-        
-    # Set DATABASE_URL for setup_test_data to use
-    project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-    os.environ["DATABASE_URL"] = f"sqlite:///{project_root}/{db_filename}"
-    
+    """Ensure baseline seed data exists for invitation workflow tests."""
     import tests.setup_test_data
-    setup_test_data = tests.setup_test_data.setup_test_data
-    setup_test_data() # No argument needed as it uses env var
+
+    # Seed via API so credentials match the running ephemeral test server.
+    tests.setup_test_data.setup_test_data(app_config.api_base)
     yield
 
 

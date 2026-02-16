@@ -4,9 +4,6 @@ import pytest
 from playwright.sync_api import Page, expect
 from tests.e2e.helpers import AppConfig, ApiTestClient, login_via_ui
 
-# Use the test port defined in conftest.py (or default to 8001 if running standalone)
-APP_URL = os.getenv("E2E_APP_URL", "http://localhost:8001")
-
 @pytest.fixture(scope="function")
 def admin_page(
     page: Page,
@@ -36,7 +33,7 @@ def admin_page(
     )
     
     # 3. Login
-    login_via_ui(page, APP_URL, admin["email"], admin["password"])
+    login_via_ui(page, app_config.app_url, admin["email"], admin["password"])
     
     # 4. Navigate to Admin
     # Wait for dashboard first to ensure login complete

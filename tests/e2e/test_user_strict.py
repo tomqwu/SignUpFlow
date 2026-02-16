@@ -1,10 +1,11 @@
 """Strict tests for user navigation and view components."""
 import pytest
 from playwright.sync_api import Page, expect
-import time
+from tests.e2e.helpers import AppConfig
+
 
 @pytest.fixture
-def user_page(page: Page, api_server):
+def user_page(page: Page, api_server, app_config: AppConfig):
     """
     Fixture to set up a user session.
     Creates an org, creates a user, logs in, and waits for the dashboard.
@@ -14,9 +15,7 @@ def user_page(page: Page, api_server):
     timestamp = int(time.time())
     org_name = f"Strict User Test Org {timestamp}"
     
-    # Use APP_URL from env or default
-    import os
-    app_url = os.getenv("E2E_APP_URL", "http://localhost:8001")
+    app_url = app_config.app_url
     page.goto(app_url)
     
     # Check if we are already logged in (dashboard visible)

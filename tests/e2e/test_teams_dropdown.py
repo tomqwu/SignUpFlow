@@ -5,9 +5,6 @@ import pytest
 from playwright.sync_api import sync_playwright, expect, Page
 from tests.e2e.helpers import AppConfig, ApiTestClient
 
-APP_URL = os.getenv("E2E_APP_URL", "http://localhost:8001")
-API_URL = f"{APP_URL}/api"
-
 @pytest.fixture(scope="function")
 def browser_context():
     with sync_playwright() as p:
@@ -16,7 +13,7 @@ def browser_context():
         yield context
         browser.close()
 
-def test_teams_dropdown_populated(page: Page, app_config: AppConfig, api_client: ApiTestClient):
+def test_teams_dropdown_populated(page: Page, api_server, app_config: AppConfig, api_client: ApiTestClient):
     """
     Test teams dropdown population.
 

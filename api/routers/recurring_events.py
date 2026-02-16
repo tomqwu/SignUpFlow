@@ -444,7 +444,8 @@ def update_series_template(
     if role_requirements is not None:
         series.role_requirements = role_requirements
 
-    series.updated_at = datetime.utcnow()
+    from datetime import UTC
+    series.updated_at = datetime.now(UTC).replace(tzinfo=None)
 
     db.commit()
     db.refresh(series)

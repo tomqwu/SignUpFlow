@@ -227,8 +227,8 @@ async def get_organization_notification_stats(
     # Verify admin belongs to organization
     verify_org_member(admin, org_id)
 
-    from datetime import datetime, timedelta
-    cutoff_date = datetime.utcnow() - timedelta(days=days)
+    from datetime import datetime, timedelta, UTC
+    cutoff_date = datetime.now(UTC).replace(tzinfo=None) - timedelta(days=days)
 
     # Total notifications by status
     status_counts = db.query(

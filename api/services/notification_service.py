@@ -13,6 +13,8 @@ from datetime import datetime
 
 from sqlalchemy.orm import Session
 
+from api.timeutils import utcnow
+
 from api.models import (
     Notification, NotificationType, NotificationStatus,
     EmailPreference, EmailFrequency,
@@ -137,7 +139,7 @@ def create_assignment_notifications(
                 "assignment_id": assignment.id,
                 "role": assignment.role if hasattr(assignment, 'role') else None,
             },
-            created_at=datetime.utcnow()
+            created_at=utcnow()
         )
         db.add(notification)
         db.flush()  # Flush to get notification ID
@@ -219,7 +221,7 @@ def create_notification(
         status=NotificationStatus.PENDING,
         event_id=event_id,
         template_data=template_data or {},
-        created_at=datetime.utcnow()
+        created_at=utcnow()
     )
     db.add(notification)
     db.flush()

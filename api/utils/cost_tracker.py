@@ -55,7 +55,8 @@ class CostTracker:
             Dictionary with budget status and alert info
         """
         # Get or create usage record for current month
-        month_year = datetime.utcnow().strftime("%Y-%m")
+        from api.timeutils import utcnow
+        month_year = utcnow().strftime("%Y-%m")
 
         usage = (
             db.query(SmsUsage)
@@ -140,7 +141,8 @@ class CostTracker:
         Returns:
             Dictionary with budget status
         """
-        month_year = datetime.utcnow().strftime("%Y-%m")
+        from api.timeutils import utcnow
+        month_year = utcnow().strftime("%Y-%m")
 
         usage = (
             db.query(SmsUsage)

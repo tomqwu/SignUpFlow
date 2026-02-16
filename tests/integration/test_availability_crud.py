@@ -11,11 +11,7 @@ import pytest
 from api.models import Organization, Person
 from api.security import hash_password
 
-BASE_URL = "http://localhost:8001"
-API_BASE = f"{BASE_URL}/api"
-
-
-def get_admin_headers_and_create_user(org_id="test-org", user_id="test-admin", email="admin@test.com"):
+def get_admin_headers_and_create_user(api_base: str, org_id="test-org", user_id="test-admin", email="admin@test.com"):
     """Ensure an admin user exists for the given org and return auth headers."""
     # Use the app's SessionLocal so we write into the same DB the test server is using.
     from api.database import SessionLocal
@@ -49,7 +45,7 @@ def get_admin_headers_and_create_user(org_id="test-org", user_id="test-admin", e
     finally:
         session.close()
 
-    login_resp = requests.post(f"{API_BASE}/auth/login", json={
+    login_resp = requests.post(f"{api_base}/auth/login", json={
         "email": email,
         "password": "admin123"
     })
@@ -61,12 +57,15 @@ def get_admin_headers_and_create_user(org_id="test-org", user_id="test-admin", e
     return {"Authorization": f"Bearer {token}"}
 
 
-def test_availability_api_crud(api_server):
+def test_availability_api_crud(api_server, app_config):
     """Test complete CRUD lifecycle for time-off via API"""
     print("\n🧪 Testing Availability API CRUD...")
 
+    api_base = app_config.api_base
+    API_BASE = api_base
+
     # Get admin authentication headers (creates admin user if needed)
-    admin_headers = get_admin_headers_and_create_user()
+    admin_headers = get_admin_headers_and_create_user(api_base)
 
     # Setup: Create organization first
     org_data = {
@@ -171,12 +170,15 @@ def test_availability_api_crud(api_server):
     print("\n✅ API CRUD tests passed!")
 
 
-def test_availability_edge_cases(api_server):
+def test_availability_edge_cases(api_server, app_config):
     """Test edge cases and error handling"""
     print("\n🧪 Testing Availability Edge Cases...")
 
+    api_base = app_config.api_base
+    API_BASE = api_base
+
     # Get admin authentication headers
-    admin_headers = get_admin_headers_and_create_user(org_id="test-org-edge", user_id="test-admin-edge", email="admin-edge@test.com")
+    admin_headers = get_admin_headers_and_create_user(api_base, org_id="test-org-edge", user_id="test-admin-edge", email="admin-edge@test.com")
 
     # Setup: Create organization first
     org_data = {
@@ -289,7 +291,7 @@ def test_availability_edge_cases(api_server):
 
 
 @pytest.mark.skip(reason="E2E test miscategorized as integration test - requires Playwright browsers. Should be moved to tests/e2e/")
-def test_availability_gui_workflow(api_server):
+def test_availability_gui_workflow(api_server, app_config):
     """Test complete availability workflow through GUI"""
     print("\n🧪 Testing Availability GUI Workflow...")
 

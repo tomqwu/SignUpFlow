@@ -271,10 +271,10 @@ def process_cancelled_subscriptions(self) -> Dict[str, Any]:
     db = SessionLocal()
 
     try:
-        from datetime import datetime, timedelta
+        from datetime import datetime, timedelta, UTC
         from api.models import Subscription, Organization, SubscriptionEvent
 
-        now = datetime.utcnow()
+        now = datetime.now(UTC).replace(tzinfo=None)
         cancelled_orgs = []
 
         # Find all subscriptions marked for cancellation at period end
@@ -375,10 +375,10 @@ def mark_organizations_for_deletion(self) -> Dict[str, Any]:
     db = SessionLocal()
 
     try:
-        from datetime import datetime
+        from datetime import datetime, UTC
         from api.models import Organization
 
-        now = datetime.utcnow()
+        now = datetime.now(UTC).replace(tzinfo=None)
         marked_orgs = []
 
         # Find organizations past retention period

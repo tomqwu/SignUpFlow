@@ -19,7 +19,7 @@ Example Usage:
 import os
 from typing import Optional, Dict, Any, List
 from sqlalchemy.orm import Session, joinedload
-from datetime import datetime
+from datetime import datetime, UTC
 
 from api.models import Organization, Subscription, UsageMetrics, Person
 from api.logging_config import logger
@@ -354,7 +354,7 @@ class UsageService:
                 metric.current_value = volunteer_count
                 metric.plan_limit = plan_limit
                 metric.percentage_used = percentage_used
-                metric.last_updated = datetime.utcnow()
+                metric.last_updated = datetime.now(UTC)
             else:
                 metric = UsageMetrics(
                     org_id=org_id,

@@ -43,6 +43,7 @@ def admin_login(
     page: Page,
     app_config: AppConfig,
     api_client: ApiTestClient,
+    api_server,
 ):
     """Login as admin for constraints tests."""
     # Setup: Create test organization and admin user
@@ -70,12 +71,19 @@ def admin_login(
     expect(page).to_have_url(re.compile(r".*/app/schedule.*"))
     expect(page.locator("#main-app")).to_be_visible()
 
+    # Navigate to admin console
+    page.goto(f"{app_config.app_url}/app/admin")
+    page.wait_for_timeout(1000)
+
     # Click Constraints tab
     # Use exact data-tab selector
     constraints_tab = page.locator('button[data-tab="constraints"]')
     expect(constraints_tab.first).to_be_visible(timeout=5000)
     constraints_tab.first.click()
     
+    # Track dialogs (for delete confirmation)
+    page.on("dialog", lambda dialog: dialog.accept())
+
     # Wait for tab content to be visible
     # Debug: Print classes
     tab_content = page.locator('#admin-tab-constraints')
@@ -90,7 +98,6 @@ def admin_login(
     return page
 
 
-@pytest.mark.skip(reason="Flaky test: Button visibility timing out in CI environment")
 def test_create_constraint(admin_login: Page):
     """Test creating a constraint with type, weight, and predicate."""
     page = admin_login
@@ -142,7 +149,7 @@ def test_create_constraint(admin_login: Page):
         predicate_input.fill(constraint_predicate)
 
     # Submit form
-    submit_button = page.locator('button:has-text("Create"), button:has-text("Save"), button[type="submit"]')
+    submit_button = page.locator('#constraint-modal button[type="submit"]')
     expect(submit_button.first).to_be_visible()
     submit_button.first.click()
 
@@ -156,10 +163,9 @@ def test_create_constraint(admin_login: Page):
     # Verify constraint details displayed
     expect(page.locator(f'text="{constraint_key}"')).to_be_visible()
     expect(page.locator('text="soft"')).to_be_visible()  # Type
-    expect(page.locator('text="80"')).to_be_visible()  # Weight
+    expect(page.locator(f'text="Weight: 80"')).to_be_visible()  # Weight
 
 
-@pytest.mark.skip(reason="Flaky test: Button visibility timing out in CI environment")
 def test_edit_constraint(admin_login: Page):
     """Test editing existing constraint."""
     page = admin_login
@@ -231,17 +237,16 @@ def test_edit_constraint(admin_login: Page):
         predicate_input.fill(updated_predicate)
 
     # Submit update
-    save_button = page.locator('button:has-text("Save"), button:has-text("Update"), button[type="submit"]')
+    save_button = page.locator('#constraint-modal button[type="submit"]')
     expect(save_button.first).to_be_visible()
     save_button.first.click()
 
     page.wait_for_timeout(2000)
 
     # Verify updated weight appears
-    expect(page.locator(f'text="{updated_weight}"').first).to_be_visible(timeout=5000)
+    expect(page.locator(f'text="Weight: {updated_weight}"').first).to_be_visible(timeout=5000)
 
 
-@pytest.mark.skip(reason="Flaky test: Button visibility timing out in CI environment")
 def test_delete_constraint(admin_login: Page):
     """Test deleting constraint and cleanup."""
     page = admin_login
@@ -294,20 +299,12 @@ def test_delete_constraint(admin_login: Page):
 
     expect(delete_button.first).to_be_visible(timeout=5000)
     delete_button.first.click()
-    page.wait_for_timeout(500)
-
-    # Confirm deletion
-    confirm_button = page.locator('button:has-text("Confirm"), button:has-text("Yes"), button:has-text("Delete")')
-    if confirm_button.count() > 0:
-        confirm_button.last.click()  # Use last to get the confirm dialog button
-
     page.wait_for_timeout(2000)
 
     # Verify constraint is no longer in the list
     expect(page.locator(f'text="{constraint_key}"')).not_to_be_visible()
 
 
-@pytest.mark.skip(reason="Flaky test: Button visibility timing out in CI environment")
 def test_view_constraints_list(admin_login: Page):
     """Test viewing all constraints for organization."""
     page = admin_login
@@ -358,7 +355,6 @@ def test_view_constraints_list(admin_login: Page):
         expect(page.locator(f'text="{constraint_key}"')).to_be_visible()
 
 
-@pytest.mark.skip(reason="Flaky test: Button visibility timing out in CI environment")
 def test_toggle_constraint_active(admin_login: Page):
     """Test toggling constraint active/inactive status."""
     page = admin_login
@@ -421,7 +417,6 @@ def test_toggle_constraint_active(admin_login: Page):
         page.wait_for_timeout(500)
 
 
-@pytest.mark.skip(reason="Flaky test: Button visibility timing out in CI environment")
 def test_constraint_priority_ordering(admin_login: Page):
     """Test constraint priority ordering (drag-drop or up/down buttons)."""
     page = admin_login

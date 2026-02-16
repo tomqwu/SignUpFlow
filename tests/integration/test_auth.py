@@ -12,15 +12,21 @@ import pytest
 import httpx
 from datetime import datetime
 
-API_BASE = "http://localhost:8001/api"
+# NOTE: do not hardcode ports; use app_config/api_server fixtures to select a free port.
+
+
+
+def _api_base(app_config):
+    return app_config.api_base
 
 
 class TestAuthSignup:
     """Test signup endpoint."""
 
-    def test_signup_success(self, api_server):
+    def test_signup_success(self, api_server, app_config):
         """Test successful signup with valid data."""
         client = httpx.Client()
+        API_BASE = _api_base(app_config)
 
         # Create org first
         org_id = f"test_org_{int(datetime.now().timestamp())}"
@@ -49,9 +55,10 @@ class TestAuthSignup:
         # First user automatically becomes admin
         assert "admin" in data["roles"]
 
-    def test_signup_duplicate_email(self, api_server):
+    def test_signup_duplicate_email(self, api_server, app_config):
         """Test signup rejects duplicate email."""
         client = httpx.Client()
+        API_BASE = _api_base(app_config)
 
         org_id = f"test_org_{int(datetime.now().timestamp())}"
         client.post(f"{API_BASE}/organizations/", json={
@@ -83,9 +90,10 @@ class TestAuthSignup:
 
         assert response.status_code == 409
 
-    def test_signup_invalid_org(self, api_server):
+    def test_signup_invalid_org(self, api_server, app_config):
         """Test signup fails with nonexistent organization."""
         client = httpx.Client()
+        API_BASE = _api_base(app_config)
 
         response = client.post(f"{API_BASE}/auth/signup", json={
             "org_id": "nonexistent_org",
@@ -101,9 +109,10 @@ class TestAuthSignup:
 class TestAuthLogin:
     """Test login endpoint."""
 
-    def test_login_success(self, api_server):
+    def test_login_success(self, api_server, app_config):
         """Test successful login with correct credentials."""
         client = httpx.Client()
+        API_BASE = _api_base(app_config)
 
         # Create org and user with highly unique IDs
         import random
@@ -145,9 +154,10 @@ class TestAuthLogin:
         # First user in org automatically gets admin role
         assert "admin" in data["roles"]
 
-    def test_login_wrong_password(self, api_server):
+    def test_login_wrong_password(self, api_server, app_config):
         """Test login fails with wrong password."""
         client = httpx.Client()
+        API_BASE = _api_base(app_config)
 
         org_id = f"test_org_{int(datetime.now().timestamp())}"
         email = f"wrongpass_{int(datetime.now().timestamp())}@test.com"
@@ -175,9 +185,10 @@ class TestAuthLogin:
 
         assert response.status_code == 401
 
-    def test_login_nonexistent_user(self, api_server):
+    def test_login_nonexistent_user(self, api_server, app_config):
         """Test login fails with nonexistent email."""
         client = httpx.Client()
+        API_BASE = _api_base(app_config)
 
         response = client.post(f"{API_BASE}/auth/login", json={
             "email": "nonexistent@test.com",

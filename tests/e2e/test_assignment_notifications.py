@@ -56,8 +56,9 @@ def test_assignment_notification_api_workflow(
     if not events:
         # Create test event
         import uuid
-        event_id_unique = f"test_event_{int(datetime.utcnow().timestamp())}"
-        start_time = (datetime.utcnow() + timedelta(days=7))
+        from api.timeutils import utcnow
+        event_id_unique = f"test_event_{int(utcnow().timestamp())}"
+        start_time = (utcnow() + timedelta(days=7))
         end_time = start_time + timedelta(minutes=60)  # 60-minute duration
 
         create_event_response = requests.post(

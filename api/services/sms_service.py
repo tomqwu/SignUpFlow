@@ -32,6 +32,7 @@ from api.models import (
 from api.utils.sms_rate_limiter import SmsRateLimiter
 from api.utils.quiet_hours import QuietHours
 from api.utils.cost_tracker import CostTracker
+from api.timeutils import utcnow
 
 
 class SMSService:
@@ -137,7 +138,7 @@ class SMSService:
                 twilio_message_sid=twilio_message.sid,
                 cost_cents=cost_cents,
                 is_urgent=is_urgent,
-                sent_at=datetime.utcnow(),
+                sent_at=utcnow(),
             )
             db.add(sms_message)
 
@@ -174,7 +175,7 @@ class SMSService:
                 error_message=str(e),
                 cost_cents=0,
                 is_urgent=is_urgent,
-                failed_at=datetime.utcnow(),
+                failed_at=utcnow(),
             )
             db.add(sms_message)
             db.commit()
@@ -377,7 +378,7 @@ class SMSService:
         """
         # 1. Generate random 6-digit code
         code = random.randint(100000, 999999)
-        expires_at = datetime.utcnow() + timedelta(minutes=10)
+        expires_at = utcnow() + timedelta(minutes=10)
 
         # 2. Delete any existing verification codes for this person
         db.query(SmsVerificationCode).filter(
@@ -446,7 +447,7 @@ class SMSService:
             raise ValueError("No verification code found. Please request a new code.")
 
         # 2. Check expiration (10 minutes)
-        if datetime.utcnow() > verification.expires_at:
+        if utcnow() > verification.expires_at:
             db.delete(verification)
             db.commit()
             raise ValueError("Verification code expired. Please request a new code.")
@@ -482,7 +483,7 @@ class SMSService:
                 phone_number=verification.phone_number,
                 verified=True,
                 notification_types=["assignment", "reminder", "change", "cancellation"],
-                opt_in_date=datetime.utcnow(),
+                opt_in_date=utcnow(),
                 language="en",
                 timezone="UTC",
             )
@@ -490,7 +491,7 @@ class SMSService:
         else:
             sms_pref.verified = True
             sms_pref.phone_number = verification.phone_number
-            sms_pref.opt_in_date = datetime.utcnow()
+            sms_pref.opt_in_date = utcnow()
 
         # 6. Delete verification code record
         db.delete(verification)
@@ -588,7 +589,7 @@ class SMSService:
             event_id=None,
             action_taken=action,
             twilio_message_sid=twilio_message_sid,
-            processed_at=datetime.utcnow(),
+            processed_at=utcnow(),
         )
         db.add(sms_reply)
         db.commit()
@@ -621,7 +622,7 @@ class SMSService:
             .join(Event)
             .filter(
                 Assignment.person_id == person_id,
-                Event.datetime >= datetime.utcnow(),
+                Event.datetime >= utcnow(),
             )
             .order_by(Event.datetime.asc())
             .first()
@@ -669,7 +670,7 @@ class SMSService:
             .join(Event)
             .filter(
                 Assignment.person_id == person_id,
-                Event.datetime >= datetime.utcnow(),
+                Event.datetime >= utcnow(),
             )
             .order_by(Event.datetime.asc())
             .first()
@@ -721,7 +722,7 @@ class SMSService:
             return "You are not subscribed to SMS notifications."
 
         # 2. Update opt_out_date (TCPA compliance)
-        sms_pref.opt_out_date = datetime.utcnow()
+        sms_pref.opt_out_date = utcnow()
         db.commit()
 
         # 3. Return opt-out confirmation
@@ -757,7 +758,7 @@ class SMSService:
 
         # 3. Clear opt_out_date to re-enable
         sms_pref.opt_out_date = None
-        sms_pref.opt_in_date = datetime.utcnow()  # Update opt-in date
+        sms_pref.opt_in_date = utcnow()  # Update opt-in date
         db.commit()
 
         # 4. Return re-enablement confirmation

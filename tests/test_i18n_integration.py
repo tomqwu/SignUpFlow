@@ -213,22 +213,21 @@ class TestI18nGUI:
 
             try:
                 # 1. Login
-                page.goto(app_config.app_url)
+                page.goto(f"{app_config.app_url}/login")
                 page.wait_for_load_state("networkidle")
-
-                # Click sign in if needed
-                if page.locator('a:has-text("Sign in")').count() > 0:
-                    page.locator('a:has-text("Sign in")').click()
-                    page.wait_for_timeout(500)
 
                 # Login with new user
                 page.fill('input[type="email"]', email)
                 page.fill('input[type="password"]', password)
                 page.get_by_role("button", name="Sign In").click()
+
+                # Wait for login to complete (SPA may land on /wizard first)
                 page.wait_for_timeout(2000)
 
-                # Verify logged in
-                assert page.locator('#main-app').is_visible()
+                # Force navigation to main app screen
+                page.goto(f"{app_config.app_url}/app")
+                page.wait_for_load_state("networkidle")
+                page.wait_for_selector('#main-app', state='visible', timeout=15_000)
 
                 # 2. Open settings (use gear icon button)
                 # 2. Open settings (use JS directly to avoid click issues)

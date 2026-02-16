@@ -417,7 +417,7 @@ class EmailService:
             notification.error_message = error_message
 
         if status == "sent":
-            notification.sent_at = datetime.utcnow()
+            notification.sent_at = utcnow()
 
         db.commit()
 
