@@ -5,6 +5,7 @@ from fastapi import APIRouter, Depends, HTTPException, status, Request
 from sqlalchemy.orm import Session
 from pydantic import BaseModel, EmailStr, Field
 import time
+import uuid
 import os
 
 from api.database import get_db
@@ -68,7 +69,7 @@ def signup(request: SignupRequest, db: Session = Depends(get_db)):
     is_first_user = existing_users_count == 0
 
     # Create person ID from email
-    person_id = f"person_{request.email.split('@')[0]}_{int(time.time())}"
+    person_id = f"person_{request.email.split('@')[0]}_{uuid.uuid4().hex[:8]}"
 
     # Hash password
     password_hash = hash_password(request.password)
