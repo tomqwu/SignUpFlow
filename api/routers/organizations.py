@@ -14,8 +14,6 @@ from api.schemas.organization import (
 from api.models import Organization
 from api.utils.rate_limit_middleware import rate_limit
 from api.utils.recaptcha_middleware import require_recaptcha
-from api.services.billing_service import BillingService
-from api.services.usage_service import UsageService
 from api.logging_config import logger
 
 router = APIRouter(prefix="/organizations", tags=["organizations"])
@@ -46,28 +44,12 @@ def create_organization(org_data: OrganizationCreate, db: Session = Depends(get_
     db.commit()
     db.refresh(org)
 
-    # Auto-create Free plan subscription
-    billing_service = BillingService(db)
-    subscription = billing_service.create_free_subscription(org.id)
-
-    if subscription:
-        # Initialize volunteer usage metrics (0/10 for Free plan)
-        usage_service = UsageService(db)
-        usage_service.track_volunteer_added(org.id)  # Will create metric with 0 volunteers
-        logger.info(f"Free plan subscription created for org {org.id}")
-    else:
-        logger.error(f"Failed to create free subscription for org {org.id}")
-
     return org
 
 
 @router.get("/", response_model=OrganizationList)
 def list_organizations(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
     """List all organizations."""
-    try:
-        print(f"DEBUG: DB URL is {db.bind.url}")
-    except Exception as e:
-        print(f"DEBUG: Could not get DB URL: {e}")
     orgs = db.query(Organization).offset(skip).limit(limit).all()
     total = db.query(Organization).count()
     return {"organizations": orgs, "total": total}
