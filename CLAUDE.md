@@ -6,14 +6,16 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project
 
-SignUpFlow is an AI-powered volunteer scheduling and sign-up management SaaS (churches, sports leagues, non-profits). It uses OR-Tools constraint-based optimization to auto-generate fair schedules.
+SignUpFlow is an AI-powered volunteer scheduling and sign-up management SaaS (churches, sports leagues, non-profits). It uses a greedy heuristic solver with constraint-based optimization to auto-generate fair schedules.
 
 - **Backend:** FastAPI + SQLAlchemy 2.0 + Pydantic 2.x (Python 3.11+)
 - **Frontend:** Vanilla JS SPA (no framework) + i18next (6 languages)
 - **Database:** SQLite (dev: `roster.db`), PostgreSQL (prod via Docker)
 - **Auth:** JWT (HS256, 24h expiry) + bcrypt password hashing
-- **Billing:** Stripe integration
-- **Messaging:** SendGrid (email), Twilio (SMS) — both disabled by default
+
+### Disabled Features
+
+Billing (Stripe), email (SendGrid), SMS (Twilio), and notification routers are **not registered** in `api/main.py`. Their service files and models remain in the codebase but are inactive. Tests for these features are skipped via `pytestmark`. The `/api/config/safe-flags` endpoint always returns `false` for `EMAIL_ENABLED`, `SMS_ENABLED`, `BILLING_ENABLED`.
 
 ## Commands
 
@@ -36,47 +38,66 @@ npm run test:watch        # Jest watch mode
 # Database
 make migrate              # Run Alembic migrations
 # Reset: rm roster.db && make migrate
-
-# Docker (optional, for PostgreSQL + Redis)
-make up                   # Start containers
-make down                 # Stop containers
 ```
 
 ## Architecture
 
+### Active API Routers (registered in `api/main.py`)
+
 ```
-Browser (SPA)
-  │  fetch() + JWT Bearer token
-  ▼
-FastAPI (:8000)
-  ├── api/main.py              # App entry, router registration, SPA fallback
-  ├── api/routers/             # 21 route modules (auth, people, events, solver, billing, ...)
-  ├── api/dependencies.py      # Auth middleware: get_current_user(), get_current_admin_user(), get_db()
-  ├── api/security.py          # JWT creation/verification, bcrypt hashing
-  ├── api/services/            # Business logic (billing, email, SMS, notifications, solver)
-  ├── api/schemas/             # Pydantic request/response models
-  ├── api/models.py            # SQLAlchemy ORM (Organization, Person, Event, Team, Role, Invitation, ...)
-  └── api/database.py          # Engine, session factory, get_db() dependency
+/api/auth           — signup, login, email check, recaptcha config
+/api/organizations  — CRUD for organizations
+/api/people         — CRUD for people, /me profile
+/api/teams          — CRUD for teams + membership
+/api/events         — CRUD for events + assignments
+/api/constraints    — CRUD for scheduling constraints (DSL-based)
+/api/solver         — POST /solve to generate schedules
+/api/solutions      — list/view generated solutions
+/api/availability   — time-off / blocked dates
+/api/conflicts      — conflict checking between person+event
+/api/invitations    — create/verify/accept invitation tokens
+/api/calendar       — ICS export of personal schedules
+/api/analytics      — volunteer stats, event stats
+/api/onboarding     — wizard progress, sample data generation
+/api/password-reset — request/confirm password reset
+```
 
-frontend/
-  ├── index.html               # SPA shell (102KB, contains embedded templates)
-  ├── js/router.js             # Client-side routing (22 routes)
-  ├── js/app.js                # Admin console initialization
-  ├── js/app-user.js           # Volunteer UI (10k+ LOC)
-  ├── js/app-admin.js          # Admin UI
-  ├── js/auth.js               # authFetch() — auto-attaches JWT header
-  ├── js/i18n.js               # i18next setup, language switching
-  └── tests/                   # Jest unit tests
+### Key Files
 
-locales/{en,es,pt,zh-CN,zh-TW,fr}/  # i18n JSON files (common, auth, schedule, admin, messages)
+```
+api/main.py              # App entry, router registration, SPA fallback
+api/dependencies.py      # Auth: get_current_user(), get_current_admin_user(), verify_org_member()
+api/security.py          # JWT creation/verification, bcrypt hashing
+api/models.py            # SQLAlchemy ORM (Organization, Person, Event, Team, Assignment, Constraint, ...)
+api/database.py          # Engine, session factory, get_db() dependency
+api/core/solver/         # GreedyHeuristicSolver + constraint evaluation engine
+api/core/models.py       # In-memory domain models for solver (separate from ORM models)
+api/core/constraints/    # Constraint DSL: eval.py (evaluator), predicates.py (built-in predicates)
+api/schemas/             # Pydantic request/response models per domain
+```
 
-tests/
-  ├── conftest.py              # Fixtures: auto-mocks auth for unit tests, real auth for integration/e2e
-  ├── unit/                    # ~193 tests, fast, mocked auth
-  ├── integration/             # Real DB tests
-  ├── e2e/                     # Playwright browser automation
-  ├── comprehensive_test_suite.py  # Full API + GUI workflow tests
-  └── setup_test_data.py       # Seed data for test DB
+### Frontend
+
+```
+frontend/index.html      # SPA shell
+frontend/js/router.js    # Client-side routing (22 routes)
+frontend/js/auth.js      # authFetch() — auto-attaches JWT header
+frontend/js/app.js       # Admin console initialization
+frontend/js/app-user.js  # Volunteer UI
+frontend/js/app-admin.js # Admin UI
+frontend/js/i18n.js      # i18next setup, language switching
+locales/{en,es,pt,zh-CN,zh-TW,fr}/  # i18n JSON files
+```
+
+### Tests
+
+```
+tests/conftest.py              # Fixtures: auto-mocks auth for unit, real auth for integration/e2e
+tests/unit/                    # ~338 passing, fast, mocked auth
+tests/integration/             # Real DB tests
+tests/e2e/                     # Playwright browser automation
+tests/comprehensive_test_suite.py  # Full API workflow tests
+tests/setup_test_data.py       # Seed data for test DB
 ```
 
 ## Key Patterns
@@ -91,13 +112,11 @@ tests/
 
 **Test auth mocking:** Unit tests auto-mock authentication via `conftest.py` (returns a test admin user). Integration/E2E tests use real auth. Mark tests with `@pytest.mark.no_mock_auth` to opt out of mocking.
 
-**Feature flags:** `EMAIL_ENABLED`, `SMS_ENABLED`, `BILLING_ENABLED` control external service integration. All default to false/disabled in test environments. Check flags via `GET /api/config/safe-flags`.
-
-**E2E test server:** `make test-e2e` automatically starts a test server with `DISABLE_RATE_LIMITS=true TESTING=true EMAIL_ENABLED=false SMS_ENABLED=false` via `scripts/run_with_server.sh`.
+**E2E test server:** `make test-e2e` automatically starts a test server with `DISABLE_RATE_LIMITS=true TESTING=true` via `scripts/run_with_server.sh`.
 
 ## Testing Rules
 
-Every user-visible feature needs an E2E test that simulates the actual user journey (clicks, form fills, visual verification). Write tests first (TDD), implement to make them pass, then run `make test-all` to verify no regressions. All tests must pass before committing.
+Write tests first (TDD), implement to make them pass, then run `make test-unit` to verify no regressions. All tests must pass before committing.
 
 Pytest markers: `@pytest.mark.unit`, `@pytest.mark.integration`, `@pytest.mark.e2e`, `@pytest.mark.gui`, `@pytest.mark.slow`, `@pytest.mark.no_mock_auth`.
 

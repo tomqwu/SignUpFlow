@@ -13,34 +13,6 @@ from dotenv import load_dotenv
 # Load environment variables from .env file
 load_dotenv()
 
-# Initialize Sentry for error tracking (production only)
-import sentry_sdk
-from sentry_sdk.integrations.fastapi import FastApiIntegration
-from sentry_sdk.integrations.sqlalchemy import SqlalchemyIntegration
-
-sentry_dsn = os.getenv("SENTRY_DSN")
-environment = os.getenv("ENVIRONMENT", "development")
-
-if sentry_dsn and environment != "development":
-    sentry_sdk.init(
-        dsn=sentry_dsn,
-        environment=environment,
-        integrations=[
-            FastApiIntegration(transaction_style="endpoint"),
-            SqlalchemyIntegration(),
-        ],
-        # Set traces_sample_rate to 1.0 to capture 100% of transactions for performance monitoring.
-        # Adjust in production to reduce overhead (e.g., 0.1 = 10%)
-        traces_sample_rate=0.1 if environment == "production" else 1.0,
-        # Send errors from all environments except development
-        send_default_pii=False,  # Don't send personally identifiable information
-        attach_stacktrace=True,
-        debug=False,
-    )
-    print(f"✅ Sentry initialized for {environment} environment")
-else:
-    print(f"ℹ️  Sentry disabled (SENTRY_DSN not set or environment is development)")
-
 from api.database import init_db
 from api.logging_config import logger
 from api.routers import (
@@ -58,10 +30,6 @@ from api.routers import (
     conflicts,
     invitations,
     calendar,
-    sms,
-    billing,
-    webhooks,
-    notifications,
     onboarding,
 )
 
@@ -184,21 +152,16 @@ app.include_router(password_reset.router, prefix="/api")
 app.include_router(analytics.router, prefix="/api")
 app.include_router(invitations.router, prefix="/api")
 app.include_router(calendar.router, prefix="/api")
-app.include_router(notifications.router, prefix="/api")
 app.include_router(onboarding.router, prefix="/api")
-app.include_router(sms.router)
-app.include_router(billing.router, prefix="/api")
-app.include_router(webhooks.router, prefix="/api")
 
 # API Info endpoint
 @app.get("/api/config/safe-flags", tags=["config"])
 def get_safe_flags():
     """Get safety configuration flags for frontend UI."""
-    from api.core.config import settings
     return {
-        "EMAIL_ENABLED": settings.EMAIL_ENABLED,
-        "SMS_ENABLED": settings.SMS_ENABLED,
-        "BILLING_ENABLED": settings.BILLING_ENABLED,
+        "EMAIL_ENABLED": False,
+        "SMS_ENABLED": False,
+        "BILLING_ENABLED": False,
         "ENVIRONMENT": os.getenv("ENVIRONMENT", "development")
     }
 

@@ -1,6 +1,7 @@
+"""Integration tests for EmailService — DISABLED (email features removed)."""
+import pytest
+pytestmark = pytest.mark.skip(reason="Email features disabled — focusing on core scheduling logic")
 """
-Integration tests for EmailService with real Mailtrap SMTP sandbox.
-
 Tests REAL email sending (not mocked):
 - Sends actual emails via SMTP to Mailtrap sandbox
 - Verifies emails arrive in Mailtrap inbox via API
