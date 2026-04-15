@@ -215,7 +215,8 @@ def accept_invitation(
         )
 
     # Create person
-    person_id = f"person_{invitation.email.split('@')[0]}_{int(time.time())}"
+    import uuid
+    person_id = f"person_{invitation.email.split('@')[0]}_{uuid.uuid4().hex[:8]}"
     password_hash = hash_password(request.password)
 
     person = Person(
