@@ -6,7 +6,7 @@
 
 *AI-powered sign-up management for churches, sports leagues, and non-profits*
 
-[![Tests](https://img.shields.io/badge/tests-390%20passing-brightgreen?style=for-the-badge)](#testing)
+[![Tests](https://img.shields.io/badge/tests-413%20passing-brightgreen?style=for-the-badge)](#testing)
 [![Python](https://img.shields.io/badge/python-3.11+-blue?style=for-the-badge&logo=python)](https://www.python.org/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.109+-009688?style=for-the-badge&logo=fastapi)](https://fastapi.tiangolo.com/)
 [![License](https://img.shields.io/badge/license-MIT-green?style=for-the-badge)](LICENSE)
@@ -343,19 +343,33 @@ Billing (Stripe), email (SendGrid), SMS (Twilio), and notification routers are n
 
 ## Testing
 
-### Test Pyramid: 390 tests
+### Test Pyramid: 413 tests
 
 ```bash
 make test-unit                        # Unit tests (338 tests, ~4min)
-poetry run pytest tests/api/ -v       # API integration (36 tests, ~70s)
+poetry run pytest tests/api/ -v       # API integration (59 tests, ~90s)
 poetry run pytest tests/cli/ -v       # CLI E2E (16 tests, ~11s)
 ```
 
 | Layer | Suite | Tests | What it tests | Speed |
 |-------|-------|-------|---------------|-------|
 | **Unit** | `tests/unit/` | 338 | Individual functions, mocked auth, endpoint coverage | ~4min |
-| **API** | `tests/api/` | 36 | Full HTTP workflows with real JWT + in-memory DB | ~70s |
+| **API** | `tests/api/` | 59 | Full HTTP workflows with real JWT + in-memory DB | ~90s |
 | **CLI E2E** | `tests/cli/` | 16 | Subprocess CLI: YAML in, JSON out, real solver | ~11s |
+
+### API Test Coverage
+
+| Area | Tests | What's covered |
+|------|-------|----------------|
+| Event CRUD | 12 | Create, read, update, delete, list, RBAC enforcement |
+| Conflict detection | 6 | Already assigned, time-off overlap, double-booking, 404s |
+| Availability | 4 | Add/list/delete time-off periods |
+| Profile + Teams | 2 | Update own profile, add/remove team members |
+| Scheduling workflow | 4 | Full solver lifecycle, manual assign/unassign |
+| Church scenario | 8 | Ministry teams, multi-role members, invitation flow |
+| Sports scenario | 8 | Dual-sport players, tournament, injury time-off |
+| Org lifecycle | 9 | First-user admin, RBAC, duplicate email |
+| Multi-tenant | 7 | Cross-org isolation for people/teams/events/solver |
 
 ### Scenario Tests
 
