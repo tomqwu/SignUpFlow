@@ -79,6 +79,12 @@ Before declaring a change done:
 - [ ] If a route was added or moved, the router is registered in `api/main.py` and the path is documented in `CLAUDE.md`.
 - [ ] If a model field was added or changed, an Alembic migration exists in `alembic/versions/`.
 
+## PR rules
+
+1. Run tests after every code change. After any edit to code or tests, run `make test-unit` (or `make test-unit-fast` during iteration). The change is not "done" until local tests pass. Run `make test-all` before pushing a PR.
+2. Commit and let CI run. After local tests pass, commit and push. Do not declare a change shippable based on local results alone — wait for CI on the branch.
+3. Merge only when CI is green. A PR may merge only after CI passes. If CI is red, fix the cause before merging. Do not bypass, force-merge, or skip required checks.
+
 ## Testing rules
 
 - Write tests first (TDD): write the failing test, implement to make it pass, run `make test-unit` to confirm no regressions.
