@@ -29,7 +29,7 @@ class RateLimiter:
     Thread-safe implementation for handling concurrent requests.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         # Store format: {key: (tokens, last_refill_time)}
         self._buckets: dict[str, tuple[float, float]] = {}
         self._lock = Lock()
@@ -73,13 +73,13 @@ class RateLimiter:
                 self._buckets[key] = (new_tokens, current_time)
                 return False
 
-    def reset(self, key: str):
+    def reset(self, key: str) -> None:
         """Reset rate limit for a specific key."""
         with self._lock:
             if key in self._buckets:
                 del self._buckets[key]
 
-    def cleanup_old_entries(self, max_age_seconds: int = 3600):
+    def cleanup_old_entries(self, max_age_seconds: int = 3600) -> None:
         """
         Remove old entries to prevent memory bloat.
         Call this periodically (e.g., every hour).

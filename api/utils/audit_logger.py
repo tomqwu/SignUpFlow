@@ -171,8 +171,8 @@ def log_permission_change(
     target_user_id: str,
     target_email: str,
     organization_id: str,
-    old_roles: list,
-    new_roles: list,
+    old_roles: list[str],
+    new_roles: list[str],
 ) -> AuditLog:
     """
     Log a permission/role change.

@@ -3,6 +3,7 @@ FastAPI dependencies for rate limiting.
 """
 
 import os
+from collections.abc import Callable
 
 from fastapi import HTTPException, Request, status
 
@@ -23,7 +24,7 @@ def get_client_ip(request: Request) -> str:
     return request.client.host if request.client else "unknown"
 
 
-def rate_limit(limit_type: str):
+def rate_limit(limit_type: str) -> Callable[[Request], bool]:
     """
     Dependency factory for rate limiting.
 
@@ -39,7 +40,7 @@ def rate_limit(limit_type: str):
         Rate limiting is disabled during tests (when TESTING env var is set).
     """
 
-    def check_rate_limit(request: Request):
+    def check_rate_limit(request: Request) -> bool:
         # Disable rate limiting during tests or when explicitly toggled
         if os.getenv("TESTING") == "true" or os.getenv("DISABLE_RATE_LIMITS") == "true":
             return True

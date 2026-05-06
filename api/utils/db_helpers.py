@@ -1,6 +1,7 @@
 """Database helper functions for common query patterns."""
 
 from datetime import datetime
+from typing import cast
 
 from sqlalchemy.orm import Session
 
@@ -135,7 +136,9 @@ def get_available_people_for_event(
         if person.id in assigned_ids:
             continue
 
-        is_blocked, _ = is_person_blocked_on_date(db, person.id, event.start_time)
+        is_blocked, _ = is_person_blocked_on_date(
+            db, str(person.id), cast(datetime, event.start_time)
+        )
         if not is_blocked:
             available.append(person)
 

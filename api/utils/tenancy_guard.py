@@ -36,7 +36,7 @@ def _tenant_scoped_entities(state: ORMExecuteState) -> set[str]:
     """Return names of selected entities that have a direct `org_id` column."""
     names: set[str] = set()
     try:
-        descs = state.statement.column_descriptions or []
+        descs = getattr(state.statement, "column_descriptions", None) or []
     except Exception:
         return names
     for desc in descs:

@@ -11,9 +11,13 @@ Adds security-related HTTP headers to all responses:
 """
 
 import os
+from collections.abc import Awaitable, Callable
 
+from fastapi import FastAPI
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.requests import Request
+from starlette.responses import Response
+from starlette.types import ASGIApp
 
 
 class SecurityHeadersMiddleware(BaseHTTPMiddleware):
@@ -27,7 +31,7 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
     - SECURITY_FRAME_OPTIONS: X-Frame-Options value (default: DENY)
     """
 
-    def __init__(self, app):
+    def __init__(self, app: ASGIApp) -> None:
         super().__init__(app)
 
         # Environment-based configuration
@@ -45,7 +49,9 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
         self.csp_enabled = os.getenv("SECURITY_CSP_ENABLED", "true").lower() == "true"
         self.frame_options = os.getenv("SECURITY_FRAME_OPTIONS", "DENY")
 
-    async def dispatch(self, request: Request, call_next):
+    async def dispatch(
+        self, request: Request, call_next: Callable[[Request], Awaitable[Response]]
+    ) -> Response:
         """Add security headers to response."""
         response = await call_next(request)
 
@@ -104,7 +110,7 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
         return "; ".join(policy_directives)
 
 
-def add_security_headers_middleware(app):
+def add_security_headers_middleware(app: FastAPI) -> None:
     """
     Add security headers middleware to FastAPI app.
 

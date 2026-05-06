@@ -8,6 +8,7 @@ This module handles:
 """
 
 from datetime import datetime
+from typing import Any, cast
 from zoneinfo import ZoneInfo
 
 from icalendar import Calendar, vDatetime
@@ -15,7 +16,9 @@ from icalendar import Event as ICalEvent
 
 
 def generate_ics_from_assignments(
-    assignments: list[dict], calendar_name: str = "My Schedule", timezone: str = "UTC"
+    assignments: list[dict[str, Any]],
+    calendar_name: str = "My Schedule",
+    timezone: str = "UTC",
 ) -> str:
     """
     Generate an ICS calendar file from a list of assignments.
@@ -96,11 +99,11 @@ def generate_ics_from_assignments(
         # Add to calendar
         cal.add_component(event)
 
-    return cal.to_ical().decode("utf-8")
+    return cast(str, cal.to_ical().decode("utf-8"))
 
 
 def generate_ics_from_events(
-    events: list[dict],
+    events: list[dict[str, Any]],
     calendar_name: str = "Organization Events",
     timezone: str = "UTC",
     include_assignments: bool = True,
@@ -184,7 +187,7 @@ def generate_ics_from_events(
         # Add to calendar
         cal.add_component(event)
 
-    return cal.to_ical().decode("utf-8")
+    return cast(str, cal.to_ical().decode("utf-8"))
 
 
 def generate_webcal_url(base_url: str, token: str) -> str:

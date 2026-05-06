@@ -5,6 +5,7 @@ Extracted from api/routers/events.py to follow DRY principle and single responsi
 """
 
 from datetime import date, datetime
+from typing import Any, cast
 
 from sqlalchemy.orm import Session
 
@@ -55,7 +56,7 @@ def get_assigned_person_ids(db: Session, event_id: str) -> set[str]:
     """
     assignments = db.query(Assignment).filter(Assignment.event_id == event_id).all()
 
-    return {assignment.person_id for assignment in assignments}
+    return {str(assignment.person_id) for assignment in assignments}
 
 
 def person_has_matching_role(person_roles: list[str], required_roles: list[str]) -> bool:
@@ -95,13 +96,13 @@ def get_event_required_roles(event: Event) -> list[str]:
         >>> roles = get_event_required_roles(event)
         >>> # Returns ["usher", "greeter", "sound_tech"]
     """
-    extra_data = event.extra_data or {}
+    extra_data: dict[str, Any] = cast(dict[str, Any], event.extra_data or {})
     role_counts = extra_data.get("role_counts", {})
 
     if role_counts:
         return list(role_counts.keys())
     else:
-        return extra_data.get("roles", [])
+        return cast(list[str], extra_data.get("roles", []))
 
 
 def count_people_with_role(people: list[Person], role: str) -> int:
@@ -156,11 +157,11 @@ def get_blocked_assigned_people(db: Session, event_id: str, event_date: date) ->
     """
     assignments = db.query(Assignment).filter(Assignment.event_id == event_id).all()
 
-    blocked_names = []
+    blocked_names: list[str] = []
     for assignment in assignments:
-        if is_person_blocked_on_date(db, assignment.person_id, event_date):
+        if is_person_blocked_on_date(db, str(assignment.person_id), event_date):
             person = db.query(Person).filter(Person.id == assignment.person_id).first()
             if person:
-                blocked_names.append(person.name)
+                blocked_names.append(str(person.name))
 
     return blocked_names
