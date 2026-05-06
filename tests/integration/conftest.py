@@ -101,6 +101,12 @@ def api_client(api_server: _ServerHandle) -> Iterator[httpx.Client]:
         yield client
 
 
+@pytest.fixture(scope="session")
+def api_base(api_server: _ServerHandle) -> str:
+    """The `/api/v1` URL prefix on the live api_server."""
+    return f"{api_server.base_url}/api/v1"
+
+
 # Override root conftest's autouse fixtures so the integration tier owns its
 # own lifecycle. Without these, tests/conftest.py's reset_database_between_tests
 # fights uvicorn's session-scoped engine.
