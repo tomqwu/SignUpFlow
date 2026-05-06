@@ -365,6 +365,66 @@
         "title": "AvailablePerson",
         "type": "object"
       },
+      "BulkImportItemError": {
+        "description": "One row that the bulk importer rejected.",
+        "properties": {
+          "id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Row id, if present",
+            "title": "Id"
+          },
+          "index": {
+            "description": "Position in the original payload (0-based)",
+            "title": "Index",
+            "type": "integer"
+          },
+          "reason": {
+            "description": "Why this row was rejected",
+            "title": "Reason",
+            "type": "string"
+          }
+        },
+        "required": [
+          "index",
+          "reason"
+        ],
+        "title": "BulkImportItemError",
+        "type": "object"
+      },
+      "BulkImportResponse": {
+        "description": "Result of a bulk people import request.",
+        "properties": {
+          "created": {
+            "title": "Created",
+            "type": "integer"
+          },
+          "errors": {
+            "items": {
+              "$ref": "#/components/schemas/BulkImportItemError"
+            },
+            "title": "Errors",
+            "type": "array"
+          },
+          "skipped": {
+            "title": "Skipped",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "created",
+          "skipped",
+          "errors"
+        ],
+        "title": "BulkImportResponse",
+        "type": "object"
+      },
       "CalendarSubscriptionResponse": {
         "description": "Calendar subscription response.",
         "properties": {
@@ -5678,6 +5738,69 @@
           }
         ],
         "summary": "Create Person",
+        "tags": [
+          "people"
+        ]
+      }
+    },
+    "/api/v1/people/bulk": {
+      "post": {
+        "description": "Admin-only bulk people import.\n\nStrictly JSON-array body \u2014 no file upload (file uploads are Phase 2 scope).\nValidates each row, persists rows that don't already exist, and returns\ncreated/skipped counts plus a row-level error list.",
+        "operationId": "bulkImportPeople",
+        "parameters": [
+          {
+            "description": "Organization to import people into",
+            "in": "query",
+            "name": "org_id",
+            "required": true,
+            "schema": {
+              "description": "Organization to import people into",
+              "title": "Org Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": true,
+                "description": "JSON-array bulk import. Body shape: {items: [PersonCreate, ...]}. Cap of 1000 items per request.",
+                "title": "Payload",
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BulkImportResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Bulk Import People",
         "tags": [
           "people"
         ]

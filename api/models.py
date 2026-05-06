@@ -903,6 +903,9 @@ class AuditAction:
     SOLUTION_PUBLISHED = "solution.published"
     SOLUTION_UNPUBLISHED = "solution.unpublished"
 
+    # Bulk operations
+    BULK_IMPORT = "data.bulk_import"
+
 
 class SmsPreference(Base):
     """SMS notification preferences for volunteers."""
