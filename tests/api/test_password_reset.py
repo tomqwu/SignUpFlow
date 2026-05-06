@@ -5,29 +5,16 @@ Covers two regressions:
 - The token round-trip must still be testable, gated behind DEBUG_RETURN_RESET_TOKEN.
 """
 
-import pytest
 from fastapi.testclient import TestClient
 
-from api.database import get_db
 from api.main import app
-from api.models import Organization, Person
+from api.models import AuditAction, AuditLog, Organization, Person
 
 
-@pytest.fixture
-def client():
-    return TestClient(app)
-
-
-@pytest.fixture
-def reset_user(client):
-    """Seed an org and one person with a known email; cleanup on teardown."""
-    db_gen = get_db()
-    db = next(db_gen)
-
+def _seed_reset_user(db):
+    """Add an org and one volunteer to the test session."""
     org = Organization(id="reset_test_org", name="Reset Test Org", region="Test")
     db.add(org)
-    db.commit()
-
     person = Person(
         id="reset_test_person",
         org_id="reset_test_org",
@@ -38,19 +25,16 @@ def reset_user(client):
     )
     db.add(person)
     db.commit()
-
-    yield person
-
-    db.delete(person)
-    db.delete(org)
-    db.commit()
+    return person
 
 
 class TestForgotPasswordResponseShape:
     """Default response must not leak reset token / link."""
 
-    def test_response_omits_token_and_link_by_default(self, client, reset_user, monkeypatch):
+    def test_response_omits_token_and_link_by_default(self, db, monkeypatch):
         monkeypatch.delenv("DEBUG_RETURN_RESET_TOKEN", raising=False)
+        _seed_reset_user(db)
+        client = TestClient(app)
         response = client.post("/api/v1/auth/forgot-password", json={"email": "reset@example.com"})
         assert response.status_code == 200
         body = response.json()
@@ -58,8 +42,8 @@ class TestForgotPasswordResponseShape:
         assert "token" not in body
         assert "message" in body
 
-    def test_response_omits_token_for_unknown_email(self, client):
-        """Same response shape regardless of whether the email exists."""
+    def test_response_omits_token_for_unknown_email(self, db):
+        client = TestClient(app)
         response = client.post(
             "/api/v1/auth/forgot-password", json={"email": "no-such-user@example.com"}
         )
@@ -73,8 +57,10 @@ class TestForgotPasswordResponseShape:
 class TestForgotPasswordDebugFlag:
     """Under DEBUG_RETURN_RESET_TOKEN=true the token comes back in the body for E2E."""
 
-    def test_token_returned_when_flag_enabled(self, client, reset_user, monkeypatch):
+    def test_token_returned_when_flag_enabled(self, db, monkeypatch):
         monkeypatch.setenv("DEBUG_RETURN_RESET_TOKEN", "true")
+        _seed_reset_user(db)
+        client = TestClient(app)
         response = client.post("/api/v1/auth/forgot-password", json={"email": "reset@example.com"})
         assert response.status_code == 200
         body = response.json()
@@ -82,8 +68,10 @@ class TestForgotPasswordDebugFlag:
         assert isinstance(body["token"], str)
         assert len(body["token"]) >= 20
 
-    def test_full_reset_flow_with_debug_flag(self, client, reset_user, monkeypatch):
+    def test_full_reset_flow_with_debug_flag(self, db, monkeypatch):
         monkeypatch.setenv("DEBUG_RETURN_RESET_TOKEN", "true")
+        _seed_reset_user(db)
+        client = TestClient(app)
 
         forgot = client.post("/api/v1/auth/forgot-password", json={"email": "reset@example.com"})
         token = forgot.json()["token"]
@@ -107,13 +95,11 @@ class TestForgotPasswordDebugFlag:
 class TestForgotPasswordAuditTrail:
     """The forgot-password endpoint should leave an audit row regardless of leak flag."""
 
-    def test_audit_row_created_on_request(self, client, reset_user, monkeypatch):
+    def test_audit_row_created_on_request(self, db, monkeypatch):
         monkeypatch.delenv("DEBUG_RETURN_RESET_TOKEN", raising=False)
+        _seed_reset_user(db)
+        client = TestClient(app)
 
-        from api.models import AuditAction, AuditLog
-
-        db_gen = get_db()
-        db = next(db_gen)
         before = (
             db.query(AuditLog)
             .filter(AuditLog.action == AuditAction.PASSWORD_RESET_REQUESTED)

@@ -39,6 +39,13 @@ engine = create_engine(
 # Create session factory
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
+# Install the cross-tenant query guard. The listener is registered against
+# the global Session class so it covers SessionLocal as well as any test
+# sessionmakers spun up against in-memory SQLite (e.g., tests/api/conftest.py).
+from api.utils.tenancy_guard import install_tenancy_guard  # noqa: E402
+
+install_tenancy_guard(Session)
+
 
 def _resolve_sqlite_path(db_url: str) -> Path | None:
     """Translate SQLite URLs into filesystem paths."""
