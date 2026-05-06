@@ -165,6 +165,29 @@ def api_redirect():
     return RedirectResponse(url="/api/v1", status_code=308)
 
 
+def _snake_to_camel(name: str) -> str:
+    head, *tail = name.split("_")
+    return head + "".join(part.title() for part in tail)
+
+
+def _set_camel_case_operation_ids(app: FastAPI) -> None:
+    """Override FastAPI's auto-generated operationIds with predictable camelCase names.
+
+    Function names in this codebase are already unique snake_case verbs (e.g.,
+    `list_people`, `create_event`), so a direct snake -> camel mapping yields
+    `listPeople`, `createEvent`. openapi-generator-cli (Dart-Dio target) reads
+    operationId verbatim, so this is what the Flutter client gets as method names.
+    """
+    from fastapi.routing import APIRoute
+
+    for route in app.routes:
+        if isinstance(route, APIRoute):
+            route.operation_id = _snake_to_camel(route.name)
+
+
+_set_camel_case_operation_ids(app)
+
+
 def start():
     """Start the API server (used by poetry script)."""
     uvicorn.run(
