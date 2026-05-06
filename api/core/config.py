@@ -28,6 +28,10 @@ class Settings(BaseSettings):
     # Application
     APP_URL: str = "http://localhost:8000"
     TESTING: bool = False
+    # When true, /auth/forgot-password returns the raw reset token in the JSON
+    # response. Default off — never enable in production. Used by E2E tests
+    # that exercise the reset flow without a real email service.
+    DEBUG_RETURN_RESET_TOKEN: bool = False
 
     # Email Service (General)
     EMAIL_FROM: str = "noreply@signupflow.io"

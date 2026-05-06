@@ -2372,7 +2372,7 @@
     },
     "/api/v1/auth/forgot-password": {
       "post": {
-        "description": "Request a password reset token.",
+        "description": "Request a password reset token.\n\nAlways returns the same generic message regardless of whether the email\nexists. Audits every request. The reset token is held in-memory and is\nNEVER returned in the response in production. Set\n`DEBUG_RETURN_RESET_TOKEN=true` in dev/test environments to opt into\nreceiving the token in the JSON body for E2E exercise.",
         "operationId": "requestPasswordReset",
         "requestBody": {
           "content": {

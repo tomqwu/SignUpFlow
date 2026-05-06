@@ -12,6 +12,11 @@ from api.security import verify_password
 class TestPasswordResetSecurity:
     """Test that password reset uses bcrypt instead of SHA256."""
 
+    @pytest.fixture(autouse=True)
+    def _enable_reset_token_debug(self, monkeypatch):
+        """These tests need the raw token in the response to drive the reset flow."""
+        monkeypatch.setenv("DEBUG_RETURN_RESET_TOKEN", "true")
+
     def test_password_reset_uses_bcrypt(self):
         """Verify that password reset hashes passwords with bcrypt, not SHA256."""
         client = TestClient(app)
@@ -37,15 +42,12 @@ class TestPasswordResetSecurity:
         db.add(person)
         db.commit()
 
-        # Request password reset
+        # Request password reset (token returned only because of DEBUG flag set above)
         response = client.post("/api/v1/auth/forgot-password", json={"email": "reset@example.com"})
         assert response.status_code == 200
         data = response.json()
-        assert "reset_link" in data
-
-        # Extract token from reset link
-        reset_link = data["reset_link"]
-        token = reset_link.split("token=")[1]
+        assert "token" in data
+        token = data["token"]
 
         # Reset password
         new_password = "NewSecurePassword123!"
@@ -112,7 +114,7 @@ class TestPasswordResetSecurity:
 
         # Request password reset
         response = client.post("/api/v1/auth/forgot-password", json={"email": "sha@example.com"})
-        token = response.json()["reset_link"].split("token=")[1]
+        token = response.json()["token"]
 
         # Reset password
         new_password = "TestPassword123"
@@ -173,7 +175,7 @@ class TestPasswordResetSecurity:
 
         # Request password reset
         response = client.post("/api/v1/auth/forgot-password", json={"email": "login@example.com"})
-        token = response.json()["reset_link"].split("token=")[1]
+        token = response.json()["token"]
 
         # Reset password to known value
         new_password = "MyNewPassword456!"
