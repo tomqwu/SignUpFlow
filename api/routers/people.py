@@ -1,7 +1,8 @@
 """People router."""
 
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Body, Depends, HTTPException, Query, Request, status
+from pydantic import BaseModel, Field
 from sqlalchemy import or_
 from sqlalchemy.orm import Session
 
@@ -13,11 +14,37 @@ from api.dependencies import (
     verify_org_member,
 )
 from api.logging_config import logger
-from api.models import Organization, Person
+from api.models import AuditAction, Organization, Person
 from api.schemas.common import PaginationParams, get_pagination_params
 from api.schemas.person import PersonCreate, PersonList, PersonResponse, PersonUpdate
+from api.utils.audit_logger import log_audit_event
+from api.utils.bulk_import import (
+    MAX_BULK_IMPORT_ITEMS,
+    BulkImportError,
+    parse_bulk_people,
+)
 
 router = APIRouter(prefix="/people", tags=["people"])
+
+
+class BulkImportItemError(BaseModel):
+    """One row that the bulk importer rejected."""
+
+    index: int = Field(..., description="Position in the original payload (0-based)")
+    id: str | None = Field(None, description="Row id, if present")
+    reason: str = Field(..., description="Why this row was rejected")
+
+
+class BulkImportResponse(BaseModel):
+    """Result of a bulk people import request."""
+
+    created: int
+    skipped: int
+    errors: list[BulkImportItemError]
+
+
+def _to_response_error(err: BulkImportError) -> BulkImportItemError:
+    return BulkImportItemError(index=err.index, id=err.id, reason=err.reason)
 
 
 @router.get("/me", response_model=PersonResponse)
@@ -88,6 +115,99 @@ def create_person(
     db.commit()
     db.refresh(person)
     return person
+
+
+@router.post("/bulk", response_model=BulkImportResponse, status_code=status.HTTP_200_OK)
+def bulk_import_people(
+    http_request: Request,
+    payload: dict = Body(
+        ...,
+        description=(
+            "JSON-array bulk import. Body shape: {items: [PersonCreate, ...]}. "
+            f"Cap of {MAX_BULK_IMPORT_ITEMS} items per request."
+        ),
+    ),
+    org_id: str = Query(..., description="Organization to import people into"),
+    current_admin: Person = Depends(get_current_admin_user),
+    db: Session = Depends(get_db),
+):
+    """Admin-only bulk people import.
+
+    Strictly JSON-array body — no file upload (file uploads are Phase 2 scope).
+    Validates each row, persists rows that don't already exist, and returns
+    created/skipped counts plus a row-level error list.
+    """
+    verify_org_member(current_admin, org_id)
+
+    org = db.query(Organization).filter(Organization.id == org_id).first()
+    if not org:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Organization '{org_id}' not found",
+        )
+
+    items = payload.get("items")
+    if not isinstance(items, list):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="payload must contain an 'items' array",
+        )
+    if len(items) > MAX_BULK_IMPORT_ITEMS:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"items length {len(items)} exceeds cap of {MAX_BULK_IMPORT_ITEMS}",
+        )
+
+    parsed = parse_bulk_people(items, expected_org_id=org_id)
+    response_errors = [_to_response_error(e) for e in parsed.errors]
+
+    created = 0
+    skipped = len(parsed.duplicate_indexes)
+    candidate_ids = [p.id for p in parsed.valid]
+    existing_ids: set[str] = set()
+    if candidate_ids:
+        existing_ids = {
+            row[0] for row in db.query(Person.id).filter(Person.id.in_(candidate_ids)).all()
+        }
+
+    for person_data in parsed.valid:
+        if person_data.id in existing_ids:
+            skipped += 1
+            continue
+        person = Person(
+            id=person_data.id,
+            org_id=org_id,
+            name=person_data.name,
+            email=person_data.email,
+            roles=person_data.roles or [],
+            timezone=person_data.timezone,
+            language=person_data.language,
+            extra_data=person_data.extra_data or {},
+        )
+        db.add(person)
+        created += 1
+
+    db.commit()
+
+    log_audit_event(
+        db,
+        action=AuditAction.BULK_IMPORT,
+        user_id=current_admin.id,
+        user_email=current_admin.email,
+        organization_id=org_id,
+        resource_type="person",
+        resource_id=None,
+        details={
+            "created": created,
+            "skipped": skipped,
+            "error_count": len(response_errors),
+            "submitted": len(items),
+        },
+        ip_address=http_request.client.host if http_request.client else None,
+        user_agent=http_request.headers.get("user-agent"),
+    )
+
+    return BulkImportResponse(created=created, skipped=skipped, errors=response_errors)
 
 
 @router.get("/", response_model=PersonList)
