@@ -70,13 +70,16 @@ async def error_logging_middleware(request: Request, call_next):
         )
 
 
+from api.utils.cors_config import get_cors_origins
+from api.utils.request_id_middleware import RequestIDMiddleware
 from api.utils.security_headers_middleware import add_security_headers_middleware
 
 add_security_headers_middleware(app)
+app.add_middleware(RequestIDMiddleware)
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=get_cors_origins(),
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
