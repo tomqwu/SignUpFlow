@@ -6,7 +6,7 @@ from fastapi import HTTPException
 
 
 def success_response(
-    message_key: str, data: dict[str, Any] | None = None, **params
+    message_key: str, data: dict[str, Any] | None = None, **params: Any
 ) -> dict[str, Any]:
     """
     Create a success response with i18n message key.
@@ -42,7 +42,7 @@ def success_response(
     return response
 
 
-def error_response(message_key: str, status_code: int = 400, **params) -> HTTPException:
+def error_response(message_key: str, status_code: int = 400, **params: Any) -> HTTPException:
     """
     Create an error response with i18n message key.
 
@@ -74,7 +74,7 @@ def error_response(message_key: str, status_code: int = 400, **params) -> HTTPEx
     )
 
 
-def validation_warning(warning_type: str, message_key: str, **params) -> dict[str, Any]:
+def validation_warning(warning_type: str, message_key: str, **params: Any) -> dict[str, Any]:
     """
     Create a validation warning with i18n message key.
 

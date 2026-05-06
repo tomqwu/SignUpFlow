@@ -74,3 +74,21 @@ disallow_untyped_defs = true
 [[tool.mypy.overrides]]
 module = "ics.*"
 ignore_missing_imports = true
+
+# Third-party libs without published type stubs.
+[[tool.mypy.overrides]]
+module = ["icalendar.*", "reportlab.*", "redis.*", "stripe.*", "twilio.*", "sendgrid.*"]
+ignore_missing_imports = true
+
+# Disabled feature stacks (Stripe billing, SMS) are out-of-scope for the
+# strict step. PR 4.7 strict-checks the active surface of api/utils only;
+# these modules stay on the advisory mypy api step until their features
+# are re-enabled.
+[[tool.mypy.overrides]]
+module = [
+    "api.utils.stripe_client",
+    "api.utils.stripe_error_handler",
+    "api.utils.cost_tracker",
+    "api.utils.sms_rate_limiter",
+]
+ignore_errors = true

@@ -12,7 +12,7 @@ from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 class QuietHours:
     """Quiet hours checker for SMS notifications."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize quiet hours configuration."""
         self.quiet_start = time(22, 0)  # 10:00 PM
         self.quiet_end = time(8, 0)  # 8:00 AM

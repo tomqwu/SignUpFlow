@@ -27,7 +27,7 @@ class PasswordValidator:
     - PASSWORD_SPECIAL_CHARS: Allowed special characters (default: !@#$%^&*()_+-=[]{}|;:,.<>?)
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         # Load configuration from environment
         self.min_length = int(os.getenv("PASSWORD_MIN_LENGTH", "8"))
         self.require_uppercase = os.getenv("PASSWORD_REQUIRE_UPPERCASE", "true").lower() == "true"

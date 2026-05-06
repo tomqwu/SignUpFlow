@@ -2,6 +2,7 @@
 
 from datetime import datetime
 from io import BytesIO
+from typing import Any
 
 from reportlab.lib import colors
 from reportlab.lib.enums import TA_CENTER
@@ -13,11 +14,11 @@ from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer, Table, Tabl
 
 def generate_schedule_pdf(
     org_name: str,
-    events: list,
-    people: dict,
-    assignments: dict,
-    events_db_map: dict = None,
-    blocked_dates_map: dict = None,
+    events: list[dict[str, Any]],
+    people: dict[str, dict[str, Any]],
+    assignments: dict[str, list[str]],
+    events_db_map: dict[str, Any] | None = None,
+    blocked_dates_map: dict[str, list[dict[str, Any]]] | None = None,
 ) -> BytesIO:
     """
     Generate a formatted PDF schedule.
@@ -79,7 +80,7 @@ def generate_schedule_pdf(
     sorted_events = sorted(events, key=lambda e: e["start_time"])
 
     # Group events by date
-    events_by_date = {}
+    events_by_date: dict[str, list[dict[str, Any]]] = {}
     for event in sorted_events:
         date_str = event["start_time"].strftime("%A, %B %d, %Y")
         if date_str not in events_by_date:
@@ -121,11 +122,13 @@ def generate_schedule_pdf(
 
                 # Group people by their roles that match event requirements
                 if role_counts:
-                    role_assignments = {role: [] for role in role_counts.keys()}
-                    assigned_people = set()
+                    role_assignments: dict[str, list[str]] = {
+                        role: [] for role in role_counts.keys()
+                    }
+                    assigned_people: set[str] = set()
 
                     # Helper function to check if person is blocked on event date
-                    def is_person_blocked(person_id, event_date):
+                    def is_person_blocked(person_id: str, event_date: datetime) -> bool:
                         if not blocked_dates_map:
                             return False
                         blocked_periods = blocked_dates_map.get(person_id, [])
@@ -177,7 +180,9 @@ def generate_schedule_pdf(
                     assignees_str = "\n".join(role_lines) if role_lines else "Not assigned"
                 else:
                     # No role requirements, just list names
-                    def is_person_blocked(person_id, event_date):
+                    def is_person_blocked(
+                        person_id: str, event_date: datetime
+                    ) -> bool:  # noqa: F811
                         if not blocked_dates_map:
                             return False
                         blocked_periods = blocked_dates_map.get(person_id, [])

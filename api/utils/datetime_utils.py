@@ -56,7 +56,7 @@ def from_user_timezone(user_datetime: datetime, user_tz: str = "UTC") -> datetim
     return user_datetime.astimezone(ZoneInfo("UTC"))
 
 
-def parse_date_safe(date_string: str) -> date:
+def parse_date_safe(date_string: str) -> date | None:
     """
     Parse date string without timezone issues.
 
@@ -64,7 +64,7 @@ def parse_date_safe(date_string: str) -> date:
         date_string: Date string in format "YYYY-MM-DD" or ISO 8601
 
     Returns:
-        date object
+        date object or None when the input is empty
     """
     if not date_string:
         return None
@@ -113,7 +113,7 @@ def format_datetime_for_api(dt: datetime) -> str:
     return dt.isoformat()
 
 
-def parse_datetime_safe(datetime_string: str) -> datetime:
+def parse_datetime_safe(datetime_string: str) -> datetime | None:
     """
     Parse datetime string to timezone-aware datetime.
 
@@ -121,7 +121,7 @@ def parse_datetime_safe(datetime_string: str) -> datetime:
         datetime_string: ISO 8601 datetime string
 
     Returns:
-        timezone-aware datetime in UTC
+        timezone-aware datetime in UTC, or None when the input is empty
     """
     if not datetime_string:
         return None
@@ -153,7 +153,7 @@ def is_date_in_range(check_date: date, start_date: date, end_date: date) -> bool
     return start_date <= check_date <= end_date
 
 
-def get_common_timezones() -> list[dict]:
+def get_common_timezones() -> list[dict[str, str]]:
     """
     Get list of common timezones for selector UI.
 
@@ -195,6 +195,7 @@ if __name__ == "__main__":
     # Test date parsing (no timezone issues)
     print("=== Date Parsing Tests ===")
     test_date = parse_date_safe("2025-10-11")
+    assert test_date is not None
     print(f"Parsed date: {test_date}")  # 2025-10-11
     print(f"Formatted: {format_date_for_api(test_date)}")  # 2025-10-11
 
