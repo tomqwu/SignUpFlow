@@ -26,7 +26,7 @@ def upgrade() -> None:
                 'is_published',
                 sa.Boolean(),
                 nullable=False,
-                server_default=sa.text('0'),
+                server_default=sa.false(),
             )
         )
         batch_op.add_column(sa.Column('published_at', sa.DateTime(), nullable=True))
