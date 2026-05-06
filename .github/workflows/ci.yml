@@ -78,6 +78,12 @@ jobs:
       - name: OpenAPI contract snapshot
         run: poetry run pytest tests/contract/ -v --tb=short
 
+      - name: Integration tests
+        # Sprint 4 PR 4.6a brought back the api_server fixture and a smoke
+        # test. PR 4.6b is reviving the previously-failing files; until then
+        # they're skip-marked at module scope.
+        run: poetry run pytest tests/integration/ -v --tb=short
+
       - name: Alembic upgrade head (PostgreSQL)
         env:
           DATABASE_URL: postgresql+psycopg2://signupflow:signupflow@localhost:5432/signupflow_ci
