@@ -120,7 +120,7 @@ class TestCalendarExportAPI:
         # Create organization
         client.post(
             f"{API_BASE}/organizations/",
-            json={"id": "calendar_test_org", "name": "Calendar Test Org"},
+            json={"id": "test_org", "name": "Calendar Test Org"},
         )
 
         # Create person
@@ -128,7 +128,7 @@ class TestCalendarExportAPI:
             f"{API_BASE}/people/",
             json={
                 "id": "calendar_person_1",
-                "org_id": "calendar_test_org",
+                "org_id": "test_org",
                 "name": "Test User",
                 "email": "testuser@example.com",
                 "roles": ["volunteer"],
@@ -138,7 +138,7 @@ class TestCalendarExportAPI:
 
         # Create resource
         client.post(
-            f"{API_BASE}/organizations/calendar_test_org/resources",
+            f"{API_BASE}/organizations/test_org/resources",
             json={"id": "resource_1", "type": "venue", "location": "Test Church Building"},
         )
 
@@ -150,7 +150,7 @@ class TestCalendarExportAPI:
             f"{API_BASE}/events/",
             json={
                 "id": "calendar_event_1",
-                "org_id": "calendar_test_org",
+                "org_id": "test_org",
                 "type": "Sunday Service",
                 "start_time": start_time,
                 "end_time": end_time,
@@ -360,9 +360,9 @@ class TestCalendarIntegration:
 
     def test_complete_subscription_workflow(self, client):
         """Test complete workflow: create person -> subscribe -> feed."""
-        # 1. Create organization
+        # 1. Create organization (use mocked admin's org for auth)
         client.post(
-            f"{API_BASE}/organizations/", json={"id": "workflow_org", "name": "Workflow Test Org"}
+            f"{API_BASE}/organizations/", json={"id": "test_org", "name": "Workflow Test Org"}
         )
 
         # 2. Create person
@@ -370,7 +370,7 @@ class TestCalendarIntegration:
             f"{API_BASE}/people/",
             json={
                 "id": "workflow_person",
-                "org_id": "workflow_org",
+                "org_id": "test_org",
                 "name": "Workflow User",
                 "email": "workflow@example.com",
                 "roles": ["volunteer"],
