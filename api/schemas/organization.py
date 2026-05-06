@@ -3,7 +3,9 @@
 from datetime import datetime
 from typing import Any
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, Field
+
+from api.schemas._serializers import BaseResponse
 
 
 class OrganizationBase(BaseModel):
@@ -28,10 +30,8 @@ class OrganizationUpdate(BaseModel):
     config: dict[str, Any] | None = None
 
 
-class OrganizationResponse(OrganizationBase):
+class OrganizationResponse(BaseResponse, OrganizationBase):
     """Schema for organization response."""
-
-    model_config = ConfigDict(from_attributes=True)
 
     id: str
     created_at: datetime
