@@ -3,7 +3,9 @@
 from datetime import datetime
 from typing import Any
 
-from pydantic import BaseModel, ConfigDict, EmailStr, Field
+from pydantic import BaseModel, EmailStr, Field
+
+from api.schemas._serializers import BaseResponse
 
 
 class PersonBase(BaseModel):
@@ -35,10 +37,8 @@ class PersonUpdate(BaseModel):
     extra_data: dict[str, Any] | None = None
 
 
-class PersonResponse(PersonBase):
+class PersonResponse(BaseResponse, PersonBase):
     """Schema for person response."""
-
-    model_config = ConfigDict(from_attributes=True)
 
     id: str
     org_id: str

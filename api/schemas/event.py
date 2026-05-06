@@ -3,7 +3,9 @@
 from datetime import datetime
 from typing import Any
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, Field
+
+from api.schemas._serializers import BaseResponse
 
 
 class EventBase(BaseModel):
@@ -34,10 +36,8 @@ class EventUpdate(BaseModel):
     extra_data: dict[str, Any] | None = None
 
 
-class EventResponse(EventBase):
+class EventResponse(BaseResponse, EventBase):
     """Schema for event response."""
-
-    model_config = ConfigDict(from_attributes=True)
 
     id: str
     org_id: str
