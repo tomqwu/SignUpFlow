@@ -116,6 +116,18 @@ async def get_current_user(
             headers={"WWW-Authenticate": "Bearer"},
         )
 
+    # Session-invalidation-on-password-change: tokens whose pwd_iat is strictly
+    # older than the user's password_changed_at are rejected. Tokens without
+    # the claim still validate (backward compat with pre-rollout tokens).
+    pwd_iat = payload.get("pwd_iat")
+    if pwd_iat is not None and person.password_changed_at is not None:
+        if float(pwd_iat) < person.password_changed_at.timestamp():
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Token revoked: password was changed",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
+
     return person
 
 

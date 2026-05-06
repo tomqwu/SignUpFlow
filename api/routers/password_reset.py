@@ -11,6 +11,7 @@ from sqlalchemy.orm import Session
 from api.database import get_db
 from api.models import AuditAction, Person
 from api.security import hash_password
+from api.timeutils import utcnow
 from api.utils.audit_logger import log_audit_event
 from api.utils.rate_limit_middleware import rate_limit
 
@@ -114,6 +115,8 @@ def reset_password(
 
     # Hash new password using bcrypt (same as signup/login)
     person.password_hash = hash_password(request.new_password)
+    # Invalidate any tokens issued before this reset.
+    person.password_changed_at = utcnow()
 
     db.commit()
 

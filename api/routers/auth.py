@@ -10,7 +10,16 @@ from api.database import get_db
 from api.dependencies import get_organization_by_id
 from api.models import Person
 from api.security import create_access_token, hash_password, verify_password
+from api.timeutils import utcnow
 from api.utils.rate_limit_middleware import rate_limit
+
+
+def _pwd_iat_for(person: Person) -> float:
+    """Token claim representing the password version this token was issued for."""
+    if person.password_changed_at is not None:
+        return person.password_changed_at.timestamp()
+    return utcnow().timestamp()
+
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
@@ -99,6 +108,7 @@ def signup(request: SignupRequest, db: Session = Depends(get_db)):
         roles=roles,
         timezone=request.timezone,
         language=request.language,
+        password_changed_at=utcnow(),
         extra_data={},
     )
 
@@ -106,8 +116,8 @@ def signup(request: SignupRequest, db: Session = Depends(get_db)):
     db.commit()
     db.refresh(person)
 
-    # Generate JWT access token
-    access_token = create_access_token(data={"sub": person.id})
+    # Generate JWT access token (pwd_iat allows revocation on password change).
+    access_token = create_access_token(data={"sub": person.id, "pwd_iat": _pwd_iat_for(person)})
 
     return AuthResponse(
         person_id=person.id,
@@ -138,8 +148,8 @@ def login(request: LoginRequest, db: Session = Depends(get_db)):
             status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid email or password"
         )
 
-    # Generate JWT access token
-    access_token = create_access_token(data={"sub": person.id})
+    # Generate JWT access token (pwd_iat allows revocation on password change).
+    access_token = create_access_token(data={"sub": person.id, "pwd_iat": _pwd_iat_for(person)})
 
     return AuthResponse(
         person_id=person.id,
