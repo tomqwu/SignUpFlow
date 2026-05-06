@@ -55,6 +55,15 @@ class GreedyHeuristicSolver(SolverAdapter):
             for h in self.context.holidays:
                 holiday_map[h.date] = h.is_long_weekend
 
+        # Build per-person vacation map: person_id -> list[(start_date, end_date)]
+        # so we can filter out unavailable candidates per event.
+        self._vacation_by_person: dict[str, list[tuple[Any, Any]]] = defaultdict(list)
+        for avail in self.context.availability or []:
+            if avail.person_id is None:
+                continue
+            for vac in avail.vacations:
+                self._vacation_by_person[avail.person_id].append((vac.start, vac.end))
+
         # Filter events in range
         events_in_range = [
             e
@@ -168,6 +177,12 @@ class GreedyHeuristicSolver(SolverAdapter):
             for person in candidates:
                 if person.id in assignees:
                     continue  # Already assigned to this event
+
+                # Skip if person is on vacation/time-off covering the event date.
+                # Vacation periods are inclusive on both ends.
+                vacations = getattr(self, "_vacation_by_person", {}).get(person.id, [])
+                if any(v_start <= event_date <= v_end for v_start, v_end in vacations):
+                    continue
 
                 # Check person-level hard constraints
                 ctx.person = person
