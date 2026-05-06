@@ -908,6 +908,7 @@ class AuditAction:
 
     # Bulk operations
     BULK_IMPORT = "data.bulk_import"
+    HOLIDAY_BULK_IMPORTED = "data.holiday_bulk_imported"
 
     # Calendar token management
     CALENDAR_TOKEN_RESET = "calendar.token.reset"

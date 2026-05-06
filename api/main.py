@@ -24,6 +24,7 @@ from api.routers import (
     conflicts,
     constraints,
     events,
+    holidays,
     invitations,
     organizations,
     password_reset,
@@ -142,6 +143,7 @@ app.include_router(assignments.router, prefix="/api/v1")
 app.include_router(audit.router, prefix="/api/v1")
 app.include_router(recurring_events.router, prefix="/api/v1")
 app.include_router(resources.router, prefix="/api/v1")
+app.include_router(holidays.router, prefix="/api/v1")
 
 
 @app.get("/api/v1", tags=["root"])
