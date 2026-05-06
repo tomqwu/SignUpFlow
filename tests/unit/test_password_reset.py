@@ -13,7 +13,7 @@ from api.security import verify_password
 class TestPasswordResetSecurity:
     """Test that password reset uses bcrypt instead of SHA256."""
 
-    def test_password_reset_uses_bcrypt(self, api_server):
+    def test_password_reset_uses_bcrypt(self):
         """Verify that password reset hashes passwords with bcrypt, not SHA256."""
         client = TestClient(app)
 
@@ -85,7 +85,7 @@ class TestPasswordResetSecurity:
         db.delete(org)
         db.commit()
 
-    def test_password_reset_different_from_sha256(self, api_server):
+    def test_password_reset_different_from_sha256(self):
         """Verify that bcrypt hash is different from SHA256 hash."""
         client = TestClient(app)
 
@@ -147,7 +147,7 @@ class TestPasswordResetSecurity:
         db.delete(org)
         db.commit()
 
-    def test_password_reset_with_login(self, api_server):
+    def test_password_reset_with_login(self):
         """Verify that reset password can be used to log in."""
         client = TestClient(app)
 
