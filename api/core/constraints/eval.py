@@ -1,5 +1,6 @@
 """Constraint evaluation engine."""
 
+from datetime import date
 
 from api.core.constraints.dsl import ConstraintResult, EvalContext
 from api.core.constraints.predicates import (
@@ -91,11 +92,27 @@ def evaluate_constraint(binding: ConstraintBinding, ctx: EvalContext) -> Constra
         period = action.enforce_cap.get("period", "P1M")
         max_count = action.enforce_cap.get("max_count", 999)
 
-        # Simple monthly cap
-        if period == "P1M" and ctx.date:
-            month_start = ctx.date.replace(day=1)
-            month_end = (month_start + timedelta(days=32)).replace(day=1) - timedelta(days=1)
-            count = count_assignments_in_period(ctx, ctx.person.id, month_start, month_end)
+        # Resolve [win_start, win_end] for the configured period.
+        win_start: date | None = None
+        win_end: date | None = None
+        if ctx.date:
+            if period == "P1M":
+                win_start = ctx.date.replace(day=1)
+                win_end = (win_start + timedelta(days=32)).replace(day=1) - timedelta(days=1)
+            elif period.startswith("P") and period.endswith("D"):
+                # Rolling N-day window centered on the candidate event date.
+                # For N=7, half=3, win=[date-3, date+3] (7 days inclusive).
+                try:
+                    window_days = int(period[1:-1])
+                except ValueError:
+                    window_days = 0
+                if window_days > 0:
+                    half = window_days // 2
+                    win_start = ctx.date - timedelta(days=half)
+                    win_end = ctx.date + timedelta(days=window_days - half - 1)
+
+        if win_start is not None and win_end is not None:
+            count = count_assignments_in_period(ctx, ctx.person.id, win_start, win_end)
             if count >= max_count:
                 return ConstraintResult(
                     satisfied=False,

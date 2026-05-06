@@ -75,14 +75,20 @@ A new constraint DSL predicate `workload_cap`:
 ```yaml
 constraints:
   - key: weekly_volunteer_cap
-    predicate: workload_cap
+    scope: person
+    applies_to: ["service"]
     severity: hard
-    params:
-      max_per_window_days: 7
-      max_count: 2
+    then:
+      enforce_cap:
+        period: P7D
+        max_count: 2
 ```
 
 Evaluates per `Person` over a rolling N-day window centered on each candidate event. Rejects (or penalizes, per `severity`) candidates that would exceed `max_count`. Reuses the existing constraint DSL evaluator (`api/core/constraints/eval.py`).
+
+**Implementation note**: Sprint 6 PR 6.3 reuses the existing `enforce_cap` action shape rather than introducing a new top-level `predicate` node. The `period` field accepts ISO-8601 abbreviated durations: `P1M` (existing — calendar month) or `P{N}D` (new — rolling N-day window centered on the candidate event date). For `P7D` and a candidate on Jun 7, the window is `[Jun 4, Jun 10]`.
+
+**Out of scope for 6.3**: wiring DB `Constraint` rows into `SolveContext.constraints`. The router currently passes `constraints = []` (`api/routers/solver.py:189`). Once that wiring exists, admins can author workload-cap constraints via the constraint API and the solver will honor them. Until then, the predicate is unit-tested via `evaluate_constraint` directly.
 
 ### Performance SLO target
 
