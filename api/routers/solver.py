@@ -69,8 +69,10 @@ from api.schemas.solver import (
     SolutionMetrics,
     SolveRequest,
     SolveResponse,
+    StabilityMetrics,
     ViolationInfo,
 )
+from api.utils.solver_stability import compute_stability_metrics
 
 router = APIRouter(prefix="/solver", tags=["solver"])
 
@@ -271,6 +273,9 @@ def solve_schedule(
     solver.build_model(context)
     solution = solver.solve()
 
+    # Compute stability vs the org's currently-published solution.
+    stability = compute_stability_metrics(db, org_id=org.id, new_assignments=solution.assignments)
+
     # Save solution to database
     db_solution = DBSolution(
         org_id=org.id,
@@ -282,7 +287,11 @@ def solve_schedule(
             "fairness": {
                 "stdev": solution.metrics.fairness.stdev,
                 "per_person_counts": solution.metrics.fairness.per_person_counts,
-            }
+            },
+            "stability": {
+                "moves_from_published": stability.moves_from_published,
+                "affected_persons": stability.affected_persons,
+            },
         },
     )
     db.add(db_solution)
@@ -323,6 +332,10 @@ def solve_schedule(
         fairness=FairnessMetrics(
             stdev=solution.metrics.fairness.stdev,
             per_person_counts=solution.metrics.fairness.per_person_counts,
+        ),
+        stability=StabilityMetrics(
+            moves_from_published=stability.moves_from_published,
+            affected_persons=stability.affected_persons,
         ),
     )
 
