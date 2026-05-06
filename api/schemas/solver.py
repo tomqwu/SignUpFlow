@@ -117,3 +117,30 @@ class SolutionDiffResponse(BaseModel):
     unchanged_count: int
     affected_persons: list[str]
     moves: int
+
+
+class FairnessStats(BaseModel):
+    """Fairness metrics + histogram of per-person assignment counts."""
+
+    stdev: float
+    per_person_counts: dict[str, int]
+    histogram: dict[str, int]  # str-keyed for JSON: "count" → num_people
+
+
+class WorkloadStats(BaseModel):
+    """Aggregate workload distribution stats."""
+
+    max_events_per_person: int
+    min_events_per_person: int
+    median_events_per_person: float
+    total_events_assigned: int
+    distinct_persons_assigned: int
+
+
+class SolutionStatsResponse(BaseModel):
+    """Stats response for ``GET /solutions/{id}/stats`` (admin only)."""
+
+    solution_id: int
+    fairness: FairnessStats
+    stability: StabilityMetrics
+    workload: WorkloadStats

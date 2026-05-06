@@ -21,9 +21,13 @@ from api.schemas.common import PaginationParams, get_pagination_params
 from api.schemas.solver import (
     AssignmentChange,
     ExportFormat,
+    FairnessStats,
     SolutionDiffResponse,
     SolutionList,
     SolutionResponse,
+    SolutionStatsResponse,
+    StabilityMetrics,
+    WorkloadStats,
 )
 from api.timeutils import utcnow
 from api.utils.audit_logger import log_audit_event
@@ -576,6 +580,73 @@ def rollback_solution(
     response = SolutionResponse.model_validate(solution)
     response.assignment_count = assignment_count
     return response
+
+
+@router.get("/{solution_id}/stats", response_model=SolutionStatsResponse)
+def get_solution_stats(
+    solution_id: int,
+    current_admin: Person = Depends(get_current_admin_user),
+    db: Session = Depends(get_db),
+):
+    """Stats endpoint (admin only): fairness histogram + stability + workload distribution."""
+    solution = db.query(Solution).filter(Solution.id == solution_id).first()
+    if not solution:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Solution {solution_id} not found",
+        )
+    verify_org_member(current_admin, solution.org_id)
+
+    metrics = solution.metrics or {}
+    fairness_raw = metrics.get("fairness", {})
+    stability_raw = metrics.get("stability", {})
+
+    per_person_counts: dict[str, int] = fairness_raw.get("per_person_counts", {}) or {}
+
+    # Histogram: count_bucket → num_people_with_that_count.
+    histogram: dict[str, int] = {}
+    for c in per_person_counts.values():
+        key = str(c)
+        histogram[key] = histogram.get(key, 0) + 1
+
+    counts = list(per_person_counts.values())
+    if counts:
+        sorted_counts = sorted(counts)
+        n = len(sorted_counts)
+        if n % 2 == 1:
+            median = float(sorted_counts[n // 2])
+        else:
+            median = (sorted_counts[n // 2 - 1] + sorted_counts[n // 2]) / 2.0
+        max_v = max(counts)
+        min_v = min(counts)
+        total = sum(counts)
+        distinct = len(per_person_counts)
+    else:
+        median = 0.0
+        max_v = 0
+        min_v = 0
+        total = 0
+        distinct = 0
+
+    return SolutionStatsResponse(
+        solution_id=int(solution.id),
+        fairness=FairnessStats(
+            stdev=float(fairness_raw.get("stdev", 0.0)),
+            per_person_counts=per_person_counts,
+            histogram=histogram,
+        ),
+        stability=StabilityMetrics(
+            moves_from_published=int(stability_raw.get("moves_from_published", 0)),
+            affected_persons=int(stability_raw.get("affected_persons", 0)),
+        ),
+        workload=WorkloadStats(
+            max_events_per_person=max_v,
+            min_events_per_person=min_v,
+            median_events_per_person=median,
+            total_events_assigned=total,
+            distinct_persons_assigned=distinct,
+        ),
+    )
 
 
 @router.delete("/{solution_id}", status_code=status.HTTP_204_NO_CONTENT)
