@@ -15,6 +15,21 @@ jobs:
     name: Lint, type-check, and test
     runs-on: ubuntu-latest
 
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: signupflow
+          POSTGRES_PASSWORD: signupflow
+          POSTGRES_DB: signupflow_ci
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U signupflow -d signupflow_ci"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
     steps:
       - uses: actions/checkout@v4
 
@@ -62,3 +77,8 @@ jobs:
 
       - name: OpenAPI contract snapshot
         run: poetry run pytest tests/contract/ -v --tb=short
+
+      - name: Alembic upgrade head (PostgreSQL)
+        env:
+          DATABASE_URL: postgresql+psycopg2://signupflow:signupflow@localhost:5432/signupflow_ci
+        run: poetry run alembic upgrade head
