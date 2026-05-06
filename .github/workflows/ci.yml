@@ -59,3 +59,6 @@ jobs:
 
       - name: CLI tests
         run: poetry run pytest tests/cli/ -v --tb=short
+
+      - name: OpenAPI contract snapshot
+        run: poetry run pytest tests/contract/ -v --tb=short

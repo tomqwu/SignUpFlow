@@ -262,6 +262,15 @@ test-with-timing: check-poetry
 	@echo "⏱️  Running tests with timing information..."
 	@poetry run pytest tests/unit/ --durations=20 -v --tb=short
 
+test-contract: check-poetry
+	@echo "📜 Running OpenAPI contract snapshot tests..."
+	@poetry run pytest tests/contract/ -v --tb=short
+
+update-openapi-snapshot: check-poetry
+	@echo "🔄 Refreshing OpenAPI contract snapshot..."
+	@poetry run python -m tests.contract.test_openapi_snapshot --update
+	@echo "✅ Snapshot updated. Review the diff, run 'make mobile-codegen' once mobile/ exists, then commit."
+
 # ============================================================================
 # Docker Compose Commands (Development Environment)
 # ============================================================================
