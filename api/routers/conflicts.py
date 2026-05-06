@@ -2,10 +2,11 @@
 
 from datetime import datetime
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
 from api.database import get_db
+from api.dependencies import get_current_admin_user, verify_org_member
 from api.models import (
     Assignment,
     Availability,
@@ -13,6 +14,7 @@ from api.models import (
     Person,
     VacationPeriod,
 )
+from api.schemas.common import ListResponse, PaginationParams, get_pagination_params
 from api.schemas.conflicts import (
     ConflictCheckRequest,
     ConflictCheckResponse,
@@ -132,4 +134,110 @@ def check_conflicts(
         has_conflicts=len(conflicts) > 0,
         conflicts=conflicts,
         can_assign=not has_blocking_conflicts,
+    )
+
+
+def _person_conflicts(person: Person, db: Session) -> list[ConflictType]:
+    """Detect every conflict on this person's existing assignments.
+
+    Looks at:
+    - time-off overlap with each assignment's event
+    - double-booked: any pair of assignments whose events overlap
+
+    Does NOT raise `already_assigned` (the assignment exists by definition).
+    """
+    rows: list[ConflictType] = []
+
+    assignments = db.query(Assignment).filter(Assignment.person_id == person.id).all()
+    if not assignments:
+        return rows
+
+    # Pre-load events keyed by id
+    event_ids = [a.event_id for a in assignments]
+    events_by_id: dict[str, Event] = {
+        e.id: e for e in db.query(Event).filter(Event.id.in_(event_ids)).all()
+    }
+
+    # Time-off overlaps
+    availability = db.query(Availability).filter(Availability.person_id == person.id).first()
+    if availability:
+        vacations = (
+            db.query(VacationPeriod).filter(VacationPeriod.availability_id == availability.id).all()
+        )
+        for assignment in assignments:
+            event = events_by_id.get(assignment.event_id)
+            if event is None:
+                continue
+            for vacation in vacations:
+                v_start = datetime.combine(vacation.start_date, datetime.min.time())
+                v_end = datetime.combine(vacation.end_date, datetime.max.time())
+                if check_time_overlap(event.start_time, event.end_time, v_start, v_end):
+                    rows.append(
+                        ConflictType(
+                            type="time_off",
+                            message=(
+                                f"{person.name} has time-off from {vacation.start_date} "
+                                f"to {vacation.end_date} but is assigned to {event.type}"
+                            ),
+                            conflicting_event_id=event.id,
+                            start_time=v_start,
+                            end_time=v_end,
+                        )
+                    )
+
+    # Double-booked: any pair of overlapping assignments for this person
+    for i, a in enumerate(assignments):
+        ev_a = events_by_id.get(a.event_id)
+        if ev_a is None:
+            continue
+        for b in assignments[i + 1 :]:
+            ev_b = events_by_id.get(b.event_id)
+            if ev_b is None:
+                continue
+            if check_time_overlap(ev_a.start_time, ev_a.end_time, ev_b.start_time, ev_b.end_time):
+                rows.append(
+                    ConflictType(
+                        type="double_booked",
+                        message=(
+                            f"{person.name} is double-booked: '{ev_a.type}' "
+                            f"and '{ev_b.type}' overlap"
+                        ),
+                        conflicting_event_id=ev_b.id,
+                        start_time=ev_b.start_time,
+                        end_time=ev_b.end_time,
+                    )
+                )
+    return rows
+
+
+@router.get("/", response_model=ListResponse[ConflictType])
+def list_conflicts(
+    org_id: str = Query(..., description="Organization ID"),
+    person_id: str | None = Query(None, description="Optional filter to a single person"),
+    pagination: PaginationParams = Depends(get_pagination_params),
+    current_admin: Person = Depends(get_current_admin_user),
+    db: Session = Depends(get_db),
+):
+    """List currently-detected conflicts across an org (admin-only).
+
+    Scans every Assignment in the org (or just the named person's) and
+    surfaces `time_off` and `double_booked` conflicts. `already_assigned`
+    is intentionally omitted because the assignment exists.
+    """
+    verify_org_member(current_admin, org_id)
+
+    people_query = db.query(Person).filter(Person.org_id == org_id)
+    if person_id is not None:
+        people_query = people_query.filter(Person.id == person_id)
+
+    all_rows: list[ConflictType] = []
+    for person in people_query.all():
+        all_rows.extend(_person_conflicts(person, db))
+
+    page = all_rows[pagination.offset : pagination.offset + pagination.limit]
+    return ListResponse[ConflictType](
+        items=page,
+        total=len(all_rows),
+        limit=pagination.limit,
+        offset=pagination.offset,
     )
