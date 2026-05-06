@@ -26,6 +26,12 @@ from api.models import Base
 # ---------------------------------------------------------------------------
 
 
+@pytest.fixture(autouse=True)
+def _strict_tenancy_guard(monkeypatch):
+    """Make the tenancy guard raise inside this tier so tenant leaks fail tests."""
+    monkeypatch.setenv("TENANCY_GUARD", "strict")
+
+
 @pytest.fixture(scope="function")
 def db():
     """Fresh in-memory SQLite database per test. All tables created/dropped."""
