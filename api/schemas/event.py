@@ -45,8 +45,6 @@ class EventResponse(BaseResponse, EventBase):
     updated_at: datetime
 
 
-class EventList(BaseModel):
-    """Schema for listing events."""
+from api.schemas.common import ListResponse
 
-    events: list[EventResponse]
-    total: int
+EventList = ListResponse[EventResponse]

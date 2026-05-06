@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session
 
 from api.database import get_db
 from api.models import Constraint, Organization
+from api.schemas.common import PaginationParams, get_pagination_params
 from api.schemas.constraint import (
     ConstraintCreate,
     ConstraintList,
@@ -53,8 +54,7 @@ def create_constraint(constraint_data: ConstraintCreate, db: Session = Depends(g
 def list_constraints(
     org_id: str | None = Query(None, description="Filter by organization ID"),
     constraint_type: str | None = Query(None, description="Filter by type (hard/soft)"),
-    skip: int = 0,
-    limit: int = 100,
+    pagination: PaginationParams = Depends(get_pagination_params),
     db: Session = Depends(get_db),
 ):
     """List constraints with optional filters."""
@@ -65,9 +65,14 @@ def list_constraints(
     if constraint_type:
         query = query.filter(Constraint.type == constraint_type)
 
-    constraints = query.offset(skip).limit(limit).all()
+    constraints = query.offset(pagination.offset).limit(pagination.limit).all()
     total = query.count()
-    return {"constraints": constraints, "total": total}
+    return {
+        "items": constraints,
+        "total": total,
+        "limit": pagination.limit,
+        "offset": pagination.offset,
+    }
 
 
 @router.get("/{constraint_id}", response_model=ConstraintResponse)

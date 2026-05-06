@@ -122,8 +122,8 @@ class TestTeamRead:
         response = client.get(f"{API_BASE}/teams/?org_id=team_test_org_005")
         assert response.status_code == 200
         data = response.json()
-        assert "teams" in data
-        assert len(data["teams"]) >= 3
+        assert "items" in data
+        assert len(data["items"]) >= 3
 
 
 class TestTeamUpdate:

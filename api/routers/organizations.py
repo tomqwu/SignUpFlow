@@ -5,6 +5,7 @@ from sqlalchemy.orm import Session
 
 from api.database import get_db
 from api.models import Organization
+from api.schemas.common import PaginationParams, get_pagination_params
 from api.schemas.organization import (
     OrganizationCreate,
     OrganizationList,
@@ -50,11 +51,19 @@ def create_organization(org_data: OrganizationCreate, db: Session = Depends(get_
 
 
 @router.get("/", response_model=OrganizationList)
-def list_organizations(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
+def list_organizations(
+    pagination: PaginationParams = Depends(get_pagination_params),
+    db: Session = Depends(get_db),
+):
     """List all organizations."""
-    orgs = db.query(Organization).offset(skip).limit(limit).all()
+    orgs = db.query(Organization).offset(pagination.offset).limit(pagination.limit).all()
     total = db.query(Organization).count()
-    return {"organizations": orgs, "total": total}
+    return {
+        "items": orgs,
+        "total": total,
+        "limit": pagination.limit,
+        "offset": pagination.offset,
+    }
 
 
 @router.get("/{org_id}", response_model=OrganizationResponse)

@@ -137,7 +137,12 @@ async def list_invitations(
 
     invitations = query.order_by(Invitation.created_at.desc()).all()
 
-    return InvitationList(invitations=invitations, total=len(invitations))
+    return InvitationList(
+        items=invitations,
+        total=len(invitations),
+        limit=len(invitations),
+        offset=0,
+    )
 
 
 @router.get(

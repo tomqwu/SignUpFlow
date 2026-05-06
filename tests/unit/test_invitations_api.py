@@ -83,7 +83,7 @@ class TestInvitationsAPI:
         # data = response.json()
         # assert "invitations" in data
         # assert "total" in data
-        # assert isinstance(data["invitations"], list)
+        # assert isinstance(data["items"], list)
 
     @pytest.mark.no_mock_auth
     def test_create_invitation_requires_authentication(self, client):

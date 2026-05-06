@@ -56,8 +56,6 @@ class TeamResponse(TeamBase):
     member_count: int = Field(0, description="Number of members")
 
 
-class TeamList(BaseModel):
-    """Schema for listing teams."""
+from api.schemas.common import ListResponse
 
-    teams: list[TeamResponse]
-    total: int
+TeamList = ListResponse[TeamResponse]

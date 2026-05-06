@@ -16,6 +16,7 @@ from api.models import (
     Person,
     Team,
 )
+from api.schemas.common import PaginationParams, get_pagination_params
 from api.schemas.event import EventCreate, EventList, EventResponse, EventUpdate
 from api.utils.event_helpers import (
     count_people_with_role,
@@ -124,8 +125,7 @@ def list_events(
     | None = Query(None, description="Filter events starting after this time"),
     start_before: datetime
     | None = Query(None, description="Filter events starting before this time"),
-    skip: int = 0,
-    limit: int = 100,
+    pagination: PaginationParams = Depends(get_pagination_params),
     db: Session = Depends(get_db),
 ):
     """List events with optional filters."""
@@ -141,9 +141,14 @@ def list_events(
         query = query.filter(Event.start_time <= start_before)
 
     query = query.order_by(Event.start_time)
-    events = query.offset(skip).limit(limit).all()
+    events = query.offset(pagination.offset).limit(pagination.limit).all()
     total = query.count()
-    return {"events": events, "total": total}
+    return {
+        "items": events,
+        "total": total,
+        "limit": pagination.limit,
+        "offset": pagination.offset,
+    }
 
 
 @router.get("/{event_id}", response_model=EventResponse)

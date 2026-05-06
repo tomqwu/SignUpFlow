@@ -46,8 +46,6 @@ class PersonResponse(BaseResponse, PersonBase):
     updated_at: datetime
 
 
-class PersonList(BaseModel):
-    """Schema for listing people."""
+from api.schemas.common import ListResponse
 
-    people: list[PersonResponse]
-    total: int
+PersonList = ListResponse[PersonResponse]

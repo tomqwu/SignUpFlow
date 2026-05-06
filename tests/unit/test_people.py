@@ -120,8 +120,8 @@ class TestPersonRead:
         response = client.get(f"{API_BASE}/people/?org_id=people_test_org5")
         assert response.status_code == 200
         data = response.json()
-        assert "people" in data
-        assert len(data["people"]) >= 3
+        assert "items" in data
+        assert len(data["items"]) >= 3
 
 
 class TestPersonUpdate:

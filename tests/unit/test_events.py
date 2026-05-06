@@ -161,8 +161,8 @@ class TestEventRead:
         response = client.get(f"{API_BASE}/events/?org_id=event_test_org5")
         assert response.status_code == 200
         data = response.json()
-        assert "events" in data
-        assert len(data["events"]) >= 3
+        assert "items" in data
+        assert len(data["items"]) >= 3
 
     def test_list_events_date_range(self, client):
         """Test listing events within date range."""
@@ -190,7 +190,7 @@ class TestEventRead:
         )
         assert response.status_code == 200
         data = response.json()
-        assert len(data["events"]) >= 1
+        assert len(data["items"]) >= 1
 
 
 class TestEventUpdate:

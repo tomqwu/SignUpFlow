@@ -77,11 +77,9 @@ class SolutionResponse(BaseModel):
     assignment_count: int = 0
 
 
-class SolutionList(BaseModel):
-    """Schema for listing solutions."""
+from api.schemas.common import ListResponse
 
-    solutions: list[SolutionResponse]
-    total: int
+SolutionList = ListResponse[SolutionResponse]
 
 
 class ExportFormat(BaseModel):

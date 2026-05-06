@@ -16,6 +16,7 @@ from api.core.models import (
 )
 from api.database import get_db
 from api.models import Assignment, Event, Organization, Person, Solution
+from api.schemas.common import PaginationParams, get_pagination_params
 from api.schemas.solver import ExportFormat, SolutionList, SolutionResponse
 from api.utils.pdf_export import generate_schedule_pdf
 
@@ -25,8 +26,7 @@ router = APIRouter(prefix="/solutions", tags=["solutions"])
 @router.get("/", response_model=SolutionList)
 def list_solutions(
     org_id: str | None = Query(None, description="Filter by organization ID"),
-    skip: int = 0,
-    limit: int = 100,
+    pagination: PaginationParams = Depends(get_pagination_params),
     db: Session = Depends(get_db),
 ):
     """List solutions with optional filters."""
@@ -36,7 +36,7 @@ def list_solutions(
         query = query.filter(Solution.org_id == org_id)
 
     query = query.order_by(Solution.created_at.desc())
-    solutions = query.offset(skip).limit(limit).all()
+    solutions = query.offset(pagination.offset).limit(pagination.limit).all()
     total = query.count()
 
     # Add assignment counts
@@ -47,7 +47,12 @@ def list_solutions(
         response.assignment_count = assignment_count
         solution_responses.append(response)
 
-    return {"solutions": solution_responses, "total": total}
+    return {
+        "items": solution_responses,
+        "total": total,
+        "limit": pagination.limit,
+        "offset": pagination.offset,
+    }
 
 
 @router.get("/{solution_id}", response_model=SolutionResponse)

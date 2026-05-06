@@ -590,28 +590,6 @@
         "title": "ConstraintCreate",
         "type": "object"
       },
-      "ConstraintList": {
-        "description": "Schema for listing constraints.",
-        "properties": {
-          "constraints": {
-            "items": {
-              "$ref": "#/components/schemas/ConstraintResponse"
-            },
-            "title": "Constraints",
-            "type": "array"
-          },
-          "total": {
-            "title": "Total",
-            "type": "integer"
-          }
-        },
-        "required": [
-          "constraints",
-          "total"
-        ],
-        "title": "ConstraintList",
-        "type": "object"
-      },
       "ConstraintResponse": {
         "description": "Schema for constraint response.",
         "properties": {
@@ -818,28 +796,6 @@
           "org_id"
         ],
         "title": "EventCreate",
-        "type": "object"
-      },
-      "EventList": {
-        "description": "Schema for listing events.",
-        "properties": {
-          "events": {
-            "items": {
-              "$ref": "#/components/schemas/EventResponse"
-            },
-            "title": "Events",
-            "type": "array"
-          },
-          "total": {
-            "title": "Total",
-            "type": "integer"
-          }
-        },
-        "required": [
-          "events",
-          "total"
-        ],
-        "title": "EventList",
         "type": "object"
       },
       "EventResponse": {
@@ -1145,28 +1101,6 @@
         "title": "InvitationCreate",
         "type": "object"
       },
-      "InvitationList": {
-        "description": "Schema for listing invitations.",
-        "properties": {
-          "invitations": {
-            "items": {
-              "$ref": "#/components/schemas/InvitationResponse"
-            },
-            "title": "Invitations",
-            "type": "array"
-          },
-          "total": {
-            "title": "Total",
-            "type": "integer"
-          }
-        },
-        "required": [
-          "invitations",
-          "total"
-        ],
-        "title": "InvitationList",
-        "type": "object"
-      },
       "InvitationResponse": {
         "description": "Schema for invitation response.",
         "properties": {
@@ -1278,6 +1212,223 @@
         "title": "InvitationVerify",
         "type": "object"
       },
+      "ListResponse_ConstraintResponse_": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/ConstraintResponse"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "limit": {
+            "title": "Limit",
+            "type": "integer"
+          },
+          "offset": {
+            "title": "Offset",
+            "type": "integer"
+          },
+          "total": {
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "items",
+          "total",
+          "limit",
+          "offset"
+        ],
+        "title": "ListResponse[ConstraintResponse]",
+        "type": "object"
+      },
+      "ListResponse_EventResponse_": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/EventResponse"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "limit": {
+            "title": "Limit",
+            "type": "integer"
+          },
+          "offset": {
+            "title": "Offset",
+            "type": "integer"
+          },
+          "total": {
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "items",
+          "total",
+          "limit",
+          "offset"
+        ],
+        "title": "ListResponse[EventResponse]",
+        "type": "object"
+      },
+      "ListResponse_InvitationResponse_": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/InvitationResponse"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "limit": {
+            "title": "Limit",
+            "type": "integer"
+          },
+          "offset": {
+            "title": "Offset",
+            "type": "integer"
+          },
+          "total": {
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "items",
+          "total",
+          "limit",
+          "offset"
+        ],
+        "title": "ListResponse[InvitationResponse]",
+        "type": "object"
+      },
+      "ListResponse_OrganizationResponse_": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/OrganizationResponse"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "limit": {
+            "title": "Limit",
+            "type": "integer"
+          },
+          "offset": {
+            "title": "Offset",
+            "type": "integer"
+          },
+          "total": {
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "items",
+          "total",
+          "limit",
+          "offset"
+        ],
+        "title": "ListResponse[OrganizationResponse]",
+        "type": "object"
+      },
+      "ListResponse_PersonResponse_": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/PersonResponse"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "limit": {
+            "title": "Limit",
+            "type": "integer"
+          },
+          "offset": {
+            "title": "Offset",
+            "type": "integer"
+          },
+          "total": {
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "items",
+          "total",
+          "limit",
+          "offset"
+        ],
+        "title": "ListResponse[PersonResponse]",
+        "type": "object"
+      },
+      "ListResponse_SolutionResponse_": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/SolutionResponse"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "limit": {
+            "title": "Limit",
+            "type": "integer"
+          },
+          "offset": {
+            "title": "Offset",
+            "type": "integer"
+          },
+          "total": {
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "items",
+          "total",
+          "limit",
+          "offset"
+        ],
+        "title": "ListResponse[SolutionResponse]",
+        "type": "object"
+      },
+      "ListResponse_TeamResponse_": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/TeamResponse"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "limit": {
+            "title": "Limit",
+            "type": "integer"
+          },
+          "offset": {
+            "title": "Offset",
+            "type": "integer"
+          },
+          "total": {
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "items",
+          "total",
+          "limit",
+          "offset"
+        ],
+        "title": "ListResponse[TeamResponse]",
+        "type": "object"
+      },
       "LoginRequest": {
         "description": "Login request.",
         "properties": {
@@ -1345,28 +1496,6 @@
           "id"
         ],
         "title": "OrganizationCreate",
-        "type": "object"
-      },
-      "OrganizationList": {
-        "description": "Schema for listing organizations.",
-        "properties": {
-          "organizations": {
-            "items": {
-              "$ref": "#/components/schemas/OrganizationResponse"
-            },
-            "title": "Organizations",
-            "type": "array"
-          },
-          "total": {
-            "title": "Total",
-            "type": "integer"
-          }
-        },
-        "required": [
-          "organizations",
-          "total"
-        ],
-        "title": "OrganizationList",
         "type": "object"
       },
       "OrganizationResponse": {
@@ -1580,28 +1709,6 @@
           "org_id"
         ],
         "title": "PersonCreate",
-        "type": "object"
-      },
-      "PersonList": {
-        "description": "Schema for listing people.",
-        "properties": {
-          "people": {
-            "items": {
-              "$ref": "#/components/schemas/PersonResponse"
-            },
-            "title": "People",
-            "type": "array"
-          },
-          "total": {
-            "title": "Total",
-            "type": "integer"
-          }
-        },
-        "required": [
-          "people",
-          "total"
-        ],
-        "title": "PersonList",
         "type": "object"
       },
       "PersonResponse": {
@@ -1848,28 +1955,6 @@
         "title": "SignupRequest",
         "type": "object"
       },
-      "SolutionList": {
-        "description": "Schema for listing solutions.",
-        "properties": {
-          "solutions": {
-            "items": {
-              "$ref": "#/components/schemas/SolutionResponse"
-            },
-            "title": "Solutions",
-            "type": "array"
-          },
-          "total": {
-            "title": "Total",
-            "type": "integer"
-          }
-        },
-        "required": [
-          "solutions",
-          "total"
-        ],
-        "title": "SolutionList",
-        "type": "object"
-      },
       "SolutionMetrics": {
         "description": "Schema for solution metrics.",
         "properties": {
@@ -2110,28 +2195,6 @@
           "org_id"
         ],
         "title": "TeamCreate",
-        "type": "object"
-      },
-      "TeamList": {
-        "description": "Schema for listing teams.",
-        "properties": {
-          "teams": {
-            "items": {
-              "$ref": "#/components/schemas/TeamResponse"
-            },
-            "title": "Teams",
-            "type": "array"
-          },
-          "total": {
-            "title": "Total",
-            "type": "integer"
-          }
-        },
-        "required": [
-          "teams",
-          "total"
-        ],
-        "title": "TeamList",
         "type": "object"
       },
       "TeamMemberAdd": {
@@ -3684,22 +3747,29 @@
             }
           },
           {
-            "in": "query",
-            "name": "skip",
-            "required": false,
-            "schema": {
-              "default": 0,
-              "title": "Skip",
-              "type": "integer"
-            }
-          },
-          {
+            "description": "Page size, max 200",
             "in": "query",
             "name": "limit",
             "required": false,
             "schema": {
-              "default": 100,
+              "default": 50,
+              "description": "Page size, max 200",
+              "maximum": 200,
+              "minimum": 1,
               "title": "Limit",
+              "type": "integer"
+            }
+          },
+          {
+            "description": "Number of rows to skip",
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "description": "Number of rows to skip",
+              "minimum": 0,
+              "title": "Offset",
               "type": "integer"
             }
           }
@@ -3709,7 +3779,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ConstraintList"
+                  "$ref": "#/components/schemas/ListResponse_ConstraintResponse_"
                 }
               }
             },
@@ -3980,22 +4050,29 @@
             }
           },
           {
-            "in": "query",
-            "name": "skip",
-            "required": false,
-            "schema": {
-              "default": 0,
-              "title": "Skip",
-              "type": "integer"
-            }
-          },
-          {
+            "description": "Page size, max 200",
             "in": "query",
             "name": "limit",
             "required": false,
             "schema": {
-              "default": 100,
+              "default": 50,
+              "description": "Page size, max 200",
+              "maximum": 200,
+              "minimum": 1,
               "title": "Limit",
+              "type": "integer"
+            }
+          },
+          {
+            "description": "Number of rows to skip",
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "description": "Number of rows to skip",
+              "minimum": 0,
+              "title": "Offset",
               "type": "integer"
             }
           }
@@ -4005,7 +4082,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/EventList"
+                  "$ref": "#/components/schemas/ListResponse_EventResponse_"
                 }
               }
             },
@@ -4442,7 +4519,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/InvitationList"
+                  "$ref": "#/components/schemas/ListResponse_InvitationResponse_"
                 }
               }
             },
@@ -4719,22 +4796,29 @@
         "operationId": "listOrganizations",
         "parameters": [
           {
-            "in": "query",
-            "name": "skip",
-            "required": false,
-            "schema": {
-              "default": 0,
-              "title": "Skip",
-              "type": "integer"
-            }
-          },
-          {
+            "description": "Page size, max 200",
             "in": "query",
             "name": "limit",
             "required": false,
             "schema": {
-              "default": 100,
+              "default": 50,
+              "description": "Page size, max 200",
+              "maximum": 200,
+              "minimum": 1,
               "title": "Limit",
+              "type": "integer"
+            }
+          },
+          {
+            "description": "Number of rows to skip",
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "description": "Number of rows to skip",
+              "minimum": 0,
+              "title": "Offset",
               "type": "integer"
             }
           }
@@ -4744,7 +4828,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/OrganizationList"
+                  "$ref": "#/components/schemas/ListResponse_OrganizationResponse_"
                 }
               }
             },
@@ -4977,22 +5061,29 @@
             }
           },
           {
-            "in": "query",
-            "name": "skip",
-            "required": false,
-            "schema": {
-              "default": 0,
-              "title": "Skip",
-              "type": "integer"
-            }
-          },
-          {
+            "description": "Page size, max 200",
             "in": "query",
             "name": "limit",
             "required": false,
             "schema": {
-              "default": 100,
+              "default": 50,
+              "description": "Page size, max 200",
+              "maximum": 200,
+              "minimum": 1,
               "title": "Limit",
+              "type": "integer"
+            }
+          },
+          {
+            "description": "Number of rows to skip",
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "description": "Number of rows to skip",
+              "minimum": 0,
+              "title": "Offset",
               "type": "integer"
             }
           }
@@ -5002,7 +5093,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/PersonList"
+                  "$ref": "#/components/schemas/ListResponse_PersonResponse_"
                 }
               }
             },
@@ -5314,22 +5405,29 @@
             }
           },
           {
-            "in": "query",
-            "name": "skip",
-            "required": false,
-            "schema": {
-              "default": 0,
-              "title": "Skip",
-              "type": "integer"
-            }
-          },
-          {
+            "description": "Page size, max 200",
             "in": "query",
             "name": "limit",
             "required": false,
             "schema": {
-              "default": 100,
+              "default": 50,
+              "description": "Page size, max 200",
+              "maximum": 200,
+              "minimum": 1,
               "title": "Limit",
+              "type": "integer"
+            }
+          },
+          {
+            "description": "Number of rows to skip",
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "description": "Number of rows to skip",
+              "minimum": 0,
+              "title": "Offset",
               "type": "integer"
             }
           }
@@ -5339,7 +5437,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/SolutionList"
+                  "$ref": "#/components/schemas/ListResponse_SolutionResponse_"
                 }
               }
             },
@@ -5644,22 +5742,29 @@
             }
           },
           {
-            "in": "query",
-            "name": "skip",
-            "required": false,
-            "schema": {
-              "default": 0,
-              "title": "Skip",
-              "type": "integer"
-            }
-          },
-          {
+            "description": "Page size, max 200",
             "in": "query",
             "name": "limit",
             "required": false,
             "schema": {
-              "default": 100,
+              "default": 50,
+              "description": "Page size, max 200",
+              "maximum": 200,
+              "minimum": 1,
               "title": "Limit",
+              "type": "integer"
+            }
+          },
+          {
+            "description": "Number of rows to skip",
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "description": "Number of rows to skip",
+              "minimum": 0,
+              "title": "Offset",
               "type": "integer"
             }
           }
@@ -5669,7 +5774,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/TeamList"
+                  "$ref": "#/components/schemas/ListResponse_TeamResponse_"
                 }
               }
             },

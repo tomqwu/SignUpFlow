@@ -38,8 +38,6 @@ class OrganizationResponse(BaseResponse, OrganizationBase):
     updated_at: datetime
 
 
-class OrganizationList(BaseModel):
-    """Schema for listing organizations."""
+from api.schemas.common import ListResponse
 
-    organizations: list[OrganizationResponse]
-    total: int
+OrganizationList = ListResponse[OrganizationResponse]
