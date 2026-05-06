@@ -8,7 +8,7 @@ work correctly to create test data before tests run.
 import pytest
 import requests
 
-API_BASE = "http://localhost:8000/api"
+API_BASE = "http://localhost:8000/api/v1"
 
 
 class TestSetupTestDataFunction:

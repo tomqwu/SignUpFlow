@@ -53,20 +53,22 @@ make migrate              # Run Alembic migrations
 ### Active API Routers (registered in `api/main.py`)
 
 ```
-/api/auth           — signup, login, email check
-/api/organizations  — CRUD for organizations
-/api/people         — CRUD for people, /me profile
-/api/teams          — CRUD for teams + membership
-/api/events         — CRUD for events + assignments
-/api/constraints    — CRUD for scheduling constraints (DSL-based)
-/api/solver         — POST /solve to generate schedules
-/api/solutions      — list/view generated solutions
-/api/availability   — time-off / blocked dates
-/api/conflicts      — conflict checking between person+event
-/api/invitations    — create/verify/accept invitation tokens
-/api/calendar       — ICS export of personal schedules
-/api/analytics      — volunteer stats, event stats
-/api/password-reset — request/confirm password reset
+/api/v1/auth           — signup, login, email check
+/api/v1/organizations  — CRUD for organizations
+/api/v1/people         — CRUD for people, /me profile
+/api/v1/teams          — CRUD for teams + membership
+/api/v1/events         — CRUD for events + assignments
+/api/v1/constraints    — CRUD for scheduling constraints (DSL-based)
+/api/v1/solver         — POST /solve to generate schedules
+/api/v1/solutions      — list/view generated solutions
+/api/v1/availability   — time-off / blocked dates
+/api/v1/conflicts      — conflict checking between person+event
+/api/v1/invitations    — create/verify/accept invitation tokens
+/api/v1/calendar       — ICS export of personal schedules
+/api/v1/analytics      — volunteer stats, event stats
+/api/v1/password-reset — request/confirm password reset
+
+Bare `/api` is a 308 redirect to `/api/v1` for one release.
 ```
 
 ### Key Files

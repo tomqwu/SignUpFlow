@@ -1,7 +1,7 @@
 """Unit tests for team endpoints."""
 
 
-API_BASE = "http://localhost:8000/api"
+API_BASE = "http://localhost:8000/api/v1"
 
 
 class TestTeamCreate:

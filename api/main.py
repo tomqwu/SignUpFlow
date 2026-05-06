@@ -120,23 +120,23 @@ def health_check():
     return health_status
 
 
-app.include_router(auth.router, prefix="/api")
-app.include_router(organizations.router, prefix="/api")
-app.include_router(people.router, prefix="/api")
-app.include_router(teams.router, prefix="/api")
-app.include_router(events.router, prefix="/api")
-app.include_router(constraints.router, prefix="/api")
-app.include_router(solver.router, prefix="/api")
-app.include_router(solutions.router, prefix="/api")
-app.include_router(availability.router, prefix="/api")
-app.include_router(conflicts.router, prefix="/api")
-app.include_router(password_reset.router, prefix="/api")
-app.include_router(analytics.router, prefix="/api")
-app.include_router(invitations.router, prefix="/api")
-app.include_router(calendar.router, prefix="/api")
+app.include_router(auth.router, prefix="/api/v1")
+app.include_router(organizations.router, prefix="/api/v1")
+app.include_router(people.router, prefix="/api/v1")
+app.include_router(teams.router, prefix="/api/v1")
+app.include_router(events.router, prefix="/api/v1")
+app.include_router(constraints.router, prefix="/api/v1")
+app.include_router(solver.router, prefix="/api/v1")
+app.include_router(solutions.router, prefix="/api/v1")
+app.include_router(availability.router, prefix="/api/v1")
+app.include_router(conflicts.router, prefix="/api/v1")
+app.include_router(password_reset.router, prefix="/api/v1")
+app.include_router(analytics.router, prefix="/api/v1")
+app.include_router(invitations.router, prefix="/api/v1")
+app.include_router(calendar.router, prefix="/api/v1")
 
 
-@app.get("/api", tags=["root"])
+@app.get("/api/v1", tags=["root"])
 def api_info():
     """API information endpoint."""
     return {
@@ -146,15 +146,23 @@ def api_info():
         "docs": "/docs",
         "redoc": "/redoc",
         "endpoints": {
-            "organizations": "/api/organizations",
-            "people": "/api/people",
-            "teams": "/api/teams",
-            "events": "/api/events",
-            "constraints": "/api/constraints",
-            "solver": "/api/solver/solve",
-            "solutions": "/api/solutions",
+            "organizations": "/api/v1/organizations",
+            "people": "/api/v1/people",
+            "teams": "/api/v1/teams",
+            "events": "/api/v1/events",
+            "constraints": "/api/v1/constraints",
+            "solver": "/api/v1/solver/solve",
+            "solutions": "/api/v1/solutions",
         },
     }
+
+
+@app.get("/api", tags=["root"], include_in_schema=False)
+def api_redirect():
+    """Redirect bare /api to versioned /api/v1 for one release."""
+    from fastapi.responses import RedirectResponse
+
+    return RedirectResponse(url="/api/v1", status_code=308)
 
 
 def start():

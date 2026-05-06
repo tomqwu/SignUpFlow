@@ -62,7 +62,7 @@ async def test_unauthenticated_request_to_protected_endpoint():
     """Test that requests without auth token are rejected."""
     async with AsyncClient(app=app, base_url="http://test") as ac:
         # Try to access protected endpoint without token
-        response = await ac.get("/api/people/me")
+        response = await ac.get("/api/v1/people/me")
 
         # Should return 403 Forbidden (no auth header provided)
         assert response.status_code == 403
@@ -73,7 +73,7 @@ async def test_invalid_token_rejected():
     """Test that invalid tokens are rejected."""
     async with AsyncClient(app=app, base_url="http://test") as ac:
         response = await ac.get(
-            "/api/people/me", headers={"Authorization": "Bearer invalid_token_xyz"}
+            "/api/v1/people/me", headers={"Authorization": "Bearer invalid_token_xyz"}
         )
 
         # Should return 401 Unauthorized
@@ -117,7 +117,7 @@ async def test_login_returns_jwt_token():
 
     async with AsyncClient(app=app, base_url="http://test") as ac:
         response = await ac.post(
-            "/api/auth/login",
+            "/api/v1/auth/login",
             json={"email": "security_test@example.com", "password": "testpass123"},
         )
 
@@ -174,7 +174,7 @@ async def test_authenticated_request_with_valid_token():
     token = create_access_token(data={"sub": "auth_test_person"})
 
     async with AsyncClient(app=app, base_url="http://test") as ac:
-        response = await ac.get("/api/people/me", headers={"Authorization": f"Bearer {token}"})
+        response = await ac.get("/api/v1/people/me", headers={"Authorization": f"Bearer {token}"})
 
         assert response.status_code == 200
         data = response.json()

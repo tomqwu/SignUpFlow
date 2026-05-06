@@ -91,14 +91,14 @@ class TestChurchScenario:
         hdrs, members = self._setup_church(client)
 
         # Verify all 6 people in org (pastor + 5 members)
-        resp = client.get(f"/api/people/?org_id={self.ORG}", headers=hdrs)
+        resp = client.get(f"/api/v1/people/?org_id={self.ORG}", headers=hdrs)
         assert resp.status_code == 200
         assert resp.json()["total"] == 6
 
         # Verify Sarah has dual roles
         members["sarah.chen@grace.org"]
         sarah_hdrs = auth_headers(client, "sarah.chen@grace.org", self.VOL_PW)
-        resp = client.get("/api/people/me", headers=sarah_hdrs)
+        resp = client.get("/api/v1/people/me", headers=sarah_hdrs)
         assert resp.status_code == 200
         profile = resp.json()
         assert "musician" in profile["roles"]
@@ -134,7 +134,7 @@ class TestChurchScenario:
         assert teaching["name"] == "Teaching Team"
 
         # Sarah is on BOTH teams
-        resp = client.get(f"/api/teams/?org_id={self.ORG}", headers=hdrs)
+        resp = client.get(f"/api/v1/teams/?org_id={self.ORG}", headers=hdrs)
         assert resp.status_code == 200
         assert resp.json()["total"] == 2
 
@@ -182,7 +182,7 @@ class TestChurchScenario:
             role_counts={"youth_leader": 1, "volunteer": 2},
         )
 
-        resp = client.get(f"/api/events/?org_id={self.ORG}")
+        resp = client.get(f"/api/v1/events/?org_id={self.ORG}")
         assert resp.status_code == 200
         assert resp.json()["total"] == 3
 
@@ -209,12 +209,12 @@ class TestChurchScenario:
         add_timeoff(client, james_id, wed_date, wed_date, reason="Work commitment")
 
         # Verify time-off recorded
-        resp = client.get(f"/api/availability/{maria_id}/timeoff")
+        resp = client.get(f"/api/v1/availability/{maria_id}/timeoff")
         assert resp.status_code == 200
         assert resp.json()["total"] == 1
         assert resp.json()["timeoff"][0]["reason"] == "Family vacation in Mexico"
 
-        resp = client.get(f"/api/availability/{james_id}/timeoff")
+        resp = client.get(f"/api/v1/availability/{james_id}/timeoff")
         assert resp.status_code == 200
         assert resp.json()["total"] == 1
 
@@ -245,7 +245,7 @@ class TestChurchScenario:
         from_date = (datetime.now() + timedelta(days=13)).strftime("%Y-%m-%d")
         to_date = (datetime.now() + timedelta(days=45)).strftime("%Y-%m-%d")
         resp = client.post(
-            "/api/solver/solve",
+            "/api/v1/solver/solve",
             json={
                 "org_id": self.ORG,
                 "from_date": from_date,
@@ -268,7 +268,7 @@ class TestChurchScenario:
         assert "per_person_counts" in fairness
 
         # Verify assignments via API
-        resp = client.get(f"/api/events/assignments/all?org_id={self.ORG}")
+        resp = client.get(f"/api/v1/events/assignments/all?org_id={self.ORG}")
         assert resp.status_code == 200
         assignments = resp.json()["assignments"]
         assert len(assignments) > 0
@@ -300,7 +300,7 @@ class TestChurchScenario:
 
         # Pastor assigns Sarah as musician
         resp = client.post(
-            f"/api/events/{event['id']}/assignments",
+            f"/api/v1/events/{event['id']}/assignments",
             json={
                 "person_id": sarah_id,
                 "action": "assign",
@@ -311,7 +311,7 @@ class TestChurchScenario:
         assert resp.status_code == 200
 
         # Verify assignment
-        resp = client.get(f"/api/events/assignments/all?org_id={self.ORG}")
+        resp = client.get(f"/api/v1/events/assignments/all?org_id={self.ORG}")
         assert resp.status_code == 200
         assignments = resp.json()["assignments"]
         sarah_assigned = [
@@ -344,7 +344,7 @@ class TestChurchScenario:
         from_date = (datetime.now() + timedelta(days=13)).strftime("%Y-%m-%d")
         to_date = (datetime.now() + timedelta(days=30)).strftime("%Y-%m-%d")
         client.post(
-            "/api/solver/solve",
+            "/api/v1/solver/solve",
             json={
                 "org_id": self.ORG,
                 "from_date": from_date,
@@ -357,12 +357,12 @@ class TestChurchScenario:
 
         # Sarah logs in and checks assignments
         sarah_hdrs = auth_headers(client, "sarah.chen@grace.org", self.VOL_PW)
-        resp = client.get("/api/people/me", headers=sarah_hdrs)
+        resp = client.get("/api/v1/people/me", headers=sarah_hdrs)
         assert resp.status_code == 200
         assert resp.json()["name"] == "Sarah Chen"
 
         # Assignments list is org-wide (Sarah can see it)
-        resp = client.get(f"/api/events/assignments/all?org_id={self.ORG}")
+        resp = client.get(f"/api/v1/events/assignments/all?org_id={self.ORG}")
         assert resp.status_code == 200
 
     # ------------------------------------------------------------------
@@ -384,7 +384,7 @@ class TestChurchScenario:
         )
 
         # Verify invitation is pending
-        resp = client.get(f"/api/invitations?org_id={self.ORG}", headers=hdrs)
+        resp = client.get(f"/api/v1/invitations?org_id={self.ORG}", headers=hdrs)
         assert resp.status_code == 200
         pending = [i for i in resp.json()["invitations"] if i["email"] == "rachel.wong@gmail.com"]
         assert len(pending) == 1
@@ -397,6 +397,6 @@ class TestChurchScenario:
 
         # Rachel can now log in
         rachel_hdrs = auth_headers(client, "rachel.wong@gmail.com", "Rachel123!")
-        resp = client.get("/api/people/me", headers=rachel_hdrs)
+        resp = client.get("/api/v1/people/me", headers=rachel_hdrs)
         assert resp.status_code == 200
         assert resp.json()["name"] == "Rachel Wong"
