@@ -1212,6 +1212,68 @@
         "title": "InvitationVerify",
         "type": "object"
       },
+      "ListResponse_AssignmentResponse_": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/AssignmentResponse"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "limit": {
+            "title": "Limit",
+            "type": "integer"
+          },
+          "offset": {
+            "title": "Offset",
+            "type": "integer"
+          },
+          "total": {
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "items",
+          "total",
+          "limit",
+          "offset"
+        ],
+        "title": "ListResponse[AssignmentResponse]",
+        "type": "object"
+      },
+      "ListResponse_AuditLogResponse_": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/AuditLogResponse"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "limit": {
+            "title": "Limit",
+            "type": "integer"
+          },
+          "offset": {
+            "title": "Offset",
+            "type": "integer"
+          },
+          "total": {
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "items",
+          "total",
+          "limit",
+          "offset"
+        ],
+        "title": "ListResponse[AuditLogResponse]",
+        "type": "object"
+      },
       "ListResponse_ConflictType_": {
         "properties": {
           "items": {
@@ -2657,22 +2719,57 @@
     },
     "/api/v1/assignments/me": {
       "get": {
-        "description": "Return every assignment belonging to the caller, scoped to their org via the join.",
+        "description": "Return assignments belonging to the caller, scoped to their org via the join.",
         "operationId": "listMyAssignments",
+        "parameters": [
+          {
+            "description": "Page size, max 200",
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 50,
+              "description": "Page size, max 200",
+              "maximum": 200,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          },
+          {
+            "description": "Number of rows to skip",
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "description": "Number of rows to skip",
+              "minimum": 0,
+              "title": "Offset",
+              "type": "integer"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "content": {
               "application/json": {
                 "schema": {
-                  "items": {
-                    "$ref": "#/components/schemas/AssignmentResponse"
-                  },
-                  "title": "Response List My Assignments Api V1 Assignments Me Get",
-                  "type": "array"
+                  "$ref": "#/components/schemas/ListResponse_AssignmentResponse_"
                 }
               }
             },
             "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
           }
         },
         "security": [
@@ -2966,11 +3063,13 @@
             }
           },
           {
+            "description": "Page size, max 200",
             "in": "query",
             "name": "limit",
             "required": false,
             "schema": {
               "default": 50,
+              "description": "Page size, max 200",
               "maximum": 200,
               "minimum": 1,
               "title": "Limit",
@@ -2978,11 +3077,13 @@
             }
           },
           {
+            "description": "Number of rows to skip",
             "in": "query",
             "name": "offset",
             "required": false,
             "schema": {
               "default": 0,
+              "description": "Number of rows to skip",
               "minimum": 0,
               "title": "Offset",
               "type": "integer"
@@ -2994,11 +3095,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "items": {
-                    "$ref": "#/components/schemas/AuditLogResponse"
-                  },
-                  "title": "Response List Audit Logs Api V1 Audit Logs Get",
-                  "type": "array"
+                  "$ref": "#/components/schemas/ListResponse_AuditLogResponse_"
                 }
               }
             },

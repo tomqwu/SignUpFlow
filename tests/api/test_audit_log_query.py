@@ -75,7 +75,7 @@ class TestAuditLogScoping:
 
         resp = client.get("/api/v1/audit-logs", headers=admin_hdrs)
         assert resp.status_code == 200
-        rows = resp.json()
+        rows = resp.json()["items"]
         assert all(r["organization_id"] == org_id for r in rows)
 
 
@@ -91,7 +91,7 @@ class TestAuditLogFilters:
             f"/api/v1/audit-logs?action={AuditAction.LOGIN_SUCCESS}", headers=admin_hdrs
         )
         assert resp.status_code == 200
-        rows = resp.json()
+        rows = resp.json()["items"]
         assert all(r["action"] == AuditAction.LOGIN_SUCCESS for r in rows)
         assert len(rows) >= 1
 
@@ -107,7 +107,7 @@ class TestAuditLogFilters:
         start = (now - timedelta(days=1)).isoformat().replace("+00:00", "Z")
         resp = client.get("/api/v1/audit-logs", params={"start_date": start}, headers=admin_hdrs)
         assert resp.status_code == 200
-        rows = resp.json()
+        rows = resp.json()["items"]
         # All returned rows must be within the range
         for r in rows:
             assert r["timestamp"] >= start
@@ -126,7 +126,7 @@ class TestAuditLogFilters:
         resp = client.get(
             f"/api/v1/audit-logs?action={AuditAction.LOGIN_SUCCESS}", headers=admin_hdrs
         )
-        rows = resp.json()
+        rows = resp.json()["items"]
         timestamps = [r["timestamp"] for r in rows]
         assert timestamps == sorted(timestamps, reverse=True)
 
@@ -147,7 +147,7 @@ class TestAuditLogPagination:
 
         resp = client.get("/api/v1/audit-logs?limit=2", headers=admin_hdrs)
         assert resp.status_code == 200
-        rows = resp.json()
+        rows = resp.json()["items"]
         assert len(rows) == 2
 
 
