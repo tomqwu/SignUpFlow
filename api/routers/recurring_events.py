@@ -19,6 +19,7 @@ from sqlalchemy.orm import Session
 from api.database import get_db
 from api.dependencies import get_current_admin_user, get_current_user, verify_org_member
 from api.models import Event, Person, RecurringSeries
+from api.schemas.common import ListResponse, PaginationParams, get_pagination_params
 from api.services.recurrence_generator import (
     RecurrenceGenerationError,
     detect_holiday_conflicts,
@@ -149,7 +150,7 @@ def create_recurring_series(
         id=str(uuid.uuid4()),
         org_id=org_id,
         created_by=current_admin.id,
-        **request.dict(exclude={"start_time"}),
+        **request.model_dump(exclude={"start_time"}),
     )
 
     # Validate series duration
@@ -178,7 +179,7 @@ def create_recurring_series(
         id=temp_series.id,
         org_id=org_id,
         created_by=current_admin.id,
-        **request.dict(exclude={"start_time"}),
+        **request.model_dump(exclude={"start_time"}),
     )
 
     db.add(series)
@@ -205,46 +206,48 @@ def create_recurring_series(
     db.refresh(series)
 
     # Add occurrence count to response
-    response = RecurringSeriesResponse.from_orm(series)
+    response = RecurringSeriesResponse.model_validate(series)
     response.occurrence_preview_count = len(occurrences)
 
     return response
 
 
-@router.get("/recurring-series", response_model=list[RecurringSeriesResponse])
+@router.get("/recurring-series", response_model=ListResponse[RecurringSeriesResponse])
 def list_recurring_series(
     org_id: str = Query(..., description="Organization ID"),
     active_only: bool = Query(True, description="Only return active series"),
+    pagination: PaginationParams = Depends(get_pagination_params),
     current_user: Person = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    """
-    List all recurring series for an organization.
-
-    Returns all series the user has access to (must be in same organization).
-    """
-    # Verify user belongs to organization
+    """List all recurring series for an organization, scoped to the caller's org."""
     verify_org_member(current_user, org_id)
 
     query = db.query(RecurringSeries).filter(RecurringSeries.org_id == org_id)
-
     if active_only:
-        query = query.filter(RecurringSeries.active is True)
+        query = query.filter(RecurringSeries.active.is_(True))
 
-    series_list = query.order_by(RecurringSeries.created_at.desc()).all()
+    total = query.count()
+    series_list = (
+        query.order_by(RecurringSeries.created_at.desc())
+        .offset(pagination.offset)
+        .limit(pagination.limit)
+        .all()
+    )
 
-    # Add occurrence count for each series
     response_list = []
     for series in series_list:
-        response = RecurringSeriesResponse.from_orm(series)
-
-        # Count occurrences
+        response = RecurringSeriesResponse.model_validate(series)
         occurrence_count = db.query(Event).filter(Event.series_id == series.id).count()
         response.occurrence_preview_count = occurrence_count
-
         response_list.append(response)
 
-    return response_list
+    return {
+        "items": response_list,
+        "total": total,
+        "limit": pagination.limit,
+        "offset": pagination.offset,
+    }
 
 
 @router.get("/recurring-series/{series_id}", response_model=RecurringSeriesResponse)
@@ -265,7 +268,7 @@ def get_recurring_series(
     verify_org_member(current_user, series.org_id)
 
     # Add occurrence count
-    response = RecurringSeriesResponse.from_orm(series)
+    response = RecurringSeriesResponse.model_validate(series)
     occurrence_count = db.query(Event).filter(Event.series_id == series.id).count()
     response.occurrence_preview_count = occurrence_count
 
@@ -395,8 +398,11 @@ def delete_recurring_series(
     # Verify admin belongs to same organization
     verify_org_member(current_admin, series.org_id)
 
-    # Delete all occurrences (cascade will delete exceptions)
-    occurrences = db.query(Event).filter(Event.series_id == series_id).all()
+    # Delete all occurrences (cascade will delete exceptions). Scope by both
+    # series_id and org_id so the tenancy guard sees an org_id filter.
+    occurrences = (
+        db.query(Event).filter(Event.series_id == series_id, Event.org_id == series.org_id).all()
+    )
     occurrence_count = len(occurrences)
 
     for occ in occurrences:
@@ -453,4 +459,4 @@ def update_series_template(
     db.commit()
     db.refresh(series)
 
-    return RecurringSeriesResponse.from_orm(series)
+    return RecurringSeriesResponse.model_validate(series)

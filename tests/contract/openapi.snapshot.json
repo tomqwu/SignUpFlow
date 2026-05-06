@@ -1520,6 +1520,37 @@
         "title": "ListResponse[PersonResponse]",
         "type": "object"
       },
+      "ListResponse_RecurringSeriesResponse_": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/RecurringSeriesResponse"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "limit": {
+            "title": "Limit",
+            "type": "integer"
+          },
+          "offset": {
+            "title": "Offset",
+            "type": "integer"
+          },
+          "total": {
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "items",
+          "total",
+          "limit",
+          "offset"
+        ],
+        "title": "ListResponse[RecurringSeriesResponse]",
+        "type": "object"
+      },
       "ListResponse_SolutionResponse_": {
         "properties": {
           "items": {
@@ -1602,6 +1633,78 @@
           "password"
         ],
         "title": "LoginRequest",
+        "type": "object"
+      },
+      "OccurrencePreview": {
+        "description": "Preview of generated occurrences.",
+        "properties": {
+          "end_time": {
+            "format": "date-time",
+            "title": "End Time",
+            "type": "string"
+          },
+          "holiday_label": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Holiday Label"
+          },
+          "is_holiday_conflict": {
+            "default": false,
+            "title": "Is Holiday Conflict",
+            "type": "boolean"
+          },
+          "location": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Location"
+          },
+          "occurrence_sequence": {
+            "title": "Occurrence Sequence",
+            "type": "integer"
+          },
+          "role_requirements": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Role Requirements"
+          },
+          "start_time": {
+            "format": "date-time",
+            "title": "Start Time",
+            "type": "string"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "occurrence_sequence",
+          "start_time",
+          "end_time",
+          "title",
+          "location",
+          "role_requirements"
+        ],
+        "title": "OccurrencePreview",
         "type": "object"
       },
       "OrganizationCreate": {
@@ -2066,6 +2169,436 @@
           }
         },
         "title": "PersonUpdate",
+        "type": "object"
+      },
+      "PreviewRequest": {
+        "description": "Request for previewing occurrences without saving.",
+        "properties": {
+          "duration": {
+            "title": "Duration",
+            "type": "integer"
+          },
+          "end_condition_type": {
+            "title": "End Condition Type",
+            "type": "string"
+          },
+          "end_date": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "End Date"
+          },
+          "frequency_interval": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Frequency Interval"
+          },
+          "occurrence_count": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Occurrence Count"
+          },
+          "pattern_type": {
+            "title": "Pattern Type",
+            "type": "string"
+          },
+          "selected_days": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Selected Days"
+          },
+          "start_date": {
+            "format": "date",
+            "title": "Start Date",
+            "type": "string"
+          },
+          "start_time": {
+            "format": "time",
+            "title": "Start Time",
+            "type": "string"
+          },
+          "weekday_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Weekday Name"
+          },
+          "weekday_position": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Weekday Position"
+          }
+        },
+        "required": [
+          "pattern_type",
+          "start_date",
+          "start_time",
+          "duration",
+          "end_condition_type"
+        ],
+        "title": "PreviewRequest",
+        "type": "object"
+      },
+      "RecurringSeriesCreate": {
+        "description": "Request model for creating recurring series.",
+        "properties": {
+          "duration": {
+            "description": "Duration in minutes",
+            "exclusiveMinimum": 0.0,
+            "title": "Duration",
+            "type": "integer"
+          },
+          "end_condition_type": {
+            "pattern": "^(date|count|indefinite)$",
+            "title": "End Condition Type",
+            "type": "string"
+          },
+          "end_date": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "End Date"
+          },
+          "frequency_interval": {
+            "anyOf": [
+              {
+                "exclusiveMinimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Frequency Interval"
+          },
+          "location": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Location"
+          },
+          "occurrence_count": {
+            "anyOf": [
+              {
+                "exclusiveMinimum": 0.0,
+                "maximum": 200.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Occurrence Count"
+          },
+          "pattern_type": {
+            "pattern": "^(weekly|biweekly|monthly|custom)$",
+            "title": "Pattern Type",
+            "type": "string"
+          },
+          "role_requirements": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Role Requirements"
+          },
+          "selected_days": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Selected Days"
+          },
+          "start_date": {
+            "format": "date",
+            "title": "Start Date",
+            "type": "string"
+          },
+          "start_time": {
+            "format": "time",
+            "title": "Start Time",
+            "type": "string"
+          },
+          "title": {
+            "maxLength": 255,
+            "minLength": 1,
+            "title": "Title",
+            "type": "string"
+          },
+          "weekday_name": {
+            "anyOf": [
+              {
+                "pattern": "^(monday|tuesday|wednesday|thursday|friday|saturday|sunday)$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Weekday Name"
+          },
+          "weekday_position": {
+            "anyOf": [
+              {
+                "pattern": "^(first|second|third|fourth|last)$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Weekday Position"
+          }
+        },
+        "required": [
+          "title",
+          "duration",
+          "pattern_type",
+          "start_date",
+          "start_time",
+          "end_condition_type"
+        ],
+        "title": "RecurringSeriesCreate",
+        "type": "object"
+      },
+      "RecurringSeriesResponse": {
+        "description": "Response model for recurring series.",
+        "properties": {
+          "active": {
+            "title": "Active",
+            "type": "boolean"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "created_by": {
+            "title": "Created By",
+            "type": "string"
+          },
+          "duration": {
+            "title": "Duration",
+            "type": "integer"
+          },
+          "end_condition_type": {
+            "title": "End Condition Type",
+            "type": "string"
+          },
+          "end_date": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "End Date"
+          },
+          "frequency_interval": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Frequency Interval"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "location": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Location"
+          },
+          "occurrence_count": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Occurrence Count"
+          },
+          "occurrence_preview_count": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Occurrence Preview Count"
+          },
+          "org_id": {
+            "title": "Org Id",
+            "type": "string"
+          },
+          "pattern_type": {
+            "title": "Pattern Type",
+            "type": "string"
+          },
+          "role_requirements": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Role Requirements"
+          },
+          "selected_days": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Selected Days"
+          },
+          "start_date": {
+            "format": "date",
+            "title": "Start Date",
+            "type": "string"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          },
+          "updated_at": {
+            "format": "date-time",
+            "title": "Updated At",
+            "type": "string"
+          },
+          "weekday_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Weekday Name"
+          },
+          "weekday_position": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Weekday Position"
+          }
+        },
+        "required": [
+          "id",
+          "org_id",
+          "created_by",
+          "title",
+          "duration",
+          "location",
+          "role_requirements",
+          "pattern_type",
+          "frequency_interval",
+          "selected_days",
+          "weekday_position",
+          "weekday_name",
+          "start_date",
+          "end_condition_type",
+          "end_date",
+          "occurrence_count",
+          "active",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "RecurringSeriesResponse",
         "type": "object"
       },
       "SignupRequest": {
@@ -6076,6 +6609,449 @@
         "summary": "Update Person",
         "tags": [
           "people"
+        ]
+      }
+    },
+    "/api/v1/recurring-series": {
+      "get": {
+        "description": "List all recurring series for an organization, scoped to the caller's org.",
+        "operationId": "listRecurringSeries",
+        "parameters": [
+          {
+            "description": "Organization ID",
+            "in": "query",
+            "name": "org_id",
+            "required": true,
+            "schema": {
+              "description": "Organization ID",
+              "title": "Org Id",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Only return active series",
+            "in": "query",
+            "name": "active_only",
+            "required": false,
+            "schema": {
+              "default": true,
+              "description": "Only return active series",
+              "title": "Active Only",
+              "type": "boolean"
+            }
+          },
+          {
+            "description": "Page size, max 200",
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 50,
+              "description": "Page size, max 200",
+              "maximum": 200,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          },
+          {
+            "description": "Number of rows to skip",
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "description": "Number of rows to skip",
+              "minimum": 0,
+              "title": "Offset",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListResponse_RecurringSeriesResponse_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "List Recurring Series",
+        "tags": [
+          "recurring-events"
+        ]
+      },
+      "post": {
+        "description": "Create a new recurring event series and generate all occurrences.\n\nRequires admin access. Creates:\n1. RecurringSeries template\n2. Individual Event occurrences based on pattern\n3. Links occurrences to series\n\nReturns the created series with occurrence count.",
+        "operationId": "createRecurringSeries",
+        "parameters": [
+          {
+            "description": "Organization ID",
+            "in": "query",
+            "name": "org_id",
+            "required": true,
+            "schema": {
+              "description": "Organization ID",
+              "title": "Org Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RecurringSeriesCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecurringSeriesResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Create Recurring Series",
+        "tags": [
+          "recurring-events"
+        ]
+      }
+    },
+    "/api/v1/recurring-series/preview": {
+      "post": {
+        "description": "Preview occurrences for a recurring pattern WITHOUT creating them.\n\nUsed by the UI calendar preview to show occurrences before saving.\nReturns up to 100 occurrences for preview.",
+        "operationId": "previewOccurrences",
+        "parameters": [
+          {
+            "description": "Organization ID",
+            "in": "query",
+            "name": "org_id",
+            "required": true,
+            "schema": {
+              "description": "Organization ID",
+              "title": "Org Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PreviewRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/OccurrencePreview"
+                  },
+                  "title": "Response Preview Occurrences Api V1 Recurring Series Preview Post",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Preview Occurrences",
+        "tags": [
+          "recurring-events"
+        ]
+      }
+    },
+    "/api/v1/recurring-series/{series_id}": {
+      "delete": {
+        "description": "Delete a recurring series and all its occurrences.\n\nRequires admin access. Deletes:\n1. All event occurrences linked to series\n2. All exceptions for those occurrences\n3. The series itself\n\nWarning: This is irreversible!",
+        "operationId": "deleteRecurringSeries",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "series_id",
+            "required": true,
+            "schema": {
+              "title": "Series Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Delete Recurring Series",
+        "tags": [
+          "recurring-events"
+        ]
+      },
+      "get": {
+        "description": "Get a specific recurring series by ID.\n\nReturns series details with occurrence count.",
+        "operationId": "getRecurringSeries",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "series_id",
+            "required": true,
+            "schema": {
+              "title": "Series Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecurringSeriesResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Get Recurring Series",
+        "tags": [
+          "recurring-events"
+        ]
+      },
+      "put": {
+        "description": "Update the series template (affects future occurrences).\n\nOnly updates the template - existing occurrences are NOT changed.\nUse this to modify what future occurrences will look like.\n\nNote: To modify recurrence pattern, delete and recreate the series.",
+        "operationId": "updateSeriesTemplate",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "series_id",
+            "required": true,
+            "schema": {
+              "title": "Series Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "title",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Title"
+            }
+          },
+          {
+            "in": "query",
+            "name": "location",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Location"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "anyOf": [
+                  {
+                    "additionalProperties": true,
+                    "type": "object"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Role Requirements"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Update Series Template",
+        "tags": [
+          "recurring-events"
+        ]
+      }
+    },
+    "/api/v1/recurring-series/{series_id}/occurrences": {
+      "get": {
+        "description": "Get all event occurrences for a recurring series.\n\nReturns list of Event objects with exception indicators.",
+        "operationId": "getSeriesOccurrences",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "series_id",
+            "required": true,
+            "schema": {
+              "title": "Series Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Get Series Occurrences",
+        "tags": [
+          "recurring-events"
         ]
       }
     },
