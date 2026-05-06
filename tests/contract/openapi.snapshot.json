@@ -1551,6 +1551,37 @@
         "title": "ListResponse[RecurringSeriesResponse]",
         "type": "object"
       },
+      "ListResponse_ResourceResponse_": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/ResourceResponse"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "limit": {
+            "title": "Limit",
+            "type": "integer"
+          },
+          "offset": {
+            "title": "Offset",
+            "type": "integer"
+          },
+          "total": {
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "items",
+          "total",
+          "limit",
+          "offset"
+        ],
+        "title": "ListResponse[ResourceResponse]",
+        "type": "object"
+      },
       "ListResponse_SolutionResponse_": {
         "properties": {
           "items": {
@@ -2599,6 +2630,197 @@
           "updated_at"
         ],
         "title": "RecurringSeriesResponse",
+        "type": "object"
+      },
+      "ResourceCreate": {
+        "properties": {
+          "capacity": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Optional headcount cap; null = unbounded",
+            "title": "Capacity"
+          },
+          "extra_data": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Free-form metadata",
+            "title": "Extra Data"
+          },
+          "id": {
+            "description": "Caller-supplied unique id",
+            "maxLength": 64,
+            "minLength": 1,
+            "title": "Id",
+            "type": "string"
+          },
+          "location": {
+            "maxLength": 255,
+            "minLength": 1,
+            "title": "Location",
+            "type": "string"
+          },
+          "org_id": {
+            "description": "Owning organization",
+            "title": "Org Id",
+            "type": "string"
+          },
+          "type": {
+            "description": "e.g. 'room', 'venue', 'equipment'",
+            "maxLength": 64,
+            "minLength": 1,
+            "title": "Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "type",
+          "location",
+          "id",
+          "org_id"
+        ],
+        "title": "ResourceCreate",
+        "type": "object"
+      },
+      "ResourceResponse": {
+        "properties": {
+          "capacity": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Optional headcount cap; null = unbounded",
+            "title": "Capacity"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "extra_data": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Free-form metadata",
+            "title": "Extra Data"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "location": {
+            "maxLength": 255,
+            "minLength": 1,
+            "title": "Location",
+            "type": "string"
+          },
+          "org_id": {
+            "title": "Org Id",
+            "type": "string"
+          },
+          "type": {
+            "description": "e.g. 'room', 'venue', 'equipment'",
+            "maxLength": 64,
+            "minLength": 1,
+            "title": "Type",
+            "type": "string"
+          },
+          "updated_at": {
+            "format": "date-time",
+            "title": "Updated At",
+            "type": "string"
+          }
+        },
+        "required": [
+          "type",
+          "location",
+          "id",
+          "org_id",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "ResourceResponse",
+        "type": "object"
+      },
+      "ResourceUpdate": {
+        "description": "All fields optional (PATCH-style update).",
+        "properties": {
+          "capacity": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Capacity"
+          },
+          "extra_data": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Extra Data"
+          },
+          "location": {
+            "anyOf": [
+              {
+                "maxLength": 255,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Location"
+          },
+          "type": {
+            "anyOf": [
+              {
+                "maxLength": 64,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Type"
+          }
+        },
+        "title": "ResourceUpdate",
         "type": "object"
       },
       "SignupRequest": {
@@ -7052,6 +7274,289 @@
         "summary": "Get Series Occurrences",
         "tags": [
           "recurring-events"
+        ]
+      }
+    },
+    "/api/v1/resources/": {
+      "get": {
+        "description": "List resources for one organization. Caller must be a member.",
+        "operationId": "listResources",
+        "parameters": [
+          {
+            "description": "Organization ID \u2014 required (single-tenant scope)",
+            "in": "query",
+            "name": "org_id",
+            "required": true,
+            "schema": {
+              "description": "Organization ID \u2014 required (single-tenant scope)",
+              "title": "Org Id",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Filter by resource type",
+            "in": "query",
+            "name": "type",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Filter by resource type",
+              "title": "Type"
+            }
+          },
+          {
+            "description": "Page size, max 200",
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 50,
+              "description": "Page size, max 200",
+              "maximum": 200,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          },
+          {
+            "description": "Number of rows to skip",
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "description": "Number of rows to skip",
+              "minimum": 0,
+              "title": "Offset",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListResponse_ResourceResponse_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "List Resources",
+        "tags": [
+          "resources"
+        ]
+      },
+      "post": {
+        "description": "Create a new resource (admin only, scoped to admin's org).",
+        "operationId": "createResource",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ResourceCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResourceResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Create Resource",
+        "tags": [
+          "resources"
+        ]
+      }
+    },
+    "/api/v1/resources/{resource_id}": {
+      "delete": {
+        "description": "Delete a resource (admin only).\n\nRefuses with 409 if any Event still references the resource \u2014 preserves\nreferential integrity without forcing the admin to discover dangling FKs\nby surprise.",
+        "operationId": "deleteResource",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "resource_id",
+            "required": true,
+            "schema": {
+              "title": "Resource Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Delete Resource",
+        "tags": [
+          "resources"
+        ]
+      },
+      "get": {
+        "description": "Get a single resource by id; tenancy enforced via the row's org_id.",
+        "operationId": "getResource",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "resource_id",
+            "required": true,
+            "schema": {
+              "title": "Resource Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResourceResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Get Resource",
+        "tags": [
+          "resources"
+        ]
+      },
+      "put": {
+        "description": "Update a resource (admin only). org_id is immutable.",
+        "operationId": "updateResource",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "resource_id",
+            "required": true,
+            "schema": {
+              "title": "Resource Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ResourceUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResourceResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Update Resource",
+        "tags": [
+          "resources"
         ]
       }
     },
