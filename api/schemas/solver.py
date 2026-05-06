@@ -32,6 +32,13 @@ class FairnessMetrics(BaseModel):
     per_person_counts: dict[str, int]
 
 
+class StabilityMetrics(BaseModel):
+    """Stability metrics relative to the org's currently-published solution."""
+
+    moves_from_published: int = 0
+    affected_persons: int = 0
+
+
 class SolutionMetrics(BaseModel):
     """Schema for solution metrics."""
 
@@ -40,6 +47,7 @@ class SolutionMetrics(BaseModel):
     health_score: float
     solve_ms: float
     fairness: FairnessMetrics
+    stability: StabilityMetrics = Field(default_factory=StabilityMetrics)
 
 
 class AssignmentInfo(BaseModel):

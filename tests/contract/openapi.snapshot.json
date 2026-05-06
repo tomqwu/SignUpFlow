@@ -3251,6 +3251,9 @@
           "solve_ms": {
             "title": "Solve Ms",
             "type": "number"
+          },
+          "stability": {
+            "$ref": "#/components/schemas/StabilityMetrics"
           }
         },
         "required": [
@@ -3419,6 +3422,23 @@
           "message"
         ],
         "title": "SolveResponse",
+        "type": "object"
+      },
+      "StabilityMetrics": {
+        "description": "Stability metrics relative to the org's currently-published solution.",
+        "properties": {
+          "affected_persons": {
+            "default": 0,
+            "title": "Affected Persons",
+            "type": "integer"
+          },
+          "moves_from_published": {
+            "default": 0,
+            "title": "Moves From Published",
+            "type": "integer"
+          }
+        },
+        "title": "StabilityMetrics",
         "type": "object"
       },
       "TeamCreate": {
