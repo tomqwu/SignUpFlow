@@ -16,9 +16,15 @@ from api.core.models import (
 )
 from api.database import get_db
 from api.dependencies import get_current_admin_user, verify_org_member
-from api.models import Assignment, AuditAction, Event, Organization, Person, Solution
+from api.models import Assignment, AuditAction, AuditLog, Event, Organization, Person, Solution
 from api.schemas.common import PaginationParams, get_pagination_params
-from api.schemas.solver import ExportFormat, SolutionList, SolutionResponse
+from api.schemas.solver import (
+    AssignmentChange,
+    ExportFormat,
+    SolutionDiffResponse,
+    SolutionList,
+    SolutionResponse,
+)
 from api.timeutils import utcnow
 from api.utils.audit_logger import log_audit_event
 from api.utils.pdf_export import generate_schedule_pdf
@@ -440,6 +446,128 @@ def unpublish_solution(
         organization_id=solution.org_id,
         resource_type="solution",
         resource_id=str(solution.id),
+        ip_address=http_request.client.host if http_request.client else None,
+        user_agent=http_request.headers.get("user-agent"),
+    )
+
+    assignment_count = db.query(Assignment).filter(Assignment.solution_id == solution.id).count()
+    response = SolutionResponse.model_validate(solution)
+    response.assignment_count = assignment_count
+    return response
+
+
+@router.get("/{solution_a_id}/compare/{solution_b_id}", response_model=SolutionDiffResponse)
+def compare_solutions(
+    solution_a_id: int,
+    solution_b_id: int,
+    current_admin: Person = Depends(get_current_admin_user),
+    db: Session = Depends(get_db),
+):
+    """Diff two solutions (admin only). Both must belong to the same org as the caller."""
+    sol_a = db.query(Solution).filter(Solution.id == solution_a_id).first()
+    if not sol_a:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Solution {solution_a_id} not found",
+        )
+    sol_b = db.query(Solution).filter(Solution.id == solution_b_id).first()
+    if not sol_b:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Solution {solution_b_id} not found",
+        )
+    verify_org_member(current_admin, sol_a.org_id)
+    verify_org_member(current_admin, sol_b.org_id)
+
+    a_rows = db.query(Assignment).filter(Assignment.solution_id == sol_a.id).all()
+    b_rows = db.query(Assignment).filter(Assignment.solution_id == sol_b.id).all()
+
+    a_keys = {(r.event_id, r.person_id, r.role) for r in a_rows}
+    b_keys = {(r.event_id, r.person_id, r.role) for r in b_rows}
+
+    removed = a_keys - b_keys
+    added = b_keys - a_keys
+    unchanged_count = len(a_keys & b_keys)
+
+    affected_persons = sorted({pid for (_, pid, _) in removed | added})
+
+    return SolutionDiffResponse(
+        solution_a_id=sol_a.id,
+        solution_b_id=sol_b.id,
+        added=[AssignmentChange(event_id=e, person_id=p, role=r) for (e, p, r) in added],
+        removed=[AssignmentChange(event_id=e, person_id=p, role=r) for (e, p, r) in removed],
+        unchanged_count=unchanged_count,
+        affected_persons=affected_persons,
+        moves=len(added) + len(removed),
+    )
+
+
+@router.post("/{solution_id}/rollback", response_model=SolutionResponse)
+def rollback_solution(
+    solution_id: int,
+    http_request: Request,
+    current_admin: Person = Depends(get_current_admin_user),
+    db: Session = Depends(get_db),
+):
+    """Rollback to a previously-published solution (admin only).
+
+    Republishes the target and unpublishes whatever is currently published in
+    the same org. The target must have been published at some point before
+    (i.e. an audit row recording its publish/rollback exists); otherwise 400.
+    """
+    solution = db.query(Solution).filter(Solution.id == solution_id).first()
+    if not solution:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Solution {solution_id} not found",
+        )
+    verify_org_member(current_admin, solution.org_id)
+
+    # Eligibility: existing publish_solution nulls published_at on the prior
+    # when it replaces, so published_at is unreliable. Use the audit trail.
+    was_ever_published = (
+        db.query(AuditLog)
+        .filter(
+            AuditLog.action.in_([AuditAction.SOLUTION_PUBLISHED, AuditAction.SOLUTION_ROLLED_BACK]),
+            AuditLog.resource_id == str(solution.id),
+        )
+        .count()
+        > 0
+    )
+    if not was_ever_published:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Cannot roll back to a solution that has never been published",
+        )
+
+    prior = (
+        db.query(Solution)
+        .filter(
+            Solution.org_id == solution.org_id,
+            Solution.is_published.is_(True),
+            Solution.id != solution.id,
+        )
+        .all()
+    )
+    for s in prior:
+        s.is_published = False
+        s.published_at = None
+
+    now = utcnow()
+    solution.is_published = True
+    solution.published_at = now
+    db.commit()
+    db.refresh(solution)
+
+    log_audit_event(
+        db,
+        action=AuditAction.SOLUTION_ROLLED_BACK,
+        user_id=current_admin.id,
+        user_email=current_admin.email,
+        organization_id=solution.org_id,
+        resource_type="solution",
+        resource_id=str(solution.id),
+        details={"unpublished_prior_ids": [s.id for s in prior]},
         ip_address=http_request.client.host if http_request.client else None,
         user_agent=http_request.headers.get("user-agent"),
     )

@@ -905,6 +905,7 @@ class AuditAction:
     # Solution lifecycle
     SOLUTION_PUBLISHED = "solution.published"
     SOLUTION_UNPUBLISHED = "solution.unpublished"
+    SOLUTION_ROLLED_BACK = "solution.rolled_back"
 
     # Bulk operations
     BULK_IMPORT = "data.bulk_import"

@@ -60,7 +60,7 @@ make migrate              # Run Alembic migrations
 /api/v1/events         — CRUD for events + assignments
 /api/v1/constraints    — CRUD for scheduling constraints (DSL-based)
 /api/v1/solver         — POST /solve to generate schedules
-/api/v1/solutions      — list/view generated solutions
+/api/v1/solutions      — list/view, compare, publish/unpublish/rollback
 /api/v1/availability   — time-off / blocked dates
 /api/v1/conflicts      — conflict checking between person+event
 /api/v1/invitations    — create/verify/accept invitation tokens
