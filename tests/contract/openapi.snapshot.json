@@ -1072,6 +1072,36 @@
         "title": "FairnessMetrics",
         "type": "object"
       },
+      "FairnessStats": {
+        "description": "Fairness metrics + histogram of per-person assignment counts.",
+        "properties": {
+          "histogram": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "title": "Histogram",
+            "type": "object"
+          },
+          "per_person_counts": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "title": "Per Person Counts",
+            "type": "object"
+          },
+          "stdev": {
+            "title": "Stdev",
+            "type": "number"
+          }
+        },
+        "required": [
+          "stdev",
+          "per_person_counts",
+          "histogram"
+        ],
+        "title": "FairnessStats",
+        "type": "object"
+      },
       "HTTPValidationError": {
         "properties": {
           "detail": {
@@ -3346,6 +3376,32 @@
         "title": "SolutionResponse",
         "type": "object"
       },
+      "SolutionStatsResponse": {
+        "description": "Stats response for ``GET /solutions/{id}/stats`` (admin only).",
+        "properties": {
+          "fairness": {
+            "$ref": "#/components/schemas/FairnessStats"
+          },
+          "solution_id": {
+            "title": "Solution Id",
+            "type": "integer"
+          },
+          "stability": {
+            "$ref": "#/components/schemas/StabilityMetrics"
+          },
+          "workload": {
+            "$ref": "#/components/schemas/WorkloadStats"
+          }
+        },
+        "required": [
+          "solution_id",
+          "fairness",
+          "stability",
+          "workload"
+        ],
+        "title": "SolutionStatsResponse",
+        "type": "object"
+      },
       "SolveRequest": {
         "description": "Schema for solve request.",
         "properties": {
@@ -3752,6 +3808,40 @@
           "severity"
         ],
         "title": "ViolationInfo",
+        "type": "object"
+      },
+      "WorkloadStats": {
+        "description": "Aggregate workload distribution stats.",
+        "properties": {
+          "distinct_persons_assigned": {
+            "title": "Distinct Persons Assigned",
+            "type": "integer"
+          },
+          "max_events_per_person": {
+            "title": "Max Events Per Person",
+            "type": "integer"
+          },
+          "median_events_per_person": {
+            "title": "Median Events Per Person",
+            "type": "number"
+          },
+          "min_events_per_person": {
+            "title": "Min Events Per Person",
+            "type": "integer"
+          },
+          "total_events_assigned": {
+            "title": "Total Events Assigned",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "max_events_per_person",
+          "min_events_per_person",
+          "median_events_per_person",
+          "total_events_assigned",
+          "distinct_persons_assigned"
+        ],
+        "title": "WorkloadStats",
         "type": "object"
       }
     },
@@ -8671,6 +8761,54 @@
           }
         ],
         "summary": "Rollback Solution",
+        "tags": [
+          "solutions"
+        ]
+      }
+    },
+    "/api/v1/solutions/{solution_id}/stats": {
+      "get": {
+        "description": "Stats endpoint (admin only): fairness histogram + stability + workload distribution.",
+        "operationId": "getSolutionStats",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "solution_id",
+            "required": true,
+            "schema": {
+              "title": "Solution Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SolutionStatsResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Get Solution Stats",
         "tags": [
           "solutions"
         ]
