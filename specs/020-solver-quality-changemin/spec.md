@@ -92,9 +92,10 @@ Evaluates per `Person` over a rolling N-day window centered on each candidate ev
 
 ### Performance SLO target
 
-- **Synthetic workload**: 1000 events × 500 people, ~3 roles per event, average 5 availability windows per person.
+- **Synthetic workload**: 1000 events × 500 people, ~3 roles per event, 5 availability windows per person.
 - **Target**: solve_ms p95 < 5000ms (5s) on a developer laptop (Apple M-series or equivalent).
-- **Calibrated**: actual p95 number captured during PR 6.4 and updated here on merge.
+- **Calibrated** (Sprint 6 PR 6.4, on Apple M-series): p50 ≈ 274ms, p95 ≈ 278ms, p99 ≈ 278ms over 5 iterations. ~18× under the 5s target.
+- **Regression guard threshold**: tests/unit/test_solver_perf_bench.py asserts `p95 < 15000ms` (3× the 5s target) to absorb shared-CI runner variance without flaking. A flake here is a real regression.
 
 ---
 
