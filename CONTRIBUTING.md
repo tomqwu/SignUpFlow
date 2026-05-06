@@ -1,9 +1,9 @@
-# Contributing to Rostio
+# Contributing to SignUpFlow
 
-## Before Making ANY Changes
+## Before Making Changes
 
 ### The Golden Rule
-**If a user will see it, it needs an e2e test. No exceptions.**
+**Write the test first. Implement to make it pass. Verify against the suite before committing.**
 
 ---
 
@@ -11,98 +11,69 @@
 
 ### 1. Plan the Feature
 - [ ] Write down the user journey in plain English
-- [ ] Identify what screens/forms/buttons are involved
-- [ ] Note any dependencies (i18n, timezone, roles, etc.)
+- [ ] Identify the API endpoints, CLI commands, or domain logic involved
+- [ ] Note any dependencies (auth, RBAC, multi-tenancy, solver constraints)
 
-### 2. Write the E2E Test FIRST
-- [ ] Create test in `tests/e2e/test_[feature].py`
-- [ ] Use the template from [E2E_TESTING_CHECKLIST.md](docs/E2E_TESTING_CHECKLIST.md)
-- [ ] Test should simulate EXACT user clicks/inputs
-- [ ] Test should verify WHAT USER SEES (not just API responses)
-- [ ] Run test - it should FAIL (test-first approach)
+### 2. Write the Test FIRST
+- [ ] **Unit-level**: add to `tests/unit/test_<module>.py`
+- [ ] **HTTP-level**: add to `tests/api/test_<feature>.py` (real JWT, in-memory DB)
+- [ ] **CLI-level**: add to `tests/cli/test_<feature>.py` (subprocess, YAML in / JSON out)
+- [ ] Run the new test — it should FAIL (test-first)
 
 ### 3. Implement the Feature
-- [ ] Write minimum code to make e2e test pass
+- [ ] Write minimum code to make the test pass
 - [ ] Check for dependencies:
-  - [ ] i18n translations for all text
-  - [ ] Timezone handling
-  - [ ] Role/permission checks
-  - [ ] Form validation (both frontend and backend)
-  - [ ] Error handling with user-friendly messages
+  - [ ] Auth + RBAC (admin vs volunteer)
+  - [ ] `org_id` filter on every query (multi-tenant isolation)
+  - [ ] Pydantic schema validation at the boundary
+  - [ ] Error handling with clear API messages
 
 ### 4. Verify the Feature
-- [ ] Run e2e test - it should PASS
-- [ ] Manually test in browser
-- [ ] Check browser console for errors
-- [ ] Check network tab for failed requests
-- [ ] Test with different user roles
-- [ ] Test with different languages (if i18n)
+- [ ] Run the new test — it should PASS
+- [ ] Run `make test-unit` — no regressions
+- [ ] Run `make test-all` if the change crosses layers
 
 ### 5. Before Submitting
-- [ ] Run ALL e2e tests: `poetry run pytest tests/e2e/ -v`
 - [ ] All tests pass
 - [ ] No TODOs or FIXMEs in code
-- [ ] No console errors in browser
-- [ ] Screenshot test passes (if UI change)
+- [ ] `poetry run black api tests` and `poetry run ruff check`
+- [ ] `poetry run mypy api` if you touched typed modules
 
 ---
 
-## E2E Test Requirements
+## Test Layout
 
-Every user-facing feature MUST have:
+| Suite | Location | What it covers |
+|-------|----------|----------------|
+| Unit | `tests/unit/` | Individual functions, mocked auth, fast |
+| API | `tests/api/` | Full HTTP workflows with real JWT + in-memory DB |
+| CLI | `tests/cli/` | Subprocess CLI: YAML in, JSON out, real solver |
+| Integration | `tests/integration/` | Real DB + real auth |
+| Comprehensive | `tests/comprehensive_test_suite.py` | Cross-router workflows |
 
-1. **Happy Path Test** - User does everything correctly
-   ```python
-   def test_[feature]_complete_user_journey(page: Page):
-       # Simulate exact user clicks
-       # Verify what user sees at each step
-   ```
+Every public API endpoint or CLI subcommand MUST have:
 
-2. **Validation Test** - User submits invalid data
-   ```python
-   def test_[feature]_validation_errors(page: Page):
-       # Submit empty form
-       # Submit invalid data
-       # Verify error messages appear
-   ```
-
-3. **UI State Test** - Verify UI elements are correct
-   ```python
-   def test_[feature]_ui_state(page: Page):
-       # Check elements are visible/hidden correctly
-       # Check form fields are pre-filled
-       # Check timezone/language auto-detection
-   ```
+1. **Happy Path** — caller provides valid input, expected output is returned
+2. **Validation Path** — caller provides invalid input, clear error returned
+3. **Authorization Path** — wrong role / wrong org / no token returns 401/403
 
 ---
 
 ## Common Feature Dependencies
 
-### Authentication Features
-- [ ] JWT token handling
-- [ ] Role-based access control
-- [ ] Session persistence
-- [ ] Logout functionality
+### Authentication
+- [ ] JWT token issued + verified
+- [ ] Role-based access control (`admin` vs `volunteer`)
+- [ ] Org membership check via `verify_org_member`
 
-### Forms
-- [ ] Client-side validation
-- [ ] Server-side validation
-- [ ] Error messages in UI
-- [ ] Success feedback
-- [ ] i18n for all text
-- [ ] Timezone handling (if date/time fields)
+### Multi-tenancy
+- [ ] `org_id` filter on every DB query
+- [ ] Cross-org request returns 403/404 (never leaks data)
 
-### Navigation
-- [ ] URL routing
-- [ ] Back button handling
-- [ ] Screen transitions
-- [ ] State cleanup between screens
-
-### i18n
-- [ ] All text in translation files
-- [ ] Language switcher updates all text
-- [ ] Fallback to English if translation missing
-- [ ] Date/time formatting respects locale
+### Solver
+- [ ] Constraints honored (hard violations = 0)
+- [ ] Fairness reasonable (low stdev)
+- [ ] Health score reported in solution metrics
 
 ---
 
@@ -110,90 +81,49 @@ Every user-facing feature MUST have:
 
 ### Before Saying "Done"
 
-**Feature Implementation:**
-- [ ] E2E test exists and covers complete user journey
-- [ ] E2E test verifies UI state (what user sees)
-- [ ] E2E test passes consistently
-- [ ] Manually tested in browser
-- [ ] All console errors fixed
-- [ ] All network errors fixed
+**Implementation:**
+- [ ] Test exists and covers the feature
+- [ ] Test passes consistently
+- [ ] Manually exercised via `curl` or the CLI
 
 **Code Quality:**
-- [ ] No hardcoded strings (use i18n)
 - [ ] No TODOs or FIXMEs
 - [ ] Error handling for all async operations
-- [ ] Loading states for all async operations
+- [ ] Pydantic schemas at boundaries
 
 **Dependencies:**
-- [ ] i18n translations added (all languages)
-- [ ] Timezone handling implemented
-- [ ] Role/permission checks in place
-- [ ] Form validation (frontend + backend)
+- [ ] RBAC checks in place
+- [ ] `org_id` filter on every query
+- [ ] Schema validation (request + response)
 
 **Testing:**
 - [ ] Unit tests for business logic
-- [ ] E2E tests for user journeys
+- [ ] API or CLI tests for the user-facing surface
 - [ ] All tests pass
 - [ ] No flaky tests
-
----
-
-## Red Flags
-
-🚩 **"The API works"** → Did you test the UI?
-
-🚩 **"The test passes"** → Did you test the COMPLETE user journey?
-
-🚩 **"It should work"** → Did you actually TEST it in the browser?
-
-🚩 **"Can you test it?"** → NO. Test it yourself FIRST.
-
-🚩 **"I'll add tests later"** → NO. Tests come FIRST.
-
----
-
-## Example: Good vs Bad Approach
-
-### ❌ Bad Approach
-1. Implement feature
-2. Write API test
-3. API test passes
-4. Say "it's done"
-5. User reports bug
-6. Waste time debugging
-7. Realize UI was never tested
-
-### ✅ Good Approach
-1. Write user journey description
-2. Write e2e test simulating user clicks
-3. Test fails (good!)
-4. Implement feature
-5. Test passes
-6. Manually verify in browser
-7. Ship with confidence
 
 ---
 
 ## Running Tests
 
 ```bash
-# Run all e2e tests before committing
-poetry run pytest tests/e2e/ -v
+# Fast iteration
+make test-unit-fast
 
-# Run specific test file
-poetry run pytest tests/e2e/test_org_creation.py -v -s
+# Single file
+poetry run pytest tests/unit/test_events.py -v
 
-# Run all tests (unit + e2e)
+# Single test
+poetry run pytest tests/unit/test_events.py::test_create_event -v
+
+# Whole pyramid
 make test-all
-
-# Run with browser visible (debugging)
-poetry run pytest tests/e2e/ -v --headed --slowmo 500
 ```
 
 ---
 
-## Questions?
+## Commits & PRs
 
-See [E2E_TESTING_CHECKLIST.md](docs/E2E_TESTING_CHECKLIST.md) for detailed testing guidelines.
-
-**Remember**: If a user can see it, click it, or type in it → it needs an e2e test. No exceptions.
+- Use Conventional Commits (`feat:`, `fix:`, `docs:`, `refactor:`, `test:`)
+- Keep each commit scoped to a single concern
+- PRs include: a short summary, list of tests run, and any migration / config steps

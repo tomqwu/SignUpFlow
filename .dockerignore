@@ -68,11 +68,6 @@ docs/
 .env.*
 !.env.example
 
-# Node modules (if any)
-node_modules/
-npm-debug.log
-yarn-error.log
-
 # Temporary files
 tmp/
 temp/

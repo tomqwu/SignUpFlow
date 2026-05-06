@@ -10,7 +10,6 @@ from api.database import get_db
 from api.models import Person
 from api.security import hash_password
 from api.utils.rate_limit_middleware import rate_limit
-from api.utils.recaptcha_middleware import require_recaptcha
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
@@ -29,7 +28,7 @@ class PasswordResetConfirm(BaseModel):
     new_password: str
 
 
-@router.post("/forgot-password", dependencies=[Depends(rate_limit("password_reset")), Depends(require_recaptcha)])
+@router.post("/forgot-password", dependencies=[Depends(rate_limit("password_reset"))])
 def request_password_reset(
     request: PasswordResetRequest,
     db: Session = Depends(get_db),

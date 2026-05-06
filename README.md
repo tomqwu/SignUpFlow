@@ -23,8 +23,6 @@
 - **Invitation system** — token-based volunteer onboarding
 - **Availability tracking** — volunteers block dates, time-off with reasons
 - **Calendar export** — ICS files and webcal subscriptions
-- **i18n** — 6 languages (EN, ES, PT, ZH-CN, ZH-TW, FR)
-- **Frontend** — Vanilla JS SPA with admin + volunteer views
 
 ---
 
@@ -311,7 +309,7 @@ POST /api/solver/solve         →  api/routers/solver.py (HTTP + DB)
 ```
 
 **Backend:** FastAPI + SQLAlchemy 2.0 + Pydantic 2.x (Python 3.11+)
-**Frontend:** Vanilla JS SPA + i18next
+**CLI:** YAML workspace in, JSON solution out (`api.cli.main`)
 **Database:** SQLite (dev) / PostgreSQL (prod)
 **Auth:** JWT (HS256) + bcrypt
 
@@ -331,13 +329,12 @@ POST /api/solver/solve         →  api/routers/solver.py (HTTP + DB)
 /api/invitations    — create/verify/accept invitation tokens
 /api/calendar       — ICS export
 /api/analytics      — volunteer + event stats
-/api/onboarding     — wizard progress
 /api/password-reset — request/confirm password reset
 ```
 
 ### Disabled Features
 
-Billing (Stripe), email (SendGrid), SMS (Twilio), and notification routers are not active. Their code remains but is not registered in `api/main.py`. The `/api/config/safe-flags` endpoint returns `false` for all.
+Billing (Stripe), email (SendGrid), SMS (Twilio), and notification routers are not active. Their code remains but is not registered in `api/main.py`.
 
 ---
 
@@ -384,10 +381,10 @@ Both API and CLI suites include real-world scenario tests:
 ```bash
 make setup                # First-time setup
 make run                  # Dev server on :8000
-make test                 # Frontend + backend tests
+make test                 # Backend comprehensive tests
 make test-unit            # Python unit tests only
 make test-unit-fast       # Skip slow bcrypt tests (~7s)
-make test-e2e             # Playwright browser tests
+make test-all             # Full suite: unit + api + cli + integration
 make migrate              # Run Alembic migrations
 ```
 
