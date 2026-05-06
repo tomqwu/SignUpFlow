@@ -144,6 +144,9 @@ class Person(Base):
         String, unique=True, nullable=True
     )  # Unique token for calendar subscription
     is_sample = Column(Boolean, default=False, nullable=False)  # For sample/demo data
+    password_changed_at = Column(
+        DateTime, nullable=True
+    )  # Tokens with pwd_iat older than this are revoked.
     extra_data = Column(JSONType, nullable=True)
     created_at = Column(DateTime, default=utcnow)
     updated_at = Column(DateTime, default=utcnow, onupdate=utcnow)
