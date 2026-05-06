@@ -889,6 +889,11 @@ class AuditAction:
     DATABASE_BACKUP = "system.database.backup"
     CONFIG_CHANGED = "system.config.changed"
 
+    # Assignment self-service
+    ASSIGNMENT_ACCEPTED = "assignment.accepted"
+    ASSIGNMENT_DECLINED = "assignment.declined"
+    ASSIGNMENT_SWAP_REQUESTED = "assignment.swap_requested"
+
 
 class SmsPreference(Base):
     """SMS notification preferences for volunteers."""

@@ -16,6 +16,7 @@ from api.database import init_db
 from api.logging_config import logger
 from api.routers import (
     analytics,
+    assignments,
     auth,
     availability,
     calendar,
@@ -134,6 +135,7 @@ app.include_router(password_reset.router, prefix="/api/v1")
 app.include_router(analytics.router, prefix="/api/v1")
 app.include_router(invitations.router, prefix="/api/v1")
 app.include_router(calendar.router, prefix="/api/v1")
+app.include_router(assignments.router, prefix="/api/v1")
 
 
 @app.get("/api/v1", tags=["root"])
