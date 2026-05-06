@@ -909,6 +909,10 @@ class AuditAction:
     # Bulk operations
     BULK_IMPORT = "data.bulk_import"
 
+    # Calendar token management
+    CALENDAR_TOKEN_RESET = "calendar.token.reset"
+    CALENDAR_TOKEN_ADMIN_RESET = "calendar.token.admin_reset"
+
 
 class SmsPreference(Base):
     """SMS notification preferences for volunteers."""

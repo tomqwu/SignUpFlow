@@ -5,7 +5,13 @@ from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from api.database import get_db
-from api.models import Assignment, Event, Organization, Person, Resource
+from api.dependencies import (
+    check_admin_permission,
+    get_current_admin_user,
+    get_current_user,
+)
+from api.models import Assignment, AuditAction, Event, Organization, Person, Resource
+from api.utils.audit_logger import log_audit_event
 from api.utils.calendar_utils import (
     generate_https_feed_url,
     generate_ics_from_assignments,
@@ -15,6 +21,18 @@ from api.utils.calendar_utils import (
 from api.utils.security import generate_calendar_token
 
 router = APIRouter(prefix="/calendar", tags=["calendar"])
+
+
+def _ensure_self_or_same_org_admin(current_user: Person, target: Person) -> None:
+    """403 unless the requester is the target or an admin in the same org."""
+    if current_user.id == target.id:
+        return
+    if check_admin_permission(current_user) and current_user.org_id == target.org_id:
+        return
+    raise HTTPException(
+        status_code=status.HTTP_403_FORBIDDEN,
+        detail="Access denied: must be self or admin in the same organization",
+    )
 
 
 # Schemas
@@ -125,6 +143,7 @@ def export_personal_schedule(
 @router.get("/subscribe")
 def get_subscription_url(
     person_id: str,
+    current_user: Person = Depends(get_current_user),
     db: Session = Depends(get_db),
     request: Request = None,
 ) -> CalendarSubscriptionResponse:
@@ -132,7 +151,8 @@ def get_subscription_url(
     Get calendar subscription URL for a person.
 
     Returns a webcal:// URL that can be used to subscribe to the calendar
-    in Google Calendar, Apple Calendar, Outlook, etc.
+    in Google Calendar, Apple Calendar, Outlook, etc. Caller must be the
+    target person or an admin in the same organization.
     """
     # Verify person exists
     person = db.query(Person).filter(Person.id == person_id).first()
@@ -141,6 +161,7 @@ def get_subscription_url(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Person '{person_id}' not found",
         )
+    _ensure_self_or_same_org_admin(current_user, person)
 
     # Generate calendar token if not exists
     if not person.calendar_token:
@@ -166,14 +187,16 @@ def get_subscription_url(
 @router.post("/reset-token")
 def reset_calendar_token(
     person_id: str,
+    current_user: Person = Depends(get_current_user),
     db: Session = Depends(get_db),
     request: Request = None,
 ) -> CalendarTokenResetResponse:
     """
     Reset calendar subscription token for a person.
 
-    This invalidates the old subscription URL and generates a new one.
-    Use this if the subscription URL has been compromised.
+    This invalidates the old subscription URL and generates a new one. Caller
+    must be the target person or an admin in the same organization. Use
+    `/calendar/{person_id}/admin-reset` for the admin-only flow.
     """
     # Verify person exists
     person = db.query(Person).filter(Person.id == person_id).first()
@@ -182,11 +205,24 @@ def reset_calendar_token(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Person '{person_id}' not found",
         )
+    _ensure_self_or_same_org_admin(current_user, person)
 
     # Generate new token
     person.calendar_token = generate_calendar_token()
     db.commit()
     db.refresh(person)
+
+    log_audit_event(
+        db,
+        action=AuditAction.CALENDAR_TOKEN_RESET,
+        user_id=current_user.id,
+        user_email=current_user.email,
+        organization_id=person.org_id,
+        resource_type="person",
+        resource_id=person.id,
+        ip_address=request.client.host if request and request.client else None,
+        user_agent=request.headers.get("user-agent") if request else None,
+    )
 
     # Get base URL
     base_url = get_base_url(request) if request else "http://localhost:8000"
@@ -200,6 +236,59 @@ def reset_calendar_token(
         webcal_url=webcal_url,
         https_url=https_url,
         message="Calendar token has been reset. Update your calendar subscription with the new URL.",
+    )
+
+
+@router.post("/{person_id}/admin-reset")
+def admin_reset_calendar_token(
+    person_id: str,
+    current_admin: Person = Depends(get_current_admin_user),
+    db: Session = Depends(get_db),
+    request: Request = None,
+) -> CalendarTokenResetResponse:
+    """
+    Admin-only force-reset of another user's calendar token.
+
+    Same as `/calendar/reset-token` but explicitly an admin override of a
+    target user's token. Always audited as `calendar.token.admin_reset`.
+    """
+    person = db.query(Person).filter(Person.id == person_id).first()
+    if not person:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Person '{person_id}' not found",
+        )
+    if current_admin.org_id != person.org_id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Access denied: not a member of this organization",
+        )
+
+    person.calendar_token = generate_calendar_token()
+    db.commit()
+    db.refresh(person)
+
+    log_audit_event(
+        db,
+        action=AuditAction.CALENDAR_TOKEN_ADMIN_RESET,
+        user_id=current_admin.id,
+        user_email=current_admin.email,
+        organization_id=person.org_id,
+        resource_type="person",
+        resource_id=person.id,
+        ip_address=request.client.host if request and request.client else None,
+        user_agent=request.headers.get("user-agent") if request else None,
+    )
+
+    base_url = get_base_url(request) if request else "http://localhost:8000"
+    webcal_url = generate_webcal_url(base_url, person.calendar_token)
+    https_url = generate_https_feed_url(base_url, person.calendar_token)
+
+    return CalendarTokenResetResponse(
+        token=person.calendar_token,
+        webcal_url=webcal_url,
+        https_url=https_url,
+        message=f"Calendar token for {person.id} has been reset by admin.",
     )
 
 
