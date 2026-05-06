@@ -11,6 +11,9 @@ from api.dependencies import get_current_admin_user, verify_org_member
 
 logger = logging.getLogger("rostio")
 from api.core.models import (
+    Availability as AvailabilityModel,
+)
+from api.core.models import (
     Event as EventModel,
 )
 from api.core.models import (
@@ -24,12 +27,21 @@ from api.core.models import (
     Person as PersonModel,
 )
 from api.core.models import (
+    Resource as ResourceModel,
+)
+from api.core.models import (
     Team as TeamModel,
+)
+from api.core.models import (
+    VacationPeriod as VacationPeriodModel,
 )
 from api.core.solver.adapter import SolveContext
 from api.core.solver.heuristics import GreedyHeuristicSolver
 from api.models import (
     Assignment as DBAssignment,
+)
+from api.models import (
+    Availability as DBAvailability,
 )
 from api.models import (
     Constraint as DBConstraint,
@@ -39,10 +51,14 @@ from api.models import (
     Holiday,
     Organization,
     Person,
+    Resource,
     Team,
 )
 from api.models import (
     Solution as DBSolution,
+)
+from api.models import (
+    VacationPeriod as DBVacationPeriod,
 )
 from api.schemas.solver import (
     FairnessMetrics,
@@ -168,15 +184,49 @@ def solve_schedule(
         for h in holidays_db
     ]
 
+    # Load resources for the org
+    resources_db = db.query(Resource).filter(Resource.org_id == solve_request.org_id).all()
+    resources = [
+        ResourceModel(
+            id=r.id,
+            type=r.type,
+            capacity=r.capacity or 1,
+            location=r.location,
+        )
+        for r in resources_db
+    ]
+
+    # Load availability for people in this org. Each Availability row may
+    # carry zero-or-more VacationPeriod children that the solver uses to
+    # block out time-off.
+    person_ids = [p.id for p in people_db]
+    availability: list[AvailabilityModel] = []
+    if person_ids:
+        avail_rows = db.query(DBAvailability).filter(DBAvailability.person_id.in_(person_ids)).all()
+        for a in avail_rows:
+            vacations = [
+                VacationPeriodModel(start=v.start_date, end=v.end_date)
+                for v in db.query(DBVacationPeriod)
+                .filter(DBVacationPeriod.availability_id == a.id)
+                .all()
+            ]
+            availability.append(
+                AvailabilityModel(
+                    person_id=a.person_id,
+                    rrule=a.rrule,
+                    vacations=vacations,
+                )
+            )
+
     # Build solve context
     context = SolveContext(
         org=org_file,
         people=people,
         teams=teams,
-        resources=[],  # TODO: Load resources if needed
+        resources=resources,
         events=events,
         constraints=constraints,
-        availability=[],  # TODO: Load availability if needed
+        availability=availability,
         holidays=holidays,
         from_date=solve_request.from_date,
         to_date=solve_request.to_date,

@@ -209,3 +209,67 @@ class TestSchedulingWorkflow:
             headers=hdrs,
         )
         assert resp.status_code == 200
+
+    def test_solver_honors_volunteer_timeoff(self, client):
+        """A volunteer with time-off covering the event date is NOT assigned by the solver.
+
+        Regression test for the previously hard-coded `availability=[]` in the solver
+        endpoint — the solver now loads real Availability + VacationPeriod records and
+        respects them.
+        """
+        seed_org(client, self.ORG, name="Grace Church")
+        seed_user(client, self.ORG, self.ADMIN_EMAIL, "Pastor", self.ADMIN_PW)
+        # Two volunteers; one will be marked unavailable.
+        away = seed_user(client, self.ORG, "away@grace.church", "Sarah Away", "VolPass123!")
+        present = seed_user(
+            client, self.ORG, "present@grace.church", "James Present", "VolPass123!"
+        )
+        hdrs = auth_headers(client, self.ADMIN_EMAIL, self.ADMIN_PW)
+
+        # Event 14 days from now.
+        event_start = datetime.now() + timedelta(days=14)
+        event = seed_event(
+            client,
+            hdrs,
+            self.ORG,
+            "evt-timeoff",
+            role_counts={"volunteer": 1},
+        )
+
+        # Block the "away" volunteer for a window that covers event_start.
+        timeoff_start = (event_start - timedelta(days=1)).date().isoformat()
+        timeoff_end = (event_start + timedelta(days=1)).date().isoformat()
+        add_timeoff(client, away["person_id"], timeoff_start, timeoff_end, reason="Vacation")
+
+        # Run solver across a wide enough window.
+        from_date = (event_start - timedelta(days=2)).date().isoformat()
+        to_date = (event_start + timedelta(days=2)).date().isoformat()
+        resp = client.post(
+            "/api/v1/solver/solve",
+            json={
+                "org_id": self.ORG,
+                "from_date": from_date,
+                "to_date": to_date,
+                "mode": "strict",
+                "change_min": False,
+            },
+            headers=hdrs,
+        )
+        assert resp.status_code == 200, resp.text
+
+        # Inspect the assignments produced.
+        resp = client.get(f"/api/v1/events/assignments/all?org_id={self.ORG}", headers=hdrs)
+        assert resp.status_code == 200
+        assignments = resp.json()["assignments"]
+
+        away_assigned = [a for a in assignments if a["person_id"] == away["person_id"]]
+        present_assigned = [a for a in assignments if a["person_id"] == present["person_id"]]
+
+        # The away volunteer must not be on this event.
+        assert all(
+            a["event_id"] != event["id"] for a in away_assigned
+        ), "Solver assigned a volunteer who is on time-off; availability not honored"
+        # The other volunteer should pick up the slot.
+        assert any(
+            a["event_id"] == event["id"] for a in present_assigned
+        ), "Available volunteer was not assigned to the open role"
