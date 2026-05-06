@@ -7,7 +7,7 @@ Tests the ability to assign people to events with specific roles
 
 import time
 
-API_BASE = "/api"
+API_BASE = "/api/v1"
 
 
 class TestEventRoleAssignment:

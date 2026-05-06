@@ -12,7 +12,7 @@ from api.utils.calendar_utils import (
 )
 from api.utils.security import generate_calendar_token
 
-API_BASE = "http://localhost:8000/api"
+API_BASE = "http://localhost:8000/api/v1"
 
 
 class TestCalendarUtils:
@@ -34,21 +34,21 @@ class TestCalendarUtils:
 
         # Test with https://
         url1 = generate_webcal_url("https://rostio.app", token)
-        assert url1 == "webcal://rostio.app/api/calendar/feed/test_token_123"
+        assert url1 == "webcal://rostio.app/api/v1/calendar/feed/test_token_123"
 
         # Test with http://
         url2 = generate_webcal_url("http://localhost:8000", token)
-        assert url2 == "webcal://localhost:8000/api/calendar/feed/test_token_123"
+        assert url2 == "webcal://localhost:8000/api/v1/calendar/feed/test_token_123"
 
     def test_generate_https_feed_url(self, client):
         """Test HTTPS feed URL generation."""
         token = "test_token_123"
 
         url1 = generate_https_feed_url("https://rostio.app", token)
-        assert url1 == "https://rostio.app/api/calendar/feed/test_token_123"
+        assert url1 == "https://rostio.app/api/v1/calendar/feed/test_token_123"
 
         url2 = generate_https_feed_url("rostio.app", token)
-        assert url2 == "https://rostio.app/api/calendar/feed/test_token_123"
+        assert url2 == "https://rostio.app/api/v1/calendar/feed/test_token_123"
 
     def test_generate_ics_from_assignments(self, client):
         """Test ICS generation from assignments."""

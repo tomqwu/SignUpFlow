@@ -67,7 +67,7 @@ class TestAuthenticationMocking:
         db.commit()
 
         # Call protected endpoint without Authorization header
-        response = client.get("/api/people/test_person_endpoint")
+        response = client.get("/api/v1/people/test_person_endpoint")
 
         # Should succeed because auth is mocked
         assert response.status_code == 200
@@ -213,7 +213,7 @@ class TestMockingIntegration:
 
         # Create person without auth header
         response = client.post(
-            "/api/people/",
+            "/api/v1/people/",
             json={
                 "id": "test_person_mock",
                 "org_id": "test_org_mock",
@@ -253,7 +253,7 @@ class TestMockingIntegration:
         db.commit()
 
         # Update without auth header
-        response = client.put("/api/people/test_person_update", json={"name": "Updated Name"})
+        response = client.put("/api/v1/people/test_person_update", json={"name": "Updated Name"})
 
         assert response.status_code == 200
         assert response.json()["name"] == "Updated Name"
@@ -286,7 +286,7 @@ class TestMockingIntegration:
         db.commit()
 
         # Delete without auth header
-        response = client.delete("/api/people/test_person_delete")
+        response = client.delete("/api/v1/people/test_person_delete")
 
         # DELETE returns 204 No Content on success
         assert response.status_code == 204

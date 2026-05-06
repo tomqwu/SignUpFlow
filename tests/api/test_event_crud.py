@@ -54,14 +54,14 @@ class TestEventCRUD:
         hdrs = self._setup(client)
         seed_event(client, hdrs, self.ORG, "evt-get")
 
-        resp = client.get("/api/events/evt-get")
+        resp = client.get("/api/v1/events/evt-get")
         assert resp.status_code == 200
         assert resp.json()["id"] == "evt-get"
 
     def test_get_nonexistent_event_returns_404(self, client):
         """Getting a missing event returns 404."""
         self._setup(client)
-        resp = client.get("/api/events/does-not-exist")
+        resp = client.get("/api/v1/events/does-not-exist")
         assert resp.status_code == 404
 
     def test_list_events_filtered_by_org(self, client):
@@ -70,7 +70,7 @@ class TestEventCRUD:
         seed_event(client, hdrs, self.ORG, "evt-a", days_from_now=14)
         seed_event(client, hdrs, self.ORG, "evt-b", days_from_now=21)
 
-        resp = client.get(f"/api/events/?org_id={self.ORG}")
+        resp = client.get(f"/api/v1/events/?org_id={self.ORG}")
         assert resp.status_code == 200
         assert resp.json()["total"] == 2
 
@@ -80,7 +80,7 @@ class TestEventCRUD:
         seed_event(client, hdrs, self.ORG, "evt-update", event_type="Regular Service")
 
         resp = client.put(
-            "/api/events/evt-update",
+            "/api/v1/events/evt-update",
             json={
                 "type": "Easter Service",
                 "extra_data": {"role_counts": {"musician": 3, "usher": 2}},
@@ -103,7 +103,7 @@ class TestEventCRUD:
         new_end = new_start + timedelta(hours=3)
 
         resp = client.put(
-            "/api/events/evt-reschedule",
+            "/api/v1/events/evt-reschedule",
             json={
                 "start_time": new_start.isoformat(),
                 "end_time": new_end.isoformat(),
@@ -116,7 +116,7 @@ class TestEventCRUD:
     def test_update_nonexistent_event_returns_404(self, client):
         """Updating a missing event returns 404."""
         hdrs = self._setup(client)
-        resp = client.put("/api/events/ghost", json={"type": "X"}, headers=hdrs)
+        resp = client.put("/api/v1/events/ghost", json={"type": "X"}, headers=hdrs)
         assert resp.status_code == 404
 
     def test_delete_event(self, client):
@@ -124,17 +124,17 @@ class TestEventCRUD:
         hdrs = self._setup(client)
         seed_event(client, hdrs, self.ORG, "evt-delete")
 
-        resp = client.delete("/api/events/evt-delete", headers=hdrs)
+        resp = client.delete("/api/v1/events/evt-delete", headers=hdrs)
         assert resp.status_code == 204
 
         # Verify gone
-        resp = client.get("/api/events/evt-delete")
+        resp = client.get("/api/v1/events/evt-delete")
         assert resp.status_code == 404
 
     def test_delete_nonexistent_event_returns_404(self, client):
         """Deleting a missing event returns 404."""
         hdrs = self._setup(client)
-        resp = client.delete("/api/events/ghost", headers=hdrs)
+        resp = client.delete("/api/v1/events/ghost", headers=hdrs)
         assert resp.status_code == 404
 
     def test_volunteer_cannot_update_event(self, client):
@@ -144,7 +144,7 @@ class TestEventCRUD:
         seed_user(client, self.ORG, "vol@crud.org", "Vol", "VolPass123!")
         vol_hdrs = auth_headers(client, "vol@crud.org", "VolPass123!")
 
-        resp = client.put("/api/events/evt-protected", json={"type": "Hacked"}, headers=vol_hdrs)
+        resp = client.put("/api/v1/events/evt-protected", json={"type": "Hacked"}, headers=vol_hdrs)
         assert resp.status_code == 403
 
     def test_volunteer_cannot_delete_event(self, client):
@@ -154,7 +154,7 @@ class TestEventCRUD:
         seed_user(client, self.ORG, "vol@crud.org", "Vol", "VolPass123!")
         vol_hdrs = auth_headers(client, "vol@crud.org", "VolPass123!")
 
-        resp = client.delete("/api/events/evt-nodelete", headers=vol_hdrs)
+        resp = client.delete("/api/v1/events/evt-nodelete", headers=vol_hdrs)
         assert resp.status_code == 403
 
 
@@ -179,7 +179,7 @@ class TestConflictDetection:
         event = seed_event(client, hdrs, self.ORG, "evt-clean", days_from_now=14)
 
         resp = client.post(
-            "/api/conflicts/check",
+            "/api/v1/conflicts/check",
             json={
                 "person_id": vol["person_id"],
                 "event_id": event["id"],
@@ -197,7 +197,7 @@ class TestConflictDetection:
 
         # Assign first
         client.post(
-            f"/api/events/{event['id']}/assignments",
+            f"/api/v1/events/{event['id']}/assignments",
             json={
                 "person_id": vol["person_id"],
                 "action": "assign",
@@ -208,7 +208,7 @@ class TestConflictDetection:
 
         # Check conflicts — should detect already_assigned
         resp = client.post(
-            "/api/conflicts/check",
+            "/api/v1/conflicts/check",
             json={
                 "person_id": vol["person_id"],
                 "event_id": event["id"],
@@ -232,7 +232,7 @@ class TestConflictDetection:
 
         # Check conflicts — should detect time_off
         resp = client.post(
-            "/api/conflicts/check",
+            "/api/v1/conflicts/check",
             json={
                 "person_id": vol["person_id"],
                 "event_id": event["id"],
@@ -254,7 +254,7 @@ class TestConflictDetection:
 
         # Assign to event A
         client.post(
-            f"/api/events/{evt_a['id']}/assignments",
+            f"/api/v1/events/{evt_a['id']}/assignments",
             json={
                 "person_id": vol["person_id"],
                 "action": "assign",
@@ -265,7 +265,7 @@ class TestConflictDetection:
 
         # Check conflicts for event B — should detect double_booked
         resp = client.post(
-            "/api/conflicts/check",
+            "/api/v1/conflicts/check",
             json={
                 "person_id": vol["person_id"],
                 "event_id": evt_b["id"],
@@ -284,7 +284,7 @@ class TestConflictDetection:
         event = seed_event(client, hdrs, self.ORG, "evt-x", days_from_now=14)
 
         resp = client.post(
-            "/api/conflicts/check",
+            "/api/v1/conflicts/check",
             json={
                 "person_id": "ghost-person",
                 "event_id": event["id"],
@@ -297,7 +297,7 @@ class TestConflictDetection:
         hdrs, vol = self._setup_with_volunteer(client)
 
         resp = client.post(
-            "/api/conflicts/check",
+            "/api/v1/conflicts/check",
             json={
                 "person_id": vol["person_id"],
                 "event_id": "ghost-event",
@@ -327,7 +327,7 @@ class TestAvailabilityManagement:
 
         add_timeoff(client, pid, "2026-06-01", "2026-06-07", reason="Vacation")
 
-        resp = client.get(f"/api/availability/{pid}/timeoff")
+        resp = client.get(f"/api/v1/availability/{pid}/timeoff")
         assert resp.status_code == 200
         data = resp.json()
         assert data["total"] == 1
@@ -342,7 +342,7 @@ class TestAvailabilityManagement:
         add_timeoff(client, pid, "2026-06-01", "2026-06-07", reason="Vacation 1")
         add_timeoff(client, pid, "2026-07-01", "2026-07-07", reason="Vacation 2")
 
-        resp = client.get(f"/api/availability/{pid}/timeoff")
+        resp = client.get(f"/api/v1/availability/{pid}/timeoff")
         assert resp.status_code == 200
         assert resp.json()["total"] == 2
 
@@ -354,21 +354,21 @@ class TestAvailabilityManagement:
         add_timeoff(client, pid, "2026-08-01", "2026-08-07", reason="To be deleted")
 
         # Get the timeoff ID
-        resp = client.get(f"/api/availability/{pid}/timeoff")
+        resp = client.get(f"/api/v1/availability/{pid}/timeoff")
         timeoff_id = resp.json()["timeoff"][0]["id"]
 
         # Delete it
-        resp = client.delete(f"/api/availability/{pid}/timeoff/{timeoff_id}")
+        resp = client.delete(f"/api/v1/availability/{pid}/timeoff/{timeoff_id}")
         assert resp.status_code == 204
 
         # Verify gone
-        resp = client.get(f"/api/availability/{pid}/timeoff")
+        resp = client.get(f"/api/v1/availability/{pid}/timeoff")
         assert resp.json()["total"] == 0
 
     def test_timeoff_for_unknown_person_returns_empty(self, client):
         """Querying time-off for a non-existent person returns empty list."""
         self._setup_with_volunteer(client)
-        resp = client.get("/api/availability/ghost-person/timeoff")
+        resp = client.get("/api/v1/availability/ghost-person/timeoff")
         assert resp.status_code == 200
         assert resp.json()["total"] == 0
 
@@ -389,7 +389,7 @@ class TestProfileAndTeamMembers:
         vol_hdrs = auth_headers(client, "vol@profile.org", "VolPass123!")
 
         resp = client.put(
-            "/api/people/me",
+            "/api/v1/people/me",
             json={
                 "name": "New Name",
                 "timezone": "US/Pacific",
@@ -409,7 +409,7 @@ class TestProfileAndTeamMembers:
 
         # Create empty team
         resp = client.post(
-            "/api/teams/",
+            "/api/v1/teams/",
             json={
                 "id": "team-1",
                 "org_id": self.ORG,
@@ -421,7 +421,7 @@ class TestProfileAndTeamMembers:
 
         # Add member
         resp = client.post(
-            "/api/teams/team-1/members",
+            "/api/v1/teams/team-1/members",
             json={
                 "person_ids": [vol["person_id"]],
             },
@@ -430,14 +430,14 @@ class TestProfileAndTeamMembers:
         assert resp.status_code == 204
 
         # Verify member count increased
-        resp = client.get("/api/teams/team-1", headers=hdrs)
+        resp = client.get("/api/v1/teams/team-1", headers=hdrs)
         assert resp.status_code == 200
         assert resp.json()["member_count"] == 1
 
         # Remove member (DELETE with body requires request method)
         resp = client.request(
             "DELETE",
-            "/api/teams/team-1/members",
+            "/api/v1/teams/team-1/members",
             json={
                 "person_ids": [vol["person_id"]],
             },
@@ -446,5 +446,5 @@ class TestProfileAndTeamMembers:
         assert resp.status_code == 204
 
         # Verify member count back to 0
-        resp = client.get("/api/teams/team-1", headers=hdrs)
+        resp = client.get("/api/v1/teams/team-1", headers=hdrs)
         assert resp.json()["member_count"] == 0

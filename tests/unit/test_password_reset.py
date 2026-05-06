@@ -38,7 +38,7 @@ class TestPasswordResetSecurity:
         db.commit()
 
         # Request password reset
-        response = client.post("/api/auth/forgot-password", json={"email": "reset@example.com"})
+        response = client.post("/api/v1/auth/forgot-password", json={"email": "reset@example.com"})
         assert response.status_code == 200
         data = response.json()
         assert "reset_link" in data
@@ -50,7 +50,7 @@ class TestPasswordResetSecurity:
         # Reset password
         new_password = "NewSecurePassword123!"
         response = client.post(
-            "/api/auth/reset-password", json={"token": token, "new_password": new_password}
+            "/api/v1/auth/reset-password", json={"token": token, "new_password": new_password}
         )
         assert response.status_code == 200
         assert response.json()["message"] == "Password reset successfully"
@@ -111,13 +111,13 @@ class TestPasswordResetSecurity:
         db.commit()
 
         # Request password reset
-        response = client.post("/api/auth/forgot-password", json={"email": "sha@example.com"})
+        response = client.post("/api/v1/auth/forgot-password", json={"email": "sha@example.com"})
         token = response.json()["reset_link"].split("token=")[1]
 
         # Reset password
         new_password = "TestPassword123"
         response = client.post(
-            "/api/auth/reset-password", json={"token": token, "new_password": new_password}
+            "/api/v1/auth/reset-password", json={"token": token, "new_password": new_password}
         )
         assert response.status_code == 200
 
@@ -172,19 +172,19 @@ class TestPasswordResetSecurity:
         db.commit()
 
         # Request password reset
-        response = client.post("/api/auth/forgot-password", json={"email": "login@example.com"})
+        response = client.post("/api/v1/auth/forgot-password", json={"email": "login@example.com"})
         token = response.json()["reset_link"].split("token=")[1]
 
         # Reset password to known value
         new_password = "MyNewPassword456!"
         response = client.post(
-            "/api/auth/reset-password", json={"token": token, "new_password": new_password}
+            "/api/v1/auth/reset-password", json={"token": token, "new_password": new_password}
         )
         assert response.status_code == 200
 
         # Try to log in with new password
         response = client.post(
-            "/api/auth/login", json={"email": "login@example.com", "password": new_password}
+            "/api/v1/auth/login", json={"email": "login@example.com", "password": new_password}
         )
 
         # Should succeed because password was properly hashed with bcrypt

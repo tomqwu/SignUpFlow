@@ -38,8 +38,8 @@ class TestMultiTenantIsolation:
         hdrs1, hdrs2 = self._setup_two_orgs(client)
 
         # Each org lists its own people
-        resp1 = client.get(f"/api/people/?org_id={self.ORG1}", headers=hdrs1)
-        resp2 = client.get(f"/api/people/?org_id={self.ORG2}", headers=hdrs2)
+        resp1 = client.get(f"/api/v1/people/?org_id={self.ORG1}", headers=hdrs1)
+        resp2 = client.get(f"/api/v1/people/?org_id={self.ORG2}", headers=hdrs2)
         assert resp1.status_code == 200
         assert resp2.status_code == 200
         assert all(p["org_id"] == self.ORG1 for p in resp1.json()["people"])
@@ -48,7 +48,7 @@ class TestMultiTenantIsolation:
     def test_cross_org_people_access_denied(self, client):
         """Admin of org1 gets 403 trying to list org2's people."""
         hdrs1, _ = self._setup_two_orgs(client)
-        resp = client.get(f"/api/people/?org_id={self.ORG2}", headers=hdrs1)
+        resp = client.get(f"/api/v1/people/?org_id={self.ORG2}", headers=hdrs1)
         assert resp.status_code == 403
 
     def test_cross_org_team_access_denied(self, client):
@@ -56,7 +56,7 @@ class TestMultiTenantIsolation:
         hdrs1, hdrs2 = self._setup_two_orgs(client)
         seed_team(client, hdrs2, self.ORG2, "beta-team", "Beta Ushers")
 
-        resp = client.get(f"/api/teams/?org_id={self.ORG2}", headers=hdrs1)
+        resp = client.get(f"/api/v1/teams/?org_id={self.ORG2}", headers=hdrs1)
         assert resp.status_code == 403
 
     def test_cross_org_event_creation_denied(self, client):
@@ -66,7 +66,7 @@ class TestMultiTenantIsolation:
         start = (datetime.now() + timedelta(days=7)).isoformat()
         end = (datetime.now() + timedelta(days=7, hours=2)).isoformat()
         resp = client.post(
-            "/api/events/",
+            "/api/v1/events/",
             json={
                 "id": "evt-cross",
                 "org_id": self.ORG2,
@@ -82,7 +82,7 @@ class TestMultiTenantIsolation:
         """Admin of org1 can't run solver for org2."""
         hdrs1, _ = self._setup_two_orgs(client)
         resp = client.post(
-            "/api/solver/solve",
+            "/api/v1/solver/solve",
             json={
                 "org_id": self.ORG2,
                 "from_date": "2026-05-01",
@@ -101,8 +101,8 @@ class TestMultiTenantIsolation:
         seed_event(client, hdrs1, self.ORG1, "evt-alpha-only")
         seed_event(client, hdrs2, self.ORG2, "evt-beta-only")
 
-        resp1 = client.get(f"/api/events/?org_id={self.ORG1}")
-        resp2 = client.get(f"/api/events/?org_id={self.ORG2}")
+        resp1 = client.get(f"/api/v1/events/?org_id={self.ORG1}")
+        resp2 = client.get(f"/api/v1/events/?org_id={self.ORG2}")
         assert resp1.status_code == 200
         assert resp2.status_code == 200
 
@@ -117,11 +117,11 @@ class TestMultiTenantIsolation:
         """API endpoints that require auth reject unauthenticated requests."""
         seed_org(client, self.ORG1)
 
-        resp = client.get(f"/api/people/?org_id={self.ORG1}")
+        resp = client.get(f"/api/v1/people/?org_id={self.ORG1}")
         assert resp.status_code in (401, 403)
 
         resp = client.post(
-            "/api/events/",
+            "/api/v1/events/",
             json={
                 "id": "evt-noauth",
                 "org_id": self.ORG1,

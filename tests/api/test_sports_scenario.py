@@ -106,13 +106,13 @@ class TestSportsScenario:
         hdrs, players = self._setup_club(client)
 
         # 7 people total (coach + 6 players)
-        resp = client.get(f"/api/people/?org_id={self.ORG}", headers=hdrs)
+        resp = client.get(f"/api/v1/people/?org_id={self.ORG}", headers=hdrs)
         assert resp.status_code == 200
         assert resp.json()["total"] == 7
 
         # Priya plays both sports
         priya_hdrs = auth_headers(client, "priya@riverside.club", self.PLAYER_PW)
-        resp = client.get("/api/people/me", headers=priya_hdrs)
+        resp = client.get("/api/v1/people/me", headers=priya_hdrs)
         assert resp.status_code == 200
         roles = resp.json()["roles"]
         assert "bowler" in roles
@@ -120,7 +120,7 @@ class TestSportsScenario:
 
         # Alex plays both sports
         alex_hdrs = auth_headers(client, "alex@riverside.club", self.PLAYER_PW)
-        resp = client.get("/api/people/me", headers=alex_hdrs)
+        resp = client.get("/api/v1/people/me", headers=alex_hdrs)
         roles = resp.json()["roles"]
         assert "shooting_guard" in roles
         assert "all_rounder" in roles
@@ -162,7 +162,7 @@ class TestSportsScenario:
         assert basketball["name"] == "Basketball Squad"
 
         # Priya and Alex are on BOTH squads
-        resp = client.get(f"/api/teams/?org_id={self.ORG}", headers=hdrs)
+        resp = client.get(f"/api/v1/teams/?org_id={self.ORG}", headers=hdrs)
         assert resp.status_code == 200
         assert resp.json()["total"] == 2
 
@@ -228,7 +228,7 @@ class TestSportsScenario:
             role_counts={"batsman": 4, "bowler": 2, "wicket_keeper": 1},
         )
 
-        resp = client.get(f"/api/events/?org_id={self.ORG}")
+        resp = client.get(f"/api/v1/events/?org_id={self.ORG}")
         assert resp.status_code == 200
         assert resp.json()["total"] == 4
 
@@ -248,7 +248,7 @@ class TestSportsScenario:
             client, rahul_id, injury_start, injury_end, reason="Hamstring injury — physio recovery"
         )
 
-        resp = client.get(f"/api/availability/{rahul_id}/timeoff")
+        resp = client.get(f"/api/v1/availability/{rahul_id}/timeoff")
         assert resp.status_code == 200
         periods = resp.json()["timeoff"]
         assert len(periods) == 1
@@ -297,7 +297,7 @@ class TestSportsScenario:
         from_date = (datetime.now() + timedelta(days=14)).strftime("%Y-%m-%d")
         to_date = (datetime.now() + timedelta(days=21)).strftime("%Y-%m-%d")
         resp = client.post(
-            "/api/solver/solve",
+            "/api/v1/solver/solve",
             json={
                 "org_id": self.ORG,
                 "from_date": from_date,
@@ -314,7 +314,7 @@ class TestSportsScenario:
         assert solution["metrics"]["health_score"] >= 0
 
         # Every event should have assignments
-        resp = client.get(f"/api/events/assignments/all?org_id={self.ORG}")
+        resp = client.get(f"/api/v1/events/assignments/all?org_id={self.ORG}")
         assert resp.status_code == 200
         assignments = resp.json()["assignments"]
         assigned_events = {a["event_id"] for a in assignments}
@@ -365,7 +365,7 @@ class TestSportsScenario:
         from_date = (datetime.now() + timedelta(days=17)).strftime("%Y-%m-%d")
         to_date = (datetime.now() + timedelta(days=22)).strftime("%Y-%m-%d")
         resp = client.post(
-            "/api/solver/solve",
+            "/api/v1/solver/solve",
             json={
                 "org_id": self.ORG,
                 "from_date": from_date,
@@ -407,7 +407,7 @@ class TestSportsScenario:
 
         # Assign Rahul as batsman
         resp = client.post(
-            f"/api/events/{match['id']}/assignments",
+            f"/api/v1/events/{match['id']}/assignments",
             json={
                 "person_id": rahul_id,
                 "action": "assign",
@@ -419,7 +419,7 @@ class TestSportsScenario:
 
         # Assign Ben as batsman
         resp = client.post(
-            f"/api/events/{match['id']}/assignments",
+            f"/api/v1/events/{match['id']}/assignments",
             json={
                 "person_id": ben_id,
                 "action": "assign",
@@ -431,7 +431,7 @@ class TestSportsScenario:
 
         # Rahul gets injured — unassign him
         resp = client.post(
-            f"/api/events/{match['id']}/assignments",
+            f"/api/v1/events/{match['id']}/assignments",
             json={
                 "person_id": rahul_id,
                 "action": "unassign",
@@ -441,7 +441,7 @@ class TestSportsScenario:
         assert resp.status_code == 200
 
         # Verify only Ben remains assigned
-        resp = client.get(f"/api/events/assignments/all?org_id={self.ORG}")
+        resp = client.get(f"/api/v1/events/assignments/all?org_id={self.ORG}")
         assert resp.status_code == 200
         match_assignments = [
             a for a in resp.json()["assignments"] if a["event_id"] == "finals-match"
@@ -463,7 +463,7 @@ class TestSportsScenario:
         start = (datetime.now() + timedelta(days=14)).isoformat()
         end = (datetime.now() + timedelta(days=14, hours=2)).isoformat()
         resp = client.post(
-            "/api/events/",
+            "/api/v1/events/",
             json={
                 "id": "unauthorized-match",
                 "org_id": self.ORG,

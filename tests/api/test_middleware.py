@@ -34,6 +34,22 @@ class TestRequestID:
         assert r1.headers["X-Request-ID"] != r2.headers["X-Request-ID"]
 
 
+class TestApiPrefixRedirect:
+    """Bare /api is a 308 redirect to /api/v1 for one release."""
+
+    def test_bare_api_redirects_to_v1(self, client):
+        response = client.get("/api", follow_redirects=False)
+        assert response.status_code == 308
+        assert response.headers["location"] == "/api/v1"
+
+    def test_v1_api_info_is_canonical(self, client):
+        response = client.get("/api/v1")
+        assert response.status_code == 200
+        body = response.json()
+        assert body["service"] == "SignUpFlow API"
+        assert body["endpoints"]["organizations"] == "/api/v1/organizations"
+
+
 class TestCORS:
     """CORS preflight allows configured origins and rejects others."""
 

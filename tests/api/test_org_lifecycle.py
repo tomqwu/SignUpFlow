@@ -48,7 +48,7 @@ class TestOrgLifecycle:
         seed_org(client, self.ORG)
         seed_user(client, self.ORG, self.ADMIN_EMAIL, "Admin", self.ADMIN_PW)
         resp = client.post(
-            "/api/auth/signup",
+            "/api/v1/auth/signup",
             json={
                 "org_id": self.ORG,
                 "name": "Duplicate",
@@ -71,7 +71,7 @@ class TestOrgLifecycle:
         assert team["name"] == "Ushers"
 
         # Verify team in list
-        resp = client.get(f"/api/teams/?org_id={self.ORG}", headers=hdrs)
+        resp = client.get(f"/api/v1/teams/?org_id={self.ORG}", headers=hdrs)
         assert resp.status_code == 200
         assert resp.json()["total"] >= 1
 
@@ -101,7 +101,7 @@ class TestOrgLifecycle:
         start = (datetime.now() + timedelta(days=7)).isoformat()
         end = (datetime.now() + timedelta(days=7, hours=2)).isoformat()
         resp = client.post(
-            "/api/events/",
+            "/api/v1/events/",
             json={
                 "id": "evt-forbidden",
                 "org_id": self.ORG,
@@ -121,7 +121,7 @@ class TestOrgLifecycle:
         vol_hdrs = auth_headers(client, self.VOL_EMAIL, self.VOL_PW)
 
         resp = client.post(
-            "/api/teams/",
+            "/api/v1/teams/",
             json={
                 "id": "team-forbidden",
                 "org_id": self.ORG,
@@ -138,7 +138,7 @@ class TestOrgLifecycle:
         seed_user(client, self.ORG, self.VOL_EMAIL, "Sarah", self.VOL_PW)
         vol_hdrs = auth_headers(client, self.VOL_EMAIL, self.VOL_PW)
 
-        resp = client.get("/api/people/me", headers=vol_hdrs)
+        resp = client.get("/api/v1/people/me", headers=vol_hdrs)
         assert resp.status_code == 200
         assert resp.json()["email"] == self.VOL_EMAIL
 
@@ -149,6 +149,6 @@ class TestOrgLifecycle:
         seed_user(client, self.ORG, self.VOL_EMAIL, "Sarah", self.VOL_PW)
         vol_hdrs = auth_headers(client, self.VOL_EMAIL, self.VOL_PW)
 
-        resp = client.get(f"/api/people/?org_id={self.ORG}", headers=vol_hdrs)
+        resp = client.get(f"/api/v1/people/?org_id={self.ORG}", headers=vol_hdrs)
         assert resp.status_code == 200
         assert resp.json()["total"] == 2

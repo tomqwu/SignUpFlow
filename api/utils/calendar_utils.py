@@ -204,7 +204,7 @@ def generate_webcal_url(base_url: str, token: str) -> str:
     elif base_url.startswith("http://"):
         base_url = base_url.replace("http://", "")
 
-    return f"webcal://{base_url}/api/calendar/feed/{token}"
+    return f"webcal://{base_url}/api/v1/calendar/feed/{token}"
 
 
 def generate_https_feed_url(base_url: str, token: str) -> str:
@@ -225,4 +225,4 @@ def generate_https_feed_url(base_url: str, token: str) -> str:
     # Remove trailing slash
     base_url = base_url.rstrip("/")
 
-    return f"{base_url}/api/calendar/feed/{token}"
+    return f"{base_url}/api/v1/calendar/feed/{token}"

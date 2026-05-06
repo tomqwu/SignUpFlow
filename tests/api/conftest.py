@@ -84,7 +84,9 @@ def reset_database_between_tests():
 
 def seed_org(client: TestClient, org_id: str, name: str = "Test Org", region: str = "US") -> dict:
     """Create an organization. Returns response JSON."""
-    resp = client.post("/api/organizations/", json={"id": org_id, "name": name, "region": region})
+    resp = client.post(
+        "/api/v1/organizations/", json={"id": org_id, "name": name, "region": region}
+    )
     assert resp.status_code == 201, f"seed_org failed: {resp.status_code} {resp.text}"
     return resp.json()
 
@@ -99,7 +101,7 @@ def seed_user(
 ) -> dict:
     """Sign up a user. First user in org auto-becomes admin. Returns auth response with token."""
     resp = client.post(
-        "/api/auth/signup",
+        "/api/v1/auth/signup",
         json={
             "org_id": org_id,
             "name": name,
@@ -114,7 +116,7 @@ def seed_user(
 
 def login(client: TestClient, email: str, password: str) -> dict:
     """Log in and return full auth response (including token)."""
-    resp = client.post("/api/auth/login", json={"email": email, "password": password})
+    resp = client.post("/api/v1/auth/login", json={"email": email, "password": password})
     assert resp.status_code == 200, f"login failed: {resp.status_code} {resp.text}"
     return resp.json()
 
@@ -139,7 +141,7 @@ def seed_event(
     start = datetime.now() + timedelta(days=days_from_now)
     end = start + timedelta(hours=duration_hours)
     resp = client.post(
-        "/api/events/",
+        "/api/v1/events/",
         json={
             "id": event_id,
             "org_id": org_id,
@@ -164,7 +166,7 @@ def seed_invitation(
 ) -> dict:
     """Create an invitation (admin only). Returns invitation with token."""
     resp = client.post(
-        f"/api/invitations?org_id={org_id}",
+        f"/api/v1/invitations?org_id={org_id}",
         json={
             "email": email,
             "name": name,
@@ -179,7 +181,7 @@ def seed_invitation(
 def accept_invitation(client: TestClient, token: str, password: str = "VolPass123!") -> dict:
     """Accept invitation. NOTE: returned token is NOT a JWT — must call login() after."""
     resp = client.post(
-        f"/api/invitations/{token}/accept",
+        f"/api/v1/invitations/{token}/accept",
         json={
             "password": password,
             "timezone": "UTC",
@@ -199,7 +201,7 @@ def seed_team(
 ) -> dict:
     """Create a team (admin only). Returns team response."""
     resp = client.post(
-        "/api/teams/",
+        "/api/v1/teams/",
         json={
             "id": team_id,
             "org_id": org_id,
@@ -221,7 +223,7 @@ def add_timeoff(
 ) -> dict:
     """Add time-off for a person. Dates are ISO strings like '2026-05-01'."""
     resp = client.post(
-        f"/api/availability/{person_id}/timeoff",
+        f"/api/v1/availability/{person_id}/timeoff",
         json={
             "start_date": start_date,
             "end_date": end_date,

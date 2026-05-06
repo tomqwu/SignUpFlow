@@ -56,7 +56,7 @@ class TestSchedulingWorkflow:
             event_ids.append(eid)
 
         # Verify events created
-        resp = client.get(f"/api/events/?org_id={self.ORG}")
+        resp = client.get(f"/api/v1/events/?org_id={self.ORG}")
         assert resp.status_code == 200
         assert resp.json()["total"] == 3
 
@@ -84,7 +84,7 @@ class TestSchedulingWorkflow:
             )
 
         # Verify all people exist (1 admin + 5 volunteers)
-        resp = client.get(f"/api/people/?org_id={self.ORG}", headers=hdrs)
+        resp = client.get(f"/api/v1/people/?org_id={self.ORG}", headers=hdrs)
         assert resp.status_code == 200
         assert resp.json()["total"] == 6
 
@@ -101,7 +101,7 @@ class TestSchedulingWorkflow:
 
         # Verify time-off recorded
         for vol in volunteers[:2]:
-            resp = client.get(f"/api/availability/{vol['person_id']}/timeoff")
+            resp = client.get(f"/api/v1/availability/{vol['person_id']}/timeoff")
             assert resp.status_code == 200
             assert resp.json()["total"] == 1
 
@@ -109,7 +109,7 @@ class TestSchedulingWorkflow:
         from_date = (datetime.now() + timedelta(days=13)).strftime("%Y-%m-%d")
         to_date = (datetime.now() + timedelta(days=40)).strftime("%Y-%m-%d")
         resp = client.post(
-            "/api/solver/solve",
+            "/api/v1/solver/solve",
             json={
                 "org_id": self.ORG,
                 "from_date": from_date,
@@ -127,7 +127,7 @@ class TestSchedulingWorkflow:
         assert solution["metrics"]["health_score"] >= 0
 
         # -- Verify solution in solutions list --
-        resp = client.get(f"/api/solutions/?org_id={self.ORG}", headers=hdrs)
+        resp = client.get(f"/api/v1/solutions/?org_id={self.ORG}", headers=hdrs)
         assert resp.status_code == 200
         assert resp.json()["total"] >= 1
 
@@ -141,7 +141,7 @@ class TestSchedulingWorkflow:
         seed_event(client, hdrs, self.ORG, "evt-far", days_from_now=60)
 
         resp = client.post(
-            "/api/solver/solve",
+            "/api/v1/solver/solve",
             json={
                 "org_id": self.ORG,
                 "from_date": "2026-01-01",
@@ -164,7 +164,7 @@ class TestSchedulingWorkflow:
 
         # Assign volunteer to event
         resp = client.post(
-            f"/api/events/{event['id']}/assignments",
+            f"/api/v1/events/{event['id']}/assignments",
             json={
                 "person_id": vol["person_id"],
                 "action": "assign",
@@ -175,7 +175,7 @@ class TestSchedulingWorkflow:
         assert resp.status_code == 200
 
         # Verify assignment shows up
-        resp = client.get(f"/api/events/assignments/all?org_id={self.ORG}")
+        resp = client.get(f"/api/v1/events/assignments/all?org_id={self.ORG}")
         assert resp.status_code == 200
         assignments = resp.json()["assignments"]
         assert any(a["person_id"] == vol["person_id"] for a in assignments)
@@ -191,7 +191,7 @@ class TestSchedulingWorkflow:
 
         # Assign then unassign
         client.post(
-            f"/api/events/{event['id']}/assignments",
+            f"/api/v1/events/{event['id']}/assignments",
             json={
                 "person_id": vol["person_id"],
                 "action": "assign",
@@ -201,7 +201,7 @@ class TestSchedulingWorkflow:
         )
 
         resp = client.post(
-            f"/api/events/{event['id']}/assignments",
+            f"/api/v1/events/{event['id']}/assignments",
             json={
                 "person_id": vol["person_id"],
                 "action": "unassign",
