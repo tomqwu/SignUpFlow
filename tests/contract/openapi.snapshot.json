@@ -1,6 +1,22 @@
 {
   "components": {
     "schemas": {
+      "AssignmentDeclineRequest": {
+        "description": "Body for POST /assignments/{id}/decline.",
+        "properties": {
+          "decline_reason": {
+            "maxLength": 500,
+            "minLength": 1,
+            "title": "Decline Reason",
+            "type": "string"
+          }
+        },
+        "required": [
+          "decline_reason"
+        ],
+        "title": "AssignmentDeclineRequest",
+        "type": "object"
+      },
       "AssignmentRequest": {
         "description": "Request to assign/unassign a person.",
         "properties": {
@@ -29,6 +45,84 @@
           "action"
         ],
         "title": "AssignmentRequest",
+        "type": "object"
+      },
+      "AssignmentResponse": {
+        "description": "Single-assignment response shape returned by self-service mutations.",
+        "properties": {
+          "assigned_at": {
+            "format": "date-time",
+            "title": "Assigned At",
+            "type": "string"
+          },
+          "decline_reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Decline Reason"
+          },
+          "event_id": {
+            "title": "Event Id",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "integer"
+          },
+          "person_id": {
+            "title": "Person Id",
+            "type": "string"
+          },
+          "role": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Role"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "event_id",
+          "person_id",
+          "role",
+          "status",
+          "decline_reason",
+          "assigned_at"
+        ],
+        "title": "AssignmentResponse",
+        "type": "object"
+      },
+      "AssignmentSwapRequest": {
+        "description": "Body for POST /assignments/{id}/swap-request.",
+        "properties": {
+          "note": {
+            "anyOf": [
+              {
+                "maxLength": 500,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
+          }
+        },
+        "title": "AssignmentSwapRequest",
         "type": "object"
       },
       "AuthResponse": {
@@ -2325,6 +2419,201 @@
         "summary": "Get Volunteer Stats",
         "tags": [
           "analytics"
+        ]
+      }
+    },
+    "/api/v1/assignments/me": {
+      "get": {
+        "description": "Return every assignment belonging to the caller, scoped to their org via the join.",
+        "operationId": "listMyAssignments",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/AssignmentResponse"
+                  },
+                  "title": "Response List My Assignments Api V1 Assignments Me Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "List My Assignments",
+        "tags": [
+          "assignments"
+        ]
+      }
+    },
+    "/api/v1/assignments/{assignment_id}/accept": {
+      "post": {
+        "description": "Mark the caller's assignment as confirmed.",
+        "operationId": "acceptAssignment",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "assignment_id",
+            "required": true,
+            "schema": {
+              "title": "Assignment Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AssignmentResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Accept Assignment",
+        "tags": [
+          "assignments"
+        ]
+      }
+    },
+    "/api/v1/assignments/{assignment_id}/decline": {
+      "post": {
+        "description": "Decline the caller's assignment with a reason.",
+        "operationId": "declineAssignment",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "assignment_id",
+            "required": true,
+            "schema": {
+              "title": "Assignment Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AssignmentDeclineRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AssignmentResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Decline Assignment",
+        "tags": [
+          "assignments"
+        ]
+      }
+    },
+    "/api/v1/assignments/{assignment_id}/swap-request": {
+      "post": {
+        "description": "Flag the caller's assignment for swap; admin follows up out of band.",
+        "operationId": "requestSwap",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "assignment_id",
+            "required": true,
+            "schema": {
+              "title": "Assignment Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AssignmentSwapRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AssignmentResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Request Swap",
+        "tags": [
+          "assignments"
         ]
       }
     },
