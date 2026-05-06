@@ -29,6 +29,7 @@ from api.routers import (
     password_reset,
     people,
     recurring_events,
+    resources,
     solutions,
     solver,
     teams,
@@ -140,6 +141,7 @@ app.include_router(calendar.router, prefix="/api/v1")
 app.include_router(assignments.router, prefix="/api/v1")
 app.include_router(audit.router, prefix="/api/v1")
 app.include_router(recurring_events.router, prefix="/api/v1")
+app.include_router(resources.router, prefix="/api/v1")
 
 
 @app.get("/api/v1", tags=["root"])
