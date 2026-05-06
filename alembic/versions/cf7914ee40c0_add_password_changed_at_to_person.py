@@ -1,7 +1,7 @@
 """add_password_changed_at_to_person
 
 Revision ID: cf7914ee40c0
-Revises: 7ba388eecd31
+Revises: 739ba7ba574c
 Create Date: 2026-05-06 17:31:28.378854
 
 """
@@ -13,7 +13,7 @@ import sqlalchemy as sa
 
 # revision identifiers, used by Alembic.
 revision: str = 'cf7914ee40c0'
-down_revision: Union[str, Sequence[str], None] = '7ba388eecd31'
+down_revision: Union[str, Sequence[str], None] = '739ba7ba574c'
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 
