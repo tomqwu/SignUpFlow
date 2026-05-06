@@ -1212,6 +1212,37 @@
         "title": "InvitationVerify",
         "type": "object"
       },
+      "ListResponse_ConflictType_": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/ConflictType"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "limit": {
+            "title": "Limit",
+            "type": "integer"
+          },
+          "offset": {
+            "title": "Offset",
+            "type": "integer"
+          },
+          "total": {
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "items",
+          "total",
+          "limit",
+          "offset"
+        ],
+        "title": "ListResponse[ConflictType]",
+        "type": "object"
+      },
       "ListResponse_ConstraintResponse_": {
         "properties": {
           "items": {
@@ -3660,6 +3691,101 @@
         "summary": "Get Subscription Url",
         "tags": [
           "calendar"
+        ]
+      }
+    },
+    "/api/v1/conflicts/": {
+      "get": {
+        "description": "List currently-detected conflicts across an org (admin-only).\n\nScans every Assignment in the org (or just the named person's) and\nsurfaces `time_off` and `double_booked` conflicts. `already_assigned`\nis intentionally omitted because the assignment exists.",
+        "operationId": "listConflicts",
+        "parameters": [
+          {
+            "description": "Organization ID",
+            "in": "query",
+            "name": "org_id",
+            "required": true,
+            "schema": {
+              "description": "Organization ID",
+              "title": "Org Id",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Optional filter to a single person",
+            "in": "query",
+            "name": "person_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Optional filter to a single person",
+              "title": "Person Id"
+            }
+          },
+          {
+            "description": "Page size, max 200",
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 50,
+              "description": "Page size, max 200",
+              "maximum": 200,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          },
+          {
+            "description": "Number of rows to skip",
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "description": "Number of rows to skip",
+              "minimum": 0,
+              "title": "Offset",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListResponse_ConflictType_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "List Conflicts",
+        "tags": [
+          "conflicts"
         ]
       }
     },
