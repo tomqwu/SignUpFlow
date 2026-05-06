@@ -58,11 +58,15 @@ class GreedyHeuristicSolver(SolverAdapter):
         # Build per-person vacation map: person_id -> list[(start_date, end_date)]
         # so we can filter out unavailable candidates per event.
         self._vacation_by_person: dict[str, list[tuple[Any, Any]]] = defaultdict(list)
+        # Per-person exception dates (rrule expansions + one-off AvailabilityException rows).
+        self._exception_dates_by_person: dict[str, set[Any]] = defaultdict(set)
         for avail in self.context.availability or []:
             if avail.person_id is None:
                 continue
             for vac in avail.vacations:
                 self._vacation_by_person[avail.person_id].append((vac.start, vac.end))
+            for exc_date in avail.exceptions:
+                self._exception_dates_by_person[avail.person_id].add(exc_date)
 
         # Filter events in range
         events_in_range = [
@@ -182,6 +186,13 @@ class GreedyHeuristicSolver(SolverAdapter):
                 # Vacation periods are inclusive on both ends.
                 vacations = getattr(self, "_vacation_by_person", {}).get(person.id, [])
                 if any(v_start <= event_date <= v_end for v_start, v_end in vacations):
+                    continue
+                # Skip if event date matches a one-off AvailabilityException OR
+                # any rrule-expanded blocked date for the person.
+                exception_dates = getattr(self, "_exception_dates_by_person", {}).get(
+                    person.id, set()
+                )
+                if event_date in exception_dates:
                     continue
 
                 # Check person-level hard constraints

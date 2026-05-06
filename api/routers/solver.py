@@ -37,11 +37,15 @@ from api.core.models import (
 )
 from api.core.solver.adapter import SolveContext
 from api.core.solver.heuristics import GreedyHeuristicSolver
+from api.core.timeutils import parse_rrule
 from api.models import (
     Assignment as DBAssignment,
 )
 from api.models import (
     Availability as DBAvailability,
+)
+from api.models import (
+    AvailabilityException as DBAvailabilityException,
 )
 from api.models import (
     Constraint as DBConstraint,
@@ -196,13 +200,18 @@ def solve_schedule(
         for r in resources_db
     ]
 
-    # Load availability for people in this org. Each Availability row may
-    # carry zero-or-more VacationPeriod children that the solver uses to
-    # block out time-off.
+    # Load availability for people in this org. Each Availability row carries:
+    #   - VacationPeriod children: ranges the solver blocks (Sprint 3-E)
+    #   - AvailabilityException children: one-off blocked dates
+    #   - rrule string: recurring blocked dates expanded over the solve window
     person_ids = [p.id for p in people_db]
     availability: list[AvailabilityModel] = []
     if person_ids:
         avail_rows = db.query(DBAvailability).filter(DBAvailability.person_id.in_(person_ids)).all()
+        # Compute the solve window once for rrule expansion
+        from_dt = datetime.combine(solve_request.from_date, datetime.min.time())
+        to_dt = datetime.combine(solve_request.to_date, datetime.max.time())
+
         for a in avail_rows:
             vacations = [
                 VacationPeriodModel(start=v.start_date, end=v.end_date)
@@ -210,11 +219,34 @@ def solve_schedule(
                 .filter(DBVacationPeriod.availability_id == a.id)
                 .all()
             ]
+            # One-off exception dates from AvailabilityException
+            exception_dates: list = [
+                row.exception_date
+                for row in db.query(DBAvailabilityException)
+                .filter(DBAvailabilityException.availability_id == a.id)
+                .all()
+            ]
+            # Expand rrule to concrete blocked dates within [from_date, to_date].
+            # Malformed rrule strings are logged and treated as no-op so a single
+            # bad rule doesn't break the entire solve.
+            if a.rrule:
+                try:
+                    for occ in parse_rrule(a.rrule, from_dt, to_dt):
+                        exception_dates.append(occ.date())
+                except Exception as exc:  # noqa: BLE001 — solver must not crash on bad input
+                    logger.warning(
+                        "Skipping malformed rrule for person=%s availability=%s: %s",
+                        a.person_id,
+                        a.id,
+                        exc,
+                    )
+
             availability.append(
                 AvailabilityModel(
                     person_id=a.person_id,
                     rrule=a.rrule,
                     vacations=vacations,
+                    exceptions=exception_dates,
                 )
             )
 
