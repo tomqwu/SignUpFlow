@@ -1212,6 +1212,37 @@
         "title": "InvitationVerify",
         "type": "object"
       },
+      "ListResponse_ConflictType_": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/ConflictType"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "limit": {
+            "title": "Limit",
+            "type": "integer"
+          },
+          "offset": {
+            "title": "Offset",
+            "type": "integer"
+          },
+          "total": {
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "items",
+          "total",
+          "limit",
+          "offset"
+        ],
+        "title": "ListResponse[ConflictType]",
+        "type": "object"
+      },
       "ListResponse_ConstraintResponse_": {
         "properties": {
           "items": {
@@ -3660,6 +3691,94 @@
         "summary": "Get Subscription Url",
         "tags": [
           "calendar"
+        ]
+      }
+    },
+    "/api/v1/conflicts/": {
+      "get": {
+        "description": "List existing scheduling conflicts for `person_id` within `org_id`.\n\nSurfaces:\n- `double_booked` \u2014 pairs of overlapping assignments\n- `time_off` \u2014 assignments overlapping the person's vacation periods\n\nReuses `check_time_overlap`. Auth: caller must be a member of `org_id`.",
+        "operationId": "listConflicts",
+        "parameters": [
+          {
+            "description": "Organization scope (required)",
+            "in": "query",
+            "name": "org_id",
+            "required": true,
+            "schema": {
+              "description": "Organization scope (required)",
+              "title": "Org Id",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Person whose conflicts to surface",
+            "in": "query",
+            "name": "person_id",
+            "required": true,
+            "schema": {
+              "description": "Person whose conflicts to surface",
+              "title": "Person Id",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Page size, max 200",
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 50,
+              "description": "Page size, max 200",
+              "maximum": 200,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          },
+          {
+            "description": "Number of rows to skip",
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "description": "Number of rows to skip",
+              "minimum": 0,
+              "title": "Offset",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListResponse_ConflictType_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "List Conflicts",
+        "tags": [
+          "conflicts"
         ]
       }
     },

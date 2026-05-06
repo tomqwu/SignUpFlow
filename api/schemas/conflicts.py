@@ -4,6 +4,8 @@ from datetime import datetime
 
 from pydantic import BaseModel, Field
 
+from api.schemas.common import ListResponse
+
 
 class ConflictCheckRequest(BaseModel):
     """Request schema for checking conflicts."""
@@ -34,3 +36,6 @@ class ConflictCheckResponse(BaseModel):
     can_assign: bool = Field(
         ..., description="Whether assignment should be allowed despite conflicts"
     )
+
+
+ConflictList = ListResponse[ConflictType]
