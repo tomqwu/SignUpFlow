@@ -3930,7 +3930,7 @@
     },
     "/api/v1/constraints/": {
       "get": {
-        "description": "List constraints with optional filters.",
+        "description": "List constraints. Always scoped to the caller's organization.",
         "operationId": "listConstraints",
         "parameters": [
           {
@@ -4019,13 +4019,18 @@
             "description": "Validation Error"
           }
         },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
         "summary": "List Constraints",
         "tags": [
           "constraints"
         ]
       },
       "post": {
-        "description": "Create a new constraint.",
+        "description": "Create a new constraint (admin only, scoped to admin's org).",
         "operationId": "createConstraint",
         "requestBody": {
           "content": {
@@ -4059,6 +4064,11 @@
             "description": "Validation Error"
           }
         },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
         "summary": "Create Constraint",
         "tags": [
           "constraints"
@@ -4067,7 +4077,7 @@
     },
     "/api/v1/constraints/{constraint_id}": {
       "delete": {
-        "description": "Delete constraint.",
+        "description": "Delete constraint (admin only, scoped to admin's org).",
         "operationId": "deleteConstraint",
         "parameters": [
           {
@@ -4095,13 +4105,18 @@
             "description": "Validation Error"
           }
         },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
         "summary": "Delete Constraint",
         "tags": [
           "constraints"
         ]
       },
       "get": {
-        "description": "Get constraint by ID.",
+        "description": "Get constraint by ID; org isolation enforced.",
         "operationId": "getConstraint",
         "parameters": [
           {
@@ -4136,13 +4151,18 @@
             "description": "Validation Error"
           }
         },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
         "summary": "Get Constraint",
         "tags": [
           "constraints"
         ]
       },
       "put": {
-        "description": "Update constraint.",
+        "description": "Update constraint (admin only, scoped to admin's org).",
         "operationId": "updateConstraint",
         "parameters": [
           {
@@ -4187,6 +4207,11 @@
             "description": "Validation Error"
           }
         },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
         "summary": "Update Constraint",
         "tags": [
           "constraints"
