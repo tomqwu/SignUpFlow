@@ -1,11 +1,11 @@
-"""Constraints router."""
-
+"""Constraints router. Read requires authentication; create/update/delete require admin."""
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
 from api.database import get_db
-from api.models import Constraint, Organization
+from api.dependencies import get_current_admin_user, get_current_user, verify_org_member
+from api.models import Constraint, Organization, Person
 from api.schemas.common import PaginationParams, get_pagination_params
 from api.schemas.constraint import (
     ConstraintCreate,
@@ -18,8 +18,15 @@ router = APIRouter(prefix="/constraints", tags=["constraints"])
 
 
 @router.post("/", response_model=ConstraintResponse, status_code=status.HTTP_201_CREATED)
-def create_constraint(constraint_data: ConstraintCreate, db: Session = Depends(get_db)):
-    """Create a new constraint."""
+def create_constraint(
+    constraint_data: ConstraintCreate,
+    current_admin: Person = Depends(get_current_admin_user),
+    db: Session = Depends(get_db),
+):
+    """Create a new constraint (admin only, scoped to admin's org)."""
+    # Admins may only create constraints for their own org
+    verify_org_member(current_admin, constraint_data.org_id)
+
     # Verify organization exists
     org = db.query(Organization).filter(Organization.id == constraint_data.org_id).first()
     if not org:
@@ -55,13 +62,15 @@ def list_constraints(
     org_id: str | None = Query(None, description="Filter by organization ID"),
     constraint_type: str | None = Query(None, description="Filter by type (hard/soft)"),
     pagination: PaginationParams = Depends(get_pagination_params),
+    current_user: Person = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    """List constraints with optional filters."""
-    query = db.query(Constraint)
+    """List constraints. Always scoped to the caller's organization."""
+    # Default to caller's org if not specified; admins/members can only query their own org
+    target_org = org_id or current_user.org_id
+    verify_org_member(current_user, target_org)
 
-    if org_id:
-        query = query.filter(Constraint.org_id == org_id)
+    query = db.query(Constraint).filter(Constraint.org_id == target_org)
     if constraint_type:
         query = query.filter(Constraint.type == constraint_type)
 
@@ -76,28 +85,37 @@ def list_constraints(
 
 
 @router.get("/{constraint_id}", response_model=ConstraintResponse)
-def get_constraint(constraint_id: int, db: Session = Depends(get_db)):
-    """Get constraint by ID."""
+def get_constraint(
+    constraint_id: int,
+    current_user: Person = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Get constraint by ID; org isolation enforced."""
     constraint = db.query(Constraint).filter(Constraint.id == constraint_id).first()
     if not constraint:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Constraint {constraint_id} not found",
         )
+    verify_org_member(current_user, constraint.org_id)
     return constraint
 
 
 @router.put("/{constraint_id}", response_model=ConstraintResponse)
 def update_constraint(
-    constraint_id: int, constraint_data: ConstraintUpdate, db: Session = Depends(get_db)
+    constraint_id: int,
+    constraint_data: ConstraintUpdate,
+    current_admin: Person = Depends(get_current_admin_user),
+    db: Session = Depends(get_db),
 ):
-    """Update constraint."""
+    """Update constraint (admin only, scoped to admin's org)."""
     constraint = db.query(Constraint).filter(Constraint.id == constraint_id).first()
     if not constraint:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Constraint {constraint_id} not found",
         )
+    verify_org_member(current_admin, constraint.org_id)
 
     # Update fields
     if constraint_data.type is not None:
@@ -120,14 +138,19 @@ def update_constraint(
 
 
 @router.delete("/{constraint_id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_constraint(constraint_id: int, db: Session = Depends(get_db)):
-    """Delete constraint."""
+def delete_constraint(
+    constraint_id: int,
+    current_admin: Person = Depends(get_current_admin_user),
+    db: Session = Depends(get_db),
+):
+    """Delete constraint (admin only, scoped to admin's org)."""
     constraint = db.query(Constraint).filter(Constraint.id == constraint_id).first()
     if not constraint:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Constraint {constraint_id} not found",
         )
+    verify_org_member(current_admin, constraint.org_id)
 
     db.delete(constraint)
     db.commit()
