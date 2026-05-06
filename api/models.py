@@ -534,6 +534,8 @@ class Solution(Base):
     health_score = Column(Float, nullable=False)
     metrics = Column(JSONType, nullable=True)
     created_at = Column(DateTime, default=utcnow)
+    is_published = Column(Boolean, nullable=False, default=False, server_default="0")
+    published_at = Column(DateTime, nullable=True)
 
     # Relationships
     organization = relationship("Organization", back_populates="solutions")
@@ -545,6 +547,7 @@ class Solution(Base):
     __table_args__ = (
         Index("idx_solutions_org_id", "org_id"),
         Index("idx_solutions_created_at", "created_at"),
+        Index("idx_solutions_org_published", "org_id", "is_published"),
     )
 
 
@@ -895,6 +898,10 @@ class AuditAction:
     ASSIGNMENT_ACCEPTED = "assignment.accepted"
     ASSIGNMENT_DECLINED = "assignment.declined"
     ASSIGNMENT_SWAP_REQUESTED = "assignment.swap_requested"
+
+    # Solution lifecycle
+    SOLUTION_PUBLISHED = "solution.published"
+    SOLUTION_UNPUBLISHED = "solution.unpublished"
 
 
 class SmsPreference(Base):

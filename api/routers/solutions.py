@@ -2,7 +2,7 @@
 
 from datetime import datetime
 
-from fastapi import APIRouter, Depends, HTTPException, Query, Response, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response, status
 from sqlalchemy.orm import Session
 
 from api.core.models import (
@@ -15,9 +15,12 @@ from api.core.models import (
     Person as PersonModel,
 )
 from api.database import get_db
-from api.models import Assignment, Event, Organization, Person, Solution
+from api.dependencies import get_current_admin_user, verify_org_member
+from api.models import Assignment, AuditAction, Event, Organization, Person, Solution
 from api.schemas.common import PaginationParams, get_pagination_params
 from api.schemas.solver import ExportFormat, SolutionList, SolutionResponse
+from api.timeutils import utcnow
+from api.utils.audit_logger import log_audit_event
 from api.utils.pdf_export import generate_schedule_pdf
 
 router = APIRouter(prefix="/solutions", tags=["solutions"])
@@ -351,6 +354,100 @@ def export_solution(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"Unknown format: {export_format.format}. Must be json, csv, ics, or pdf",
         )
+
+
+@router.post("/{solution_id}/publish", response_model=SolutionResponse)
+def publish_solution(
+    solution_id: int,
+    http_request: Request,
+    current_admin: Person = Depends(get_current_admin_user),
+    db: Session = Depends(get_db),
+):
+    """Publish a solution (admin only). Unpublishes any prior published in the same org."""
+    solution = db.query(Solution).filter(Solution.id == solution_id).first()
+    if not solution:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Solution {solution_id} not found",
+        )
+    verify_org_member(current_admin, solution.org_id)
+
+    # Unpublish any prior in the same org.
+    prior = (
+        db.query(Solution)
+        .filter(
+            Solution.org_id == solution.org_id,
+            Solution.is_published.is_(True),
+            Solution.id != solution.id,
+        )
+        .all()
+    )
+    for s in prior:
+        s.is_published = False
+        s.published_at = None
+
+    now = utcnow()
+    solution.is_published = True
+    solution.published_at = now
+    db.commit()
+    db.refresh(solution)
+
+    log_audit_event(
+        db,
+        action=AuditAction.SOLUTION_PUBLISHED,
+        user_id=current_admin.id,
+        user_email=current_admin.email,
+        organization_id=solution.org_id,
+        resource_type="solution",
+        resource_id=str(solution.id),
+        details={"unpublished_prior_ids": [s.id for s in prior]},
+        ip_address=http_request.client.host if http_request.client else None,
+        user_agent=http_request.headers.get("user-agent"),
+    )
+
+    assignment_count = db.query(Assignment).filter(Assignment.solution_id == solution.id).count()
+    response = SolutionResponse.model_validate(solution)
+    response.assignment_count = assignment_count
+    return response
+
+
+@router.post("/{solution_id}/unpublish", response_model=SolutionResponse)
+def unpublish_solution(
+    solution_id: int,
+    http_request: Request,
+    current_admin: Person = Depends(get_current_admin_user),
+    db: Session = Depends(get_db),
+):
+    """Unpublish a solution (admin only)."""
+    solution = db.query(Solution).filter(Solution.id == solution_id).first()
+    if not solution:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Solution {solution_id} not found",
+        )
+    verify_org_member(current_admin, solution.org_id)
+
+    solution.is_published = False
+    solution.published_at = None
+    db.commit()
+    db.refresh(solution)
+
+    log_audit_event(
+        db,
+        action=AuditAction.SOLUTION_UNPUBLISHED,
+        user_id=current_admin.id,
+        user_email=current_admin.email,
+        organization_id=solution.org_id,
+        resource_type="solution",
+        resource_id=str(solution.id),
+        ip_address=http_request.client.host if http_request.client else None,
+        user_agent=http_request.headers.get("user-agent"),
+    )
+
+    assignment_count = db.query(Assignment).filter(Assignment.solution_id == solution.id).count()
+    response = SolutionResponse.model_validate(solution)
+    response.assignment_count = assignment_count
+    return response
 
 
 @router.delete("/{solution_id}", status_code=status.HTTP_204_NO_CONTENT)
