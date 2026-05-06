@@ -883,6 +883,8 @@ class AuditAction:
     ORG_CREATED = "org.created"
     ORG_UPDATED = "org.updated"
     ORG_SETTINGS_CHANGED = "org.settings.changed"
+    ORG_CANCELLED = "org.cancelled"
+    ORG_RESTORED = "org.restored"
 
     # Sensitive operations
     BULK_DELETE = "data.bulk_delete"
