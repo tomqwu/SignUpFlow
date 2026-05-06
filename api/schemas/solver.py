@@ -1,7 +1,8 @@
 """Solver schemas."""
 
-from typing import Optional, List, Dict, Any
 from datetime import date, datetime
+from typing import Any
+
 from pydantic import BaseModel, ConfigDict, Field
 
 
@@ -20,7 +21,7 @@ class ViolationInfo(BaseModel):
 
     constraint_key: str
     message: str
-    entities: List[str]
+    entities: list[str]
     severity: str
 
 
@@ -28,7 +29,7 @@ class FairnessMetrics(BaseModel):
     """Schema for fairness metrics."""
 
     stdev: float
-    per_person_counts: Dict[str, int]
+    per_person_counts: dict[str, int]
 
 
 class SolutionMetrics(BaseModel):
@@ -56,7 +57,7 @@ class SolveResponse(BaseModel):
     solution_id: int = Field(..., description="Database ID of saved solution")
     metrics: SolutionMetrics
     assignment_count: int
-    violations: List[ViolationInfo]
+    violations: list[ViolationInfo]
     message: str
 
 
@@ -71,7 +72,7 @@ class SolutionResponse(BaseModel):
 
     soft_score: float
     health_score: float
-    metrics: Optional[Dict[str, Any]]
+    metrics: dict[str, Any] | None
     created_at: datetime
     assignment_count: int = 0
 
@@ -79,7 +80,7 @@ class SolutionResponse(BaseModel):
 class SolutionList(BaseModel):
     """Schema for listing solutions."""
 
-    solutions: List[SolutionResponse]
+    solutions: list[SolutionResponse]
     total: int
 
 

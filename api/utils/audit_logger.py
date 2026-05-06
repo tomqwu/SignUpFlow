@@ -5,25 +5,27 @@ Provides functions to log security-sensitive operations to the audit log.
 """
 
 import secrets
-from typing import Optional, Dict, Any
-from sqlalchemy.orm import Session
+from typing import Any
+
 from fastapi import Request
-from api.models import AuditLog, AuditAction
+from sqlalchemy.orm import Session
+
+from api.models import AuditAction, AuditLog
 
 
 def log_audit_event(
     db: Session,
     action: str,
-    user_id: Optional[str] = None,
-    user_email: Optional[str] = None,
-    organization_id: Optional[str] = None,
-    resource_type: Optional[str] = None,
-    resource_id: Optional[str] = None,
-    details: Optional[Dict[str, Any]] = None,
-    ip_address: Optional[str] = None,
-    user_agent: Optional[str] = None,
+    user_id: str | None = None,
+    user_email: str | None = None,
+    organization_id: str | None = None,
+    resource_type: str | None = None,
+    resource_id: str | None = None,
+    details: dict[str, Any] | None = None,
+    ip_address: str | None = None,
+    user_agent: str | None = None,
     status: str = "success",
-    error_message: Optional[str] = None,
+    error_message: str | None = None,
 ) -> AuditLog:
     """
     Log an audit event to the database.
@@ -71,14 +73,14 @@ def log_audit_from_request(
     db: Session,
     request: Request,
     action: str,
-    user_id: Optional[str] = None,
-    user_email: Optional[str] = None,
-    organization_id: Optional[str] = None,
-    resource_type: Optional[str] = None,
-    resource_id: Optional[str] = None,
-    details: Optional[Dict[str, Any]] = None,
+    user_id: str | None = None,
+    user_email: str | None = None,
+    organization_id: str | None = None,
+    resource_type: str | None = None,
+    resource_id: str | None = None,
+    details: dict[str, Any] | None = None,
     status: str = "success",
-    error_message: Optional[str] = None,
+    error_message: str | None = None,
 ) -> AuditLog:
     """
     Log an audit event, extracting IP and user agent from FastAPI Request.
@@ -127,9 +129,9 @@ def log_login_attempt(
     request: Request,
     email: str,
     success: bool,
-    user_id: Optional[str] = None,
-    organization_id: Optional[str] = None,
-    error_message: Optional[str] = None,
+    user_id: str | None = None,
+    organization_id: str | None = None,
+    error_message: str | None = None,
 ) -> AuditLog:
     """
     Log a login attempt (success or failure).
@@ -229,8 +231,8 @@ def log_data_export(
     user_email: str,
     organization_id: str,
     export_type: str,  # "calendar", "report", "csv"
-    resource_type: Optional[str] = None,
-    resource_count: Optional[int] = None,
+    resource_type: str | None = None,
+    resource_count: int | None = None,
 ) -> AuditLog:
     """
     Log a data export operation.
@@ -248,7 +250,9 @@ def log_data_export(
     Returns:
         Created AuditLog instance
     """
-    action = AuditAction.CALENDAR_EXPORTED if export_type == "calendar" else AuditAction.DATA_EXPORTED
+    action = (
+        AuditAction.CALENDAR_EXPORTED if export_type == "calendar" else AuditAction.DATA_EXPORTED
+    )
 
     details = {
         "export_type": export_type,

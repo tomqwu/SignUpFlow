@@ -9,20 +9,19 @@ Provides endpoints for:
 - Incoming webhook handling
 """
 
-from fastapi import APIRouter, Depends, HTTPException, Request, BackgroundTasks
-from sqlalchemy.orm import Session
-from typing import List, Optional
+
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Request
 from pydantic import BaseModel, Field
+from sqlalchemy.orm import Session
 
 from api.database import get_db
-from api.dependencies import get_current_user, get_current_admin_user
-from api.models import Person, Event, Assignment, SmsPreference
+from api.dependencies import get_current_admin_user, get_current_user
+from api.models import Assignment, Event, Person, SmsPreference
 from api.services.sms_service import SMSService
 from api.tasks.sms_tasks import (
     send_assignment_notification,
-    send_event_reminder,
-    send_schedule_change_notification,
     send_broadcast_message,
+    send_event_reminder,
 )
 
 router = APIRouter(prefix="/api/sms", tags=["sms"])
@@ -46,8 +45,8 @@ class PhoneVerificationResponse(BaseModel):
     carrier_type: str
     formatted_number: str
     deliverable: bool
-    country_code: Optional[str] = None
-    error: Optional[str] = None
+    country_code: str | None = None
+    error: str | None = None
 
 
 class VerificationCodeRequest(BaseModel):
@@ -100,7 +99,7 @@ class SendEventReminderRequest(BaseModel):
 class SendBroadcastRequest(BaseModel):
     """Request to send broadcast message."""
 
-    recipient_ids: List[int] = Field(..., description="List of person IDs (max 200)")
+    recipient_ids: list[int] = Field(..., description="List of person IDs (max 200)")
     message_text: str = Field(..., description="Message content (max 1600 chars)", max_length=1600)
     is_urgent: bool = Field(default=False, description="Bypass rate limits if urgent")
 
@@ -142,9 +141,7 @@ def verify_phone_number(
     except ValueError as e:
         raise HTTPException(status_code=422, detail=str(e))
     except Exception as e:
-        raise HTTPException(
-            status_code=500, detail=f"Phone verification failed: {str(e)}"
-        )
+        raise HTTPException(status_code=500, detail=f"Phone verification failed: {str(e)}")
 
 
 @router.post("/send-verification-code", response_model=VerificationCodeResponse)
@@ -165,7 +162,7 @@ def send_verification_code(
     sms_service = SMSService()
 
     try:
-        code = sms_service.generate_verification_code(
+        sms_service.generate_verification_code(
             db=db, person_id=request.person_id, phone_number=request.phone_number
         )
 
@@ -216,10 +213,12 @@ def verify_code(
 class UpdateSmsPreferencesRequest(BaseModel):
     """Request to update SMS notification preferences."""
 
-    notification_types: List[str] = Field(
+    notification_types: list[str] = Field(
         ..., description="List of notification types: assignment, reminder, change, cancellation"
     )
-    language: str = Field(default="en", description="Preferred language for SMS: en, es, pt, zh-CN, zh-TW, fr")
+    language: str = Field(
+        default="en", description="Preferred language for SMS: en, es, pt, zh-CN, zh-TW, fr"
+    )
 
 
 class SmsUsageStatsResponse(BaseModel):
@@ -232,7 +231,7 @@ class SmsUsageStatsResponse(BaseModel):
     total_cost_cents: int
     budget_limit_cents: int
     budget_used_percentage: float
-    messages_remaining: Optional[int] = None
+    messages_remaining: int | None = None
 
 
 @router.put("/people/{person_id}/sms-preferences")
@@ -260,10 +259,14 @@ def update_sms_preferences(
     sms_pref = db.query(SmsPreference).filter(SmsPreference.person_id == person_id_int).first()
 
     if not sms_pref:
-        raise HTTPException(status_code=404, detail="SMS preferences not found. Verify phone first.")
+        raise HTTPException(
+            status_code=404, detail="SMS preferences not found. Verify phone first."
+        )
 
     if not sms_pref.verified:
-        raise HTTPException(status_code=403, detail="Phone must be verified before updating preferences")
+        raise HTTPException(
+            status_code=403, detail="Phone must be verified before updating preferences"
+        )
 
     # Validate notification types
     valid_types = ["assignment", "reminder", "change", "cancellation"]
@@ -271,7 +274,7 @@ def update_sms_preferences(
         if notification_type not in valid_types:
             raise HTTPException(
                 status_code=422,
-                detail=f"Invalid notification type: {notification_type}. Valid: {', '.join(valid_types)}"
+                detail=f"Invalid notification type: {notification_type}. Valid: {', '.join(valid_types)}",
             )
 
     # Validate language
@@ -279,7 +282,7 @@ def update_sms_preferences(
     if request.language not in valid_languages:
         raise HTTPException(
             status_code=422,
-            detail=f"Invalid language: {request.language}. Valid: {', '.join(valid_languages)}"
+            detail=f"Invalid language: {request.language}. Valid: {', '.join(valid_languages)}",
         )
 
     # Update preferences
@@ -290,7 +293,7 @@ def update_sms_preferences(
     return {
         "message": "SMS preferences updated successfully",
         "notification_types": sms_pref.notification_types,
-        "language": sms_pref.language
+        "language": sms_pref.language,
     }
 
 
@@ -305,8 +308,9 @@ def get_sms_usage_stats(
 
     Returns current month usage with budget tracking.
     """
-    from api.models import SmsUsage
     from datetime import datetime
+
+    from api.models import SmsUsage
 
     # Verify admin belongs to organization
     admin_org_id = int(current_admin.org_id.split("_")[-1])
@@ -318,10 +322,7 @@ def get_sms_usage_stats(
 
     usage = (
         db.query(SmsUsage)
-        .filter(
-            SmsUsage.organization_id == org_id,
-            SmsUsage.month_year == current_month
-        )
+        .filter(SmsUsage.organization_id == org_id, SmsUsage.month_year == current_month)
         .first()
     )
 
@@ -335,11 +336,15 @@ def get_sms_usage_stats(
             total_cost_cents=0,
             budget_limit_cents=100000,  # Default $1000 budget
             budget_used_percentage=0.0,
-            messages_remaining=None
+            messages_remaining=None,
         )
 
     # Calculate budget percentage
-    budget_used_percentage = (usage.total_cost_cents / usage.budget_limit_cents * 100) if usage.budget_limit_cents > 0 else 0
+    budget_used_percentage = (
+        (usage.total_cost_cents / usage.budget_limit_cents * 100)
+        if usage.budget_limit_cents > 0
+        else 0
+    )
 
     # Calculate messages remaining (if budget set)
     messages_remaining = None
@@ -356,7 +361,7 @@ def get_sms_usage_stats(
         total_cost_cents=usage.total_cost_cents,
         budget_limit_cents=usage.budget_limit_cents,
         budget_used_percentage=round(budget_used_percentage, 2),
-        messages_remaining=messages_remaining
+        messages_remaining=messages_remaining,
     )
 
 
@@ -385,9 +390,7 @@ def send_assignment_notification_api(
     # Verify assignment exists
     assignment = db.query(Assignment).filter(Assignment.id == request.assignment_id).first()
     if not assignment:
-        raise HTTPException(
-            status_code=404, detail=f"Assignment {request.assignment_id} not found"
-        )
+        raise HTTPException(status_code=404, detail=f"Assignment {request.assignment_id} not found")
 
     # Queue Celery task
     task = send_assignment_notification.delay(
@@ -457,9 +460,7 @@ def send_broadcast_api(
         raise HTTPException(status_code=422, detail="recipient_ids cannot be empty")
 
     if len(request.recipient_ids) > 200:
-        raise HTTPException(
-            status_code=422, detail="Maximum 200 recipients per broadcast"
-        )
+        raise HTTPException(status_code=422, detail="Maximum 200 recipients per broadcast")
 
     # Get organization ID from admin
     organization_id = current_admin.org_id
@@ -547,13 +548,12 @@ async def twilio_delivery_status_webhook(request: Request, db: Session = Depends
             raise HTTPException(status_code=422, detail="Missing required fields")
 
         # Update message status in database
-        from api.models import SmsMessage
         from datetime import datetime
 
+        from api.models import SmsMessage
+
         sms_message = (
-            db.query(SmsMessage)
-            .filter(SmsMessage.twilio_message_sid == message_sid)
-            .first()
+            db.query(SmsMessage).filter(SmsMessage.twilio_message_sid == message_sid).first()
         )
 
         if sms_message:

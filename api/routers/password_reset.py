@@ -1,10 +1,11 @@
 """Password reset endpoints."""
 
-from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy.orm import Session
-from pydantic import BaseModel, EmailStr
 import secrets
 from datetime import datetime, timedelta
+
+from fastapi import APIRouter, Depends, HTTPException, status
+from pydantic import BaseModel, EmailStr
+from sqlalchemy.orm import Session
 
 from api.database import get_db
 from api.models import Person
@@ -19,11 +20,13 @@ reset_tokens = {}
 
 class PasswordResetRequest(BaseModel):
     """Request password reset."""
+
     email: EmailStr
 
 
 class PasswordResetConfirm(BaseModel):
     """Confirm password reset with token."""
+
     token: str
     new_password: str
 

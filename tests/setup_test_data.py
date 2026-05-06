@@ -3,16 +3,15 @@
 from __future__ import annotations
 
 import os
+from collections.abc import Iterable
 from datetime import datetime, timedelta
-
-from api.timeutils import utcnow
-from typing import Iterable
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
-from api.models import Base, Organization, Person, Event
+from api.models import Base, Event, Organization, Person
 from api.security import hash_password
+from api.timeutils import utcnow
 
 
 def _get_engine() -> tuple[str, sessionmaker]:
@@ -40,7 +39,9 @@ def _get_engine() -> tuple[str, sessionmaker]:
     return db_url, sessionmaker(bind=engine, autoflush=False, autocommit=False)
 
 
-def _upsert_organization(session, org_id: str, name: str, *, region: str, config: dict) -> Organization:
+def _upsert_organization(
+    session, org_id: str, name: str, *, region: str, config: dict
+) -> Organization:
     organization = session.get(Organization, org_id)
     if organization is None:
         organization = Organization(id=org_id, name=name, region=region, config=config)

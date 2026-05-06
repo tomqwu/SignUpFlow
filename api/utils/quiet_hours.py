@@ -6,7 +6,6 @@ Uses volunteer's timezone from sms_preferences table.
 """
 
 from datetime import datetime, time, timedelta
-from typing import Tuple
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 
@@ -18,9 +17,7 @@ class QuietHours:
         self.quiet_start = time(22, 0)  # 10:00 PM
         self.quiet_end = time(8, 0)  # 8:00 AM
 
-    def is_quiet_hours(
-        self, timezone: str, is_urgent: bool = False
-    ) -> Tuple[bool, str]:
+    def is_quiet_hours(self, timezone: str, is_urgent: bool = False) -> tuple[bool, str]:
         """
         Check if current time is within quiet hours for timezone.
 
@@ -95,9 +92,7 @@ class QuietHours:
 
         return next_send
 
-    def _is_between(
-        self, current: time, start: time, end: time
-    ) -> bool:
+    def _is_between(self, current: time, start: time, end: time) -> bool:
         """
         Check if current time is between start and end times.
         Handles overnight ranges (e.g., 10pm-8am).

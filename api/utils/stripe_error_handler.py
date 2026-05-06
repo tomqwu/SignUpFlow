@@ -17,11 +17,12 @@ Example Usage:
         }
 """
 
-from typing import Dict, Any
+from typing import Any
+
 from api.logging_config import logger
 
 
-def handle_stripe_error(error: Exception) -> Dict[str, Any]:
+def handle_stripe_error(error: Exception) -> dict[str, Any]:
     """
     Handle Stripe API errors and return user-friendly messages.
 
@@ -55,7 +56,7 @@ def handle_stripe_error(error: Exception) -> Dict[str, Any]:
             "user_message": "Payment system is not configured. Please contact support.",
             "error_code": "stripe_not_installed",
             "error_type": "system_error",
-            "technical_details": str(error)
+            "technical_details": str(error),
         }
 
     # Default error response
@@ -63,76 +64,100 @@ def handle_stripe_error(error: Exception) -> Dict[str, Any]:
         "user_message": "An unexpected error occurred. Please try again or contact support.",
         "error_code": "unknown",
         "error_type": "unknown",
-        "technical_details": str(error)
+        "technical_details": str(error),
     }
 
     # Handle Stripe-specific errors
     if isinstance(error, stripe.error.CardError):
         # Card was declined
-        error_response.update({
-            "user_message": "Your card was declined. Please check your card details or use a different payment method.",
-            "error_code": error.code if hasattr(error, 'code') else "card_declined",
-            "error_type": "card_error"
-        })
+        error_response.update(
+            {
+                "user_message": "Your card was declined. Please check your card details or use a different payment method.",
+                "error_code": error.code if hasattr(error, "code") else "card_declined",
+                "error_type": "card_error",
+            }
+        )
 
         # More specific card error messages
-        if hasattr(error, 'code'):
-            if error.code == 'insufficient_funds':
-                error_response["user_message"] = "Your card has insufficient funds. Please use a different payment method."
-            elif error.code == 'expired_card':
-                error_response["user_message"] = "Your card has expired. Please update your payment information."
-            elif error.code == 'incorrect_cvc':
-                error_response["user_message"] = "The CVC code is incorrect. Please check and try again."
-            elif error.code == 'incorrect_number':
-                error_response["user_message"] = "The card number is incorrect. Please check and try again."
-            elif error.code == 'card_not_supported':
-                error_response["user_message"] = "This card type is not supported. Please use a different card."
+        if hasattr(error, "code"):
+            if error.code == "insufficient_funds":
+                error_response[
+                    "user_message"
+                ] = "Your card has insufficient funds. Please use a different payment method."
+            elif error.code == "expired_card":
+                error_response[
+                    "user_message"
+                ] = "Your card has expired. Please update your payment information."
+            elif error.code == "incorrect_cvc":
+                error_response[
+                    "user_message"
+                ] = "The CVC code is incorrect. Please check and try again."
+            elif error.code == "incorrect_number":
+                error_response[
+                    "user_message"
+                ] = "The card number is incorrect. Please check and try again."
+            elif error.code == "card_not_supported":
+                error_response[
+                    "user_message"
+                ] = "This card type is not supported. Please use a different card."
 
-        logger.warning(f"Stripe card error: {error.code if hasattr(error, 'code') else 'unknown'} - {str(error)}")
+        logger.warning(
+            f"Stripe card error: {error.code if hasattr(error, 'code') else 'unknown'} - {str(error)}"
+        )
 
     elif isinstance(error, stripe.error.RateLimitError):
         # Too many requests
-        error_response.update({
-            "user_message": "Our payment system is busy. Please wait a moment and try again.",
-            "error_code": "rate_limit",
-            "error_type": "rate_limit_error"
-        })
+        error_response.update(
+            {
+                "user_message": "Our payment system is busy. Please wait a moment and try again.",
+                "error_code": "rate_limit",
+                "error_type": "rate_limit_error",
+            }
+        )
         logger.error(f"Stripe rate limit error: {str(error)}")
 
     elif isinstance(error, stripe.error.InvalidRequestError):
         # Invalid parameters
-        error_response.update({
-            "user_message": "There was a problem with your request. Please check your information and try again.",
-            "error_code": "invalid_request",
-            "error_type": "invalid_request_error"
-        })
+        error_response.update(
+            {
+                "user_message": "There was a problem with your request. Please check your information and try again.",
+                "error_code": "invalid_request",
+                "error_type": "invalid_request_error",
+            }
+        )
         logger.error(f"Stripe invalid request error: {str(error)}")
 
     elif isinstance(error, stripe.error.AuthenticationError):
         # API key issues
-        error_response.update({
-            "user_message": "Payment system authentication failed. Please contact support.",
-            "error_code": "authentication_error",
-            "error_type": "authentication_error"
-        })
+        error_response.update(
+            {
+                "user_message": "Payment system authentication failed. Please contact support.",
+                "error_code": "authentication_error",
+                "error_type": "authentication_error",
+            }
+        )
         logger.critical(f"Stripe authentication error - check API keys: {str(error)}")
 
     elif isinstance(error, stripe.error.APIConnectionError):
         # Network communication failed
-        error_response.update({
-            "user_message": "Unable to connect to payment system. Please check your internet connection and try again.",
-            "error_code": "connection_error",
-            "error_type": "api_connection_error"
-        })
+        error_response.update(
+            {
+                "user_message": "Unable to connect to payment system. Please check your internet connection and try again.",
+                "error_code": "connection_error",
+                "error_type": "api_connection_error",
+            }
+        )
         logger.error(f"Stripe API connection error: {str(error)}")
 
     elif isinstance(error, stripe.error.StripeError):
         # Generic Stripe error
-        error_response.update({
-            "user_message": "Payment processing failed. Please try again or contact support.",
-            "error_code": error.code if hasattr(error, 'code') else "stripe_error",
-            "error_type": "stripe_error"
-        })
+        error_response.update(
+            {
+                "user_message": "Payment processing failed. Please try again or contact support.",
+                "error_code": error.code if hasattr(error, "code") else "stripe_error",
+                "error_type": "stripe_error",
+            }
+        )
         logger.error(f"Stripe error: {str(error)}")
 
     else:
@@ -165,7 +190,7 @@ def format_stripe_error_for_user(error: Exception) -> str:
     return error_info["user_message"]
 
 
-def log_stripe_error(error: Exception, operation: str, context: Dict[str, Any] = None):
+def log_stripe_error(error: Exception, operation: str, context: dict[str, Any] = None):
     """
     Log Stripe error with context for debugging.
 
@@ -192,7 +217,7 @@ def log_stripe_error(error: Exception, operation: str, context: Dict[str, Any] =
         f"Error code: {error_info['error_code']} | "
         f"Message: {error_info['user_message']}"
         f"{context_str}",
-        exc_info=True
+        exc_info=True,
     )
 
 
@@ -228,7 +253,4 @@ def get_error_message(error_key: str) -> str:
         >>> get_error_message("trial_already_used")
         "Trial period has already been used for this organization."
     """
-    return ERROR_MESSAGES.get(
-        error_key,
-        "An error occurred. Please try again or contact support."
-    )
+    return ERROR_MESSAGES.get(error_key, "An error occurred. Please try again or contact support.")

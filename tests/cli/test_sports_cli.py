@@ -11,28 +11,47 @@ from pathlib import Path
 
 import pytest
 
-from tests.cli.conftest import run_cli, write_yaml, read_json
+from tests.cli.conftest import run_cli, write_yaml
 
 
 @pytest.mark.no_mock_auth
 class TestSportsCLI:
-
     def _build_sports_workspace(self, ws: Path, tournament: bool = False):
         """Create a sports club workspace."""
-        write_yaml(ws / "org.yaml", {
-            "org_id": "riverside-sports",
-            "region": "AU",
-            "defaults": {"fairness_weight": 60},
-        })
+        write_yaml(
+            ws / "org.yaml",
+            {
+                "org_id": "riverside-sports",
+                "region": "AU",
+                "defaults": {"fairness_weight": 60},
+            },
+        )
 
-        write_yaml(ws / "people.yaml", {"people": [
-            {"id": "rahul",  "name": "Rahul Sharma",   "roles": ["batsman", "wicket_keeper"]},
-            {"id": "priya",  "name": "Priya Patel",    "roles": ["bowler", "point_guard"]},
-            {"id": "marcus", "name": "Marcus Johnson",  "roles": ["center", "power_forward"]},
-            {"id": "alex",   "name": "Alex Rivera",     "roles": ["shooting_guard", "all_rounder", "batsman"]},
-            {"id": "tomoko", "name": "Tomoko Sato",     "roles": ["small_forward", "point_guard"]},
-            {"id": "ben",    "name": "Ben O'Brien",     "roles": ["batsman", "bowler"]},
-        ]})
+        write_yaml(
+            ws / "people.yaml",
+            {
+                "people": [
+                    {"id": "rahul", "name": "Rahul Sharma", "roles": ["batsman", "wicket_keeper"]},
+                    {"id": "priya", "name": "Priya Patel", "roles": ["bowler", "point_guard"]},
+                    {
+                        "id": "marcus",
+                        "name": "Marcus Johnson",
+                        "roles": ["center", "power_forward"],
+                    },
+                    {
+                        "id": "alex",
+                        "name": "Alex Rivera",
+                        "roles": ["shooting_guard", "all_rounder", "batsman"],
+                    },
+                    {
+                        "id": "tomoko",
+                        "name": "Tomoko Sato",
+                        "roles": ["small_forward", "point_guard"],
+                    },
+                    {"id": "ben", "name": "Ben O'Brien", "roles": ["batsman", "bowler"]},
+                ]
+            },
+        )
 
         base = datetime.now().replace(hour=14, minute=0, second=0, microsecond=0)
         base += timedelta(days=14)
@@ -41,30 +60,34 @@ class TestSportsCLI:
         if tournament:
             # Tournament: 3 cricket + 2 basketball in 3 days
             for i in range(3):
-                events.append({
-                    "id": f"cricket-t{i}",
-                    "type": "Tournament Cricket",
-                    "start": (base + timedelta(days=i)).isoformat(),
-                    "end": (base + timedelta(days=i, hours=6)).isoformat(),
-                    "required_roles": [
-                        {"role": "batsman", "count": 3},
-                        {"role": "bowler", "count": 2},
-                        {"role": "wicket_keeper", "count": 1},
-                    ],
-                })
+                events.append(
+                    {
+                        "id": f"cricket-t{i}",
+                        "type": "Tournament Cricket",
+                        "start": (base + timedelta(days=i)).isoformat(),
+                        "end": (base + timedelta(days=i, hours=6)).isoformat(),
+                        "required_roles": [
+                            {"role": "batsman", "count": 3},
+                            {"role": "bowler", "count": 2},
+                            {"role": "wicket_keeper", "count": 1},
+                        ],
+                    }
+                )
             for i in range(2):
-                events.append({
-                    "id": f"bball-t{i}",
-                    "type": "Tournament Basketball",
-                    "start": (base + timedelta(days=i, hours=7)).isoformat(),
-                    "end": (base + timedelta(days=i, hours=9)).isoformat(),
-                    "required_roles": [
-                        {"role": "point_guard", "count": 1},
-                        {"role": "shooting_guard", "count": 1},
-                        {"role": "center", "count": 1},
-                        {"role": "small_forward", "count": 1},
-                    ],
-                })
+                events.append(
+                    {
+                        "id": f"bball-t{i}",
+                        "type": "Tournament Basketball",
+                        "start": (base + timedelta(days=i, hours=7)).isoformat(),
+                        "end": (base + timedelta(days=i, hours=9)).isoformat(),
+                        "required_roles": [
+                            {"role": "point_guard", "count": 1},
+                            {"role": "shooting_guard", "count": 1},
+                            {"role": "center", "count": 1},
+                            {"role": "small_forward", "count": 1},
+                        ],
+                    }
+                )
         else:
             # Regular week
             events = [
@@ -145,9 +168,9 @@ class TestSportsCLI:
         # Alex should appear in cricket (batsman) or basketball (shooting_guard) or both
         dual_players = cricket_assigned & bball_assigned
         # At least one dual-sport player should serve both
-        assert len(dual_players) >= 1, (
-            f"No dual-sport players found. Cricket: {cricket_assigned}, Basketball: {bball_assigned}"
-        )
+        assert (
+            len(dual_players) >= 1
+        ), f"No dual-sport players found. Cricket: {cricket_assigned}, Basketball: {bball_assigned}"
 
     # ------------------------------------------------------------------
     # Test: Tournament week (heavy load)
@@ -201,8 +224,9 @@ class TestSportsCLI:
         from_d = base.strftime("%Y-%m-%d")
         to_d = from_d  # Same day
 
-        result = run_cli("solve", str(ws), "--from-date", from_d, "--to-date", to_d,
-                        "--json-output")
+        result = run_cli(
+            "solve", str(ws), "--from-date", from_d, "--to-date", to_d, "--json-output"
+        )
         solution = json.loads(result.stdout)
 
         # Only events on that day
@@ -227,8 +251,9 @@ class TestSportsCLI:
         assert "Events:" in result.stdout
         assert "Solved in" in result.stdout
         # Should show people names in assignments
-        assert any(name in result.stdout for name in
-                   ["Rahul", "Priya", "Marcus", "Alex", "Tomoko", "Ben"])
+        assert any(
+            name in result.stdout for name in ["Rahul", "Priya", "Marcus", "Alex", "Tomoko", "Ben"]
+        )
 
     # ------------------------------------------------------------------
     # Test: Solve modes

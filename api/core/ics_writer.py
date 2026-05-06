@@ -2,7 +2,8 @@
 
 from pathlib import Path
 
-from ics import Calendar, Event as ICSEvent
+from ics import Calendar
+from ics import Event as ICSEvent
 
 from api.core.models import Event, Person, SolutionBundle
 
@@ -41,9 +42,7 @@ def write_calendar_ics(
         ics_event.end = event.end
 
         # Add attendees
-        assignee_names = [
-            people_map[pid].name for pid in assignment.assignees if pid in people_map
-        ]
+        assignee_names = [people_map[pid].name for pid in assignment.assignees if pid in people_map]
         if assignee_names:
             ics_event.description = f"Assigned: {', '.join(assignee_names)}"
 

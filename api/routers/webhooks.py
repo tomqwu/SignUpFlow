@@ -1,21 +1,19 @@
 """Stripe webhook handlers for real-time subscription synchronization."""
 
-from fastapi import APIRouter, Request, HTTPException, Depends
+from typing import Any
+
+from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy.orm import Session
-from typing import Dict, Any
 
 from api.database import get_db
-from api.services.webhook_service import WebhookService
 from api.logging_config import logger
+from api.services.webhook_service import WebhookService
 
 router = APIRouter(tags=["webhooks"])
 
 
 @router.post("/webhooks/stripe")
-async def stripe_webhook(
-    request: Request,
-    db: Session = Depends(get_db)
-) -> Dict[str, Any]:
+async def stripe_webhook(request: Request, db: Session = Depends(get_db)) -> dict[str, Any]:
     """
     Handle incoming Stripe webhook events.
 
@@ -41,7 +39,7 @@ async def stripe_webhook(
     """
     # Get raw body for signature verification
     payload = await request.body()
-    sig_header = request.headers.get('stripe-signature')
+    sig_header = request.headers.get("stripe-signature")
 
     if not sig_header:
         logger.error("Missing Stripe signature header")

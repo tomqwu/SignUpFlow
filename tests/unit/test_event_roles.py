@@ -5,11 +5,6 @@ Tests the ability to assign people to events with specific roles
 (e.g., "usher", "greeter", "sound_tech") rather than generic assignment.
 """
 
-import pytest
-from fastapi.testclient import TestClient
-from api.main import app
-from api.models import Organization, Person, Event, Assignment
-from api.database import Base, engine
 import time
 
 API_BASE = "/api"
@@ -26,32 +21,39 @@ class TestEventRoleAssignment:
         event_id = f"role_event_{timestamp}"
 
         # Create org
-        client.post(f"{API_BASE}/organizations/", json={"id": org_id, "name": "Test Org", "region": "Test"})
+        client.post(
+            f"{API_BASE}/organizations/", json={"id": org_id, "name": "Test Org", "region": "Test"}
+        )
 
         # Create person
-        client.post(f"{API_BASE}/people/", json={
-            "id": person_id,
-            "org_id": org_id,
-            "name": "John Usher",
-            "email": f"john_{timestamp}@test.com",
-            "roles": ["volunteer"]
-        })
+        client.post(
+            f"{API_BASE}/people/",
+            json={
+                "id": person_id,
+                "org_id": org_id,
+                "name": "John Usher",
+                "email": f"john_{timestamp}@test.com",
+                "roles": ["volunteer"],
+            },
+        )
 
         # Create event
-        client.post(f"{API_BASE}/events/", json={
-            "id": event_id,
-            "org_id": org_id,
-            "type": "sunday_service",
-            "start_time": "2025-12-25T10:00:00",
-            "end_time": "2025-12-25T12:00:00"
-        })
+        client.post(
+            f"{API_BASE}/events/",
+            json={
+                "id": event_id,
+                "org_id": org_id,
+                "type": "sunday_service",
+                "start_time": "2025-12-25T10:00:00",
+                "end_time": "2025-12-25T12:00:00",
+            },
+        )
 
         # Assign person with role
-        response = client.post(f"{API_BASE}/events/{event_id}/assignments", json={
-            "person_id": person_id,
-            "action": "assign",
-            "role": "usher"
-        })
+        response = client.post(
+            f"{API_BASE}/events/{event_id}/assignments",
+            json={"person_id": person_id, "action": "assign", "role": "usher"},
+        )
 
         assert response.status_code == 200
         data = response.json()
@@ -69,53 +71,64 @@ class TestEventRoleAssignment:
         event2_id = f"event2_{timestamp}"
 
         # Create org
-        client.post(f"{API_BASE}/organizations/", json={"id": org_id, "name": "Test Org", "region": "Test"})
+        client.post(
+            f"{API_BASE}/organizations/", json={"id": org_id, "name": "Test Org", "region": "Test"}
+        )
 
         # Create person
-        client.post(f"{API_BASE}/people/", json={
-            "id": person_id,
-            "org_id": org_id,
-            "name": "Jane Multirole",
-            "email": f"jane_{timestamp}@test.com",
-            "roles": ["volunteer"]
-        })
+        client.post(
+            f"{API_BASE}/people/",
+            json={
+                "id": person_id,
+                "org_id": org_id,
+                "name": "Jane Multirole",
+                "email": f"jane_{timestamp}@test.com",
+                "roles": ["volunteer"],
+            },
+        )
 
         # Create two events
-        client.post(f"{API_BASE}/events/", json={
-            "id": event1_id,
-            "org_id": org_id,
-            "type": "sunday_service",
-            "start_time": "2025-12-25T10:00:00",
-            "end_time": "2025-12-25T12:00:00"
-        })
-        client.post(f"{API_BASE}/events/", json={
-            "id": event2_id,
-            "org_id": org_id,
-            "type": "wednesday_service",
-            "start_time": "2025-12-27T19:00:00",
-            "end_time": "2025-12-27T20:30:00"
-        })
+        client.post(
+            f"{API_BASE}/events/",
+            json={
+                "id": event1_id,
+                "org_id": org_id,
+                "type": "sunday_service",
+                "start_time": "2025-12-25T10:00:00",
+                "end_time": "2025-12-25T12:00:00",
+            },
+        )
+        client.post(
+            f"{API_BASE}/events/",
+            json={
+                "id": event2_id,
+                "org_id": org_id,
+                "type": "wednesday_service",
+                "start_time": "2025-12-27T19:00:00",
+                "end_time": "2025-12-27T20:30:00",
+            },
+        )
 
         # Assign to event 1 as usher
-        response1 = client.post(f"{API_BASE}/events/{event1_id}/assignments", json={
-            "person_id": person_id,
-            "action": "assign",
-            "role": "usher"
-        })
+        response1 = client.post(
+            f"{API_BASE}/events/{event1_id}/assignments",
+            json={"person_id": person_id, "action": "assign", "role": "usher"},
+        )
         assert response1.status_code == 200
         assert response1.json()["role"] == "usher"
 
         # Assign to event 2 as greeter
-        response2 = client.post(f"{API_BASE}/events/{event2_id}/assignments", json={
-            "person_id": person_id,
-            "action": "assign",
-            "role": "greeter"
-        })
+        response2 = client.post(
+            f"{API_BASE}/events/{event2_id}/assignments",
+            json={"person_id": person_id, "action": "assign", "role": "greeter"},
+        )
         assert response2.status_code == 200
         assert response2.json()["role"] == "greeter"
 
         # Verify both assignments exist with different roles
-        assignments_response = client.get(f"{API_BASE}/events/assignments/all", params={"org_id": org_id})
+        assignments_response = client.get(
+            f"{API_BASE}/events/assignments/all", params={"org_id": org_id}
+        )
         assert assignments_response.status_code == 200
         assignments = assignments_response.json()["assignments"]
 
@@ -136,27 +149,35 @@ class TestEventRoleAssignment:
         event_id = f"no_role_event_{timestamp}"
 
         # Create org, person, and event
-        client.post(f"{API_BASE}/organizations/", json={"id": org_id, "name": "Test Org", "region": "Test"})
-        client.post(f"{API_BASE}/people/", json={
-            "id": person_id,
-            "org_id": org_id,
-            "name": "Bob Norole",
-            "email": f"bob_{timestamp}@test.com",
-            "roles": ["volunteer"]
-        })
-        client.post(f"{API_BASE}/events/", json={
-            "id": event_id,
-            "org_id": org_id,
-            "type": "sunday_service",
-            "start_time": "2025-12-25T10:00:00",
-            "end_time": "2025-12-25T12:00:00"
-        })
+        client.post(
+            f"{API_BASE}/organizations/", json={"id": org_id, "name": "Test Org", "region": "Test"}
+        )
+        client.post(
+            f"{API_BASE}/people/",
+            json={
+                "id": person_id,
+                "org_id": org_id,
+                "name": "Bob Norole",
+                "email": f"bob_{timestamp}@test.com",
+                "roles": ["volunteer"],
+            },
+        )
+        client.post(
+            f"{API_BASE}/events/",
+            json={
+                "id": event_id,
+                "org_id": org_id,
+                "type": "sunday_service",
+                "start_time": "2025-12-25T10:00:00",
+                "end_time": "2025-12-25T12:00:00",
+            },
+        )
 
         # Assign without specifying role
-        response = client.post(f"{API_BASE}/events/{event_id}/assignments", json={
-            "person_id": person_id,
-            "action": "assign"
-        })
+        response = client.post(
+            f"{API_BASE}/events/{event_id}/assignments",
+            json={"person_id": person_id, "action": "assign"},
+        )
 
         assert response.status_code == 200
         data = response.json()
@@ -170,28 +191,35 @@ class TestEventRoleAssignment:
         event_id = f"get_role_event_{timestamp}"
 
         # Create org, person, and event
-        client.post(f"{API_BASE}/organizations/", json={"id": org_id, "name": "Test Org", "region": "Test"})
-        client.post(f"{API_BASE}/people/", json={
-            "id": person_id,
-            "org_id": org_id,
-            "name": "Alice Sound",
-            "email": f"alice_{timestamp}@test.com",
-            "roles": ["volunteer"]
-        })
-        client.post(f"{API_BASE}/events/", json={
-            "id": event_id,
-            "org_id": org_id,
-            "type": "sunday_service",
-            "start_time": "2025-12-25T10:00:00",
-            "end_time": "2025-12-25T12:00:00"
-        })
+        client.post(
+            f"{API_BASE}/organizations/", json={"id": org_id, "name": "Test Org", "region": "Test"}
+        )
+        client.post(
+            f"{API_BASE}/people/",
+            json={
+                "id": person_id,
+                "org_id": org_id,
+                "name": "Alice Sound",
+                "email": f"alice_{timestamp}@test.com",
+                "roles": ["volunteer"],
+            },
+        )
+        client.post(
+            f"{API_BASE}/events/",
+            json={
+                "id": event_id,
+                "org_id": org_id,
+                "type": "sunday_service",
+                "start_time": "2025-12-25T10:00:00",
+                "end_time": "2025-12-25T12:00:00",
+            },
+        )
 
         # Assign with role
-        client.post(f"{API_BASE}/events/{event_id}/assignments", json={
-            "person_id": person_id,
-            "action": "assign",
-            "role": "sound_tech"
-        })
+        client.post(
+            f"{API_BASE}/events/{event_id}/assignments",
+            json={"person_id": person_id, "action": "assign", "role": "sound_tech"},
+        )
 
         # Get all assignments
         response = client.get(f"{API_BASE}/events/assignments/all", params={"org_id": org_id})
@@ -217,28 +245,39 @@ class TestEventRoleValidation:
         event_id = f"custom_role_event_{timestamp}"
 
         # Setup
-        client.post(f"{API_BASE}/organizations/", json={"id": org_id, "name": "Test Org", "region": "Test"})
-        client.post(f"{API_BASE}/people/", json={
-            "id": person_id,
-            "org_id": org_id,
-            "name": "Chris Custom",
-            "email": f"chris_{timestamp}@test.com",
-            "roles": ["volunteer"]
-        })
-        client.post(f"{API_BASE}/events/", json={
-            "id": event_id,
-            "org_id": org_id,
-            "type": "special_event",
-            "start_time": "2025-12-25T10:00:00",
-            "end_time": "2025-12-25T12:00:00"
-        })
+        client.post(
+            f"{API_BASE}/organizations/", json={"id": org_id, "name": "Test Org", "region": "Test"}
+        )
+        client.post(
+            f"{API_BASE}/people/",
+            json={
+                "id": person_id,
+                "org_id": org_id,
+                "name": "Chris Custom",
+                "email": f"chris_{timestamp}@test.com",
+                "roles": ["volunteer"],
+            },
+        )
+        client.post(
+            f"{API_BASE}/events/",
+            json={
+                "id": event_id,
+                "org_id": org_id,
+                "type": "special_event",
+                "start_time": "2025-12-25T10:00:00",
+                "end_time": "2025-12-25T12:00:00",
+            },
+        )
 
         # Assign with custom role
-        response = client.post(f"{API_BASE}/events/{event_id}/assignments", json={
-            "person_id": person_id,
-            "action": "assign",
-            "role": "Coffee Barista"  # Custom role
-        })
+        response = client.post(
+            f"{API_BASE}/events/{event_id}/assignments",
+            json={
+                "person_id": person_id,
+                "action": "assign",
+                "role": "Coffee Barista",  # Custom role
+            },
+        )
 
         assert response.status_code == 200
         assert response.json()["role"] == "Coffee Barista"
@@ -251,28 +290,35 @@ class TestEventRoleValidation:
         event_id = f"persist_role_event_{timestamp}"
 
         # Setup
-        client.post(f"{API_BASE}/organizations/", json={"id": org_id, "name": "Test Org", "region": "Test"})
-        client.post(f"{API_BASE}/people/", json={
-            "id": person_id,
-            "org_id": org_id,
-            "name": "David Persist",
-            "email": f"david_{timestamp}@test.com",
-            "roles": ["volunteer"]
-        })
-        client.post(f"{API_BASE}/events/", json={
-            "id": event_id,
-            "org_id": org_id,
-            "type": "sunday_service",
-            "start_time": "2025-12-25T10:00:00",
-            "end_time": "2025-12-25T12:00:00"
-        })
+        client.post(
+            f"{API_BASE}/organizations/", json={"id": org_id, "name": "Test Org", "region": "Test"}
+        )
+        client.post(
+            f"{API_BASE}/people/",
+            json={
+                "id": person_id,
+                "org_id": org_id,
+                "name": "David Persist",
+                "email": f"david_{timestamp}@test.com",
+                "roles": ["volunteer"],
+            },
+        )
+        client.post(
+            f"{API_BASE}/events/",
+            json={
+                "id": event_id,
+                "org_id": org_id,
+                "type": "sunday_service",
+                "start_time": "2025-12-25T10:00:00",
+                "end_time": "2025-12-25T12:00:00",
+            },
+        )
 
         # Assign with role
-        assign_response = client.post(f"{API_BASE}/events/{event_id}/assignments", json={
-            "person_id": person_id,
-            "action": "assign",
-            "role": "worship_leader"
-        })
+        assign_response = client.post(
+            f"{API_BASE}/events/{event_id}/assignments",
+            json={"person_id": person_id, "action": "assign", "role": "worship_leader"},
+        )
         assert assign_response.status_code == 200
 
         # Fetch assignments again to verify persistence
@@ -291,28 +337,35 @@ class TestEventRoleValidation:
         event_id = f"empty_role_event_{timestamp}"
 
         # Setup
-        client.post(f"{API_BASE}/organizations/", json={"id": org_id, "name": "Test Org", "region": "Test"})
-        client.post(f"{API_BASE}/people/", json={
-            "id": person_id,
-            "org_id": org_id,
-            "name": "Emma Empty",
-            "email": f"emma_{timestamp}@test.com",
-            "roles": ["volunteer"]
-        })
-        client.post(f"{API_BASE}/events/", json={
-            "id": event_id,
-            "org_id": org_id,
-            "type": "sunday_service",
-            "start_time": "2025-12-25T10:00:00",
-            "end_time": "2025-12-25T12:00:00"
-        })
+        client.post(
+            f"{API_BASE}/organizations/", json={"id": org_id, "name": "Test Org", "region": "Test"}
+        )
+        client.post(
+            f"{API_BASE}/people/",
+            json={
+                "id": person_id,
+                "org_id": org_id,
+                "name": "Emma Empty",
+                "email": f"emma_{timestamp}@test.com",
+                "roles": ["volunteer"],
+            },
+        )
+        client.post(
+            f"{API_BASE}/events/",
+            json={
+                "id": event_id,
+                "org_id": org_id,
+                "type": "sunday_service",
+                "start_time": "2025-12-25T10:00:00",
+                "end_time": "2025-12-25T12:00:00",
+            },
+        )
 
         # Assign with empty string role
-        response = client.post(f"{API_BASE}/events/{event_id}/assignments", json={
-            "person_id": person_id,
-            "action": "assign",
-            "role": ""
-        })
+        response = client.post(
+            f"{API_BASE}/events/{event_id}/assignments",
+            json={"person_id": person_id, "action": "assign", "role": ""},
+        )
 
         # Should work - empty string is valid (will be stored as empty string, not null)
         assert response.status_code == 200

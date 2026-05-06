@@ -10,9 +10,8 @@ Enforces password security requirements:
 - Not a common/breached password (optional)
 """
 
-import re
 import os
-from typing import Tuple, List, Optional
+import re
 
 
 class PasswordValidator:
@@ -39,15 +38,44 @@ class PasswordValidator:
 
         # Common weak passwords (top 100 most common passwords)
         self.common_passwords = {
-            "password", "123456", "12345678", "qwerty", "abc123", "monkey", "1234567",
-            "letmein", "trustno1", "dragon", "baseball", "111111", "iloveyou", "master",
-            "sunshine", "ashley", "bailey", "passw0rd", "shadow", "123123", "654321",
-            "superman", "qazwsx", "michael", "football", "password1", "admin", "welcome",
+            "password",
+            "123456",
+            "12345678",
+            "qwerty",
+            "abc123",
+            "monkey",
+            "1234567",
+            "letmein",
+            "trustno1",
+            "dragon",
+            "baseball",
+            "111111",
+            "iloveyou",
+            "master",
+            "sunshine",
+            "ashley",
+            "bailey",
+            "passw0rd",
+            "shadow",
+            "123123",
+            "654321",
+            "superman",
+            "qazwsx",
+            "michael",
+            "football",
+            "password1",
+            "admin",
+            "welcome",
             # Common test/demo passwords
-            "login123", "test123", "test123!", "admin123", "password123", "password123!",
+            "login123",
+            "test123",
+            "test123!",
+            "admin123",
+            "password123",
+            "password123!",
         }
 
-    def validate(self, password: str) -> Tuple[bool, Optional[str]]:
+    def validate(self, password: str) -> tuple[bool, str | None]:
         """
         Validate password strength.
 
@@ -67,7 +95,7 @@ class PasswordValidator:
 
         return True, None
 
-    def get_validation_errors(self, password: str) -> List[str]:
+    def get_validation_errors(self, password: str) -> list[str]:
         """
         Get all validation errors for a password.
 
@@ -99,7 +127,9 @@ class PasswordValidator:
         if self.require_special:
             special_char_pattern = f"[{re.escape(self.special_chars)}]"
             if not re.search(special_char_pattern, password):
-                errors.append(f"Password must contain at least one special character ({self.special_chars})")
+                errors.append(
+                    f"Password must contain at least one special character ({self.special_chars})"
+                )
 
         # Check against common passwords (case-insensitive)
         if password.lower() in self.common_passwords:
@@ -130,7 +160,7 @@ class PasswordValidator:
 
         return "; ".join(requirements)
 
-    def calculate_password_strength(self, password: str) -> Tuple[str, int]:
+    def calculate_password_strength(self, password: str) -> tuple[str, int]:
         """
         Calculate password strength score.
 
@@ -190,7 +220,7 @@ def get_password_validator() -> PasswordValidator:
     return _validator
 
 
-def validate_password_strength(password: str) -> Tuple[bool, Optional[str]]:
+def validate_password_strength(password: str) -> tuple[bool, str | None]:
     """
     Validate password strength using global validator.
 

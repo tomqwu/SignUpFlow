@@ -6,12 +6,12 @@ from sqlalchemy.orm import Session
 
 from api.dependencies import (
     check_admin_permission,
-    get_person_by_id,
     get_organization_by_id,
+    get_person_by_id,
     verify_admin_access,
     verify_org_member,
 )
-from api.models import Person, Organization
+from api.models import Organization, Person
 
 
 class TestCheckAdminPermission:
@@ -58,6 +58,7 @@ class TestGetPersonById:
     def test_existing_person_returns_person(self, db_session: Session, test_org: Organization):
         """Test that existing person is returned."""
         import time
+
         person_id = f"person_{int(time.time() * 1000000)}"
 
         # Create person
@@ -66,7 +67,7 @@ class TestGetPersonById:
             org_id=test_org.id,
             name="John Doe",
             email=f"{person_id}@test.com",
-            roles=["volunteer"]
+            roles=["volunteer"],
         )
         db_session.add(person)
         db_session.commit()
@@ -92,6 +93,7 @@ class TestGetOrganizationById:
     def test_existing_org_returns_org(self, db_session: Session):
         """Test that existing organization is returned."""
         import time
+
         org_id = f"org_{int(time.time() * 1000000)}"
 
         # Create org
@@ -141,6 +143,7 @@ class TestVerifyAdminAccess:
     def test_admin_user_returns_person(self, db_session: Session, test_org: Organization):
         """Test that admin user is returned."""
         import time
+
         person_id = f"admin_{int(time.time() * 1000000)}"
 
         # Create admin person
@@ -149,7 +152,7 @@ class TestVerifyAdminAccess:
             org_id=test_org.id,
             name="Admin User",
             email=f"{person_id}@test.com",
-            roles=["admin"]
+            roles=["admin"],
         )
         db_session.add(person)
         db_session.commit()
@@ -163,6 +166,7 @@ class TestVerifyAdminAccess:
     def test_non_admin_raises_403(self, db_session: Session, test_org: Organization):
         """Test that non-admin user raises HTTPException with 403."""
         import time
+
         person_id = f"user_{int(time.time() * 1000000)}"
 
         # Create non-admin person
@@ -171,7 +175,7 @@ class TestVerifyAdminAccess:
             org_id=test_org.id,
             name="Regular User",
             email=f"{person_id}@test.com",
-            roles=["volunteer"]
+            roles=["volunteer"],
         )
         db_session.add(person)
         db_session.commit()
@@ -195,9 +199,10 @@ class TestVerifyAdminAccess:
 @pytest.fixture
 def db_session():
     """Create a test database session."""
-    from api.database import get_db, init_db
-    import tempfile
     import os
+    import tempfile
+
+    from api.database import get_db, init_db
 
     # Create temporary database
     fd, path = tempfile.mkstemp(suffix=".db")
@@ -221,6 +226,7 @@ def db_session():
 def test_org(db_session: Session):
     """Create a test organization with unique ID."""
     import time
+
     org_id = f"test_org_{int(time.time() * 1000000)}"
     org = Organization(id=org_id, name="Test Organization")
     db_session.add(org)

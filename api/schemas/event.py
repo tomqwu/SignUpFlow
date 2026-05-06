@@ -1,7 +1,8 @@
 """Event schemas."""
 
-from typing import Optional, List, Dict, Any
 from datetime import datetime
+from typing import Any
+
 from pydantic import BaseModel, ConfigDict, Field
 
 
@@ -11,8 +12,8 @@ class EventBase(BaseModel):
     type: str = Field(..., description="Event type (match, shift, meeting)")
     start_time: datetime = Field(..., description="Event start time")
     end_time: datetime = Field(..., description="Event end time")
-    resource_id: Optional[str] = Field(None, description="Resource/venue ID")
-    extra_data: Optional[Dict[str, Any]] = Field(None, description="Additional data")
+    resource_id: str | None = Field(None, description="Resource/venue ID")
+    extra_data: dict[str, Any] | None = Field(None, description="Additional data")
 
 
 class EventCreate(EventBase):
@@ -20,17 +21,17 @@ class EventCreate(EventBase):
 
     id: str = Field(..., description="Unique event ID", min_length=1)
     org_id: str = Field(..., description="Organization ID")
-    team_ids: Optional[List[str]] = Field(default_factory=list, description="List of team IDs")
+    team_ids: list[str] | None = Field(default_factory=list, description="List of team IDs")
 
 
 class EventUpdate(BaseModel):
     """Schema for updating an event."""
 
-    type: Optional[str] = None
-    start_time: Optional[datetime] = None
-    end_time: Optional[datetime] = None
-    resource_id: Optional[str] = None
-    extra_data: Optional[Dict[str, Any]] = None
+    type: str | None = None
+    start_time: datetime | None = None
+    end_time: datetime | None = None
+    resource_id: str | None = None
+    extra_data: dict[str, Any] | None = None
 
 
 class EventResponse(EventBase):
@@ -47,5 +48,5 @@ class EventResponse(EventBase):
 class EventList(BaseModel):
     """Schema for listing events."""
 
-    events: List[EventResponse]
+    events: list[EventResponse]
     total: int

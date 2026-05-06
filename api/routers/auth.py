@@ -1,17 +1,15 @@
 """Authentication endpoints."""
 
-from typing import Optional
-from fastapi import APIRouter, Depends, HTTPException, status, Request
-from sqlalchemy.orm import Session
-from pydantic import BaseModel, EmailStr, Field
-import time
 import uuid
-import os
+
+from fastapi import APIRouter, Depends, HTTPException, status
+from pydantic import BaseModel, EmailStr, Field
+from sqlalchemy.orm import Session
 
 from api.database import get_db
 from api.dependencies import get_organization_by_id
-from api.security import hash_password, verify_password, create_access_token
-from api.models import Person, Organization
+from api.models import Person
+from api.security import create_access_token, hash_password, verify_password
 from api.utils.rate_limit_middleware import rate_limit
 
 router = APIRouter(prefix="/auth", tags=["auth"])
@@ -20,23 +18,26 @@ router = APIRouter(prefix="/auth", tags=["auth"])
 # Schemas
 class SignupRequest(BaseModel):
     """Signup request."""
+
     org_id: str = Field(..., description="Organization ID")
     name: str = Field(..., description="Full name")
     email: EmailStr = Field(..., description="Email address")
     password: str = Field(..., min_length=6, description="Password (min 6 characters)")
-    roles: Optional[list[str]] = Field(default_factory=list, description="User roles")
-    timezone: Optional[str] = Field(default="UTC", description="User timezone")
-    language: Optional[str] = Field(default="en", description="User language")
+    roles: list[str] | None = Field(default_factory=list, description="User roles")
+    timezone: str | None = Field(default="UTC", description="User timezone")
+    language: str | None = Field(default="en", description="User language")
 
 
 class LoginRequest(BaseModel):
     """Login request."""
+
     email: EmailStr = Field(..., description="Email address")
     password: str = Field(..., description="Password")
 
 
 class AuthResponse(BaseModel):
     """Authentication response."""
+
     person_id: str
     org_id: str
     name: str
@@ -48,20 +49,22 @@ class AuthResponse(BaseModel):
 
 
 # Endpoints
-@router.post("/signup", response_model=AuthResponse, status_code=status.HTTP_201_CREATED, dependencies=[Depends(rate_limit("signup"))])
+@router.post(
+    "/signup",
+    response_model=AuthResponse,
+    status_code=status.HTTP_201_CREATED,
+    dependencies=[Depends(rate_limit("signup"))],
+)
 def signup(request: SignupRequest, db: Session = Depends(get_db)):
     """Create a new user account. Rate limited to 3 requests per hour per IP."""
 
     # Check if email already exists
     existing = db.query(Person).filter(Person.email == request.email).first()
     if existing:
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail="Email already registered"
-        )
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Email already registered")
 
     # Verify organization exists
-    org = get_organization_by_id(request.org_id, db)
+    get_organization_by_id(request.org_id, db)
 
     # Check if this is the first user in the organization
     existing_users_count = db.query(Person).filter(Person.org_id == request.org_id).count()
@@ -96,7 +99,7 @@ def signup(request: SignupRequest, db: Session = Depends(get_db)):
         roles=roles,
         timezone=request.timezone,
         language=request.language,
-        extra_data={}
+        extra_data={},
     )
 
     db.add(person)
@@ -114,7 +117,7 @@ def signup(request: SignupRequest, db: Session = Depends(get_db)):
         roles=person.roles or [],
         timezone=person.timezone or "UTC",
         language=person.language or "en",
-        token=access_token
+        token=access_token,
     )
 
 
@@ -126,15 +129,13 @@ def login(request: LoginRequest, db: Session = Depends(get_db)):
     person = db.query(Person).filter(Person.email == request.email).first()
     if not person or not person.password_hash:
         raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid email or password"
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid email or password"
         )
 
     # Verify password
     if not verify_password(request.password, person.password_hash):
         raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid email or password"
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid email or password"
         )
 
     # Generate JWT access token
@@ -148,7 +149,7 @@ def login(request: LoginRequest, db: Session = Depends(get_db)):
         roles=person.roles or [],
         timezone=person.timezone or "UTC",
         language=person.language or "en",
-        token=access_token
+        token=access_token,
     )
 
 
@@ -157,5 +158,3 @@ def check_email(email: EmailStr, db: Session = Depends(get_db)):
     """Check if email is already registered."""
     exists = db.query(Person).filter(Person.email == email).first() is not None
     return {"exists": exists}
-
-

@@ -8,14 +8,14 @@ Tests the PasswordValidator class which enforces:
 - Password strength scoring
 """
 
-import pytest
 import os
 from unittest.mock import patch
+
 from api.utils.password_validator import (
     PasswordValidator,
+    get_password_requirements,
     get_password_validator,
     validate_password_strength,
-    get_password_requirements,
 )
 
 
@@ -309,4 +309,6 @@ class TestPasswordValidatorEdgeCases:
 
         for pwd in test_passwords:
             errors = validator.get_validation_errors(pwd)
-            assert any("too common" in err for err in errors), f"{pwd} should be blocked as common test password"
+            assert any(
+                "too common" in err for err in errors
+            ), f"{pwd} should be blocked as common test password"

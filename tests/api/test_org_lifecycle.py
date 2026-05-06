@@ -6,17 +6,21 @@ role enforcement — first user gets admin, subsequent users are volunteers,
 and volunteers can't perform admin actions.
 """
 
-import pytest
 from datetime import datetime, timedelta
 
+import pytest
+
 from tests.api.conftest import (
-    seed_org, seed_user, auth_headers, seed_event, seed_team,
+    auth_headers,
+    seed_event,
+    seed_org,
+    seed_team,
+    seed_user,
 )
 
 
 @pytest.mark.no_mock_auth
 class TestOrgLifecycle:
-
     ORG = "lifecycle-org"
     ADMIN_EMAIL = "admin@lifecycle.com"
     ADMIN_PW = "AdminPass123!"
@@ -33,8 +37,9 @@ class TestOrgLifecycle:
         """Second user can't self-assign admin, defaults to volunteer."""
         seed_org(client, self.ORG)
         seed_user(client, self.ORG, self.ADMIN_EMAIL, "Admin", self.ADMIN_PW)
-        vol = seed_user(client, self.ORG, self.VOL_EMAIL, "Volunteer", self.VOL_PW,
-                        roles=["admin"])  # Tries to request admin!
+        vol = seed_user(
+            client, self.ORG, self.VOL_EMAIL, "Volunteer", self.VOL_PW, roles=["admin"]
+        )  # Tries to request admin!
         assert "admin" not in vol["roles"]
         assert "volunteer" in vol["roles"]
 
@@ -42,10 +47,15 @@ class TestOrgLifecycle:
         """Signing up with an existing email returns 409."""
         seed_org(client, self.ORG)
         seed_user(client, self.ORG, self.ADMIN_EMAIL, "Admin", self.ADMIN_PW)
-        resp = client.post("/api/auth/signup", json={
-            "org_id": self.ORG, "name": "Duplicate",
-            "email": self.ADMIN_EMAIL, "password": "AnyPass123!",
-        })
+        resp = client.post(
+            "/api/auth/signup",
+            json={
+                "org_id": self.ORG,
+                "name": "Duplicate",
+                "email": self.ADMIN_EMAIL,
+                "password": "AnyPass123!",
+            },
+        )
         assert resp.status_code == 409
 
     def test_admin_creates_teams_with_members(self, client):
@@ -55,8 +65,9 @@ class TestOrgLifecycle:
         vol = seed_user(client, self.ORG, self.VOL_EMAIL, "Sarah", self.VOL_PW)
         hdrs = auth_headers(client, self.ADMIN_EMAIL, self.ADMIN_PW)
 
-        team = seed_team(client, hdrs, self.ORG, "team-ushers", "Ushers",
-                        member_ids=[vol["person_id"]])
+        team = seed_team(
+            client, hdrs, self.ORG, "team-ushers", "Ushers", member_ids=[vol["person_id"]]
+        )
         assert team["name"] == "Ushers"
 
         # Verify team in list
@@ -70,9 +81,14 @@ class TestOrgLifecycle:
         seed_user(client, self.ORG, self.ADMIN_EMAIL, "Admin", self.ADMIN_PW)
         hdrs = auth_headers(client, self.ADMIN_EMAIL, self.ADMIN_PW)
 
-        event = seed_event(client, hdrs, self.ORG, "evt-sunday",
-                          event_type="Sunday Service",
-                          role_counts={"volunteer": 3, "leader": 1})
+        event = seed_event(
+            client,
+            hdrs,
+            self.ORG,
+            "evt-sunday",
+            event_type="Sunday Service",
+            role_counts={"volunteer": 3, "leader": 1},
+        )
         assert event["org_id"] == self.ORG
 
     def test_volunteer_cannot_create_events(self, client):
@@ -84,10 +100,17 @@ class TestOrgLifecycle:
 
         start = (datetime.now() + timedelta(days=7)).isoformat()
         end = (datetime.now() + timedelta(days=7, hours=2)).isoformat()
-        resp = client.post("/api/events/", json={
-            "id": "evt-forbidden", "org_id": self.ORG, "type": "Test",
-            "start_time": start, "end_time": end,
-        }, headers=vol_hdrs)
+        resp = client.post(
+            "/api/events/",
+            json={
+                "id": "evt-forbidden",
+                "org_id": self.ORG,
+                "type": "Test",
+                "start_time": start,
+                "end_time": end,
+            },
+            headers=vol_hdrs,
+        )
         assert resp.status_code == 403
 
     def test_volunteer_cannot_create_teams(self, client):
@@ -97,9 +120,15 @@ class TestOrgLifecycle:
         seed_user(client, self.ORG, self.VOL_EMAIL, "Vol", self.VOL_PW)
         vol_hdrs = auth_headers(client, self.VOL_EMAIL, self.VOL_PW)
 
-        resp = client.post("/api/teams/", json={
-            "id": "team-forbidden", "org_id": self.ORG, "name": "Forbidden",
-        }, headers=vol_hdrs)
+        resp = client.post(
+            "/api/teams/",
+            json={
+                "id": "team-forbidden",
+                "org_id": self.ORG,
+                "name": "Forbidden",
+            },
+            headers=vol_hdrs,
+        )
         assert resp.status_code == 403
 
     def test_volunteer_can_view_own_profile(self, client):

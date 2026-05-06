@@ -11,9 +11,9 @@ Adds security-related HTTP headers to all responses:
 """
 
 import os
+
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.requests import Request
-from starlette.responses import Response
 
 
 class SecurityHeadersMiddleware(BaseHTTPMiddleware):
@@ -32,7 +32,9 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
 
         # Environment-based configuration
         self.is_production = os.getenv("ENVIRONMENT", "development") == "production"
-        self.hsts_enabled = os.getenv("SECURITY_HSTS_ENABLED", str(self.is_production)).lower() == "true"
+        self.hsts_enabled = (
+            os.getenv("SECURITY_HSTS_ENABLED", str(self.is_production)).lower() == "true"
+        )
 
         # Parse HSTS max-age with fallback for invalid values
         try:
@@ -49,7 +51,9 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
 
         # HSTS - Force HTTPS for 1 year (only in production with HTTPS)
         if self.hsts_enabled:
-            response.headers["Strict-Transport-Security"] = f"max-age={self.hsts_max_age}; includeSubDomains"
+            response.headers[
+                "Strict-Transport-Security"
+            ] = f"max-age={self.hsts_max_age}; includeSubDomains"
 
         # CSP - Prevent XSS and data injection attacks
         if self.csp_enabled:

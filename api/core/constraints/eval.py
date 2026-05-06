@@ -1,6 +1,5 @@
 """Constraint evaluation engine."""
 
-from typing import Any
 
 from api.core.constraints.dsl import ConstraintResult, EvalContext
 from api.core.constraints.predicates import (

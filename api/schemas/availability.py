@@ -1,7 +1,7 @@
 """Availability schemas."""
 
-from typing import Optional
 from datetime import date
+
 from pydantic import BaseModel, ConfigDict, Field
 
 
@@ -14,7 +14,7 @@ class AvailabilityCreate(BaseModel):
 class AvailabilityUpdate(BaseModel):
     """Schema for updating availability."""
 
-    rrule: Optional[str] = None
+    rrule: str | None = None
 
 
 class AvailabilityResponse(BaseModel):
@@ -31,7 +31,7 @@ class TimeOffCreate(BaseModel):
 
     start_date: date = Field(..., description="Start date of time-off")
     end_date: date = Field(..., description="End date of time-off")
-    reason: Optional[str] = Field(None, description="Reason for time-off")
+    reason: str | None = Field(None, description="Reason for time-off")
 
 
 class TimeOffResponse(BaseModel):
@@ -42,4 +42,4 @@ class TimeOffResponse(BaseModel):
     id: int
     start_date: date
     end_date: date
-    reason: Optional[str] = None
+    reason: str | None = None

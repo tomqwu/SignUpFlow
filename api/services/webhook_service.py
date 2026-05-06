@@ -18,12 +18,13 @@ Example Usage:
     result = webhook_service.process_event(stripe_event)
 """
 
-from typing import Dict, Any, Optional
-from sqlalchemy.orm import Session
 from datetime import datetime
+from typing import Any
 
-from api.models import Subscription, BillingHistory
+from sqlalchemy.orm import Session
+
 from api.logging_config import logger
+from api.models import BillingHistory, Subscription
 
 
 class WebhookService:
@@ -38,7 +39,7 @@ class WebhookService:
         """
         self.db = db
 
-    def verify_signature(self, payload: bytes, sig_header: str) -> Dict[str, Any]:
+    def verify_signature(self, payload: bytes, sig_header: str) -> dict[str, Any]:
         """
         Verify Stripe webhook signature to ensure authenticity.
 
@@ -62,11 +63,12 @@ class WebhookService:
                 sig_header=request.headers['stripe-signature']
             )
         """
-        import stripe
         import os
 
+        import stripe
+
         # Get webhook secret from environment
-        webhook_secret = os.getenv('STRIPE_WEBHOOK_SECRET')
+        webhook_secret = os.getenv("STRIPE_WEBHOOK_SECRET")
 
         if not webhook_secret:
             logger.warning(
@@ -75,14 +77,13 @@ class WebhookService:
             )
             # For development/testing: parse payload without verification
             import json
-            return json.loads(payload.decode('utf-8'))
+
+            return json.loads(payload.decode("utf-8"))
 
         # Verify signature and construct event
         try:
             event = stripe.Webhook.construct_event(
-                payload=payload.decode('utf-8'),
-                sig_header=sig_header,
-                secret=webhook_secret
+                payload=payload.decode("utf-8"), sig_header=sig_header, secret=webhook_secret
             )
             logger.info(f"Webhook signature verified successfully for event {event.get('id')}")
             return event
@@ -97,7 +98,7 @@ class WebhookService:
             logger.error(f"Webhook signature verification failed: {e}")
             raise Exception(f"Invalid signature: {e}")
 
-    def process_event(self, event: Dict[str, Any]) -> Dict[str, Any]:
+    def process_event(self, event: dict[str, Any]) -> dict[str, Any]:
         """
         Process a Stripe webhook event.
 
@@ -144,18 +145,14 @@ class WebhookService:
                 return {
                     "success": True,
                     "event_type": event_type,
-                    "message": "Event type not handled"
+                    "message": "Event type not handled",
                 }
 
         except Exception as e:
             logger.error(f"Error processing webhook event {event_type}: {e}")
-            return {
-                "success": False,
-                "event_type": event_type,
-                "message": str(e)
-            }
+            return {"success": False, "event_type": event_type, "message": str(e)}
 
-    def _handle_subscription_created(self, event: Dict[str, Any]) -> Dict[str, Any]:
+    def _handle_subscription_created(self, event: dict[str, Any]) -> dict[str, Any]:
         """Handle customer.subscription.created event."""
         subscription_data = event["data"]["object"]
         stripe_sub_id = subscription_data["id"]
@@ -167,9 +164,7 @@ class WebhookService:
             return {"success": False, "message": "Missing org_id in metadata"}
 
         # Update local subscription
-        subscription = self.db.query(Subscription).filter(
-            Subscription.org_id == org_id
-        ).first()
+        subscription = self.db.query(Subscription).filter(Subscription.org_id == org_id).first()
 
         if subscription:
             subscription.stripe_subscription_id = stripe_sub_id
@@ -188,15 +183,17 @@ class WebhookService:
 
         return {"success": False, "message": "Subscription not found in database"}
 
-    def _handle_subscription_updated(self, event: Dict[str, Any]) -> Dict[str, Any]:
+    def _handle_subscription_updated(self, event: dict[str, Any]) -> dict[str, Any]:
         """Handle customer.subscription.updated event."""
         subscription_data = event["data"]["object"]
         stripe_sub_id = subscription_data["id"]
 
         # Find local subscription
-        subscription = self.db.query(Subscription).filter(
-            Subscription.stripe_subscription_id == stripe_sub_id
-        ).first()
+        subscription = (
+            self.db.query(Subscription)
+            .filter(Subscription.stripe_subscription_id == stripe_sub_id)
+            .first()
+        )
 
         if not subscription:
             logger.warning(f"Subscription not found: {stripe_sub_id}")
@@ -213,24 +210,26 @@ class WebhookService:
         subscription.cancel_at_period_end = subscription_data.get("cancel_at_period_end", False)
 
         if subscription_data.get("trial_end"):
-            subscription.trial_end_date = datetime.fromtimestamp(
-                subscription_data["trial_end"]
-            )
+            subscription.trial_end_date = datetime.fromtimestamp(subscription_data["trial_end"])
 
         self.db.commit()
 
-        logger.info(f"Subscription updated: {stripe_sub_id} (status: {subscription_data['status']})")
+        logger.info(
+            f"Subscription updated: {stripe_sub_id} (status: {subscription_data['status']})"
+        )
         return {"success": True, "event_type": "subscription_updated", "message": "Processed"}
 
-    def _handle_subscription_deleted(self, event: Dict[str, Any]) -> Dict[str, Any]:
+    def _handle_subscription_deleted(self, event: dict[str, Any]) -> dict[str, Any]:
         """Handle customer.subscription.deleted event."""
         subscription_data = event["data"]["object"]
         stripe_sub_id = subscription_data["id"]
 
         # Find local subscription
-        subscription = self.db.query(Subscription).filter(
-            Subscription.stripe_subscription_id == stripe_sub_id
-        ).first()
+        subscription = (
+            self.db.query(Subscription)
+            .filter(Subscription.stripe_subscription_id == stripe_sub_id)
+            .first()
+        )
 
         if not subscription:
             logger.warning(f"Subscription not found: {stripe_sub_id}")
@@ -247,16 +246,18 @@ class WebhookService:
         logger.info(f"Subscription deleted: {stripe_sub_id} (reverted to free)")
         return {"success": True, "event_type": "subscription_deleted", "message": "Processed"}
 
-    def _handle_payment_succeeded(self, event: Dict[str, Any]) -> Dict[str, Any]:
+    def _handle_payment_succeeded(self, event: dict[str, Any]) -> dict[str, Any]:
         """Handle invoice.payment_succeeded event."""
         invoice = event["data"]["object"]
         customer_id = invoice["customer"]
         amount_paid = invoice["amount_paid"]  # Amount in cents
 
         # Find subscription by customer ID
-        subscription = self.db.query(Subscription).filter(
-            Subscription.stripe_customer_id == customer_id
-        ).first()
+        subscription = (
+            self.db.query(Subscription)
+            .filter(Subscription.stripe_customer_id == customer_id)
+            .first()
+        )
 
         if not subscription:
             logger.warning(f"Subscription not found for customer: {customer_id}")
@@ -273,7 +274,7 @@ class WebhookService:
             stripe_invoice_id=invoice["id"],
             invoice_pdf_url=invoice.get("invoice_pdf"),
             description=f"Payment for {subscription.plan_tier} plan",
-            extra_metadata={"invoice_number": invoice.get("number")}
+            extra_metadata={"invoice_number": invoice.get("number")},
         )
 
         self.db.add(billing_record)
@@ -285,16 +286,18 @@ class WebhookService:
         )
         return {"success": True, "event_type": "payment_succeeded", "message": "Processed"}
 
-    def _handle_payment_failed(self, event: Dict[str, Any]) -> Dict[str, Any]:
+    def _handle_payment_failed(self, event: dict[str, Any]) -> dict[str, Any]:
         """Handle invoice.payment_failed event."""
         invoice = event["data"]["object"]
         customer_id = invoice["customer"]
         amount_due = invoice["amount_due"]
 
         # Find subscription by customer ID
-        subscription = self.db.query(Subscription).filter(
-            Subscription.stripe_customer_id == customer_id
-        ).first()
+        subscription = (
+            self.db.query(Subscription)
+            .filter(Subscription.stripe_customer_id == customer_id)
+            .first()
+        )
 
         if not subscription:
             logger.warning(f"Subscription not found for customer: {customer_id}")
@@ -316,8 +319,8 @@ class WebhookService:
             description=f"Failed payment for {subscription.plan_tier} plan",
             extra_metadata={
                 "invoice_number": invoice.get("number"),
-                "attempt_count": invoice.get("attempt_count")
-            }
+                "attempt_count": invoice.get("attempt_count"),
+            },
         )
 
         self.db.add(billing_record)
@@ -329,7 +332,7 @@ class WebhookService:
         )
         return {"success": True, "event_type": "payment_failed", "message": "Processed"}
 
-    def _handle_payment_method_attached(self, event: Dict[str, Any]) -> Dict[str, Any]:
+    def _handle_payment_method_attached(self, event: dict[str, Any]) -> dict[str, Any]:
         """Handle payment_method.attached event."""
         payment_method = event["data"]["object"]
 

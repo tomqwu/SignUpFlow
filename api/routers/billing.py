@@ -1,23 +1,23 @@
 """Billing and subscription management endpoints."""
 
+from typing import Any
+
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session, joinedload
-from typing import Optional, Dict, Any
 
 from api.database import get_db
-from api.dependencies import get_current_user, verify_org_member, verify_admin_access
-from api.models import Person, Organization
-from api.services.billing_service import BillingService
-from api.services.usage_service import UsageService
-from api.services.stripe_service import StripeService
+from api.dependencies import get_current_user, verify_admin_access, verify_org_member
+from api.models import Person
 from api.schemas.billing import (
-    SubscriptionResponse,
-    UsageSummaryResponse,
-    UpgradeRequest,
-    TrialRequest,
+    CancelRequest,
     DowngradeRequest,
-    CancelRequest
+    SubscriptionResponse,
+    TrialRequest,
+    UpgradeRequest,
 )
+from api.services.billing_service import BillingService
+from api.services.stripe_service import StripeService
+from api.services.usage_service import UsageService
 
 router = APIRouter(tags=["billing"])
 
@@ -26,8 +26,8 @@ router = APIRouter(tags=["billing"])
 def get_subscription(
     org_id: str = Query(..., description="Organization ID"),
     current_user: Person = Depends(get_current_user),
-    db: Session = Depends(get_db)
-) -> Dict[str, Any]:
+    db: Session = Depends(get_db),
+) -> dict[str, Any]:
     """
     Get current subscription details for organization.
 
@@ -52,10 +52,7 @@ def get_subscription(
     subscription = billing_service.get_subscription(org_id)
 
     if not subscription:
-        raise HTTPException(
-            status_code=404,
-            detail="No subscription found for organization"
-        )
+        raise HTTPException(status_code=404, detail="No subscription found for organization")
 
     # Get usage summary
     usage_service = UsageService(db)
@@ -67,13 +64,13 @@ def get_subscription(
         next_invoice = {
             "due_date": subscription.current_period_end.isoformat(),
             "amount": "Based on plan tier",  # Placeholder
-            "status": subscription.status
+            "status": subscription.status,
         }
 
     return {
         "subscription": SubscriptionResponse.from_orm(subscription),
         "usage": usage_summary,
-        "next_invoice": next_invoice
+        "next_invoice": next_invoice,
     }
 
 
@@ -81,8 +78,8 @@ def get_subscription(
 def upgrade_subscription(
     request: UpgradeRequest,
     admin: Person = Depends(verify_admin_access),
-    db: Session = Depends(get_db)
-) -> Dict[str, Any]:
+    db: Session = Depends(get_db),
+) -> dict[str, Any]:
     """
     Upgrade organization to paid plan.
 
@@ -124,16 +121,13 @@ def upgrade_subscription(
     subscription = billing_service.get_subscription(request.org_id)
 
     if not subscription:
-        raise HTTPException(
-            status_code=404,
-            detail="No subscription found for organization"
-        )
+        raise HTTPException(status_code=404, detail="No subscription found for organization")
 
     # Only allow upgrading from free tier for now
     if subscription.plan_tier != "free":
         raise HTTPException(
             status_code=400,
-            detail=f"Organization already has {subscription.plan_tier} plan. Use change plan endpoint to switch plans."
+            detail=f"Organization already has {subscription.plan_tier} plan. Use change plan endpoint to switch plans.",
         )
 
     # Construct Stripe price ID from plan tier and billing cycle
@@ -144,16 +138,13 @@ def upgrade_subscription(
     result = stripe_service.create_checkout_session(
         org_id=request.org_id,
         price_id=price_id,
-        success_url=f"https://signupflow.io/app/billing?session_id={{CHECKOUT_SESSION_ID}}",
-        cancel_url=f"https://signupflow.io/app/billing?cancelled=true",
-        trial_days=request.trial_days
+        success_url="https://signupflow.io/app/billing?session_id={CHECKOUT_SESSION_ID}",
+        cancel_url="https://signupflow.io/app/billing?cancelled=true",
+        trial_days=request.trial_days,
     )
 
     if not result["success"]:
-        raise HTTPException(
-            status_code=500,
-            detail=result["message"]
-        )
+        raise HTTPException(status_code=500, detail=result["message"])
 
     return result
 
@@ -162,8 +153,8 @@ def upgrade_subscription(
 def handle_checkout_success(
     session_id: str = Query(..., description="Stripe checkout session ID"),
     admin: Person = Depends(verify_admin_access),
-    db: Session = Depends(get_db)
-) -> Dict[str, Any]:
+    db: Session = Depends(get_db),
+) -> dict[str, Any]:
     """
     Handle successful checkout completion.
 
@@ -190,10 +181,7 @@ def handle_checkout_success(
     subscription = billing_service.get_subscription(org_id)
 
     if not subscription:
-        raise HTTPException(
-            status_code=404,
-            detail="No subscription found"
-        )
+        raise HTTPException(status_code=404, detail="No subscription found")
 
     usage_service = UsageService(db)
     usage_summary = usage_service.get_usage_summary(org_id)
@@ -202,7 +190,7 @@ def handle_checkout_success(
         "success": True,
         "subscription": SubscriptionResponse.from_orm(subscription),
         "usage": usage_summary,
-        "message": "Subscription updated successfully"
+        "message": "Subscription updated successfully",
     }
 
 
@@ -210,8 +198,8 @@ def handle_checkout_success(
 def start_trial(
     request: TrialRequest,
     admin: Person = Depends(verify_admin_access),
-    db: Session = Depends(get_db)
-) -> Dict[str, Any]:
+    db: Session = Depends(get_db),
+) -> dict[str, Any]:
     """
     Start a 14-day trial of a paid plan.
 
@@ -253,14 +241,11 @@ def start_trial(
         org_id=request.org_id,
         plan_tier=request.plan_tier,
         trial_days=request.trial_days,
-        admin_id=admin.id
+        admin_id=admin.id,
     )
 
     if not result["success"]:
-        raise HTTPException(
-            status_code=400,
-            detail=result["message"]
-        )
+        raise HTTPException(status_code=400, detail=result["message"])
 
     # Get updated usage summary
     usage_service = UsageService(db)
@@ -271,7 +256,7 @@ def start_trial(
         "subscription": SubscriptionResponse.from_orm(result["subscription"]),
         "usage": usage_summary,
         "trial_end_date": result["trial_end_date"].isoformat(),
-        "message": result["message"]
+        "message": result["message"],
     }
 
 
@@ -279,8 +264,8 @@ def start_trial(
 def downgrade_subscription(
     request: DowngradeRequest,
     admin: Person = Depends(verify_admin_access),
-    db: Session = Depends(get_db)
-) -> Dict[str, Any]:
+    db: Session = Depends(get_db),
+) -> dict[str, Any]:
     """
     Schedule subscription downgrade to execute at period end.
 
@@ -328,14 +313,11 @@ def downgrade_subscription(
         org_id=request.org_id,
         new_plan_tier=request.new_plan_tier,
         reason=request.reason,
-        admin_id=admin.id
+        admin_id=admin.id,
     )
 
     if not result["success"]:
-        raise HTTPException(
-            status_code=400,
-            detail=result["message"]
-        )
+        raise HTTPException(status_code=400, detail=result["message"])
 
     # Get updated usage summary
     usage_service = UsageService(db)
@@ -346,7 +328,7 @@ def downgrade_subscription(
         "subscription": SubscriptionResponse.from_orm(result["subscription"]),
         "usage": usage_summary,
         "pending_downgrade": result["pending_downgrade"],
-        "message": result["message"]
+        "message": result["message"],
     }
 
 
@@ -354,8 +336,8 @@ def downgrade_subscription(
 def cancel_downgrade(
     org_id: str = Query(..., description="Organization ID"),
     admin: Person = Depends(verify_admin_access),
-    db: Session = Depends(get_db)
-) -> Dict[str, Any]:
+    db: Session = Depends(get_db),
+) -> dict[str, Any]:
     """
     Cancel scheduled downgrade.
 
@@ -385,17 +367,11 @@ def cancel_downgrade(
     subscription = billing_service.get_subscription(org_id)
 
     if not subscription:
-        raise HTTPException(
-            status_code=404,
-            detail="No subscription found for organization"
-        )
+        raise HTTPException(status_code=404, detail="No subscription found for organization")
 
     # Check if pending downgrade exists
     if not subscription.pending_downgrade:
-        raise HTTPException(
-            status_code=400,
-            detail="No pending downgrade to cancel"
-        )
+        raise HTTPException(status_code=400, detail="No pending downgrade to cancel")
 
     # Store pending downgrade details for event recording
     pending = subscription.pending_downgrade
@@ -407,8 +383,8 @@ def cancel_downgrade(
     db.refresh(subscription)
 
     # Record subscription event
+
     from api.models import SubscriptionEvent
-    from datetime import datetime
 
     event = SubscriptionEvent(
         org_id=org_id,
@@ -416,7 +392,7 @@ def cancel_downgrade(
         new_plan=subscription.plan_tier,  # Stays on current plan
         previous_plan=subscription.plan_tier,
         admin_id=admin.id,
-        notes=f"Cancelled scheduled downgrade to {new_plan_tier}"
+        notes=f"Cancelled scheduled downgrade to {new_plan_tier}",
     )
     db.add(event)
     db.commit()
@@ -429,7 +405,7 @@ def cancel_downgrade(
         "success": True,
         "subscription": SubscriptionResponse.from_orm(subscription),
         "usage": usage_summary,
-        "message": "Downgrade cancelled successfully"
+        "message": "Downgrade cancelled successfully",
     }
 
 
@@ -437,8 +413,8 @@ def cancel_downgrade(
 def cancel_subscription(
     request: CancelRequest,
     admin: Person = Depends(verify_admin_access),
-    db: Session = Depends(get_db)
-) -> Dict[str, Any]:
+    db: Session = Depends(get_db),
+) -> dict[str, Any]:
     """
     Cancel subscription with service continuing until period end.
 
@@ -483,14 +459,11 @@ def cancel_subscription(
         reason=request.reason,
         feedback=request.feedback,
         admin_id=admin.id,
-        at_period_end=not request.immediately  # Invert immediately flag
+        at_period_end=not request.immediately,  # Invert immediately flag
     )
 
     if not result["success"]:
-        raise HTTPException(
-            status_code=400,
-            detail=result["message"]
-        )
+        raise HTTPException(status_code=400, detail=result["message"])
 
     # Get updated usage summary
     usage_service = UsageService(db)
@@ -501,8 +474,10 @@ def cancel_subscription(
         "subscription": SubscriptionResponse.from_orm(result["subscription"]),
         "usage": usage_summary,
         "period_end": result["period_end"].isoformat() if result["period_end"] else None,
-        "data_retention_until": result["data_retention_until"].isoformat() if result["data_retention_until"] else None,
-        "message": result["message"]
+        "data_retention_until": result["data_retention_until"].isoformat()
+        if result["data_retention_until"]
+        else None,
+        "message": result["message"],
     }
 
 
@@ -510,8 +485,8 @@ def cancel_subscription(
 def reactivate_subscription(
     org_id: str = Query(..., description="Organization ID"),
     admin: Person = Depends(verify_admin_access),
-    db: Session = Depends(get_db)
-) -> Dict[str, Any]:
+    db: Session = Depends(get_db),
+) -> dict[str, Any]:
     """
     Reactivate a cancelled subscription within data retention period.
 
@@ -545,16 +520,10 @@ def reactivate_subscription(
 
     # Reactivate subscription via BillingService
     billing_service = BillingService(db)
-    result = billing_service.reactivate_subscription(
-        org_id=org_id,
-        admin_id=admin.id
-    )
+    result = billing_service.reactivate_subscription(org_id=org_id, admin_id=admin.id)
 
     if not result["success"]:
-        raise HTTPException(
-            status_code=400,
-            detail=result["message"]
-        )
+        raise HTTPException(status_code=400, detail=result["message"])
 
     # Get updated usage summary
     usage_service = UsageService(db)
@@ -564,7 +533,7 @@ def reactivate_subscription(
         "success": True,
         "subscription": SubscriptionResponse.from_orm(result["subscription"]),
         "usage": usage_summary,
-        "message": result["message"]
+        "message": result["message"],
     }
 
 
@@ -572,12 +541,13 @@ def reactivate_subscription(
 # Payment Methods Management (US8)
 # ============================================================================
 
+
 @router.get("/billing/payment-methods")
 def get_payment_methods(
     org_id: str = Query(..., description="Organization ID"),
     current_user: Person = Depends(get_current_user),
-    db: Session = Depends(get_db)
-) -> Dict[str, Any]:
+    db: Session = Depends(get_db),
+) -> dict[str, Any]:
     """
     Get organization's payment methods from Stripe.
 
@@ -617,10 +587,7 @@ def get_payment_methods(
     if not result["success"]:
         raise HTTPException(status_code=400, detail=result["message"])
 
-    return {
-        "success": True,
-        "payment_methods": result["payment_methods"]
-    }
+    return {"success": True, "payment_methods": result["payment_methods"]}
 
 
 @router.post("/billing/payment-methods")
@@ -628,8 +595,8 @@ def add_payment_method(
     payment_method_id: str = Query(..., description="Stripe payment method ID"),
     org_id: str = Query(..., description="Organization ID"),
     admin: Person = Depends(verify_admin_access),
-    db: Session = Depends(get_db)
-) -> Dict[str, Any]:
+    db: Session = Depends(get_db),
+) -> dict[str, Any]:
     """
     Add new payment method to organization via Stripe.
 
@@ -659,10 +626,7 @@ def add_payment_method(
     if not result["success"]:
         raise HTTPException(status_code=400, detail=result["message"])
 
-    return {
-        "success": True,
-        "message": result["message"]
-    }
+    return {"success": True, "message": result["message"]}
 
 
 @router.delete("/billing/payment-methods/{payment_method_id}")
@@ -670,8 +634,8 @@ def remove_payment_method(
     payment_method_id: str,
     org_id: str = Query(..., description="Organization ID"),
     admin: Person = Depends(verify_admin_access),
-    db: Session = Depends(get_db)
-) -> Dict[str, Any]:
+    db: Session = Depends(get_db),
+) -> dict[str, Any]:
     """
     Remove payment method from organization.
 
@@ -702,10 +666,7 @@ def remove_payment_method(
     if not result["success"]:
         raise HTTPException(status_code=400, detail=result["message"])
 
-    return {
-        "success": True,
-        "message": result["message"]
-    }
+    return {"success": True, "message": result["message"]}
 
 
 @router.put("/billing/payment-methods/{payment_method_id}/primary")
@@ -713,8 +674,8 @@ def set_primary_payment_method(
     payment_method_id: str,
     org_id: str = Query(..., description="Organization ID"),
     admin: Person = Depends(verify_admin_access),
-    db: Session = Depends(get_db)
-) -> Dict[str, Any]:
+    db: Session = Depends(get_db),
+) -> dict[str, Any]:
     """
     Set payment method as primary (default) for organization.
 
@@ -744,10 +705,7 @@ def set_primary_payment_method(
     if not result["success"]:
         raise HTTPException(status_code=400, detail=result["message"])
 
-    return {
-        "success": True,
-        "message": result["message"]
-    }
+    return {"success": True, "message": result["message"]}
 
 
 @router.get("/billing/history")
@@ -756,8 +714,8 @@ def get_billing_history(
     page: int = Query(1, ge=1, description="Page number (1-indexed)"),
     limit: int = Query(50, ge=1, le=100, description="Records per page (default: 50)"),
     current_user: Person = Depends(get_current_user),
-    db: Session = Depends(get_db)
-) -> Dict[str, Any]:
+    db: Session = Depends(get_db),
+) -> dict[str, Any]:
     """
     Get organization's billing history with pagination.
 
@@ -802,9 +760,11 @@ def get_billing_history(
     offset = (page - 1) * limit
 
     # Query billing history with pagination (optimized with index on org_id, event_timestamp)
-    history_query = db.query(BillingHistory).filter(
-        BillingHistory.org_id == org_id
-    ).order_by(BillingHistory.event_timestamp.desc())
+    history_query = (
+        db.query(BillingHistory)
+        .filter(BillingHistory.org_id == org_id)
+        .order_by(BillingHistory.event_timestamp.desc())
+    )
 
     total = history_query.count()
     history_records = history_query.offset(offset).limit(limit).all()
@@ -812,16 +772,20 @@ def get_billing_history(
     # Format history records
     history = []
     for record in history_records:
-        history.append({
-            "id": record.id,
-            "event_type": record.event_type,
-            "amount_cents": record.amount_cents,
-            "currency": record.currency,
-            "payment_status": record.payment_status,
-            "event_timestamp": record.event_timestamp.isoformat() if record.event_timestamp else None,
-            "description": record.description or "",
-            "stripe_invoice_id": record.stripe_invoice_id
-        })
+        history.append(
+            {
+                "id": record.id,
+                "event_type": record.event_type,
+                "amount_cents": record.amount_cents,
+                "currency": record.currency,
+                "payment_status": record.payment_status,
+                "event_timestamp": record.event_timestamp.isoformat()
+                if record.event_timestamp
+                else None,
+                "description": record.description or "",
+                "stripe_invoice_id": record.stripe_invoice_id,
+            }
+        )
 
     return {
         "success": True,
@@ -830,8 +794,8 @@ def get_billing_history(
             "page": page,
             "limit": limit,
             "total": total,
-            "pages": (total + limit - 1) // limit  # Ceiling division
-        }
+            "pages": (total + limit - 1) // limit,  # Ceiling division
+        },
     }
 
 
@@ -840,7 +804,7 @@ def download_invoice_pdf(
     billing_history_id: str,
     format: str = Query("html", pattern="^(pdf|html)$", description="Output format (pdf or html)"),
     current_user: Person = Depends(get_current_user),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ):
     """
     Generate and download invoice PDF for billing history record.
@@ -859,14 +823,15 @@ def download_invoice_pdf(
     Returns:
         PDF file download or HTML response
     """
+    from fastapi.responses import HTMLResponse, StreamingResponse
+
     from api.models import BillingHistory, Organization
     from api.utils.invoice_generator import generate_invoice_pdf, generate_invoice_pdf_html
-    from fastapi.responses import StreamingResponse, HTMLResponse
 
     # Get billing history record
-    billing_record = db.query(BillingHistory).filter(
-        BillingHistory.id == billing_history_id
-    ).first()
+    billing_record = (
+        db.query(BillingHistory).filter(BillingHistory.id == billing_history_id).first()
+    )
 
     if not billing_record:
         raise HTTPException(status_code=404, detail="Invoice not found")
@@ -875,11 +840,12 @@ def download_invoice_pdf(
     verify_org_member(current_user, billing_record.org_id)
 
     # Get organization details (with eager-loaded subscription)
-    org = db.query(Organization).options(
-        joinedload(Organization.subscription)
-    ).filter(
-        Organization.id == billing_record.org_id
-    ).first()
+    org = (
+        db.query(Organization)
+        .options(joinedload(Organization.subscription))
+        .filter(Organization.id == billing_record.org_id)
+        .first()
+    )
 
     if not org:
         raise HTTPException(status_code=404, detail="Organization not found")
@@ -894,8 +860,8 @@ def download_invoice_pdf(
             amount_cents=billing_record.amount_cents or 0,
             created_at=billing_record.created_at,
             description=billing_record.description,
-            org_address=getattr(org, 'region', None),
-            invoice_number=f"INV-{billing_record.id[:8].upper()}"
+            org_address=getattr(org, "region", None),
+            invoice_number=f"INV-{billing_record.id[:8].upper()}",
         )
 
         return HTMLResponse(content=html_content)
@@ -909,7 +875,7 @@ def download_invoice_pdf(
             plan_tier=billing_record.plan_tier or "free",
             amount_cents=billing_record.amount_cents or 0,
             created_at=billing_record.created_at,
-            description=billing_record.description
+            description=billing_record.description,
         )
 
         filename = f"invoice_{billing_record.id[:8]}.txt"
@@ -917,9 +883,7 @@ def download_invoice_pdf(
         return StreamingResponse(
             pdf_buffer,
             media_type="text/plain",
-            headers={
-                "Content-Disposition": f"attachment; filename={filename}"
-            }
+            headers={"Content-Disposition": f"attachment; filename={filename}"},
         )
 
 
@@ -927,8 +891,8 @@ def download_invoice_pdf(
 def create_billing_portal_session(
     org_id: str = Query(..., description="Organization ID"),
     admin: Person = Depends(verify_admin_access),
-    db: Session = Depends(get_db)
-) -> Dict[str, Any]:
+    db: Session = Depends(get_db),
+) -> dict[str, Any]:
     """
     Create Stripe billing portal session for self-service management.
 
@@ -957,7 +921,4 @@ def create_billing_portal_session(
     if not result["success"]:
         raise HTTPException(status_code=400, detail=result["message"])
 
-    return {
-        "success": True,
-        "url": result["url"]
-    }
+    return {"success": True, "url": result["url"]}

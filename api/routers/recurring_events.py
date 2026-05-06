@@ -9,23 +9,22 @@ Provides REST API endpoints for:
 - Editing single occurrences vs entire series
 """
 
+import uuid
+from datetime import date, datetime, time
+
 from fastapi import APIRouter, Depends, HTTPException, Query
+from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy.orm import Session
-from typing import List, Optional
-from datetime import datetime, date, time
-from pydantic import BaseModel, Field, ConfigDict
 
 from api.database import get_db
-from api.dependencies import get_current_user, get_current_admin_user, verify_org_member
-from api.models import RecurringSeries, RecurrenceException, Event, Person
+from api.dependencies import get_current_admin_user, get_current_user, verify_org_member
+from api.models import Event, Person, RecurringSeries
 from api.services.recurrence_generator import (
-    generate_occurrences,
+    RecurrenceGenerationError,
     detect_holiday_conflicts,
+    generate_occurrences,
     validate_series_duration,
-    RecurrenceGenerationError
 )
-import uuid
-
 
 router = APIRouter(tags=["recurring-events"])
 
@@ -34,95 +33,103 @@ router = APIRouter(tags=["recurring-events"])
 # Pydantic Models for Request/Response
 # ============================================================================
 
+
 class RecurringSeriesCreate(BaseModel):
     """Request model for creating recurring series."""
+
     title: str = Field(..., min_length=1, max_length=255)
     duration: int = Field(..., gt=0, description="Duration in minutes")
-    location: Optional[str] = None
-    role_requirements: Optional[dict] = None
+    location: str | None = None
+    role_requirements: dict | None = None
 
     pattern_type: str = Field(..., pattern="^(weekly|biweekly|monthly|custom)$")
-    frequency_interval: Optional[int] = Field(None, gt=0)
-    selected_days: Optional[List[str]] = None
-    weekday_position: Optional[str] = Field(None, pattern="^(first|second|third|fourth|last)$")
-    weekday_name: Optional[str] = Field(None, pattern="^(monday|tuesday|wednesday|thursday|friday|saturday|sunday)$")
+    frequency_interval: int | None = Field(None, gt=0)
+    selected_days: list[str] | None = None
+    weekday_position: str | None = Field(None, pattern="^(first|second|third|fourth|last)$")
+    weekday_name: str | None = Field(
+        None, pattern="^(monday|tuesday|wednesday|thursday|friday|saturday|sunday)$"
+    )
 
     start_date: date
     start_time: time
     end_condition_type: str = Field(..., pattern="^(date|count|indefinite)$")
-    end_date: Optional[date] = None
-    occurrence_count: Optional[int] = Field(None, gt=0, le=200)
+    end_date: date | None = None
+    occurrence_count: int | None = Field(None, gt=0, le=200)
 
 
 class RecurringSeriesResponse(BaseModel):
     """Response model for recurring series."""
+
     id: str
     org_id: str
     created_by: str
     title: str
     duration: int
-    location: Optional[str]
-    role_requirements: Optional[dict]
+    location: str | None
+    role_requirements: dict | None
 
     pattern_type: str
-    frequency_interval: Optional[int]
-    selected_days: Optional[List[str]]
-    weekday_position: Optional[str]
-    weekday_name: Optional[str]
+    frequency_interval: int | None
+    selected_days: list[str] | None
+    weekday_position: str | None
+    weekday_name: str | None
 
     start_date: date
     end_condition_type: str
-    end_date: Optional[date]
-    occurrence_count: Optional[int]
+    end_date: date | None
+    occurrence_count: int | None
 
     active: bool
     created_at: datetime
     updated_at: datetime
 
     # Computed fields
-    occurrence_preview_count: Optional[int] = None
+    occurrence_preview_count: int | None = None
 
     model_config = ConfigDict(from_attributes=True)
 
 
 class OccurrencePreview(BaseModel):
     """Preview of generated occurrences."""
+
     occurrence_sequence: int
     start_time: datetime
     end_time: datetime
     title: str
-    location: Optional[str]
-    role_requirements: Optional[dict]
+    location: str | None
+    role_requirements: dict | None
     is_holiday_conflict: bool = False
-    holiday_label: Optional[str] = None
+    holiday_label: str | None = None
 
 
 class PreviewRequest(BaseModel):
     """Request for previewing occurrences without saving."""
+
     pattern_type: str
-    selected_days: Optional[List[str]] = None
-    weekday_position: Optional[str] = None
-    weekday_name: Optional[str] = None
-    frequency_interval: Optional[int] = None
+    selected_days: list[str] | None = None
+    weekday_position: str | None = None
+    weekday_name: str | None = None
+    frequency_interval: int | None = None
 
     start_date: date
     start_time: time
     duration: int
     end_condition_type: str
-    end_date: Optional[date] = None
-    occurrence_count: Optional[int] = None
+    end_date: date | None = None
+    occurrence_count: int | None = None
 
 
 # ============================================================================
 # API Endpoints
 # ============================================================================
 
+
 @router.post("/recurring-series", response_model=RecurringSeriesResponse)
 def create_recurring_series(
     request: RecurringSeriesCreate,
     org_id: str = Query(..., description="Organization ID"),
     current_admin: Person = Depends(get_current_admin_user),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ):
     """
     Create a new recurring event series and generate all occurrences.
@@ -135,14 +142,14 @@ def create_recurring_series(
     Returns the created series with occurrence count.
     """
     # Verify admin belongs to organization
-    verify_org_member(admin, org_id)
+    verify_org_member(current_admin, org_id)
 
     # Create temporary series object for validation
     temp_series = RecurringSeries(
         id=str(uuid.uuid4()),
         org_id=org_id,
-        created_by=admin.id,
-        **request.dict(exclude={"start_time"})
+        created_by=current_admin.id,
+        **request.dict(exclude={"start_time"}),
     )
 
     # Validate series duration
@@ -163,15 +170,15 @@ def create_recurring_series(
     if len(occurrences) > 200:
         raise HTTPException(
             status_code=422,
-            detail=f"Pattern generates {len(occurrences)} occurrences (maximum 200 allowed)"
+            detail=f"Pattern generates {len(occurrences)} occurrences (maximum 200 allowed)",
         )
 
     # Create recurring series in database
     series = RecurringSeries(
         id=temp_series.id,
         org_id=org_id,
-        created_by=admin.id,
-        **request.dict(exclude={"start_time"})
+        created_by=current_admin.id,
+        **request.dict(exclude={"start_time"}),
     )
 
     db.add(series)
@@ -189,8 +196,8 @@ def create_recurring_series(
             is_exception=False,
             extra_data={
                 "location": occ.get("location"),
-                "role_requirements": occ.get("role_requirements")
-            }
+                "role_requirements": occ.get("role_requirements"),
+            },
         )
         db.add(event)
 
@@ -204,12 +211,12 @@ def create_recurring_series(
     return response
 
 
-@router.get("/recurring-series", response_model=List[RecurringSeriesResponse])
+@router.get("/recurring-series", response_model=list[RecurringSeriesResponse])
 def list_recurring_series(
     org_id: str = Query(..., description="Organization ID"),
     active_only: bool = Query(True, description="Only return active series"),
     current_user: Person = Depends(get_current_user),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ):
     """
     List all recurring series for an organization.
@@ -222,7 +229,7 @@ def list_recurring_series(
     query = db.query(RecurringSeries).filter(RecurringSeries.org_id == org_id)
 
     if active_only:
-        query = query.filter(RecurringSeries.active == True)
+        query = query.filter(RecurringSeries.active is True)
 
     series_list = query.order_by(RecurringSeries.created_at.desc()).all()
 
@@ -232,9 +239,7 @@ def list_recurring_series(
         response = RecurringSeriesResponse.from_orm(series)
 
         # Count occurrences
-        occurrence_count = db.query(Event).filter(
-            Event.series_id == series.id
-        ).count()
+        occurrence_count = db.query(Event).filter(Event.series_id == series.id).count()
         response.occurrence_preview_count = occurrence_count
 
         response_list.append(response)
@@ -244,9 +249,7 @@ def list_recurring_series(
 
 @router.get("/recurring-series/{series_id}", response_model=RecurringSeriesResponse)
 def get_recurring_series(
-    series_id: str,
-    current_user: Person = Depends(get_current_user),
-    db: Session = Depends(get_db)
+    series_id: str, current_user: Person = Depends(get_current_user), db: Session = Depends(get_db)
 ):
     """
     Get a specific recurring series by ID.
@@ -271,9 +274,7 @@ def get_recurring_series(
 
 @router.get("/recurring-series/{series_id}/occurrences")
 def get_series_occurrences(
-    series_id: str,
-    current_user: Person = Depends(get_current_user),
-    db: Session = Depends(get_db)
+    series_id: str, current_user: Person = Depends(get_current_user), db: Session = Depends(get_db)
 ):
     """
     Get all event occurrences for a recurring series.
@@ -289,9 +290,12 @@ def get_series_occurrences(
     verify_org_member(current_user, series.org_id)
 
     # Get all occurrences for this series
-    occurrences = db.query(Event).filter(
-        Event.series_id == series_id
-    ).order_by(Event.occurrence_sequence).all()
+    occurrences = (
+        db.query(Event)
+        .filter(Event.series_id == series_id)
+        .order_by(Event.occurrence_sequence)
+        .all()
+    )
 
     return {
         "series_id": series_id,
@@ -305,19 +309,19 @@ def get_series_occurrences(
                 "end_time": occ.end_time,
                 "is_exception": occ.is_exception,
                 "type": occ.type,
-                "extra_data": occ.extra_data
+                "extra_data": occ.extra_data,
             }
             for occ in occurrences
-        ]
+        ],
     }
 
 
-@router.post("/recurring-series/preview", response_model=List[OccurrencePreview])
+@router.post("/recurring-series/preview", response_model=list[OccurrencePreview])
 def preview_occurrences(
     request: PreviewRequest,
     org_id: str = Query(..., description="Organization ID"),
     current_user: Person = Depends(get_current_user),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ):
     """
     Preview occurrences for a recurring pattern WITHOUT creating them.
@@ -343,7 +347,7 @@ def preview_occurrences(
         start_date=request.start_date,
         end_condition_type=request.end_condition_type,
         end_date=request.end_date,
-        occurrence_count=request.occurrence_count
+        occurrence_count=request.occurrence_count,
     )
 
     # Validate series duration
@@ -371,7 +375,7 @@ def preview_occurrences(
 def delete_recurring_series(
     series_id: str,
     current_admin: Person = Depends(get_current_admin_user),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ):
     """
     Delete a recurring series and all its occurrences.
@@ -405,18 +409,18 @@ def delete_recurring_series(
     return {
         "message": "Recurring series deleted successfully",
         "series_id": series_id,
-        "occurrences_deleted": occurrence_count
+        "occurrences_deleted": occurrence_count,
     }
 
 
 @router.put("/recurring-series/{series_id}")
 def update_series_template(
     series_id: str,
-    title: Optional[str] = None,
-    location: Optional[str] = None,
-    role_requirements: Optional[dict] = None,
+    title: str | None = None,
+    location: str | None = None,
+    role_requirements: dict | None = None,
     current_admin: Person = Depends(get_current_admin_user),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ):
     """
     Update the series template (affects future occurrences).

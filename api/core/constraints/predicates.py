@@ -1,6 +1,6 @@
 """Predicate functions for constraint evaluation."""
 
-from datetime import date, datetime, timedelta
+from datetime import date, datetime
 
 from api.core.constraints.dsl import EvalContext
 
@@ -46,9 +46,7 @@ def has_role(ctx: EvalContext, role: str) -> bool:
     return role in ctx.person.roles
 
 
-def count_assignments_in_period(
-    ctx: EvalContext, person_id: str, start: date, end: date
-) -> int:
+def count_assignments_in_period(ctx: EvalContext, person_id: str, start: date, end: date) -> int:
     """Count assignments for person in date range."""
     if not ctx.person_assignments or person_id not in ctx.person_assignments:
         return 0

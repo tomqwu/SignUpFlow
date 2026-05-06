@@ -14,13 +14,14 @@ Example Usage:
     )
 """
 
-from typing import Optional, Dict, Any
-from sqlalchemy.orm import Session, joinedload
 from datetime import datetime
+from typing import Any
 
-from api.models import Organization, Subscription, PaymentMethod
-from api.utils.stripe_client import StripeClient
+from sqlalchemy.orm import Session, joinedload
+
 from api.logging_config import logger
+from api.models import Organization, PaymentMethod, Subscription
+from api.utils.stripe_client import StripeClient
 
 
 class StripeService:
@@ -37,11 +38,8 @@ class StripeService:
         self.stripe_client = StripeClient()
 
     def upgrade_to_paid(
-        self,
-        org_id: str,
-        price_id: str,
-        trial_days: Optional[int] = 14
-    ) -> Dict[str, Any]:
+        self, org_id: str, price_id: str, trial_days: int | None = 14
+    ) -> dict[str, Any]:
         """
         Upgrade organization from free to paid plan.
 
@@ -72,15 +70,16 @@ class StripeService:
         """
         try:
             # Get organization and current subscription (with eager loading)
-            org = self.db.query(Organization).options(
-                joinedload(Organization.subscription)
-            ).filter(Organization.id == org_id).first()
+            org = (
+                self.db.query(Organization)
+                .options(joinedload(Organization.subscription))
+                .filter(Organization.id == org_id)
+                .first()
+            )
             if not org:
                 return {"success": False, "message": "Organization not found"}
 
-            subscription = self.db.query(Subscription).filter(
-                Subscription.org_id == org_id
-            ).first()
+            subscription = self.db.query(Subscription).filter(Subscription.org_id == org_id).first()
 
             if not subscription:
                 return {"success": False, "message": "No subscription record found"}
@@ -91,9 +90,7 @@ class StripeService:
                 customer_email = admin.email if admin else f"{org_id}@signupflow.io"
 
                 customer_result = self.stripe_client.create_customer(
-                    org_id=org_id,
-                    email=customer_email,
-                    name=org.name
+                    org_id=org_id, email=customer_email, name=org.name
                 )
 
                 if not customer_result["success"]:
@@ -106,7 +103,7 @@ class StripeService:
                 customer_id=subscription.stripe_customer_id,
                 price_id=price_id,
                 trial_days=trial_days,
-                metadata={"org_id": org_id}
+                metadata={"org_id": org_id},
             )
 
             if not subscription_result["success"]:
@@ -148,22 +145,15 @@ class StripeService:
                 "success": True,
                 "subscription": subscription,
                 "stripe_subscription_id": stripe_subscription["id"],
-                "message": f"Successfully upgraded to {plan_tier} plan"
+                "message": f"Successfully upgraded to {plan_tier} plan",
             }
 
         except Exception as e:
             self.db.rollback()
             logger.error(f"Error upgrading org {org_id} to paid plan: {e}")
-            return {
-                "success": False,
-                "message": f"Unexpected error: {str(e)}"
-            }
+            return {"success": False, "message": f"Unexpected error: {str(e)}"}
 
-    def change_plan(
-        self,
-        org_id: str,
-        new_price_id: str
-    ) -> Dict[str, Any]:
+    def change_plan(self, org_id: str, new_price_id: str) -> dict[str, Any]:
         """
         Change organization's subscription plan (upgrade or downgrade).
 
@@ -175,17 +165,14 @@ class StripeService:
             dict: Result with success status and details
         """
         try:
-            subscription = self.db.query(Subscription).filter(
-                Subscription.org_id == org_id
-            ).first()
+            subscription = self.db.query(Subscription).filter(Subscription.org_id == org_id).first()
 
             if not subscription or not subscription.stripe_subscription_id:
                 return {"success": False, "message": "No active paid subscription found"}
 
             # Update Stripe subscription
             update_result = self.stripe_client.update_subscription(
-                subscription_id=subscription.stripe_subscription_id,
-                price_id=new_price_id
+                subscription_id=subscription.stripe_subscription_id, price_id=new_price_id
             )
 
             if not update_result["success"]:
@@ -211,7 +198,7 @@ class StripeService:
             return {
                 "success": True,
                 "subscription": subscription,
-                "message": f"Plan changed from {previous_plan} to {new_plan}"
+                "message": f"Plan changed from {previous_plan} to {new_plan}",
             }
 
         except Exception as e:
@@ -220,11 +207,8 @@ class StripeService:
             return {"success": False, "message": str(e)}
 
     def update_subscription_billing_cycle(
-        self,
-        stripe_subscription_id: str,
-        new_price_id: str,
-        prorated_amount_cents: int
-    ) -> Dict[str, Any]:
+        self, stripe_subscription_id: str, new_price_id: str, prorated_amount_cents: int
+    ) -> dict[str, Any]:
         """
         Update subscription billing cycle in Stripe.
 
@@ -253,14 +237,11 @@ class StripeService:
             update_result = self.stripe_client.update_subscription(
                 subscription_id=stripe_subscription_id,
                 price_id=new_price_id,
-                proration_behavior="always_invoice"  # Create invoice for proration
+                proration_behavior="always_invoice",  # Create invoice for proration
             )
 
             if not update_result["success"]:
-                return {
-                    "success": False,
-                    "message": update_result["message"]
-                }
+                return {"success": False, "message": update_result["message"]}
 
             updated_subscription = update_result["subscription"]
 
@@ -272,23 +253,16 @@ class StripeService:
             return {
                 "success": True,
                 "stripe_subscription": updated_subscription,
-                "message": "Billing cycle updated in Stripe"
+                "message": "Billing cycle updated in Stripe",
             }
 
         except Exception as e:
             logger.error(
                 f"Error updating billing cycle for subscription {stripe_subscription_id}: {e}"
             )
-            return {
-                "success": False,
-                "message": f"Failed to update billing cycle: {str(e)}"
-            }
+            return {"success": False, "message": f"Failed to update billing cycle: {str(e)}"}
 
-    def cancel_subscription(
-        self,
-        org_id: str,
-        at_period_end: bool = True
-    ) -> Dict[str, Any]:
+    def cancel_subscription(self, org_id: str, at_period_end: bool = True) -> dict[str, Any]:
         """
         Cancel organization's subscription.
 
@@ -300,17 +274,14 @@ class StripeService:
             dict: Result with success status
         """
         try:
-            subscription = self.db.query(Subscription).filter(
-                Subscription.org_id == org_id
-            ).first()
+            subscription = self.db.query(Subscription).filter(Subscription.org_id == org_id).first()
 
             if not subscription or not subscription.stripe_subscription_id:
                 return {"success": False, "message": "No active subscription found"}
 
             # Cancel in Stripe
             cancel_result = self.stripe_client.cancel_subscription(
-                subscription_id=subscription.stripe_subscription_id,
-                at_period_end=at_period_end
+                subscription_id=subscription.stripe_subscription_id, at_period_end=at_period_end
             )
 
             if not cancel_result["success"]:
@@ -330,11 +301,7 @@ class StripeService:
 
             logger.info(f"Cancelled subscription for org {org_id} (at_period_end={at_period_end})")
 
-            return {
-                "success": True,
-                "subscription": subscription,
-                "message": message
-            }
+            return {"success": True, "subscription": subscription, "message": message}
 
         except Exception as e:
             self.db.rollback()
@@ -342,11 +309,8 @@ class StripeService:
             return {"success": False, "message": str(e)}
 
     def save_payment_method(
-        self,
-        org_id: str,
-        payment_method_id: str,
-        card_details: Dict[str, Any]
-    ) -> Dict[str, Any]:
+        self, org_id: str, payment_method_id: str, card_details: dict[str, Any]
+    ) -> dict[str, Any]:
         """
         Save payment method for organization.
 
@@ -359,9 +323,7 @@ class StripeService:
             dict: Result with success status
         """
         try:
-            subscription = self.db.query(Subscription).filter(
-                Subscription.org_id == org_id
-            ).first()
+            subscription = self.db.query(Subscription).filter(Subscription.org_id == org_id).first()
 
             if not subscription or not subscription.stripe_customer_id:
                 return {"success": False, "message": "No Stripe customer found"}
@@ -370,7 +332,7 @@ class StripeService:
             attach_result = self.stripe_client.attach_payment_method(
                 customer_id=subscription.stripe_customer_id,
                 payment_method_id=payment_method_id,
-                set_as_default=True
+                set_as_default=True,
             )
 
             if not attach_result["success"]:
@@ -384,13 +346,12 @@ class StripeService:
                 card_last4=card_details.get("last4"),
                 exp_month=card_details.get("exp_month"),
                 exp_year=card_details.get("exp_year"),
-                is_primary=True
+                is_primary=True,
             )
 
             # Set other payment methods as non-primary
             self.db.query(PaymentMethod).filter(
-                PaymentMethod.org_id == org_id,
-                PaymentMethod.is_primary == True
+                PaymentMethod.org_id == org_id, PaymentMethod.is_primary is True
             ).update({"is_primary": False})
 
             self.db.add(payment_method)
@@ -401,7 +362,7 @@ class StripeService:
             return {
                 "success": True,
                 "payment_method": payment_method,
-                "message": "Payment method saved successfully"
+                "message": "Payment method saved successfully",
             }
 
         except Exception as e:
@@ -415,8 +376,8 @@ class StripeService:
         price_id: str,
         success_url: str,
         cancel_url: str,
-        trial_days: Optional[int] = 14
-    ) -> Dict[str, Any]:
+        trial_days: int | None = 14,
+    ) -> dict[str, Any]:
         """
         Create a Stripe Checkout session for payment collection.
 
@@ -451,9 +412,7 @@ class StripeService:
         """
         try:
             # Get or create Stripe customer
-            subscription = self.db.query(Subscription).filter(
-                Subscription.org_id == org_id
-            ).first()
+            subscription = self.db.query(Subscription).filter(Subscription.org_id == org_id).first()
 
             if not subscription:
                 return {"success": False, "message": "No subscription record found"}
@@ -462,9 +421,12 @@ class StripeService:
 
             # Create customer if doesn't exist
             if not customer_id:
-                org = self.db.query(Organization).options(
-                    joinedload(Organization.subscription)
-                ).filter(Organization.id == org_id).first()
+                org = (
+                    self.db.query(Organization)
+                    .options(joinedload(Organization.subscription))
+                    .filter(Organization.id == org_id)
+                    .first()
+                )
                 if not org:
                     return {"success": False, "message": "Organization not found"}
 
@@ -472,10 +434,7 @@ class StripeService:
                 customer_email = admin.email if admin else f"{org_id}@signupflow.io"
 
                 customer_result = self.stripe_client.create_customer(
-                    org_id=org_id,
-                    email=customer_email,
-                    name=org.name,
-                    metadata={"org_id": org_id}
+                    org_id=org_id, email=customer_email, name=org.name, metadata={"org_id": org_id}
                 )
 
                 if not customer_result["success"]:
@@ -487,23 +446,21 @@ class StripeService:
 
             # Create checkout session
             import stripe
+
             checkout_session = stripe.checkout.Session.create(
                 customer=customer_id,
                 mode="subscription",
-                line_items=[{
-                    "price": price_id,
-                    "quantity": 1
-                }],
+                line_items=[{"price": price_id, "quantity": 1}],
                 subscription_data={
                     "trial_period_days": trial_days if trial_days and trial_days > 0 else None,
                     "metadata": {
                         "org_id": org_id,
-                        "plan_tier": self._get_tier_from_price_id(price_id)
-                    }
+                        "plan_tier": self._get_tier_from_price_id(price_id),
+                    },
                 },
                 success_url=success_url,
                 cancel_url=cancel_url,
-                metadata={"org_id": org_id}
+                metadata={"org_id": org_id},
             )
 
             logger.info(f"Created checkout session for org {org_id}: {checkout_session.id}")
@@ -512,15 +469,12 @@ class StripeService:
                 "success": True,
                 "checkout_url": checkout_session.url,
                 "session_id": checkout_session.id,
-                "message": "Checkout session created"
+                "message": "Checkout session created",
             }
 
         except Exception as e:
             logger.error(f"Error creating checkout session for org {org_id}: {e}")
-            return {
-                "success": False,
-                "message": f"Failed to create checkout session: {str(e)}"
-            }
+            return {"success": False, "message": f"Failed to create checkout session: {str(e)}"}
 
     def _get_tier_from_price_id(self, price_id: str) -> str:
         """
@@ -545,11 +499,8 @@ class StripeService:
             return "starter"
 
     def apply_customer_credit(
-        self,
-        customer_id: str,
-        amount_cents: int,
-        description: str = "Account credit"
-    ) -> Dict[str, Any]:
+        self, customer_id: str, amount_cents: int, description: str = "Account credit"
+    ) -> dict[str, Any]:
         """
         Apply credit to Stripe customer balance.
 
@@ -579,7 +530,7 @@ class StripeService:
                 customer_id,
                 amount=-abs(amount_cents),  # Negative = credit
                 currency="usd",
-                description=description
+                description=description,
             )
 
             logger.info(
@@ -591,17 +542,14 @@ class StripeService:
                 "success": True,
                 "transaction_id": balance_transaction.id,
                 "amount_cents": amount_cents,
-                "message": f"Applied ${amount_cents/100:.2f} credit to customer balance"
+                "message": f"Applied ${amount_cents/100:.2f} credit to customer balance",
             }
 
         except Exception as e:
             logger.error(f"Error applying credit to customer {customer_id}: {e}")
-            return {
-                "success": False,
-                "message": f"Failed to apply credit: {str(e)}"
-            }
+            return {"success": False, "message": f"Failed to apply credit: {str(e)}"}
 
-    def list_payment_methods(self, org_id: str) -> Dict[str, Any]:
+    def list_payment_methods(self, org_id: str) -> dict[str, Any]:
         """
         List all payment methods for organization's Stripe customer.
 
@@ -620,24 +568,22 @@ class StripeService:
         """
         try:
             import stripe
+
             from api.models import Subscription
 
             # Get subscription to find customer ID
-            subscription = self.db.query(Subscription).filter(
-                Subscription.org_id == org_id
-            ).first()
+            subscription = self.db.query(Subscription).filter(Subscription.org_id == org_id).first()
 
             if not subscription or not subscription.stripe_customer_id:
                 return {
                     "success": True,
                     "payment_methods": [],
-                    "message": "No payment methods found (no Stripe customer)"
+                    "message": "No payment methods found (no Stripe customer)",
                 }
 
             # List payment methods for customer
             payment_methods = stripe.PaymentMethod.list(
-                customer=subscription.stripe_customer_id,
-                type="card"
+                customer=subscription.stripe_customer_id, type="card"
             )
 
             # Get customer to check default payment method
@@ -647,24 +593,26 @@ class StripeService:
             # Format payment methods
             formatted_pms = []
             for pm in payment_methods.data:
-                formatted_pms.append({
-                    "id": pm.id,
-                    "type": pm.type,
-                    "card": {
-                        "brand": pm.card.brand,
-                        "last4": pm.card.last4,
-                        "exp_month": pm.card.exp_month,
-                        "exp_year": pm.card.exp_year
-                    },
-                    "is_default": pm.id == default_pm_id
-                })
+                formatted_pms.append(
+                    {
+                        "id": pm.id,
+                        "type": pm.type,
+                        "card": {
+                            "brand": pm.card.brand,
+                            "last4": pm.card.last4,
+                            "exp_month": pm.card.exp_month,
+                            "exp_year": pm.card.exp_year,
+                        },
+                        "is_default": pm.id == default_pm_id,
+                    }
+                )
 
             logger.info(f"Retrieved {len(formatted_pms)} payment methods for org {org_id}")
 
             return {
                 "success": True,
                 "payment_methods": formatted_pms,
-                "message": f"Found {len(formatted_pms)} payment methods"
+                "message": f"Found {len(formatted_pms)} payment methods",
             }
 
         except Exception as e:
@@ -672,10 +620,10 @@ class StripeService:
             return {
                 "success": False,
                 "payment_methods": [],
-                "message": f"Failed to list payment methods: {str(e)}"
+                "message": f"Failed to list payment methods: {str(e)}",
             }
 
-    def attach_payment_method(self, org_id: str, payment_method_id: str) -> Dict[str, Any]:
+    def attach_payment_method(self, org_id: str, payment_method_id: str) -> dict[str, Any]:
         """
         Attach payment method to organization's Stripe customer.
 
@@ -692,33 +640,24 @@ class StripeService:
         """
         try:
             import stripe
+
             from api.models import Subscription
 
             # Get subscription to find customer ID
-            subscription = self.db.query(Subscription).filter(
-                Subscription.org_id == org_id
-            ).first()
+            subscription = self.db.query(Subscription).filter(Subscription.org_id == org_id).first()
 
             if not subscription:
-                return {
-                    "success": False,
-                    "message": "No subscription found for organization"
-                }
+                return {"success": False, "message": "No subscription found for organization"}
 
             # Create customer if doesn't exist
             if not subscription.stripe_customer_id:
-                customer = stripe.Customer.create(
-                    metadata={"org_id": org_id}
-                )
+                customer = stripe.Customer.create(metadata={"org_id": org_id})
                 subscription.stripe_customer_id = customer.id
                 self.db.commit()
                 logger.info(f"Created Stripe customer {customer.id} for org {org_id}")
 
             # Attach payment method to customer
-            payment_method = stripe.PaymentMethod.attach(
-                payment_method_id,
-                customer=subscription.stripe_customer_id
-            )
+            stripe.PaymentMethod.attach(payment_method_id, customer=subscription.stripe_customer_id)
 
             logger.info(
                 f"Attached payment method {payment_method_id} to customer "
@@ -730,23 +669,17 @@ class StripeService:
             if not customer.invoice_settings.default_payment_method:
                 stripe.Customer.modify(
                     subscription.stripe_customer_id,
-                    invoice_settings={"default_payment_method": payment_method_id}
+                    invoice_settings={"default_payment_method": payment_method_id},
                 )
                 logger.info(f"Set {payment_method_id} as default payment method")
 
-            return {
-                "success": True,
-                "message": "Payment method added successfully"
-            }
+            return {"success": True, "message": "Payment method added successfully"}
 
         except Exception as e:
             logger.error(f"Error attaching payment method for org {org_id}: {e}")
-            return {
-                "success": False,
-                "message": f"Failed to add payment method: {str(e)}"
-            }
+            return {"success": False, "message": f"Failed to add payment method: {str(e)}"}
 
-    def detach_payment_method(self, payment_method_id: str) -> Dict[str, Any]:
+    def detach_payment_method(self, payment_method_id: str) -> dict[str, Any]:
         """
         Detach payment method from customer.
 
@@ -764,23 +697,17 @@ class StripeService:
             import stripe
 
             # Detach payment method
-            payment_method = stripe.PaymentMethod.detach(payment_method_id)
+            stripe.PaymentMethod.detach(payment_method_id)
 
             logger.info(f"Detached payment method {payment_method_id}")
 
-            return {
-                "success": True,
-                "message": "Payment method removed successfully"
-            }
+            return {"success": True, "message": "Payment method removed successfully"}
 
         except Exception as e:
             logger.error(f"Error detaching payment method {payment_method_id}: {e}")
-            return {
-                "success": False,
-                "message": f"Failed to remove payment method: {str(e)}"
-            }
+            return {"success": False, "message": f"Failed to remove payment method: {str(e)}"}
 
-    def set_default_payment_method(self, org_id: str, payment_method_id: str) -> Dict[str, Any]:
+    def set_default_payment_method(self, org_id: str, payment_method_id: str) -> dict[str, Any]:
         """
         Set payment method as default for organization's Stripe customer.
 
@@ -797,23 +724,19 @@ class StripeService:
         """
         try:
             import stripe
+
             from api.models import Subscription
 
             # Get subscription to find customer ID
-            subscription = self.db.query(Subscription).filter(
-                Subscription.org_id == org_id
-            ).first()
+            subscription = self.db.query(Subscription).filter(Subscription.org_id == org_id).first()
 
             if not subscription or not subscription.stripe_customer_id:
-                return {
-                    "success": False,
-                    "message": "No Stripe customer found for organization"
-                }
+                return {"success": False, "message": "No Stripe customer found for organization"}
 
             # Set default payment method
             stripe.Customer.modify(
                 subscription.stripe_customer_id,
-                invoice_settings={"default_payment_method": payment_method_id}
+                invoice_settings={"default_payment_method": payment_method_id},
             )
 
             logger.info(
@@ -821,19 +744,18 @@ class StripeService:
                 f"customer {subscription.stripe_customer_id} (org {org_id})"
             )
 
-            return {
-                "success": True,
-                "message": "Primary payment method updated successfully"
-            }
+            return {"success": True, "message": "Primary payment method updated successfully"}
 
         except Exception as e:
             logger.error(f"Error setting default payment method for org {org_id}: {e}")
             return {
                 "success": False,
-                "message": f"Failed to update primary payment method: {str(e)}"
+                "message": f"Failed to update primary payment method: {str(e)}",
             }
 
-    def create_billing_portal_session(self, org_id: str, return_url: Optional[str] = None) -> Dict[str, Any]:
+    def create_billing_portal_session(
+        self, org_id: str, return_url: str | None = None
+    ) -> dict[str, Any]:
         """
         Create Stripe billing portal session for self-service management.
 
@@ -857,17 +779,16 @@ class StripeService:
         """
         try:
             import stripe
+
             from api.models import Subscription
 
             # Get subscription to find customer ID
-            subscription = self.db.query(Subscription).filter(
-                Subscription.org_id == org_id
-            ).first()
+            subscription = self.db.query(Subscription).filter(Subscription.org_id == org_id).first()
 
             if not subscription or not subscription.stripe_customer_id:
                 return {
                     "success": False,
-                    "message": "No Stripe customer found for organization. Please upgrade to a paid plan first."
+                    "message": "No Stripe customer found for organization. Please upgrade to a paid plan first.",
                 }
 
             # Set return URL (default to placeholder if not provided)
@@ -876,8 +797,7 @@ class StripeService:
 
             # Create billing portal session
             session = stripe.billing_portal.Session.create(
-                customer=subscription.stripe_customer_id,
-                return_url=return_url
+                customer=subscription.stripe_customer_id, return_url=return_url
             )
 
             logger.info(
@@ -888,12 +808,12 @@ class StripeService:
             return {
                 "success": True,
                 "url": session.url,
-                "message": "Billing portal session created successfully"
+                "message": "Billing portal session created successfully",
             }
 
         except Exception as e:
             logger.error(f"Error creating billing portal session for org {org_id}: {e}")
             return {
                 "success": False,
-                "message": f"Failed to create billing portal session: {str(e)}"
+                "message": f"Failed to create billing portal session: {str(e)}",
             }

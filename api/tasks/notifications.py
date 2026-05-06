@@ -7,16 +7,22 @@ and admin summaries asynchronously.
 
 import logging
 from datetime import datetime, timedelta
-from typing import List, Dict, Any, Optional
+from typing import Any
 
 from sqlalchemy.orm import Session
 
 from api.celery_app import celery_app
 from api.database import get_db
 from api.models import (
-    Notification, NotificationType, NotificationStatus,
-    EmailPreference, EmailFrequency,
-    Person, Event, Assignment, Organization
+    Assignment,
+    EmailFrequency,
+    EmailPreference,
+    Event,
+    Notification,
+    NotificationStatus,
+    NotificationType,
+    Organization,
+    Person,
 )
 from api.services.email_service import email_service
 
@@ -24,10 +30,7 @@ logger = logging.getLogger(__name__)
 
 
 @celery_app.task(bind=True, max_retries=3)
-def send_email_task(
-    self,
-    notification_id: int
-) -> Dict[str, Any]:
+def send_email_task(self, notification_id: int) -> dict[str, Any]:
     """
     Send single email notification asynchronously.
 
@@ -47,18 +50,14 @@ def send_email_task(
 
     try:
         # Get notification from database
-        notification = db.query(Notification).filter(
-            Notification.id == notification_id
-        ).first()
+        notification = db.query(Notification).filter(Notification.id == notification_id).first()
 
         if not notification:
             logger.error(f"Notification {notification_id} not found")
             return {"status": "error", "message": "Notification not found"}
 
         # Get recipient
-        recipient = db.query(Person).filter(
-            Person.id == notification.recipient_id
-        ).first()
+        recipient = db.query(Person).filter(Person.id == notification.recipient_id).first()
 
         if not recipient:
             logger.error(f"Recipient {notification.recipient_id} not found")
@@ -68,9 +67,9 @@ def send_email_task(
             return {"status": "error", "message": "Recipient not found"}
 
         # Get email preferences
-        email_pref = db.query(EmailPreference).filter(
-            EmailPreference.person_id == recipient.id
-        ).first()
+        email_pref = (
+            db.query(EmailPreference).filter(EmailPreference.person_id == recipient.id).first()
+        )
 
         # Determine language
         language = email_pref.language if email_pref else recipient.language or "en"
@@ -111,18 +110,16 @@ def send_email_task(
 
         # Update notification status
         try:
-            notification = db.query(Notification).filter(
-                Notification.id == notification_id
-            ).first()
+            notification = db.query(Notification).filter(Notification.id == notification_id).first()
             if notification:
                 notification.status = NotificationStatus.RETRY
                 notification.error_message = str(e)
                 db.commit()
-        except:
+        except Exception:
             pass
 
         # Retry with exponential backoff
-        raise self.retry(exc=e, countdown=60 * (2 ** self.request.retries))
+        raise self.retry(exc=e, countdown=60 * (2**self.request.retries))
 
     finally:
         db.close()
@@ -131,10 +128,10 @@ def send_email_task(
 def _send_assignment_notification(
     notification: Notification,
     recipient: Person,
-    email_pref: Optional[EmailPreference],
+    email_pref: EmailPreference | None,
     language: str,
-    db: Session
-) -> Optional[str]:
+    db: Session,
+) -> str | None:
     """Send assignment notification email."""
     # Get event details
     event = db.query(Event).filter(Event.id == notification.event_id).first()
@@ -143,17 +140,18 @@ def _send_assignment_notification(
         return None
 
     # Get assignment details
-    assignment = db.query(Assignment).filter(
-        Assignment.event_id == event.id,
-        Assignment.person_id == recipient.id
-    ).first()
+    assignment = (
+        db.query(Assignment)
+        .filter(Assignment.event_id == event.id, Assignment.person_id == recipient.id)
+        .first()
+    )
 
     if not assignment:
         logger.error(f"Assignment not found for event {event.id}, person {recipient.id}")
         return None
 
     # Get organization
-    org = db.query(Organization).filter(Organization.id == event.org_id).first()
+    db.query(Organization).filter(Organization.id == event.org_id).first()
 
     # Format event datetime
     event_datetime = event.start_time.strftime("%A, %B %d, %Y at %I:%M %p")
@@ -168,23 +166,30 @@ def _send_assignment_notification(
         event_title=(event.extra_data or {}).get("title", event.type),
         role=assignment.role,
         event_datetime=event_datetime,
-        event_location=((event.extra_data or {}).get("location") or (event.resource.location if event.resource else None)),
-        event_duration=f"{event.duration_minutes} minutes" if hasattr(event, 'duration_minutes') else None,
-        additional_info=notification.template_data.get("additional_info") if notification.template_data else None,
+        event_location=(
+            (event.extra_data or {}).get("location")
+            or (event.resource.location if event.resource else None)
+        ),
+        event_duration=f"{event.duration_minutes} minutes"
+        if hasattr(event, "duration_minutes")
+        else None,
+        additional_info=notification.template_data.get("additional_info")
+        if notification.template_data
+        else None,
         unsubscribe_token=unsubscribe_token,
         notification=notification,
         db=db,
-        language=language
+        language=language,
     )
 
 
 def _send_reminder_notification(
     notification: Notification,
     recipient: Person,
-    email_pref: Optional[EmailPreference],
+    email_pref: EmailPreference | None,
     language: str,
-    db: Session
-) -> Optional[str]:
+    db: Session,
+) -> str | None:
     """Send reminder notification email."""
     # Get event details
     event = db.query(Event).filter(Event.id == notification.event_id).first()
@@ -193,10 +198,11 @@ def _send_reminder_notification(
         return None
 
     # Get assignment details
-    assignment = db.query(Assignment).filter(
-        Assignment.event_id == event.id,
-        Assignment.person_id == recipient.id
-    ).first()
+    assignment = (
+        db.query(Assignment)
+        .filter(Assignment.event_id == event.id, Assignment.person_id == recipient.id)
+        .first()
+    )
 
     if not assignment:
         logger.error(f"Assignment not found for event {event.id}, person {recipient.id}")
@@ -220,27 +226,34 @@ def _send_reminder_notification(
         volunteer_email=recipient.email,
         volunteer_name=recipient.name,
         event_title=(event.extra_data or {}).get("title", event.type),
-        role=assignment.role if hasattr(assignment, 'role') else template_data.get("role", "Volunteer"),
+        role=assignment.role
+        if hasattr(assignment, "role")
+        else template_data.get("role", "Volunteer"),
         event_datetime=event_datetime,
         hours_remaining=hours_remaining,
-        event_location=((event.extra_data or {}).get("location") or (event.resource.location if event.resource else None)),
-        event_duration=f"{event.duration_minutes} minutes" if hasattr(event, 'duration_minutes') else None,
+        event_location=(
+            (event.extra_data or {}).get("location")
+            or (event.resource.location if event.resource else None)
+        ),
+        event_duration=f"{event.duration_minutes} minutes"
+        if hasattr(event, "duration_minutes")
+        else None,
         what_to_bring=template_data.get("what_to_bring"),
         additional_info=template_data.get("additional_info"),
         unsubscribe_token=unsubscribe_token,
         notification=notification,
         db=db,
-        language=language
+        language=language,
     )
 
 
 def _send_update_notification(
     notification: Notification,
     recipient: Person,
-    email_pref: Optional[EmailPreference],
+    email_pref: EmailPreference | None,
     language: str,
-    db: Session
-) -> Optional[str]:
+    db: Session,
+) -> str | None:
     """Send update notification email."""
     # Get event details
     event = db.query(Event).filter(Event.id == notification.event_id).first()
@@ -249,10 +262,11 @@ def _send_update_notification(
         return None
 
     # Get assignment details
-    assignment = db.query(Assignment).filter(
-        Assignment.event_id == event.id,
-        Assignment.person_id == recipient.id
-    ).first()
+    assignment = (
+        db.query(Assignment)
+        .filter(Assignment.event_id == event.id, Assignment.person_id == recipient.id)
+        .first()
+    )
 
     if not assignment:
         logger.error(f"Assignment not found for event {event.id}, person {recipient.id}")
@@ -275,27 +289,34 @@ def _send_update_notification(
         volunteer_email=recipient.email,
         volunteer_name=recipient.name,
         event_title=(event.extra_data or {}).get("title", event.type),
-        role=assignment.role if hasattr(assignment, 'role') else template_data.get("role", "Volunteer"),
+        role=assignment.role
+        if hasattr(assignment, "role")
+        else template_data.get("role", "Volunteer"),
         new_datetime=new_datetime,
         old_datetime=old_datetime,
-        new_location=((event.extra_data or {}).get("location") or (event.resource.location if event.resource else None)),
+        new_location=(
+            (event.extra_data or {}).get("location")
+            or (event.resource.location if event.resource else None)
+        ),
         old_location=old_location,
-        event_duration=f"{event.duration_minutes} minutes" if hasattr(event, 'duration_minutes') else None,
+        event_duration=f"{event.duration_minutes} minutes"
+        if hasattr(event, "duration_minutes")
+        else None,
         other_changes=other_changes,
         unsubscribe_token=unsubscribe_token,
         notification=notification,
         db=db,
-        language=language
+        language=language,
     )
 
 
 def _send_cancellation_notification(
     notification: Notification,
     recipient: Person,
-    email_pref: Optional[EmailPreference],
+    email_pref: EmailPreference | None,
     language: str,
-    db: Session
-) -> Optional[str]:
+    db: Session,
+) -> str | None:
     """Send cancellation notification email."""
     # Get event details
     event = db.query(Event).filter(Event.id == notification.event_id).first()
@@ -322,18 +343,21 @@ def _send_cancellation_notification(
         event_title=(event.extra_data or {}).get("title", event.type),
         role=role,
         event_datetime=event_datetime,
-        event_location=((event.extra_data or {}).get("location") or (event.resource.location if event.resource else None)),
+        event_location=(
+            (event.extra_data or {}).get("location")
+            or (event.resource.location if event.resource else None)
+        ),
         cancellation_reason=cancellation_reason,
         apology_message=apology_message,
         unsubscribe_token=unsubscribe_token,
         notification=notification,
         db=db,
-        language=language
+        language=language,
     )
 
 
 @celery_app.task
-def send_reminder_emails() -> Dict[str, Any]:
+def send_reminder_emails() -> dict[str, Any]:
     """
     Send reminder emails for events 24 hours away.
 
@@ -357,32 +381,29 @@ def send_reminder_emails() -> Dict[str, Any]:
         reminder_start = now + timedelta(hours=23)
         reminder_end = now + timedelta(hours=25)
 
-        events = db.query(Event).filter(
-            Event.start_time >= reminder_start,
-            Event.start_time <= reminder_end
-        ).all()
+        events = (
+            db.query(Event)
+            .filter(Event.start_time >= reminder_start, Event.start_time <= reminder_end)
+            .all()
+        )
 
         logger.info(f"Found {len(events)} events in 24-hour reminder window")
 
         for event in events:
             # Get all assignments for this event
-            assignments = db.query(Assignment).filter(
-                Assignment.event_id == event.id
-            ).all()
+            assignments = db.query(Assignment).filter(Assignment.event_id == event.id).all()
 
             for assignment in assignments:
                 # Get volunteer
-                person = db.query(Person).filter(
-                    Person.id == assignment.person_id
-                ).first()
+                person = db.query(Person).filter(Person.id == assignment.person_id).first()
 
                 if not person:
                     continue
 
                 # Get email preferences
-                email_pref = db.query(EmailPreference).filter(
-                    EmailPreference.person_id == person.id
-                ).first()
+                email_pref = (
+                    db.query(EmailPreference).filter(EmailPreference.person_id == person.id).first()
+                )
 
                 # Check if reminders are enabled
                 if email_pref and NotificationType.REMINDER not in (email_pref.enabled_types or []):
@@ -390,11 +411,15 @@ def send_reminder_emails() -> Dict[str, Any]:
                     continue
 
                 # Check if reminder already sent
-                existing = db.query(Notification).filter(
-                    Notification.recipient_id == person.id,
-                    Notification.event_id == event.id,
-                    Notification.type == NotificationType.REMINDER
-                ).first()
+                existing = (
+                    db.query(Notification)
+                    .filter(
+                        Notification.recipient_id == person.id,
+                        Notification.event_id == event.id,
+                        Notification.type == NotificationType.REMINDER,
+                    )
+                    .first()
+                )
 
                 if existing:
                     logger.info(f"Reminder already sent for event {event.id}, person {person.id}")
@@ -409,10 +434,10 @@ def send_reminder_emails() -> Dict[str, Any]:
                     event_id=event.id,
                     template_data={
                         "assignment_id": assignment.id,
-                        "role": assignment.role if hasattr(assignment, 'role') else None,
-                        "hours_remaining": int((event.start_time - now).total_seconds() / 3600)
+                        "role": assignment.role if hasattr(assignment, "role") else None,
+                        "hours_remaining": int((event.start_time - now).total_seconds() / 3600),
                     },
-                    created_at=datetime.utcnow()
+                    created_at=datetime.utcnow(),
                 )
                 db.add(notification)
                 db.flush()
@@ -440,7 +465,7 @@ def send_reminder_emails() -> Dict[str, Any]:
 
 
 @celery_app.task
-def send_daily_digests() -> Dict[str, Any]:
+def send_daily_digests() -> dict[str, Any]:
     """
     Send daily digest emails to users with daily frequency preference.
 
@@ -455,7 +480,7 @@ def send_daily_digests() -> Dict[str, Any]:
 
 
 @celery_app.task
-def send_weekly_digests() -> Dict[str, Any]:
+def send_weekly_digests() -> dict[str, Any]:
     """
     Send weekly digest emails to users with weekly frequency preference.
 
@@ -470,7 +495,7 @@ def send_weekly_digests() -> Dict[str, Any]:
 
 
 @celery_app.task
-def send_admin_summaries() -> Dict[str, Any]:
+def send_admin_summaries() -> dict[str, Any]:
     """
     Send weekly admin summary emails to organization admins.
 

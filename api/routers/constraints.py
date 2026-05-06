@@ -1,17 +1,17 @@
 """Constraints router."""
 
-from typing import Optional
-from fastapi import APIRouter, Depends, HTTPException, status, Query
+
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
 from api.database import get_db
+from api.models import Constraint, Organization
 from api.schemas.constraint import (
     ConstraintCreate,
-    ConstraintUpdate,
-    ConstraintResponse,
     ConstraintList,
+    ConstraintResponse,
+    ConstraintUpdate,
 )
-from api.models import Constraint, Organization
 
 router = APIRouter(prefix="/constraints", tags=["constraints"])
 
@@ -51,8 +51,8 @@ def create_constraint(constraint_data: ConstraintCreate, db: Session = Depends(g
 
 @router.get("/", response_model=ConstraintList)
 def list_constraints(
-    org_id: Optional[str] = Query(None, description="Filter by organization ID"),
-    constraint_type: Optional[str] = Query(None, description="Filter by type (hard/soft)"),
+    org_id: str | None = Query(None, description="Filter by organization ID"),
+    constraint_type: str | None = Query(None, description="Filter by type (hard/soft)"),
     skip: int = 0,
     limit: int = 100,
     db: Session = Depends(get_db),

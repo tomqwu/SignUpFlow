@@ -1,11 +1,16 @@
 import pytest
-pytestmark = pytest.mark.skip(reason="Email/SMS features disabled — focusing on core scheduling logic")
+
+pytestmark = pytest.mark.skip(
+    reason="Email/SMS features disabled — focusing on core scheduling logic"
+)
 
 import os
 import unittest
 from unittest.mock import MagicMock, patch
+
 from api.services.email_service import EmailService
 from api.services.sms_service import SMSService
+
 
 class TestWorkflowSafety(unittest.TestCase):
     """
@@ -16,7 +21,7 @@ class TestWorkflowSafety(unittest.TestCase):
     def setUp(self):
         # Ensure environment is set to development
         os.environ["ENVIRONMENT"] = "development"
-        
+
     @patch("api.services.email_service.smtplib.SMTP")
     @patch("api.services.email_service.SendGridAPIClient")
     def test_email_service_safety_flag(self, mock_sendgrid, mock_smtp):
@@ -25,22 +30,27 @@ class TestWorkflowSafety(unittest.TestCase):
         with patch.dict(os.environ, {"EMAIL_ENABLED": "false"}):
             service = EmailService()
             self.assertFalse(service.enabled)
-            
+
             result = service.send_email(
-                to_email="test@example.com",
-                subject="Test",
-                html_content="<h1>Hello</h1>"
+                to_email="test@example.com", subject="Test", html_content="<h1>Hello</h1>"
             )
-            
+
             self.assertIsNone(result)
             mock_smtp.assert_not_called()
             mock_sendgrid.assert_not_called()
 
         # 2. Test with EMAIL_ENABLED=true (to verify it WOULD call)
-        with patch.dict(os.environ, {"EMAIL_ENABLED": "true", "MAILTRAP_SMTP_USER": "test", "MAILTRAP_SMTP_PASSWORD": "test"}):
+        with patch.dict(
+            os.environ,
+            {
+                "EMAIL_ENABLED": "true",
+                "MAILTRAP_SMTP_USER": "test",
+                "MAILTRAP_SMTP_PASSWORD": "test",
+            },
+        ):
             service = EmailService()
             self.assertTrue(service.enabled)
-            
+
             # We don't actually call it here because it would try to connect,
             # but we verified the 'enabled' flag logic.
 
@@ -51,17 +61,18 @@ class TestWorkflowSafety(unittest.TestCase):
         with patch.dict(os.environ, {"SMS_ENABLED": "false"}):
             service = SMSService()
             self.assertFalse(service.enabled)
-            
+
             result = service.send_sms(
                 db=MagicMock(),
                 recipient_id=1,
                 message_text="Test",
                 message_type="assignment",
-                organization_id=1
+                organization_id=1,
             )
-            
+
             self.assertEqual(result["status"], "disabled")
             mock_twilio.assert_not_called()
+
 
 if __name__ == "__main__":
     unittest.main()

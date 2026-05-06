@@ -6,11 +6,13 @@ allowing unit tests to bypass JWT authentication and org membership verification
 """
 
 import asyncio
+
 import pytest
 from fastapi.testclient import TestClient
-from api.main import app
-from api.models import Person, Organization
+
 from api.database import get_db
+from api.main import app
+from api.models import Organization, Person
 
 
 class TestAuthenticationMocking:
@@ -36,8 +38,9 @@ class TestAuthenticationMocking:
         # Get the overridden dependency (it's async, so we need to await it)
         mock_user = asyncio.run(app.dependency_overrides[get_current_user]())
 
-        assert "admin" in mock_user.roles, "Mock user should have admin role to allow unit tests to pass"
-
+        assert (
+            "admin" in mock_user.roles
+        ), "Mock user should have admin role to allow unit tests to pass"
 
     def test_protected_endpoint_accessible_without_jwt(self):
         """Verify protected endpoints are accessible without JWT tokens in tests."""
@@ -58,7 +61,7 @@ class TestAuthenticationMocking:
             org_id="test_org_endpoint",
             name="Test Person",
             email="test@example.com",
-            roles=["volunteer"]
+            roles=["volunteer"],
         )
         db.add(person)
         db.commit()
@@ -87,7 +90,7 @@ class TestAuthenticationMocking:
             org_id="org_a",
             name="Person A",
             email="persona@example.com",
-            roles=["volunteer"]
+            roles=["volunteer"],
         )
 
         # Should not raise error even when checking different org
@@ -133,8 +136,9 @@ class TestDatabaseOverride:
 
     def test_test_database_has_all_tables(self):
         """Verify test database has all required tables."""
-        from api.database import get_db
         from sqlalchemy import inspect
+
+        from api.database import get_db
 
         db = next(get_db())
         inspector = inspect(db.bind)
@@ -148,7 +152,7 @@ class TestDatabaseOverride:
             "events",
             "assignments",
             "availability",
-            "invitations"
+            "invitations",
         ]
 
         for table in required_tables:
@@ -161,12 +165,11 @@ class TestDependencyOverrideCleanup:
     def test_overrides_are_applied(self):
         """Verify that dependency overrides are active during tests."""
         from api.dependencies import get_current_admin_user, get_current_user
-        from api.database import get_db
 
         # Auth dependencies should be overridden
         assert get_current_admin_user in app.dependency_overrides
         assert get_current_user in app.dependency_overrides
-        
+
         # DB dependence is NOT overridden (it's patched at lower level)
         # assert get_db in app.dependency_overrides # Removed assertion
 
@@ -181,7 +184,7 @@ class TestDependencyOverrideCleanup:
             org_id="org_a",
             name="Test",
             email="test@example.com",
-            roles=["volunteer"]
+            roles=["volunteer"],
         )
 
         # Should not raise (monkey-patched to do nothing)
@@ -209,13 +212,16 @@ class TestMockingIntegration:
         db.commit()
 
         # Create person without auth header
-        response = client.post("/api/people/", json={
-            "id": "test_person_mock",
-            "org_id": "test_org_mock",
-            "name": "Test Person",
-            "email": "testmock@example.com",
-            "roles": ["volunteer"]
-        })
+        response = client.post(
+            "/api/people/",
+            json={
+                "id": "test_person_mock",
+                "org_id": "test_org_mock",
+                "name": "Test Person",
+                "email": "testmock@example.com",
+                "roles": ["volunteer"],
+            },
+        )
 
         assert response.status_code == 201
 
@@ -224,7 +230,6 @@ class TestMockingIntegration:
         db.delete(org)
         db.commit()
         db.close()
-
 
     def test_update_resource_without_auth_header(self):
         """Verify we can update resources without Authorization header."""
@@ -242,15 +247,13 @@ class TestMockingIntegration:
             org_id="test_org_update",
             name="Original Name",
             email="update@example.com",
-            roles=["volunteer"]
+            roles=["volunteer"],
         )
         db.add(person)
         db.commit()
 
         # Update without auth header
-        response = client.put("/api/people/test_person_update", json={
-            "name": "Updated Name"
-        })
+        response = client.put("/api/people/test_person_update", json={"name": "Updated Name"})
 
         assert response.status_code == 200
         assert response.json()["name"] == "Updated Name"
@@ -277,7 +280,7 @@ class TestMockingIntegration:
             org_id="test_org_delete",
             name="To Delete",
             email="delete@example.com",
-            roles=["volunteer"]
+            roles=["volunteer"],
         )
         db.add(person)
         db.commit()

@@ -1,13 +1,12 @@
 """Tests for api/utils/security.py"""
 
-import pytest
 import re
 
 from api.utils.security import (
-    generate_token,
-    generate_invitation_token,
     generate_auth_token,
     generate_calendar_token,
+    generate_invitation_token,
+    generate_token,
     hash_password,
     verify_password,
 )
@@ -45,7 +44,7 @@ class TestTokenGeneration:
         """Test that generated tokens are URL-safe."""
         token = generate_token()
         # URL-safe base64 uses only alphanumeric, hyphen, and underscore
-        assert re.match(r'^[A-Za-z0-9_-]+$', token)
+        assert re.match(r"^[A-Za-z0-9_-]+$", token)
 
     def test_generate_invitation_token(self):
         """Test invitation token generation."""

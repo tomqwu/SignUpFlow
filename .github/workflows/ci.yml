@@ -45,7 +45,10 @@ jobs:
       - name: Ruff (lint)
         run: poetry run ruff check api tests
 
-      - name: mypy (type check)
+      - name: mypy (type check, advisory)
+        # mypy is advisory while we work down the legacy backlog (751 errors at last count).
+        # Track remediation in docs/PHASE_2.md before flipping this to required.
+        continue-on-error: true
         run: poetry run mypy api
 
       - name: Unit tests

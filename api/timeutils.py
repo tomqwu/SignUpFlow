@@ -8,9 +8,9 @@ assumes naive), so we generate an aware UTC timestamp then drop tzinfo.
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 
 def utcnow() -> datetime:
     """Return naive UTC datetime (tzinfo stripped) without using datetime.utcnow()."""
-    return datetime.now(timezone.utc).replace(tzinfo=None)
+    return datetime.now(UTC).replace(tzinfo=None)

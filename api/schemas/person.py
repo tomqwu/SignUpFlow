@@ -1,19 +1,20 @@
 """Person schemas."""
 
-from typing import Optional, List, Dict, Any
 from datetime import datetime
-from pydantic import BaseModel, Field, EmailStr, ConfigDict
+from typing import Any
+
+from pydantic import BaseModel, ConfigDict, EmailStr, Field
 
 
 class PersonBase(BaseModel):
     """Base person schema."""
 
     name: str = Field(..., description="Person's full name")
-    email: Optional[EmailStr] = Field(None, description="Email address")
-    roles: Optional[List[str]] = Field(default_factory=list, description="List of roles")
+    email: EmailStr | None = Field(None, description="Email address")
+    roles: list[str] | None = Field(default_factory=list, description="List of roles")
     timezone: str = Field(default="UTC", description="User's timezone preference")
     language: str = Field(default="en", description="User's language preference (ISO 639-1 code)")
-    extra_data: Optional[Dict[str, Any]] = Field(None, description="Additional data")
+    extra_data: dict[str, Any] | None = Field(None, description="Additional data")
 
 
 class PersonCreate(PersonBase):
@@ -26,12 +27,12 @@ class PersonCreate(PersonBase):
 class PersonUpdate(BaseModel):
     """Schema for updating a person."""
 
-    name: Optional[str] = None
-    email: Optional[EmailStr] = None
-    roles: Optional[List[str]] = None
-    timezone: Optional[str] = None
-    language: Optional[str] = None
-    extra_data: Optional[Dict[str, Any]] = None
+    name: str | None = None
+    email: EmailStr | None = None
+    roles: list[str] | None = None
+    timezone: str | None = None
+    language: str | None = None
+    extra_data: dict[str, Any] | None = None
 
 
 class PersonResponse(PersonBase):
@@ -48,5 +49,5 @@ class PersonResponse(PersonBase):
 class PersonList(BaseModel):
     """Schema for listing people."""
 
-    people: List[PersonResponse]
+    people: list[PersonResponse]
     total: int

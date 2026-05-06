@@ -1,16 +1,17 @@
 """Organization schemas."""
 
-from typing import Optional, Dict, Any
 from datetime import datetime
-from pydantic import BaseModel, Field, ConfigDict
+from typing import Any
+
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class OrganizationBase(BaseModel):
     """Base organization schema."""
 
     name: str = Field(..., description="Organization name")
-    region: Optional[str] = Field(None, description="Region code (e.g., CA-ON, US-CA)")
-    config: Optional[Dict[str, Any]] = Field(None, description="Configuration settings")
+    region: str | None = Field(None, description="Region code (e.g., CA-ON, US-CA)")
+    config: dict[str, Any] | None = Field(None, description="Configuration settings")
 
 
 class OrganizationCreate(OrganizationBase):
@@ -22,9 +23,9 @@ class OrganizationCreate(OrganizationBase):
 class OrganizationUpdate(BaseModel):
     """Schema for updating an organization."""
 
-    name: Optional[str] = None
-    region: Optional[str] = None
-    config: Optional[Dict[str, Any]] = None
+    name: str | None = None
+    region: str | None = None
+    config: dict[str, Any] | None = None
 
 
 class OrganizationResponse(OrganizationBase):

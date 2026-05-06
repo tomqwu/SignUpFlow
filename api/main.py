@@ -1,13 +1,13 @@
 """FastAPI application entry point."""
 
+import traceback
 from contextlib import asynccontextmanager
+
+import uvicorn
+from dotenv import load_dotenv
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
-import uvicorn
-import os
-import traceback
-from dotenv import load_dotenv
 
 # Load environment variables from .env file
 load_dotenv()
@@ -15,20 +15,20 @@ load_dotenv()
 from api.database import init_db
 from api.logging_config import logger
 from api.routers import (
-    password_reset,
     analytics,
     auth,
-    organizations,
-    people,
-    teams,
-    events,
-    constraints,
-    solver,
-    solutions,
     availability,
-    conflicts,
-    invitations,
     calendar,
+    conflicts,
+    constraints,
+    events,
+    invitations,
+    organizations,
+    password_reset,
+    people,
+    solutions,
+    solver,
+    teams,
 )
 
 
@@ -66,12 +66,12 @@ async def error_logging_middleware(request: Request, call_next):
     except Exception as e:
         logger.error(f"Unhandled error: {str(e)}\n{traceback.format_exc()}")
         return JSONResponse(
-            status_code=500,
-            content={"detail": "Internal server error. Please try again later."}
+            status_code=500, content={"detail": "Internal server error. Please try again later."}
         )
 
 
 from api.utils.security_headers_middleware import add_security_headers_middleware
+
 add_security_headers_middleware(app)
 
 app.add_middleware(
@@ -92,14 +92,15 @@ def health_check():
         200 OK: Service and database are healthy
         503 Service Unavailable: Database connection failed
     """
-    from api.database import SessionLocal
     from sqlalchemy import text
+
+    from api.database import SessionLocal
 
     health_status = {
         "status": "healthy",
         "service": "signupflow-api",
         "version": "1.0.0",
-        "database": "unknown"
+        "database": "unknown",
     }
 
     try:
@@ -111,10 +112,7 @@ def health_check():
         health_status["status"] = "unhealthy"
         health_status["database"] = "disconnected"
         health_status["error"] = str(e)
-        return JSONResponse(
-            status_code=503,
-            content=health_status
-        )
+        return JSONResponse(status_code=503, content=health_status)
 
     return health_status
 

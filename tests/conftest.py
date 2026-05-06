@@ -1,13 +1,10 @@
 """Pytest configuration and fixtures for SignUpFlow tests."""
 
 import os
-import sys
 import uuid
-from typing import Generator
-from unittest.mock import MagicMock, patch
 
 from sqlalchemy import create_engine, text
-from sqlalchemy.orm import sessionmaker, Session
+from sqlalchemy.orm import Session, sessionmaker
 
 # Force a deterministic test database path before any application import.
 os.environ.setdefault("DATABASE_URL", "sqlite:////tmp/signupflow_test.db")
@@ -16,13 +13,11 @@ os.environ["TESTING_FORCE_MEMORY"] = "true"
 import pytest
 from fastapi.testclient import TestClient
 
-from api.main import app
-from api import database
 import api.database
 import api.main
-from api.models import Base, Person, Organization
+from api.main import app
+from api.models import Base, Organization, Person
 from api.security import hash_password
-
 
 SKIP_DB_FIXTURES = os.getenv("SKIP_TEST_DB_FIXTURES", "").lower() in {"1", "true", "yes", "on"}
 
@@ -79,10 +74,10 @@ def mock_authentication(request):
     app.dependency_overrides[get_current_admin_user] = override_get_admin_user
     app.dependency_overrides[get_current_user] = override_get_user
 
-    import api.routers.people
-    import api.routers.events
-    import api.routers.teams
     import api.dependencies
+    import api.routers.events
+    import api.routers.people
+    import api.routers.teams
 
     original_verify = api.dependencies.verify_org_member
     api.dependencies.verify_org_member = override_verify_org_member
@@ -128,6 +123,7 @@ def setup_test_database():
     try:
         if not session.query(Organization).filter_by(id="test_org").first():
             from datetime import datetime
+
             org = Organization(
                 id="test_org",
                 name="Test Org",
@@ -140,15 +136,23 @@ def setup_test_database():
 
         if not session.query(Person).filter_by(id="test_admin").first():
             admin = Person(
-                id="test_admin", org_id="test_org", name="Test Admin",
-                email="jane@test.com", password_hash=hash_password("password"), roles=["admin"],
+                id="test_admin",
+                org_id="test_org",
+                name="Test Admin",
+                email="jane@test.com",
+                password_hash=hash_password("password"),
+                roles=["admin"],
             )
             session.add(admin)
 
         if not session.query(Person).filter_by(id="test_volunteer").first():
             volunteer = Person(
-                id="test_volunteer", org_id="test_org", name="Test Volunteer",
-                email="sarah@test.com", password_hash=hash_password("password"), roles=["volunteer"],
+                id="test_volunteer",
+                org_id="test_org",
+                name="Test Volunteer",
+                email="sarah@test.com",
+                password_hash=hash_password("password"),
+                roles=["volunteer"],
             )
             session.add(volunteer)
 
@@ -205,6 +209,7 @@ def create_test_user(
 def db(setup_test_database):
     """Provides a database session for tests."""
     from api.database import SessionLocal
+
     session = SessionLocal()
     try:
         yield session
@@ -243,13 +248,21 @@ def reset_database_between_tests(request, setup_test_database):
         org = Organization(id="test_org", name="Test Org", region="US", config={})
         session.add(org)
         admin = Person(
-            id="test_admin", org_id="test_org", name="Test Admin",
-            email="jane@test.com", password_hash=hash_password("password"), roles=["admin"],
+            id="test_admin",
+            org_id="test_org",
+            name="Test Admin",
+            email="jane@test.com",
+            password_hash=hash_password("password"),
+            roles=["admin"],
         )
         session.add(admin)
         volunteer = Person(
-            id="test_volunteer", org_id="test_org", name="Test Volunteer",
-            email="sarah@test.com", password_hash=hash_password("password"), roles=["volunteer"],
+            id="test_volunteer",
+            org_id="test_org",
+            name="Test Volunteer",
+            email="sarah@test.com",
+            password_hash=hash_password("password"),
+            roles=["volunteer"],
         )
         session.add(volunteer)
         session.commit()

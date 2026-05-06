@@ -1,8 +1,8 @@
 """Invitation schemas."""
 
-from typing import List, Optional
 from datetime import datetime
-from pydantic import BaseModel, ConfigDict, Field, EmailStr
+
+from pydantic import BaseModel, ConfigDict, EmailStr, Field
 
 
 class InvitationCreate(BaseModel):
@@ -10,7 +10,7 @@ class InvitationCreate(BaseModel):
 
     email: EmailStr = Field(..., description="Email address of the invitee")
     name: str = Field(..., description="Full name of the invitee", min_length=1)
-    roles: List[str] = Field(..., description="Roles to assign (e.g., ['volunteer', 'admin'])")
+    roles: list[str] = Field(..., description="Roles to assign (e.g., ['volunteer', 'admin'])")
 
 
 class InvitationResponse(BaseModel):
@@ -20,7 +20,7 @@ class InvitationResponse(BaseModel):
     org_id: str
     email: str
     name: str
-    roles: List[str]
+    roles: list[str]
     invited_by: str
     model_config = ConfigDict(from_attributes=True)
 
@@ -28,13 +28,13 @@ class InvitationResponse(BaseModel):
     status: str  # pending, accepted, expired, cancelled
     expires_at: datetime
     created_at: datetime
-    accepted_at: Optional[datetime] = None
+    accepted_at: datetime | None = None
 
 
 class InvitationList(BaseModel):
     """Schema for listing invitations."""
 
-    invitations: List[InvitationResponse]
+    invitations: list[InvitationResponse]
     total: int
 
 
@@ -42,14 +42,16 @@ class InvitationVerify(BaseModel):
     """Schema for verifying an invitation token."""
 
     valid: bool
-    invitation: Optional[InvitationResponse] = None
-    message: Optional[str] = None
+    invitation: InvitationResponse | None = None
+    message: str | None = None
 
 
 class InvitationAccept(BaseModel):
     """Schema for accepting an invitation."""
 
-    password: str = Field(..., min_length=6, description="Password for the new account (min 6 characters)")
+    password: str = Field(
+        ..., min_length=6, description="Password for the new account (min 6 characters)"
+    )
     timezone: str = Field(default="UTC", description="User's timezone preference")
 
 
@@ -60,7 +62,7 @@ class InvitationAcceptResponse(BaseModel):
     org_id: str
     name: str
     email: str
-    roles: List[str]
+    roles: list[str]
     timezone: str
     token: str  # Auth token for immediate login
     message: str

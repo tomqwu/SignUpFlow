@@ -19,8 +19,6 @@ Configuration via environment variables:
 
 import os
 import time
-from typing import Dict, Tuple
-from collections import defaultdict
 from threading import Lock
 
 
@@ -33,15 +31,10 @@ class RateLimiter:
 
     def __init__(self):
         # Store format: {key: (tokens, last_refill_time)}
-        self._buckets: Dict[str, Tuple[float, float]] = {}
+        self._buckets: dict[str, tuple[float, float]] = {}
         self._lock = Lock()
 
-    def is_allowed(
-        self,
-        key: str,
-        max_requests: int = 5,
-        window_seconds: int = 60
-    ) -> bool:
+    def is_allowed(self, key: str, max_requests: int = 5, window_seconds: int = 60) -> bool:
         """
         Check if a request is allowed based on rate limit.
 
@@ -94,7 +87,8 @@ class RateLimiter:
         with self._lock:
             current_time = time.time()
             keys_to_remove = [
-                key for key, (_, last_refill) in self._buckets.items()
+                key
+                for key, (_, last_refill) in self._buckets.items()
                 if current_time - last_refill > max_age_seconds
             ]
             for key in keys_to_remove:

@@ -1,27 +1,30 @@
 """Solutions router - view and export generated solutions."""
 
-from typing import Optional
-from fastapi import APIRouter, Depends, HTTPException, status, Query, Response
-from sqlalchemy.orm import Session
-from io import StringIO, BytesIO
 from datetime import datetime
 
+from fastapi import APIRouter, Depends, HTTPException, Query, Response, status
+from sqlalchemy.orm import Session
+
+from api.core.models import (
+    Assignment as AssignmentModel,
+)
+from api.core.models import (
+    Event as EventModel,
+)
+from api.core.models import (
+    Person as PersonModel,
+)
 from api.database import get_db
-from api.schemas.solver import SolutionResponse, SolutionList, ExportFormat
+from api.models import Assignment, Event, Organization, Person, Solution
+from api.schemas.solver import ExportFormat, SolutionList, SolutionResponse
 from api.utils.pdf_export import generate_schedule_pdf
-from api.models import Solution, Assignment, Event, Person, Organization
-from api.core.models import Assignment as AssignmentModel, Event as EventModel, Person as PersonModel
-from api.core.csv_writer import write_assignments_csv
-from api.core.ics_writer import write_calendar_ics
-from api.core.json_writer import write_solution_json
-import json
 
 router = APIRouter(prefix="/solutions", tags=["solutions"])
 
 
 @router.get("/", response_model=SolutionList)
 def list_solutions(
-    org_id: Optional[str] = Query(None, description="Filter by organization ID"),
+    org_id: str | None = Query(None, description="Filter by organization ID"),
     skip: int = 0,
     limit: int = 100,
     db: Session = Depends(get_db),
@@ -81,16 +84,18 @@ def get_solution_assignments(solution_id: int, db: Session = Depends(get_db)):
         event = db.query(Event).filter(Event.id == assignment.event_id).first()
         person = db.query(Person).filter(Person.id == assignment.person_id).first()
 
-        result.append({
-            "assignment_id": assignment.id,
-            "event_id": assignment.event_id,
-            "event_type": event.type if event else None,
-            "event_start": event.start_time if event else None,
-            "event_end": event.end_time if event else None,
-            "person_id": assignment.person_id,
-            "person_name": person.name if person else None,
-            "assigned_at": assignment.assigned_at,
-        })
+        result.append(
+            {
+                "assignment_id": assignment.id,
+                "event_id": assignment.event_id,
+                "event_type": event.type if event else None,
+                "event_start": event.start_time if event else None,
+                "event_end": event.end_time if event else None,
+                "person_id": assignment.person_id,
+                "person_name": person.name if person else None,
+                "assigned_at": assignment.assigned_at,
+            }
+        )
 
     return {"assignments": result, "total": len(result)}
 
@@ -108,7 +113,7 @@ def create_manual_solution(
     org_id = solution_data.get("org_id")
     if not org_id:
         raise HTTPException(status_code=400, detail="org_id is required")
-        
+
     org = db.query(Organization).filter(Organization.id == org_id).first()
     if not org:
         raise HTTPException(status_code=404, detail=f"Organization {org_id} not found")
@@ -120,13 +125,13 @@ def create_manual_solution(
         soft_score=solution_data.get("soft_score", 0.0),
         health_score=solution_data.get("health_score", 0.0),
         metrics=solution_data.get("metrics", {}),
-        created_at=datetime.utcnow()
+        created_at=datetime.utcnow(),
     )
-    
+
     db.add(new_solution)
     db.commit()
     db.refresh(new_solution)
-    
+
     response = SolutionResponse.model_validate(new_solution)
     response.assignment_count = 0
     return response
@@ -191,11 +196,17 @@ def export_solution(
     ]
 
     # Create a minimal solution object for export
-    from api.core.models import (
-        SolutionBundle, Metrics, Violations, FairnessMetrics, StabilityMetrics,
-        SolutionMeta, SolverMeta
-    )
     from datetime import date
+
+    from api.core.models import (
+        FairnessMetrics,
+        Metrics,
+        SolutionBundle,
+        SolutionMeta,
+        SolverMeta,
+        StabilityMetrics,
+        Violations,
+    )
 
     solution_obj = SolutionBundle(
         meta=SolutionMeta(
@@ -204,7 +215,7 @@ def export_solution(
             range_end=date.today(),
             mode="greedy",
             change_min=False,
-            solver=SolverMeta(name="greedy-solver", version="1.0", strategy="greedy")
+            solver=SolverMeta(name="greedy-solver", version="1.0", strategy="greedy"),
         ),
         assignments=assignments,
         metrics=Metrics(
@@ -213,8 +224,12 @@ def export_solution(
             health_score=solution.health_score,
             solve_ms=solution.solve_ms,
             fairness=FairnessMetrics(
-                stdev=solution.metrics.get("fairness", {}).get("stdev", 0.0) if solution.metrics else 0.0,
-                per_person_counts=solution.metrics.get("fairness", {}).get("per_person_counts", {}) if solution.metrics else {},
+                stdev=solution.metrics.get("fairness", {}).get("stdev", 0.0)
+                if solution.metrics
+                else 0.0,
+                per_person_counts=solution.metrics.get("fairness", {}).get("per_person_counts", {})
+                if solution.metrics
+                else {},
             ),
             stability=StabilityMetrics(moves_from_published=0, affected_persons=0),
         ),
@@ -233,6 +248,7 @@ def export_solution(
     if export_format.format == "json":
         # Return solution as JSON directly
         import json
+
         content = json.dumps(solution_obj.model_dump(), indent=2, default=str)
         return Response(
             content=content,
@@ -244,24 +260,21 @@ def export_solution(
         # Generate CSV directly without using write_assignments_csv (has StringIO bug)
         import csv
         from io import StringIO
+
         output = StringIO()
         writer = csv.writer(output)
 
         # Header
-        writer.writerow(['Event ID', 'Event Type', 'Date', 'Time', 'Assignees'])
+        writer.writerow(["Event ID", "Event Type", "Date", "Time", "Assignees"])
 
         # Data rows
         for assignment in assignments:
             event = next((e for e in events if e.id == assignment.event_id), None)
             if event:
-                assignees = ', '.join([p.name for p in people if p.id in assignment.assignees])
-                writer.writerow([
-                    event.id,
-                    event.type,
-                    event.start.date(),
-                    event.start.time(),
-                    assignees
-                ])
+                assignees = ", ".join([p.name for p in people if p.id in assignment.assignees])
+                writer.writerow(
+                    [event.id, event.type, event.start.date(), event.start.time(), assignees]
+                )
 
         content = output.getvalue()
         return Response(
@@ -273,8 +286,7 @@ def export_solution(
     elif export_format.format == "ics":
         # TODO: ICS export has StringIO bug - needs fixing
         raise HTTPException(
-            status_code=status.HTTP_501_NOT_IMPLEMENTED,
-            detail="ICS export not yet implemented"
+            status_code=status.HTTP_501_NOT_IMPLEMENTED, detail="ICS export not yet implemented"
         )
 
     elif export_format.format == "pdf":
@@ -285,15 +297,17 @@ def export_solution(
         # Prepare data for PDF generation
         pdf_events = []
         for event in events:
-            pdf_events.append({
-                'id': event.id,
-                'type': event.type,
-                'start_time': event.start,
-                'end_time': event.end
-            })
+            pdf_events.append(
+                {
+                    "id": event.id,
+                    "type": event.type,
+                    "start_time": event.start,
+                    "end_time": event.end,
+                }
+            )
 
         # Create people mapping (id -> {name, roles})
-        people_map = {p.id: {'name': p.name, 'roles': p.roles or []} for p in people}
+        people_map = {p.id: {"name": p.name, "roles": p.roles or []} for p in people}
 
         # Create assignments mapping (event_id -> [person_ids])
         assignments_map = {a.event_id: a.assignees for a in assignments}
@@ -302,18 +316,24 @@ def export_solution(
         events_db_map = {e.id: e for e in events_db}
 
         # Get blocked dates for all people
-        from api.models import VacationPeriod, Availability
+        from api.models import Availability, VacationPeriod
+
         blocked_dates_map = {}  # person_id -> list of {start, end}
         for person in people:
-            vacations = db.query(VacationPeriod).join(
-                Availability, VacationPeriod.availability_id == Availability.id
-            ).filter(Availability.person_id == person.id).all()
+            vacations = (
+                db.query(VacationPeriod)
+                .join(Availability, VacationPeriod.availability_id == Availability.id)
+                .filter(Availability.person_id == person.id)
+                .all()
+            )
             blocked_dates_map[person.id] = [
-                {'start': v.start_date, 'end': v.end_date} for v in vacations
+                {"start": v.start_date, "end": v.end_date} for v in vacations
             ]
 
         # Generate PDF
-        pdf_buffer = generate_schedule_pdf(org_name, pdf_events, people_map, assignments_map, events_db_map, blocked_dates_map)
+        pdf_buffer = generate_schedule_pdf(
+            org_name, pdf_events, people_map, assignments_map, events_db_map, blocked_dates_map
+        )
 
         return Response(
             content=pdf_buffer.getvalue(),

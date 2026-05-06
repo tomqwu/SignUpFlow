@@ -1,34 +1,42 @@
 """Invitation endpoints for user onboarding."""
 
-from typing import Optional
-from fastapi import APIRouter, Depends, HTTPException, status, Query
-from sqlalchemy.orm import Session
-from datetime import datetime, timedelta
-
-from api.timeutils import utcnow
 import secrets
 import time
+from datetime import timedelta
+
+from fastapi import APIRouter, Depends, HTTPException, Query, status
+from sqlalchemy.orm import Session
 
 from api.database import get_db
-from api.dependencies import verify_admin_access, verify_org_member, get_organization_by_id, get_current_admin_user
-from api.utils.security import generate_invitation_token, generate_auth_token, hash_password
-from api.utils.db_helpers import check_email_exists
-from api.utils.rate_limit_middleware import rate_limit
+from api.dependencies import (
+    get_current_admin_user,
+    get_organization_by_id,
+    verify_org_member,
+)
+from api.models import Invitation, Person
 from api.schemas.invitation import (
-    InvitationCreate,
-    InvitationResponse,
-    InvitationList,
-    InvitationVerify,
     InvitationAccept,
     InvitationAcceptResponse,
+    InvitationCreate,
+    InvitationList,
+    InvitationResponse,
+    InvitationVerify,
 )
-from api.models import Invitation, Person, Organization
+from api.timeutils import utcnow
+from api.utils.db_helpers import check_email_exists
+from api.utils.rate_limit_middleware import rate_limit
+from api.utils.security import generate_auth_token, generate_invitation_token, hash_password
 
 router = APIRouter(prefix="/invitations", tags=["invitations"])
 
 
 # Endpoints
-@router.post("", response_model=InvitationResponse, status_code=status.HTTP_201_CREATED, dependencies=[Depends(rate_limit("create_invitation"))])
+@router.post(
+    "",
+    response_model=InvitationResponse,
+    status_code=status.HTTP_201_CREATED,
+    dependencies=[Depends(rate_limit("create_invitation"))],
+)
 def create_invitation(
     request: InvitationCreate,
     org_id: str = Query(..., description="Organization ID"),
@@ -41,7 +49,7 @@ def create_invitation(
     Sends an invitation email to a new user to join the organization.
     """
     # Verify organization exists
-    org = get_organization_by_id(org_id, db)
+    get_organization_by_id(org_id, db)
 
     # Verify inviter belongs to the organization
     verify_org_member(inviter, org_id)
@@ -50,19 +58,23 @@ def create_invitation(
     if check_email_exists(db, request.email, org_id):
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
-            detail="A user with this email already exists in this organization"
+            detail="A user with this email already exists in this organization",
         )
 
     # Check if there's already a pending invitation
-    existing_invitation = db.query(Invitation).filter(
-        Invitation.email == request.email,
-        Invitation.org_id == org_id,
-        Invitation.status == "pending"
-    ).first()
+    existing_invitation = (
+        db.query(Invitation)
+        .filter(
+            Invitation.email == request.email,
+            Invitation.org_id == org_id,
+            Invitation.status == "pending",
+        )
+        .first()
+    )
     if existing_invitation:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
-            detail="A pending invitation already exists for this email"
+            detail="A pending invitation already exists for this email",
         )
 
     # Create invitation
@@ -93,7 +105,8 @@ def create_invitation(
 async def list_invitations(
     org_id: str = Query(..., description="Organization ID"),
     admin: Person = Depends(get_current_admin_user),
-    status_filter: Optional[str] = Query(None, description="Filter by status (pending, accepted, expired, cancelled)"),
+    status_filter: str
+    | None = Query(None, description="Filter by status (pending, accepted, expired, cancelled)"),
     db: Session = Depends(get_db),
 ):
     """
@@ -113,8 +126,7 @@ async def list_invitations(
     # Update expired invitations
     now = utcnow()
     expired_invitations = query.filter(
-        Invitation.status == "pending",
-        Invitation.expires_at < now
+        Invitation.status == "pending", Invitation.expires_at < now
     ).all()
 
     for inv in expired_invitations:
@@ -125,13 +137,14 @@ async def list_invitations(
 
     invitations = query.order_by(Invitation.created_at.desc()).all()
 
-    return InvitationList(
-        invitations=invitations,
-        total=len(invitations)
-    )
+    return InvitationList(invitations=invitations, total=len(invitations))
 
 
-@router.get("/{token}", response_model=InvitationVerify, dependencies=[Depends(rate_limit("verify_invitation"))])
+@router.get(
+    "/{token}",
+    response_model=InvitationVerify,
+    dependencies=[Depends(rate_limit("verify_invitation"))],
+)
 def verify_invitation(token: str, db: Session = Depends(get_db)):
     """
     Verify an invitation token. Rate limited to 10 requests per minute per IP.
@@ -141,35 +154,26 @@ def verify_invitation(token: str, db: Session = Depends(get_db)):
     invitation = db.query(Invitation).filter(Invitation.token == token).first()
 
     if not invitation:
-        return InvitationVerify(
-            valid=False,
-            message="Invalid invitation token"
-        )
+        return InvitationVerify(valid=False, message="Invalid invitation token")
 
     if invitation.status != "pending":
         return InvitationVerify(
-            valid=False,
-            invitation=invitation,
-            message=f"Invitation is {invitation.status}"
+            valid=False, invitation=invitation, message=f"Invitation is {invitation.status}"
         )
 
     if invitation.expires_at < utcnow():
         invitation.status = "expired"
         db.commit()
         return InvitationVerify(
-            valid=False,
-            invitation=invitation,
-            message="Invitation has expired"
+            valid=False, invitation=invitation, message="Invitation has expired"
         )
 
-    return InvitationVerify(
-        valid=True,
-        invitation=invitation,
-        message="Invitation is valid"
-    )
+    return InvitationVerify(valid=True, invitation=invitation, message="Invitation is valid")
 
 
-@router.post("/{token}/accept", response_model=InvitationAcceptResponse, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/{token}/accept", response_model=InvitationAcceptResponse, status_code=status.HTTP_201_CREATED
+)
 def accept_invitation(
     token: str,
     request: InvitationAccept,
@@ -185,37 +189,35 @@ def accept_invitation(
 
     if not invitation:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Invalid invitation token"
+            status_code=status.HTTP_404_NOT_FOUND, detail="Invalid invitation token"
         )
 
     if invitation.status != "pending":
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Invitation is {invitation.status}"
+            status_code=status.HTTP_400_BAD_REQUEST, detail=f"Invitation is {invitation.status}"
         )
 
     if invitation.expires_at < utcnow():
         invitation.status = "expired"
         db.commit()
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Invitation has expired"
+            status_code=status.HTTP_400_BAD_REQUEST, detail="Invitation has expired"
         )
 
     # Check if email already exists (race condition check)
-    existing_person = db.query(Person).filter(
-        Person.email == invitation.email,
-        Person.org_id == invitation.org_id
-    ).first()
+    existing_person = (
+        db.query(Person)
+        .filter(Person.email == invitation.email, Person.org_id == invitation.org_id)
+        .first()
+    )
     if existing_person:
         raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail="An account with this email already exists"
+            status_code=status.HTTP_409_CONFLICT, detail="An account with this email already exists"
         )
 
     # Create person
     import uuid
+
     person_id = f"person_{invitation.email.split('@')[0]}_{uuid.uuid4().hex[:8]}"
     password_hash = hash_password(request.password)
 
@@ -229,7 +231,7 @@ def accept_invitation(
         timezone=request.timezone,
         status="active",
         invited_by=invitation.invited_by,
-        extra_data={}
+        extra_data={},
     )
 
     db.add(person)
@@ -252,7 +254,7 @@ def accept_invitation(
         roles=person.roles or [],
         timezone=person.timezone,
         token=auth_token,
-        message="Account created successfully. You are now logged in."
+        message="Account created successfully. You are now logged in.",
     )
 
 
@@ -268,10 +270,7 @@ def cancel_invitation(
     # Get invitation
     invitation = db.query(Invitation).filter(Invitation.id == invitation_id).first()
     if not invitation:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Invitation not found"
-        )
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Invitation not found")
 
     # Verify admin belongs to the same organization
     verify_org_member(admin, invitation.org_id)
@@ -298,10 +297,7 @@ def resend_invitation(
     # Get invitation
     invitation = db.query(Invitation).filter(Invitation.id == invitation_id).first()
     if not invitation:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Invitation not found"
-        )
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Invitation not found")
 
     # Verify admin belongs to the same organization
     verify_org_member(admin, invitation.org_id)
@@ -310,7 +306,7 @@ def resend_invitation(
     if invitation.status not in ["pending", "expired"]:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Cannot resend {invitation.status} invitations"
+            detail=f"Cannot resend {invitation.status} invitations",
         )
 
     # Generate new token and extend expiry

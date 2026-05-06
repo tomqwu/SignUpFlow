@@ -4,8 +4,7 @@ Configuration settings for SignUpFlow application.
 Loads settings from environment variables with validation.
 """
 
-import os
-from typing import Optional
+
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -39,18 +38,18 @@ class Settings(BaseSettings):
     # Mailtrap (Development Email Testing)
     MAILTRAP_SMTP_HOST: str = "sandbox.smtp.mailtrap.io"
     MAILTRAP_SMTP_PORT: int = 2525
-    MAILTRAP_SMTP_USER: Optional[str] = None
-    MAILTRAP_SMTP_PASSWORD: Optional[str] = None
-    MAILTRAP_API_TOKEN: Optional[str] = None
-    MAILTRAP_ACCOUNT_ID: Optional[str] = None
-    MAILTRAP_INBOX_ID: Optional[str] = None
+    MAILTRAP_SMTP_USER: str | None = None
+    MAILTRAP_SMTP_PASSWORD: str | None = None
+    MAILTRAP_API_TOKEN: str | None = None
+    MAILTRAP_ACCOUNT_ID: str | None = None
+    MAILTRAP_INBOX_ID: str | None = None
 
     # SendGrid (Production Email Delivery)
-    SENDGRID_API_KEY: Optional[str] = None
+    SENDGRID_API_KEY: str | None = None
 
     # Stripe Billing
-    STRIPE_SECRET_KEY: Optional[str] = None
-    STRIPE_WEBHOOK_SECRET: Optional[str] = None
+    STRIPE_SECRET_KEY: str | None = None
+    STRIPE_WEBHOOK_SECRET: str | None = None
     BILLING_ENABLED: bool = True
 
     # Celery Task Queue
@@ -80,8 +79,9 @@ class Settings(BaseSettings):
     RATE_LIMIT_PASSWORD_RESET_CONFIRM_WINDOW: int = 300
 
     # reCAPTCHA
-    RECAPTCHA_SITE_KEY: Optional[str] = None
-    RECAPTCHA_SECRET_KEY: Optional[str] = None
+    RECAPTCHA_SITE_KEY: str | None = None
+    RECAPTCHA_SECRET_KEY: str | None = None
+
 
 # Global settings instance
 settings = Settings()

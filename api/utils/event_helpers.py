@@ -5,17 +5,13 @@ Extracted from api/routers/events.py to follow DRY principle and single responsi
 """
 
 from datetime import date, datetime
-from typing import List, Optional, Tuple
+
 from sqlalchemy.orm import Session
 
-from api.models import Person, VacationPeriod, Availability, Assignment, Event
+from api.models import Assignment, Availability, Event, Person, VacationPeriod
 
 
-def is_person_blocked_on_date(
-    db: Session,
-    person_id: str,
-    target_date: date
-) -> bool:
+def is_person_blocked_on_date(db: Session, person_id: str, target_date: date) -> bool:
     """
     Check if a person has blocked a specific date via availability/vacation.
 
@@ -32,21 +28,21 @@ def is_person_blocked_on_date(
         >>> if is_blocked:
         ...     print("Person is unavailable on this date")
     """
-    blocked = db.query(VacationPeriod).join(
-        Availability, VacationPeriod.availability_id == Availability.id
-    ).filter(
-        Availability.person_id == person_id,
-        VacationPeriod.start_date <= target_date,
-        VacationPeriod.end_date >= target_date
-    ).first()
+    blocked = (
+        db.query(VacationPeriod)
+        .join(Availability, VacationPeriod.availability_id == Availability.id)
+        .filter(
+            Availability.person_id == person_id,
+            VacationPeriod.start_date <= target_date,
+            VacationPeriod.end_date >= target_date,
+        )
+        .first()
+    )
 
     return blocked is not None
 
 
-def get_assigned_person_ids(
-    db: Session,
-    event_id: str
-) -> set[str]:
+def get_assigned_person_ids(db: Session, event_id: str) -> set[str]:
     """
     Get set of person IDs assigned to an event.
 
@@ -57,17 +53,12 @@ def get_assigned_person_ids(
     Returns:
         Set of person IDs currently assigned to this event
     """
-    assignments = db.query(Assignment).filter(
-        Assignment.event_id == event_id
-    ).all()
+    assignments = db.query(Assignment).filter(Assignment.event_id == event_id).all()
 
     return {assignment.person_id for assignment in assignments}
 
 
-def person_has_matching_role(
-    person_roles: List[str],
-    required_roles: List[str]
-) -> bool:
+def person_has_matching_role(person_roles: list[str], required_roles: list[str]) -> bool:
     """
     Check if person has any of the required roles.
 
@@ -90,7 +81,7 @@ def person_has_matching_role(
     return any(role in person_roles for role in required_roles)
 
 
-def get_event_required_roles(event: Event) -> List[str]:
+def get_event_required_roles(event: Event) -> list[str]:
     """
     Extract required roles from event extra_data.
 
@@ -113,10 +104,7 @@ def get_event_required_roles(event: Event) -> List[str]:
         return extra_data.get("roles", [])
 
 
-def count_people_with_role(
-    people: List[Person],
-    role: str
-) -> int:
+def count_people_with_role(people: list[Person], role: str) -> int:
     """
     Count how many people have a specific role.
 
@@ -127,16 +115,10 @@ def count_people_with_role(
     Returns:
         Number of people with this role
     """
-    return sum(
-        1 for person in people
-        if person.roles and role in person.roles
-    )
+    return sum(1 for person in people if person.roles and role in person.roles)
 
 
-def validate_time_range(
-    start_time: datetime,
-    end_time: datetime
-) -> Tuple[bool, Optional[str]]:
+def validate_time_range(start_time: datetime, end_time: datetime) -> tuple[bool, str | None]:
     """
     Validate that end time is after start time.
 
@@ -160,11 +142,7 @@ def validate_time_range(
     return True, None
 
 
-def get_blocked_assigned_people(
-    db: Session,
-    event_id: str,
-    event_date: date
-) -> List[str]:
+def get_blocked_assigned_people(db: Session, event_id: str, event_date: date) -> list[str]:
     """
     Get names of people assigned to event who are blocked on the event date.
 
@@ -176,16 +154,12 @@ def get_blocked_assigned_people(
     Returns:
         List of person names who are both assigned and blocked
     """
-    assignments = db.query(Assignment).filter(
-        Assignment.event_id == event_id
-    ).all()
+    assignments = db.query(Assignment).filter(Assignment.event_id == event_id).all()
 
     blocked_names = []
     for assignment in assignments:
         if is_person_blocked_on_date(db, assignment.person_id, event_date):
-            person = db.query(Person).filter(
-                Person.id == assignment.person_id
-            ).first()
+            person = db.query(Person).filter(Person.id == assignment.person_id).first()
             if person:
                 blocked_names.append(person.name)
 

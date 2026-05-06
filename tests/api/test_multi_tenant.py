@@ -5,17 +5,21 @@ Verifies that organizations are fully isolated — users in one org
 cannot see, modify, or interact with another org's data.
 """
 
-import pytest
 from datetime import datetime, timedelta
 
+import pytest
+
 from tests.api.conftest import (
-    seed_org, seed_user, auth_headers, seed_event, seed_team,
+    auth_headers,
+    seed_event,
+    seed_org,
+    seed_team,
+    seed_user,
 )
 
 
 @pytest.mark.no_mock_auth
 class TestMultiTenantIsolation:
-
     ORG1 = "alpha-church"
     ORG2 = "beta-church"
 
@@ -61,20 +65,33 @@ class TestMultiTenantIsolation:
 
         start = (datetime.now() + timedelta(days=7)).isoformat()
         end = (datetime.now() + timedelta(days=7, hours=2)).isoformat()
-        resp = client.post("/api/events/", json={
-            "id": "evt-cross", "org_id": self.ORG2, "type": "Test",
-            "start_time": start, "end_time": end,
-        }, headers=hdrs1)
+        resp = client.post(
+            "/api/events/",
+            json={
+                "id": "evt-cross",
+                "org_id": self.ORG2,
+                "type": "Test",
+                "start_time": start,
+                "end_time": end,
+            },
+            headers=hdrs1,
+        )
         assert resp.status_code == 403
 
     def test_cross_org_solver_denied(self, client):
         """Admin of org1 can't run solver for org2."""
         hdrs1, _ = self._setup_two_orgs(client)
-        resp = client.post("/api/solver/solve", json={
-            "org_id": self.ORG2,
-            "from_date": "2026-05-01", "to_date": "2026-05-31",
-            "mode": "strict", "change_min": False,
-        }, headers=hdrs1)
+        resp = client.post(
+            "/api/solver/solve",
+            json={
+                "org_id": self.ORG2,
+                "from_date": "2026-05-01",
+                "to_date": "2026-05-31",
+                "mode": "strict",
+                "change_min": False,
+            },
+            headers=hdrs1,
+        )
         assert resp.status_code == 403
 
     def test_each_org_has_independent_events(self, client):
@@ -103,9 +120,14 @@ class TestMultiTenantIsolation:
         resp = client.get(f"/api/people/?org_id={self.ORG1}")
         assert resp.status_code in (401, 403)
 
-        resp = client.post("/api/events/", json={
-            "id": "evt-noauth", "org_id": self.ORG1, "type": "Test",
-            "start_time": datetime.now().isoformat(),
-            "end_time": (datetime.now() + timedelta(hours=1)).isoformat(),
-        })
+        resp = client.post(
+            "/api/events/",
+            json={
+                "id": "evt-noauth",
+                "org_id": self.ORG1,
+                "type": "Test",
+                "start_time": datetime.now().isoformat(),
+                "end_time": (datetime.now() + timedelta(hours=1)).isoformat(),
+            },
+        )
         assert resp.status_code in (401, 403)

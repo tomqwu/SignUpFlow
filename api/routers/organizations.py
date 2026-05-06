@@ -1,24 +1,27 @@
 """Organization router."""
 
-from typing import List
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from api.database import get_db
+from api.models import Organization
 from api.schemas.organization import (
     OrganizationCreate,
-    OrganizationUpdate,
-    OrganizationResponse,
     OrganizationList,
+    OrganizationResponse,
+    OrganizationUpdate,
 )
-from api.models import Organization
 from api.utils.rate_limit_middleware import rate_limit
-from api.logging_config import logger
 
 router = APIRouter(prefix="/organizations", tags=["organizations"])
 
 
-@router.post("/", response_model=OrganizationResponse, status_code=status.HTTP_201_CREATED, dependencies=[Depends(rate_limit("create_org"))])
+@router.post(
+    "/",
+    response_model=OrganizationResponse,
+    status_code=status.HTTP_201_CREATED,
+    dependencies=[Depends(rate_limit("create_org"))],
+)
 def create_organization(org_data: OrganizationCreate, db: Session = Depends(get_db)):
     """Create a new organization. Rate limited to 2 requests per hour per IP.
 
@@ -67,9 +70,7 @@ def get_organization(org_id: str, db: Session = Depends(get_db)):
 
 
 @router.put("/{org_id}", response_model=OrganizationResponse)
-def update_organization(
-    org_id: str, org_data: OrganizationUpdate, db: Session = Depends(get_db)
-):
+def update_organization(org_id: str, org_data: OrganizationUpdate, db: Session = Depends(get_db)):
     """Update organization."""
     org = db.query(Organization).filter(Organization.id == org_id).first()
     if not org:

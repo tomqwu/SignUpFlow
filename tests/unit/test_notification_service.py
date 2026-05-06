@@ -1,32 +1,36 @@
 """Unit tests for NotificationService — DISABLED (notification features removed)."""
 import pytest
-pytestmark = pytest.mark.skip(reason="Notification features disabled — focusing on core scheduling logic")
+
+pytestmark = pytest.mark.skip(
+    reason="Notification features disabled — focusing on core scheduling logic"
+)
 
 from unittest.mock import Mock, patch
+
 from sqlalchemy.orm import Session
 
 from api.core.config import settings
+from api.models import (
+    Assignment,
+    EmailFrequency,
+    EmailPreference,
+    Event,
+    Notification,
+    NotificationStatus,
+    NotificationType,
+    Person,
+)
 from api.services.notification_service import (
     create_assignment_notifications,
     create_notification,
-    get_pending_notifications_for_digest
-)
-from api.models import (
-    Notification,
-    NotificationType,
-    NotificationStatus,
-    EmailPreference,
-    EmailFrequency,
-    Assignment,
-    Event,
-    Person
+    get_pending_notifications_for_digest,
 )
 
 
 class TestCreateAssignmentNotifications:
     """Test suite for create_assignment_notifications function."""
 
-    @patch('api.services.notification_service.send_email_task')
+    @patch("api.services.notification_service.send_email_task")
     def test_creates_notification_for_single_assignment(self, mock_task):
         """Test that a notification is created for a single assignment."""
         # Arrange
@@ -75,11 +79,11 @@ class TestCreateAssignmentNotifications:
         result = create_assignment_notifications([assignment_id], mock_db, send_immediately=True)
 
         # Assert
-        assert result['created'] >= 1
+        assert result["created"] >= 1
         mock_db.add.assert_called()
         mock_db.commit.assert_called()
 
-    @patch('api.services.notification_service.send_email_task')
+    @patch("api.services.notification_service.send_email_task")
     def test_respects_email_preferences_disabled(self, mock_task):
         """Test that notifications are skipped if assignment type disabled."""
         # Arrange
@@ -121,7 +125,7 @@ class TestCreateAssignmentNotifications:
         result = create_assignment_notifications([assignment_id], mock_db, send_immediately=True)
 
         # Assert - should be skipped
-        assert result['skipped'] >= 1
+        assert result["skipped"] >= 1
 
     def test_handles_missing_assignment_gracefully(self):
         """Test that missing assignment is handled gracefully."""
@@ -140,10 +144,10 @@ class TestCreateAssignmentNotifications:
         result = create_assignment_notifications([assignment_id], mock_db, send_immediately=True)
 
         # Assert
-        assert result['skipped'] >= 1
-        assert result['created'] == 0
+        assert result["skipped"] >= 1
+        assert result["created"] == 0
 
-    @patch('api.services.notification_service.send_email_task')
+    @patch("api.services.notification_service.send_email_task")
     def test_suppresses_emails_when_settings_testing_true(self, mock_task, monkeypatch):
         """Ensure queuing is skipped when global TESTING flag is set."""
         monkeypatch.setattr(settings, "TESTING", True)
@@ -177,10 +181,10 @@ class TestCreateAssignmentNotifications:
 
         result = create_assignment_notifications([assignment_id], mock_db, send_immediately=True)
 
-        assert result['queued'] == 0
+        assert result["queued"] == 0
         mock_task.delay.assert_not_called()
 
-    @patch('api.services.notification_service.send_email_task')
+    @patch("api.services.notification_service.send_email_task")
     def test_suppresses_emails_when_testing_env_flag(self, mock_task, monkeypatch):
         """Ensure queuing is skipped when TESTING env var is truthy."""
         monkeypatch.setattr(settings, "TESTING", False)
@@ -215,14 +219,14 @@ class TestCreateAssignmentNotifications:
 
         result = create_assignment_notifications([assignment_id], mock_db, send_immediately=True)
 
-        assert result['queued'] == 0
+        assert result["queued"] == 0
         mock_task.delay.assert_not_called()
 
 
 class TestCreateNotification:
     """Test suite for create_notification function."""
 
-    @patch('api.services.notification_service.send_email_task')
+    @patch("api.services.notification_service.send_email_task")
     def test_creates_notification_with_valid_data(self, mock_task):
         """Test creating a notification with valid data."""
         # Arrange
@@ -237,10 +241,7 @@ class TestCreateNotification:
         mock_query.filter.return_value.first.return_value = mock_pref
         mock_db.query.return_value = mock_query
 
-        template_data = {
-            "event_title": "Sunday Service",
-            "role": "Usher"
-        }
+        template_data = {"event_title": "Sunday Service", "role": "Usher"}
 
         # Act
         notification = create_notification(
@@ -249,7 +250,7 @@ class TestCreateNotification:
             notification_type=NotificationType.ASSIGNMENT,
             template_data=template_data,
             db=mock_db,
-            send_immediately=True
+            send_immediately=True,
         )
 
         # Assert
@@ -261,7 +262,7 @@ class TestCreateNotification:
         mock_db.add.assert_called_once()
         mock_db.flush.assert_called()
 
-    @patch('api.services.notification_service.send_email_task')
+    @patch("api.services.notification_service.send_email_task")
     def test_create_notification_respects_testing_env(self, mock_task, monkeypatch):
         """Queue suppression also applies to single notification helper."""
         monkeypatch.setattr(settings, "TESTING", False)
@@ -283,7 +284,7 @@ class TestCreateNotification:
             notification_type=NotificationType.ASSIGNMENT,
             template_data={},
             db=mock_db,
-            send_immediately=True
+            send_immediately=True,
         )
 
         assert notification is not None
@@ -313,9 +314,7 @@ class TestGetPendingNotificationsForDigest:
 
         # Act
         result = get_pending_notifications_for_digest(
-            person_id=person_id,
-            frequency=frequency,
-            db=mock_db
+            person_id=person_id, frequency=frequency, db=mock_db
         )
 
         # Assert

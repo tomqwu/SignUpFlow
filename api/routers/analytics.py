@@ -1,13 +1,13 @@
 """Analytics endpoints for volunteer participation metrics."""
 
-from fastapi import APIRouter, Depends, Query
-from sqlalchemy.orm import Session
-from sqlalchemy import func
 from datetime import datetime, timedelta
-from typing import Optional
+
+from fastapi import APIRouter, Depends, Query
+from sqlalchemy import func
+from sqlalchemy.orm import Session
 
 from api.database import get_db
-from api.models import Person, Assignment, Event, Solution
+from api.models import Assignment, Event, Person, Solution
 
 router = APIRouter(prefix="/analytics", tags=["analytics"])
 
@@ -45,10 +45,7 @@ def get_volunteer_stats(
 
     # Top volunteers
     top_volunteers = (
-        db.query(
-            Person.name,
-            func.count(Assignment.id).label("assignment_count")
-        )
+        db.query(Person.name, func.count(Assignment.id).label("assignment_count"))
         .join(Assignment, Person.id == Assignment.person_id)
         .join(Event)
         .filter(Event.org_id == org_id)
@@ -66,10 +63,7 @@ def get_volunteer_stats(
         "active_volunteers": active_volunteers or 0,
         "total_assignments": total_assignments or 0,
         "participation_rate": round((active_volunteers or 0) / max(total_volunteers, 1) * 100, 1),
-        "top_volunteers": [
-            {"name": name, "assignments": count}
-            for name, count in top_volunteers
-        ],
+        "top_volunteers": [{"name": name, "assignments": count} for name, count in top_volunteers],
     }
 
 
@@ -115,7 +109,9 @@ def get_schedule_health(
             "health_score": latest_solution.health_score,
             "assignment_count": latest_solution.assignment_count,
             "created_at": latest_solution.created_at.isoformat(),
-        } if latest_solution else None,
+        }
+        if latest_solution
+        else None,
     }
 
 
@@ -135,7 +131,7 @@ def get_burnout_risk(
             Person.id,
             Person.name,
             Person.email,
-            func.count(Assignment.id).label("assignment_count")
+            func.count(Assignment.id).label("assignment_count"),
         )
         .join(Assignment, Person.id == Assignment.person_id)
         .join(Event)

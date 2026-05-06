@@ -9,26 +9,27 @@ Supports:
 - Database notification tracking
 """
 
-import smtplib
-import os
-import time
-from email.mime.text import MIMEText
-from email.mime.multipart import MIMEMultipart
-from typing import Optional, Dict, Any, List
-from pathlib import Path
 import logging
-
-from api.timeutils import utcnow
+import os
+import smtplib
+import time
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
+from pathlib import Path
+from typing import Any
 
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 from sqlalchemy.orm import Session
+
+from api.timeutils import utcnow
 
 logger = logging.getLogger("email_service")
 
 # Try to import SendGrid (optional dependency)
 try:
     from sendgrid import SendGridAPIClient
-    from sendgrid.helpers.mail import Mail, Email, To, Content
+    from sendgrid.helpers.mail import Content, Email, Mail, To
+
     SENDGRID_AVAILABLE = True
 except ImportError:
     SENDGRID_AVAILABLE = False
@@ -49,14 +50,14 @@ class EmailService:
 
     def __init__(
         self,
-        smtp_host: Optional[str] = None,
-        smtp_port: Optional[int] = None,
-        smtp_user: Optional[str] = None,
-        smtp_password: Optional[str] = None,
-        from_email: Optional[str] = None,
-        from_name: Optional[str] = None,
-        sendgrid_api_key: Optional[str] = None,
-        use_sendgrid: bool = False
+        smtp_host: str | None = None,
+        smtp_port: int | None = None,
+        smtp_user: str | None = None,
+        smtp_password: str | None = None,
+        from_email: str | None = None,
+        from_name: str | None = None,
+        sendgrid_api_key: str | None = None,
+        use_sendgrid: bool = False,
     ):
         """
         Initialize email service.
@@ -117,9 +118,9 @@ class EmailService:
 
         self.template_env = Environment(
             loader=FileSystemLoader(str(template_dir)),
-            autoescape=select_autoescape(['html', 'xml']),
+            autoescape=select_autoescape(["html", "xml"]),
             trim_blocks=True,
-            lstrip_blocks=True
+            lstrip_blocks=True,
         )
 
         # Retry configuration
@@ -131,14 +132,14 @@ class EmailService:
         self,
         to_email: str,
         subject: str,
-        html_content: Optional[str] = None,
-        plain_content: Optional[str] = None,
-        template_name: Optional[str] = None,
-        template_data: Optional[Dict[str, Any]] = None,
+        html_content: str | None = None,
+        plain_content: str | None = None,
+        template_name: str | None = None,
+        template_data: dict[str, Any] | None = None,
         language: str = "en",
-        notification: Optional[Any] = None,
-        db: Optional[Session] = None
-    ) -> Optional[str]:
+        notification: Any | None = None,
+        db: Session | None = None,
+    ) -> str | None:
         """
         Send email via SMTP or SendGrid with retry logic.
 
@@ -218,14 +219,13 @@ class EmailService:
                 # Update notification status to sent
                 if notification and db:
                     self._update_notification_status(
-                        notification,
-                        "sent",
-                        db,
-                        sendgrid_message_id=message_id
+                        notification, "sent", db, sendgrid_message_id=message_id
                     )
 
                 backend = "SendGrid" if self.use_sendgrid else "SMTP"
-                logger.info(f"Email sent successfully to {to_email} via {backend} (id={message_id})")
+                logger.info(
+                    f"Email sent successfully to {to_email} via {backend} (id={message_id})"
+                )
                 return message_id
 
             except Exception as e:
@@ -243,7 +243,9 @@ class EmailService:
 
                 # If max retries reached, mark as failed
                 if retry_count > self.max_retries:
-                    logger.error(f"Email send failed after {self.max_retries} retries: {last_error}")
+                    logger.error(
+                        f"Email send failed after {self.max_retries} retries: {last_error}"
+                    )
                     if notification and db:
                         self._update_notification_status(
                             notification, "failed", db, error_message=last_error
@@ -276,21 +278,17 @@ class EmailService:
             from_email=Email(self.from_email, self.from_name),
             to_emails=To(to_email),
             subject=subject,
-            html_content=Content("text/html", html_content)
+            html_content=Content("text/html", html_content),
         )
 
         response = self.sendgrid_client.send(message)
 
         # Extract message ID from response headers
-        message_id = response.headers.get('X-Message-Id', 'unknown')
+        message_id = response.headers.get("X-Message-Id", "unknown")
         return message_id
 
     def _send_via_smtp(
-        self,
-        to_email: str,
-        subject: str,
-        html_content: str,
-        plain_content: Optional[str] = None
+        self, to_email: str, subject: str, html_content: str, plain_content: str | None = None
     ) -> str:
         """
         Send email via SMTP (Mailtrap or custom SMTP server).
@@ -325,8 +323,10 @@ class EmailService:
         # Send email (with 5-second timeout to prevent hangs)
         with smtplib.SMTP(self.smtp_host, self.smtp_port, timeout=5) as server:
             # Skip TLS and login for local mock SMTP (e.g., MailHog, Mailtrap mock, or internal test mock)
-            is_mock_server = self.smtp_host in ["127.0.0.1", "localhost"] and str(self.smtp_port) in ["1025", "8025"]
-            
+            is_mock_server = self.smtp_host in ["127.0.0.1", "localhost"] and str(
+                self.smtp_port
+            ) in ["1025", "8025"]
+
             if not is_mock_server:
                 # Production/Standard SMTP
                 try:
@@ -337,7 +337,7 @@ class EmailService:
                     pass
             elif self.smtp_user and self.smtp_password:
                 # If credentials provided for mock, try login but ignore TLS
-                try: 
+                try:
                     server.login(self.smtp_user, self.smtp_password)
                 except Exception:
                     pass
@@ -345,15 +345,12 @@ class EmailService:
             server.sendmail(self.from_email, to_email, message.as_string())
 
         # Generate pseudo message ID for SMTP (since SMTP doesn't return message IDs)
-        import datetime
+
         message_id = f"smtp-{int(utcnow().timestamp())}"
         return message_id
 
     def _render_template(
-        self,
-        template_name: str,
-        template_data: Dict[str, Any],
-        language: str = "en"
+        self, template_name: str, template_data: dict[str, Any], language: str = "en"
     ) -> str:
         """
         Render Jinja2 email template with data.
@@ -377,12 +374,10 @@ class EmailService:
         try:
             template = self.template_env.get_template(template_filename)
             return template.render(**template_data)
-        except Exception as e:
+        except Exception:
             # Fallback to English if language-specific template not found
             if language != "en":
-                logger.warning(
-                    f"Template {template_filename} not found, falling back to English"
-                )
+                logger.warning(f"Template {template_filename} not found, falling back to English")
                 template_filename = f"{template_name}_en.html"
                 template = self.template_env.get_template(template_filename)
                 return template.render(**template_data)
@@ -393,8 +388,8 @@ class EmailService:
         notification: Any,
         status: str,
         db: Session,
-        sendgrid_message_id: Optional[str] = None,
-        error_message: Optional[str] = None
+        sendgrid_message_id: str | None = None,
+        error_message: str | None = None,
     ):
         """
         Update notification status in database.
@@ -422,10 +417,8 @@ class EmailService:
         db.commit()
 
     def send_batch_emails(
-        self,
-        emails: List[Dict[str, Any]],
-        db: Optional[Session] = None
-    ) -> Dict[str, Any]:
+        self, emails: list[dict[str, Any]], db: Session | None = None
+    ) -> dict[str, Any]:
         """
         Send multiple emails in batch.
 
@@ -476,7 +469,7 @@ class EmailService:
                 template_data=email_data.get("template_data"),
                 notification=email_data.get("notification"),
                 db=db,
-                language=email_data.get("language", "en")
+                language=email_data.get("language", "en"),
             )
 
             if message_id:
@@ -485,14 +478,12 @@ class EmailService:
             else:
                 failure_count += 1
 
-        logger.info(
-            f"Batch email send complete: {success_count} succeeded, {failure_count} failed"
-        )
+        logger.info(f"Batch email send complete: {success_count} succeeded, {failure_count} failed")
 
         return {
             "success_count": success_count,
             "failure_count": failure_count,
-            "message_ids": message_ids
+            "message_ids": message_ids,
         }
 
     def get_unsubscribe_url(self, unsubscribe_token: str) -> str:
@@ -521,17 +512,17 @@ class EmailService:
         event_title: str,
         role: str,
         event_datetime: str,
-        event_location: Optional[str] = None,
-        event_duration: Optional[str] = None,
-        additional_info: Optional[str] = None,
-        calendar_url: Optional[str] = None,
-        schedule_url: Optional[str] = None,
-        availability_url: Optional[str] = None,
-        unsubscribe_token: Optional[str] = None,
-        notification: Optional[Any] = None,
-        db: Optional[Session] = None,
-        language: str = "en"
-    ) -> Optional[str]:
+        event_location: str | None = None,
+        event_duration: str | None = None,
+        additional_info: str | None = None,
+        calendar_url: str | None = None,
+        schedule_url: str | None = None,
+        availability_url: str | None = None,
+        unsubscribe_token: str | None = None,
+        notification: Any | None = None,
+        db: Session | None = None,
+        language: str = "en",
+    ) -> str | None:
         """
         Send assignment notification email to volunteer.
 
@@ -581,7 +572,9 @@ class EmailService:
             "calendar_url": calendar_url or f"{app_url}/app/calendar",
             "schedule_url": schedule_url or f"{app_url}/app/schedule",
             "availability_url": availability_url or f"{app_url}/app/schedule",
-            "unsubscribe_url": self.get_unsubscribe_url(unsubscribe_token) if unsubscribe_token else f"{app_url}/settings"
+            "unsubscribe_url": self.get_unsubscribe_url(unsubscribe_token)
+            if unsubscribe_token
+            else f"{app_url}/settings",
         }
 
         # Email subject
@@ -595,7 +588,7 @@ class EmailService:
             template_data=template_data,
             language=language,
             notification=notification,
-            db=db
+            db=db,
         )
 
     def send_reminder_email(
@@ -606,17 +599,17 @@ class EmailService:
         role: str,
         event_datetime: str,
         hours_remaining: int,
-        event_location: Optional[str] = None,
-        event_duration: Optional[str] = None,
-        what_to_bring: Optional[str] = None,
-        additional_info: Optional[str] = None,
-        calendar_url: Optional[str] = None,
-        schedule_url: Optional[str] = None,
-        unsubscribe_token: Optional[str] = None,
-        notification: Optional[Any] = None,
-        db: Optional[Session] = None,
-        language: str = "en"
-    ) -> Optional[str]:
+        event_location: str | None = None,
+        event_duration: str | None = None,
+        what_to_bring: str | None = None,
+        additional_info: str | None = None,
+        calendar_url: str | None = None,
+        schedule_url: str | None = None,
+        unsubscribe_token: str | None = None,
+        notification: Any | None = None,
+        db: Session | None = None,
+        language: str = "en",
+    ) -> str | None:
         """
         Send reminder notification email to volunteer 24 hours before event.
 
@@ -669,7 +662,9 @@ class EmailService:
             "additional_info": additional_info,
             "calendar_url": calendar_url or f"{app_url}/app/calendar",
             "schedule_url": schedule_url or f"{app_url}/app/schedule",
-            "unsubscribe_url": self.get_unsubscribe_url(unsubscribe_token) if unsubscribe_token else f"{app_url}/settings"
+            "unsubscribe_url": self.get_unsubscribe_url(unsubscribe_token)
+            if unsubscribe_token
+            else f"{app_url}/settings",
         }
 
         # Email subject
@@ -683,7 +678,7 @@ class EmailService:
             template_data=template_data,
             language=language,
             notification=notification,
-            db=db
+            db=db,
         )
 
     def send_update_email(
@@ -693,17 +688,17 @@ class EmailService:
         event_title: str,
         role: str,
         new_datetime: str,
-        old_datetime: Optional[str] = None,
-        new_location: Optional[str] = None,
-        old_location: Optional[str] = None,
-        event_duration: Optional[str] = None,
-        other_changes: Optional[str] = None,
-        schedule_url: Optional[str] = None,
-        unsubscribe_token: Optional[str] = None,
-        notification: Optional[Any] = None,
-        db: Optional[Session] = None,
-        language: str = "en"
-    ) -> Optional[str]:
+        old_datetime: str | None = None,
+        new_location: str | None = None,
+        old_location: str | None = None,
+        event_duration: str | None = None,
+        other_changes: str | None = None,
+        schedule_url: str | None = None,
+        unsubscribe_token: str | None = None,
+        notification: Any | None = None,
+        db: Session | None = None,
+        language: str = "en",
+    ) -> str | None:
         """
         Send update notification email when event details change.
 
@@ -759,7 +754,9 @@ class EmailService:
             "event_duration": event_duration,
             "other_changes": other_changes,
             "schedule_url": schedule_url or f"{app_url}/app/schedule",
-            "unsubscribe_url": self.get_unsubscribe_url(unsubscribe_token) if unsubscribe_token else f"{app_url}/settings"
+            "unsubscribe_url": self.get_unsubscribe_url(unsubscribe_token)
+            if unsubscribe_token
+            else f"{app_url}/settings",
         }
 
         # Email subject
@@ -773,7 +770,7 @@ class EmailService:
             template_data=template_data,
             language=language,
             notification=notification,
-            db=db
+            db=db,
         )
 
     def send_cancellation_email(
@@ -783,15 +780,15 @@ class EmailService:
         event_title: str,
         role: str,
         event_datetime: str,
-        event_location: Optional[str] = None,
-        cancellation_reason: Optional[str] = None,
-        apology_message: Optional[str] = None,
-        schedule_url: Optional[str] = None,
-        unsubscribe_token: Optional[str] = None,
-        notification: Optional[Any] = None,
-        db: Optional[Session] = None,
-        language: str = "en"
-    ) -> Optional[str]:
+        event_location: str | None = None,
+        cancellation_reason: str | None = None,
+        apology_message: str | None = None,
+        schedule_url: str | None = None,
+        unsubscribe_token: str | None = None,
+        notification: Any | None = None,
+        db: Session | None = None,
+        language: str = "en",
+    ) -> str | None:
         """
         Send cancellation notification email when event is cancelled.
 
@@ -835,9 +832,12 @@ class EmailService:
             "event_datetime": event_datetime,
             "event_location": event_location,
             "cancellation_reason": cancellation_reason,
-            "apology_message": apology_message or "We apologize for any inconvenience this may cause.",
+            "apology_message": apology_message
+            or "We apologize for any inconvenience this may cause.",
             "schedule_url": schedule_url or f"{app_url}/app/schedule",
-            "unsubscribe_url": self.get_unsubscribe_url(unsubscribe_token) if unsubscribe_token else f"{app_url}/settings"
+            "unsubscribe_url": self.get_unsubscribe_url(unsubscribe_token)
+            if unsubscribe_token
+            else f"{app_url}/settings",
         }
 
         # Email subject
@@ -851,7 +851,7 @@ class EmailService:
             template_data=template_data,
             language=language,
             notification=notification,
-            db=db
+            db=db,
         )
 
     def send_invitation_email(
@@ -860,7 +860,7 @@ class EmailService:
         admin_name: str,
         org_name: str,
         invitation_token: str,
-        app_url: str = "http://localhost:8000"
+        app_url: str = "http://localhost:8000",
     ) -> bool:
         """
         Send invitation email to new user.

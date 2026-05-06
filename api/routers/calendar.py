@@ -1,19 +1,18 @@
 """Calendar export and subscription endpoints."""
 
-from typing import Optional
-from fastapi import APIRouter, Depends, HTTPException, status, Response, Request
-from sqlalchemy.orm import Session
+from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
 from pydantic import BaseModel
+from sqlalchemy.orm import Session
 
 from api.database import get_db
+from api.models import Assignment, Event, Organization, Person, Resource
 from api.utils.calendar_utils import (
-    generate_calendar_token,
+    generate_https_feed_url,
     generate_ics_from_assignments,
     generate_ics_from_events,
     generate_webcal_url,
-    generate_https_feed_url,
 )
-from api.models import Person, Assignment, Event, Resource, Organization
+from api.utils.security import generate_calendar_token
 
 router = APIRouter(prefix="/calendar", tags=["calendar"])
 
@@ -21,6 +20,7 @@ router = APIRouter(prefix="/calendar", tags=["calendar"])
 # Schemas
 class CalendarSubscriptionResponse(BaseModel):
     """Calendar subscription response."""
+
     token: str
     webcal_url: str
     https_url: str
@@ -29,6 +29,7 @@ class CalendarSubscriptionResponse(BaseModel):
 
 class CalendarTokenResetResponse(BaseModel):
     """Calendar token reset response."""
+
     token: str
     webcal_url: str
     https_url: str
@@ -82,24 +83,28 @@ def export_personal_schedule(
         if event.resource_id:
             resource = db.query(Resource).filter(Resource.id == event.resource_id).first()
 
-        assignment_data.append({
-            "id": assignment.id,
-            "person": {
-                "id": person.id,
-                "name": person.name,
-            },
-            "event": {
-                "id": event.id,
-                "type": event.type,
-                "start_time": event.start_time,
-                "end_time": event.end_time,
-                "extra_data": event.extra_data or {},
-                "resource": {
-                    "location": resource.location if resource else "TBD",
-                } if resource else None,
-            },
-            "role": assignment.role,  # Event-specific role (usher, greeter, etc.)
-        })
+        assignment_data.append(
+            {
+                "id": assignment.id,
+                "person": {
+                    "id": person.id,
+                    "name": person.name,
+                },
+                "event": {
+                    "id": event.id,
+                    "type": event.type,
+                    "start_time": event.start_time,
+                    "end_time": event.end_time,
+                    "extra_data": event.extra_data or {},
+                    "resource": {
+                        "location": resource.location if resource else "TBD",
+                    }
+                    if resource
+                    else None,
+                },
+                "role": assignment.role,  # Event-specific role (usher, greeter, etc.)
+            }
+        )
 
     # Generate ICS file
     calendar_name = f"{person.name}'s Schedule"
@@ -113,9 +118,7 @@ def export_personal_schedule(
     return Response(
         content=ics_content,
         media_type="text/calendar",
-        headers={
-            "Content-Disposition": f"attachment; filename={person_id}_schedule.ics"
-        },
+        headers={"Content-Disposition": f"attachment; filename={person_id}_schedule.ics"},
     )
 
 
@@ -259,7 +262,9 @@ def export_organization_events(
             "extra_data": event.extra_data or {},
             "resource": {
                 "location": resource.location if resource else "TBD",
-            } if resource else None,
+            }
+            if resource
+            else None,
         }
 
         # Add assignments if requested
@@ -269,12 +274,14 @@ def export_organization_events(
             for assignment in assignments:
                 person_assigned = db.query(Person).filter(Person.id == assignment.person_id).first()
                 if person_assigned:
-                    event_dict["assignments"].append({
-                        "person": {
-                            "name": person_assigned.name,
-                        },
-                        "role": None,  # Could be extracted from extra_data
-                    })
+                    event_dict["assignments"].append(
+                        {
+                            "person": {
+                                "name": person_assigned.name,
+                            },
+                            "role": None,  # Could be extracted from extra_data
+                        }
+                    )
 
         event_data.append(event_dict)
 
@@ -291,9 +298,7 @@ def export_organization_events(
     return Response(
         content=ics_content,
         media_type="text/calendar",
-        headers={
-            "Content-Disposition": f"attachment; filename={org_id}_events.ics"
-        },
+        headers={"Content-Disposition": f"attachment; filename={org_id}_events.ics"},
     )
 
 
@@ -327,24 +332,28 @@ def calendar_feed(token: str, db: Session = Depends(get_db)):
         if event.resource_id:
             resource = db.query(Resource).filter(Resource.id == event.resource_id).first()
 
-        assignment_data.append({
-            "id": assignment.id,
-            "person": {
-                "id": person.id,
-                "name": person.name,
-            },
-            "event": {
-                "id": event.id,
-                "type": event.type,
-                "start_time": event.start_time,
-                "end_time": event.end_time,
-                "extra_data": event.extra_data or {},
-                "resource": {
-                    "location": resource.location if resource else "TBD",
-                } if resource else None,
-            },
-            "role": assignment.role,  # Event-specific role (usher, greeter, etc.)
-        })
+        assignment_data.append(
+            {
+                "id": assignment.id,
+                "person": {
+                    "id": person.id,
+                    "name": person.name,
+                },
+                "event": {
+                    "id": event.id,
+                    "type": event.type,
+                    "start_time": event.start_time,
+                    "end_time": event.end_time,
+                    "extra_data": event.extra_data or {},
+                    "resource": {
+                        "location": resource.location if resource else "TBD",
+                    }
+                    if resource
+                    else None,
+                },
+                "role": assignment.role,  # Event-specific role (usher, greeter, etc.)
+            }
+        )
 
     # Generate ICS file
     calendar_name = f"{person.name}'s Schedule"

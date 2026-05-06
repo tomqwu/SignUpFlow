@@ -1,7 +1,8 @@
 """Constraint schemas."""
 
-from typing import Optional, Dict, Any, List
 from datetime import datetime
+from typing import Any
+
 from pydantic import BaseModel, ConfigDict, Field
 
 
@@ -10,9 +11,9 @@ class ConstraintBase(BaseModel):
 
     key: str = Field(..., description="Constraint key/identifier")
     type: str = Field(..., description="Constraint type: hard or soft")
-    weight: Optional[int] = Field(None, description="Weight for soft constraints")
+    weight: int | None = Field(None, description="Weight for soft constraints")
     predicate: str = Field(..., description="Constraint predicate/rule")
-    params: Optional[Dict[str, Any]] = Field(None, description="Constraint parameters")
+    params: dict[str, Any] | None = Field(None, description="Constraint parameters")
 
 
 class ConstraintCreate(ConstraintBase):
@@ -24,10 +25,10 @@ class ConstraintCreate(ConstraintBase):
 class ConstraintUpdate(BaseModel):
     """Schema for updating a constraint."""
 
-    type: Optional[str] = None
-    weight: Optional[int] = None
-    predicate: Optional[str] = None
-    params: Optional[Dict[str, Any]] = None
+    type: str | None = None
+    weight: int | None = None
+    predicate: str | None = None
+    params: dict[str, Any] | None = None
 
 
 class ConstraintResponse(ConstraintBase):
@@ -44,5 +45,5 @@ class ConstraintResponse(ConstraintBase):
 class ConstraintList(BaseModel):
     """Schema for listing constraints."""
 
-    constraints: List[ConstraintResponse]
+    constraints: list[ConstraintResponse]
     total: int

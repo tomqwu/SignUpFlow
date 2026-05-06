@@ -55,7 +55,10 @@ build-backend = "poetry.core.masonry.api"
 line-length = 100
 target-version = "py311"
 select = ["E", "F", "I", "N", "W", "UP"]
-ignore = []
+# E501: Black is the source of truth for line length; Ruff flags lines Black can't break (URLs, strings).
+# E402: tests intentionally set env vars before importing api.* modules.
+# N806: SQLAlchemy uses CapCase for sessionmakers (e.g., SessionLocal); the convention is intentional.
+ignore = ["E501", "E402", "N806"]
 
 [tool.black]
 line-length = 100

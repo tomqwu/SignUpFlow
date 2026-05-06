@@ -8,7 +8,8 @@ Tracks SMS usage and costs per organization with budget alerts.
 """
 
 from datetime import datetime
-from typing import Optional, Dict, Any
+from typing import Any
+
 from sqlalchemy.orm import Session
 
 from api.models import SmsUsage
@@ -41,7 +42,7 @@ class CostTracker:
         organization_id: int,
         message_type: str,
         cost_cents: int,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Track SMS usage and update budget counters.
 
@@ -99,9 +100,7 @@ class CostTracker:
         db.commit()
 
         # Calculate budget utilization
-        utilization_percent = (
-            usage.total_cost_cents / usage.budget_limit_cents * 100
-        )
+        utilization_percent = usage.total_cost_cents / usage.budget_limit_cents * 100
 
         # Check for budget alerts
         alert_needed = None
@@ -109,10 +108,7 @@ class CostTracker:
             alert_needed = "budget_limit_reached"
             usage.alert_sent_at_100 = True
             db.commit()
-        elif (
-            utilization_percent >= usage.alert_threshold_percent
-            and not usage.alert_sent_at_80
-        ):
+        elif utilization_percent >= usage.alert_threshold_percent and not usage.alert_sent_at_80:
             alert_needed = "budget_threshold_warning"
             usage.alert_sent_at_80 = True
             db.commit()
@@ -127,9 +123,7 @@ class CostTracker:
             "auto_pause_enabled": usage.auto_pause_enabled,
         }
 
-    def check_budget(
-        self, db: Session, organization_id: int
-    ) -> Dict[str, Any]:
+    def check_budget(self, db: Session, organization_id: int) -> dict[str, Any]:
         """
         Check current budget status for organization.
 
@@ -163,9 +157,7 @@ class CostTracker:
                 "can_send": True,
             }
 
-        utilization_percent = (
-            usage.total_cost_cents / usage.budget_limit_cents * 100
-        )
+        utilization_percent = usage.total_cost_cents / usage.budget_limit_cents * 100
         budget_exceeded = utilization_percent >= 100
 
         return {

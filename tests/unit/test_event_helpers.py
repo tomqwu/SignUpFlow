@@ -8,16 +8,15 @@ Note: Only testing pure functions without database dependencies.
 Database-dependent functions are tested via integration tests in test_events.py.
 """
 
-import pytest
-from datetime import date, datetime
+from datetime import datetime
 
+from api.models import Event, Person
 from api.utils.event_helpers import (
-    person_has_matching_role,
-    get_event_required_roles,
     count_people_with_role,
-    validate_time_range
+    get_event_required_roles,
+    person_has_matching_role,
+    validate_time_range,
 )
-from api.models import Person, Event
 
 
 class TestPersonHasMatchingRole:
@@ -44,8 +43,7 @@ class TestPersonHasMatchingRole:
     def test_multiple_matching_roles(self):
         """Test person with multiple matching roles returns True."""
         result = person_has_matching_role(
-            ["usher", "greeter", "sound_tech"],
-            ["greeter", "sound_tech"]
+            ["usher", "greeter", "sound_tech"], ["greeter", "sound_tech"]
         )
 
         assert result is True
@@ -68,13 +66,7 @@ class TestGetEventRequiredRoles:
             type="Service",
             start_time=datetime(2025, 1, 1, 10, 0),
             end_time=datetime(2025, 1, 1, 12, 0),
-            extra_data={
-                "role_counts": {
-                    "usher": 2,
-                    "greeter": 1,
-                    "sound_tech": 1
-                }
-            }
+            extra_data={"role_counts": {"usher": 2, "greeter": 1, "sound_tech": 1}},
         )
 
         result = get_event_required_roles(event)
@@ -89,7 +81,7 @@ class TestGetEventRequiredRoles:
             type="Service",
             start_time=datetime(2025, 1, 1, 10, 0),
             end_time=datetime(2025, 1, 1, 12, 0),
-            extra_data={"roles": ["usher", "greeter"]}
+            extra_data={"roles": ["usher", "greeter"]},
         )
 
         result = get_event_required_roles(event)
@@ -104,7 +96,7 @@ class TestGetEventRequiredRoles:
             type="Service",
             start_time=datetime(2025, 1, 1, 10, 0),
             end_time=datetime(2025, 1, 1, 12, 0),
-            extra_data={}
+            extra_data={},
         )
 
         result = get_event_required_roles(event)
@@ -119,7 +111,7 @@ class TestGetEventRequiredRoles:
             type="Service",
             start_time=datetime(2025, 1, 1, 10, 0),
             end_time=datetime(2025, 1, 1, 12, 0),
-            extra_data=None
+            extra_data=None,
         )
 
         result = get_event_required_roles(event)

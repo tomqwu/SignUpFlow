@@ -20,9 +20,7 @@ def write_assignments_csv(
         if not event:
             continue
 
-        assignee_names = [
-            people_map[pid].name for pid in assignment.assignees if pid in people_map
-        ]
+        assignee_names = [people_map[pid].name for pid in assignment.assignees if pid in people_map]
 
         rows.append(
             {

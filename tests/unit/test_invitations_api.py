@@ -4,15 +4,12 @@ Following TDD/BDD - test before fixing.
 """
 
 import pytest
-from fastapi.testclient import TestClient
-from api.main import app
 
 API_BASE = "http://localhost:8000/api"
 
 
 class TestInvitationsAPI:
     """Test invitations API endpoints."""
-
 
     @pytest.mark.no_mock_auth
     def test_list_invitations_requires_authentication_no_org(self, client):
@@ -33,8 +30,8 @@ class TestInvitationsAPI:
             json={
                 "id": "test_org_invitations",
                 "name": "Test Invitations Org",
-                "config": {"roles": ["admin", "volunteer"]}
-            }
+                "config": {"roles": ["admin", "volunteer"]},
+            },
         )
         assert org_response.status_code in [200, 201]
 
@@ -53,8 +50,8 @@ class TestInvitationsAPI:
             json={
                 "id": "test_org_inv_list",
                 "name": "Test Invitations List Org",
-                "config": {"roles": ["admin", "volunteer"]}
-            }
+                "config": {"roles": ["admin", "volunteer"]},
+            },
         )
         assert org_response.status_code in [200, 201]
 
@@ -68,8 +65,8 @@ class TestInvitationsAPI:
                 "org_id": "test_org_inv_list",
                 "roles": ["admin"],
                 "timezone": "UTC",
-                "language": "en"
-            }
+                "language": "en",
+            },
         )
         assert admin_response.status_code in [200, 201]
 
@@ -94,11 +91,7 @@ class TestInvitationsAPI:
         # Try to create invitation without authentication
         response = client.post(
             f"{API_BASE}/invitations?org_id=test_org",
-            json={
-                "email": "newuser@test.com",
-                "name": "New User",
-                "roles": ["volunteer"]
-            }
+            json={"email": "newuser@test.com", "name": "New User", "roles": ["volunteer"]},
         )
 
         # Should return 401/403 (unauthorized), 422 (validation), or 404 (org not found with mock auth)

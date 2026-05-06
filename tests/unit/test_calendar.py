@@ -1,16 +1,16 @@
 """Unit tests for calendar export and subscription endpoints."""
 
-import pytest
 from datetime import datetime, timedelta
-from fastapi.testclient import TestClient
-from api.main import app
+
+import pytest
+
 from api.utils.calendar_utils import (
-    generate_calendar_token,
+    generate_https_feed_url,
     generate_ics_from_assignments,
     generate_ics_from_events,
     generate_webcal_url,
-    generate_https_feed_url,
 )
+from api.utils.security import generate_calendar_token
 
 API_BASE = "http://localhost:8000/api"
 
@@ -65,11 +65,9 @@ class TestCalendarUtils:
                     "start_time": datetime(2025, 10, 11, 10, 0),
                     "end_time": datetime(2025, 10, 11, 11, 30),
                     "extra_data": {"notes": "Main sanctuary"},
-                    "resource": {
-                        "location": "Main Church Building"
-                    }
+                    "resource": {"location": "Main Church Building"},
                 },
-                "role": "Greeter"
+                "role": "Greeter",
             }
         ]
 
@@ -99,15 +97,8 @@ class TestCalendarUtils:
                 "start_time": datetime(2025, 10, 11, 10, 0),
                 "end_time": datetime(2025, 10, 11, 11, 30),
                 "extra_data": {},
-                "resource": {
-                    "location": "Main Church"
-                },
-                "assignments": [
-                    {
-                        "person": {"name": "John Doe"},
-                        "role": "Greeter"
-                    }
-                ]
+                "resource": {"location": "Main Church"},
+                "assignments": [{"person": {"name": "John Doe"}, "role": "Greeter"}],
             }
         ]
 
@@ -129,7 +120,7 @@ class TestCalendarExportAPI:
         # Create organization
         client.post(
             f"{API_BASE}/organizations/",
-            json={"id": "calendar_test_org", "name": "Calendar Test Org"}
+            json={"id": "calendar_test_org", "name": "Calendar Test Org"},
         )
 
         # Create person
@@ -141,18 +132,14 @@ class TestCalendarExportAPI:
                 "name": "Test User",
                 "email": "testuser@example.com",
                 "roles": ["volunteer"],
-                "timezone": "America/New_York"
-            }
+                "timezone": "America/New_York",
+            },
         )
 
         # Create resource
         client.post(
             f"{API_BASE}/organizations/calendar_test_org/resources",
-            json={
-                "id": "resource_1",
-                "type": "venue",
-                "location": "Test Church Building"
-            }
+            json={"id": "resource_1", "type": "venue", "location": "Test Church Building"},
         )
 
         # Create event
@@ -167,8 +154,8 @@ class TestCalendarExportAPI:
                 "type": "Sunday Service",
                 "start_time": start_time,
                 "end_time": end_time,
-                "resource_id": "resource_1"
-            }
+                "resource_id": "resource_1",
+            },
         )
 
     def test_export_personal_schedule_no_assignments(self, client):
@@ -272,8 +259,7 @@ class TestOrganizationExport:
         """Create test organization with admin and events."""
         # Create organization
         client.post(
-            f"{API_BASE}/organizations/",
-            json={"id": "org_export_test", "name": "Org Export Test"}
+            f"{API_BASE}/organizations/", json={"id": "org_export_test", "name": "Org Export Test"}
         )
 
         # Create admin
@@ -284,8 +270,8 @@ class TestOrganizationExport:
                 "org_id": "org_export_test",
                 "name": "Admin User",
                 "email": "admin@example.com",
-                "roles": ["admin"]
-            }
+                "roles": ["admin"],
+            },
         )
 
         # Create volunteer
@@ -296,8 +282,8 @@ class TestOrganizationExport:
                 "org_id": "org_export_test",
                 "name": "Volunteer User",
                 "email": "volunteer@example.com",
-                "roles": ["volunteer"]
-            }
+                "roles": ["volunteer"],
+            },
         )
 
         # Create event
@@ -311,8 +297,8 @@ class TestOrganizationExport:
                 "org_id": "org_export_test",
                 "type": "Team Meeting",
                 "start_time": start_time,
-                "end_time": end_time
-            }
+                "end_time": end_time,
+            },
         )
 
     def test_org_export_as_admin(self, client):
@@ -349,10 +335,7 @@ class TestOrganizationExport:
     def test_org_export_no_events(self, client):
         """Test organization export when no events exist."""
         # Create new org with no events
-        client.post(
-            f"{API_BASE}/organizations/",
-            json={"id": "empty_org", "name": "Empty Org"}
-        )
+        client.post(f"{API_BASE}/organizations/", json={"id": "empty_org", "name": "Empty Org"})
 
         client.post(
             f"{API_BASE}/people/",
@@ -360,8 +343,8 @@ class TestOrganizationExport:
                 "id": "empty_org_admin",
                 "org_id": "empty_org",
                 "name": "Empty Admin",
-                "roles": ["admin"]
-            }
+                "roles": ["admin"],
+            },
         )
 
         response = client.get(
@@ -379,8 +362,7 @@ class TestCalendarIntegration:
         """Test complete workflow: create person -> subscribe -> feed."""
         # 1. Create organization
         client.post(
-            f"{API_BASE}/organizations/",
-            json={"id": "workflow_org", "name": "Workflow Test Org"}
+            f"{API_BASE}/organizations/", json={"id": "workflow_org", "name": "Workflow Test Org"}
         )
 
         # 2. Create person
@@ -391,8 +373,8 @@ class TestCalendarIntegration:
                 "org_id": "workflow_org",
                 "name": "Workflow User",
                 "email": "workflow@example.com",
-                "roles": ["volunteer"]
-            }
+                "roles": ["volunteer"],
+            },
         )
 
         # 3. Get subscription URL

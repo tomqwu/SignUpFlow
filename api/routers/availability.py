@@ -1,22 +1,16 @@
 """Availability router - manage person availability and time-off."""
 
-from typing import Optional
-from datetime import date
-from fastapi import APIRouter, Depends, HTTPException, status, Query
+from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from api.database import get_db
-from api.schemas.availability import (
-    AvailabilityCreate,
-    AvailabilityUpdate,
-    AvailabilityResponse,
-    TimeOffCreate,
-    TimeOffResponse,
-)
 from api.models import (
     Availability,
-    VacationPeriod,
     Person,
+    VacationPeriod,
+)
+from api.schemas.availability import (
+    TimeOffCreate,
 )
 
 router = APIRouter(prefix="/availability", tags=["availability"])
@@ -62,9 +56,7 @@ def get_timeoff(person_id: str, db: Session = Depends(get_db)):
 
     # Get vacation periods
     vacations = (
-        db.query(VacationPeriod)
-        .filter(VacationPeriod.availability_id == availability.id)
-        .all()
+        db.query(VacationPeriod).filter(VacationPeriod.availability_id == availability.id).all()
     )
 
     return {
@@ -112,11 +104,15 @@ def add_timeoff(
         )
 
     # Check for overlapping vacation periods
-    overlapping = db.query(VacationPeriod).filter(
-        VacationPeriod.availability_id == availability.id,
-        VacationPeriod.start_date <= timeoff_data.end_date,
-        VacationPeriod.end_date >= timeoff_data.start_date
-    ).first()
+    overlapping = (
+        db.query(VacationPeriod)
+        .filter(
+            VacationPeriod.availability_id == availability.id,
+            VacationPeriod.start_date <= timeoff_data.end_date,
+            VacationPeriod.end_date >= timeoff_data.start_date,
+        )
+        .first()
+    )
 
     if overlapping:
         raise HTTPException(

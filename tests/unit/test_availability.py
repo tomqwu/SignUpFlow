@@ -1,9 +1,6 @@
 """Unit tests for availability endpoints."""
 
-import pytest
 from datetime import datetime, timedelta
-from fastapi.testclient import TestClient
-from api.main import app
 
 API_BASE = "http://localhost:8000/api"
 
@@ -16,21 +13,15 @@ class TestAvailabilityCreate:
         # Setup: Create org and person
         client.post(
             f"{API_BASE}/organizations/",
-            json={"id": "avail_test_org1", "name": "Availability Test Org 1"}
+            json={"id": "avail_test_org1", "name": "Availability Test Org 1"},
         )
         client.post(
             f"{API_BASE}/people/",
-            json={
-                "id": "avail_person_001",
-                "org_id": "avail_test_org1",
-                "name": "Test Person 1"
-            }
+            json={"id": "avail_person_001", "org_id": "avail_test_org1", "name": "Test Person 1"},
         )
 
         # Create availability record
-        response = client.post(
-            f"{API_BASE}/availability/?person_id=avail_person_001"
-        )
+        response = client.post(f"{API_BASE}/availability/?person_id=avail_person_001")
         assert response.status_code == 201
         data = response.json()
         assert "availability_id" in data
@@ -41,10 +32,7 @@ class TestAvailabilityCreate:
         end = (datetime.now() + timedelta(days=10)).strftime("%Y-%m-%d")
         response = client.post(
             f"{API_BASE}/availability/avail_person_001/timeoff",
-            json={
-                "start_date": start,
-                "end_date": end
-            }
+            json={"start_date": start, "end_date": end},
         )
         assert response.status_code == 201
         data = response.json()
@@ -58,24 +46,21 @@ class TestAvailabilityCreate:
         end = (datetime.now() + timedelta(days=10)).strftime("%Y-%m-%d")
         response = client.post(
             f"{API_BASE}/availability/nonexistent_person/timeoff",
-            json={
-                "start_date": start,
-                "end_date": end
-            }
+            json={"start_date": start, "end_date": end},
         )
         assert response.status_code == 404
 
     def test_add_availability_overlapping(self, client):
         """Test adding overlapping availability periods returns conflict error."""
         import time
+
         timestamp = int(time.time() * 1000)
         org_id = f"avail_test_org_{timestamp}"
         person_id = f"avail_person_{timestamp}"
 
         # Setup: Create org and person
         client.post(
-            f"{API_BASE}/organizations/",
-            json={"id": org_id, "name": "Availability Test Org"}
+            f"{API_BASE}/organizations/", json={"id": org_id, "name": "Availability Test Org"}
         )
         client.post(
             f"{API_BASE}/people/",
@@ -83,8 +68,8 @@ class TestAvailabilityCreate:
                 "id": person_id,
                 "org_id": org_id,
                 "name": "Test Person",
-                "email": f"{person_id}@test.com"
-            }
+                "email": f"{person_id}@test.com",
+            },
         )
 
         # Add first timeoff period
@@ -92,7 +77,7 @@ class TestAvailabilityCreate:
         end1 = (datetime.now() + timedelta(days=20)).strftime("%Y-%m-%d")
         response1 = client.post(
             f"{API_BASE}/availability/{person_id}/timeoff",
-            json={"start_date": start1, "end_date": end1}
+            json={"start_date": start1, "end_date": end1},
         )
         assert response1.status_code == 201
 
@@ -101,7 +86,7 @@ class TestAvailabilityCreate:
         end2 = (datetime.now() + timedelta(days=25)).strftime("%Y-%m-%d")
         response2 = client.post(
             f"{API_BASE}/availability/{person_id}/timeoff",
-            json={"start_date": start2, "end_date": end2}
+            json={"start_date": start2, "end_date": end2},
         )
         # Should fail with conflict error
         assert response2.status_code == 409
@@ -112,15 +97,11 @@ class TestAvailabilityCreate:
         # Setup: Create org and person
         client.post(
             f"{API_BASE}/organizations/",
-            json={"id": "avail_test_org3", "name": "Availability Test Org 3"}
+            json={"id": "avail_test_org3", "name": "Availability Test Org 3"},
         )
         client.post(
             f"{API_BASE}/people/",
-            json={
-                "id": "avail_person_003",
-                "org_id": "avail_test_org3",
-                "name": "Test Person 3"
-            }
+            json={"id": "avail_person_003", "org_id": "avail_test_org3", "name": "Test Person 3"},
         )
 
         # Try to add invalid timeoff period
@@ -128,7 +109,7 @@ class TestAvailabilityCreate:
         end = (datetime.now() + timedelta(days=15)).strftime("%Y-%m-%d")  # Before start
         response = client.post(
             f"{API_BASE}/availability/avail_person_003/timeoff",
-            json={"start_date": start, "end_date": end}
+            json={"start_date": start, "end_date": end},
         )
         assert response.status_code == 400
 
@@ -141,24 +122,20 @@ class TestAvailabilityRead:
         # Setup: Create org and person
         client.post(
             f"{API_BASE}/organizations/",
-            json={"id": "avail_test_org4", "name": "Availability Test Org 4"}
+            json={"id": "avail_test_org4", "name": "Availability Test Org 4"},
         )
         client.post(
             f"{API_BASE}/people/",
-            json={
-                "id": "avail_person_004",
-                "org_id": "avail_test_org4",
-                "name": "Test Person 4"
-            }
+            json={"id": "avail_person_004", "org_id": "avail_test_org4", "name": "Test Person 4"},
         )
 
         # Add multiple timeoff periods
         for i in range(3):
-            start = (datetime.now() + timedelta(days=30 + i*10)).strftime("%Y-%m-%d")
-            end = (datetime.now() + timedelta(days=35 + i*10)).strftime("%Y-%m-%d")
+            start = (datetime.now() + timedelta(days=30 + i * 10)).strftime("%Y-%m-%d")
+            end = (datetime.now() + timedelta(days=35 + i * 10)).strftime("%Y-%m-%d")
             client.post(
                 f"{API_BASE}/availability/avail_person_004/timeoff",
-                json={"start_date": start, "end_date": end}
+                json={"start_date": start, "end_date": end},
             )
 
         # Retrieve timeoff list
@@ -180,15 +157,11 @@ class TestAvailabilityRead:
         # Setup: Create org and person
         client.post(
             f"{API_BASE}/organizations/",
-            json={"id": "avail_test_org5", "name": "Availability Test Org 5"}
+            json={"id": "avail_test_org5", "name": "Availability Test Org 5"},
         )
         client.post(
             f"{API_BASE}/people/",
-            json={
-                "id": "avail_person_005",
-                "org_id": "avail_test_org5",
-                "name": "Test Person 5"
-            }
+            json={"id": "avail_person_005", "org_id": "avail_test_org5", "name": "Test Person 5"},
         )
 
         # Retrieve timeoff list (should be empty)
@@ -216,15 +189,11 @@ class TestAvailabilityDelete:
         # Setup: Create org and person
         client.post(
             f"{API_BASE}/organizations/",
-            json={"id": "avail_test_org6", "name": "Availability Test Org 6"}
+            json={"id": "avail_test_org6", "name": "Availability Test Org 6"},
         )
         client.post(
             f"{API_BASE}/people/",
-            json={
-                "id": "avail_person_006",
-                "org_id": "avail_test_org6",
-                "name": "Test Person 6"
-            }
+            json={"id": "avail_person_006", "org_id": "avail_test_org6", "name": "Test Person 6"},
         )
 
         # Add timeoff period
@@ -232,14 +201,12 @@ class TestAvailabilityDelete:
         end = (datetime.now() + timedelta(days=65)).strftime("%Y-%m-%d")
         create_response = client.post(
             f"{API_BASE}/availability/avail_person_006/timeoff",
-            json={"start_date": start, "end_date": end}
+            json={"start_date": start, "end_date": end},
         )
         timeoff_id = create_response.json()["id"]
 
         # Delete timeoff period
-        response = client.delete(
-            f"{API_BASE}/availability/avail_person_006/timeoff/{timeoff_id}"
-        )
+        response = client.delete(f"{API_BASE}/availability/avail_person_006/timeoff/{timeoff_id}")
         assert response.status_code == 204
 
         # Verify deletion
@@ -252,21 +219,15 @@ class TestAvailabilityDelete:
         # Setup: Create org and person
         client.post(
             f"{API_BASE}/organizations/",
-            json={"id": "avail_test_org7", "name": "Availability Test Org 7"}
+            json={"id": "avail_test_org7", "name": "Availability Test Org 7"},
         )
         client.post(
             f"{API_BASE}/people/",
-            json={
-                "id": "avail_person_007",
-                "org_id": "avail_test_org7",
-                "name": "Test Person 7"
-            }
+            json={"id": "avail_person_007", "org_id": "avail_test_org7", "name": "Test Person 7"},
         )
 
         # Try to delete non-existent timeoff
-        response = client.delete(
-            f"{API_BASE}/availability/avail_person_007/timeoff/99999"
-        )
+        response = client.delete(f"{API_BASE}/availability/avail_person_007/timeoff/99999")
         assert response.status_code == 404
 
     def test_delete_availability_wrong_person(self, client):
@@ -274,23 +235,15 @@ class TestAvailabilityDelete:
         # Setup: Create org and two persons
         client.post(
             f"{API_BASE}/organizations/",
-            json={"id": "avail_test_org8", "name": "Availability Test Org 8"}
+            json={"id": "avail_test_org8", "name": "Availability Test Org 8"},
         )
         client.post(
             f"{API_BASE}/people/",
-            json={
-                "id": "avail_person_008",
-                "org_id": "avail_test_org8",
-                "name": "Test Person 8"
-            }
+            json={"id": "avail_person_008", "org_id": "avail_test_org8", "name": "Test Person 8"},
         )
         client.post(
             f"{API_BASE}/people/",
-            json={
-                "id": "avail_person_009",
-                "org_id": "avail_test_org8",
-                "name": "Test Person 9"
-            }
+            json={"id": "avail_person_009", "org_id": "avail_test_org8", "name": "Test Person 9"},
         )
 
         # Add timeoff for person 8
@@ -298,12 +251,10 @@ class TestAvailabilityDelete:
         end = (datetime.now() + timedelta(days=75)).strftime("%Y-%m-%d")
         create_response = client.post(
             f"{API_BASE}/availability/avail_person_008/timeoff",
-            json={"start_date": start, "end_date": end}
+            json={"start_date": start, "end_date": end},
         )
         timeoff_id = create_response.json()["id"]
 
         # Try to delete using person 9's endpoint
-        response = client.delete(
-            f"{API_BASE}/availability/avail_person_009/timeoff/{timeoff_id}"
-        )
+        response = client.delete(f"{API_BASE}/availability/avail_person_009/timeoff/{timeoff_id}")
         assert response.status_code == 404

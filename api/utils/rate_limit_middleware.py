@@ -3,8 +3,10 @@ FastAPI dependencies for rate limiting.
 """
 
 import os
-from fastapi import Request, HTTPException, status
-from api.utils.rate_limiter import rate_limiter, RATE_LIMITS
+
+from fastapi import HTTPException, Request, status
+
+from api.utils.rate_limiter import RATE_LIMITS, rate_limiter
 
 
 def get_client_ip(request: Request) -> str:
@@ -36,6 +38,7 @@ def rate_limit(limit_type: str):
     Note:
         Rate limiting is disabled during tests (when TESTING env var is set).
     """
+
     def check_rate_limit(request: Request):
         # Disable rate limiting during tests or when explicitly toggled
         if os.getenv("TESTING") == "true" or os.getenv("DISABLE_RATE_LIMITS") == "true":
@@ -52,13 +55,11 @@ def rate_limit(limit_type: str):
         config = RATE_LIMITS.get(limit_type, {"max_requests": 10, "window_seconds": 60})
 
         if not rate_limiter.is_allowed(
-            key,
-            max_requests=config["max_requests"],
-            window_seconds=config["window_seconds"]
+            key, max_requests=config["max_requests"], window_seconds=config["window_seconds"]
         ):
             raise HTTPException(
                 status_code=status.HTTP_429_TOO_MANY_REQUESTS,
-                detail=f"Rate limit exceeded. Please try again later."
+                detail="Rate limit exceeded. Please try again later.",
             )
 
         return True

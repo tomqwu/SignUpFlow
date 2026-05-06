@@ -93,7 +93,9 @@ class GreedyHeuristicSolver(SolverAdapter):
             solver=SolverMeta(name="greedy_heuristic", version="1.0.0", strategy="feasible_first"),
         )
 
-        return SolutionBundle(meta=meta, assignments=assignments, metrics=metrics, violations=violations)
+        return SolutionBundle(
+            meta=meta, assignments=assignments, metrics=metrics, violations=violations
+        )
 
     def _assign_event(
         self,

@@ -8,9 +8,8 @@ Principles:
 - Handle dates separately from datetimes
 """
 
-from datetime import datetime, date, time
+from datetime import date, datetime
 from zoneinfo import ZoneInfo
-from typing import Optional
 
 
 def to_user_timezone(utc_datetime: datetime, user_tz: str = "UTC") -> datetime:
@@ -71,8 +70,8 @@ def parse_date_safe(date_string: str) -> date:
         return None
 
     # Handle ISO 8601 format (with T and time component)
-    if 'T' in date_string:
-        date_string = date_string.split('T')[0]
+    if "T" in date_string:
+        date_string = date_string.split("T")[0]
 
     # Parse YYYY-MM-DD
     return date.fromisoformat(date_string)
@@ -128,7 +127,7 @@ def parse_datetime_safe(datetime_string: str) -> datetime:
         return None
 
     # Parse ISO format
-    dt = datetime.fromisoformat(datetime_string.replace('Z', '+00:00'))
+    dt = datetime.fromisoformat(datetime_string.replace("Z", "+00:00"))
 
     # Ensure UTC
     if dt.tzinfo is None:
@@ -169,13 +168,11 @@ def get_common_timezones() -> list[dict]:
         {"value": "America/Los_Angeles", "label": "Pacific Time (PT)", "region": "US & Canada"},
         {"value": "America/Anchorage", "label": "Alaska Time (AKT)", "region": "US & Canada"},
         {"value": "Pacific/Honolulu", "label": "Hawaii Time (HT)", "region": "US & Canada"},
-
         # Europe
         {"value": "Europe/London", "label": "London (GMT/BST)", "region": "Europe"},
         {"value": "Europe/Paris", "label": "Paris (CET/CEST)", "region": "Europe"},
         {"value": "Europe/Berlin", "label": "Berlin (CET/CEST)", "region": "Europe"},
         {"value": "Europe/Moscow", "label": "Moscow (MSK)", "region": "Europe"},
-
         # Asia
         {"value": "Asia/Dubai", "label": "Dubai (GST)", "region": "Asia"},
         {"value": "Asia/Kolkata", "label": "India (IST)", "region": "Asia"},
@@ -183,13 +180,11 @@ def get_common_timezones() -> list[dict]:
         {"value": "Asia/Tokyo", "label": "Japan (JST)", "region": "Asia"},
         {"value": "Asia/Seoul", "label": "South Korea (KST)", "region": "Asia"},
         {"value": "Asia/Singapore", "label": "Singapore (SGT)", "region": "Asia"},
-
         # Australia
         {"value": "Australia/Sydney", "label": "Sydney (AEDT/AEST)", "region": "Australia"},
         {"value": "Australia/Melbourne", "label": "Melbourne (AEDT/AEST)", "region": "Australia"},
         {"value": "Australia/Brisbane", "label": "Brisbane (AEST)", "region": "Australia"},
         {"value": "Australia/Perth", "label": "Perth (AWST)", "region": "Australia"},
-
         # Other
         {"value": "UTC", "label": "UTC (Coordinated Universal Time)", "region": "Other"},
     ]

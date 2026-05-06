@@ -1,10 +1,12 @@
 """Tests for rate limiting functionality."""
 
-import pytest
 import os
-from fastapi import Request, HTTPException
+
+import pytest
+from fastapi import HTTPException
+
+from api.utils.rate_limit_middleware import get_client_ip, rate_limit
 from api.utils.rate_limiter import RateLimiter, rate_limiter
-from api.utils.rate_limit_middleware import rate_limit, get_client_ip
 
 
 class TestRateLimiter:
@@ -17,7 +19,9 @@ class TestRateLimiter:
 
         # First 5 requests should be allowed
         for i in range(5):
-            assert limiter.is_allowed(key, max_requests=5, window_seconds=60), f"Request {i+1} should be allowed"
+            assert limiter.is_allowed(
+                key, max_requests=5, window_seconds=60
+            ), f"Request {i+1} should be allowed"
 
     def test_blocks_requests_over_limit(self):
         """Test that requests over the limit are blocked."""
@@ -29,7 +33,9 @@ class TestRateLimiter:
             assert limiter.is_allowed(key, max_requests=3, window_seconds=60)
 
         # 4th request should be blocked
-        assert not limiter.is_allowed(key, max_requests=3, window_seconds=60), "4th request should be blocked"
+        assert not limiter.is_allowed(
+            key, max_requests=3, window_seconds=60
+        ), "4th request should be blocked"
 
     def test_resets_after_window(self):
         """Test that rate limit resets after window expires."""
@@ -45,10 +51,13 @@ class TestRateLimiter:
 
         # Wait for window to expire
         import time
+
         time.sleep(0.15)
 
         # Should be allowed again
-        assert limiter.is_allowed(key, max_requests=2, window_seconds=0.1), "Should be allowed after window expires"
+        assert limiter.is_allowed(
+            key, max_requests=2, window_seconds=0.1
+        ), "Should be allowed after window expires"
 
     def test_different_keys_independent(self):
         """Test that different keys have independent rate limits."""
@@ -62,7 +71,9 @@ class TestRateLimiter:
         assert not limiter.is_allowed("user1", max_requests=3, window_seconds=60)
 
         # But user2 should still be allowed
-        assert limiter.is_allowed("user2", max_requests=3, window_seconds=60), "user2 should have independent limit"
+        assert limiter.is_allowed(
+            "user2", max_requests=3, window_seconds=60
+        ), "user2 should have independent limit"
 
     def test_reset_key(self):
         """Test that reset() clears the rate limit for a key."""
@@ -80,7 +91,9 @@ class TestRateLimiter:
         limiter.reset(key)
 
         # Should be allowed again
-        assert limiter.is_allowed(key, max_requests=3, window_seconds=60), "Should be allowed after reset"
+        assert limiter.is_allowed(
+            key, max_requests=3, window_seconds=60
+        ), "Should be allowed after reset"
 
     def test_cleanup_old_entries(self):
         """Test that cleanup removes old entries."""
@@ -94,6 +107,7 @@ class TestRateLimiter:
 
         # Cleanup with very short max_age (0.1 seconds)
         import time
+
         time.sleep(0.15)
         limiter.cleanup_old_entries(max_age_seconds=0.1)
 
@@ -106,6 +120,7 @@ class TestRateLimitMiddleware:
 
     def test_get_client_ip_from_direct_connection(self):
         """Test extracting IP from direct connection."""
+
         # Create a mock request
         class MockClient:
             host = "192.168.1.100"
@@ -120,6 +135,7 @@ class TestRateLimitMiddleware:
 
     def test_get_client_ip_from_forwarded_header(self):
         """Test extracting IP from X-Forwarded-For header."""
+
         class MockRequest:
             client = None
             headers = {"X-Forwarded-For": "203.0.113.1, 198.51.100.1"}
@@ -168,6 +184,7 @@ class TestRateLimitProduction:
             del os.environ["DISABLE_RATE_LIMITS"]
 
         try:
+
             class MockClient:
                 host = "192.168.1.1"
 
@@ -192,7 +209,6 @@ class TestRateLimitProduction:
 
             assert exc_info.value.status_code == 429
             assert "Rate limit exceeded" in exc_info.value.detail
-
 
         finally:
             # Restore TESTING and DISABLE_RATE_LIMITS environment variables
@@ -222,7 +238,9 @@ class TestRateLimitConfiguration:
 
         # Reload the rate limiter module to pick up new env vars
         import importlib
+
         from api.utils import rate_limiter as rl_module
+
         importlib.reload(rl_module)
 
         # Check that custom values are loaded
@@ -243,7 +261,9 @@ class TestRateLimitConfiguration:
 
         # Reload the rate limiter module
         import importlib
+
         from api.utils import rate_limiter as rl_module
+
         importlib.reload(rl_module)
 
         # Check that default values are used
@@ -258,7 +278,9 @@ class TestRateLimitConfiguration:
 
         # Reload the rate limiter module
         import importlib
+
         from api.utils import rate_limiter as rl_module
+
         importlib.reload(rl_module)
 
         # Should use defaults when env vars are invalid

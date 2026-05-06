@@ -1,7 +1,7 @@
 """Time and date utilities including RRULE parsing helpers."""
 
+from collections.abc import Iterator
 from datetime import date, datetime, timedelta
-from typing import Iterator
 
 from dateutil import rrule
 

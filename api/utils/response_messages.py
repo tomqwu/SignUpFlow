@@ -1,14 +1,13 @@
 """Utilities for creating i18n-compatible API responses."""
 
-from typing import Dict, Any, Optional
+from typing import Any
+
 from fastapi import HTTPException
 
 
 def success_response(
-    message_key: str,
-    data: Optional[Dict[str, Any]] = None,
-    **params
-) -> Dict[str, Any]:
+    message_key: str, data: dict[str, Any] | None = None, **params
+) -> dict[str, Any]:
     """
     Create a success response with i18n message key.
 
@@ -37,20 +36,13 @@ def success_response(
         #     "assignment_id": "abc123"
         # }
     """
-    response = {
-        "message_key": message_key,
-        "message_params": params
-    }
+    response = {"message_key": message_key, "message_params": params}
     if data:
         response.update(data)
     return response
 
 
-def error_response(
-    message_key: str,
-    status_code: int = 400,
-    **params
-) -> HTTPException:
+def error_response(message_key: str, status_code: int = 400, **params) -> HTTPException:
     """
     Create an error response with i18n message key.
 
@@ -78,19 +70,11 @@ def error_response(
         # }
     """
     return HTTPException(
-        status_code=status_code,
-        detail={
-            "message_key": message_key,
-            "message_params": params
-        }
+        status_code=status_code, detail={"message_key": message_key, "message_params": params}
     )
 
 
-def validation_warning(
-    warning_type: str,
-    message_key: str,
-    **params
-) -> Dict[str, Any]:
+def validation_warning(warning_type: str, message_key: str, **params) -> dict[str, Any]:
     """
     Create a validation warning with i18n message key.
 
@@ -116,8 +100,4 @@ def validation_warning(
         #     "message_params": {"people": "John, Jane"}
         # }
     """
-    return {
-        "type": warning_type,
-        "message_key": message_key,
-        "message_params": params
-    }
+    return {"type": warning_type, "message_key": message_key, "message_params": params}

@@ -1,15 +1,15 @@
 """Database configuration and session management."""
 
 import os
+from collections.abc import Generator
 from pathlib import Path
-from typing import Generator, Optional
 
 from sqlalchemy import create_engine, text
 from sqlalchemy.engine import make_url
 from sqlalchemy.orm import Session, sessionmaker
 
-from api.models import Base
 from api.core.config import settings
+from api.models import Base
 
 # Database URL - can be configured via environment variable
 DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./roster.db")
@@ -40,7 +40,7 @@ engine = create_engine(
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 
-def _resolve_sqlite_path(db_url: str) -> Optional[Path]:
+def _resolve_sqlite_path(db_url: str) -> Path | None:
     """Translate SQLite URLs into filesystem paths."""
     # FORCE DISABLE FILE RESOLUTION
     # return None
@@ -75,13 +75,16 @@ def init_db() -> None:
     """Initialize database tables."""
     import logging
     import sys
+
     logging.getLogger("rostio").fatal(f"DEBUG: init_db engine id: {id(engine)}")
     for k in sorted(sys.modules.keys()):
         if "api.database" in k:
-            logging.getLogger("rostio").fatal(f"DEBUG: IN THREAD sys.modules[{k}] id: {id(sys.modules[k])}")
-    
+            logging.getLogger("rostio").fatal(
+                f"DEBUG: IN THREAD sys.modules[{k}] id: {id(sys.modules[k])}"
+            )
+
     logging.getLogger("rostio").fatal(f"DEBUG: init_db tables: {list(Base.metadata.tables.keys())}")
-    
+
     sqlite_path = _resolve_sqlite_path(DATABASE_URL)
     if sqlite_path:
         _prepare_sqlite_file(sqlite_path, DATABASE_URL)
@@ -95,7 +98,9 @@ def init_db() -> None:
                 conn.execute(text("PRAGMA journal_mode=DELETE"))
             else:
                 conn.execute(text("PRAGMA journal_mode=WAL"))
-                conn.execute(text("PRAGMA synchronous=NORMAL"))  # Balance between safety and performance
+                conn.execute(
+                    text("PRAGMA synchronous=NORMAL")
+                )  # Balance between safety and performance
             conn.commit()
 
 
@@ -109,6 +114,7 @@ def get_db() -> Generator[Session, None, None]:
             ...
     """
     import logging
+
     logging.getLogger("rostio").fatal(f"DEBUG: get_db engine id: {id(engine)}")
     db = SessionLocal()
     try:

@@ -1,26 +1,13 @@
 """Database helper functions for common query patterns."""
 
-from typing import Optional, List
 from datetime import datetime
+
 from sqlalchemy.orm import Session
-from sqlalchemy import and_, or_
 
-from api.models import (
-    Person,
-    Organization,
-    Team,
-    Event,
-    Assignment,
-    VacationPeriod,
-    Availability
-)
+from api.models import Assignment, Availability, Event, Person, Team
 
 
-def get_person_with_org_check(
-    db: Session,
-    person_id: str,
-    org_id: str
-) -> Optional[Person]:
+def get_person_with_org_check(db: Session, person_id: str, org_id: str) -> Person | None:
     """Get person by ID and verify they belong to the organization."""
     person = db.query(Person).filter(Person.id == person_id).first()
     if person and person.org_id == org_id:
@@ -28,22 +15,14 @@ def get_person_with_org_check(
     return None
 
 
-def check_email_exists(
-    db: Session,
-    email: str,
-    org_id: str
-) -> bool:
+def check_email_exists(db: Session, email: str, org_id: str) -> bool:
     """Check if email already exists in the organization."""
-    return db.query(Person).filter(
-        Person.email == email,
-        Person.org_id == org_id
-    ).first() is not None
+    return (
+        db.query(Person).filter(Person.email == email, Person.org_id == org_id).first() is not None
+    )
 
 
-def get_team_members(
-    db: Session,
-    team_id: str
-) -> List[Person]:
+def get_team_members(db: Session, team_id: str) -> list[Person]:
     """Get all members of a team."""
     team = db.query(Team).filter(Team.id == team_id).first()
     if not team:
@@ -55,9 +34,9 @@ def get_team_members(
 def get_person_assignments(
     db: Session,
     person_id: str,
-    start_date: Optional[datetime] = None,
-    end_date: Optional[datetime] = None
-) -> List[Assignment]:
+    start_date: datetime | None = None,
+    end_date: datetime | None = None,
+) -> list[Assignment]:
     """Get all assignments for a person, optionally filtered by date range."""
     query = db.query(Assignment).filter(Assignment.person_id == person_id)
 
@@ -74,10 +53,8 @@ def get_person_assignments(
 
 
 def is_person_blocked_on_date(
-    db: Session,
-    person_id: str,
-    date: datetime
-) -> tuple[bool, Optional[str]]:
+    db: Session, person_id: str, date: datetime
+) -> tuple[bool, str | None]:
     """
     Check if person is blocked on a specific date.
 
@@ -87,9 +64,7 @@ def is_person_blocked_on_date(
     # Check vacation periods through availability relationship
     # VacationPeriod has availability_id, not person_id directly
     # We need to join through Availability to check vacation periods
-    availability_records = db.query(Availability).filter(
-        Availability.person_id == person_id
-    ).all()
+    availability_records = db.query(Availability).filter(Availability.person_id == person_id).all()
 
     for avail in availability_records:
         for vacation in avail.vacations:
@@ -103,10 +78,7 @@ def is_person_blocked_on_date(
     return False, None
 
 
-def get_event_assignments(
-    db: Session,
-    event_id: str
-) -> List[Assignment]:
+def get_event_assignments(db: Session, event_id: str) -> list[Assignment]:
     """Get all assignments for an event."""
     return db.query(Assignment).filter(Assignment.event_id == event_id).all()
 
@@ -114,10 +86,10 @@ def get_event_assignments(
 def get_organization_events(
     db: Session,
     org_id: str,
-    event_type: Optional[str] = None,
-    start_after: Optional[datetime] = None,
-    start_before: Optional[datetime] = None
-) -> List[Event]:
+    event_type: str | None = None,
+    start_after: datetime | None = None,
+    start_before: datetime | None = None,
+) -> list[Event]:
     """Get organization events with optional filters."""
     query = db.query(Event).filter(Event.org_id == org_id)
 
@@ -132,10 +104,8 @@ def get_organization_events(
 
 
 def get_available_people_for_event(
-    db: Session,
-    event: Event,
-    role_filter: Optional[str] = None
-) -> List[Person]:
+    db: Session, event: Event, role_filter: str | None = None
+) -> list[Person]:
     """
     Get all people available for an event.
 
@@ -156,8 +126,7 @@ def get_available_people_for_event(
 
     # Get already assigned people
     assigned_ids = {
-        a.person_id
-        for a in db.query(Assignment).filter(Assignment.event_id == event.id).all()
+        a.person_id for a in db.query(Assignment).filter(Assignment.event_id == event.id).all()
     }
 
     # Filter available people

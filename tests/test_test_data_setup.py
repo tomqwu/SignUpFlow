@@ -44,10 +44,7 @@ class TestSetupTestDataFunction:
         assert len(people) > 0
 
         # Find the specific test person
-        test_person = next(
-            (p for p in people if p["id"] == "test_person_comp_001"),
-            None
-        )
+        test_person = next((p for p in people if p["id"] == "test_person_comp_001"), None)
 
         assert test_person is not None
         assert test_person["name"] == "Comprehensive Test Person"
@@ -70,10 +67,7 @@ class TestSetupTestDataFunction:
         assert len(events) > 0
 
         # Find the specific test event
-        test_event = next(
-            (e for e in events if e["id"] == "test_event_comp_001"),
-            None
-        )
+        test_event = next((e for e in events if e["id"] == "test_event_comp_001"), None)
 
         assert test_event is not None
         assert test_event["type"] == "Comprehensive Test Event"
@@ -205,7 +199,7 @@ class TestSetupTestDataIdempotency:
 
     def test_setup_handles_existing_data(self, api_server):
         """Verify setup_test_data() handles already-existing test data gracefully."""
-        from tests.comprehensive_test_suite import setup_test_data, get_auth_headers
+        from tests.comprehensive_test_suite import get_auth_headers, setup_test_data
 
         headers = get_auth_headers()
 
@@ -255,19 +249,19 @@ class TestTestDataQuality:
         assert response.status_code == 200
         events = response.json()["events"]
 
-        test_event = next(
-            (e for e in events if "comp" in e["id"].lower()),
-            None
-        )
+        test_event = next((e for e in events if "comp" in e["id"].lower()), None)
 
         if test_event and "extra_data" in test_event:
             # Event should have role counts for testing
-            assert "role_counts" in test_event.get("extra_data", {}) or True  # May not have this field
+            assert (
+                "role_counts" in test_event.get("extra_data", {}) or True
+            )  # May not have this field
 
     def test_test_event_is_in_future(self, api_server):
         """Verify test event start_time is in the future."""
-        from tests.comprehensive_test_suite import get_auth_headers
         from datetime import datetime
+
+        from tests.comprehensive_test_suite import get_auth_headers
 
         headers = get_auth_headers()
         response = requests.get(f"{API_BASE}/events/?org_id=test_org", headers=headers)
@@ -275,10 +269,7 @@ class TestTestDataQuality:
         assert response.status_code == 200
         events = response.json()["events"]
 
-        test_event = next(
-            (e for e in events if "comp" in e["id"].lower()),
-            None
-        )
+        test_event = next((e for e in events if "comp" in e["id"].lower()), None)
 
         if test_event:
             start_time = datetime.fromisoformat(test_event["start_time"].replace("Z", "+00:00"))

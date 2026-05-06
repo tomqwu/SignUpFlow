@@ -1,51 +1,60 @@
 """Events router."""
 
-from typing import Optional, List
 from datetime import datetime
-from fastapi import APIRouter, Depends, HTTPException, status, Query
-from sqlalchemy.orm import Session
+
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from pydantic import BaseModel
+from sqlalchemy.orm import Session
 
 from api.database import get_db
-from api.schemas.event import EventCreate, EventUpdate, EventResponse, EventList
-from api.models import Event, EventTeam, Organization, Team, Person, Assignment, VacationPeriod, Availability
-from api.utils.response_messages import success_response, error_response, validation_warning
-from api.dependencies import get_current_user, get_current_admin_user, verify_org_member
-from api.utils.event_helpers import (
-    is_person_blocked_on_date,
-    get_assigned_person_ids,
-    person_has_matching_role,
-    get_event_required_roles,
-    count_people_with_role,
-    validate_time_range,
-    get_blocked_assigned_people
+from api.dependencies import get_current_admin_user, verify_org_member
+from api.models import (
+    Assignment,
+    Event,
+    EventTeam,
+    Organization,
+    Person,
+    Team,
 )
+from api.schemas.event import EventCreate, EventList, EventResponse, EventUpdate
+from api.utils.event_helpers import (
+    count_people_with_role,
+    get_assigned_person_ids,
+    get_blocked_assigned_people,
+    get_event_required_roles,
+    is_person_blocked_on_date,
+    person_has_matching_role,
+    validate_time_range,
+)
+from api.utils.response_messages import error_response, success_response, validation_warning
 
 router = APIRouter(prefix="/events", tags=["events"])
 
 
 class AvailablePerson(BaseModel):
     """Person available for an event."""
+
     id: str
     name: str
-    email: Optional[str]
-    roles: List[str]
+    email: str | None
+    roles: list[str]
     is_assigned: bool
     is_blocked: bool = False  # True if person has blocked this date
 
 
 class AssignmentRequest(BaseModel):
     """Request to assign/unassign a person."""
+
     person_id: str
     action: str  # "assign" or "unassign"
-    role: Optional[str] = None  # Event-specific role (e.g., "usher", "greeter", "sound_tech")
+    role: str | None = None  # Event-specific role (e.g., "usher", "greeter", "sound_tech")
 
 
 @router.post("/", response_model=EventResponse, status_code=status.HTTP_201_CREATED)
 def create_event(
     event_data: EventCreate,
     current_admin: Person = Depends(get_current_admin_user),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ):
     """Create a new event (admin only)."""
     # Verify admin belongs to the organization
@@ -109,10 +118,12 @@ def create_event(
 
 @router.get("/", response_model=EventList)
 def list_events(
-    org_id: Optional[str] = Query(None, description="Filter by organization ID"),
-    event_type: Optional[str] = Query(None, description="Filter by event type"),
-    start_after: Optional[datetime] = Query(None, description="Filter events starting after this time"),
-    start_before: Optional[datetime] = Query(None, description="Filter events starting before this time"),
+    org_id: str | None = Query(None, description="Filter by organization ID"),
+    event_type: str | None = Query(None, description="Filter by event type"),
+    start_after: datetime
+    | None = Query(None, description="Filter events starting after this time"),
+    start_before: datetime
+    | None = Query(None, description="Filter events starting before this time"),
     skip: int = 0,
     limit: int = 100,
     db: Session = Depends(get_db),
@@ -151,7 +162,7 @@ def update_event(
     event_id: str,
     event_data: EventUpdate,
     current_admin: Person = Depends(get_current_admin_user),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ):
     """Update event (admin only)."""
     event = db.query(Event).filter(Event.id == event_id).first()
@@ -192,7 +203,7 @@ def update_event(
 def delete_event(
     event_id: str,
     current_admin: Person = Depends(get_current_admin_user),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ):
     """Delete event (admin only)."""
     event = db.query(Event).filter(Event.id == event_id).first()
@@ -209,8 +220,8 @@ def delete_event(
     return None
 
 
-@router.get("/{event_id}/available-people", response_model=List[AvailablePerson])
-def get_available_people(event_id: str, db: Session = Depends(get_db)) -> List[AvailablePerson]:
+@router.get("/{event_id}/available-people", response_model=list[AvailablePerson])
+def get_available_people(event_id: str, db: Session = Depends(get_db)) -> list[AvailablePerson]:
     """
     Get people available for this event based on roles.
 
@@ -245,14 +256,16 @@ def get_available_people(event_id: str, db: Session = Depends(get_db)) -> List[A
             # Check if person has blocked this date
             is_blocked = is_person_blocked_on_date(db, person.id, event_date)
 
-            available.append(AvailablePerson(
-                id=person.id,
-                name=person.name,
-                email=person.email,
-                roles=person_roles,
-                is_assigned=person.id in assigned_person_ids,
-                is_blocked=is_blocked
-            ))
+            available.append(
+                AvailablePerson(
+                    id=person.id,
+                    name=person.name,
+                    email=person.email,
+                    roles=person_roles,
+                    is_assigned=person.id in assigned_person_ids,
+                    is_blocked=is_blocked,
+                )
+            )
 
     return available
 
@@ -283,10 +296,7 @@ def validate_event(event_id: str, db: Session = Depends(get_db)) -> dict:
     role_counts = (event.extra_data or {}).get("role_counts", {})
 
     if not role_counts:
-        warnings.append(validation_warning(
-            "missing_config",
-            "events.validation.no_roles"
-        ))
+        warnings.append(validation_warning("missing_config", "events.validation.no_roles"))
         is_valid = False
     else:
         # Check each role has enough people
@@ -297,13 +307,15 @@ def validate_event(event_id: str, db: Session = Depends(get_db)) -> dict:
             available_count = count_people_with_role(people, role)
 
             if available_count < needed_count:
-                warnings.append(validation_warning(
-                    "insufficient_people",
-                    "events.validation.need_more_people",
-                    needed=needed_count,
-                    role=role,
-                    available=available_count
-                ))
+                warnings.append(
+                    validation_warning(
+                        "insufficient_people",
+                        "events.validation.need_more_people",
+                        needed=needed_count,
+                        role=role,
+                        available=available_count,
+                    )
+                )
                 is_valid = False
 
     # Check if any assigned people are blocked on this event date
@@ -311,18 +323,16 @@ def validate_event(event_id: str, db: Session = Depends(get_db)) -> dict:
     blocked_people = get_blocked_assigned_people(db, event_id, event_date)
 
     if blocked_people:
-        warnings.append(validation_warning(
-            "blocked_assignments",
-            "events.validation.blocked_people_assigned",
-            people=", ".join(blocked_people)
-        ))
+        warnings.append(
+            validation_warning(
+                "blocked_assignments",
+                "events.validation.blocked_people_assigned",
+                people=", ".join(blocked_people),
+            )
+        )
         is_valid = False
 
-    return {
-        "event_id": event_id,
-        "is_valid": is_valid,
-        "warnings": warnings
-    }
+    return {"event_id": event_id, "is_valid": is_valid, "warnings": warnings}
 
 
 @router.post("/{event_id}/assignments")
@@ -330,15 +340,12 @@ def manage_assignment(
     event_id: str,
     request: AssignmentRequest,
     current_admin: Person = Depends(get_current_admin_user),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ):
     """Assign or unassign a person to/from an event (admin only)."""
     event = db.query(Event).filter(Event.id == event_id).first()
     if not event:
-        raise error_response(
-            "events.errors.event_not_found",
-            status_code=status.HTTP_404_NOT_FOUND
-        )
+        raise error_response("events.errors.event_not_found", status_code=status.HTTP_404_NOT_FOUND)
 
     # Verify admin belongs to the same organization as the event
     verify_org_member(current_admin, event.org_id)
@@ -346,8 +353,7 @@ def manage_assignment(
     person = db.query(Person).filter(Person.id == request.person_id).first()
     if not person:
         raise error_response(
-            "events.errors.person_not_found",
-            status_code=status.HTTP_404_NOT_FOUND
+            "events.errors.person_not_found", status_code=status.HTTP_404_NOT_FOUND
         )
 
     # Verify person belongs to the same organization
@@ -355,16 +361,17 @@ def manage_assignment(
 
     if request.action == "assign":
         # Check if already assigned
-        existing = db.query(Assignment).filter(
-            Assignment.event_id == event_id,
-            Assignment.person_id == request.person_id
-        ).first()
+        existing = (
+            db.query(Assignment)
+            .filter(Assignment.event_id == event_id, Assignment.person_id == request.person_id)
+            .first()
+        )
 
         if existing:
             raise error_response(
                 "events.assign.already_assigned",
                 status_code=status.HTTP_400_BAD_REQUEST,
-                person=person.name
+                person=person.name,
             )
 
         # Create new assignment (solution_id is None for manual assignments)
@@ -372,7 +379,7 @@ def manage_assignment(
             event_id=event_id,
             person_id=request.person_id,
             role=request.role,  # Event-specific role
-            solution_id=None
+            solution_id=None,
         )
         db.add(assignment)
         db.commit()
@@ -381,46 +388,45 @@ def manage_assignment(
         return success_response(
             "events.assign.success",
             {"assignment_id": assignment.id, "role": request.role},
-            person=person.name
+            person=person.name,
         )
 
     elif request.action == "unassign":
         # Find and delete assignment
-        assignment = db.query(Assignment).filter(
-            Assignment.event_id == event_id,
-            Assignment.person_id == request.person_id
-        ).first()
+        assignment = (
+            db.query(Assignment)
+            .filter(Assignment.event_id == event_id, Assignment.person_id == request.person_id)
+            .first()
+        )
 
         if not assignment:
             raise error_response(
                 "events.assign.not_assigned",
                 status_code=status.HTTP_404_NOT_FOUND,
-                person=person.name
+                person=person.name,
             )
 
         db.delete(assignment)
         db.commit()
-        return success_response(
-            "events.assign.unassigned",
-            person=person.name
-        )
+        return success_response("events.assign.unassigned", person=person.name)
 
     else:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Invalid action '{request.action}'. Must be 'assign' or 'unassign'"
+            detail=f"Invalid action '{request.action}'. Must be 'assign' or 'unassign'",
         )
 
 
 @router.get("/assignments/all")
-def get_all_assignments(org_id: str = Query(..., description="Organization ID"), db: Session = Depends(get_db)):
+def get_all_assignments(
+    org_id: str = Query(..., description="Organization ID"), db: Session = Depends(get_db)
+):
     """Get all assignments for an organization (both from solutions and manual)."""
     # Verify organization exists
     org = db.query(Organization).filter(Organization.id == org_id).first()
     if not org:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Organization '{org_id}' not found"
+            status_code=status.HTTP_404_NOT_FOUND, detail=f"Organization '{org_id}' not found"
         )
 
     # Get all assignments joined with events to filter by organization
@@ -431,17 +437,19 @@ def get_all_assignments(org_id: str = Query(..., description="Organization ID"),
         event = db.query(Event).filter(Event.id == assignment.event_id).first()
         person = db.query(Person).filter(Person.id == assignment.person_id).first()
 
-        result.append({
-            "assignment_id": assignment.id,
-            "event_id": assignment.event_id,
-            "event_type": event.type if event else None,
-            "event_start": event.start_time if event else None,
-            "event_end": event.end_time if event else None,
-            "person_id": assignment.person_id,
-            "person_name": person.name if person else None,
-            "role": assignment.role,  # Event-specific role
-            "solution_id": assignment.solution_id,
-            "is_manual": assignment.solution_id is None
-        })
+        result.append(
+            {
+                "assignment_id": assignment.id,
+                "event_id": assignment.event_id,
+                "event_type": event.type if event else None,
+                "event_start": event.start_time if event else None,
+                "event_end": event.end_time if event else None,
+                "person_id": assignment.person_id,
+                "person_name": person.name if person else None,
+                "role": assignment.role,  # Event-specific role
+                "solution_id": assignment.solution_id,
+                "is_manual": assignment.solution_id is None,
+            }
+        )
 
     return {"assignments": result, "total": len(result)}

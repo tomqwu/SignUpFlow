@@ -8,18 +8,22 @@ triggering Celery tasks for sending emails.
 import logging
 import os
 import secrets
-from typing import List, Dict, Any, Optional
 from datetime import datetime
+from typing import Any
 
 from sqlalchemy.orm import Session
 
+from api.core.config import settings
 from api.models import (
-    Notification, NotificationType, NotificationStatus,
-    EmailPreference, EmailFrequency,
-    Person, Assignment
+    Assignment,
+    EmailFrequency,
+    EmailPreference,
+    Notification,
+    NotificationStatus,
+    NotificationType,
+    Person,
 )
 from api.tasks.notifications import send_email_task
-from api.core.config import settings
 
 logger = logging.getLogger(__name__)
 _TRUTHY_VALUES = {"1", "true", "yes", "on"}
@@ -45,10 +49,8 @@ def _should_queue_email(send_immediately: bool) -> bool:
 
 
 def create_assignment_notifications(
-    assignment_ids: List[int],
-    db: Session,
-    send_immediately: bool = True
-) -> Dict[str, Any]:
+    assignment_ids: list[int], db: Session, send_immediately: bool = True
+) -> dict[str, Any]:
     """
     Create notification records for new assignments and optionally send emails.
 
@@ -68,7 +70,9 @@ def create_assignment_notifications(
     queued_count = 0
     skipped_count = 0
 
-    queue_emails = _should_queue_email(send_immediately) and settings.EMAIL_SEND_ASSIGNMENT_NOTIFICATIONS
+    queue_emails = (
+        _should_queue_email(send_immediately) and settings.EMAIL_SEND_ASSIGNMENT_NOTIFICATIONS
+    )
     logger.debug(
         "create_assignment_notifications queue_emails=%s send_immediately=%s",
         queue_emails,
@@ -77,9 +81,7 @@ def create_assignment_notifications(
 
     for assignment_id in assignment_ids:
         # Get assignment details
-        assignment = db.query(Assignment).filter(
-            Assignment.id == assignment_id
-        ).first()
+        assignment = db.query(Assignment).filter(Assignment.id == assignment_id).first()
 
         if not assignment:
             logger.warning(f"Assignment {assignment_id} not found")
@@ -87,9 +89,7 @@ def create_assignment_notifications(
             continue
 
         # Get person
-        person = db.query(Person).filter(
-            Person.id == assignment.person_id
-        ).first()
+        person = db.query(Person).filter(Person.id == assignment.person_id).first()
 
         if not person:
             logger.warning(f"Person {assignment.person_id} not found")
@@ -97,9 +97,9 @@ def create_assignment_notifications(
             continue
 
         # Get or create email preferences
-        email_pref = db.query(EmailPreference).filter(
-            EmailPreference.person_id == person.id
-        ).first()
+        email_pref = (
+            db.query(EmailPreference).filter(EmailPreference.person_id == person.id).first()
+        )
 
         if not email_pref:
             # Create default email preferences with unsubscribe token
@@ -111,11 +111,15 @@ def create_assignment_notifications(
                     NotificationType.ASSIGNMENT,
                     NotificationType.REMINDER,
                     NotificationType.UPDATE,
-                    NotificationType.CANCELLATION
+                    NotificationType.CANCELLATION,
                 ],
-                language=person.language if hasattr(person, 'language') and person.language else "en",
-                timezone=person.timezone if hasattr(person, 'timezone') and person.timezone else "UTC",
-                unsubscribe_token=secrets.token_urlsafe(32)
+                language=person.language
+                if hasattr(person, "language") and person.language
+                else "en",
+                timezone=person.timezone
+                if hasattr(person, "timezone") and person.timezone
+                else "UTC",
+                unsubscribe_token=secrets.token_urlsafe(32),
             )
             db.add(email_pref)
             db.flush()
@@ -135,9 +139,9 @@ def create_assignment_notifications(
             event_id=assignment.event_id,
             template_data={
                 "assignment_id": assignment.id,
-                "role": assignment.role if hasattr(assignment, 'role') else None,
+                "role": assignment.role if hasattr(assignment, "role") else None,
             },
-            created_at=datetime.utcnow()
+            created_at=datetime.utcnow(),
         )
         db.add(notification)
         db.flush()  # Flush to get notification ID
@@ -161,22 +165,18 @@ def create_assignment_notifications(
         f"{queued_count} queued, {skipped_count} skipped"
     )
 
-    return {
-        "created": created_count,
-        "queued": queued_count,
-        "skipped": skipped_count
-    }
+    return {"created": created_count, "queued": queued_count, "skipped": skipped_count}
 
 
 def create_notification(
     recipient_id: str,
     org_id: str,
     notification_type: str,
-    event_id: Optional[str] = None,
-    template_data: Optional[Dict[str, Any]] = None,
+    event_id: str | None = None,
+    template_data: dict[str, Any] | None = None,
     db: Session = None,
-    send_immediately: bool = True
-) -> Optional[Notification]:
+    send_immediately: bool = True,
+) -> Notification | None:
     """
     Create a single notification record.
 
@@ -202,9 +202,7 @@ def create_notification(
         ... )
     """
     # Get email preferences
-    email_pref = db.query(EmailPreference).filter(
-        EmailPreference.person_id == recipient_id
-    ).first()
+    email_pref = db.query(EmailPreference).filter(EmailPreference.person_id == recipient_id).first()
 
     # Check if notification type is enabled
     if email_pref and notification_type not in (email_pref.enabled_types or []):
@@ -219,12 +217,14 @@ def create_notification(
         status=NotificationStatus.PENDING,
         event_id=event_id,
         template_data=template_data or {},
-        created_at=datetime.utcnow()
+        created_at=datetime.utcnow(),
     )
     db.add(notification)
     db.flush()
 
-    queue_emails = _should_queue_email(send_immediately) and settings.EMAIL_SEND_UPDATE_NOTIFICATIONS
+    queue_emails = (
+        _should_queue_email(send_immediately) and settings.EMAIL_SEND_UPDATE_NOTIFICATIONS
+    )
 
     # Queue email if immediate frequency
     if queue_emails and (not email_pref or email_pref.frequency == EmailFrequency.IMMEDIATE):
@@ -238,10 +238,8 @@ def create_notification(
 
 
 def get_pending_notifications_for_digest(
-    person_id: str,
-    frequency: str,
-    db: Session
-) -> List[Notification]:
+    person_id: str, frequency: str, db: Session
+) -> list[Notification]:
     """
     Get pending notifications for daily/weekly digest.
 
@@ -260,12 +258,18 @@ def get_pending_notifications_for_digest(
         ...     db=db
         ... )
     """
-    return db.query(Notification).filter(
-        Notification.recipient_id == person_id,
-        Notification.status == NotificationStatus.PENDING,
-        Notification.type.in_([
-            NotificationType.ASSIGNMENT,
-            NotificationType.UPDATE,
-            NotificationType.CANCELLATION
-        ])
-    ).all()
+    return (
+        db.query(Notification)
+        .filter(
+            Notification.recipient_id == person_id,
+            Notification.status == NotificationStatus.PENDING,
+            Notification.type.in_(
+                [
+                    NotificationType.ASSIGNMENT,
+                    NotificationType.UPDATE,
+                    NotificationType.CANCELLATION,
+                ]
+            ),
+        )
+        .all()
+    )

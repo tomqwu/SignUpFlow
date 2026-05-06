@@ -18,27 +18,34 @@ from pathlib import Path
 
 import pytest
 
-from tests.cli.conftest import run_cli, write_yaml, read_json
+from tests.cli.conftest import read_json, run_cli, write_yaml
 
 
 @pytest.mark.no_mock_auth
 class TestChurchCLI:
-
     def _build_church_workspace(self, ws: Path):
         """Create a church scheduling workspace with YAML files."""
-        write_yaml(ws / "org.yaml", {
-            "org_id": "grace-church",
-            "region": "US",
-            "defaults": {"fairness_weight": 50, "cooldown_days": 14},
-        })
+        write_yaml(
+            ws / "org.yaml",
+            {
+                "org_id": "grace-church",
+                "region": "US",
+                "defaults": {"fairness_weight": 50, "cooldown_days": 14},
+            },
+        )
 
-        write_yaml(ws / "people.yaml", {"people": [
-            {"id": "sarah",  "name": "Sarah Chen",   "roles": ["musician", "teacher"]},
-            {"id": "david",  "name": "David Kim",    "roles": ["musician", "sound_tech"]},
-            {"id": "maria",  "name": "Maria Lopez",  "roles": ["teacher", "volunteer"]},
-            {"id": "james",  "name": "James Brown",  "roles": ["usher", "volunteer"]},
-            {"id": "emily",  "name": "Emily Davis",  "roles": ["musician", "youth_leader"]},
-        ]})
+        write_yaml(
+            ws / "people.yaml",
+            {
+                "people": [
+                    {"id": "sarah", "name": "Sarah Chen", "roles": ["musician", "teacher"]},
+                    {"id": "david", "name": "David Kim", "roles": ["musician", "sound_tech"]},
+                    {"id": "maria", "name": "Maria Lopez", "roles": ["teacher", "volunteer"]},
+                    {"id": "james", "name": "James Brown", "roles": ["usher", "volunteer"]},
+                    {"id": "emily", "name": "Emily Davis", "roles": ["musician", "youth_leader"]},
+                ]
+            },
+        )
 
         base = datetime.now().replace(hour=9, minute=0, second=0, microsecond=0)
         base += timedelta(days=(7 - base.weekday()) % 7 + 7)  # Next-next Sunday
@@ -46,17 +53,19 @@ class TestChurchCLI:
         events = []
         for week in range(4):
             sunday = base + timedelta(weeks=week)
-            events.append({
-                "id": f"worship-wk{week}",
-                "type": "Sunday Worship",
-                "start": sunday.isoformat(),
-                "end": (sunday + timedelta(hours=2)).isoformat(),
-                "required_roles": [
-                    {"role": "musician", "count": 2},
-                    {"role": "sound_tech", "count": 1},
-                    {"role": "usher", "count": 1},
-                ],
-            })
+            events.append(
+                {
+                    "id": f"worship-wk{week}",
+                    "type": "Sunday Worship",
+                    "start": sunday.isoformat(),
+                    "end": (sunday + timedelta(hours=2)).isoformat(),
+                    "required_roles": [
+                        {"role": "musician", "count": 2},
+                        {"role": "sound_tech", "count": 1},
+                        {"role": "usher", "count": 1},
+                    ],
+                }
+            )
 
         write_yaml(ws / "events.yaml", {"events": events})
         return base
@@ -192,9 +201,14 @@ class TestChurchCLI:
         ws = tmp_path / "empty"
         ws.mkdir()
         write_yaml(ws / "org.yaml", {"org_id": "test", "region": "US"})
-        write_yaml(ws / "people.yaml", {"people": [
-            {"id": "p1", "name": "Person", "roles": ["vol"]},
-        ]})
+        write_yaml(
+            ws / "people.yaml",
+            {
+                "people": [
+                    {"id": "p1", "name": "Person", "roles": ["vol"]},
+                ]
+            },
+        )
         write_yaml(ws / "events.yaml", {"events": []})
 
         result = run_cli("solve", str(ws), check=False)
@@ -207,10 +221,20 @@ class TestChurchCLI:
         ws.mkdir()
         write_yaml(ws / "org.yaml", {"org_id": "test", "region": "US"})
         write_yaml(ws / "people.yaml", {"people": []})
-        write_yaml(ws / "events.yaml", {"events": [
-            {"id": "e1", "type": "Test", "start": "2026-05-01T09:00:00",
-             "end": "2026-05-01T11:00:00", "required_roles": [{"role": "vol", "count": 1}]},
-        ]})
+        write_yaml(
+            ws / "events.yaml",
+            {
+                "events": [
+                    {
+                        "id": "e1",
+                        "type": "Test",
+                        "start": "2026-05-01T09:00:00",
+                        "end": "2026-05-01T11:00:00",
+                        "required_roles": [{"role": "vol", "count": 1}],
+                    },
+                ]
+            },
+        )
 
         result = run_cli("solve", str(ws), check=False)
         assert result.returncode != 0

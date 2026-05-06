@@ -11,10 +11,11 @@ Tests all invitation endpoints:
 - POST /api/invitations/{id}/resend - Resend invitation
 """
 
-import pytest
-import httpx
-from datetime import datetime
 import time
+
+import httpx
+import pytest
+
 
 @pytest.fixture
 def setup_test_org(api_server, app_config):
@@ -27,24 +28,27 @@ def setup_test_org(api_server, app_config):
     admin_email = f"admin_{timestamp}@test.com"
 
     # Create organization
-    org_response = client.post(f"{app_config.api_base}/organizations/", json={
-        "id": org_id,
-        "name": "Test Organization",
-        "region": "US",
-        "config": {}
-    })
+    org_response = client.post(
+        f"{app_config.api_base}/organizations/",
+        json={"id": org_id, "name": "Test Organization", "region": "US", "config": {}},
+    )
 
     if org_response.status_code not in [200, 201]:
-        raise Exception(f"Failed to create org (status {org_response.status_code}): {org_response.text}")
+        raise Exception(
+            f"Failed to create org (status {org_response.status_code}): {org_response.text}"
+        )
 
     # Create admin user
-    signup_response = client.post(f"{app_config.api_base}/auth/signup", json={
-        "org_id": org_id,
-        "name": "Admin User",
-        "email": admin_email,
-        "password": "admin123",
-        "roles": ["admin"]
-    })
+    signup_response = client.post(
+        f"{app_config.api_base}/auth/signup",
+        json={
+            "org_id": org_id,
+            "name": "Admin User",
+            "email": admin_email,
+            "password": "admin123",
+            "roles": ["admin"],
+        },
+    )
 
     if signup_response.status_code != 201:
         raise Exception(f"Failed to signup: {signup_response.text}")
@@ -79,13 +83,9 @@ class TestCreateInvitation:
             f"{api_base}/invitations",
             params={
                 "org_id": data["org_id"],
-                "person_id": data["admin_id"]  # Changed from person_id to person_id
+                "person_id": data["admin_id"],  # Changed from person_id to person_id
             },
-            json={
-                "email": invitee_email,
-                "name": "New Volunteer",
-                "roles": ["volunteer"]
-            }
+            json={"email": invitee_email, "name": "New Volunteer", "roles": ["volunteer"]},
         )
 
         assert response.status_code == 201
@@ -106,15 +106,8 @@ class TestCreateInvitation:
         # Try to invite the admin (who already exists)
         response = client.post(
             f"{api_base}/invitations",
-            params={
-                "org_id": data["org_id"],
-                "person_id": data["admin_id"]
-            },
-            json={
-                "email": data["admin_email"],
-                "name": "Duplicate User",
-                "roles": ["volunteer"]
-            }
+            params={"org_id": data["org_id"], "person_id": data["admin_id"]},
+            json={"email": data["admin_email"], "name": "Duplicate User", "roles": ["volunteer"]},
         )
 
         assert response.status_code == 409
@@ -127,13 +120,16 @@ class TestCreateInvitation:
 
         # Create a volunteer (non-admin) user
         volunteer_email = f"volunteer_{int(time.time())}@test.com"
-        volunteer_response = httpx.Client(base_url=api_base).post(f"{api_base}/auth/signup", json={
-            "org_id": data["org_id"],
-            "name": "Volunteer User",
-            "email": volunteer_email,
-            "password": "vol123",
-            "roles": ["volunteer"]
-        })
+        volunteer_response = httpx.Client(base_url=api_base).post(
+            f"{api_base}/auth/signup",
+            json={
+                "org_id": data["org_id"],
+                "name": "Volunteer User",
+                "email": volunteer_email,
+                "password": "vol123",
+                "roles": ["volunteer"],
+            },
+        )
         volunteer_data = volunteer_response.json()
 
         # Create a new client with volunteer's JWT token
@@ -144,14 +140,12 @@ class TestCreateInvitation:
         # Try to create invitation as volunteer (should fail)
         response = volunteer_client.post(
             f"{api_base}/invitations",
-            params={
-                "org_id": data["org_id"]
-            },
+            params={"org_id": data["org_id"]},
             json={
                 "email": f"new_{int(time.time())}@test.com",
                 "name": "New User",
-                "roles": ["volunteer"]
-            }
+                "roles": ["volunteer"],
+            },
         )
 
         assert response.status_code == 403
@@ -171,29 +165,15 @@ class TestCreateInvitation:
         # Create first invitation
         client.post(
             f"{api_base}/invitations",
-            params={
-                "org_id": data["org_id"],
-                "person_id": data["admin_id"]
-            },
-            json={
-                "email": invitee_email,
-                "name": "User",
-                "roles": ["volunteer"]
-            }
+            params={"org_id": data["org_id"], "person_id": data["admin_id"]},
+            json={"email": invitee_email, "name": "User", "roles": ["volunteer"]},
         )
 
         # Try to create second invitation with same email
         response = client.post(
             f"{api_base}/invitations",
-            params={
-                "org_id": data["org_id"],
-                "person_id": data["admin_id"]
-            },
-            json={
-                "email": invitee_email,
-                "name": "User Again",
-                "roles": ["volunteer"]
-            }
+            params={"org_id": data["org_id"], "person_id": data["admin_id"]},
+            json={"email": invitee_email, "name": "User Again", "roles": ["volunteer"]},
         )
 
         assert response.status_code == 409
@@ -213,24 +193,18 @@ class TestListInvitations:
         for i in range(3):
             client.post(
                 f"{api_base}/invitations",
-                params={
-                    "org_id": data["org_id"],
-                    "person_id": data["admin_id"]
-                },
+                params={"org_id": data["org_id"], "person_id": data["admin_id"]},
                 json={
                     "email": f"user{i}_{int(time.time())}@test.com",
                     "name": f"User {i}",
-                    "roles": ["volunteer"]
-                }
+                    "roles": ["volunteer"],
+                },
             )
 
         # List invitations
         response = client.get(
             f"{api_base}/invitations",
-            params={
-                "org_id": data["org_id"],
-                "person_id": data["admin_id"]
-            }
+            params={"org_id": data["org_id"], "person_id": data["admin_id"]},
         )
 
         assert response.status_code == 200
@@ -247,22 +221,18 @@ class TestListInvitations:
         # Create invitation
         inv_response = client.post(
             f"{api_base}/invitations",
-            params={
-                "org_id": data["org_id"],
-                "person_id": data["admin_id"]
-            },
+            params={"org_id": data["org_id"], "person_id": data["admin_id"]},
             json={
                 "email": f"filter_{int(time.time())}@test.com",
                 "name": "Filter User",
-                "roles": ["volunteer"]
-            }
+                "roles": ["volunteer"],
+            },
         )
         invitation = inv_response.json()
 
         # Cancel it
         client.delete(
-            f"{api_base}/invitations/{invitation['id']}",
-            params={"person_id": data["admin_id"]}
+            f"{api_base}/invitations/{invitation['id']}", params={"person_id": data["admin_id"]}
         )
 
         # List cancelled invitations
@@ -271,8 +241,8 @@ class TestListInvitations:
             params={
                 "org_id": data["org_id"],
                 "person_id": data["admin_id"],
-                "status_filter": "cancelled"
-            }
+                "status_filter": "cancelled",
+            },
         )
 
         assert response.status_code == 200
@@ -292,15 +262,12 @@ class TestVerifyInvitation:
         # Create invitation
         inv_response = client.post(
             f"{api_base}/invitations",
-            params={
-                "org_id": data["org_id"],
-                "person_id": data["admin_id"]
-            },
+            params={"org_id": data["org_id"], "person_id": data["admin_id"]},
             json={
                 "email": f"verify_{int(time.time())}@test.com",
                 "name": "Verify User",
-                "roles": ["volunteer"]
-            }
+                "roles": ["volunteer"],
+            },
         )
         invitation = inv_response.json()
         token = invitation["token"]
@@ -335,22 +302,18 @@ class TestVerifyInvitation:
         # Create invitation
         inv_response = client.post(
             f"{api_base}/invitations",
-            params={
-                "org_id": data["org_id"],
-                "person_id": data["admin_id"]
-            },
+            params={"org_id": data["org_id"], "person_id": data["admin_id"]},
             json={
                 "email": f"cancelled_{int(time.time())}@test.com",
                 "name": "Cancelled User",
-                "roles": ["volunteer"]
-            }
+                "roles": ["volunteer"],
+            },
         )
         invitation = inv_response.json()
 
         # Cancel it
         client.delete(
-            f"{api_base}/invitations/{invitation['id']}",
-            params={"person_id": data["admin_id"]}
+            f"{api_base}/invitations/{invitation['id']}", params={"person_id": data["admin_id"]}
         )
 
         # Verify token
@@ -376,15 +339,8 @@ class TestAcceptInvitation:
         # Create invitation
         inv_response = client.post(
             f"{api_base}/invitations",
-            params={
-                "org_id": data["org_id"],
-                "person_id": data["admin_id"]
-            },
-            json={
-                "email": invitee_email,
-                "name": "Accept User",
-                "roles": ["volunteer"]
-            }
+            params={"org_id": data["org_id"], "person_id": data["admin_id"]},
+            json={"email": invitee_email, "name": "Accept User", "roles": ["volunteer"]},
         )
         invitation = inv_response.json()
         token = invitation["token"]
@@ -392,10 +348,7 @@ class TestAcceptInvitation:
         # Accept invitation
         response = client.post(
             f"{api_base}/invitations/{token}/accept",
-            json={
-                "password": "newpassword123",
-                "timezone": "America/New_York"
-            }
+            json={"password": "newpassword123", "timezone": "America/New_York"},
         )
 
         assert response.status_code == 201
@@ -407,10 +360,9 @@ class TestAcceptInvitation:
         assert "token" in result  # Auth token for immediate login
 
         # Verify user can login
-        login_response = client.post(f"{api_base}/auth/login", json={
-            "email": invitee_email,
-            "password": "newpassword123"
-        })
+        login_response = client.post(
+            f"{api_base}/auth/login", json={"email": invitee_email, "password": "newpassword123"}
+        )
         assert login_response.status_code == 200
 
     def test_accept_invitation_invalid_token(self, setup_test_org):
@@ -421,10 +373,7 @@ class TestAcceptInvitation:
 
         response = client.post(
             f"{api_base}/invitations/invalid_token/accept",
-            json={
-                "password": "password123",
-                "timezone": "UTC"
-            }
+            json={"password": "password123", "timezone": "UTC"},
         )
 
         assert response.status_code == 404
@@ -438,28 +387,25 @@ class TestAcceptInvitation:
         # Create invitation
         inv_response = client.post(
             f"{api_base}/invitations",
-            params={
-                "org_id": data["org_id"],
-                "person_id": data["admin_id"]
-            },
+            params={"org_id": data["org_id"], "person_id": data["admin_id"]},
             json={
                 "email": f"twice_{int(time.time())}@test.com",
                 "name": "Twice User",
-                "roles": ["volunteer"]
-            }
+                "roles": ["volunteer"],
+            },
         )
         token = inv_response.json()["token"]
 
         # Accept first time
         client.post(
             f"{api_base}/invitations/{token}/accept",
-            json={"password": "pass123", "timezone": "UTC"}
+            json={"password": "pass123", "timezone": "UTC"},
         )
 
         # Try to accept again
         response = client.post(
             f"{api_base}/invitations/{token}/accept",
-            json={"password": "pass456", "timezone": "UTC"}
+            json={"password": "pass456", "timezone": "UTC"},
         )
 
         assert response.status_code == 400
@@ -478,22 +424,18 @@ class TestCancelInvitation:
         # Create invitation
         inv_response = client.post(
             f"{api_base}/invitations",
-            params={
-                "org_id": data["org_id"],
-                "person_id": data["admin_id"]
-            },
+            params={"org_id": data["org_id"], "person_id": data["admin_id"]},
             json={
                 "email": f"cancel_{int(time.time())}@test.com",
                 "name": "Cancel User",
-                "roles": ["volunteer"]
-            }
+                "roles": ["volunteer"],
+            },
         )
         invitation = inv_response.json()
 
         # Cancel invitation
         response = client.delete(
-            f"{api_base}/invitations/{invitation['id']}",
-            params={"person_id": data["admin_id"]}
+            f"{api_base}/invitations/{invitation['id']}", params={"person_id": data["admin_id"]}
         )
 
         assert response.status_code == 204
@@ -515,15 +457,12 @@ class TestResendInvitation:
         # Create invitation
         inv_response = client.post(
             f"{api_base}/invitations",
-            params={
-                "org_id": data["org_id"],
-                "person_id": data["admin_id"]
-            },
+            params={"org_id": data["org_id"], "person_id": data["admin_id"]},
             json={
                 "email": f"resend_{int(time.time())}@test.com",
                 "name": "Resend User",
-                "roles": ["volunteer"]
-            }
+                "roles": ["volunteer"],
+            },
         )
         invitation = inv_response.json()
         old_token = invitation["token"]
@@ -531,7 +470,7 @@ class TestResendInvitation:
         # Resend invitation
         response = client.post(
             f"{api_base}/invitations/{invitation['id']}/resend",
-            params={"person_id": data["admin_id"]}
+            params={"person_id": data["admin_id"]},
         )
 
         assert response.status_code == 200
@@ -554,27 +493,24 @@ class TestResendInvitation:
         # Create and accept invitation
         inv_response = client.post(
             f"{api_base}/invitations",
-            params={
-                "org_id": data["org_id"],
-                "person_id": data["admin_id"]
-            },
+            params={"org_id": data["org_id"], "person_id": data["admin_id"]},
             json={
                 "email": f"resend_accepted_{int(time.time())}@test.com",
                 "name": "Resend Accepted User",
-                "roles": ["volunteer"]
-            }
+                "roles": ["volunteer"],
+            },
         )
         invitation = inv_response.json()
 
         client.post(
             f"{api_base}/invitations/{invitation['token']}/accept",
-            json={"password": "pass123", "timezone": "UTC"}
+            json={"password": "pass123", "timezone": "UTC"},
         )
 
         # Try to resend
         response = client.post(
             f"{api_base}/invitations/{invitation['id']}/resend",
-            params={"person_id": data["admin_id"]}
+            params={"person_id": data["admin_id"]},
         )
 
         assert response.status_code == 400
@@ -595,15 +531,8 @@ class TestInvitationWorkflow:
         # Step 1: Admin creates invitation
         inv_response = client.post(
             f"{api_base}/invitations",
-            params={
-                "org_id": data["org_id"],
-                "person_id": data["admin_id"]
-            },
-            json={
-                "email": invitee_email,
-                "name": "Workflow User",
-                "roles": ["volunteer"]
-            }
+            params={"org_id": data["org_id"], "person_id": data["admin_id"]},
+            json={"email": invitee_email, "name": "Workflow User", "roles": ["volunteer"]},
         )
         assert inv_response.status_code == 201
         invitation = inv_response.json()
@@ -617,19 +546,15 @@ class TestInvitationWorkflow:
         # Step 3: Invitee accepts invitation
         accept_response = client.post(
             f"{api_base}/invitations/{token}/accept",
-            json={
-                "password": "workflow123",
-                "timezone": "America/Los_Angeles"
-            }
+            json={"password": "workflow123", "timezone": "America/Los_Angeles"},
         )
         assert accept_response.status_code == 201
-        user_data = accept_response.json()
+        accept_response.json()
 
         # Step 4: User can login
-        login_response = client.post(f"{api_base}/auth/login", json={
-            "email": invitee_email,
-            "password": "workflow123"
-        })
+        login_response = client.post(
+            f"{api_base}/auth/login", json={"email": invitee_email, "password": "workflow123"}
+        )
         assert login_response.status_code == 200
 
         # Step 5: Admin can see accepted invitation
@@ -638,8 +563,8 @@ class TestInvitationWorkflow:
             params={
                 "org_id": data["org_id"],
                 "person_id": data["admin_id"],
-                "status_filter": "accepted"
-            }
+                "status_filter": "accepted",
+            },
         )
         accepted_invitations = list_response.json()["invitations"]
         assert any(inv["email"] == invitee_email for inv in accepted_invitations)

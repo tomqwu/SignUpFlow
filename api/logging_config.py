@@ -1,8 +1,8 @@
 """Logging configuration for Rostio API."""
 
 import logging
-import sys
 import os
+import sys
 from pathlib import Path
 
 # Determine if debug mode is enabled
@@ -27,16 +27,14 @@ error_handler = logging.FileHandler(LOGS_DIR / "rostio_errors.log")
 error_handler.setLevel(logging.ERROR)
 
 # Configure logging format
-log_format = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+log_format = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 if DEBUG:
     # More detailed format in debug mode
-    log_format = '%(asctime)s - %(name)s - [%(filename)s:%(lineno)d] - %(levelname)s - %(message)s'
+    log_format = "%(asctime)s - %(name)s - [%(filename)s:%(lineno)d] - %(levelname)s - %(message)s"
 
 # Configure logging
 logging.basicConfig(
-    level=LOG_LEVEL,
-    format=log_format,
-    handlers=[console_handler, file_handler, error_handler]
+    level=LOG_LEVEL, format=log_format, handlers=[console_handler, file_handler, error_handler]
 )
 
 # Get logger

@@ -1,14 +1,19 @@
 """People router."""
 
-from typing import Optional
-from fastapi import APIRouter, Depends, HTTPException, status, Query
+
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
 from api.database import get_db
-from api.dependencies import get_current_user, get_current_admin_user, verify_org_member, check_admin_permission
-from api.schemas.person import PersonCreate, PersonUpdate, PersonResponse, PersonList
-from api.models import Person, Organization
+from api.dependencies import (
+    check_admin_permission,
+    get_current_admin_user,
+    get_current_user,
+    verify_org_member,
+)
 from api.logging_config import logger
+from api.models import Organization, Person
+from api.schemas.person import PersonCreate, PersonList, PersonResponse, PersonUpdate
 
 router = APIRouter(prefix="/people", tags=["people"])
 
@@ -23,7 +28,7 @@ async def get_current_person(current_user: Person = Depends(get_current_user)):
 async def update_current_person(
     person_data: PersonUpdate,
     current_user: Person = Depends(get_current_user),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ):
     """Update the current authenticated user's profile."""
     # Update allowed fields
@@ -45,7 +50,7 @@ async def update_current_person(
 def create_person(
     person_data: PersonCreate,
     current_admin: Person = Depends(get_current_admin_user),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ):
     """Create a new person (admin only)."""
     # Verify organization exists
@@ -85,8 +90,8 @@ def create_person(
 
 @router.get("/", response_model=PersonList)
 def list_people(
-    org_id: Optional[str] = Query(None, description="Filter by organization ID"),
-    role: Optional[str] = Query(None, description="Filter by role"),
+    org_id: str | None = Query(None, description="Filter by organization ID"),
+    role: str | None = Query(None, description="Filter by role"),
     skip: int = 0,
     limit: int = 100,
     current_user: Person = Depends(get_current_user),
@@ -119,9 +124,7 @@ def list_people(
 
 @router.get("/{person_id}", response_model=PersonResponse)
 def get_person(
-    person_id: str,
-    current_user: Person = Depends(get_current_user),
-    db: Session = Depends(get_db)
+    person_id: str, current_user: Person = Depends(get_current_user), db: Session = Depends(get_db)
 ):
     """Get person by ID. Users can only view people from their own organization."""
     person = db.query(Person).filter(Person.id == person_id).first()
@@ -141,7 +144,7 @@ def update_person(
     person_id: str,
     person_data: PersonUpdate,
     current_user: Person = Depends(get_current_user),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ):
     """Update person. Users can edit themselves, admins can edit anyone in their org."""
     try:
@@ -158,7 +161,7 @@ def update_person(
         if not is_self and not is_admin:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
-                detail="You can only edit your own profile unless you are an admin"
+                detail="You can only edit your own profile unless you are an admin",
             )
 
         # Admins can only edit people in their own organization
@@ -168,8 +171,7 @@ def update_person(
         # Prevent role escalation: non-admins cannot modify roles
         if person_data.roles is not None and not is_admin:
             raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="Only admins can modify user roles"
+                status_code=status.HTTP_403_FORBIDDEN, detail="Only admins can modify user roles"
             )
 
         # Update fields
@@ -201,7 +203,7 @@ def update_person(
 def delete_person(
     person_id: str,
     current_admin: Person = Depends(get_current_admin_user),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ):
     """Delete person (admin only)."""
     person = db.query(Person).filter(Person.id == person_id).first()

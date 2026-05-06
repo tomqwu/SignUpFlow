@@ -8,11 +8,16 @@ Covers the full lifecycle of events and the guard rails around scheduling:
   event validation and available-people queries
 """
 
-import pytest
 from datetime import datetime, timedelta
 
+import pytest
+
 from tests.api.conftest import (
-    seed_org, seed_user, auth_headers, seed_event, add_timeoff,
+    add_timeoff,
+    auth_headers,
+    seed_event,
+    seed_org,
+    seed_user,
 )
 
 
@@ -32,9 +37,14 @@ class TestEventCRUD:
     def test_create_event(self, client):
         """Admin creates an event with role requirements."""
         hdrs = self._setup(client)
-        event = seed_event(client, hdrs, self.ORG, "evt-1",
-                          event_type="Sunday Worship",
-                          role_counts={"musician": 2, "usher": 1})
+        event = seed_event(
+            client,
+            hdrs,
+            self.ORG,
+            "evt-1",
+            event_type="Sunday Worship",
+            role_counts={"musician": 2, "usher": 1},
+        )
         assert event["id"] == "evt-1"
         assert event["org_id"] == self.ORG
         assert event["extra_data"]["role_counts"]["musician"] == 2
@@ -67,13 +77,16 @@ class TestEventCRUD:
     def test_update_event_type(self, client):
         """Admin updates an event's type and role counts."""
         hdrs = self._setup(client)
-        seed_event(client, hdrs, self.ORG, "evt-update",
-                  event_type="Regular Service")
+        seed_event(client, hdrs, self.ORG, "evt-update", event_type="Regular Service")
 
-        resp = client.put("/api/events/evt-update", json={
-            "type": "Easter Service",
-            "extra_data": {"role_counts": {"musician": 3, "usher": 2}},
-        }, headers=hdrs)
+        resp = client.put(
+            "/api/events/evt-update",
+            json={
+                "type": "Easter Service",
+                "extra_data": {"role_counts": {"musician": 3, "usher": 2}},
+            },
+            headers=hdrs,
+        )
         assert resp.status_code == 200
         updated = resp.json()
         assert updated["type"] == "Easter Service"
@@ -85,13 +98,18 @@ class TestEventCRUD:
         seed_event(client, hdrs, self.ORG, "evt-reschedule")
 
         new_start = (datetime.now() + timedelta(days=30)).replace(
-            hour=10, minute=0, second=0, microsecond=0)
+            hour=10, minute=0, second=0, microsecond=0
+        )
         new_end = new_start + timedelta(hours=3)
 
-        resp = client.put("/api/events/evt-reschedule", json={
-            "start_time": new_start.isoformat(),
-            "end_time": new_end.isoformat(),
-        }, headers=hdrs)
+        resp = client.put(
+            "/api/events/evt-reschedule",
+            json={
+                "start_time": new_start.isoformat(),
+                "end_time": new_end.isoformat(),
+            },
+            headers=hdrs,
+        )
         assert resp.status_code == 200
         assert "T10:00:00" in resp.json()["start_time"]
 
@@ -126,8 +144,7 @@ class TestEventCRUD:
         seed_user(client, self.ORG, "vol@crud.org", "Vol", "VolPass123!")
         vol_hdrs = auth_headers(client, "vol@crud.org", "VolPass123!")
 
-        resp = client.put("/api/events/evt-protected",
-                         json={"type": "Hacked"}, headers=vol_hdrs)
+        resp = client.put("/api/events/evt-protected", json={"type": "Hacked"}, headers=vol_hdrs)
         assert resp.status_code == 403
 
     def test_volunteer_cannot_delete_event(self, client):
@@ -161,10 +178,13 @@ class TestConflictDetection:
         hdrs, vol = self._setup_with_volunteer(client)
         event = seed_event(client, hdrs, self.ORG, "evt-clean", days_from_now=14)
 
-        resp = client.post("/api/conflicts/check", json={
-            "person_id": vol["person_id"],
-            "event_id": event["id"],
-        })
+        resp = client.post(
+            "/api/conflicts/check",
+            json={
+                "person_id": vol["person_id"],
+                "event_id": event["id"],
+            },
+        )
         assert resp.status_code == 200
         result = resp.json()
         assert result["has_conflicts"] is False
@@ -176,15 +196,24 @@ class TestConflictDetection:
         event = seed_event(client, hdrs, self.ORG, "evt-dup", days_from_now=14)
 
         # Assign first
-        client.post(f"/api/events/{event['id']}/assignments", json={
-            "person_id": vol["person_id"], "action": "assign", "role": "volunteer",
-        }, headers=hdrs)
+        client.post(
+            f"/api/events/{event['id']}/assignments",
+            json={
+                "person_id": vol["person_id"],
+                "action": "assign",
+                "role": "volunteer",
+            },
+            headers=hdrs,
+        )
 
         # Check conflicts — should detect already_assigned
-        resp = client.post("/api/conflicts/check", json={
-            "person_id": vol["person_id"],
-            "event_id": event["id"],
-        })
+        resp = client.post(
+            "/api/conflicts/check",
+            json={
+                "person_id": vol["person_id"],
+                "event_id": event["id"],
+            },
+        )
         assert resp.status_code == 200
         result = resp.json()
         assert result["has_conflicts"] is True
@@ -199,14 +228,16 @@ class TestConflictDetection:
         event = seed_event(client, hdrs, self.ORG, "evt-timeoff", days_from_now=14)
 
         # Sarah blocks that day
-        add_timeoff(client, vol["person_id"], event_date, event_date,
-                    reason="Family vacation")
+        add_timeoff(client, vol["person_id"], event_date, event_date, reason="Family vacation")
 
         # Check conflicts — should detect time_off
-        resp = client.post("/api/conflicts/check", json={
-            "person_id": vol["person_id"],
-            "event_id": event["id"],
-        })
+        resp = client.post(
+            "/api/conflicts/check",
+            json={
+                "person_id": vol["person_id"],
+                "event_id": event["id"],
+            },
+        )
         assert resp.status_code == 200
         result = resp.json()
         assert result["has_conflicts"] is True
@@ -222,15 +253,24 @@ class TestConflictDetection:
         evt_b = seed_event(client, hdrs, self.ORG, "evt-b", days_from_now=14)
 
         # Assign to event A
-        client.post(f"/api/events/{evt_a['id']}/assignments", json={
-            "person_id": vol["person_id"], "action": "assign", "role": "volunteer",
-        }, headers=hdrs)
+        client.post(
+            f"/api/events/{evt_a['id']}/assignments",
+            json={
+                "person_id": vol["person_id"],
+                "action": "assign",
+                "role": "volunteer",
+            },
+            headers=hdrs,
+        )
 
         # Check conflicts for event B — should detect double_booked
-        resp = client.post("/api/conflicts/check", json={
-            "person_id": vol["person_id"],
-            "event_id": evt_b["id"],
-        })
+        resp = client.post(
+            "/api/conflicts/check",
+            json={
+                "person_id": vol["person_id"],
+                "event_id": evt_b["id"],
+            },
+        )
         assert resp.status_code == 200
         result = resp.json()
         assert result["has_conflicts"] is True
@@ -243,20 +283,26 @@ class TestConflictDetection:
         hdrs, _ = self._setup_with_volunteer(client)
         event = seed_event(client, hdrs, self.ORG, "evt-x", days_from_now=14)
 
-        resp = client.post("/api/conflicts/check", json={
-            "person_id": "ghost-person",
-            "event_id": event["id"],
-        })
+        resp = client.post(
+            "/api/conflicts/check",
+            json={
+                "person_id": "ghost-person",
+                "event_id": event["id"],
+            },
+        )
         assert resp.status_code == 404
 
     def test_conflict_check_nonexistent_event(self, client):
         """Conflict check with invalid event_id returns 404."""
         hdrs, vol = self._setup_with_volunteer(client)
 
-        resp = client.post("/api/conflicts/check", json={
-            "person_id": vol["person_id"],
-            "event_id": "ghost-event",
-        })
+        resp = client.post(
+            "/api/conflicts/check",
+            json={
+                "person_id": vol["person_id"],
+                "event_id": "ghost-event",
+            },
+        )
         assert resp.status_code == 404
 
 
@@ -342,10 +388,14 @@ class TestProfileAndTeamMembers:
         seed_user(client, self.ORG, "vol@profile.org", "Old Name", "VolPass123!")
         vol_hdrs = auth_headers(client, "vol@profile.org", "VolPass123!")
 
-        resp = client.put("/api/people/me", json={
-            "name": "New Name",
-            "timezone": "US/Pacific",
-        }, headers=vol_hdrs)
+        resp = client.put(
+            "/api/people/me",
+            json={
+                "name": "New Name",
+                "timezone": "US/Pacific",
+            },
+            headers=vol_hdrs,
+        )
         assert resp.status_code == 200
         assert resp.json()["name"] == "New Name"
         assert resp.json()["timezone"] == "US/Pacific"
@@ -358,15 +408,25 @@ class TestProfileAndTeamMembers:
         hdrs = auth_headers(client, self.ADMIN_EMAIL, self.ADMIN_PW)
 
         # Create empty team
-        resp = client.post("/api/teams/", json={
-            "id": "team-1", "org_id": self.ORG, "name": "Ushers",
-        }, headers=hdrs)
+        resp = client.post(
+            "/api/teams/",
+            json={
+                "id": "team-1",
+                "org_id": self.ORG,
+                "name": "Ushers",
+            },
+            headers=hdrs,
+        )
         assert resp.status_code == 201
 
         # Add member
-        resp = client.post("/api/teams/team-1/members", json={
-            "person_ids": [vol["person_id"]],
-        }, headers=hdrs)
+        resp = client.post(
+            "/api/teams/team-1/members",
+            json={
+                "person_ids": [vol["person_id"]],
+            },
+            headers=hdrs,
+        )
         assert resp.status_code == 204
 
         # Verify member count increased
@@ -375,9 +435,14 @@ class TestProfileAndTeamMembers:
         assert resp.json()["member_count"] == 1
 
         # Remove member (DELETE with body requires request method)
-        resp = client.request("DELETE", "/api/teams/team-1/members", json={
-            "person_ids": [vol["person_id"]],
-        }, headers=hdrs)
+        resp = client.request(
+            "DELETE",
+            "/api/teams/team-1/members",
+            json={
+                "person_ids": [vol["person_id"]],
+            },
+            headers=hdrs,
+        )
         assert resp.status_code == 204
 
         # Verify member count back to 0

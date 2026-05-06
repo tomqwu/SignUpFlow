@@ -2,7 +2,6 @@
 
 from datetime import date
 from pathlib import Path
-from typing import Any
 
 from api.core.loader import (
     load_availability_files,
@@ -24,13 +23,15 @@ class ValidationError(Exception):
         super().__init__("\n".join(errors))
 
 
-def validate_workspace(workspace: Path, from_date: date | None = None, to_date: date | None = None) -> None:
+def validate_workspace(
+    workspace: Path, from_date: date | None = None, to_date: date | None = None
+) -> None:
     """Validate entire workspace for semantic correctness."""
     errors: list[str] = []
 
     # Load all files
     try:
-        org = load_org(workspace)
+        load_org(workspace)
     except Exception as e:
         errors.append(f"org.yaml: {e}")
         raise ValidationError(errors)
@@ -55,7 +56,7 @@ def validate_workspace(workspace: Path, from_date: date | None = None, to_date: 
         errors.append(f"events.yaml: {e}")
         raise ValidationError(errors)
 
-    holidays_file = load_holidays(workspace)
+    load_holidays(workspace)
     availability_list = load_availability_files(workspace)
     constraints = load_constraint_files(workspace)
 
@@ -63,7 +64,7 @@ def validate_workspace(workspace: Path, from_date: date | None = None, to_date: 
     person_ids = {p.id for p in people}
     team_ids = {t.id for t in teams}
     resource_ids = {r.id for r in resources}
-    event_ids = {e.id for e in events}
+    {e.id for e in events}
 
     # Validate team members
     for team in teams:

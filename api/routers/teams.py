@@ -1,20 +1,20 @@
 """Teams router."""
 
-from typing import Optional
-from fastapi import APIRouter, Depends, HTTPException, status, Query
+
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
 from api.database import get_db
-from api.dependencies import get_current_user, get_current_admin_user, verify_org_member
+from api.dependencies import get_current_admin_user, get_current_user, verify_org_member
+from api.models import Organization, Person, Team, TeamMember
 from api.schemas.team import (
     TeamCreate,
-    TeamUpdate,
-    TeamResponse,
     TeamList,
     TeamMemberAdd,
     TeamMemberRemove,
+    TeamResponse,
+    TeamUpdate,
 )
-from api.models import Team, TeamMember, Organization, Person
 
 router = APIRouter(prefix="/teams", tags=["teams"])
 
@@ -23,7 +23,7 @@ router = APIRouter(prefix="/teams", tags=["teams"])
 def create_team(
     team_data: TeamCreate,
     current_admin: Person = Depends(get_current_admin_user),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ):
     """Create a new team (admin only)."""
     # Verify organization exists
@@ -83,7 +83,7 @@ def create_team(
 
 @router.get("/", response_model=TeamList)
 def list_teams(
-    org_id: Optional[str] = Query(None, description="Filter by organization ID"),
+    org_id: str | None = Query(None, description="Filter by organization ID"),
     skip: int = 0,
     limit: int = 100,
     current_user: Person = Depends(get_current_user),
@@ -117,9 +117,7 @@ def list_teams(
 
 @router.get("/{team_id}", response_model=TeamResponse)
 def get_team(
-    team_id: str,
-    current_user: Person = Depends(get_current_user),
-    db: Session = Depends(get_db)
+    team_id: str, current_user: Person = Depends(get_current_user), db: Session = Depends(get_db)
 ):
     """Get team by ID. Users can only view teams from their own organization."""
     team = db.query(Team).filter(Team.id == team_id).first()
@@ -142,7 +140,7 @@ def update_team(
     team_id: str,
     team_data: TeamUpdate,
     current_admin: Person = Depends(get_current_admin_user),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ):
     """Update team (admin only)."""
     team = db.query(Team).filter(Team.id == team_id).first()
@@ -176,7 +174,7 @@ def add_team_members(
     team_id: str,
     members: TeamMemberAdd,
     current_admin: Person = Depends(get_current_admin_user),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ):
     """Add members to team (admin only)."""
     team = db.query(Team).filter(Team.id == team_id).first()
@@ -218,7 +216,7 @@ def remove_team_members(
     team_id: str,
     members: TeamMemberRemove,
     current_admin: Person = Depends(get_current_admin_user),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ):
     """Remove members from team (admin only)."""
     team = db.query(Team).filter(Team.id == team_id).first()
@@ -243,7 +241,7 @@ def remove_team_members(
 def delete_team(
     team_id: str,
     current_admin: Person = Depends(get_current_admin_user),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ):
     """Delete team (admin only)."""
     team = db.query(Team).filter(Team.id == team_id).first()

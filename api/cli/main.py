@@ -9,19 +9,18 @@ Usage:
 
 import json
 import sys
-from datetime import date, datetime
 from pathlib import Path
 
 import click
 
 from api.core.loader import (
+    load_availability_files,
+    load_constraint_files,
+    load_events,
+    load_holidays,
     load_org,
     load_people,
     load_teams,
-    load_events,
-    load_holidays,
-    load_availability_files,
-    load_constraint_files,
     save_json,
 )
 from api.core.solver.adapter import SolveContext
@@ -51,22 +50,36 @@ def init(workspace: str):
     _write_sample_events(ws)
 
     click.echo(f"Created workspace at {ws}/")
-    click.echo(f"  org.yaml      — organization config")
-    click.echo(f"  people.yaml   — volunteers and their roles")
-    click.echo(f"  events.yaml   — events to schedule")
+    click.echo("  org.yaml      — organization config")
+    click.echo("  people.yaml   — volunteers and their roles")
+    click.echo("  events.yaml   — events to schedule")
     click.echo(f"\nRun: signupflow solve {workspace}")
 
 
 @cli.command()
 @click.argument("workspace", type=click.Path(exists=True, file_okay=False))
-@click.option("-o", "--output", type=click.Path(), default=None,
-              help="Output directory for solution files (default: <workspace>/output/)")
-@click.option("--from-date", type=click.DateTime(formats=["%Y-%m-%d"]), default=None,
-              help="Start date (default: earliest event)")
-@click.option("--to-date", type=click.DateTime(formats=["%Y-%m-%d"]), default=None,
-              help="End date (default: latest event)")
-@click.option("--mode", type=click.Choice(["strict", "relaxed"]), default="relaxed",
-              help="Solving mode")
+@click.option(
+    "-o",
+    "--output",
+    type=click.Path(),
+    default=None,
+    help="Output directory for solution files (default: <workspace>/output/)",
+)
+@click.option(
+    "--from-date",
+    type=click.DateTime(formats=["%Y-%m-%d"]),
+    default=None,
+    help="Start date (default: earliest event)",
+)
+@click.option(
+    "--to-date",
+    type=click.DateTime(formats=["%Y-%m-%d"]),
+    default=None,
+    help="End date (default: latest event)",
+)
+@click.option(
+    "--mode", type=click.Choice(["strict", "relaxed"]), default="relaxed", help="Solving mode"
+)
 @click.option("--json-output", is_flag=True, help="Output solution as JSON to stdout")
 def solve(workspace: str, output: str, from_date, to_date, mode: str, json_output: bool):
     """Run the scheduler on a workspace directory."""
@@ -158,8 +171,7 @@ def solve(workspace: str, output: str, from_date, to_date, mode: str, json_outpu
         "assignment_count": len(solution.assignments),
         "fairness_stdev": solution.metrics.fairness.stdev,
         "assignments": [
-            {"event_id": a.event_id, "assignees": a.assignees}
-            for a in solution.assignments
+            {"event_id": a.event_id, "assignees": a.assignees} for a in solution.assignments
         ],
         "violations": [
             {"key": v.constraint_key, "message": v.message, "entities": v.entities}
@@ -175,8 +187,10 @@ def solve(workspace: str, output: str, from_date, to_date, mode: str, json_outpu
     click.echo(f"Solved in {solution.metrics.solve_ms:.0f}ms")
     click.echo(f"Health score: {solution.metrics.health_score:.1f}/100")
     click.echo(f"Assignments:  {len(solution.assignments)}")
-    click.echo(f"Violations:   {solution.metrics.hard_violations} hard, "
-               f"{len(solution.violations.soft)} soft")
+    click.echo(
+        f"Violations:   {solution.metrics.hard_violations} hard, "
+        f"{len(solution.violations.soft)} soft"
+    )
     click.echo(f"Fairness:     stdev={solution.metrics.fairness.stdev:.2f}")
     click.echo()
 
@@ -202,6 +216,7 @@ def solve(workspace: str, output: str, from_date, to_date, mode: str, json_outpu
 
 def _write_sample_org(ws: Path):
     import yaml
+
     data = {
         "org_id": "my-org",
         "region": "US",
@@ -217,13 +232,19 @@ def _write_sample_org(ws: Path):
 
 def _write_sample_people(ws: Path):
     import yaml
+
     data = {
         "people": [
             {"id": "sarah", "name": "Sarah Chen", "roles": ["musician", "teacher"], "skills": []},
             {"id": "david", "name": "David Kim", "roles": ["musician", "sound_tech"], "skills": []},
             {"id": "maria", "name": "Maria Lopez", "roles": ["teacher", "volunteer"], "skills": []},
             {"id": "james", "name": "James Brown", "roles": ["usher", "volunteer"], "skills": []},
-            {"id": "emily", "name": "Emily Davis", "roles": ["musician", "youth_leader"], "skills": []},
+            {
+                "id": "emily",
+                "name": "Emily Davis",
+                "roles": ["musician", "youth_leader"],
+                "skills": [],
+            },
         ],
     }
     with open(ws / "people.yaml", "w") as f:
@@ -231,8 +252,10 @@ def _write_sample_people(ws: Path):
 
 
 def _write_sample_events(ws: Path):
-    import yaml
     from datetime import datetime, timedelta
+
+    import yaml
+
     base = datetime.now().replace(hour=9, minute=0, second=0, microsecond=0) + timedelta(days=7)
     data = {
         "events": [

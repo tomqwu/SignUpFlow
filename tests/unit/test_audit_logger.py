@@ -5,20 +5,20 @@ Tests the audit_logger module which provides functions to log
 security-sensitive operations to the audit log database.
 """
 
-import pytest
-from unittest.mock import Mock, MagicMock
-from datetime import datetime
-from sqlalchemy.orm import Session
-from fastapi import Request
+from unittest.mock import Mock
 
+import pytest
+from fastapi import Request
+from sqlalchemy.orm import Session
+
+from api.models import AuditAction, AuditLog
 from api.utils.audit_logger import (
     log_audit_event,
     log_audit_from_request,
+    log_data_export,
     log_login_attempt,
     log_permission_change,
-    log_data_export,
 )
-from api.models import AuditLog, AuditAction
 
 
 @pytest.fixture
@@ -62,7 +62,7 @@ class TestLogAuditEvent:
 
     def test_log_basic_event(self, mock_db):
         """Test logging a basic audit event."""
-        result = log_audit_event(
+        log_audit_event(
             db=mock_db,
             action=AuditAction.USER_CREATED,
             user_id="user_123",
@@ -86,7 +86,7 @@ class TestLogAuditEvent:
 
     def test_log_event_with_resource(self, mock_db):
         """Test logging an event with resource information."""
-        result = log_audit_event(
+        log_audit_event(
             db=mock_db,
             action=AuditAction.USER_DELETED,
             user_id="admin_123",
@@ -107,7 +107,7 @@ class TestLogAuditEvent:
             "changed_by": "super_admin",
         }
 
-        result = log_audit_event(
+        log_audit_event(
             db=mock_db,
             action=AuditAction.ROLE_ASSIGNED,
             user_id="admin_123",
@@ -119,7 +119,7 @@ class TestLogAuditEvent:
 
     def test_log_event_with_ip_and_user_agent(self, mock_db):
         """Test logging an event with IP address and user agent."""
-        result = log_audit_event(
+        log_audit_event(
             db=mock_db,
             action=AuditAction.DATA_EXPORTED,
             user_id="user_123",
@@ -133,7 +133,7 @@ class TestLogAuditEvent:
 
     def test_log_failure_event(self, mock_db):
         """Test logging a failure event with error message."""
-        result = log_audit_event(
+        log_audit_event(
             db=mock_db,
             action=AuditAction.LOGIN_FAILURE,
             user_email="test@example.com",
@@ -147,7 +147,7 @@ class TestLogAuditEvent:
 
     def test_log_denied_event(self, mock_db):
         """Test logging a denied permission event."""
-        result = log_audit_event(
+        log_audit_event(
             db=mock_db,
             action=AuditAction.PERMISSION_DENIED,
             user_id="user_123",
@@ -161,7 +161,7 @@ class TestLogAuditEvent:
 
     def test_log_event_without_user(self, mock_db):
         """Test logging a system event without user information."""
-        result = log_audit_event(
+        log_audit_event(
             db=mock_db,
             action=AuditAction.DATABASE_BACKUP,
             user_id=None,
@@ -174,12 +174,12 @@ class TestLogAuditEvent:
 
     def test_log_event_generates_unique_id(self, mock_db):
         """Test that each audit log has a unique ID."""
-        result1 = log_audit_event(
+        log_audit_event(
             db=mock_db,
             action=AuditAction.USER_CREATED,
         )
 
-        result2 = log_audit_event(
+        log_audit_event(
             db=mock_db,
             action=AuditAction.USER_CREATED,
         )
@@ -197,7 +197,7 @@ class TestLogAuditFromRequest:
 
     def test_extract_ip_from_request(self, mock_db, mock_request):
         """Test that IP address is extracted from request."""
-        result = log_audit_from_request(
+        log_audit_from_request(
             db=mock_db,
             request=mock_request,
             action=AuditAction.DATA_EXPORTED,
@@ -209,7 +209,7 @@ class TestLogAuditFromRequest:
 
     def test_extract_user_agent_from_request(self, mock_db, mock_request):
         """Test that user agent is extracted from request."""
-        result = log_audit_from_request(
+        log_audit_from_request(
             db=mock_db,
             request=mock_request,
             action=AuditAction.DATA_EXPORTED,
@@ -221,7 +221,7 @@ class TestLogAuditFromRequest:
 
     def test_extract_ip_from_x_forwarded_for(self, mock_db, mock_request_with_proxy):
         """Test that client IP is extracted from X-Forwarded-For header."""
-        result = log_audit_from_request(
+        log_audit_from_request(
             db=mock_db,
             request=mock_request_with_proxy,
             action=AuditAction.DATA_EXPORTED,
@@ -242,7 +242,7 @@ class TestLogAuditFromRequest:
             "x-real-ip": "203.0.113.99",
         }
 
-        result = log_audit_from_request(
+        log_audit_from_request(
             db=mock_db,
             request=request,
             action=AuditAction.DATA_EXPORTED,
@@ -258,7 +258,7 @@ class TestLogAuditFromRequest:
         request.client = None
         request.headers = {"user-agent": "Mozilla/5.0"}
 
-        result = log_audit_from_request(
+        log_audit_from_request(
             db=mock_db,
             request=request,
             action=AuditAction.DATA_EXPORTED,
@@ -274,7 +274,7 @@ class TestLogLoginAttempt:
 
     def test_log_successful_login(self, mock_db, mock_request):
         """Test logging a successful login attempt."""
-        result = log_login_attempt(
+        log_login_attempt(
             db=mock_db,
             request=mock_request,
             email="test@example.com",
@@ -292,7 +292,7 @@ class TestLogLoginAttempt:
 
     def test_log_failed_login(self, mock_db, mock_request):
         """Test logging a failed login attempt."""
-        result = log_login_attempt(
+        log_login_attempt(
             db=mock_db,
             request=mock_request,
             email="test@example.com",
@@ -312,7 +312,7 @@ class TestLogPermissionChange:
 
     def test_log_role_assignment(self, mock_db, mock_request):
         """Test logging a role assignment (adding roles)."""
-        result = log_permission_change(
+        log_permission_change(
             db=mock_db,
             request=mock_request,
             admin_user_id="admin_123",
@@ -335,7 +335,7 @@ class TestLogPermissionChange:
 
     def test_log_role_removal(self, mock_db, mock_request):
         """Test logging a role removal (removing roles)."""
-        result = log_permission_change(
+        log_permission_change(
             db=mock_db,
             request=mock_request,
             admin_user_id="admin_123",
@@ -354,7 +354,7 @@ class TestLogPermissionChange:
 
     def test_log_role_change_multiple(self, mock_db, mock_request):
         """Test logging complex role changes (both add and remove)."""
-        result = log_permission_change(
+        log_permission_change(
             db=mock_db,
             request=mock_request,
             admin_user_id="admin_123",
@@ -378,7 +378,7 @@ class TestLogDataExport:
 
     def test_log_calendar_export(self, mock_db, mock_request):
         """Test logging a calendar export operation."""
-        result = log_data_export(
+        log_data_export(
             db=mock_db,
             request=mock_request,
             user_id="user_123",
@@ -398,7 +398,7 @@ class TestLogDataExport:
 
     def test_log_csv_export(self, mock_db, mock_request):
         """Test logging a CSV data export."""
-        result = log_data_export(
+        log_data_export(
             db=mock_db,
             request=mock_request,
             user_id="user_123",
@@ -416,7 +416,7 @@ class TestLogDataExport:
 
     def test_log_report_export(self, mock_db, mock_request):
         """Test logging a report generation."""
-        result = log_data_export(
+        log_data_export(
             db=mock_db,
             request=mock_request,
             user_id="admin_123",

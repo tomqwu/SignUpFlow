@@ -1,18 +1,18 @@
 """JWT Authentication and security utilities for Rostio API."""
 
 import os
-from datetime import datetime, timedelta
-
-from api.timeutils import utcnow
-from typing import Optional
+from datetime import timedelta
 
 import bcrypt
 from fastapi import HTTPException, status
 from jose import JWTError, jwt
 from passlib.context import CryptContext
 
+from api.timeutils import utcnow
+
 # passlib<1.7.5 expects bcrypt.__about__.__version__; newer bcrypt dropped it.
 if not hasattr(bcrypt, "__about__"):
+
     class _BcryptAbout:
         __version__ = getattr(bcrypt, "__version__", "0")
 
@@ -41,10 +41,10 @@ def hash_password(password: str) -> str:
         Bcrypt has a 72-byte limit. Longer passwords are truncated.
     """
     # Bcrypt has a 72-byte limit - truncate if necessary
-    password_bytes = password.encode('utf-8')
+    password_bytes = password.encode("utf-8")
     if len(password_bytes) > 72:
         password_bytes = password_bytes[:72]
-        password = password_bytes.decode('utf-8', errors='ignore')
+        password = password_bytes.decode("utf-8", errors="ignore")
 
     return pwd_context.hash(password)
 
@@ -61,15 +61,15 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
         True if password matches hash
     """
     # Bcrypt has a 72-byte limit - truncate if necessary
-    password_bytes = plain_password.encode('utf-8')
+    password_bytes = plain_password.encode("utf-8")
     if len(password_bytes) > 72:
         password_bytes = password_bytes[:72]
-        plain_password = password_bytes.decode('utf-8', errors='ignore')
+        plain_password = password_bytes.decode("utf-8", errors="ignore")
 
     return pwd_context.verify(plain_password, hashed_password)
 
 
-def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -> str:
+def create_access_token(data: dict, expires_delta: timedelta | None = None) -> str:
     """
     Create a JWT access token.
 
@@ -109,7 +109,7 @@ def verify_token(token: str) -> dict:
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         return payload
-    except JWTError as e:
+    except JWTError:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Could not validate credentials",

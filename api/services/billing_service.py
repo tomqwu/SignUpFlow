@@ -11,20 +11,21 @@ Example Usage:
     usage = billing.get_usage_metrics(org_id="org_123")
 """
 
-from typing import Optional, Dict, Any, List
-from sqlalchemy.orm import Session, joinedload
 from datetime import datetime, timedelta
+from typing import Any
 
+from sqlalchemy.orm import Session, joinedload
+
+from api.logging_config import logger
 from api.models import (
-    Organization,
-    Subscription,
     BillingHistory,
+    Organization,
     PaymentMethod,
+    Subscription,
+    SubscriptionEvent,
     UsageMetrics,
-    SubscriptionEvent
 )
 from api.utils.stripe_client import StripeClient
-from api.logging_config import logger
 
 
 class BillingService:
@@ -40,7 +41,7 @@ class BillingService:
         self.db = db
         self.stripe_client = StripeClient()
 
-    def get_subscription(self, org_id: str) -> Optional[Subscription]:
+    def get_subscription(self, org_id: str) -> Subscription | None:
         """
         Get organization's current subscription.
 
@@ -57,9 +58,7 @@ class BillingService:
             print(f"Status: {subscription.status}")
         """
         try:
-            subscription = self.db.query(Subscription).filter(
-                Subscription.org_id == org_id
-            ).first()
+            subscription = self.db.query(Subscription).filter(Subscription.org_id == org_id).first()
 
             if subscription:
                 logger.info(f"Retrieved subscription for org {org_id}: {subscription.plan_tier}")
@@ -72,7 +71,7 @@ class BillingService:
             logger.error(f"Error retrieving subscription for org {org_id}: {e}")
             return None
 
-    def create_free_subscription(self, org_id: str) -> Optional[Subscription]:
+    def create_free_subscription(self, org_id: str) -> Subscription | None:
         """
         Create a Free tier subscription for a new organization.
 
@@ -105,7 +104,7 @@ class BillingService:
                 status="active",
                 billing_cycle=None,  # No billing for free tier
                 stripe_customer_id=None,
-                stripe_subscription_id=None
+                stripe_subscription_id=None,
             )
 
             self.db.add(subscription)
@@ -119,7 +118,7 @@ class BillingService:
                 org_id=org_id,
                 event_type="created",
                 new_plan="free",
-                notes="Organization created with free tier"
+                notes="Organization created with free tier",
             )
 
             return subscription
@@ -129,7 +128,7 @@ class BillingService:
             logger.error(f"Error creating free subscription for org {org_id}: {e}")
             return None
 
-    def get_usage_metrics(self, org_id: str) -> List[UsageMetrics]:
+    def get_usage_metrics(self, org_id: str) -> list[UsageMetrics]:
         """
         Get all usage metrics for an organization.
 
@@ -145,9 +144,7 @@ class BillingService:
                 print(f"{metric.metric_type}: {metric.current_value}/{metric.plan_limit}")
         """
         try:
-            metrics = self.db.query(UsageMetrics).filter(
-                UsageMetrics.org_id == org_id
-            ).all()
+            metrics = self.db.query(UsageMetrics).filter(UsageMetrics.org_id == org_id).all()
 
             logger.info(f"Retrieved {len(metrics)} usage metrics for org {org_id}")
             return metrics
@@ -156,7 +153,7 @@ class BillingService:
             logger.error(f"Error retrieving usage metrics for org {org_id}: {e}")
             return []
 
-    def update_volunteer_count(self, org_id: str) -> Optional[UsageMetrics]:
+    def update_volunteer_count(self, org_id: str) -> UsageMetrics | None:
         """
         Update the volunteer count usage metric.
 
@@ -175,9 +172,12 @@ class BillingService:
         """
         try:
             # Get organization and subscription (with eager loading)
-            org = self.db.query(Organization).options(
-                joinedload(Organization.subscription)
-            ).filter(Organization.id == org_id).first()
+            org = (
+                self.db.query(Organization)
+                .options(joinedload(Organization.subscription))
+                .filter(Organization.id == org_id)
+                .first()
+            )
             if not org:
                 logger.error(f"Organization {org_id} not found")
                 return None
@@ -188,18 +188,10 @@ class BillingService:
                 return None
 
             # Count current volunteers
-            volunteer_count = len([
-                p for p in org.people
-                if "volunteer" in (p.roles or [])
-            ])
+            volunteer_count = len([p for p in org.people if "volunteer" in (p.roles or [])])
 
             # Get plan limit
-            tier_limits = {
-                "free": 10,
-                "starter": 50,
-                "pro": 200,
-                "enterprise": None  # Unlimited
-            }
+            tier_limits = {"free": 10, "starter": 50, "pro": 200, "enterprise": None}  # Unlimited
             plan_limit = tier_limits.get(subscription.plan_tier, 10)
 
             # Calculate percentage used
@@ -209,10 +201,13 @@ class BillingService:
                 percentage_used = (volunteer_count / plan_limit * 100) if plan_limit > 0 else 0.0
 
             # Update or create metric
-            metric = self.db.query(UsageMetrics).filter(
-                UsageMetrics.org_id == org_id,
-                UsageMetrics.metric_type == "volunteers_count"
-            ).first()
+            metric = (
+                self.db.query(UsageMetrics)
+                .filter(
+                    UsageMetrics.org_id == org_id, UsageMetrics.metric_type == "volunteers_count"
+                )
+                .first()
+            )
 
             if metric:
                 metric.current_value = volunteer_count
@@ -225,7 +220,7 @@ class BillingService:
                     metric_type="volunteers_count",
                     current_value=volunteer_count,
                     plan_limit=plan_limit,
-                    percentage_used=percentage_used
+                    percentage_used=percentage_used,
                 )
                 self.db.add(metric)
 
@@ -263,10 +258,11 @@ class BillingService:
                 )
         """
         try:
-            metric = self.db.query(UsageMetrics).filter(
-                UsageMetrics.org_id == org_id,
-                UsageMetrics.metric_type == metric_type
-            ).first()
+            metric = (
+                self.db.query(UsageMetrics)
+                .filter(UsageMetrics.org_id == org_id, UsageMetrics.metric_type == metric_type)
+                .first()
+            )
 
             if not metric:
                 return False
@@ -281,11 +277,8 @@ class BillingService:
             return False
 
     def get_billing_history(
-        self,
-        org_id: str,
-        limit: int = 50,
-        offset: int = 0
-    ) -> List[BillingHistory]:
+        self, org_id: str, limit: int = 50, offset: int = 0
+    ) -> list[BillingHistory]:
         """
         Get billing history for an organization.
 
@@ -303,11 +296,14 @@ class BillingService:
                 print(f"{record.event_type}: ${record.amount_cents/100}")
         """
         try:
-            history = self.db.query(BillingHistory).filter(
-                BillingHistory.org_id == org_id
-            ).order_by(
-                BillingHistory.event_timestamp.desc()
-            ).limit(limit).offset(offset).all()
+            history = (
+                self.db.query(BillingHistory)
+                .filter(BillingHistory.org_id == org_id)
+                .order_by(BillingHistory.event_timestamp.desc())
+                .limit(limit)
+                .offset(offset)
+                .all()
+            )
 
             logger.info(f"Retrieved {len(history)} billing history records for org {org_id}")
             return history
@@ -320,9 +316,9 @@ class BillingService:
         self,
         org_id: str,
         price_id: str,
-        trial_days: Optional[int] = 14,
-        admin_id: Optional[str] = None
-    ) -> Dict[str, Any]:
+        trial_days: int | None = 14,
+        admin_id: str | None = None,
+    ) -> dict[str, Any]:
         """
         Upgrade organization subscription to paid plan.
 
@@ -368,12 +364,11 @@ class BillingService:
 
             # Use StripeService to upgrade
             from api.services.stripe_service import StripeService
+
             stripe_service = StripeService(self.db)
 
             upgrade_result = stripe_service.upgrade_to_paid(
-                org_id=org_id,
-                price_id=price_id,
-                trial_days=trial_days
+                org_id=org_id, price_id=price_id, trial_days=trial_days
             )
 
             if not upgrade_result["success"]:
@@ -390,7 +385,7 @@ class BillingService:
                     amount_cents=self._get_plan_amount(price_id),
                     payment_status="succeeded",
                     description=f"Upgraded from {previous_plan} to {new_plan}",
-                    stripe_invoice_id=None  # Will be updated by webhook
+                    stripe_invoice_id=None,  # Will be updated by webhook
                 )
 
             # Record subscription event for audit trail
@@ -400,15 +395,13 @@ class BillingService:
                 new_plan=new_plan,
                 previous_plan=previous_plan,
                 admin_id=admin_id,
-                notes=f"Upgraded from {previous_plan} to {new_plan} plan"
+                notes=f"Upgraded from {previous_plan} to {new_plan} plan",
             )
 
             # Update usage metrics with new volunteer limit
             self.update_volunteer_count(org_id)
 
-            logger.info(
-                f"Successfully upgraded org {org_id} from {previous_plan} to {new_plan}"
-            )
+            logger.info(f"Successfully upgraded org {org_id} from {previous_plan} to {new_plan}")
 
             # TODO: Send confirmation email with invoice details
             # This will be implemented when email service is ready
@@ -416,16 +409,13 @@ class BillingService:
             return {
                 "success": True,
                 "subscription": subscription,
-                "message": f"Successfully upgraded to {new_plan} plan"
+                "message": f"Successfully upgraded to {new_plan} plan",
             }
 
         except Exception as e:
             self.db.rollback()
             logger.error(f"Error upgrading subscription for org {org_id}: {e}")
-            return {
-                "success": False,
-                "message": f"Upgrade failed: {str(e)}"
-            }
+            return {"success": False, "message": f"Upgrade failed: {str(e)}"}
 
     def _record_billing_history(
         self,
@@ -433,10 +423,10 @@ class BillingService:
         event_type: str,
         amount_cents: int,
         payment_status: str,
-        description: Optional[str] = None,
-        stripe_invoice_id: Optional[str] = None,
-        invoice_pdf_url: Optional[str] = None
-    ) -> Optional[BillingHistory]:
+        description: str | None = None,
+        stripe_invoice_id: str | None = None,
+        invoice_pdf_url: str | None = None,
+    ) -> BillingHistory | None:
         """
         Record a billing event in history.
 
@@ -462,7 +452,7 @@ class BillingService:
                 payment_status=payment_status,
                 description=description,
                 stripe_invoice_id=stripe_invoice_id,
-                invoice_pdf_url=invoice_pdf_url
+                invoice_pdf_url=invoice_pdf_url,
             )
 
             self.db.add(history)
@@ -482,12 +472,8 @@ class BillingService:
             return None
 
     def start_trial(
-        self,
-        org_id: str,
-        plan_tier: str,
-        trial_days: int = 14,
-        admin_id: Optional[str] = None
-    ) -> Dict[str, Any]:
+        self, org_id: str, plan_tier: str, trial_days: int = 14, admin_id: str | None = None
+    ) -> dict[str, Any]:
         """
         Start a trial period for an organization.
 
@@ -528,15 +514,12 @@ class BillingService:
             if subscription.plan_tier != "free":
                 return {
                     "success": False,
-                    "message": f"Cannot start trial from {subscription.plan_tier} plan"
+                    "message": f"Cannot start trial from {subscription.plan_tier} plan",
                 }
 
             # Validate plan tier
             if plan_tier not in ["starter", "pro", "enterprise"]:
-                return {
-                    "success": False,
-                    "message": "Invalid plan tier for trial"
-                }
+                return {"success": False, "message": "Invalid plan tier for trial"}
 
             previous_plan = subscription.plan_tier
 
@@ -560,7 +543,7 @@ class BillingService:
                 new_plan=plan_tier,
                 previous_plan=previous_plan,
                 admin_id=admin_id,
-                notes=f"Started {trial_days}-day trial of {plan_tier} plan"
+                notes=f"Started {trial_days}-day trial of {plan_tier} plan",
             )
 
             # Update usage metrics to new plan limits
@@ -578,18 +561,15 @@ class BillingService:
                 "success": True,
                 "subscription": subscription,
                 "trial_end_date": trial_end,
-                "message": f"Started {trial_days}-day trial of {plan_tier} plan"
+                "message": f"Started {trial_days}-day trial of {plan_tier} plan",
             }
 
         except Exception as e:
             self.db.rollback()
             logger.error(f"Error starting trial for org {org_id}: {e}")
-            return {
-                "success": False,
-                "message": f"Failed to start trial: {str(e)}"
-            }
+            return {"success": False, "message": f"Failed to start trial: {str(e)}"}
 
-    def auto_downgrade_expired_trials(self) -> Dict[str, Any]:
+    def auto_downgrade_expired_trials(self) -> dict[str, Any]:
         """
         Automatically downgrade subscriptions with expired trials.
 
@@ -617,20 +597,25 @@ class BillingService:
             now = datetime.utcnow()
 
             # Find all expired trials
-            expired_trials = self.db.query(Subscription).filter(
-                Subscription.status == "trialing",
-                Subscription.trial_end_date <= now
-            ).all()
+            expired_trials = (
+                self.db.query(Subscription)
+                .filter(Subscription.status == "trialing", Subscription.trial_end_date <= now)
+                .all()
+            )
 
             downgraded_orgs = []
 
             for subscription in expired_trials:
                 # Check if payment method on file
-                payment_method = self.db.query(PaymentMethod).filter(
-                    PaymentMethod.org_id == subscription.org_id,
-                    PaymentMethod.is_primary == True,
-                    PaymentMethod.is_active == True
-                ).first()
+                payment_method = (
+                    self.db.query(PaymentMethod)
+                    .filter(
+                        PaymentMethod.org_id == subscription.org_id,
+                        PaymentMethod.is_primary is True,
+                        PaymentMethod.is_active is True,
+                    )
+                    .first()
+                )
 
                 if payment_method:
                     # Has payment method - convert to paid subscription
@@ -661,7 +646,7 @@ class BillingService:
                     new_plan="free",
                     previous_plan=previous_plan,
                     reason="Trial expired without payment method",
-                    notes=f"Auto-downgraded from {previous_plan} trial to free plan"
+                    notes=f"Auto-downgraded from {previous_plan} trial to free plan",
                 )
 
                 # Update usage metrics to free plan limits
@@ -680,7 +665,7 @@ class BillingService:
                 "success": True,
                 "downgraded_count": len(downgraded_orgs),
                 "downgraded_orgs": downgraded_orgs,
-                "message": f"Downgraded {len(downgraded_orgs)} expired trials to free plan"
+                "message": f"Downgraded {len(downgraded_orgs)} expired trials to free plan",
             }
 
         except Exception as e:
@@ -689,7 +674,7 @@ class BillingService:
             return {
                 "success": False,
                 "downgraded_count": 0,
-                "message": f"Failed to downgrade expired trials: {str(e)}"
+                "message": f"Failed to downgrade expired trials: {str(e)}",
             }
 
     def _get_plan_amount(self, price_id: str) -> int:
@@ -705,11 +690,11 @@ class BillingService:
         # Price mapping (in cents)
         # Annual pricing: 20% off annual total (equivalent to 2 months free)
         price_map = {
-            "starter_monthly": 2900,    # $29/month
-            "starter_annual": 27840,    # $278.40/year (20% off $348 = save $69.60)
-            "pro_monthly": 9900,        # $99/month
-            "pro_annual": 95040,        # $950.40/year (20% off $1188 = save $237.60)
-            "enterprise": 0             # Contact sales
+            "starter_monthly": 2900,  # $29/month
+            "starter_annual": 27840,  # $278.40/year (20% off $348 = save $69.60)
+            "pro_monthly": 9900,  # $99/month
+            "pro_annual": 95040,  # $950.40/year (20% off $1188 = save $237.60)
+            "enterprise": 0,  # Contact sales
         }
 
         price_lower = price_id.lower()
@@ -765,11 +750,8 @@ class BillingService:
         return savings
 
     def switch_billing_cycle(
-        self,
-        org_id: str,
-        new_billing_cycle: str,
-        admin_id: Optional[str] = None
-    ) -> Dict[str, Any]:
+        self, org_id: str, new_billing_cycle: str, admin_id: str | None = None
+    ) -> dict[str, Any]:
         """
         Switch subscription billing cycle between monthly and annual.
 
@@ -804,7 +786,7 @@ class BillingService:
             if new_billing_cycle not in ["monthly", "annual"]:
                 return {
                     "success": False,
-                    "message": "Invalid billing cycle. Must be 'monthly' or 'annual'"
+                    "message": "Invalid billing cycle. Must be 'monthly' or 'annual'",
                 }
 
             # Get current subscription
@@ -814,28 +796,24 @@ class BillingService:
 
             # Only allow switching for active paid subscriptions
             if subscription.plan_tier == "free":
-                return {
-                    "success": False,
-                    "message": "Cannot switch billing cycle for free plan"
-                }
+                return {"success": False, "message": "Cannot switch billing cycle for free plan"}
 
             if subscription.status != "active":
                 return {
                     "success": False,
-                    "message": f"Cannot switch billing cycle for {subscription.status} subscription"
+                    "message": f"Cannot switch billing cycle for {subscription.status} subscription",
                 }
 
             current_cycle = subscription.billing_cycle
             if current_cycle == new_billing_cycle:
                 return {
                     "success": False,
-                    "message": f"Subscription is already on {new_billing_cycle} billing cycle"
+                    "message": f"Subscription is already on {new_billing_cycle} billing cycle",
                 }
 
             # Calculate prorated amount
             prorated_amount = self._calculate_prorated_amount(
-                subscription=subscription,
-                new_billing_cycle=new_billing_cycle
+                subscription=subscription, new_billing_cycle=new_billing_cycle
             )
 
             # Get new price ID
@@ -844,6 +822,7 @@ class BillingService:
 
             # Update subscription in Stripe
             from api.services.stripe_service import StripeService
+
             stripe_service = StripeService(self.db)
 
             if subscription.stripe_subscription_id:
@@ -851,7 +830,7 @@ class BillingService:
                 stripe_result = stripe_service.update_subscription_billing_cycle(
                     stripe_subscription_id=subscription.stripe_subscription_id,
                     new_price_id=new_price_id,
-                    prorated_amount_cents=prorated_amount
+                    prorated_amount_cents=prorated_amount,
                 )
 
                 if not stripe_result["success"]:
@@ -871,7 +850,7 @@ class BillingService:
                 amount_cents=abs(prorated_amount),
                 payment_status="succeeded" if prorated_amount > 0 else "credited",
                 description=f"Switched from {previous_cycle} to {new_billing_cycle} billing",
-                stripe_invoice_id=None  # Will be updated by webhook
+                stripe_invoice_id=None,  # Will be updated by webhook
             )
 
             # Record subscription event
@@ -881,7 +860,7 @@ class BillingService:
                 new_plan=subscription.plan_tier,
                 previous_plan=subscription.plan_tier,
                 admin_id=admin_id,
-                notes=f"Switched from {previous_cycle} to {new_billing_cycle} billing"
+                notes=f"Switched from {previous_cycle} to {new_billing_cycle} billing",
             )
 
             logger.info(
@@ -893,22 +872,15 @@ class BillingService:
                 "success": True,
                 "subscription": subscription,
                 "prorated_amount_cents": prorated_amount,
-                "message": f"Successfully switched to {new_billing_cycle} billing"
+                "message": f"Successfully switched to {new_billing_cycle} billing",
             }
 
         except Exception as e:
             self.db.rollback()
             logger.error(f"Error switching billing cycle for org {org_id}: {e}")
-            return {
-                "success": False,
-                "message": f"Failed to switch billing cycle: {str(e)}"
-            }
+            return {"success": False, "message": f"Failed to switch billing cycle: {str(e)}"}
 
-    def _calculate_prorated_amount(
-        self,
-        subscription: Subscription,
-        new_billing_cycle: str
-    ) -> int:
+    def _calculate_prorated_amount(self, subscription: Subscription, new_billing_cycle: str) -> int:
         """
         Calculate prorated amount for billing cycle switch.
 
@@ -931,7 +903,9 @@ class BillingService:
 
         # Calculate days remaining in current period
         if subscription.current_period_end:
-            total_period_days = (subscription.current_period_end - subscription.current_period_start).days
+            total_period_days = (
+                subscription.current_period_end - subscription.current_period_start
+            ).days
             remaining_days = (subscription.current_period_end - now).days
             if remaining_days < 0:
                 remaining_days = 0
@@ -966,9 +940,9 @@ class BillingService:
         self,
         org_id: str,
         new_plan_tier: str,
-        reason: Optional[str] = None,
-        admin_id: Optional[str] = None
-    ) -> Dict[str, Any]:
+        reason: str | None = None,
+        admin_id: str | None = None,
+    ) -> dict[str, Any]:
         """
         Schedule subscription downgrade to execute at period end.
 
@@ -1015,20 +989,17 @@ class BillingService:
             if new_tier_level >= current_tier_level:
                 return {
                     "success": False,
-                    "message": f"Cannot downgrade from {current_plan} to {new_plan_tier}. Use upgrade instead."
+                    "message": f"Cannot downgrade from {current_plan} to {new_plan_tier}. Use upgrade instead.",
                 }
 
             # Only allow downgrades for active paid subscriptions
             if current_plan == "free":
-                return {
-                    "success": False,
-                    "message": "Cannot downgrade free plan"
-                }
+                return {"success": False, "message": "Cannot downgrade free plan"}
 
             if subscription.status != "active":
                 return {
                     "success": False,
-                    "message": f"Cannot downgrade {subscription.status} subscription"
+                    "message": f"Cannot downgrade {subscription.status} subscription",
                 }
 
             # Calculate effective date (end of current period)
@@ -1036,8 +1007,7 @@ class BillingService:
 
             # Calculate credit for unused time
             credit_amount = self._calculate_downgrade_credit(
-                subscription=subscription,
-                new_plan_tier=new_plan_tier
+                subscription=subscription, new_plan_tier=new_plan_tier
             )
 
             # Store pending downgrade
@@ -1046,7 +1016,7 @@ class BillingService:
                 "effective_date": effective_date.isoformat(),
                 "credit_amount_cents": credit_amount,
                 "reason": reason,
-                "scheduled_at": datetime.utcnow().isoformat()
+                "scheduled_at": datetime.utcnow().isoformat(),
             }
 
             self.db.commit()
@@ -1060,7 +1030,7 @@ class BillingService:
                 previous_plan=current_plan,
                 admin_id=admin_id,
                 reason=reason,
-                notes=f"Downgrade from {current_plan} to {new_plan_tier} scheduled for {effective_date.isoformat()}"
+                notes=f"Downgrade from {current_plan} to {new_plan_tier} scheduled for {effective_date.isoformat()}",
             )
 
             logger.info(
@@ -1073,22 +1043,15 @@ class BillingService:
                 "subscription": subscription,
                 "effective_date": effective_date.isoformat(),
                 "credit_amount_cents": credit_amount,
-                "message": f"Downgrade to {new_plan_tier} scheduled for {effective_date.strftime('%Y-%m-%d')}"
+                "message": f"Downgrade to {new_plan_tier} scheduled for {effective_date.strftime('%Y-%m-%d')}",
             }
 
         except Exception as e:
             self.db.rollback()
             logger.error(f"Error scheduling downgrade for org {org_id}: {e}")
-            return {
-                "success": False,
-                "message": f"Failed to schedule downgrade: {str(e)}"
-            }
+            return {"success": False, "message": f"Failed to schedule downgrade: {str(e)}"}
 
-    def _calculate_downgrade_credit(
-        self,
-        subscription: Subscription,
-        new_plan_tier: str
-    ) -> int:
+    def _calculate_downgrade_credit(self, subscription: Subscription, new_plan_tier: str) -> int:
         """
         Calculate credit for unused time when downgrading.
 
@@ -1109,7 +1072,9 @@ class BillingService:
 
         # Calculate days remaining in period
         if subscription.current_period_end:
-            total_period_days = (subscription.current_period_end - subscription.current_period_start).days
+            total_period_days = (
+                subscription.current_period_end - subscription.current_period_start
+            ).days
             remaining_days = (subscription.current_period_end - now).days
             if remaining_days < 0:
                 remaining_days = 0
@@ -1132,7 +1097,7 @@ class BillingService:
 
         return credit_amount
 
-    def apply_pending_downgrades(self) -> Dict[str, Any]:
+    def apply_pending_downgrades(self) -> dict[str, Any]:
         """
         Apply all pending downgrades that have reached their effective date.
 
@@ -1158,9 +1123,9 @@ class BillingService:
             applied_downgrades = []
 
             # Find all subscriptions with pending downgrades
-            subscriptions = self.db.query(Subscription).filter(
-                Subscription.pending_downgrade.isnot(None)
-            ).all()
+            subscriptions = (
+                self.db.query(Subscription).filter(Subscription.pending_downgrade.isnot(None)).all()
+            )
 
             logger.info(f"Found {len(subscriptions)} subscriptions with pending downgrades")
 
@@ -1198,11 +1163,12 @@ class BillingService:
                     if credit_amount_cents > 0 and subscription.stripe_customer_id:
                         try:
                             from api.services.stripe_service import StripeService
+
                             stripe_service = StripeService(self.db)
                             stripe_service.apply_customer_credit(
                                 customer_id=subscription.stripe_customer_id,
                                 amount_cents=credit_amount_cents,
-                                description=f"Credit for downgrade from {previous_plan} to {new_plan_tier}"
+                                description=f"Credit for downgrade from {previous_plan} to {new_plan_tier}",
                             )
                             logger.info(
                                 f"Applied ${credit_amount_cents/100:.2f} credit to "
@@ -1228,16 +1194,18 @@ class BillingService:
                         new_plan=new_plan_tier,
                         previous_plan=previous_plan,
                         reason=reason,
-                        notes=f"Scheduled downgrade applied: {previous_plan} → {new_plan_tier}, credit ${credit_amount_cents/100:.2f}"
+                        notes=f"Scheduled downgrade applied: {previous_plan} → {new_plan_tier}, credit ${credit_amount_cents/100:.2f}",
                     )
 
-                    applied_downgrades.append({
-                        "org_id": subscription.org_id,
-                        "previous_plan": previous_plan,
-                        "new_plan": new_plan_tier,
-                        "credit_amount_cents": credit_amount_cents,
-                        "effective_date": effective_date_str
-                    })
+                    applied_downgrades.append(
+                        {
+                            "org_id": subscription.org_id,
+                            "previous_plan": previous_plan,
+                            "new_plan": new_plan_tier,
+                            "credit_amount_cents": credit_amount_cents,
+                            "effective_date": effective_date_str,
+                        }
+                    )
 
                     logger.info(
                         f"Successfully applied downgrade for org {subscription.org_id}: "
@@ -1247,7 +1215,7 @@ class BillingService:
                 except Exception as e:
                     logger.error(
                         f"Error applying downgrade for subscription {subscription.id}: {e}",
-                        exc_info=True
+                        exc_info=True,
                     )
                     self.db.rollback()
                     # Continue with next subscription
@@ -1256,7 +1224,7 @@ class BillingService:
                 "success": True,
                 "applied_count": len(applied_downgrades),
                 "applied_downgrades": applied_downgrades,
-                "message": f"Applied {len(applied_downgrades)} pending downgrades"
+                "message": f"Applied {len(applied_downgrades)} pending downgrades",
             }
 
         except Exception as e:
@@ -1266,17 +1234,17 @@ class BillingService:
                 "success": False,
                 "applied_count": 0,
                 "applied_downgrades": [],
-                "message": f"Failed to apply pending downgrades: {str(e)}"
+                "message": f"Failed to apply pending downgrades: {str(e)}",
             }
 
     def cancel_subscription(
         self,
         org_id: str,
-        reason: Optional[str] = None,
-        feedback: Optional[str] = None,
-        admin_id: Optional[str] = None,
-        at_period_end: bool = True
-    ) -> Dict[str, Any]:
+        reason: str | None = None,
+        feedback: str | None = None,
+        admin_id: str | None = None,
+        at_period_end: bool = True,
+    ) -> dict[str, Any]:
         """
         Cancel organization's subscription.
 
@@ -1314,26 +1282,18 @@ class BillingService:
             subscription = self.get_subscription(org_id)
 
             if not subscription:
-                return {
-                    "success": False,
-                    "message": "No subscription found for organization"
-                }
+                return {"success": False, "message": "No subscription found for organization"}
 
             # Validate subscription is paid (not free)
             if subscription.plan_tier == "free":
-                return {
-                    "success": False,
-                    "message": "Cannot cancel free plan subscription"
-                }
+                return {"success": False, "message": "Cannot cancel free plan subscription"}
 
             # Cancel via StripeService
             from api.services.stripe_service import StripeService
+
             stripe_service = StripeService(self.db)
 
-            result = stripe_service.cancel_subscription(
-                org_id=org_id,
-                at_period_end=at_period_end
-            )
+            result = stripe_service.cancel_subscription(org_id=org_id, at_period_end=at_period_end)
 
             if not result["success"]:
                 return result
@@ -1346,9 +1306,11 @@ class BillingService:
             data_retention_until = period_end + timedelta(days=30) if period_end else None
 
             # Record cancellation event
-            notes_text = f"Subscription cancelled"
+            notes_text = "Subscription cancelled"
             if at_period_end:
-                notes_text += f" (service continues until {period_end.isoformat() if period_end else 'N/A'})"
+                notes_text += (
+                    f" (service continues until {period_end.isoformat() if period_end else 'N/A'})"
+                )
             else:
                 notes_text += " (immediate cancellation)"
 
@@ -1362,7 +1324,7 @@ class BillingService:
                 previous_plan=subscription.plan_tier,
                 admin_id=admin_id,
                 reason=reason,
-                notes=notes_text
+                notes=notes_text,
             )
 
             logger.info(
@@ -1376,22 +1338,15 @@ class BillingService:
                 "subscription": subscription,
                 "period_end": period_end,
                 "data_retention_until": data_retention_until,
-                "message": result["message"]
+                "message": result["message"],
             }
 
         except Exception as e:
             self.db.rollback()
             logger.error(f"Error cancelling subscription for org {org_id}: {e}", exc_info=True)
-            return {
-                "success": False,
-                "message": f"Failed to cancel subscription: {str(e)}"
-            }
+            return {"success": False, "message": f"Failed to cancel subscription: {str(e)}"}
 
-    def reactivate_subscription(
-        self,
-        org_id: str,
-        admin_id: Optional[str] = None
-    ) -> Dict[str, Any]:
+    def reactivate_subscription(self, org_id: str, admin_id: str | None = None) -> dict[str, Any]:
         """
         Reactivate a cancelled subscription within data retention period.
 
@@ -1418,29 +1373,26 @@ class BillingService:
         """
         try:
             # Get organization and subscription (with eager loading)
-            org = self.db.query(Organization).options(
-                joinedload(Organization.subscription)
-            ).filter(Organization.id == org_id).first()
+            org = (
+                self.db.query(Organization)
+                .options(joinedload(Organization.subscription))
+                .filter(Organization.id == org_id)
+                .first()
+            )
 
             if not org:
-                return {
-                    "success": False,
-                    "message": "Organization not found"
-                }
+                return {"success": False, "message": "Organization not found"}
 
             subscription = self.get_subscription(org_id)
 
             if not subscription:
-                return {
-                    "success": False,
-                    "message": "No subscription found for organization"
-                }
+                return {"success": False, "message": "No subscription found for organization"}
 
             # Check if organization is in data retention period
             if not org.data_retention_until:
                 return {
                     "success": False,
-                    "message": "Subscription was not cancelled or retention period has expired"
+                    "message": "Subscription was not cancelled or retention period has expired",
                 }
 
             now = datetime.utcnow()
@@ -1448,25 +1400,32 @@ class BillingService:
             if now > org.data_retention_until:
                 return {
                     "success": False,
-                    "message": f"Data retention period expired on {org.data_retention_until.isoformat()}. Cannot reactivate subscription."
+                    "message": f"Data retention period expired on {org.data_retention_until.isoformat()}. Cannot reactivate subscription.",
                 }
 
             # Check current status
             if subscription.status not in ["cancelled", "canceled"]:
                 return {
                     "success": False,
-                    "message": f"Subscription status is {subscription.status}, not cancelled. Cannot reactivate."
+                    "message": f"Subscription status is {subscription.status}, not cancelled. Cannot reactivate.",
                 }
 
             # Get previous plan from subscription events
             from api.models import SubscriptionEvent
 
-            last_event = self.db.query(SubscriptionEvent).filter(
-                SubscriptionEvent.org_id == org_id,
-                SubscriptionEvent.event_type.in_(["cancelled", "cancelled_completed"])
-            ).order_by(SubscriptionEvent.event_timestamp.desc()).first()
+            last_event = (
+                self.db.query(SubscriptionEvent)
+                .filter(
+                    SubscriptionEvent.org_id == org_id,
+                    SubscriptionEvent.event_type.in_(["cancelled", "cancelled_completed"]),
+                )
+                .order_by(SubscriptionEvent.event_timestamp.desc())
+                .first()
+            )
 
-            previous_plan = last_event.previous_plan if last_event and last_event.previous_plan else "starter"
+            previous_plan = (
+                last_event.previous_plan if last_event and last_event.previous_plan else "starter"
+            )
 
             # Restore subscription
             subscription.plan_tier = previous_plan
@@ -1489,38 +1448,34 @@ class BillingService:
                 new_plan=previous_plan,
                 previous_plan="free",
                 admin_id=admin_id,
-                notes=f"Subscription reactivated within data retention period. Restored to {previous_plan} plan."
+                notes=f"Subscription reactivated within data retention period. Restored to {previous_plan} plan.",
             )
 
             logger.info(
-                f"Reactivated subscription for org {org_id}: "
-                f"restored to {previous_plan} plan"
+                f"Reactivated subscription for org {org_id}: " f"restored to {previous_plan} plan"
             )
 
             return {
                 "success": True,
                 "subscription": subscription,
-                "message": f"Subscription reactivated successfully. Restored to {previous_plan} plan."
+                "message": f"Subscription reactivated successfully. Restored to {previous_plan} plan.",
             }
 
         except Exception as e:
             self.db.rollback()
             logger.error(f"Error reactivating subscription for org {org_id}: {e}", exc_info=True)
-            return {
-                "success": False,
-                "message": f"Failed to reactivate subscription: {str(e)}"
-            }
+            return {"success": False, "message": f"Failed to reactivate subscription: {str(e)}"}
 
     def _record_subscription_event(
         self,
         org_id: str,
         event_type: str,
         new_plan: str,
-        previous_plan: Optional[str] = None,
-        admin_id: Optional[str] = None,
-        reason: Optional[str] = None,
-        notes: Optional[str] = None
-    ) -> Optional[SubscriptionEvent]:
+        previous_plan: str | None = None,
+        admin_id: str | None = None,
+        reason: str | None = None,
+        notes: str | None = None,
+    ) -> SubscriptionEvent | None:
         """
         Record a subscription change event for audit trail.
 
@@ -1545,7 +1500,7 @@ class BillingService:
                 previous_plan=previous_plan,
                 admin_id=admin_id,
                 reason=reason,
-                notes=notes
+                notes=notes,
             )
 
             self.db.add(event)

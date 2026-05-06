@@ -5,7 +5,9 @@ with bcrypt implementation. This module is kept for backward compatibility.
 """
 
 import secrets
-from api.security import hash_password as _hash_password, verify_password as _verify_password
+
+from api.security import hash_password as _hash_password
+from api.security import verify_password as _verify_password
 
 
 def generate_token(length: int = 32) -> str:

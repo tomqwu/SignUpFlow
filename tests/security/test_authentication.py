@@ -1,11 +1,12 @@
 """Security tests for JWT authentication."""
 
-import pytest
-from httpx import AsyncClient
 from datetime import timedelta
 
+import pytest
+from httpx import AsyncClient
+
 from api.main import app
-from api.security import create_access_token, verify_token, hash_password, verify_password
+from api.security import create_access_token, hash_password, verify_password, verify_token
 
 
 def test_password_hashing():
@@ -45,13 +46,11 @@ def test_jwt_token_expiration():
     user_id = "test_user_123"
 
     # Create token that expires in the past (invalid)
-    expired_token = create_access_token(
-        data={"sub": user_id},
-        expires_delta=timedelta(minutes=-1)
-    )
+    expired_token = create_access_token(data={"sub": user_id}, expires_delta=timedelta(minutes=-1))
 
     # Should raise HTTPException when verifying expired token
     from fastapi import HTTPException
+
     with pytest.raises(HTTPException) as exc_info:
         verify_token(expired_token)
 
@@ -74,8 +73,7 @@ async def test_invalid_token_rejected():
     """Test that invalid tokens are rejected."""
     async with AsyncClient(app=app, base_url="http://test") as ac:
         response = await ac.get(
-            "/api/people/me",
-            headers={"Authorization": "Bearer invalid_token_xyz"}
+            "/api/people/me", headers={"Authorization": "Bearer invalid_token_xyz"}
         )
 
         # Should return 401 Unauthorized
@@ -86,7 +84,7 @@ async def test_invalid_token_rejected():
 async def test_login_returns_jwt_token():
     """Test that login endpoint returns a valid JWT token."""
     from api.database import get_db
-    from api.models import Person, Organization
+    from api.models import Organization, Person
     from api.security import hash_password
 
     # Create test user
@@ -112,7 +110,7 @@ async def test_login_returns_jwt_token():
         name="Security Test",
         email="security_test@example.com",
         password_hash=hash_password("testpass123"),
-        roles=["volunteer"]
+        roles=["volunteer"],
     )
     db.add(person)
     db.commit()
@@ -120,10 +118,7 @@ async def test_login_returns_jwt_token():
     async with AsyncClient(app=app, base_url="http://test") as ac:
         response = await ac.post(
             "/api/auth/login",
-            json={
-                "email": "security_test@example.com",
-                "password": "testpass123"
-            }
+            json={"email": "security_test@example.com", "password": "testpass123"},
         )
 
         assert response.status_code == 200
@@ -147,7 +142,7 @@ async def test_login_returns_jwt_token():
 async def test_authenticated_request_with_valid_token():
     """Test that authenticated requests with valid tokens succeed."""
     from api.database import get_db
-    from api.models import Person, Organization
+    from api.models import Organization, Person
     from api.security import hash_password
 
     # Create test data
@@ -170,7 +165,7 @@ async def test_authenticated_request_with_valid_token():
         name="Auth Test",
         email="auth_test@example.com",
         password_hash=hash_password("testpass123"),
-        roles=["volunteer"]
+        roles=["volunteer"],
     )
     db.add(person)
     db.commit()
@@ -179,10 +174,7 @@ async def test_authenticated_request_with_valid_token():
     token = create_access_token(data={"sub": "auth_test_person"})
 
     async with AsyncClient(app=app, base_url="http://test") as ac:
-        response = await ac.get(
-            "/api/people/me",
-            headers={"Authorization": f"Bearer {token}"}
-        )
+        response = await ac.get("/api/people/me", headers={"Authorization": f"Bearer {token}"})
 
         assert response.status_code == 200
         data = response.json()

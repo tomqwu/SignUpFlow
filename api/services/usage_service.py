@@ -17,12 +17,13 @@ Example Usage:
 """
 
 import os
-from typing import Optional, Dict, Any, List
-from sqlalchemy.orm import Session, joinedload
 from datetime import datetime
+from typing import Any
 
-from api.models import Organization, Subscription, UsageMetrics, Person
+from sqlalchemy.orm import Session, joinedload
+
 from api.logging_config import logger
+from api.models import Organization, Subscription, UsageMetrics
 
 
 class UsageService:
@@ -34,26 +35,26 @@ class UsageService:
             "volunteers": 10,
             "events_per_month": 50,
             "storage_mb": 100,
-            "api_calls_per_day": 1000
+            "api_calls_per_day": 1000,
         },
         "starter": {
             "volunteers": 50,
             "events_per_month": 200,
             "storage_mb": 1000,
-            "api_calls_per_day": 10000
+            "api_calls_per_day": 10000,
         },
         "pro": {
             "volunteers": 200,
             "events_per_month": 1000,
             "storage_mb": 10000,
-            "api_calls_per_day": 50000
+            "api_calls_per_day": 50000,
         },
         "enterprise": {
             "volunteers": None,  # Unlimited
             "events_per_month": None,  # Unlimited
             "storage_mb": None,  # Unlimited
-            "api_calls_per_day": None  # Unlimited
-        }
+            "api_calls_per_day": None,  # Unlimited
+        },
     }
 
     def __init__(self, db: Session):
@@ -65,7 +66,7 @@ class UsageService:
         """
         self.db = db
 
-    def get_plan_limits(self, plan_tier: str) -> Dict[str, Optional[int]]:
+    def get_plan_limits(self, plan_tier: str) -> dict[str, int | None]:
         """
         Get limits for a specific plan tier.
 
@@ -101,18 +102,22 @@ class UsageService:
                 )
         """
         try:
-            if os.getenv("DISABLE_USAGE_LIMITS", "").lower() == "true" or os.getenv("TESTING", "").lower() == "true":
+            if (
+                os.getenv("DISABLE_USAGE_LIMITS", "").lower() == "true"
+                or os.getenv("TESTING", "").lower() == "true"
+            ):
                 return True
             # Get organization and subscription (with eager loading)
-            org = self.db.query(Organization).options(
-                joinedload(Organization.subscription)
-            ).filter(Organization.id == org_id).first()
+            org = (
+                self.db.query(Organization)
+                .options(joinedload(Organization.subscription))
+                .filter(Organization.id == org_id)
+                .first()
+            )
             if not org:
                 return False
 
-            subscription = self.db.query(Subscription).filter(
-                Subscription.org_id == org_id
-            ).first()
+            subscription = self.db.query(Subscription).filter(Subscription.org_id == org_id).first()
 
             if not subscription:
                 return False
@@ -125,10 +130,7 @@ class UsageService:
                 return True
 
             # Count current volunteers
-            current_volunteers = len([
-                p for p in org.people
-                if "volunteer" in (p.roles or [])
-            ])
+            current_volunteers = len([p for p in org.people if "volunteer" in (p.roles or [])])
 
             return current_volunteers < volunteer_limit
 
@@ -136,7 +138,7 @@ class UsageService:
             logger.error(f"Error checking volunteer limit for org {org_id}: {e}")
             return False
 
-    def track_volunteer_added(self, org_id: str) -> Optional[UsageMetrics]:
+    def track_volunteer_added(self, org_id: str) -> UsageMetrics | None:
         """
         Update volunteer count metric when a volunteer is added.
 
@@ -153,7 +155,7 @@ class UsageService:
         """
         return self._update_volunteer_count(org_id)
 
-    def track_volunteer_removed(self, org_id: str) -> Optional[UsageMetrics]:
+    def track_volunteer_removed(self, org_id: str) -> UsageMetrics | None:
         """
         Update volunteer count metric when a volunteer is removed.
 
@@ -170,7 +172,7 @@ class UsageService:
         """
         return self._update_volunteer_count(org_id)
 
-    def get_usage_summary(self, org_id: str) -> Dict[str, Any]:
+    def get_usage_summary(self, org_id: str) -> dict[str, Any]:
         """
         Get complete usage summary for organization.
 
@@ -197,9 +199,7 @@ class UsageService:
         """
         try:
             # Get subscription
-            subscription = self.db.query(Subscription).filter(
-                Subscription.org_id == org_id
-            ).first()
+            subscription = self.db.query(Subscription).filter(Subscription.org_id == org_id).first()
 
             if not subscription:
                 return {"error": "No subscription found"}
@@ -208,9 +208,7 @@ class UsageService:
             limits = self.get_plan_limits(subscription.plan_tier)
 
             # Get all usage metrics
-            metrics = self.db.query(UsageMetrics).filter(
-                UsageMetrics.org_id == org_id
-            ).all()
+            metrics = self.db.query(UsageMetrics).filter(UsageMetrics.org_id == org_id).all()
 
             # Build usage summary
             usage = {}
@@ -220,7 +218,7 @@ class UsageService:
                 metric_data = {
                     "current": metric.current_value,
                     "limit": metric.plan_limit,
-                    "percentage": metric.percentage_used
+                    "percentage": metric.percentage_used,
                 }
                 usage[metric.metric_type] = metric_data
 
@@ -235,14 +233,14 @@ class UsageService:
                 "plan_tier": subscription.plan_tier,
                 "limits": limits,
                 "usage": usage,
-                "warnings": warnings
+                "warnings": warnings,
             }
 
         except Exception as e:
             logger.error(f"Error getting usage summary for org {org_id}: {e}")
             return {"error": str(e)}
 
-    def enforce_volunteer_limit(self, org_id: str) -> Dict[str, Any]:
+    def enforce_volunteer_limit(self, org_id: str) -> dict[str, Any]:
         """
         Check volunteer limit and return enforcement result.
 
@@ -265,28 +263,33 @@ class UsageService:
         """
         try:
             if self.can_add_volunteer(org_id):
-                metric = self.db.query(UsageMetrics).filter(
-                    UsageMetrics.org_id == org_id,
-                    UsageMetrics.metric_type == "volunteers_count"
-                ).first()
+                metric = (
+                    self.db.query(UsageMetrics)
+                    .filter(
+                        UsageMetrics.org_id == org_id,
+                        UsageMetrics.metric_type == "volunteers_count",
+                    )
+                    .first()
+                )
 
                 if metric:
                     return {
                         "allowed": True,
                         "current": metric.current_value,
                         "limit": metric.plan_limit,
-                        "message": "Within volunteer limit"
+                        "message": "Within volunteer limit",
                     }
 
             # Over limit
-            subscription = self.db.query(Subscription).filter(
-                Subscription.org_id == org_id
-            ).first()
+            subscription = self.db.query(Subscription).filter(Subscription.org_id == org_id).first()
 
-            metric = self.db.query(UsageMetrics).filter(
-                UsageMetrics.org_id == org_id,
-                UsageMetrics.metric_type == "volunteers_count"
-            ).first()
+            metric = (
+                self.db.query(UsageMetrics)
+                .filter(
+                    UsageMetrics.org_id == org_id, UsageMetrics.metric_type == "volunteers_count"
+                )
+                .first()
+            )
 
             if metric:
                 return {
@@ -296,43 +299,35 @@ class UsageService:
                     "message": (
                         f"Volunteer limit reached ({metric.current_value}/{metric.plan_limit}). "
                         f"Upgrade to {self._get_next_tier(subscription.plan_tier)} plan for more volunteers."
-                    )
+                    ),
                 }
 
-            return {
-                "allowed": False,
-                "message": "Unable to determine volunteer limit"
-            }
+            return {"allowed": False, "message": "Unable to determine volunteer limit"}
 
         except Exception as e:
             logger.error(f"Error enforcing volunteer limit for org {org_id}: {e}")
-            return {
-                "allowed": False,
-                "message": f"Error checking limit: {str(e)}"
-            }
+            return {"allowed": False, "message": f"Error checking limit: {str(e)}"}
 
-    def _update_volunteer_count(self, org_id: str) -> Optional[UsageMetrics]:
+    def _update_volunteer_count(self, org_id: str) -> UsageMetrics | None:
         """Update volunteer count metric (internal helper)."""
         try:
             # Get organization and subscription (with eager loading)
-            org = self.db.query(Organization).options(
-                joinedload(Organization.subscription)
-            ).filter(Organization.id == org_id).first()
+            org = (
+                self.db.query(Organization)
+                .options(joinedload(Organization.subscription))
+                .filter(Organization.id == org_id)
+                .first()
+            )
             if not org:
                 return None
 
-            subscription = self.db.query(Subscription).filter(
-                Subscription.org_id == org_id
-            ).first()
+            subscription = self.db.query(Subscription).filter(Subscription.org_id == org_id).first()
 
             if not subscription:
                 return None
 
             # Count current volunteers
-            volunteer_count = len([
-                p for p in org.people
-                if "volunteer" in (p.roles or [])
-            ])
+            volunteer_count = len([p for p in org.people if "volunteer" in (p.roles or [])])
 
             # Get plan limit
             limits = self.get_plan_limits(subscription.plan_tier)
@@ -345,10 +340,13 @@ class UsageService:
                 percentage_used = (volunteer_count / plan_limit * 100) if plan_limit > 0 else 0.0
 
             # Update or create metric
-            metric = self.db.query(UsageMetrics).filter(
-                UsageMetrics.org_id == org_id,
-                UsageMetrics.metric_type == "volunteers_count"
-            ).first()
+            metric = (
+                self.db.query(UsageMetrics)
+                .filter(
+                    UsageMetrics.org_id == org_id, UsageMetrics.metric_type == "volunteers_count"
+                )
+                .first()
+            )
 
             if metric:
                 metric.current_value = volunteer_count
@@ -361,7 +359,7 @@ class UsageService:
                     metric_type="volunteers_count",
                     current_value=volunteer_count,
                     plan_limit=plan_limit,
-                    percentage_used=percentage_used
+                    percentage_used=percentage_used,
                 )
                 self.db.add(metric)
 

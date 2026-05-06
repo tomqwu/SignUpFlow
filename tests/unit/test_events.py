@@ -1,9 +1,6 @@
 """Unit tests for event endpoints."""
 
-import pytest
 from datetime import datetime, timedelta
-from fastapi.testclient import TestClient
-from api.main import app
 
 API_BASE = "http://localhost:8000/api"
 
@@ -15,23 +12,21 @@ class TestEventCreate:
         """Test successful event creation."""
         # Setup with unique IDs
         import time
+
         timestamp = int(time.time() * 1000)
         org_id = f"event_test_org_{timestamp}"
         resource_id = f"sanctuary_{timestamp}"
         event_id = f"event_{timestamp}"
 
-        client.post(
-            f"{API_BASE}/organizations/",
-            json={"id": org_id, "name": "Event Test Org"}
-        )
+        client.post(f"{API_BASE}/organizations/", json={"id": org_id, "name": "Event Test Org"})
         client.post(
             f"{API_BASE}/resources/",
             json={
                 "id": resource_id,
                 "org_id": org_id,
                 "type": "venue",
-                "location": "Main Building"
-            }
+                "location": "Main Building",
+            },
         )
         # Create event
         start = (datetime.now() + timedelta(days=1)).isoformat()
@@ -45,8 +40,8 @@ class TestEventCreate:
                 "start_time": start,
                 "end_time": end,
                 "resource_id": resource_id,
-                "extra_data": {"roles": ["volunteer"]}
-            }
+                "extra_data": {"roles": ["volunteer"]},
+            },
         )
         assert response.status_code in [200, 201]
         data = response.json()
@@ -56,14 +51,12 @@ class TestEventCreate:
     def test_create_event_without_resource(self, client):
         """Test creating event without resource (optional)."""
         import time
+
         timestamp = int(time.time() * 1000)
         org_id = f"event_test_org2_{timestamp}"
         event_id = f"event_002_{timestamp}"
 
-        client.post(
-            f"{API_BASE}/organizations/",
-            json={"id": org_id, "name": "Event Test Org 2"}
-        )
+        client.post(f"{API_BASE}/organizations/", json={"id": org_id, "name": "Event Test Org 2"})
         start = (datetime.now() + timedelta(days=2)).isoformat()
         end = (datetime.now() + timedelta(days=2, hours=1)).isoformat()
         response = client.post(
@@ -73,8 +66,8 @@ class TestEventCreate:
                 "org_id": org_id,
                 "type": "Meeting",
                 "start_time": start,
-                "end_time": end
-            }
+                "end_time": end,
+            },
         )
         assert response.status_code in [200, 201]
 
@@ -89,16 +82,15 @@ class TestEventCreate:
                 "org_id": "nonexistent_org",
                 "type": "Meeting",
                 "start_time": start,
-                "end_time": end
-            }
+                "end_time": end,
+            },
         )
         assert response.status_code == 404
 
     def test_create_event_end_before_start(self, client):
         """Test creating event where end time is before start time."""
         client.post(
-            f"{API_BASE}/organizations/",
-            json={"id": "event_test_org3", "name": "Event Test Org 3"}
+            f"{API_BASE}/organizations/", json={"id": "event_test_org3", "name": "Event Test Org 3"}
         )
         start = datetime.now().isoformat()
         end = (datetime.now() - timedelta(hours=1)).isoformat()  # Earlier than start
@@ -109,8 +101,8 @@ class TestEventCreate:
                 "org_id": "event_test_org3",
                 "type": "Invalid Event",
                 "start_time": start,
-                "end_time": end
-            }
+                "end_time": end,
+            },
         )
         # Should either fail validation or accept (depending on backend validation)
         # At minimum, we document this case
@@ -123,8 +115,7 @@ class TestEventRead:
     def test_get_event_success(self, client):
         """Test successful event retrieval."""
         client.post(
-            f"{API_BASE}/organizations/",
-            json={"id": "event_test_org4", "name": "Event Test Org 4"}
+            f"{API_BASE}/organizations/", json={"id": "event_test_org4", "name": "Event Test Org 4"}
         )
         start = (datetime.now() + timedelta(days=3)).isoformat()
         end = (datetime.now() + timedelta(days=3, hours=2)).isoformat()
@@ -135,8 +126,8 @@ class TestEventRead:
                 "org_id": "event_test_org4",
                 "type": "Service",
                 "start_time": start,
-                "end_time": end
-            }
+                "end_time": end,
+            },
         )
         response = client.get(f"{API_BASE}/events/event_005")
         assert response.status_code == 200
@@ -151,8 +142,7 @@ class TestEventRead:
     def test_list_events_by_org(self, client):
         """Test listing events filtered by organization."""
         client.post(
-            f"{API_BASE}/organizations/",
-            json={"id": "event_test_org5", "name": "Event Test Org 5"}
+            f"{API_BASE}/organizations/", json={"id": "event_test_org5", "name": "Event Test Org 5"}
         )
         # Create multiple events
         for i in range(6, 9):
@@ -165,8 +155,8 @@ class TestEventRead:
                     "org_id": "event_test_org5",
                     "type": f"Event {i}",
                     "start_time": start,
-                    "end_time": end
-                }
+                    "end_time": end,
+                },
             )
         response = client.get(f"{API_BASE}/events/?org_id=event_test_org5")
         assert response.status_code == 200
@@ -177,8 +167,7 @@ class TestEventRead:
     def test_list_events_date_range(self, client):
         """Test listing events within date range."""
         client.post(
-            f"{API_BASE}/organizations/",
-            json={"id": "event_test_org6", "name": "Event Test Org 6"}
+            f"{API_BASE}/organizations/", json={"id": "event_test_org6", "name": "Event Test Org 6"}
         )
         # Create event
         start = (datetime.now() + timedelta(days=10)).isoformat()
@@ -190,8 +179,8 @@ class TestEventRead:
                 "org_id": "event_test_org6",
                 "type": "Range Event",
                 "start_time": start,
-                "end_time": end
-            }
+                "end_time": end,
+            },
         )
         # Query with date range
         from_date = (datetime.now() + timedelta(days=9)).strftime("%Y-%m-%d")
@@ -210,8 +199,7 @@ class TestEventUpdate:
     def test_update_event_success(self, client):
         """Test successful event update."""
         client.post(
-            f"{API_BASE}/organizations/",
-            json={"id": "event_test_org7", "name": "Event Test Org 7"}
+            f"{API_BASE}/organizations/", json={"id": "event_test_org7", "name": "Event Test Org 7"}
         )
         start = (datetime.now() + timedelta(days=20)).isoformat()
         end = (datetime.now() + timedelta(days=20, hours=2)).isoformat()
@@ -222,19 +210,15 @@ class TestEventUpdate:
                 "org_id": "event_test_org7",
                 "type": "Original Type",
                 "start_time": start,
-                "end_time": end
-            }
+                "end_time": end,
+            },
         )
         # Update
         new_start = (datetime.now() + timedelta(days=21)).isoformat()
         new_end = (datetime.now() + timedelta(days=21, hours=3)).isoformat()
         response = client.put(
             f"{API_BASE}/events/event_010",
-            json={
-                "type": "Updated Type",
-                "start_time": new_start,
-                "end_time": new_end
-            }
+            json={"type": "Updated Type", "start_time": new_start, "end_time": new_end},
         )
         assert response.status_code == 200
         data = response.json()
@@ -246,7 +230,7 @@ class TestEventUpdate:
         end = (datetime.now() + timedelta(hours=2)).isoformat()
         response = client.put(
             f"{API_BASE}/events/nonexistent_event",
-            json={"type": "Updated", "start_time": start, "end_time": end}
+            json={"type": "Updated", "start_time": start, "end_time": end},
         )
         assert response.status_code == 404
 
@@ -257,8 +241,7 @@ class TestEventDelete:
     def test_delete_event_success(self, client):
         """Test successful event deletion."""
         client.post(
-            f"{API_BASE}/organizations/",
-            json={"id": "event_test_org8", "name": "Event Test Org 8"}
+            f"{API_BASE}/organizations/", json={"id": "event_test_org8", "name": "Event Test Org 8"}
         )
         start = (datetime.now() + timedelta(days=30)).isoformat()
         end = (datetime.now() + timedelta(days=30, hours=2)).isoformat()
@@ -269,8 +252,8 @@ class TestEventDelete:
                 "org_id": "event_test_org8",
                 "type": "To Delete",
                 "start_time": start,
-                "end_time": end
-            }
+                "end_time": end,
+            },
         )
         response = client.delete(f"{API_BASE}/events/event_011")
         assert response.status_code in [200, 204]  # OK or No Content
@@ -290,6 +273,7 @@ class TestEventAssignments:
     def test_get_available_people_for_event(self, client):
         """Test getting available people for an event based on roles."""
         import time
+
         timestamp = int(time.time() * 1000)
         org_id = f"assign_test_org_{timestamp}"
         event_id = f"assign_event_{timestamp}"
@@ -297,7 +281,11 @@ class TestEventAssignments:
         # Create organization with roles
         client.post(
             f"{API_BASE}/organizations/",
-            json={"id": org_id, "name": "Assignment Test Org", "config": {"roles": ["volunteer", "leader"]}}
+            json={
+                "id": org_id,
+                "name": "Assignment Test Org",
+                "config": {"roles": ["volunteer", "leader"]},
+            },
         )
 
         # Create people directly via people endpoint
@@ -307,15 +295,33 @@ class TestEventAssignments:
 
         client.post(
             f"{API_BASE}/people/",
-            json={"id": alice_id, "org_id": org_id, "name": "Alice", "email": f"alice_{timestamp}@test.com", "roles": ["volunteer"]}
+            json={
+                "id": alice_id,
+                "org_id": org_id,
+                "name": "Alice",
+                "email": f"alice_{timestamp}@test.com",
+                "roles": ["volunteer"],
+            },
         )
         client.post(
             f"{API_BASE}/people/",
-            json={"id": bob_id, "org_id": org_id, "name": "Bob", "email": f"bob_{timestamp}@test.com", "roles": ["leader"]}
+            json={
+                "id": bob_id,
+                "org_id": org_id,
+                "name": "Bob",
+                "email": f"bob_{timestamp}@test.com",
+                "roles": ["leader"],
+            },
         )
         client.post(
             f"{API_BASE}/people/",
-            json={"id": charlie_id, "org_id": org_id, "name": "Charlie", "email": f"charlie_{timestamp}@test.com", "roles": ["volunteer", "leader"]}
+            json={
+                "id": charlie_id,
+                "org_id": org_id,
+                "name": "Charlie",
+                "email": f"charlie_{timestamp}@test.com",
+                "roles": ["volunteer", "leader"],
+            },
         )
 
         # Create event with role requirements
@@ -329,8 +335,8 @@ class TestEventAssignments:
                 "type": "Service",
                 "start_time": start,
                 "end_time": end,
-                "extra_data": {"role_counts": {"volunteer": 2, "leader": 1}}
-            }
+                "extra_data": {"role_counts": {"volunteer": 2, "leader": 1}},
+            },
         )
 
         # Get available people
@@ -346,6 +352,7 @@ class TestEventAssignments:
     def test_assign_person_to_event(self, client):
         """Test assigning a person to an event."""
         import time
+
         timestamp = int(time.time() * 1000)
         org_id = f"assign_test_org2_{timestamp}"
         event_id = f"assign_event2_{timestamp}"
@@ -355,20 +362,32 @@ class TestEventAssignments:
         client.post(f"{API_BASE}/organizations/", json={"id": org_id, "name": "Test Org"})
         client.post(
             f"{API_BASE}/people/",
-            json={"id": person_id, "org_id": org_id, "name": "Alice", "email": f"alice2_{timestamp}@test.com", "roles": ["volunteer"]}
+            json={
+                "id": person_id,
+                "org_id": org_id,
+                "name": "Alice",
+                "email": f"alice2_{timestamp}@test.com",
+                "roles": ["volunteer"],
+            },
         )
 
         start = (datetime.now() + timedelta(days=1)).isoformat()
         end = (datetime.now() + timedelta(days=1, hours=2)).isoformat()
         client.post(
             f"{API_BASE}/events/",
-            json={"id": event_id, "org_id": org_id, "type": "Event", "start_time": start, "end_time": end}
+            json={
+                "id": event_id,
+                "org_id": org_id,
+                "type": "Event",
+                "start_time": start,
+                "end_time": end,
+            },
         )
 
         # Assign person
         response = client.post(
             f"{API_BASE}/events/{event_id}/assignments",
-            json={"person_id": person_id, "action": "assign"}
+            json={"person_id": person_id, "action": "assign"},
         )
         assert response.status_code == 200
         data = response.json()
@@ -380,6 +399,7 @@ class TestEventAssignments:
     def test_unassign_person_from_event(self, client):
         """Test unassigning a person from an event."""
         import time
+
         timestamp = int(time.time() * 1000)
         org_id = f"assign_test_org3_{timestamp}"
         event_id = f"assign_event3_{timestamp}"
@@ -389,26 +409,38 @@ class TestEventAssignments:
         client.post(f"{API_BASE}/organizations/", json={"id": org_id, "name": "Test Org"})
         client.post(
             f"{API_BASE}/people/",
-            json={"id": person_id, "org_id": org_id, "name": "Bob", "email": f"bob2_{timestamp}@test.com", "roles": ["volunteer"]}
+            json={
+                "id": person_id,
+                "org_id": org_id,
+                "name": "Bob",
+                "email": f"bob2_{timestamp}@test.com",
+                "roles": ["volunteer"],
+            },
         )
 
         start = (datetime.now() + timedelta(days=1)).isoformat()
         end = (datetime.now() + timedelta(days=1, hours=2)).isoformat()
         client.post(
             f"{API_BASE}/events/",
-            json={"id": event_id, "org_id": org_id, "type": "Event", "start_time": start, "end_time": end}
+            json={
+                "id": event_id,
+                "org_id": org_id,
+                "type": "Event",
+                "start_time": start,
+                "end_time": end,
+            },
         )
 
         # Assign first
         client.post(
             f"{API_BASE}/events/{event_id}/assignments",
-            json={"person_id": person_id, "action": "assign"}
+            json={"person_id": person_id, "action": "assign"},
         )
 
         # Then unassign
         response = client.post(
             f"{API_BASE}/events/{event_id}/assignments",
-            json={"person_id": person_id, "action": "unassign"}
+            json={"person_id": person_id, "action": "unassign"},
         )
         assert response.status_code == 200
         data = response.json()
@@ -419,6 +451,7 @@ class TestEventAssignments:
     def test_assign_already_assigned_person_fails(self, client):
         """Test that assigning an already assigned person returns error."""
         import time
+
         timestamp = int(time.time() * 1000)
         org_id = f"assign_test_org4_{timestamp}"
         event_id = f"assign_event4_{timestamp}"
@@ -427,32 +460,45 @@ class TestEventAssignments:
         client.post(f"{API_BASE}/organizations/", json={"id": org_id, "name": "Test Org"})
         client.post(
             f"{API_BASE}/people/",
-            json={"id": person_id, "org_id": org_id, "name": "Charlie", "email": f"charlie2_{timestamp}@test.com", "roles": ["volunteer"]}
+            json={
+                "id": person_id,
+                "org_id": org_id,
+                "name": "Charlie",
+                "email": f"charlie2_{timestamp}@test.com",
+                "roles": ["volunteer"],
+            },
         )
 
         start = (datetime.now() + timedelta(days=1)).isoformat()
         end = (datetime.now() + timedelta(days=1, hours=2)).isoformat()
         client.post(
             f"{API_BASE}/events/",
-            json={"id": event_id, "org_id": org_id, "type": "Event", "start_time": start, "end_time": end}
+            json={
+                "id": event_id,
+                "org_id": org_id,
+                "type": "Event",
+                "start_time": start,
+                "end_time": end,
+            },
         )
 
         # Assign once
         client.post(
             f"{API_BASE}/events/{event_id}/assignments",
-            json={"person_id": person_id, "action": "assign"}
+            json={"person_id": person_id, "action": "assign"},
         )
 
         # Try to assign again
         response = client.post(
             f"{API_BASE}/events/{event_id}/assignments",
-            json={"person_id": person_id, "action": "assign"}
+            json={"person_id": person_id, "action": "assign"},
         )
         assert response.status_code == 400
 
     def test_assignment_shows_in_available_people(self, client):
         """Test that assignments are reflected in available people endpoint."""
         import time
+
         timestamp = int(time.time() * 1000)
         org_id = f"assign_test_org5_{timestamp}"
         event_id = f"assign_event5_{timestamp}"
@@ -461,26 +507,39 @@ class TestEventAssignments:
         client.post(f"{API_BASE}/organizations/", json={"id": org_id, "name": "Test Org"})
         client.post(
             f"{API_BASE}/people/",
-            json={"id": person_id, "org_id": org_id, "name": "David", "email": f"david_{timestamp}@test.com", "roles": ["volunteer"]}
+            json={
+                "id": person_id,
+                "org_id": org_id,
+                "name": "David",
+                "email": f"david_{timestamp}@test.com",
+                "roles": ["volunteer"],
+            },
         )
 
         start = (datetime.now() + timedelta(days=1)).isoformat()
         end = (datetime.now() + timedelta(days=1, hours=2)).isoformat()
         client.post(
             f"{API_BASE}/events/",
-            json={"id": event_id, "org_id": org_id, "type": "Event", "start_time": start, "end_time": end, "extra_data": {"role_counts": {"volunteer": 1}}}
+            json={
+                "id": event_id,
+                "org_id": org_id,
+                "type": "Event",
+                "start_time": start,
+                "end_time": end,
+                "extra_data": {"role_counts": {"volunteer": 1}},
+            },
         )
 
         # Check before assignment
         response = client.get(f"{API_BASE}/events/{event_id}/available-people")
         people = response.json()
         assert len(people) >= 1
-        assert people[0]["is_assigned"] == False
+        assert people[0]["is_assigned"] is False
 
         # Assign
         client.post(
             f"{API_BASE}/events/{event_id}/assignments",
-            json={"person_id": person_id, "action": "assign"}
+            json={"person_id": person_id, "action": "assign"},
         )
 
         # Check after assignment
@@ -488,11 +547,12 @@ class TestEventAssignments:
         people = response.json()
         assigned_person = next((p for p in people if p["id"] == person_id), None)
         assert assigned_person is not None
-        assert assigned_person["is_assigned"] == True
+        assert assigned_person["is_assigned"] is True
 
     def test_get_all_assignments_for_org(self, client):
         """Test getting all assignments (both from solutions and manual) for an organization."""
         import time
+
         timestamp = int(time.time() * 1000)
         org_id = f"all_assign_org_{timestamp}"
         event_id = f"all_assign_event_{timestamp}"
@@ -502,20 +562,32 @@ class TestEventAssignments:
         client.post(f"{API_BASE}/organizations/", json={"id": org_id, "name": "Test Org"})
         client.post(
             f"{API_BASE}/people/",
-            json={"id": person_id, "org_id": org_id, "name": "Test Person", "email": f"test_{timestamp}@test.com", "roles": ["volunteer"]}
+            json={
+                "id": person_id,
+                "org_id": org_id,
+                "name": "Test Person",
+                "email": f"test_{timestamp}@test.com",
+                "roles": ["volunteer"],
+            },
         )
 
         start = (datetime.now() + timedelta(days=1)).isoformat()
         end = (datetime.now() + timedelta(days=1, hours=2)).isoformat()
         client.post(
             f"{API_BASE}/events/",
-            json={"id": event_id, "org_id": org_id, "type": "Test Event", "start_time": start, "end_time": end}
+            json={
+                "id": event_id,
+                "org_id": org_id,
+                "type": "Test Event",
+                "start_time": start,
+                "end_time": end,
+            },
         )
 
         # Manually assign person to event
         response = client.post(
             f"{API_BASE}/events/{event_id}/assignments",
-            json={"person_id": person_id, "action": "assign"}
+            json={"person_id": person_id, "action": "assign"},
         )
         assert response.status_code == 200
 
@@ -531,9 +603,12 @@ class TestEventAssignments:
         assert len(assignments) >= 1
 
         # Find our assignment
-        our_assignment = next((a for a in assignments if a["person_id"] == person_id and a["event_id"] == event_id), None)
+        our_assignment = next(
+            (a for a in assignments if a["person_id"] == person_id and a["event_id"] == event_id),
+            None,
+        )
         assert our_assignment is not None
-        assert our_assignment["is_manual"] == True
+        assert our_assignment["is_manual"] is True
         assert our_assignment["solution_id"] is None
         assert our_assignment["person_name"] == "Test Person"
         assert our_assignment["event_type"] == "Test Event"

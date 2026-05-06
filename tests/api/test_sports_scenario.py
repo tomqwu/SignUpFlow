@@ -24,12 +24,19 @@ Real-world tensions:
   - Fair rotation: everyone should get roughly equal game time
 """
 
-import pytest
 from datetime import datetime, timedelta
 
+import pytest
+
 from tests.api.conftest import (
-    seed_org, seed_user, auth_headers, seed_event,
-    seed_invitation, accept_invitation, add_timeoff, seed_team,
+    accept_invitation,
+    add_timeoff,
+    auth_headers,
+    seed_event,
+    seed_invitation,
+    seed_org,
+    seed_team,
+    seed_user,
 )
 
 
@@ -42,18 +49,32 @@ class TestSportsScenario:
     COACH_PW = "CoachPass123!"
 
     PLAYERS = [
-        {"email": "rahul@riverside.club",   "name": "Rahul Sharma",
-         "roles": ["batsman", "wicket_keeper"]},
-        {"email": "priya@riverside.club",   "name": "Priya Patel",
-         "roles": ["bowler", "point_guard"]},
-        {"email": "marcus@riverside.club",  "name": "Marcus Johnson",
-         "roles": ["center", "power_forward"]},
-        {"email": "alex@riverside.club",    "name": "Alex Rivera",
-         "roles": ["shooting_guard", "all_rounder", "batsman"]},
-        {"email": "tomoko@riverside.club",  "name": "Tomoko Sato",
-         "roles": ["small_forward", "point_guard"]},
-        {"email": "ben@riverside.club",     "name": "Ben O'Brien",
-         "roles": ["batsman", "bowler"]},
+        {
+            "email": "rahul@riverside.club",
+            "name": "Rahul Sharma",
+            "roles": ["batsman", "wicket_keeper"],
+        },
+        {
+            "email": "priya@riverside.club",
+            "name": "Priya Patel",
+            "roles": ["bowler", "point_guard"],
+        },
+        {
+            "email": "marcus@riverside.club",
+            "name": "Marcus Johnson",
+            "roles": ["center", "power_forward"],
+        },
+        {
+            "email": "alex@riverside.club",
+            "name": "Alex Rivera",
+            "roles": ["shooting_guard", "all_rounder", "batsman"],
+        },
+        {
+            "email": "tomoko@riverside.club",
+            "name": "Tomoko Sato",
+            "roles": ["small_forward", "point_guard"],
+        },
+        {"email": "ben@riverside.club", "name": "Ben O'Brien", "roles": ["batsman", "bowler"]},
     ]
 
     PLAYER_PW = "Player123!"
@@ -66,8 +87,7 @@ class TestSportsScenario:
 
         players = {}
         for p in self.PLAYERS:
-            inv = seed_invitation(client, hdrs, self.ORG,
-                                  p["email"], p["name"], roles=p["roles"])
+            inv = seed_invitation(client, hdrs, self.ORG, p["email"], p["name"], roles=p["roles"])
             accepted = accept_invitation(client, inv["token"], password=self.PLAYER_PW)
             players[p["email"]] = {
                 "person_id": accepted["person_id"],
@@ -120,8 +140,9 @@ class TestSportsScenario:
             players["alex@riverside.club"]["person_id"],
             players["ben@riverside.club"]["person_id"],
         ]
-        cricket = seed_team(client, hdrs, self.ORG, "cricket-squad",
-                           "Cricket Squad", member_ids=cricket_ids)
+        cricket = seed_team(
+            client, hdrs, self.ORG, "cricket-squad", "Cricket Squad", member_ids=cricket_ids
+        )
         assert cricket["name"] == "Cricket Squad"
 
         basketball_ids = [
@@ -130,8 +151,14 @@ class TestSportsScenario:
             players["alex@riverside.club"]["person_id"],
             players["tomoko@riverside.club"]["person_id"],
         ]
-        basketball = seed_team(client, hdrs, self.ORG, "basketball-squad",
-                              "Basketball Squad", member_ids=basketball_ids)
+        basketball = seed_team(
+            client,
+            hdrs,
+            self.ORG,
+            "basketball-squad",
+            "Basketball Squad",
+            member_ids=basketball_ids,
+        )
         assert basketball["name"] == "Basketball Squad"
 
         # Priya and Alex are on BOTH squads
@@ -148,35 +175,58 @@ class TestSportsScenario:
         hdrs, players = self._setup_club(client)
 
         # Tuesday: Basketball practice
-        seed_event(client, hdrs, self.ORG, "bball-practice-1",
-                  event_type="Basketball Practice",
-                  days_from_now=15,  # Tuesday
-                  duration_hours=2,
-                  role_counts={"point_guard": 1, "shooting_guard": 1, "center": 1})
+        seed_event(
+            client,
+            hdrs,
+            self.ORG,
+            "bball-practice-1",
+            event_type="Basketball Practice",
+            days_from_now=15,  # Tuesday
+            duration_hours=2,
+            role_counts={"point_guard": 1, "shooting_guard": 1, "center": 1},
+        )
 
         # Thursday: Cricket practice
-        seed_event(client, hdrs, self.ORG, "cricket-practice-1",
-                  event_type="Cricket Practice",
-                  days_from_now=17,  # Thursday
-                  duration_hours=3,
-                  role_counts={"batsman": 3, "bowler": 2})
+        seed_event(
+            client,
+            hdrs,
+            self.ORG,
+            "cricket-practice-1",
+            event_type="Cricket Practice",
+            days_from_now=17,  # Thursday
+            duration_hours=3,
+            role_counts={"batsman": 3, "bowler": 2},
+        )
 
         # Friday: Basketball game
-        seed_event(client, hdrs, self.ORG, "bball-game-1",
-                  event_type="Basketball Game",
-                  days_from_now=18,  # Friday
-                  duration_hours=2,
-                  role_counts={
-                      "point_guard": 1, "shooting_guard": 1,
-                      "center": 1, "small_forward": 1, "power_forward": 1,
-                  })
+        seed_event(
+            client,
+            hdrs,
+            self.ORG,
+            "bball-game-1",
+            event_type="Basketball Game",
+            days_from_now=18,  # Friday
+            duration_hours=2,
+            role_counts={
+                "point_guard": 1,
+                "shooting_guard": 1,
+                "center": 1,
+                "small_forward": 1,
+                "power_forward": 1,
+            },
+        )
 
         # Saturday: Cricket match
-        seed_event(client, hdrs, self.ORG, "cricket-match-1",
-                  event_type="Cricket Match",
-                  days_from_now=19,  # Saturday
-                  duration_hours=6,
-                  role_counts={"batsman": 4, "bowler": 2, "wicket_keeper": 1})
+        seed_event(
+            client,
+            hdrs,
+            self.ORG,
+            "cricket-match-1",
+            event_type="Cricket Match",
+            days_from_now=19,  # Saturday
+            duration_hours=6,
+            role_counts={"batsman": 4, "bowler": 2, "wicket_keeper": 1},
+        )
 
         resp = client.get(f"/api/events/?org_id={self.ORG}")
         assert resp.status_code == 200
@@ -194,8 +244,9 @@ class TestSportsScenario:
 
         injury_start = (datetime.now() + timedelta(days=14)).strftime("%Y-%m-%d")
         injury_end = (datetime.now() + timedelta(days=28)).strftime("%Y-%m-%d")
-        add_timeoff(client, rahul_id, injury_start, injury_end,
-                    reason="Hamstring injury — physio recovery")
+        add_timeoff(
+            client, rahul_id, injury_start, injury_end, reason="Hamstring injury — physio recovery"
+        )
 
         resp = client.get(f"/api/availability/{rahul_id}/timeoff")
         assert resp.status_code == 200
@@ -216,25 +267,46 @@ class TestSportsScenario:
 
         # Create a full week of events
         events = [
-            ("bball-prac", "Basketball Practice", 15, {"point_guard": 1, "shooting_guard": 1, "center": 1}),
+            (
+                "bball-prac",
+                "Basketball Practice",
+                15,
+                {"point_guard": 1, "shooting_guard": 1, "center": 1},
+            ),
             ("cricket-prac", "Cricket Practice", 17, {"batsman": 3, "bowler": 2}),
-            ("bball-game", "Basketball Game", 18, {"point_guard": 1, "shooting_guard": 1, "center": 1, "small_forward": 1, "power_forward": 1}),
+            (
+                "bball-game",
+                "Basketball Game",
+                18,
+                {
+                    "point_guard": 1,
+                    "shooting_guard": 1,
+                    "center": 1,
+                    "small_forward": 1,
+                    "power_forward": 1,
+                },
+            ),
             ("cricket-match", "Cricket Match", 19, {"batsman": 3, "bowler": 2, "wicket_keeper": 1}),
         ]
         for eid, etype, days, roles in events:
-            seed_event(client, hdrs, self.ORG, eid,
-                      event_type=etype, days_from_now=days, role_counts=roles)
+            seed_event(
+                client, hdrs, self.ORG, eid, event_type=etype, days_from_now=days, role_counts=roles
+            )
 
         # Solve
         from_date = (datetime.now() + timedelta(days=14)).strftime("%Y-%m-%d")
         to_date = (datetime.now() + timedelta(days=21)).strftime("%Y-%m-%d")
-        resp = client.post("/api/solver/solve", json={
-            "org_id": self.ORG,
-            "from_date": from_date,
-            "to_date": to_date,
-            "mode": "relaxed",
-            "change_min": False,
-        }, headers=hdrs)
+        resp = client.post(
+            "/api/solver/solve",
+            json={
+                "org_id": self.ORG,
+                "from_date": from_date,
+                "to_date": to_date,
+                "mode": "relaxed",
+                "change_min": False,
+            },
+            headers=hdrs,
+        )
         assert resp.status_code == 200, f"Solver failed: {resp.text}"
 
         solution = resp.json()
@@ -262,29 +334,47 @@ class TestSportsScenario:
 
         # 3 cricket matches (Fri, Sat, Sun)
         for i in range(3):
-            seed_event(client, hdrs, self.ORG, f"tournament-cricket-{i}",
-                      event_type="Tournament Cricket",
-                      days_from_now=18 + i,
-                      role_counts={"batsman": 3, "bowler": 2, "wicket_keeper": 1})
+            seed_event(
+                client,
+                hdrs,
+                self.ORG,
+                f"tournament-cricket-{i}",
+                event_type="Tournament Cricket",
+                days_from_now=18 + i,
+                role_counts={"batsman": 3, "bowler": 2, "wicket_keeper": 1},
+            )
 
         # 2 basketball games (Fri, Sat)
         for i in range(2):
-            seed_event(client, hdrs, self.ORG, f"tournament-bball-{i}",
-                      event_type="Tournament Basketball",
-                      days_from_now=18 + i,
-                      role_counts={"point_guard": 1, "shooting_guard": 1,
-                                   "center": 1, "small_forward": 1})
+            seed_event(
+                client,
+                hdrs,
+                self.ORG,
+                f"tournament-bball-{i}",
+                event_type="Tournament Basketball",
+                days_from_now=18 + i,
+                role_counts={
+                    "point_guard": 1,
+                    "shooting_guard": 1,
+                    "center": 1,
+                    "small_forward": 1,
+                },
+            )
 
         # Solve tournament week
         from_date = (datetime.now() + timedelta(days=17)).strftime("%Y-%m-%d")
         to_date = (datetime.now() + timedelta(days=22)).strftime("%Y-%m-%d")
-        resp = client.post("/api/solver/solve", json={
-            "org_id": self.ORG,
-            "from_date": from_date,
-            "to_date": to_date,
-            "mode": "relaxed",
-            "change_min": False,
-        }, headers=hdrs)
+        resp = client.post(
+            "/api/solver/solve",
+            json={
+                "org_id": self.ORG,
+                "from_date": from_date,
+                "to_date": to_date,
+                "mode": "relaxed",
+                "change_min": False,
+            },
+            headers=hdrs,
+        )
         assert resp.status_code == 200
 
         solution = resp.json()
@@ -302,37 +392,60 @@ class TestSportsScenario:
         """Coach manually assigns and removes players from a match."""
         hdrs, players = self._setup_club(client)
 
-        match = seed_event(client, hdrs, self.ORG, "finals-match",
-                          event_type="Cricket Finals",
-                          days_from_now=21,
-                          role_counts={"batsman": 4, "bowler": 2, "wicket_keeper": 1})
+        match = seed_event(
+            client,
+            hdrs,
+            self.ORG,
+            "finals-match",
+            event_type="Cricket Finals",
+            days_from_now=21,
+            role_counts={"batsman": 4, "bowler": 2, "wicket_keeper": 1},
+        )
 
         rahul_id = players["rahul@riverside.club"]["person_id"]
         ben_id = players["ben@riverside.club"]["person_id"]
 
         # Assign Rahul as batsman
-        resp = client.post(f"/api/events/{match['id']}/assignments", json={
-            "person_id": rahul_id, "action": "assign", "role": "batsman",
-        }, headers=hdrs)
+        resp = client.post(
+            f"/api/events/{match['id']}/assignments",
+            json={
+                "person_id": rahul_id,
+                "action": "assign",
+                "role": "batsman",
+            },
+            headers=hdrs,
+        )
         assert resp.status_code == 200
 
         # Assign Ben as batsman
-        resp = client.post(f"/api/events/{match['id']}/assignments", json={
-            "person_id": ben_id, "action": "assign", "role": "batsman",
-        }, headers=hdrs)
+        resp = client.post(
+            f"/api/events/{match['id']}/assignments",
+            json={
+                "person_id": ben_id,
+                "action": "assign",
+                "role": "batsman",
+            },
+            headers=hdrs,
+        )
         assert resp.status_code == 200
 
         # Rahul gets injured — unassign him
-        resp = client.post(f"/api/events/{match['id']}/assignments", json={
-            "person_id": rahul_id, "action": "unassign",
-        }, headers=hdrs)
+        resp = client.post(
+            f"/api/events/{match['id']}/assignments",
+            json={
+                "person_id": rahul_id,
+                "action": "unassign",
+            },
+            headers=hdrs,
+        )
         assert resp.status_code == 200
 
         # Verify only Ben remains assigned
         resp = client.get(f"/api/events/assignments/all?org_id={self.ORG}")
         assert resp.status_code == 200
-        match_assignments = [a for a in resp.json()["assignments"]
-                            if a["event_id"] == "finals-match"]
+        match_assignments = [
+            a for a in resp.json()["assignments"] if a["event_id"] == "finals-match"
+        ]
         assigned_ids = {a["person_id"] for a in match_assignments}
         assert ben_id in assigned_ids
         assert rahul_id not in assigned_ids
@@ -349,9 +462,15 @@ class TestSportsScenario:
 
         start = (datetime.now() + timedelta(days=14)).isoformat()
         end = (datetime.now() + timedelta(days=14, hours=2)).isoformat()
-        resp = client.post("/api/events/", json={
-            "id": "unauthorized-match", "org_id": self.ORG,
-            "type": "Rogue Match",
-            "start_time": start, "end_time": end,
-        }, headers=player_hdrs)
+        resp = client.post(
+            "/api/events/",
+            json={
+                "id": "unauthorized-match",
+                "org_id": self.ORG,
+                "type": "Rogue Match",
+                "start_time": start,
+                "end_time": end,
+            },
+            headers=player_hdrs,
+        )
         assert resp.status_code == 403

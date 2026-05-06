@@ -1,30 +1,28 @@
 """Conflict detection router - check for scheduling conflicts."""
 
-from typing import List
-from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy.orm import Session
 from datetime import datetime
 
+from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy.orm import Session
+
 from api.database import get_db
+from api.models import (
+    Assignment,
+    Availability,
+    Event,
+    Person,
+    VacationPeriod,
+)
 from api.schemas.conflicts import (
     ConflictCheckRequest,
     ConflictCheckResponse,
     ConflictType,
 )
-from api.models import (
-    Person,
-    Event,
-    Assignment,
-    Availability,
-    VacationPeriod,
-)
 
 router = APIRouter(prefix="/conflicts", tags=["conflicts"])
 
 
-def check_time_overlap(
-    start1: datetime, end1: datetime, start2: datetime, end2: datetime
-) -> bool:
+def check_time_overlap(start1: datetime, end1: datetime, start2: datetime, end2: datetime) -> bool:
     """Check if two time periods overlap."""
     return start1 < end2 and start2 < end1
 
@@ -41,7 +39,7 @@ def check_conflicts(
     - Time-off periods overlapping with event
     - Double-booked (assigned to another event at the same time)
     """
-    conflicts: List[ConflictType] = []
+    conflicts: list[ConflictType] = []
 
     # Verify person exists
     person = db.query(Person).filter(Person.id == request.person_id).first()
@@ -85,9 +83,7 @@ def check_conflicts(
     )
     if availability:
         time_off_periods = (
-            db.query(VacationPeriod)
-            .filter(VacationPeriod.availability_id == availability.id)
-            .all()
+            db.query(VacationPeriod).filter(VacationPeriod.availability_id == availability.id).all()
         )
 
         for vacation in time_off_periods:
@@ -95,9 +91,7 @@ def check_conflicts(
             vacation_start = datetime.combine(vacation.start_date, datetime.min.time())
             vacation_end = datetime.combine(vacation.end_date, datetime.max.time())
 
-            if check_time_overlap(
-                event.start_time, event.end_time, vacation_start, vacation_end
-            ):
+            if check_time_overlap(event.start_time, event.end_time, vacation_start, vacation_end):
                 conflicts.append(
                     ConflictType(
                         type="time_off",
@@ -108,11 +102,7 @@ def check_conflicts(
                 )
 
     # Check 3: Double-booked (assigned to another overlapping event)
-    other_assignments = (
-        db.query(Assignment)
-        .filter(Assignment.person_id == request.person_id)
-        .all()
-    )
+    other_assignments = db.query(Assignment).filter(Assignment.person_id == request.person_id).all()
 
     for assignment in other_assignments:
         if assignment.event_id == request.event_id:

@@ -15,14 +15,14 @@ Performance goals:
 - Recurrence generation: <5s for 365-occurrence series
 """
 
-from datetime import datetime, date, timedelta, time
-from typing import List, Dict, Optional
-from dateutil import rrule
-from dateutil.rrule import rrule as rrule_func, DAILY, WEEKLY, MONTHLY, MO, TU, WE, TH, FR, SA, SU
+from datetime import datetime, time, timedelta
 
-from api.models import RecurringSeries, Event, Holiday
+from dateutil import rrule
+from dateutil.rrule import FR, MO, MONTHLY, SA, SU, TH, TU, WE, WEEKLY
+from dateutil.rrule import rrule as rrule_func
 from sqlalchemy.orm import Session
 
+from api.models import Holiday, RecurringSeries
 
 # Weekday mapping for dateutil
 WEEKDAY_MAP = {
@@ -47,14 +47,13 @@ POSITION_MAP = {
 
 class RecurrenceGenerationError(Exception):
     """Error during recurrence generation."""
+
     pass
 
 
 def generate_occurrences(
-    series: RecurringSeries,
-    start_time: time,
-    db: Optional[Session] = None
-) -> List[Dict]:
+    series: RecurringSeries, start_time: time, db: Session | None = None
+) -> list[dict]:
     """
     Generate all occurrences for a recurring series.
 
@@ -93,10 +92,8 @@ def generate_occurrences(
 
 
 def generate_weekly_occurrences(
-    series: RecurringSeries,
-    start_time: time,
-    db: Optional[Session] = None
-) -> List[Dict]:
+    series: RecurringSeries, start_time: time, db: Session | None = None
+) -> list[dict]:
     """
     Generate weekly recurring occurrences.
 
@@ -141,17 +138,15 @@ def generate_weekly_occurrences(
         until=until,
         count=count,
         byweekday=weekdays,
-        interval=1  # Every week
+        interval=1,  # Every week
     )
 
     return _build_occurrence_list(series, rule, db)
 
 
 def generate_biweekly_occurrences(
-    series: RecurringSeries,
-    start_time: time,
-    db: Optional[Session] = None
-) -> List[Dict]:
+    series: RecurringSeries, start_time: time, db: Session | None = None
+) -> list[dict]:
     """
     Generate biweekly (every 2 weeks) recurring occurrences.
 
@@ -195,17 +190,15 @@ def generate_biweekly_occurrences(
         until=until,
         count=count,
         byweekday=weekdays,
-        interval=2  # Every 2 weeks
+        interval=2,  # Every 2 weeks
     )
 
     return _build_occurrence_list(series, rule, db)
 
 
 def generate_monthly_occurrences(
-    series: RecurringSeries,
-    start_time: time,
-    db: Optional[Session] = None
-) -> List[Dict]:
+    series: RecurringSeries, start_time: time, db: Session | None = None
+) -> list[dict]:
     """
     Generate monthly recurring occurrences.
 
@@ -221,7 +214,9 @@ def generate_monthly_occurrences(
         List of occurrence dictionaries
     """
     if not series.weekday_position or not series.weekday_name:
-        raise RecurrenceGenerationError("Monthly pattern requires weekday_position and weekday_name")
+        raise RecurrenceGenerationError(
+            "Monthly pattern requires weekday_position and weekday_name"
+        )
 
     # Convert weekday position and name to dateutil format
     try:
@@ -252,17 +247,15 @@ def generate_monthly_occurrences(
         until=until,
         count=count,
         byweekday=weekday(position),  # e.g., SU(2) for 2nd Sunday
-        interval=1  # Every month
+        interval=1,  # Every month
     )
 
     return _build_occurrence_list(series, rule, db)
 
 
 def generate_custom_interval_occurrences(
-    series: RecurringSeries,
-    start_time: time,
-    db: Optional[Session] = None
-) -> List[Dict]:
+    series: RecurringSeries, start_time: time, db: Session | None = None
+) -> list[dict]:
     """
     Generate custom interval recurring occurrences.
 
@@ -309,17 +302,15 @@ def generate_custom_interval_occurrences(
         until=until,
         count=count,
         byweekday=weekdays,
-        interval=series.frequency_interval  # Every N weeks
+        interval=series.frequency_interval,  # Every N weeks
     )
 
     return _build_occurrence_list(series, rule, db)
 
 
 def _build_occurrence_list(
-    series: RecurringSeries,
-    rule: rrule,
-    db: Optional[Session] = None
-) -> List[Dict]:
+    series: RecurringSeries, rule: rrule, db: Session | None = None
+) -> list[dict]:
     """
     Build list of occurrence dictionaries from rrule result.
 
@@ -350,7 +341,7 @@ def _build_occurrence_list(
             "title": series.title,
             "location": series.location,
             "role_requirements": series.role_requirements,
-            "is_holiday_conflict": start_dt.date() in holidays
+            "is_holiday_conflict": start_dt.date() in holidays,
         }
 
         occurrences.append(occurrence)
@@ -358,11 +349,7 @@ def _build_occurrence_list(
     return occurrences
 
 
-def detect_holiday_conflicts(
-    occurrences: List[Dict],
-    org_id: str,
-    db: Session
-) -> List[Dict]:
+def detect_holiday_conflicts(occurrences: list[dict], org_id: str, db: Session) -> list[dict]:
     """
     Detect which occurrences conflict with organization holidays.
 

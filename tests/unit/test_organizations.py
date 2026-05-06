@@ -1,8 +1,5 @@
 """Unit tests for organization endpoints."""
 
-import pytest
-from fastapi.testclient import TestClient
-from api.main import app
 
 API_BASE = "http://localhost:8000/api"
 
@@ -18,8 +15,8 @@ class TestOrganizationCreate:
                 "id": "test_org_001_v2",
                 "name": "Test Organization",
                 "region": "Test Region",
-                "config": {"location": "Test City"}
-            }
+                "config": {"location": "Test City"},
+            },
         )
         assert response.status_code in [200, 201]
         data = response.json()
@@ -29,30 +26,22 @@ class TestOrganizationCreate:
     def test_create_org_duplicate_id(self, client):
         """Test creating org with duplicate ID fails."""
         # Create first org
-        client.post(
-            f"{API_BASE}/organizations/",
-            json={"id": "test_org_002", "name": "First Org"}
-        )
+        client.post(f"{API_BASE}/organizations/", json={"id": "test_org_002", "name": "First Org"})
         # Try to create duplicate
         response = client.post(
-            f"{API_BASE}/organizations/",
-            json={"id": "test_org_002", "name": "Duplicate Org"}
+            f"{API_BASE}/organizations/", json={"id": "test_org_002", "name": "Duplicate Org"}
         )
         assert response.status_code == 409  # Conflict
 
     def test_create_org_missing_name(self, client):
         """Test creating org without name fails."""
-        response = client.post(
-            f"{API_BASE}/organizations/",
-            json={"id": "test_org_003"}
-        )
+        response = client.post(f"{API_BASE}/organizations/", json={"id": "test_org_003"})
         assert response.status_code == 422  # Validation error
 
     def test_create_org_empty_id(self, client):
         """Test creating org with empty ID fails."""
         response = client.post(
-            f"{API_BASE}/organizations/",
-            json={"id": "", "name": "Empty ID Org"}
+            f"{API_BASE}/organizations/", json={"id": "", "name": "Empty ID Org"}
         )
         assert response.status_code == 422
 
@@ -64,8 +53,7 @@ class TestOrganizationRead:
         """Test successful organization retrieval."""
         # Create org first
         client.post(
-            f"{API_BASE}/organizations/",
-            json={"id": "test_org_004", "name": "Get Test Org"}
+            f"{API_BASE}/organizations/", json={"id": "test_org_004", "name": "Get Test Org"}
         )
         # Retrieve it
         response = client.get(f"{API_BASE}/organizations/test_org_004")
@@ -85,7 +73,7 @@ class TestOrganizationRead:
         for i in range(5, 8):
             client.post(
                 f"{API_BASE}/organizations/",
-                json={"id": f"test_org_{i:03d}", "name": f"List Test Org {i}"}
+                json={"id": f"test_org_{i:03d}", "name": f"List Test Org {i}"},
             )
         # List them
         response = client.get(f"{API_BASE}/organizations/")
@@ -102,13 +90,12 @@ class TestOrganizationUpdate:
         """Test successful organization update."""
         # Create org
         client.post(
-            f"{API_BASE}/organizations/",
-            json={"id": "test_org_008_v2", "name": "Original Name"}
+            f"{API_BASE}/organizations/", json={"id": "test_org_008_v2", "name": "Original Name"}
         )
         # Update it
         response = client.put(
             f"{API_BASE}/organizations/test_org_008_v2",
-            json={"name": "Updated Name", "region": "New Region"}
+            json={"name": "Updated Name", "region": "New Region"},
         )
         assert response.status_code == 200
         data = response.json()
@@ -118,8 +105,7 @@ class TestOrganizationUpdate:
     def test_update_org_not_found(self, client):
         """Test updating non-existent org returns 404."""
         response = client.put(
-            f"{API_BASE}/organizations/nonexistent_org",
-            json={"name": "Updated Name"}
+            f"{API_BASE}/organizations/nonexistent_org", json={"name": "Updated Name"}
         )
         assert response.status_code == 404
 
@@ -128,12 +114,11 @@ class TestOrganizationUpdate:
         # Create org
         client.post(
             f"{API_BASE}/organizations/",
-            json={"id": "test_org_009_v2", "name": "Original", "region": "Original Region"}
+            json={"id": "test_org_009_v2", "name": "Original", "region": "Original Region"},
         )
         # Update only name
         response = client.put(
-            f"{API_BASE}/organizations/test_org_009_v2",
-            json={"name": "New Name"}
+            f"{API_BASE}/organizations/test_org_009_v2", json={"name": "New Name"}
         )
         assert response.status_code == 200
         data = response.json()
@@ -148,8 +133,7 @@ class TestOrganizationDelete:
         """Test successful organization deletion."""
         # Create org
         client.post(
-            f"{API_BASE}/organizations/",
-            json={"id": "test_org_010", "name": "To Be Deleted"}
+            f"{API_BASE}/organizations/", json={"id": "test_org_010", "name": "To Be Deleted"}
         )
         # Delete it
         response = client.delete(f"{API_BASE}/organizations/test_org_010")

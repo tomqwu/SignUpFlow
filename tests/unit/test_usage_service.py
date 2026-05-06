@@ -1,7 +1,11 @@
 import pytest
-pytestmark = pytest.mark.skip(reason="Usage/billing features disabled — focusing on core scheduling logic")
+
+pytestmark = pytest.mark.skip(
+    reason="Usage/billing features disabled — focusing on core scheduling logic"
+)
 
 from unittest.mock import MagicMock
+
 from api.services.usage_service import UsageService
 
 
@@ -37,9 +41,7 @@ def test_can_add_volunteer_bypasses_limits_when_disable_env(monkeypatch):
 def test_can_add_volunteer_returns_false_when_org_missing():
     service, db = _build_service()
 
-    (
-        db.query.return_value.options.return_value.filter.return_value.first.return_value
-    ) = None
+    (db.query.return_value.options.return_value.filter.return_value.first.return_value) = None
 
     assert service.can_add_volunteer("missing-org") is False
     db.query.assert_called_once()

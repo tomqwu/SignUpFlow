@@ -2,6 +2,7 @@
 
 import logging
 from datetime import datetime
+
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
@@ -9,28 +10,47 @@ from api.database import get_db
 from api.dependencies import get_current_admin_user, verify_org_member
 
 logger = logging.getLogger("rostio")
-from api.schemas.solver import SolveRequest, SolveResponse, ViolationInfo, FairnessMetrics, SolutionMetrics
-from api.models import (
-    Organization,
-    Person,
-    Team,
-    Event,
-    Constraint as DBConstraint,
-    Holiday,
-    Solution as DBSolution,
-    Assignment as DBAssignment,
+from api.core.models import (
+    Event as EventModel,
+)
+from api.core.models import (
+    Holiday as HolidayModel,
 )
 from api.core.models import (
     Org,
-    Event as EventModel,
-    Person as PersonModel,
-    Team as TeamModel,
-    ConstraintBinding as ConstraintModel,
-    Holiday as HolidayModel,
     OrgDefaults,
+)
+from api.core.models import (
+    Person as PersonModel,
+)
+from api.core.models import (
+    Team as TeamModel,
 )
 from api.core.solver.adapter import SolveContext
 from api.core.solver.heuristics import GreedyHeuristicSolver
+from api.models import (
+    Assignment as DBAssignment,
+)
+from api.models import (
+    Constraint as DBConstraint,
+)
+from api.models import (
+    Event,
+    Holiday,
+    Organization,
+    Person,
+    Team,
+)
+from api.models import (
+    Solution as DBSolution,
+)
+from api.schemas.solver import (
+    FairnessMetrics,
+    SolutionMetrics,
+    SolveRequest,
+    SolveResponse,
+    ViolationInfo,
+)
 
 router = APIRouter(prefix="/solver", tags=["solver"])
 
@@ -39,7 +59,7 @@ router = APIRouter(prefix="/solver", tags=["solver"])
 def solve_schedule(
     solve_request: SolveRequest,
     current_admin: Person = Depends(get_current_admin_user),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ):
     """
     Generate a schedule for the organization (admin only).
@@ -73,7 +93,7 @@ def solve_schedule(
         )
         .all()
     )
-    constraints_db = db.query(DBConstraint).filter(DBConstraint.org_id == solve_request.org_id).all()
+    (db.query(DBConstraint).filter(DBConstraint.org_id == solve_request.org_id).all())
     holidays_db = (
         db.query(Holiday)
         .filter(
@@ -98,7 +118,9 @@ def solve_schedule(
             change_min_weight=org.config.get("change_min_weight", 100) if org.config else 100,
             fairness_weight=org.config.get("fairness_weight", 50) if org.config else 50,
             cooldown_days=org.config.get("cooldown_days", 14) if org.config else 14,
-        ) if org.config else OrgDefaults(),
+        )
+        if org.config
+        else OrgDefaults(),
     )
 
     people = [
@@ -117,8 +139,7 @@ def solve_schedule(
         # Extract role requirements from extra_data
         role_counts = (e.extra_data or {}).get("role_counts", {})
         required_roles = [
-            {"role": role_name, "count": count}
-            for role_name, count in role_counts.items()
+            {"role": role_name, "count": count} for role_name, count in role_counts.items()
         ]
 
         # Debug logging

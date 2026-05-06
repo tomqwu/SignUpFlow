@@ -8,14 +8,14 @@ Background tasks for:
 - Broadcast messages
 """
 
-from celery import Celery
-from sqlalchemy.orm import Session
-from typing import Optional, List, Dict, Any
 import os
+from typing import Any
+
+from celery import Celery
 
 from api.database import SessionLocal
+from api.models import Assignment, Event, Person
 from api.services.sms_service import SMSService
-from api.models import Event, Assignment, Person
 
 # Initialize Celery
 celery_app = Celery(
@@ -45,7 +45,7 @@ def send_assignment_notification(
     person_id: str,
     organization_id: int,
     language: str = "en",
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """
     Send assignment notification SMS to single volunteer.
 
@@ -72,9 +72,7 @@ def send_assignment_notification(
         if not event:
             raise ValueError(f"Event {event_id} not found")
 
-        assignment = (
-            db.query(Assignment).filter(Assignment.id == assignment_id).first()
-        )
+        assignment = db.query(Assignment).filter(Assignment.id == assignment_id).first()
         if not assignment:
             raise ValueError(f"Assignment {assignment_id} not found")
 
@@ -124,7 +122,7 @@ def send_event_reminder(
     organization_id: int,
     hours_before: int = 24,
     language: str = "en",
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """
     Send reminder SMS to all assigned volunteers for an event.
 
@@ -151,9 +149,7 @@ def send_event_reminder(
             raise ValueError(f"Event {event_id} not found")
 
         # 2. Get all assignments for this event
-        assignments = (
-            db.query(Assignment).filter(Assignment.event_id == event_id).all()
-        )
+        assignments = db.query(Assignment).filter(Assignment.event_id == event_id).all()
 
         if not assignments:
             return {
@@ -170,15 +166,13 @@ def send_event_reminder(
             .filter(
                 SmsTemplate.organization_id == organization_id,
                 SmsTemplate.message_type == "reminder",
-                SmsTemplate.is_system == True,
+                SmsTemplate.is_system is True,
             )
             .first()
         )
 
         if not template:
-            raise ValueError(
-                f"No reminder template found for organization {organization_id}"
-            )
+            raise ValueError(f"No reminder template found for organization {organization_id}")
 
         # 4. Build context
         event_datetime = event.datetime
@@ -233,7 +227,7 @@ def send_schedule_change_notification(
     organization_id: int,
     change_description: str,
     language: str = "en",
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """
     Send schedule change notification to affected volunteers.
 
@@ -260,9 +254,7 @@ def send_schedule_change_notification(
             raise ValueError(f"Event {event_id} not found")
 
         # 2. Get all assignments
-        assignments = (
-            db.query(Assignment).filter(Assignment.event_id == event_id).all()
-        )
+        assignments = db.query(Assignment).filter(Assignment.event_id == event_id).all()
 
         if not assignments:
             return {
@@ -314,11 +306,11 @@ def send_schedule_change_notification(
 
 @celery_app.task
 def send_broadcast_message(
-    recipient_ids: List[int],
+    recipient_ids: list[int],
     message_text: str,
     organization_id: int,
     is_urgent: bool = False,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """
     Send broadcast message to multiple recipients (admin-initiated).
 

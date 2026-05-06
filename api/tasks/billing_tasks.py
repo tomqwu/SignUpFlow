@@ -9,12 +9,10 @@ Background tasks for:
 - Subscription event notifications
 """
 
-from celery import Celery
-from celery.schedules import crontab
-from sqlalchemy.orm import Session
-from typing import Dict, Any
-import os
 import logging
+from typing import Any
+
+from celery.schedules import crontab
 
 from api.database import SessionLocal
 from api.services.billing_service import BillingService
@@ -26,7 +24,7 @@ from api.tasks.sms_tasks import celery_app
 
 
 @celery_app.task(bind=True, max_retries=3)
-def check_expired_trials(self) -> Dict[str, Any]:
+def check_expired_trials(self) -> dict[str, Any]:
     """
     Daily scheduled task to check and downgrade expired trials.
 
@@ -61,7 +59,7 @@ def check_expired_trials(self) -> Dict[str, Any]:
             f"{result['downgraded_count']} organizations downgraded"
         )
 
-        if result['downgraded_orgs']:
+        if result["downgraded_orgs"]:
             logger.info(f"Downgraded organizations: {result['downgraded_orgs']}")
 
         return result
@@ -69,18 +67,14 @@ def check_expired_trials(self) -> Dict[str, Any]:
     except Exception as e:
         logger.error(f"Error during trial expiration check: {e}", exc_info=True)
         # Retry the task with exponential backoff
-        raise self.retry(exc=e, countdown=60 * (2 ** self.request.retries))
+        raise self.retry(exc=e, countdown=60 * (2**self.request.retries))
 
     finally:
         db.close()
 
 
 @celery_app.task(bind=True, max_retries=3)
-def send_trial_expiration_warning(
-    self,
-    org_id: str,
-    days_remaining: int
-) -> Dict[str, Any]:
+def send_trial_expiration_warning(self, org_id: str, days_remaining: int) -> dict[str, Any]:
     """
     Send warning email when trial is expiring soon.
 
@@ -91,34 +85,33 @@ def send_trial_expiration_warning(
     Returns:
         dict: Email sending result
     """
-    logger.info(f"Sending trial expiration warning to org {org_id} ({days_remaining} days remaining)")
+    logger.info(
+        f"Sending trial expiration warning to org {org_id} ({days_remaining} days remaining)"
+    )
     db = SessionLocal()
 
     try:
         # TODO: Implement email sending when email service ready
         # For now, just log the warning
-        logger.info(
-            f"Trial expiration warning: org={org_id}, "
-            f"days_remaining={days_remaining}"
-        )
+        logger.info(f"Trial expiration warning: org={org_id}, " f"days_remaining={days_remaining}")
 
         return {
             "success": True,
             "org_id": org_id,
             "days_remaining": days_remaining,
-            "message": "Trial expiration warning logged (email pending)"
+            "message": "Trial expiration warning logged (email pending)",
         }
 
     except Exception as e:
         logger.error(f"Error sending trial expiration warning: {e}", exc_info=True)
-        raise self.retry(exc=e, countdown=60 * (2 ** self.request.retries))
+        raise self.retry(exc=e, countdown=60 * (2**self.request.retries))
 
     finally:
         db.close()
 
 
 @celery_app.task(bind=True, max_retries=3)
-def check_usage_limits(self) -> Dict[str, Any]:
+def check_usage_limits(self) -> dict[str, Any]:
     """
     Daily task to check organizations approaching volunteer limits.
 
@@ -136,8 +129,8 @@ def check_usage_limits(self) -> Dict[str, Any]:
     db = SessionLocal()
 
     try:
-        from api.services.usage_service import UsageService
         from api.models import Organization
+        from api.services.usage_service import UsageService
 
         usage_service = UsageService(db)
         warned_orgs = []
@@ -152,48 +145,42 @@ def check_usage_limits(self) -> Dict[str, Any]:
             # Check thresholds
             if percentage >= 100:
                 logger.warning(f"Organization {org.id} is OVER volunteer limit")
-                warned_orgs.append({
-                    "org_id": org.id,
-                    "percentage": percentage,
-                    "status": "over_limit"
-                })
+                warned_orgs.append(
+                    {"org_id": org.id, "percentage": percentage, "status": "over_limit"}
+                )
                 # TODO: Send over-limit email
 
             elif percentage >= 90:
                 logger.info(f"Organization {org.id} at 90% volunteer limit")
-                warned_orgs.append({
-                    "org_id": org.id,
-                    "percentage": percentage,
-                    "status": "90_percent"
-                })
+                warned_orgs.append(
+                    {"org_id": org.id, "percentage": percentage, "status": "90_percent"}
+                )
                 # TODO: Send 90% warning email
 
             elif percentage >= 80:
                 logger.info(f"Organization {org.id} at 80% volunteer limit")
-                warned_orgs.append({
-                    "org_id": org.id,
-                    "percentage": percentage,
-                    "status": "80_percent"
-                })
+                warned_orgs.append(
+                    {"org_id": org.id, "percentage": percentage, "status": "80_percent"}
+                )
                 # TODO: Send 80% warning email
 
         return {
             "success": True,
             "warned_count": len(warned_orgs),
             "warned_orgs": warned_orgs,
-            "message": f"Checked usage limits for {len(organizations)} organizations"
+            "message": f"Checked usage limits for {len(organizations)} organizations",
         }
 
     except Exception as e:
         logger.error(f"Error during usage limit check: {e}", exc_info=True)
-        raise self.retry(exc=e, countdown=60 * (2 ** self.request.retries))
+        raise self.retry(exc=e, countdown=60 * (2**self.request.retries))
 
     finally:
         db.close()
 
 
 @celery_app.task(bind=True, max_retries=3)
-def apply_pending_downgrades(self) -> Dict[str, Any]:
+def apply_pending_downgrades(self) -> dict[str, Any]:
     """
     Daily task to apply scheduled downgrades at period end.
 
@@ -225,11 +212,10 @@ def apply_pending_downgrades(self) -> Dict[str, Any]:
         result = billing_service.apply_pending_downgrades()
 
         logger.info(
-            f"Pending downgrades check complete: "
-            f"{result['applied_count']} downgrades applied"
+            f"Pending downgrades check complete: " f"{result['applied_count']} downgrades applied"
         )
 
-        if result['applied_downgrades']:
+        if result["applied_downgrades"]:
             logger.info(f"Applied downgrades: {result['applied_downgrades']}")
 
         return result
@@ -237,14 +223,14 @@ def apply_pending_downgrades(self) -> Dict[str, Any]:
     except Exception as e:
         logger.error(f"Error during pending downgrades check: {e}", exc_info=True)
         # Retry the task with exponential backoff
-        raise self.retry(exc=e, countdown=60 * (2 ** self.request.retries))
+        raise self.retry(exc=e, countdown=60 * (2**self.request.retries))
 
     finally:
         db.close()
 
 
 @celery_app.task(bind=True, max_retries=3)
-def process_cancelled_subscriptions(self) -> Dict[str, Any]:
+def process_cancelled_subscriptions(self) -> dict[str, Any]:
     """
     Daily task to process cancelled subscriptions at period end.
 
@@ -272,16 +258,20 @@ def process_cancelled_subscriptions(self) -> Dict[str, Any]:
 
     try:
         from datetime import datetime, timedelta
-        from api.models import Subscription, Organization, SubscriptionEvent
+
+        from api.models import Organization, Subscription, SubscriptionEvent
 
         now = datetime.utcnow()
         cancelled_orgs = []
 
         # Find all subscriptions marked for cancellation at period end
-        subscriptions = db.query(Subscription).filter(
-            Subscription.cancel_at_period_end == True,
-            Subscription.current_period_end <= now
-        ).all()
+        subscriptions = (
+            db.query(Subscription)
+            .filter(
+                Subscription.cancel_at_period_end is True, Subscription.current_period_end <= now
+            )
+            .all()
+        )
 
         logger.info(f"Found {len(subscriptions)} subscriptions to process")
 
@@ -319,7 +309,7 @@ def process_cancelled_subscriptions(self) -> Dict[str, Any]:
                     event_type="cancelled_completed",
                     new_plan="free",
                     previous_plan=previous_plan,
-                    notes=f"Subscription cancelled at period end. Data retained until {org.data_retention_until.isoformat() if org and org.data_retention_until else 'N/A'}"
+                    notes=f"Subscription cancelled at period end. Data retained until {org.data_retention_until.isoformat() if org and org.data_retention_until else 'N/A'}",
                 )
                 db.add(event)
                 db.commit()
@@ -330,7 +320,10 @@ def process_cancelled_subscriptions(self) -> Dict[str, Any]:
                 # TODO: Send cancellation confirmation email
 
             except Exception as e:
-                logger.error(f"Error processing cancellation for subscription {subscription.id}: {e}", exc_info=True)
+                logger.error(
+                    f"Error processing cancellation for subscription {subscription.id}: {e}",
+                    exc_info=True,
+                )
                 db.rollback()
                 # Continue with next subscription
 
@@ -338,19 +331,19 @@ def process_cancelled_subscriptions(self) -> Dict[str, Any]:
             "success": True,
             "cancelled_count": len(cancelled_orgs),
             "cancelled_orgs": cancelled_orgs,
-            "message": f"Processed {len(cancelled_orgs)} cancelled subscriptions"
+            "message": f"Processed {len(cancelled_orgs)} cancelled subscriptions",
         }
 
     except Exception as e:
         logger.error(f"Error during cancelled subscriptions check: {e}", exc_info=True)
-        raise self.retry(exc=e, countdown=60 * (2 ** self.request.retries))
+        raise self.retry(exc=e, countdown=60 * (2**self.request.retries))
 
     finally:
         db.close()
 
 
 @celery_app.task(bind=True, max_retries=3)
-def mark_organizations_for_deletion(self) -> Dict[str, Any]:
+def mark_organizations_for_deletion(self) -> dict[str, Any]:
     """
     Daily task to mark organizations for deletion after retention period expires.
 
@@ -376,17 +369,22 @@ def mark_organizations_for_deletion(self) -> Dict[str, Any]:
 
     try:
         from datetime import datetime
+
         from api.models import Organization
 
         now = datetime.utcnow()
         marked_orgs = []
 
         # Find organizations past retention period
-        organizations = db.query(Organization).filter(
-            Organization.data_retention_until.isnot(None),
-            Organization.data_retention_until <= now,
-            Organization.deletion_scheduled_at.is_(None)  # Not already marked
-        ).all()
+        organizations = (
+            db.query(Organization)
+            .filter(
+                Organization.data_retention_until.isnot(None),
+                Organization.data_retention_until <= now,
+                Organization.deletion_scheduled_at.is_(None),  # Not already marked
+            )
+            .all()
+        )
 
         logger.info(f"Found {len(organizations)} organizations past retention period")
 
@@ -397,13 +395,17 @@ def mark_organizations_for_deletion(self) -> Dict[str, Any]:
                 db.commit()
                 db.refresh(org)
 
-                marked_orgs.append({
-                    "org_id": org.id,
-                    "org_name": org.name,
-                    "cancelled_at": org.cancelled_at.isoformat() if org.cancelled_at else None,
-                    "retention_expired": org.data_retention_until.isoformat() if org.data_retention_until else None,
-                    "marked_at": now.isoformat()
-                })
+                marked_orgs.append(
+                    {
+                        "org_id": org.id,
+                        "org_name": org.name,
+                        "cancelled_at": org.cancelled_at.isoformat() if org.cancelled_at else None,
+                        "retention_expired": org.data_retention_until.isoformat()
+                        if org.data_retention_until
+                        else None,
+                        "marked_at": now.isoformat(),
+                    }
+                )
 
                 logger.warning(
                     f"Marked organization {org.id} ({org.name}) for deletion - "
@@ -417,7 +419,9 @@ def mark_organizations_for_deletion(self) -> Dict[str, Any]:
                 # 4. Or automatically delete after additional grace period (e.g., 7 days)
 
             except Exception as e:
-                logger.error(f"Error marking organization {org.id} for deletion: {e}", exc_info=True)
+                logger.error(
+                    f"Error marking organization {org.id} for deletion: {e}", exc_info=True
+                )
                 db.rollback()
                 # Continue with next organization
 
@@ -425,12 +429,12 @@ def mark_organizations_for_deletion(self) -> Dict[str, Any]:
             "success": True,
             "marked_count": len(marked_orgs),
             "marked_orgs": marked_orgs,
-            "message": f"Marked {len(marked_orgs)} organizations for deletion"
+            "message": f"Marked {len(marked_orgs)} organizations for deletion",
         }
 
     except Exception as e:
         logger.error(f"Error during organization deletion check: {e}", exc_info=True)
-        raise self.retry(exc=e, countdown=60 * (2 ** self.request.retries))
+        raise self.retry(exc=e, countdown=60 * (2**self.request.retries))
 
     finally:
         db.close()
@@ -443,25 +447,21 @@ celery_app.conf.beat_schedule = {
         "task": "api.tasks.billing_tasks.apply_pending_downgrades",
         "schedule": crontab(hour=1, minute=0),
     },
-
     # Check expired trials daily at 2:00 AM UTC
     "check-expired-trials": {
         "task": "api.tasks.billing_tasks.check_expired_trials",
         "schedule": crontab(hour=2, minute=0),
     },
-
     # Check usage limits daily at 3:00 AM UTC
     "check-usage-limits": {
         "task": "api.tasks.billing_tasks.check_usage_limits",
         "schedule": crontab(hour=3, minute=0),
     },
-
     # Process cancelled subscriptions daily at 4:00 AM UTC (after usage checks)
     "process-cancelled-subscriptions": {
         "task": "api.tasks.billing_tasks.process_cancelled_subscriptions",
         "schedule": crontab(hour=4, minute=0),
     },
-
     # Mark organizations for deletion daily at 5:00 AM UTC (after cancellation processing)
     "mark-organizations-for-deletion": {
         "task": "api.tasks.billing_tasks.mark_organizations_for_deletion",

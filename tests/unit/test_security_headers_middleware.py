@@ -5,10 +5,11 @@ Tests the SecurityHeadersMiddleware which adds security headers
 to all HTTP responses to prevent XSS, clickjacking, and other attacks.
 """
 
-import pytest
 import os
-from unittest.mock import Mock, AsyncMock, patch
-from fastapi import FastAPI, Request, Response
+from unittest.mock import Mock, patch
+
+import pytest
+from fastapi import FastAPI, Response
 from fastapi.testclient import TestClient
 
 from api.utils.security_headers_middleware import (
@@ -126,7 +127,6 @@ class TestSecurityHeadersMiddleware:
 class TestSecurityHeadersConfiguration:
     """Test SecurityHeadersMiddleware configuration via environment variables."""
 
-
     def test_default_configuration(self):
         """Test middleware with default configuration."""
         # Ensure SECURITY_CSP_ENABLED is not set (it might be set by session fixures)
@@ -141,13 +141,16 @@ class TestSecurityHeadersConfiguration:
             assert middleware.csp_enabled is True
             assert middleware.frame_options == "DENY"
 
-    @patch.dict(os.environ, {
-        "ENVIRONMENT": "production",
-        "SECURITY_HSTS_ENABLED": "true",
-        "SECURITY_HSTS_MAX_AGE": "31536000",
-        "SECURITY_CSP_ENABLED": "true",
-        "SECURITY_FRAME_OPTIONS": "DENY",
-    })
+    @patch.dict(
+        os.environ,
+        {
+            "ENVIRONMENT": "production",
+            "SECURITY_HSTS_ENABLED": "true",
+            "SECURITY_HSTS_MAX_AGE": "31536000",
+            "SECURITY_CSP_ENABLED": "true",
+            "SECURITY_FRAME_OPTIONS": "DENY",
+        },
+    )
     def test_production_configuration(self):
         """Test middleware with production configuration."""
         middleware = SecurityHeadersMiddleware(app=Mock())
@@ -157,9 +160,12 @@ class TestSecurityHeadersConfiguration:
         assert middleware.csp_enabled is True
         assert middleware.frame_options == "DENY"
 
-    @patch.dict(os.environ, {
-        "SECURITY_HSTS_ENABLED": "TRUE",  # Test case-insensitive
-    })
+    @patch.dict(
+        os.environ,
+        {
+            "SECURITY_HSTS_ENABLED": "TRUE",  # Test case-insensitive
+        },
+    )
     def test_case_insensitive_boolean_config(self):
         """Test that boolean config values are case-insensitive."""
         middleware = SecurityHeadersMiddleware(app=Mock())
@@ -233,6 +239,7 @@ class TestSecurityHeadersIntegration:
 
     def test_headers_added_to_all_routes(self, test_app, test_client):
         """Test that security headers are added to all routes."""
+
         # Add multiple routes
         @test_app.get("/route1")
         async def route1():
@@ -253,6 +260,7 @@ class TestSecurityHeadersIntegration:
 
     def test_headers_dont_override_existing(self, test_app, test_client):
         """Test that middleware doesn't override existing headers."""
+
         @test_app.get("/custom")
         async def custom_route(response: Response):
             response.headers["X-Custom-Header"] = "custom-value"
@@ -294,9 +302,11 @@ class TestSecurityHeadersIntegration:
 
     def test_middleware_works_with_html_responses(self, test_app, test_client):
         """Test that middleware works with HTML responses."""
+
         @test_app.get("/html")
         async def html_route():
             from fastapi.responses import HTMLResponse
+
             return HTMLResponse(content="<html><body>Test</body></html>")
 
         add_security_headers_middleware(test_app)
@@ -336,6 +346,7 @@ class TestSecurityHeadersEdgeCases:
 
     def test_empty_response_gets_headers(self, test_app, test_client):
         """Test that even empty responses get security headers."""
+
         @test_app.get("/empty")
         async def empty_route():
             return None
@@ -348,9 +359,11 @@ class TestSecurityHeadersEdgeCases:
 
     def test_redirect_response_gets_headers(self, test_app, test_client):
         """Test that redirect responses get security headers."""
+
         @test_app.get("/redirect")
         async def redirect_route():
             from fastapi.responses import RedirectResponse
+
             return RedirectResponse(url="/test")
 
         add_security_headers_middleware(test_app)

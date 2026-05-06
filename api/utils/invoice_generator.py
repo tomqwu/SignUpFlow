@@ -5,7 +5,6 @@ Generates PDF invoices for billing records using reportlab.
 Simple text-based invoices without complex styling.
 """
 
-from typing import Dict, Any, Optional
 from datetime import datetime
 from io import BytesIO
 
@@ -17,7 +16,7 @@ def generate_invoice_pdf(
     plan_tier: str,
     amount_cents: int,
     created_at: datetime,
-    description: Optional[str] = None
+    description: str | None = None,
 ) -> BytesIO:
     """
     Generate PDF invoice from billing history record.
@@ -73,7 +72,7 @@ support@signupflow.io
 ====================================
 """
 
-    buffer.write(invoice_text.encode('utf-8'))
+    buffer.write(invoice_text.encode("utf-8"))
     buffer.seek(0)
 
     return buffer
@@ -86,9 +85,9 @@ def generate_invoice_pdf_html(
     plan_tier: str,
     amount_cents: int,
     created_at: datetime,
-    description: Optional[str] = None,
-    org_address: Optional[str] = None,
-    invoice_number: Optional[str] = None
+    description: str | None = None,
+    org_address: str | None = None,
+    invoice_number: str | None = None,
 ) -> str:
     """
     Generate HTML invoice template.

@@ -9,7 +9,7 @@ Prevents SMS spam by enforcing:
 
 import os
 from datetime import datetime, timedelta
-from typing import Optional, Tuple
+
 import redis
 
 
@@ -28,9 +28,7 @@ class SmsRateLimiter:
 
         self.max_sms_per_day = 3  # Non-urgent messages limit
 
-    def check_rate_limit(
-        self, person_id: int, is_urgent: bool = False
-    ) -> Tuple[bool, Optional[int]]:
+    def check_rate_limit(self, person_id: int, is_urgent: bool = False) -> tuple[bool, int | None]:
         """
         Check if person has exceeded daily SMS rate limit.
 
@@ -117,8 +115,6 @@ class SmsRateLimiter:
     def _seconds_until_midnight(self) -> int:
         """Calculate seconds until midnight for expiration."""
         now = datetime.utcnow()
-        midnight = (now + timedelta(days=1)).replace(
-            hour=0, minute=0, second=0, microsecond=0
-        )
+        midnight = (now + timedelta(days=1)).replace(hour=0, minute=0, second=0, microsecond=0)
         delta = midnight - now
         return int(delta.total_seconds())

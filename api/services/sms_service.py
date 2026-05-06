@@ -9,29 +9,28 @@ Provides methods for:
 """
 
 import os
-import re
 import random
+import re
 from datetime import datetime, timedelta
-from typing import Optional, List, Dict, Any
-from sqlalchemy.orm import Session
-from twilio.rest import Client
-from twilio.base.exceptions import TwilioRestException
+from typing import Any
+
 from jinja2 import Template
+from sqlalchemy.orm import Session
+from twilio.base.exceptions import TwilioRestException
+from twilio.rest import Client
 
 from api.models import (
+    Assignment,
+    Event,
     SmsMessage,
     SmsPreference,
+    SmsReply,
     SmsTemplate,
     SmsVerificationCode,
-    SmsReply,
-    SmsUsage,
-    Person,
-    Event,
-    Assignment,
 )
-from api.utils.sms_rate_limiter import SmsRateLimiter
-from api.utils.quiet_hours import QuietHours
 from api.utils.cost_tracker import CostTracker
+from api.utils.quiet_hours import QuietHours
+from api.utils.sms_rate_limiter import SmsRateLimiter
 
 
 class SMSService:
@@ -67,24 +66,23 @@ class SMSService:
         message_text: str,
         message_type: str,
         organization_id: int,
-        event_id: Optional[int] = None,
-        template_id: Optional[int] = None,
+        event_id: int | None = None,
+        template_id: int | None = None,
         is_urgent: bool = False,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Send SMS message to single recipient.
         """
         if not self.enabled:
             import logging
-            logging.getLogger("sms_service").warning(f"SMS sending disabled - would send to {recipient_id}")
+
+            logging.getLogger("sms_service").warning(
+                f"SMS sending disabled - would send to {recipient_id}"
+            )
             return {"status": "disabled", "message": "SMS sending disabled"}
 
         # 1. Get recipient SMS preferences
-        sms_pref = (
-            db.query(SmsPreference)
-            .filter(SmsPreference.person_id == recipient_id)
-            .first()
-        )
+        sms_pref = db.query(SmsPreference).filter(SmsPreference.person_id == recipient_id).first()
 
         if not sms_pref:
             raise ValueError(f"No SMS preferences found for person {recipient_id}")
@@ -97,19 +95,14 @@ class SMSService:
             raise ValueError("Recipient has opted out of SMS notifications")
 
         # 3. Check rate limits (unless is_urgent)
-        allowed, remaining = self.rate_limiter.check_rate_limit(
-            recipient_id, is_urgent
-        )
+        allowed, remaining = self.rate_limiter.check_rate_limit(recipient_id, is_urgent)
         if not allowed:
             raise ValueError(
-                "Daily SMS rate limit exceeded (3 messages per day). "
-                "Limit resets at midnight."
+                "Daily SMS rate limit exceeded (3 messages per day). " "Limit resets at midnight."
             )
 
         # 4. Check quiet hours (unless is_urgent)
-        is_quiet, reason = self.quiet_hours.is_quiet_hours(
-            sms_pref.timezone, is_urgent
-        )
+        is_quiet, reason = self.quiet_hours.is_quiet_hours(sms_pref.timezone, is_urgent)
         if is_quiet:
             raise ValueError(f"Cannot send SMS during quiet hours: {reason}")
 
@@ -145,9 +138,7 @@ class SMSService:
             self.rate_limiter.increment_count(recipient_id, is_urgent)
 
             # 9. Track usage and cost
-            self.cost_tracker.track_usage(
-                db, organization_id, message_type, cost_cents
-            )
+            self.cost_tracker.track_usage(db, organization_id, message_type, cost_cents)
 
             db.commit()
 
@@ -179,19 +170,17 @@ class SMSService:
             db.add(sms_message)
             db.commit()
 
-            raise TwilioRestException(
-                status=e.status, uri=e.uri, msg=f"Twilio API error: {e.msg}"
-            )
+            raise TwilioRestException(status=e.status, uri=e.uri, msg=f"Twilio API error: {e.msg}")
 
     def send_broadcast(
         self,
         db: Session,
-        recipient_ids: List[int],
+        recipient_ids: list[int],
         message_text: str,
         organization_id: int,
         is_urgent: bool = False,
         bypass_quiet_hours: bool = False,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Send same message to multiple recipients (broadcast).
 
@@ -233,25 +222,19 @@ class SMSService:
             try:
                 # Get SMS preferences
                 sms_pref = (
-                    db.query(SmsPreference)
-                    .filter(SmsPreference.person_id == person_id)
-                    .first()
+                    db.query(SmsPreference).filter(SmsPreference.person_id == person_id).first()
                 )
 
                 # Skip if no preferences
                 if not sms_pref:
                     skipped_count += 1
-                    skipped_reasons.append(
-                        f"Person {person_id}: No SMS preferences found"
-                    )
+                    skipped_reasons.append(f"Person {person_id}: No SMS preferences found")
                     continue
 
                 # Skip if not verified
                 if not sms_pref.verified:
                     skipped_count += 1
-                    skipped_reasons.append(
-                        f"Person {person_id}: Phone not verified"
-                    )
+                    skipped_reasons.append(f"Person {person_id}: Phone not verified")
                     continue
 
                 # Skip if opted out
@@ -261,21 +244,15 @@ class SMSService:
                     continue
 
                 # Check rate limits (unless urgent)
-                allowed, remaining = self.rate_limiter.check_rate_limit(
-                    person_id, is_urgent
-                )
+                allowed, remaining = self.rate_limiter.check_rate_limit(person_id, is_urgent)
                 if not allowed:
                     skipped_count += 1
-                    skipped_reasons.append(
-                        f"Person {person_id}: Rate limit exceeded"
-                    )
+                    skipped_reasons.append(f"Person {person_id}: Rate limit exceeded")
                     continue
 
                 # Check quiet hours (unless bypass or urgent)
                 if not bypass_quiet_hours:
-                    is_quiet, reason = self.quiet_hours.is_quiet_hours(
-                        sms_pref.timezone, is_urgent
-                    )
+                    is_quiet, reason = self.quiet_hours.is_quiet_hours(sms_pref.timezone, is_urgent)
                     if is_quiet:
                         skipped_count += 1
                         skipped_reasons.append(f"Person {person_id}: {reason}")
@@ -308,7 +285,7 @@ class SMSService:
             "message": f"Broadcast sent to {queued_count}/{len(recipient_ids)} recipients",
         }
 
-    def verify_phone_number(self, phone_number: str) -> Dict[str, Any]:
+    def verify_phone_number(self, phone_number: str) -> dict[str, Any]:
         """
         Verify phone number format and deliverability using Twilio Lookup API.
 
@@ -330,9 +307,7 @@ class SMSService:
 
         # 2. Call Twilio Lookup API
         try:
-            phone_info = self.client.lookups.v1.phone_numbers(phone_number).fetch(
-                type=["carrier"]
-            )
+            phone_info = self.client.lookups.v1.phone_numbers(phone_number).fetch(type=["carrier"])
 
             # 3. Check carrier type (mobile vs landline)
             carrier_type = phone_info.carrier.get("type", "unknown")
@@ -358,9 +333,7 @@ class SMSService:
                 }
             raise
 
-    def generate_verification_code(
-        self, db: Session, person_id: int, phone_number: str
-    ) -> int:
+    def generate_verification_code(self, db: Session, person_id: int, phone_number: str) -> int:
         """
         Generate 6-digit verification code and send via SMS.
 
@@ -380,9 +353,7 @@ class SMSService:
         expires_at = datetime.utcnow() + timedelta(minutes=10)
 
         # 2. Delete any existing verification codes for this person
-        db.query(SmsVerificationCode).filter(
-            SmsVerificationCode.person_id == person_id
-        ).delete()
+        db.query(SmsVerificationCode).filter(SmsVerificationCode.person_id == person_id).delete()
 
         # 3. Create new verification code record
         verification = SmsVerificationCode(
@@ -403,7 +374,7 @@ class SMSService:
         )
 
         try:
-            twilio_message = self.client.messages.create(
+            self.client.messages.create(
                 body=message_text,
                 from_=self.from_phone,
                 to=phone_number,
@@ -418,9 +389,7 @@ class SMSService:
                 msg=f"Failed to send verification code: {e.msg}",
             )
 
-    def verify_code(
-        self, db: Session, person_id: int, code: int
-    ) -> Dict[str, Any]:
+    def verify_code(self, db: Session, person_id: int, code: int) -> dict[str, Any]:
         """
         Verify SMS verification code and mark phone as verified.
 
@@ -437,9 +406,7 @@ class SMSService:
         """
         # 1. Get verification code from database
         verification = (
-            db.query(SmsVerificationCode)
-            .filter(SmsVerificationCode.person_id == person_id)
-            .first()
+            db.query(SmsVerificationCode).filter(SmsVerificationCode.person_id == person_id).first()
         )
 
         if not verification:
@@ -455,9 +422,7 @@ class SMSService:
         if verification.attempts >= 3:
             db.delete(verification)
             db.commit()
-            raise ValueError(
-                "Maximum verification attempts exceeded. Please request a new code."
-            )
+            raise ValueError("Maximum verification attempts exceeded. Please request a new code.")
 
         # 4. Validate code match
         verification.attempts += 1
@@ -469,11 +434,7 @@ class SMSService:
             )
 
         # 5. Mark phone as verified in sms_preferences
-        sms_pref = (
-            db.query(SmsPreference)
-            .filter(SmsPreference.person_id == person_id)
-            .first()
-        )
+        sms_pref = db.query(SmsPreference).filter(SmsPreference.person_id == person_id).first()
 
         if not sms_pref:
             # Create new SMS preferences
@@ -521,7 +482,7 @@ class SMSService:
 
     def process_incoming_reply(
         self, db: Session, from_phone: str, message_text: str, twilio_message_sid: str
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Process incoming SMS reply (YES/NO/STOP/START/HELP).
 
@@ -541,11 +502,7 @@ class SMSService:
         normalized_text = message_text.strip().upper()
 
         # Find person by phone number
-        sms_pref = (
-            db.query(SmsPreference)
-            .filter(SmsPreference.phone_number == from_phone)
-            .first()
-        )
+        sms_pref = db.query(SmsPreference).filter(SmsPreference.phone_number == from_phone).first()
 
         if not sms_pref:
             raise ValueError(f"Phone number not found in system: {from_phone}")
@@ -602,7 +559,7 @@ class SMSService:
         }
 
     def process_yes_reply(
-        self, db: Session, person_id: int, original_message_id: Optional[int]
+        self, db: Session, person_id: int, original_message_id: int | None
     ) -> str:
         """
         Process YES reply to assignment notification.
@@ -649,9 +606,7 @@ class SMSService:
             f"Thank you for confirming!"
         )
 
-    def process_no_reply(
-        self, db: Session, person_id: int, original_message_id: Optional[int]
-    ) -> str:
+    def process_no_reply(self, db: Session, person_id: int, original_message_id: int | None) -> str:
         """
         Process NO reply to assignment notification.
 
@@ -711,11 +666,7 @@ class SMSService:
             Opt-out confirmation message
         """
         # 1. Get SMS preferences
-        sms_pref = (
-            db.query(SmsPreference)
-            .filter(SmsPreference.person_id == person_id)
-            .first()
-        )
+        sms_pref = db.query(SmsPreference).filter(SmsPreference.person_id == person_id).first()
 
         if not sms_pref:
             return "You are not subscribed to SMS notifications."
@@ -742,11 +693,7 @@ class SMSService:
             Re-enablement message with verification code requirement
         """
         # 1. Get SMS preferences
-        sms_pref = (
-            db.query(SmsPreference)
-            .filter(SmsPreference.person_id == person_id)
-            .first()
-        )
+        sms_pref = db.query(SmsPreference).filter(SmsPreference.person_id == person_id).first()
 
         if not sms_pref:
             return "Phone number not found. Please verify your phone first."
@@ -825,15 +772,13 @@ class SMSService:
             .filter(
                 SmsTemplate.organization_id == event.org_id,
                 SmsTemplate.message_type == "assignment",
-                SmsTemplate.is_system == True,
+                SmsTemplate.is_system is True,
             )
             .first()
         )
 
         if not template:
-            raise ValueError(
-                f"No assignment template found for organization {event.org_id}"
-            )
+            raise ValueError(f"No assignment template found for organization {event.org_id}")
 
         # 2. Extract event details (name, date, time, location)
         event_datetime = event.datetime
@@ -861,7 +806,7 @@ class SMSService:
         self,
         db: Session,
         template_id: int,
-        context: Dict[str, Any],
+        context: dict[str, Any],
         language: str = "en",
     ) -> str:
         """
@@ -877,9 +822,7 @@ class SMSService:
             Rendered message text with variables substituted
         """
         # 1. Get template from database
-        template_record = (
-            db.query(SmsTemplate).filter(SmsTemplate.id == template_id).first()
-        )
+        template_record = db.query(SmsTemplate).filter(SmsTemplate.id == template_id).first()
 
         if not template_record:
             raise ValueError(f"Template {template_id} not found")
@@ -918,5 +861,5 @@ class SMSService:
             True if valid E.164 format, False otherwise
         """
         # E.164 format: +[country code][number] (e.g., +12345678900)
-        e164_pattern = r'^\+[1-9]\d{1,14}$'
+        e164_pattern = r"^\+[1-9]\d{1,14}$"
         return bool(re.match(e164_pattern, phone_number))

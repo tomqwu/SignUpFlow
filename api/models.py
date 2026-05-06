@@ -1,28 +1,27 @@
 """Database models for roster system using SQLAlchemy."""
 
-from datetime import datetime, date
 
-from api.timeutils import utcnow
-from typing import Optional
 import json
 
 from sqlalchemy import (
-    create_engine,
-    Column,
-    String,
-    Integer,
-    Float,
+    JSON,
     Boolean,
-    DateTime,
+    Column,
     Date,
-    Text,
+    DateTime,
+    Float,
     ForeignKey,
     Index,
-    JSON,
+    Integer,
+    String,
+    Text,
+    create_engine,
 )
 from sqlalchemy.orm import declarative_base, relationship, sessionmaker
-from sqlalchemy.types import TypeDecorator
 from sqlalchemy.sql import func
+from sqlalchemy.types import TypeDecorator
+
+from api.timeutils import utcnow
 
 Base = declarative_base()
 
@@ -58,25 +57,47 @@ class Organization(Base):
 
     # Cancellation and data retention fields
     cancelled_at = Column(DateTime, nullable=True)  # When subscription was cancelled
-    data_retention_until = Column(DateTime, nullable=True)  # When data should be deleted (period_end + 30 days)
-    deletion_scheduled_at = Column(DateTime, nullable=True)  # When organization was marked for deletion
+    data_retention_until = Column(
+        DateTime, nullable=True
+    )  # When data should be deleted (period_end + 30 days)
+    deletion_scheduled_at = Column(
+        DateTime, nullable=True
+    )  # When organization was marked for deletion
 
     # Relationships
     people = relationship("Person", back_populates="organization", cascade="all, delete-orphan")
     teams = relationship("Team", back_populates="organization", cascade="all, delete-orphan")
-    resources = relationship("Resource", back_populates="organization", cascade="all, delete-orphan")
+    resources = relationship(
+        "Resource", back_populates="organization", cascade="all, delete-orphan"
+    )
     events = relationship("Event", back_populates="organization", cascade="all, delete-orphan")
-    recurring_series = relationship("RecurringSeries", back_populates="organization", cascade="all, delete-orphan")
+    recurring_series = relationship(
+        "RecurringSeries", back_populates="organization", cascade="all, delete-orphan"
+    )
     holidays = relationship("Holiday", back_populates="organization", cascade="all, delete-orphan")
-    constraints = relationship("Constraint", back_populates="organization", cascade="all, delete-orphan")
-    solutions = relationship("Solution", back_populates="organization", cascade="all, delete-orphan")
-    invitations = relationship("Invitation", back_populates="organization", cascade="all, delete-orphan")
-    onboarding_progress = relationship("OnboardingProgress", back_populates="organization", cascade="all, delete-orphan")
-    notifications = relationship("Notification", back_populates="organization", cascade="all, delete-orphan")
-    email_preferences = relationship("EmailPreference", back_populates="organization", cascade="all, delete-orphan")
+    constraints = relationship(
+        "Constraint", back_populates="organization", cascade="all, delete-orphan"
+    )
+    solutions = relationship(
+        "Solution", back_populates="organization", cascade="all, delete-orphan"
+    )
+    invitations = relationship(
+        "Invitation", back_populates="organization", cascade="all, delete-orphan"
+    )
+    onboarding_progress = relationship(
+        "OnboardingProgress", back_populates="organization", cascade="all, delete-orphan"
+    )
+    notifications = relationship(
+        "Notification", back_populates="organization", cascade="all, delete-orphan"
+    )
+    email_preferences = relationship(
+        "EmailPreference", back_populates="organization", cascade="all, delete-orphan"
+    )
 
     # Billing relationships
-    subscription = relationship("Subscription", back_populates="organization", uselist=False, cascade="all, delete-orphan")
+    subscription = relationship(
+        "Subscription", back_populates="organization", uselist=False, cascade="all, delete-orphan"
+    )
     usage_metrics = relationship("UsageMetrics", cascade="all, delete-orphan")
     subscription_events = relationship("SubscriptionEvent", cascade="all, delete-orphan")
 
@@ -89,12 +110,7 @@ class Organization(Base):
     @property
     def volunteer_limit(self):
         """Get volunteer limit based on subscription tier."""
-        tier_limits = {
-            "free": 10,
-            "starter": 50,
-            "pro": 200,
-            "enterprise": None  # Unlimited
-        }
+        tier_limits = {"free": 10, "starter": 50, "pro": 200, "enterprise": None}  # Unlimited
         return tier_limits.get(self.subscription_tier, 10)
 
     @property
@@ -118,11 +134,15 @@ class Person(Base):
     password_hash = Column(String, nullable=True)  # Hashed password for login
     roles = Column(JSONType, nullable=True)  # Array of role strings
     timezone = Column(String, default="UTC", nullable=False)  # User's timezone preference
-    language = Column(String, default="en", nullable=False)  # User's language preference (ISO 639-1 code)
+    language = Column(
+        String, default="en", nullable=False
+    )  # User's language preference (ISO 639-1 code)
     status = Column(String, default="active", nullable=False)  # active, inactive, invited
     invited_by = Column(String, ForeignKey("people.id"), nullable=True)  # Who invited this person
     last_login = Column(DateTime, nullable=True)  # Last login timestamp
-    calendar_token = Column(String, unique=True, nullable=True)  # Unique token for calendar subscription
+    calendar_token = Column(
+        String, unique=True, nullable=True
+    )  # Unique token for calendar subscription
     is_sample = Column(Boolean, default=False, nullable=False)  # For sample/demo data
     extra_data = Column(JSONType, nullable=True)
     created_at = Column(DateTime, default=utcnow)
@@ -130,14 +150,32 @@ class Person(Base):
 
     # Relationships
     organization = relationship("Organization", back_populates="people")
-    team_memberships = relationship("TeamMember", back_populates="person", cascade="all, delete-orphan")
-    availability = relationship("Availability", back_populates="person", cascade="all, delete-orphan")
+    team_memberships = relationship(
+        "TeamMember", back_populates="person", cascade="all, delete-orphan"
+    )
+    availability = relationship(
+        "Availability", back_populates="person", cascade="all, delete-orphan"
+    )
     assignments = relationship("Assignment", back_populates="person", cascade="all, delete-orphan")
-    invitations_sent = relationship("Invitation", foreign_keys="Invitation.invited_by", back_populates="inviter", cascade="all, delete-orphan")
+    invitations_sent = relationship(
+        "Invitation",
+        foreign_keys="Invitation.invited_by",
+        back_populates="inviter",
+        cascade="all, delete-orphan",
+    )
     invited_by_person = relationship("Person", remote_side="Person.id", foreign_keys=[invited_by])
-    onboarding_progress = relationship("OnboardingProgress", back_populates="person", uselist=False, cascade="all, delete-orphan")
-    notifications_received = relationship("Notification", back_populates="recipient", foreign_keys="Notification.recipient_id", cascade="all, delete-orphan")
-    email_preferences = relationship("EmailPreference", back_populates="person", uselist=False, cascade="all, delete-orphan")
+    onboarding_progress = relationship(
+        "OnboardingProgress", back_populates="person", uselist=False, cascade="all, delete-orphan"
+    )
+    notifications_received = relationship(
+        "Notification",
+        back_populates="recipient",
+        foreign_keys="Notification.recipient_id",
+        cascade="all, delete-orphan",
+    )
+    email_preferences = relationship(
+        "EmailPreference", back_populates="person", uselist=False, cascade="all, delete-orphan"
+    )
 
     # Indexes
     __table_args__ = (
@@ -168,9 +206,7 @@ class Team(Base):
     event_teams = relationship("EventTeam", back_populates="team", cascade="all, delete-orphan")
 
     # Indexes
-    __table_args__ = (
-        Index("idx_teams_org_id", "org_id"),
-    )
+    __table_args__ = (Index("idx_teams_org_id", "org_id"),)
 
 
 class TeamMember(Base):
@@ -213,9 +249,7 @@ class Resource(Base):
     events = relationship("Event", back_populates="resource")
 
     # Indexes
-    __table_args__ = (
-        Index("idx_resources_org_id", "org_id"),
-    )
+    __table_args__ = (Index("idx_resources_org_id", "org_id"),)
 
 
 class Event(Base):
@@ -233,7 +267,9 @@ class Event(Base):
     extra_data = Column(JSONType, nullable=True)
 
     # Recurring events support (added for spec 006-recurring-events-ui)
-    series_id = Column(String, ForeignKey("recurring_series.id"), nullable=True)  # Link to recurring series
+    series_id = Column(
+        String, ForeignKey("recurring_series.id"), nullable=True
+    )  # Link to recurring series
     occurrence_sequence = Column(Integer, nullable=True)  # Position in series (1, 2, 3...)
     is_exception = Column(Boolean, default=False, nullable=False)  # Single occurrence modified
 
@@ -245,9 +281,16 @@ class Event(Base):
     resource = relationship("Resource", back_populates="events")
     event_teams = relationship("EventTeam", back_populates="event", cascade="all, delete-orphan")
     assignments = relationship("Assignment", back_populates="event", cascade="all, delete-orphan")
-    notifications = relationship("Notification", back_populates="event", cascade="all, delete-orphan")
+    notifications = relationship(
+        "Notification", back_populates="event", cascade="all, delete-orphan"
+    )
     recurring_series = relationship("RecurringSeries", back_populates="occurrences")
-    recurrence_exception = relationship("RecurrenceException", back_populates="occurrence", uselist=False, cascade="all, delete-orphan")
+    recurrence_exception = relationship(
+        "RecurrenceException",
+        back_populates="occurrence",
+        uselist=False,
+        cascade="all, delete-orphan",
+    )
 
     # Indexes
     __table_args__ = (
@@ -293,8 +336,12 @@ class RecurringSeries(Base):
     # Relationships
     organization = relationship("Organization", back_populates="recurring_series")
     creator = relationship("Person", foreign_keys=[created_by])
-    occurrences = relationship("Event", back_populates="recurring_series", cascade="all, delete-orphan")
-    exceptions = relationship("RecurrenceException", back_populates="series", cascade="all, delete-orphan")
+    occurrences = relationship(
+        "Event", back_populates="recurring_series", cascade="all, delete-orphan"
+    )
+    exceptions = relationship(
+        "RecurrenceException", back_populates="series", cascade="all, delete-orphan"
+    )
 
     # Indexes
     __table_args__ = (
@@ -376,13 +423,15 @@ class Availability(Base):
 
     # Relationships
     person = relationship("Person", back_populates="availability")
-    vacations = relationship("VacationPeriod", back_populates="availability", cascade="all, delete-orphan")
-    exceptions = relationship("AvailabilityException", back_populates="availability", cascade="all, delete-orphan")
+    vacations = relationship(
+        "VacationPeriod", back_populates="availability", cascade="all, delete-orphan"
+    )
+    exceptions = relationship(
+        "AvailabilityException", back_populates="availability", cascade="all, delete-orphan"
+    )
 
     # Indexes
-    __table_args__ = (
-        Index("idx_availability_person_id", "person_id"),
-    )
+    __table_args__ = (Index("idx_availability_person_id", "person_id"),)
 
 
 class VacationPeriod(Base):
@@ -488,7 +537,9 @@ class Solution(Base):
 
     # Relationships
     organization = relationship("Organization", back_populates="solutions")
-    assignments = relationship("Assignment", back_populates="solution", cascade="all, delete-orphan")
+    assignments = relationship(
+        "Assignment", back_populates="solution", cascade="all, delete-orphan"
+    )
 
     # Indexes
     __table_args__ = (
@@ -509,7 +560,9 @@ class Invitation(Base):
     roles = Column(JSONType, nullable=False)  # Array of role strings
     invited_by = Column(String, ForeignKey("people.id"), nullable=False)
     token = Column(String, unique=True, nullable=False)
-    status = Column(String, default="pending", nullable=False)  # pending, accepted, expired, cancelled
+    status = Column(
+        String, default="pending", nullable=False
+    )  # pending, accepted, expired, cancelled
     expires_at = Column(DateTime, nullable=False)
     created_at = Column(DateTime, default=utcnow)
     accepted_at = Column(DateTime, nullable=True)
@@ -536,10 +589,18 @@ class OnboardingProgress(Base):
     person_id = Column(String, ForeignKey("people.id"), nullable=False, unique=True)
     org_id = Column(String, ForeignKey("organizations.id"), nullable=False)
     wizard_step_completed = Column(Integer, default=0)  # 0-4 (0=not started, 4=completed)
-    wizard_data = Column(JSONType, default=dict)  # {"org": {...}, "event": {...}, "team": {...}, "invitations": [...]}
-    checklist_state = Column(JSONType, default=dict)  # {"complete_profile": True, "create_event": False, ...}
-    tutorials_completed = Column(JSONType, default=list)  # ["event_creation", "team_management", ...]
-    features_unlocked = Column(JSONType, default=list)  # ["recurring_events", "manual_editing", "sms"]
+    wizard_data = Column(
+        JSONType, default=dict
+    )  # {"org": {...}, "event": {...}, "team": {...}, "invitations": [...]}
+    checklist_state = Column(
+        JSONType, default=dict
+    )  # {"complete_profile": True, "create_event": False, ...}
+    tutorials_completed = Column(
+        JSONType, default=list
+    )  # ["event_creation", "team_management", ...]
+    features_unlocked = Column(
+        JSONType, default=list
+    )  # ["recurring_events", "manual_editing", "sms"]
     videos_watched = Column(JSONType, default=list)  # ["getting_started", "creating_events", ...]
     onboarding_skipped = Column(Boolean, default=False)
     checklist_dismissed = Column(Boolean, default=False)
@@ -564,11 +625,17 @@ class Assignment(Base):
     __tablename__ = "assignments"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
-    solution_id = Column(Integer, ForeignKey("solutions.id"), nullable=True)  # Nullable for manual assignments
+    solution_id = Column(
+        Integer, ForeignKey("solutions.id"), nullable=True
+    )  # Nullable for manual assignments
     event_id = Column(String, ForeignKey("events.id"), nullable=False)
     person_id = Column(String, ForeignKey("people.id"), nullable=False)
-    role = Column(String, nullable=True)  # Event-specific role (e.g., "usher", "greeter", "sound_tech")
-    status = Column(String, default="confirmed", nullable=False)  # confirmed, declined, swap_requested
+    role = Column(
+        String, nullable=True
+    )  # Event-specific role (e.g., "usher", "greeter", "sound_tech")
+    status = Column(
+        String, default="confirmed", nullable=False
+    )  # confirmed, declined, swap_requested
     decline_reason = Column(String, nullable=True)
     assigned_at = Column(DateTime, default=utcnow)
 
@@ -589,8 +656,10 @@ class Assignment(Base):
 # Email Notification Models
 # ==============================================================================
 
+
 class NotificationType:
     """Email notification types."""
+
     ASSIGNMENT = "assignment"  # Volunteer assigned to event
     REMINDER = "reminder"  # 24-hour reminder before event
     UPDATE = "update"  # Event details changed
@@ -602,6 +671,7 @@ class NotificationType:
 
 class NotificationStatus:
     """Email notification delivery statuses."""
+
     PENDING = "pending"  # Queued for sending
     SENDING = "sending"  # Currently being sent
     SENT = "sent"  # Sent successfully
@@ -615,6 +685,7 @@ class NotificationStatus:
 
 class EmailFrequency:
     """Email notification frequency preferences."""
+
     IMMEDIATE = "immediate"  # Send immediately
     DAILY = "daily"  # Batch into daily digest
     WEEKLY = "weekly"  # Batch into weekly digest
@@ -623,6 +694,7 @@ class EmailFrequency:
 
 class DeliveryEventType:
     """SendGrid webhook event types."""
+
     PROCESSED = "processed"
     DROPPED = "dropped"
     DELIVERED = "delivered"
@@ -644,7 +716,9 @@ class Notification(Base):
     recipient_id = Column(String, ForeignKey("people.id"), nullable=False)
     type = Column(String, nullable=False)  # NotificationType value
     status = Column(String, default=NotificationStatus.PENDING, nullable=False)
-    event_id = Column(String, ForeignKey("events.id"), nullable=True)  # Related event (if applicable)
+    event_id = Column(
+        String, ForeignKey("events.id"), nullable=True
+    )  # Related event (if applicable)
     template_data = Column(JSONType, nullable=True)  # Template rendering data
     retry_count = Column(Integer, default=0, nullable=False)
     sendgrid_message_id = Column(String, nullable=True, unique=True)  # SendGrid message ID
@@ -657,7 +731,9 @@ class Notification(Base):
 
     # Relationships
     organization = relationship("Organization", back_populates="notifications")
-    recipient = relationship("Person", back_populates="notifications_received", foreign_keys=[recipient_id])
+    recipient = relationship(
+        "Person", back_populates="notifications_received", foreign_keys=[recipient_id]
+    )
     event = relationship("Event", back_populates="notifications")
 
     # Indexes
@@ -679,7 +755,9 @@ class EmailPreference(Base):
     person_id = Column(String, ForeignKey("people.id"), nullable=False, unique=True)
     org_id = Column(String, ForeignKey("organizations.id"), nullable=False)
     frequency = Column(String, default=EmailFrequency.IMMEDIATE, nullable=False)
-    enabled_types = Column(JSONType, default=list, nullable=False)  # List of enabled NotificationType values
+    enabled_types = Column(
+        JSONType, default=list, nullable=False
+    )  # List of enabled NotificationType values
     language = Column(String, default="en", nullable=False)  # Email language preference
     timezone = Column(String, default="UTC", nullable=False)  # For digest scheduling
     digest_hour = Column(Integer, default=8, nullable=False)  # Hour to send digests (0-23)
@@ -740,7 +818,9 @@ class AuditLog(Base):
     organization_id = Column(String, nullable=True, index=True)
 
     # What
-    action = Column(String, nullable=False, index=True)  # e.g., "user.created", "role.changed", "data.exported"
+    action = Column(
+        String, nullable=False, index=True
+    )  # e.g., "user.created", "role.changed", "data.exported"
     resource_type = Column(String, nullable=True)  # e.g., "person", "event", "organization"
     resource_id = Column(String, nullable=True)  # ID of affected resource
 
@@ -748,7 +828,9 @@ class AuditLog(Base):
     details = Column(JSON, nullable=True)  # Additional context (before/after values, etc.)
 
     # When
-    timestamp = Column(DateTime(timezone=True), nullable=False, server_default=func.now(), index=True)
+    timestamp = Column(
+        DateTime(timezone=True), nullable=False, server_default=func.now(), index=True
+    )
 
     # Where
     ip_address = Column(String, nullable=True)  # Client IP address
@@ -816,7 +898,9 @@ class SmsPreference(Base):
     person_id = Column(String, ForeignKey("people.id", ondelete="CASCADE"), primary_key=True)
     phone_number = Column(String(20), nullable=False)
     verified = Column(Boolean, nullable=False, default=False)
-    notification_types = Column(JSONType, nullable=False, default=list)  # ['assignment', 'reminder', 'change', 'cancellation']
+    notification_types = Column(
+        JSONType, nullable=False, default=list
+    )  # ['assignment', 'reminder', 'change', 'cancellation']
     opt_in_date = Column(DateTime, nullable=True)
     opt_out_date = Column(DateTime, nullable=True)
     language = Column(String(5), nullable=False, default="en")
@@ -825,9 +909,7 @@ class SmsPreference(Base):
     updated_at = Column(DateTime, nullable=False, default=utcnow, onupdate=utcnow)
 
     # Indexes
-    __table_args__ = (
-        Index("idx_sms_preferences_verified", "verified", "opt_out_date"),
-    )
+    __table_args__ = (Index("idx_sms_preferences_verified", "verified", "opt_out_date"),)
 
 
 class SmsMessage(Base):
@@ -836,14 +918,22 @@ class SmsMessage(Base):
     __tablename__ = "sms_messages"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
-    organization_id = Column(String, ForeignKey("organizations.id", ondelete="CASCADE"), nullable=False)
+    organization_id = Column(
+        String, ForeignKey("organizations.id", ondelete="CASCADE"), nullable=False
+    )
     recipient_id = Column(String, ForeignKey("people.id", ondelete="CASCADE"), nullable=False)
     phone_number = Column(String(20), nullable=False)
     message_text = Column(Text, nullable=False)
-    message_type = Column(String(20), nullable=False)  # 'assignment', 'reminder', 'broadcast', 'system', 'verification'
+    message_type = Column(
+        String(20), nullable=False
+    )  # 'assignment', 'reminder', 'broadcast', 'system', 'verification'
     event_id = Column(String, ForeignKey("events.id", ondelete="SET NULL"), nullable=True)
-    template_id = Column(Integer, ForeignKey("sms_templates.id", ondelete="SET NULL"), nullable=True)
-    status = Column(String(20), nullable=False, default="queued")  # 'queued', 'sent', 'delivered', 'failed', 'undelivered'
+    template_id = Column(
+        Integer, ForeignKey("sms_templates.id", ondelete="SET NULL"), nullable=True
+    )
+    status = Column(
+        String(20), nullable=False, default="queued"
+    )  # 'queued', 'sent', 'delivered', 'failed', 'undelivered'
     twilio_message_sid = Column(String(34), unique=True, nullable=True)
     cost_cents = Column(Integer, nullable=False, default=0)
     error_message = Column(Text, nullable=True)
@@ -869,10 +959,14 @@ class SmsTemplate(Base):
     __tablename__ = "sms_templates"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
-    organization_id = Column(String, ForeignKey("organizations.id", ondelete="CASCADE"), nullable=False)
+    organization_id = Column(
+        String, ForeignKey("organizations.id", ondelete="CASCADE"), nullable=False
+    )
     name = Column(String(100), nullable=False)
     template_text = Column(Text, nullable=False)
-    message_type = Column(String(20), nullable=False)  # 'assignment', 'reminder', 'cancellation', 'broadcast'
+    message_type = Column(
+        String(20), nullable=False
+    )  # 'assignment', 'reminder', 'cancellation', 'broadcast'
     character_count = Column(Integer, nullable=False)
     translations = Column(JSONType, nullable=False, default=dict)  # {'en': '...', 'es': '...'}
     is_system = Column(Boolean, nullable=False, default=False)
@@ -893,7 +987,9 @@ class SmsUsage(Base):
 
     __tablename__ = "sms_usage"
 
-    organization_id = Column(String, ForeignKey("organizations.id", ondelete="CASCADE"), nullable=False, primary_key=True)
+    organization_id = Column(
+        String, ForeignKey("organizations.id", ondelete="CASCADE"), nullable=False, primary_key=True
+    )
     month_year = Column(String(7), nullable=False, primary_key=True)  # '2025-10'
     assignment_count = Column(Integer, nullable=False, default=0)
     reminder_count = Column(Integer, nullable=False, default=0)
@@ -909,9 +1005,7 @@ class SmsUsage(Base):
     updated_at = Column(DateTime, nullable=False, default=utcnow, onupdate=utcnow)
 
     # Indexes
-    __table_args__ = (
-        Index("idx_sms_usage_month", "month_year"),
-    )
+    __table_args__ = (Index("idx_sms_usage_month", "month_year"),)
 
 
 class SmsVerificationCode(Base):
@@ -927,9 +1021,7 @@ class SmsVerificationCode(Base):
     created_at = Column(DateTime, nullable=False, default=utcnow)
 
     # Indexes
-    __table_args__ = (
-        Index("idx_sms_verification_expires", "expires_at"),
-    )
+    __table_args__ = (Index("idx_sms_verification_expires", "expires_at"),)
 
 
 class SmsReply(Base):
@@ -941,10 +1033,16 @@ class SmsReply(Base):
     person_id = Column(String, ForeignKey("people.id", ondelete="CASCADE"), nullable=False)
     phone_number = Column(String(20), nullable=False)
     message_text = Column(Text, nullable=False)
-    reply_type = Column(String(20), nullable=False)  # 'yes', 'no', 'stop', 'start', 'help', 'unknown'
-    original_message_id = Column(Integer, ForeignKey("sms_messages.id", ondelete="SET NULL"), nullable=True)
+    reply_type = Column(
+        String(20), nullable=False
+    )  # 'yes', 'no', 'stop', 'start', 'help', 'unknown'
+    original_message_id = Column(
+        Integer, ForeignKey("sms_messages.id", ondelete="SET NULL"), nullable=True
+    )
     event_id = Column(String, ForeignKey("events.id", ondelete="SET NULL"), nullable=True)
-    action_taken = Column(String(50), nullable=False)  # 'confirmed', 'declined', 'opted_out', 'help_sent', etc.
+    action_taken = Column(
+        String(50), nullable=False
+    )  # 'confirmed', 'declined', 'opted_out', 'help_sent', etc.
     twilio_message_sid = Column(String(34), unique=True, nullable=True)
     processed_at = Column(DateTime, nullable=True)
     created_at = Column(DateTime, nullable=False, default=utcnow)
@@ -968,30 +1066,42 @@ class Subscription(Base):
     __tablename__ = "subscriptions"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
-    org_id = Column(String, ForeignKey("organizations.id", ondelete="CASCADE"), nullable=False, unique=True)
+    org_id = Column(
+        String, ForeignKey("organizations.id", ondelete="CASCADE"), nullable=False, unique=True
+    )
     stripe_customer_id = Column(String(255), unique=True, nullable=True)  # Stripe customer ID
-    stripe_subscription_id = Column(String(255), unique=True, nullable=True)  # Stripe subscription ID
+    stripe_subscription_id = Column(
+        String(255), unique=True, nullable=True
+    )  # Stripe subscription ID
     plan_tier = Column(String(20), nullable=False, default="free")  # free, starter, pro, enterprise
     billing_cycle = Column(String(10), nullable=True)  # monthly, annual (null for free)
-    status = Column(String(20), nullable=False, default="active")  # active, trialing, past_due, cancelled, incomplete
+    status = Column(
+        String(20), nullable=False, default="active"
+    )  # active, trialing, past_due, cancelled, incomplete
     trial_end_date = Column(DateTime, nullable=True)  # Trial expiration date
     current_period_start = Column(DateTime, nullable=True)  # Current billing period start
     current_period_end = Column(DateTime, nullable=True)  # Current billing period end
     cancel_at_period_end = Column(Boolean, nullable=False, default=False)  # Scheduled cancellation
-    pending_downgrade = Column(JSONType, nullable=True)  # Scheduled downgrade: {"new_plan": "starter", "effective_date": "2025-11-01"}
+    pending_downgrade = Column(
+        JSONType, nullable=True
+    )  # Scheduled downgrade: {"new_plan": "starter", "effective_date": "2025-11-01"}
     created_at = Column(DateTime, nullable=False, default=utcnow)
     updated_at = Column(DateTime, nullable=False, default=utcnow, onupdate=utcnow)
 
     # Relationships
     organization = relationship("Organization", back_populates="subscription")
-    billing_history = relationship("BillingHistory", back_populates="subscription", cascade="all, delete-orphan")
+    billing_history = relationship(
+        "BillingHistory", back_populates="subscription", cascade="all, delete-orphan"
+    )
 
     # Indexes
     __table_args__ = (
         Index("idx_subscriptions_org_id", "org_id"),
         Index("idx_subscriptions_status", "status"),
         Index("idx_subscriptions_stripe_customer", "stripe_customer_id"),
-        Index("idx_subscriptions_org_status", "org_id", "status"),  # Composite for common query pattern
+        Index(
+            "idx_subscriptions_org_status", "org_id", "status"
+        ),  # Composite for common query pattern
     )
 
 
@@ -1002,8 +1112,12 @@ class BillingHistory(Base):
 
     id = Column(Integer, primary_key=True, autoincrement=True)
     org_id = Column(String, ForeignKey("organizations.id", ondelete="CASCADE"), nullable=False)
-    subscription_id = Column(Integer, ForeignKey("subscriptions.id", ondelete="CASCADE"), nullable=True)
-    event_type = Column(String(50), nullable=False)  # charge, refund, subscription_change, trial_start, trial_end
+    subscription_id = Column(
+        Integer, ForeignKey("subscriptions.id", ondelete="CASCADE"), nullable=True
+    )
+    event_type = Column(
+        String(50), nullable=False
+    )  # charge, refund, subscription_change, trial_start, trial_end
     amount_cents = Column(Integer, nullable=False, default=0)  # Amount in cents (USD)
     currency = Column(String(3), nullable=False, default="usd")
     payment_status = Column(String(20), nullable=False)  # succeeded, failed, pending
@@ -1054,16 +1168,16 @@ class UsageMetrics(Base):
 
     id = Column(Integer, primary_key=True, autoincrement=True)
     org_id = Column(String, ForeignKey("organizations.id", ondelete="CASCADE"), nullable=False)
-    metric_type = Column(String(50), nullable=False)  # volunteers_count, events_count, storage_mb, api_calls
+    metric_type = Column(
+        String(50), nullable=False
+    )  # volunteers_count, events_count, storage_mb, api_calls
     current_value = Column(Integer, nullable=False, default=0)
     plan_limit = Column(Integer, nullable=True)  # null = unlimited
     percentage_used = Column(Float, nullable=False, default=0.0)  # Calculated field
     last_updated = Column(DateTime, nullable=False, default=utcnow, onupdate=utcnow)
 
     # Indexes
-    __table_args__ = (
-        Index("idx_usage_metrics_org_metric", "org_id", "metric_type"),
-    )
+    __table_args__ = (Index("idx_usage_metrics_org_metric", "org_id", "metric_type"),)
 
 
 class SubscriptionEvent(Base):
@@ -1073,10 +1187,14 @@ class SubscriptionEvent(Base):
 
     id = Column(Integer, primary_key=True, autoincrement=True)
     org_id = Column(String, ForeignKey("organizations.id", ondelete="CASCADE"), nullable=False)
-    event_type = Column(String(50), nullable=False)  # created, upgraded, downgraded, trial_started, cancelled, reactivated
+    event_type = Column(
+        String(50), nullable=False
+    )  # created, upgraded, downgraded, trial_started, cancelled, reactivated
     previous_plan = Column(String(20), nullable=True)  # Previous plan tier
     new_plan = Column(String(20), nullable=False)  # New plan tier
-    admin_id = Column(String, ForeignKey("people.id", ondelete="SET NULL"), nullable=True)  # Admin who initiated change
+    admin_id = Column(
+        String, ForeignKey("people.id", ondelete="SET NULL"), nullable=True
+    )  # Admin who initiated change
     reason = Column(Text, nullable=True)  # Reason for change (optional)
     notes = Column(Text, nullable=True)  # Additional notes
     extra_metadata = Column(JSONType, nullable=True)  # Additional metadata

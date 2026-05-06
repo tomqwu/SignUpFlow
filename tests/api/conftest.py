@@ -9,23 +9,22 @@ a future CLI module.
 """
 
 import os
-import pytest
 from datetime import datetime, timedelta
-from typing import Optional
 
+import pytest
+from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
-from fastapi.testclient import TestClient
 
-from api.models import Base
-from api.main import app
 from api.database import get_db
-
+from api.main import app
+from api.models import Base
 
 # ---------------------------------------------------------------------------
 # Fixtures
 # ---------------------------------------------------------------------------
+
 
 @pytest.fixture(scope="function")
 def db():
@@ -82,6 +81,7 @@ def reset_database_between_tests():
 # Helper functions (reusable by CLI)
 # ---------------------------------------------------------------------------
 
+
 def seed_org(client: TestClient, org_id: str, name: str = "Test Org", region: str = "US") -> dict:
     """Create an organization. Returns response JSON."""
     resp = client.post("/api/organizations/", json={"id": org_id, "name": name, "region": region})
@@ -95,13 +95,19 @@ def seed_user(
     email: str,
     name: str,
     password: str = "TestPass123!",
-    roles: Optional[list] = None,
+    roles: list | None = None,
 ) -> dict:
     """Sign up a user. First user in org auto-becomes admin. Returns auth response with token."""
-    resp = client.post("/api/auth/signup", json={
-        "org_id": org_id, "name": name, "email": email,
-        "password": password, "roles": roles or [],
-    })
+    resp = client.post(
+        "/api/auth/signup",
+        json={
+            "org_id": org_id,
+            "name": name,
+            "email": email,
+            "password": password,
+            "roles": roles or [],
+        },
+    )
     assert resp.status_code == 201, f"seed_user failed: {resp.status_code} {resp.text}"
     return resp.json()
 
@@ -127,61 +133,100 @@ def seed_event(
     event_type: str = "Sunday Service",
     days_from_now: int = 14,
     duration_hours: int = 2,
-    role_counts: Optional[dict] = None,
+    role_counts: dict | None = None,
 ) -> dict:
     """Create an event (admin only). Returns event response."""
     start = datetime.now() + timedelta(days=days_from_now)
     end = start + timedelta(hours=duration_hours)
-    resp = client.post("/api/events/", json={
-        "id": event_id, "org_id": org_id, "type": event_type,
-        "start_time": start.isoformat(), "end_time": end.isoformat(),
-        "extra_data": {"role_counts": role_counts or {}},
-    }, headers=headers)
+    resp = client.post(
+        "/api/events/",
+        json={
+            "id": event_id,
+            "org_id": org_id,
+            "type": event_type,
+            "start_time": start.isoformat(),
+            "end_time": end.isoformat(),
+            "extra_data": {"role_counts": role_counts or {}},
+        },
+        headers=headers,
+    )
     assert resp.status_code == 201, f"seed_event failed: {resp.status_code} {resp.text}"
     return resp.json()
 
 
 def seed_invitation(
-    client: TestClient, headers: dict, org_id: str,
-    email: str, name: str, roles: Optional[list] = None,
+    client: TestClient,
+    headers: dict,
+    org_id: str,
+    email: str,
+    name: str,
+    roles: list | None = None,
 ) -> dict:
     """Create an invitation (admin only). Returns invitation with token."""
-    resp = client.post(f"/api/invitations?org_id={org_id}", json={
-        "email": email, "name": name, "roles": roles or ["volunteer"],
-    }, headers=headers)
+    resp = client.post(
+        f"/api/invitations?org_id={org_id}",
+        json={
+            "email": email,
+            "name": name,
+            "roles": roles or ["volunteer"],
+        },
+        headers=headers,
+    )
     assert resp.status_code == 201, f"seed_invitation failed: {resp.status_code} {resp.text}"
     return resp.json()
 
 
 def accept_invitation(client: TestClient, token: str, password: str = "VolPass123!") -> dict:
     """Accept invitation. NOTE: returned token is NOT a JWT — must call login() after."""
-    resp = client.post(f"/api/invitations/{token}/accept", json={
-        "password": password, "timezone": "UTC",
-    })
+    resp = client.post(
+        f"/api/invitations/{token}/accept",
+        json={
+            "password": password,
+            "timezone": "UTC",
+        },
+    )
     assert resp.status_code == 201, f"accept_invitation failed: {resp.status_code} {resp.text}"
     return resp.json()
 
 
 def seed_team(
-    client: TestClient, headers: dict, org_id: str,
-    team_id: str, name: str, member_ids: Optional[list] = None,
+    client: TestClient,
+    headers: dict,
+    org_id: str,
+    team_id: str,
+    name: str,
+    member_ids: list | None = None,
 ) -> dict:
     """Create a team (admin only). Returns team response."""
-    resp = client.post("/api/teams/", json={
-        "id": team_id, "org_id": org_id, "name": name,
-        "member_ids": member_ids or [],
-    }, headers=headers)
+    resp = client.post(
+        "/api/teams/",
+        json={
+            "id": team_id,
+            "org_id": org_id,
+            "name": name,
+            "member_ids": member_ids or [],
+        },
+        headers=headers,
+    )
     assert resp.status_code == 201, f"seed_team failed: {resp.status_code} {resp.text}"
     return resp.json()
 
 
 def add_timeoff(
-    client: TestClient, person_id: str,
-    start_date: str, end_date: str, reason: str = "Unavailable",
+    client: TestClient,
+    person_id: str,
+    start_date: str,
+    end_date: str,
+    reason: str = "Unavailable",
 ) -> dict:
     """Add time-off for a person. Dates are ISO strings like '2026-05-01'."""
-    resp = client.post(f"/api/availability/{person_id}/timeoff", json={
-        "start_date": start_date, "end_date": end_date, "reason": reason,
-    })
+    resp = client.post(
+        f"/api/availability/{person_id}/timeoff",
+        json={
+            "start_date": start_date,
+            "end_date": end_date,
+            "reason": reason,
+        },
+    )
     assert resp.status_code == 201, f"add_timeoff failed: {resp.status_code} {resp.text}"
     return resp.json()

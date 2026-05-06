@@ -1,29 +1,29 @@
 """Tests for api/utils/db_helpers.py"""
 
-import pytest
 import time
-from datetime import datetime, timedelta
+from datetime import datetime
+
+import pytest
 from sqlalchemy.orm import Session
 
+from api.models import (
+    Assignment,
+    Availability,
+    Event,
+    Organization,
+    Person,
+    Team,
+    TeamMember,
+    VacationPeriod,
+)
 from api.utils.db_helpers import (
-    get_person_with_org_check,
     check_email_exists,
-    get_team_members,
-    get_person_assignments,
-    is_person_blocked_on_date,
     get_event_assignments,
     get_organization_events,
-    get_available_people_for_event,
-)
-from api.models import (
-    Person,
-    Organization,
-    Team,
-    Event,
-    Assignment,
-    VacationPeriod,
-    Availability,
-    TeamMember,
+    get_person_assignments,
+    get_person_with_org_check,
+    get_team_members,
+    is_person_blocked_on_date,
 )
 
 
@@ -35,10 +35,12 @@ def _unique_id(prefix="test"):
 @pytest.fixture
 def db_session():
     """Create a test database session."""
-    import tempfile
     import os
+    import tempfile
+
     from sqlalchemy import create_engine
     from sqlalchemy.orm import sessionmaker
+
     from api.models import Base
 
     # Create temporary database
@@ -46,11 +48,7 @@ def db_session():
     database_url = f"sqlite:///{path}"
 
     # Create engine for temp database
-    engine = create_engine(
-        database_url,
-        connect_args={"check_same_thread": False},
-        echo=False
-    )
+    engine = create_engine(database_url, connect_args={"check_same_thread": False}, echo=False)
 
     # Create all tables
     Base.metadata.create_all(bind=engine)
@@ -85,11 +83,7 @@ class TestGetPersonWithOrgCheck:
         """Test that person in correct org is returned."""
         pid = _unique_id("p")
         person = Person(
-            id=pid,
-            org_id=test_org.id,
-            name="John",
-            email=f"{pid}@test.com",
-            roles=["volunteer"]
+            id=pid, org_id=test_org.id, name="John", email=f"{pid}@test.com", roles=["volunteer"]
         )
         db_session.add(person)
         db_session.commit()
@@ -106,13 +100,7 @@ class TestGetPersonWithOrgCheck:
 
         org1 = Organization(id=org1_id, name="Org 1")
         org2 = Organization(id=org2_id, name="Org 2")
-        person = Person(
-            id=pid,
-            org_id=org1_id,
-            name="John",
-            email=f"{pid}@test.com",
-            roles=[]
-        )
+        person = Person(id=pid, org_id=org1_id, name="John", email=f"{pid}@test.com", roles=[])
         db_session.add_all([org1, org2, person])
         db_session.commit()
 
@@ -132,13 +120,7 @@ class TestCheckEmailExists:
         """Test that existing email returns True."""
         pid = _unique_id("p")
         email = f"{pid}@test.com"
-        person = Person(
-            id=pid,
-            org_id=test_org.id,
-            name="John",
-            email=email,
-            roles=[]
-        )
+        person = Person(id=pid, org_id=test_org.id, name="John", email=email, roles=[])
         db_session.add(person)
         db_session.commit()
 
@@ -157,13 +139,7 @@ class TestCheckEmailExists:
 
         org1 = Organization(id=org1_id, name="Org 1")
         org2 = Organization(id=org2_id, name="Org 2")
-        person = Person(
-            id=pid,
-            org_id=org1_id,
-            name="John",
-            email=email,
-            roles=[]
-        )
+        person = Person(id=pid, org_id=org1_id, name="John", email=email, roles=[])
         db_session.add_all([org1, org2, person])
         db_session.commit()
 
@@ -180,8 +156,12 @@ class TestGetTeamMembers:
         p2_id = _unique_id("p2")
 
         team = Team(id=tid, org_id=test_org.id, name="Team 1")
-        person1 = Person(id=p1_id, org_id=test_org.id, name="Alice", email=f"{p1_id}@test.com", roles=[])
-        person2 = Person(id=p2_id, org_id=test_org.id, name="Bob", email=f"{p2_id}@test.com", roles=[])
+        person1 = Person(
+            id=p1_id, org_id=test_org.id, name="Alice", email=f"{p1_id}@test.com", roles=[]
+        )
+        person2 = Person(
+            id=p2_id, org_id=test_org.id, name="Bob", email=f"{p2_id}@test.com", roles=[]
+        )
 
         db_session.add_all([team, person1, person2])
         db_session.commit()
@@ -198,7 +178,9 @@ class TestGetTeamMembers:
         assert p1_id in member_ids
         assert p2_id in member_ids
 
-    def test_team_without_members_returns_empty_list(self, db_session: Session, test_org: Organization):
+    def test_team_without_members_returns_empty_list(
+        self, db_session: Session, test_org: Organization
+    ):
         """Test that team without members returns empty list."""
         tid = _unique_id("team")
         team = Team(id=tid, org_id=test_org.id, name="Team 1")
@@ -229,14 +211,14 @@ class TestGetPersonAssignments:
             org_id=test_org.id,
             type="service",
             start_time=datetime(2025, 1, 1, 10, 0),
-            end_time=datetime(2025, 1, 1, 11, 0)
+            end_time=datetime(2025, 1, 1, 11, 0),
         )
         event2 = Event(
             id=e2_id,
             org_id=test_org.id,
             type="service",
             start_time=datetime(2025, 1, 8, 10, 0),
-            end_time=datetime(2025, 1, 8, 11, 0)
+            end_time=datetime(2025, 1, 8, 11, 0),
         )
         assignment1 = Assignment(person_id=pid, event_id=e1_id)
         assignment2 = Assignment(person_id=pid, event_id=e2_id)
@@ -259,14 +241,14 @@ class TestGetPersonAssignments:
             org_id=test_org.id,
             type="service",
             start_time=datetime(2025, 1, 1, 10, 0),
-            end_time=datetime(2025, 1, 1, 11, 0)
+            end_time=datetime(2025, 1, 1, 11, 0),
         )
         event2 = Event(
             id=e2_id,
             org_id=test_org.id,
             type="service",
             start_time=datetime(2025, 2, 1, 10, 0),
-            end_time=datetime(2025, 2, 1, 11, 0)
+            end_time=datetime(2025, 2, 1, 11, 0),
         )
         assignment1 = Assignment(person_id=pid, event_id=e1_id)
         assignment2 = Assignment(person_id=pid, event_id=e2_id)
@@ -276,10 +258,7 @@ class TestGetPersonAssignments:
 
         # Filter to only get January assignments
         assignments = get_person_assignments(
-            db_session,
-            pid,
-            start_date=datetime(2025, 1, 1),
-            end_date=datetime(2025, 1, 31)
+            db_session, pid, start_date=datetime(2025, 1, 1), end_date=datetime(2025, 1, 31)
         )
         assert len(assignments) == 1
         assert assignments[0].event_id == e1_id
@@ -303,7 +282,7 @@ class TestIsPersonBlockedOnDate:
             availability_id=availability.id,
             start_date=datetime(2025, 1, 1).date(),
             end_date=datetime(2025, 1, 7).date(),
-            reason="Vacation"
+            reason="Vacation",
         )
         db_session.add(vacation)
         db_session.commit()
@@ -313,7 +292,9 @@ class TestIsPersonBlockedOnDate:
         assert is_blocked is True
         assert reason == "Vacation"
 
-    def test_person_on_vacation_not_blocked_outside_period(self, db_session: Session, test_org: Organization):
+    def test_person_on_vacation_not_blocked_outside_period(
+        self, db_session: Session, test_org: Organization
+    ):
         """Test that person is not blocked outside vacation period."""
         pid = _unique_id("p")
         person = Person(id=pid, org_id=test_org.id, name="John", email=f"{pid}@test.com", roles=[])
@@ -328,7 +309,7 @@ class TestIsPersonBlockedOnDate:
             availability_id=availability.id,
             start_date=datetime(2025, 1, 1).date(),
             end_date=datetime(2025, 1, 7).date(),
-            reason="Vacation"
+            reason="Vacation",
         )
         db_session.add(vacation)
         db_session.commit()
@@ -364,10 +345,14 @@ class TestGetEventAssignments:
             org_id=test_org.id,
             type="service",
             start_time=datetime(2025, 1, 1, 10, 0),
-            end_time=datetime(2025, 1, 1, 11, 0)
+            end_time=datetime(2025, 1, 1, 11, 0),
         )
-        person1 = Person(id=p1_id, org_id=test_org.id, name="Alice", email=f"{p1_id}@test.com", roles=[])
-        person2 = Person(id=p2_id, org_id=test_org.id, name="Bob", email=f"{p2_id}@test.com", roles=[])
+        person1 = Person(
+            id=p1_id, org_id=test_org.id, name="Alice", email=f"{p1_id}@test.com", roles=[]
+        )
+        person2 = Person(
+            id=p2_id, org_id=test_org.id, name="Bob", email=f"{p2_id}@test.com", roles=[]
+        )
 
         assignment1 = Assignment(person_id=p1_id, event_id=eid)
         assignment2 = Assignment(person_id=p2_id, event_id=eid)
@@ -392,14 +377,14 @@ class TestGetOrganizationEvents:
             org_id=test_org.id,
             type="service",
             start_time=datetime(2025, 1, 1, 10, 0),
-            end_time=datetime(2025, 1, 1, 11, 0)
+            end_time=datetime(2025, 1, 1, 11, 0),
         )
         event2 = Event(
             id=e2_id,
             org_id=test_org.id,
             type="meeting",
             start_time=datetime(2025, 1, 8, 10, 0),
-            end_time=datetime(2025, 1, 8, 11, 0)
+            end_time=datetime(2025, 1, 8, 11, 0),
         )
 
         db_session.add_all([event1, event2])
@@ -418,14 +403,14 @@ class TestGetOrganizationEvents:
             org_id=test_org.id,
             type="service",
             start_time=datetime(2025, 1, 1, 10, 0),
-            end_time=datetime(2025, 1, 1, 11, 0)
+            end_time=datetime(2025, 1, 1, 11, 0),
         )
         event2 = Event(
             id=e2_id,
             org_id=test_org.id,
             type="meeting",
             start_time=datetime(2025, 1, 8, 10, 0),
-            end_time=datetime(2025, 1, 8, 11, 0)
+            end_time=datetime(2025, 1, 8, 11, 0),
         )
 
         db_session.add_all([event1, event2])
