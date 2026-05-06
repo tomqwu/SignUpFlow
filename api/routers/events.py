@@ -4,6 +4,7 @@ from datetime import datetime
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from pydantic import BaseModel
+from sqlalchemy import or_
 from sqlalchemy.orm import Session
 
 from api.database import get_db
@@ -18,6 +19,7 @@ from api.models import (
 )
 from api.schemas.common import PaginationParams, get_pagination_params
 from api.schemas.event import EventCreate, EventList, EventResponse, EventUpdate
+from api.timeutils import utcnow
 from api.utils.event_helpers import (
     count_people_with_role,
     get_assigned_person_ids,
@@ -125,6 +127,13 @@ def list_events(
     | None = Query(None, description="Filter events starting after this time"),
     start_before: datetime
     | None = Query(None, description="Filter events starting before this time"),
+    q: str | None = Query(None, description="Case-insensitive search on event type and id"),
+    status_filter: str
+    | None = Query(
+        None,
+        alias="status",
+        description="Filter by computed status: 'upcoming', 'past', or 'ongoing'",
+    ),
     pagination: PaginationParams = Depends(get_pagination_params),
     db: Session = Depends(get_db),
 ):
@@ -139,6 +148,24 @@ def list_events(
         query = query.filter(Event.start_time >= start_after)
     if start_before:
         query = query.filter(Event.start_time <= start_before)
+
+    if q:
+        like = f"%{q}%"
+        query = query.filter(or_(Event.type.ilike(like), Event.id.ilike(like)))
+
+    if status_filter:
+        now = utcnow()
+        if status_filter == "upcoming":
+            query = query.filter(Event.start_time > now)
+        elif status_filter == "past":
+            query = query.filter(Event.end_time < now)
+        elif status_filter == "ongoing":
+            query = query.filter(Event.start_time <= now, Event.end_time >= now)
+        else:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Invalid status '{status_filter}'. Must be 'upcoming', 'past', or 'ongoing'",
+            )
 
     query = query.order_by(Event.start_time)
     events = query.offset(pagination.offset).limit(pagination.limit).all()
