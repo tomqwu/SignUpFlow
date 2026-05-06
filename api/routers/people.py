@@ -13,6 +13,7 @@ from api.dependencies import (
 )
 from api.logging_config import logger
 from api.models import Organization, Person
+from api.schemas.common import PaginationParams, get_pagination_params
 from api.schemas.person import PersonCreate, PersonList, PersonResponse, PersonUpdate
 
 router = APIRouter(prefix="/people", tags=["people"])
@@ -92,8 +93,7 @@ def create_person(
 def list_people(
     org_id: str | None = Query(None, description="Filter by organization ID"),
     role: str | None = Query(None, description="Filter by role"),
-    skip: int = 0,
-    limit: int = 100,
+    pagination: PaginationParams = Depends(get_pagination_params),
     current_user: Person = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
@@ -112,14 +112,19 @@ def list_people(
     # Note: For JSON field filtering in SQLite, we'd need to load and filter in memory
     # For production with PostgreSQL, we could use JSON operators
 
-    people = query.offset(skip).limit(limit).all()
+    people = query.offset(pagination.offset).limit(pagination.limit).all()
 
     # Apply role filter in memory if specified
     if role:
         people = [p for p in people if p.roles and role in p.roles]
 
     total = query.count()
-    return {"people": people, "total": total}
+    return {
+        "items": people,
+        "total": total,
+        "limit": pagination.limit,
+        "offset": pagination.offset,
+    }
 
 
 @router.get("/{person_id}", response_model=PersonResponse)

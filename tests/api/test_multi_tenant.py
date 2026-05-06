@@ -42,8 +42,8 @@ class TestMultiTenantIsolation:
         resp2 = client.get(f"/api/v1/people/?org_id={self.ORG2}", headers=hdrs2)
         assert resp1.status_code == 200
         assert resp2.status_code == 200
-        assert all(p["org_id"] == self.ORG1 for p in resp1.json()["people"])
-        assert all(p["org_id"] == self.ORG2 for p in resp2.json()["people"])
+        assert all(p["org_id"] == self.ORG1 for p in resp1.json()["items"])
+        assert all(p["org_id"] == self.ORG2 for p in resp2.json()["items"])
 
     def test_cross_org_people_access_denied(self, client):
         """Admin of org1 gets 403 trying to list org2's people."""
@@ -106,8 +106,8 @@ class TestMultiTenantIsolation:
         assert resp1.status_code == 200
         assert resp2.status_code == 200
 
-        ids1 = [e["id"] for e in resp1.json()["events"]]
-        ids2 = [e["id"] for e in resp2.json()["events"]]
+        ids1 = [e["id"] for e in resp1.json()["items"]]
+        ids2 = [e["id"] for e in resp2.json()["items"]]
         assert "evt-alpha-only" in ids1
         assert "evt-alpha-only" not in ids2
         assert "evt-beta-only" in ids2

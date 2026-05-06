@@ -386,7 +386,7 @@ class TestChurchScenario:
         # Verify invitation is pending
         resp = client.get(f"/api/v1/invitations?org_id={self.ORG}", headers=hdrs)
         assert resp.status_code == 200
-        pending = [i for i in resp.json()["invitations"] if i["email"] == "rachel.wong@gmail.com"]
+        pending = [i for i in resp.json()["items"] if i["email"] == "rachel.wong@gmail.com"]
         assert len(pending) == 1
         assert pending[0]["status"] == "pending"
 

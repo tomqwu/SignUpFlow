@@ -7,6 +7,7 @@ from sqlalchemy.orm import Session
 from api.database import get_db
 from api.dependencies import get_current_admin_user, get_current_user, verify_org_member
 from api.models import Organization, Person, Team, TeamMember
+from api.schemas.common import PaginationParams, get_pagination_params
 from api.schemas.team import (
     TeamCreate,
     TeamList,
@@ -84,8 +85,7 @@ def create_team(
 @router.get("/", response_model=TeamList)
 def list_teams(
     org_id: str | None = Query(None, description="Filter by organization ID"),
-    skip: int = 0,
-    limit: int = 100,
+    pagination: PaginationParams = Depends(get_pagination_params),
     current_user: Person = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
@@ -101,7 +101,7 @@ def list_teams(
         # Default to current user's organization
         query = query.filter(Team.org_id == current_user.org_id)
 
-    teams = query.offset(skip).limit(limit).all()
+    teams = query.offset(pagination.offset).limit(pagination.limit).all()
     total = query.count()
 
     # Add member counts
@@ -112,7 +112,12 @@ def list_teams(
         response.member_count = member_count
         team_responses.append(response)
 
-    return {"teams": team_responses, "total": total}
+    return {
+        "items": team_responses,
+        "total": total,
+        "limit": pagination.limit,
+        "offset": pagination.offset,
+    }
 
 
 @router.get("/{team_id}", response_model=TeamResponse)

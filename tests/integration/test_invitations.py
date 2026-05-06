@@ -247,7 +247,7 @@ class TestListInvitations:
 
         assert response.status_code == 200
         result = response.json()
-        assert all(inv["status"] == "cancelled" for inv in result["invitations"])
+        assert all(inv["status"] == "cancelled" for inv in result["items"])
 
 
 class TestVerifyInvitation:
@@ -566,7 +566,7 @@ class TestInvitationWorkflow:
                 "status_filter": "accepted",
             },
         )
-        accepted_invitations = list_response.json()["invitations"]
+        accepted_invitations = list_response.json()["items"]
         assert any(inv["email"] == invitee_email for inv in accepted_invitations)
 
 

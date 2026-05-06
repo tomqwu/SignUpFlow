@@ -38,7 +38,7 @@ class TestSetupTestDataFunction:
         response = requests.get(f"{API_BASE}/people/?org_id=test_org", headers=headers)
 
         assert response.status_code == 200
-        people = response.json()["people"]
+        people = response.json()["items"]
 
         # Should have at least the test person
         assert len(people) > 0
@@ -61,7 +61,7 @@ class TestSetupTestDataFunction:
         response = requests.get(f"{API_BASE}/events/?org_id=test_org", headers=headers)
 
         assert response.status_code == 200
-        events = response.json()["events"]
+        events = response.json()["items"]
 
         # Should have at least the test event
         assert len(events) > 0
@@ -135,8 +135,8 @@ class TestEnsureTestDataFixture:
         assert people_response.status_code == 200
         assert events_response.status_code == 200
 
-        assert len(people_response.json()["people"]) > 0
-        assert len(events_response.json()["events"]) > 0
+        assert len(people_response.json()["items"]) > 0
+        assert len(events_response.json()["items"]) > 0
 
     def test_test_data_persists_across_tests(self, api_server):
         """Verify test data persists across multiple test runs."""
@@ -164,7 +164,7 @@ class TestFixtureConditionalSkipReplacement:
         response = requests.get(f"{API_BASE}/people/?org_id=test_org", headers=headers)
 
         assert response.status_code == 200
-        people = response.json()["people"]
+        people = response.json()["items"]
 
         # Should NEVER be empty because setup_test_data() creates at least one person
         assert len(people) > 0, "Test data setup should ensure at least one person exists"
@@ -177,7 +177,7 @@ class TestFixtureConditionalSkipReplacement:
         response = requests.get(f"{API_BASE}/events/?org_id=test_org", headers=headers)
 
         assert response.status_code == 200
-        events = response.json()["events"]
+        events = response.json()["items"]
 
         # Should NEVER be empty because setup_test_data() creates at least one event
         assert len(events) > 0, "Test data setup should ensure at least one event exists"
@@ -190,7 +190,7 @@ class TestFixtureConditionalSkipReplacement:
         response = requests.get(f"{API_BASE}/people/?org_id=test_org", headers=headers)
 
         # This is what the fixed tests do - assert with clear message instead of skip
-        people = response.json()["people"]
+        people = response.json()["items"]
         assert len(people) > 0, "No test person available - setup_test_data() may have failed"
 
 
@@ -205,14 +205,14 @@ class TestSetupTestDataIdempotency:
 
         # Get initial state
         response1 = requests.get(f"{API_BASE}/people/?org_id=test_org", headers=headers)
-        initial_count = len(response1.json()["people"])
+        initial_count = len(response1.json()["items"])
 
         # Call setup_test_data() again
         setup_test_data()
 
         # Get state after second call
         response2 = requests.get(f"{API_BASE}/people/?org_id=test_org", headers=headers)
-        final_count = len(response2.json()["people"])
+        final_count = len(response2.json()["items"])
 
         # Count should be same or similar (setup is idempotent)
         # It might create duplicates but shouldn't error
@@ -232,7 +232,7 @@ class TestTestDataQuality:
         # May be 404 if test person doesn't exist yet, check via list endpoint
         if response.status_code == 404:
             response = requests.get(f"{API_BASE}/people/?org_id=test_org", headers=headers)
-            people = response.json()["people"]
+            people = response.json()["items"]
             test_person = next((p for p in people if "comp" in p["id"].lower()), None)
 
             if test_person:
@@ -247,7 +247,7 @@ class TestTestDataQuality:
         response = requests.get(f"{API_BASE}/events/?org_id=test_org", headers=headers)
 
         assert response.status_code == 200
-        events = response.json()["events"]
+        events = response.json()["items"]
 
         test_event = next((e for e in events if "comp" in e["id"].lower()), None)
 
@@ -267,7 +267,7 @@ class TestTestDataQuality:
         response = requests.get(f"{API_BASE}/events/?org_id=test_org", headers=headers)
 
         assert response.status_code == 200
-        events = response.json()["events"]
+        events = response.json()["items"]
 
         test_event = next((e for e in events if "comp" in e["id"].lower()), None)
 

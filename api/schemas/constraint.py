@@ -42,8 +42,6 @@ class ConstraintResponse(ConstraintBase):
     updated_at: datetime
 
 
-class ConstraintList(BaseModel):
-    """Schema for listing constraints."""
+from api.schemas.common import ListResponse
 
-    constraints: list[ConstraintResponse]
-    total: int
+ConstraintList = ListResponse[ConstraintResponse]

@@ -79,8 +79,8 @@ class TestOrganizationRead:
         response = client.get(f"{API_BASE}/organizations/")
         assert response.status_code == 200
         data = response.json()
-        assert "organizations" in data
-        assert len(data["organizations"]) >= 3
+        assert "items" in data
+        assert len(data["items"]) >= 3
 
 
 class TestOrganizationUpdate:

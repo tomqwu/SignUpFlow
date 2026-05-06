@@ -31,11 +31,9 @@ class InvitationResponse(BaseModel):
     accepted_at: datetime | None = None
 
 
-class InvitationList(BaseModel):
-    """Schema for listing invitations."""
+from api.schemas.common import ListResponse
 
-    invitations: list[InvitationResponse]
-    total: int
+InvitationList = ListResponse[InvitationResponse]
 
 
 class InvitationVerify(BaseModel):
