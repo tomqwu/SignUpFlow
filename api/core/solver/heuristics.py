@@ -32,6 +32,9 @@ class GreedyHeuristicSolver(SolverAdapter):
         self.weights: dict[str, int] = {}
         self.change_min_enabled: bool = False
         self.change_min_weight: int = 100
+        # Loose match (event_id, person_id) — see specs/020-solver-quality-changemin.
+        # Solver writes Assignment.role=NULL so a role-strict match would never hit.
+        self._prior_published_keys: set[tuple[str, str]] = set()
 
     def build_model(self, context: SolveContext) -> None:
         """Build internal model from context."""
@@ -219,6 +222,11 @@ class GreedyHeuristicSolver(SolverAdapter):
                 assignment_count = len(person_events.get(person.id, []))
                 penalty += assignment_count * 10
 
+                # Change-minimization bonus: subtract weight if this (event, person)
+                # was in the prior published solution. Lower penalty wins.
+                if self.change_min_enabled and (event.id, person.id) in self._prior_published_keys:
+                    penalty -= self.change_min_weight
+
                 scored.append((penalty, person))
 
             # Pick best candidates
@@ -300,6 +308,15 @@ class GreedyHeuristicSolver(SolverAdapter):
         """Enable/disable change minimization."""
         self.change_min_enabled = enabled
         self.change_min_weight = weight_move_published
+
+    def set_prior_published_keys(self, keys: set[tuple[str, str]]) -> None:
+        """Provide ``(event_id, person_id)`` keys from the prior published solution.
+
+        When ``change_min_enabled``, candidates whose tuple is in this set get a
+        score bonus equal to ``change_min_weight``. Match is loose (no role) — see
+        specs/020-solver-quality-changemin/spec.md.
+        """
+        self._prior_published_keys = keys
 
     def incremental_update(self, changes: Patch) -> None:
         """Apply incremental changes to model."""

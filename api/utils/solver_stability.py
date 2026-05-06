@@ -60,3 +60,22 @@ def compute_stability_metrics(
         moves_from_published=len(sym_diff),
         affected_persons=len(affected),
     )
+
+
+def load_prior_published_loose_keys(db: Session, *, org_id: str) -> set[tuple[str, str]]:
+    """Return ``{(event_id, person_id)}`` for the org's currently-published solution.
+
+    Used by the change-min scoring path (Sprint 6 PR 6.2). Match is loose because
+    the solver writes ``Assignment.role = NULL``; a role-strict match would never
+    hit. Returns empty set when no solution is published in the org.
+    """
+    published = (
+        db.query(Solution)
+        .filter(Solution.org_id == org_id, Solution.is_published.is_(True))
+        .first()
+    )
+    if published is None:
+        return set()
+
+    rows = db.query(DBAssignment).filter(DBAssignment.solution_id == published.id).all()
+    return {(str(r.event_id), str(r.person_id)) for r in rows}
