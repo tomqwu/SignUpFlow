@@ -1,16 +1,24 @@
 """Password reset endpoints."""
 
+import os
 import secrets
 from datetime import datetime, timedelta
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from pydantic import BaseModel, EmailStr
 from sqlalchemy.orm import Session
 
 from api.database import get_db
-from api.models import Person
+from api.models import AuditAction, Person
 from api.security import hash_password
+from api.utils.audit_logger import log_audit_event
 from api.utils.rate_limit_middleware import rate_limit
+
+
+def _debug_return_reset_token() -> bool:
+    """True iff DEBUG_RETURN_RESET_TOKEN is opted into via env. Default off."""
+    return os.getenv("DEBUG_RETURN_RESET_TOKEN", "false").strip().lower() in ("1", "true", "yes")
+
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
@@ -34,30 +42,45 @@ class PasswordResetConfirm(BaseModel):
 @router.post("/forgot-password", dependencies=[Depends(rate_limit("password_reset"))])
 def request_password_reset(
     request: PasswordResetRequest,
+    http_request: Request,
     db: Session = Depends(get_db),
 ):
-    """Request a password reset token."""
+    """Request a password reset token.
+
+    Always returns the same generic message regardless of whether the email
+    exists. Audits every request. The reset token is held in-memory and is
+    NEVER returned in the response in production. Set
+    `DEBUG_RETURN_RESET_TOKEN=true` in dev/test environments to opt into
+    receiving the token in the JSON body for E2E exercise.
+    """
+    generic_response = {"message": "If the email exists, a password reset link will be sent"}
     person = db.query(Person).filter(Person.email == request.email).first()
 
-    if not person:
-        # Don't reveal if email exists (security)
-        return {"message": "If the email exists, a reset link will be sent"}
+    log_audit_event(
+        db,
+        action=AuditAction.PASSWORD_RESET_REQUESTED,
+        user_id=person.id if person else None,
+        user_email=request.email,
+        organization_id=person.org_id if person else None,
+        ip_address=http_request.client.host if http_request.client else None,
+        user_agent=http_request.headers.get("user-agent"),
+        status="success" if person else "denied",
+    )
 
-    # Generate reset token
+    if not person:
+        return generic_response
+
     token = secrets.token_urlsafe(32)
     reset_tokens[token] = {
         "person_id": person.id,
         "expires": datetime.now() + timedelta(hours=1),
     }
 
-    # In production, send email with reset link here
-    # For now, return the token (in production, don't return it!)
-    reset_link = f"http://localhost:8000/reset-password?token={token}"
+    if _debug_return_reset_token():
+        # Test/dev affordance ONLY. Default off.
+        return {**generic_response, "token": token}
 
-    return {
-        "message": "Password reset link sent to email",
-        "reset_link": reset_link,  # Remove in production!
-    }
+    return generic_response
 
 
 @router.post("/reset-password", dependencies=[Depends(rate_limit("password_reset_confirm"))])
