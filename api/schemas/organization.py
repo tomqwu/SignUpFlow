@@ -36,6 +36,9 @@ class OrganizationResponse(BaseResponse, OrganizationBase):
     id: str
     created_at: datetime
     updated_at: datetime
+    cancelled_at: datetime | None = None
+    deletion_scheduled_at: datetime | None = None
+    data_retention_until: datetime | None = None
 
 
 from api.schemas.common import ListResponse

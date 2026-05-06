@@ -1,10 +1,13 @@
 """Organization router."""
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from datetime import timedelta
+
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from sqlalchemy.orm import Session
 
 from api.database import get_db
-from api.models import Organization
+from api.dependencies import get_current_admin_user, verify_org_member
+from api.models import AuditAction, Organization, Person
 from api.schemas.common import PaginationParams, get_pagination_params
 from api.schemas.organization import (
     OrganizationCreate,
@@ -12,6 +15,8 @@ from api.schemas.organization import (
     OrganizationResponse,
     OrganizationUpdate,
 )
+from api.timeutils import utcnow
+from api.utils.audit_logger import log_audit_event
 from api.utils.rate_limit_middleware import rate_limit
 
 router = APIRouter(prefix="/organizations", tags=["organizations"])
@@ -52,12 +57,19 @@ def create_organization(org_data: OrganizationCreate, db: Session = Depends(get_
 
 @router.get("/", response_model=OrganizationList)
 def list_organizations(
+    include_cancelled: bool = Query(
+        False, description="Include organizations that have been cancelled (admin view)"
+    ),
     pagination: PaginationParams = Depends(get_pagination_params),
     db: Session = Depends(get_db),
 ):
-    """List all organizations."""
-    orgs = db.query(Organization).offset(pagination.offset).limit(pagination.limit).all()
-    total = db.query(Organization).count()
+    """List all organizations. Excludes cancelled by default."""
+    query = db.query(Organization)
+    if not include_cancelled:
+        query = query.filter(Organization.cancelled_at.is_(None))
+
+    orgs = query.offset(pagination.offset).limit(pagination.limit).all()
+    total = query.count()
     return {
         "items": orgs,
         "total": total,
@@ -114,3 +126,81 @@ def delete_organization(org_id: str, db: Session = Depends(get_db)):
     db.delete(org)
     db.commit()
     return None
+
+
+@router.post("/{org_id}/cancel", response_model=OrganizationResponse)
+def cancel_organization(
+    org_id: str,
+    http_request: Request,
+    current_admin: Person = Depends(get_current_admin_user),
+    db: Session = Depends(get_db),
+):
+    """Soft-cancel the organization (admin only).
+
+    Sets `cancelled_at` to now and schedules a 30-day data-retention window
+    via `data_retention_until`. The org is excluded from the default list
+    until restored.
+    """
+    verify_org_member(current_admin, org_id)
+    org = db.query(Organization).filter(Organization.id == org_id).first()
+    if not org:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Organization '{org_id}' not found",
+        )
+
+    now = utcnow()
+    org.cancelled_at = now
+    org.data_retention_until = now + timedelta(days=30)
+    db.commit()
+    db.refresh(org)
+
+    log_audit_event(
+        db,
+        action=AuditAction.ORG_CANCELLED,
+        user_id=current_admin.id,
+        user_email=current_admin.email,
+        organization_id=org_id,
+        resource_type="organization",
+        resource_id=org_id,
+        details={"data_retention_until": org.data_retention_until.isoformat()},
+        ip_address=http_request.client.host if http_request.client else None,
+        user_agent=http_request.headers.get("user-agent"),
+    )
+    return org
+
+
+@router.post("/{org_id}/restore", response_model=OrganizationResponse)
+def restore_organization(
+    org_id: str,
+    http_request: Request,
+    current_admin: Person = Depends(get_current_admin_user),
+    db: Session = Depends(get_db),
+):
+    """Restore a cancelled organization (admin only). Clears cancellation fields."""
+    verify_org_member(current_admin, org_id)
+    org = db.query(Organization).filter(Organization.id == org_id).first()
+    if not org:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Organization '{org_id}' not found",
+        )
+
+    org.cancelled_at = None
+    org.data_retention_until = None
+    org.deletion_scheduled_at = None
+    db.commit()
+    db.refresh(org)
+
+    log_audit_event(
+        db,
+        action=AuditAction.ORG_RESTORED,
+        user_id=current_admin.id,
+        user_email=current_admin.email,
+        organization_id=org_id,
+        resource_type="organization",
+        resource_id=org_id,
+        ip_address=http_request.client.host if http_request.client else None,
+        user_agent=http_request.headers.get("user-agent"),
+    )
+    return org

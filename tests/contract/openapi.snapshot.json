@@ -1594,6 +1594,18 @@
       "OrganizationResponse": {
         "description": "Schema for organization response.",
         "properties": {
+          "cancelled_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cancelled At"
+          },
           "config": {
             "anyOf": [
               {
@@ -1611,6 +1623,30 @@
             "format": "date-time",
             "title": "Created At",
             "type": "string"
+          },
+          "data_retention_until": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Data Retention Until"
+          },
+          "deletion_scheduled_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Deletion Scheduled At"
           },
           "id": {
             "title": "Id",
@@ -5040,9 +5076,21 @@
     },
     "/api/v1/organizations/": {
       "get": {
-        "description": "List all organizations.",
+        "description": "List all organizations. Excludes cancelled by default.",
         "operationId": "listOrganizations",
         "parameters": [
+          {
+            "description": "Include organizations that have been cancelled (admin view)",
+            "in": "query",
+            "name": "include_cancelled",
+            "required": false,
+            "schema": {
+              "default": false,
+              "description": "Include organizations that have been cancelled (admin view)",
+              "title": "Include Cancelled",
+              "type": "boolean"
+            }
+          },
           {
             "description": "Page size, max 200",
             "in": "query",
@@ -5262,6 +5310,102 @@
           }
         },
         "summary": "Update Organization",
+        "tags": [
+          "organizations"
+        ]
+      }
+    },
+    "/api/v1/organizations/{org_id}/cancel": {
+      "post": {
+        "description": "Soft-cancel the organization (admin only).\n\nSets `cancelled_at` to now and schedules a 30-day data-retention window\nvia `data_retention_until`. The org is excluded from the default list\nuntil restored.",
+        "operationId": "cancelOrganization",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "org_id",
+            "required": true,
+            "schema": {
+              "title": "Org Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrganizationResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Cancel Organization",
+        "tags": [
+          "organizations"
+        ]
+      }
+    },
+    "/api/v1/organizations/{org_id}/restore": {
+      "post": {
+        "description": "Restore a cancelled organization (admin only). Clears cancellation fields.",
+        "operationId": "restoreOrganization",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "org_id",
+            "required": true,
+            "schema": {
+              "title": "Org Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrganizationResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Restore Organization",
         "tags": [
           "organizations"
         ]
