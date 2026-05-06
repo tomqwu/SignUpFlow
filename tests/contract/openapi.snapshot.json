@@ -1,6 +1,36 @@
 {
   "components": {
     "schemas": {
+      "AssignmentChange": {
+        "description": "One added/removed assignment in a diff.",
+        "properties": {
+          "event_id": {
+            "title": "Event Id",
+            "type": "string"
+          },
+          "person_id": {
+            "title": "Person Id",
+            "type": "string"
+          },
+          "role": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Role"
+          }
+        },
+        "required": [
+          "event_id",
+          "person_id"
+        ],
+        "title": "AssignmentChange",
+        "type": "object"
+      },
       "AssignmentDeclineRequest": {
         "description": "Body for POST /assignments/{id}/decline.",
         "properties": {
@@ -3145,6 +3175,59 @@
           "password"
         ],
         "title": "SignupRequest",
+        "type": "object"
+      },
+      "SolutionDiffResponse": {
+        "description": "Diff between two solutions in the same org.",
+        "properties": {
+          "added": {
+            "items": {
+              "$ref": "#/components/schemas/AssignmentChange"
+            },
+            "title": "Added",
+            "type": "array"
+          },
+          "affected_persons": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Affected Persons",
+            "type": "array"
+          },
+          "moves": {
+            "title": "Moves",
+            "type": "integer"
+          },
+          "removed": {
+            "items": {
+              "$ref": "#/components/schemas/AssignmentChange"
+            },
+            "title": "Removed",
+            "type": "array"
+          },
+          "solution_a_id": {
+            "title": "Solution A Id",
+            "type": "integer"
+          },
+          "solution_b_id": {
+            "title": "Solution B Id",
+            "type": "integer"
+          },
+          "unchanged_count": {
+            "title": "Unchanged Count",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "solution_a_id",
+          "solution_b_id",
+          "added",
+          "removed",
+          "unchanged_count",
+          "affected_persons",
+          "moves"
+        ],
+        "title": "SolutionDiffResponse",
         "type": "object"
       },
       "SolutionMetrics": {
@@ -8251,6 +8334,63 @@
         ]
       }
     },
+    "/api/v1/solutions/{solution_a_id}/compare/{solution_b_id}": {
+      "get": {
+        "description": "Diff two solutions (admin only). Both must belong to the same org as the caller.",
+        "operationId": "compareSolutions",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "solution_a_id",
+            "required": true,
+            "schema": {
+              "title": "Solution A Id",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "path",
+            "name": "solution_b_id",
+            "required": true,
+            "schema": {
+              "title": "Solution B Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SolutionDiffResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Compare Solutions",
+        "tags": [
+          "solutions"
+        ]
+      }
+    },
     "/api/v1/solutions/{solution_id}": {
       "delete": {
         "description": "Delete solution and all assignments.",
@@ -8463,6 +8603,54 @@
           }
         ],
         "summary": "Publish Solution",
+        "tags": [
+          "solutions"
+        ]
+      }
+    },
+    "/api/v1/solutions/{solution_id}/rollback": {
+      "post": {
+        "description": "Rollback to a previously-published solution (admin only).\n\nRepublishes the target and unpublishes whatever is currently published in\nthe same org. The target must have been published at some point before\n(i.e. an audit row recording its publish/rollback exists); otherwise 400.",
+        "operationId": "rollbackSolution",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "solution_id",
+            "required": true,
+            "schema": {
+              "title": "Solution Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SolutionResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Rollback Solution",
         "tags": [
           "solutions"
         ]

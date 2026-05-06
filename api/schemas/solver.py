@@ -89,3 +89,23 @@ class ExportFormat(BaseModel):
 
     format: str = Field(..., description="Export format: json, csv, pdf, or ics")
     scope: str = Field("org", description="Export scope: org, person:{id}, or team:{id}")
+
+
+class AssignmentChange(BaseModel):
+    """One added/removed assignment in a diff."""
+
+    event_id: str
+    person_id: str
+    role: str | None = None
+
+
+class SolutionDiffResponse(BaseModel):
+    """Diff between two solutions in the same org."""
+
+    solution_a_id: int
+    solution_b_id: int
+    added: list[AssignmentChange]
+    removed: list[AssignmentChange]
+    unchanged_count: int
+    affected_persons: list[str]
+    moves: int
