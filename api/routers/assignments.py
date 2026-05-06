@@ -22,6 +22,7 @@ from api.schemas.assignment import (
     AssignmentResponse,
     AssignmentSwapRequest,
 )
+from api.schemas.common import ListResponse, PaginationParams, get_pagination_params
 from api.utils.audit_logger import log_audit_event
 
 router = APIRouter(prefix="/assignments", tags=["assignments"])
@@ -136,20 +137,31 @@ def request_swap(
     return assignment
 
 
-@router.get("/me", response_model=list[AssignmentResponse])
+@router.get("/me", response_model=ListResponse[AssignmentResponse])
 def list_my_assignments(
+    pagination: PaginationParams = Depends(get_pagination_params),
     current_user: Person = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    """Return every assignment belonging to the caller, scoped to their org via the join."""
-    rows = (
+    """Return assignments belonging to the caller, scoped to their org via the join."""
+    base = (
         db.query(Assignment)
         .join(Event, Assignment.event_id == Event.id)
         .filter(
             Assignment.person_id == current_user.id,
             Event.org_id == current_user.org_id,
         )
-        .order_by(Assignment.assigned_at.desc())
+    )
+    total = base.count()
+    rows = (
+        base.order_by(Assignment.assigned_at.desc())
+        .offset(pagination.offset)
+        .limit(pagination.limit)
         .all()
     )
-    return rows
+    return {
+        "items": rows,
+        "total": total,
+        "limit": pagination.limit,
+        "offset": pagination.offset,
+    }

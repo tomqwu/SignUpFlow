@@ -175,10 +175,10 @@ class TestListMyAssignments:
         vol_hdrs = auth_headers(client, email="vol-list@vss.org", password="VolPass1!")
         resp = client.get("/api/v1/assignments/me", headers=vol_hdrs)
         assert resp.status_code == 200
-        rows = resp.json()
-        assert isinstance(rows, list)
-        assert len(rows) == 1
-        assert rows[0]["event_id"] == ctx["event"]["id"]
+        body = resp.json()
+        assert body["total"] == 1
+        assert len(body["items"]) == 1
+        assert body["items"][0]["event_id"] == ctx["event"]["id"]
 
 
 @pytest.mark.no_mock_auth
