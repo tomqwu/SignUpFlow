@@ -2,6 +2,7 @@
 
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
+from sqlalchemy import or_
 from sqlalchemy.orm import Session
 
 from api.database import get_db
@@ -93,6 +94,11 @@ def create_person(
 def list_people(
     org_id: str | None = Query(None, description="Filter by organization ID"),
     role: str | None = Query(None, description="Filter by role"),
+    q: str | None = Query(None, description="Case-insensitive search across name and email"),
+    status_filter: str
+    | None = Query(
+        None, alias="status", description="Filter by Person.status (active/inactive/invited)"
+    ),
     pagination: PaginationParams = Depends(get_pagination_params),
     current_user: Person = Depends(get_current_user),
     db: Session = Depends(get_db),
@@ -108,6 +114,13 @@ def list_people(
     else:
         # Default to current user's organization
         query = query.filter(Person.org_id == current_user.org_id)
+
+    if q:
+        like = f"%{q}%"
+        query = query.filter(or_(Person.name.ilike(like), Person.email.ilike(like)))
+
+    if status_filter:
+        query = query.filter(Person.status == status_filter)
 
     # Note: For JSON field filtering in SQLite, we'd need to load and filter in memory
     # For production with PostgreSQL, we could use JSON operators

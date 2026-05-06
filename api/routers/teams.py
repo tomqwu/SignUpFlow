@@ -2,6 +2,7 @@
 
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
+from sqlalchemy import or_
 from sqlalchemy.orm import Session
 
 from api.database import get_db
@@ -85,6 +86,7 @@ def create_team(
 @router.get("/", response_model=TeamList)
 def list_teams(
     org_id: str | None = Query(None, description="Filter by organization ID"),
+    q: str | None = Query(None, description="Case-insensitive search on name and description"),
     pagination: PaginationParams = Depends(get_pagination_params),
     current_user: Person = Depends(get_current_user),
     db: Session = Depends(get_db),
@@ -100,6 +102,10 @@ def list_teams(
     else:
         # Default to current user's organization
         query = query.filter(Team.org_id == current_user.org_id)
+
+    if q:
+        like = f"%{q}%"
+        query = query.filter(or_(Team.name.ilike(like), Team.description.ilike(like)))
 
     teams = query.offset(pagination.offset).limit(pagination.limit).all()
     total = query.count()

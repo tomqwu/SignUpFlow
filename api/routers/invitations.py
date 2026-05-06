@@ -5,6 +5,7 @@ import time
 from datetime import timedelta
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
+from sqlalchemy import or_
 from sqlalchemy.orm import Session
 
 from api.database import get_db
@@ -106,7 +107,12 @@ async def list_invitations(
     org_id: str = Query(..., description="Organization ID"),
     admin: Person = Depends(get_current_admin_user),
     status_filter: str
-    | None = Query(None, description="Filter by status (pending, accepted, expired, cancelled)"),
+    | None = Query(
+        None,
+        alias="status",
+        description="Filter by status (pending, accepted, expired, cancelled)",
+    ),
+    q: str | None = Query(None, description="Case-insensitive search on email and name"),
     db: Session = Depends(get_db),
 ):
     """
@@ -122,6 +128,10 @@ async def list_invitations(
 
     if status_filter:
         query = query.filter(Invitation.status == status_filter)
+
+    if q:
+        like = f"%{q}%"
+        query = query.filter(or_(Invitation.email.ilike(like), Invitation.name.ilike(like)))
 
     # Update expired invitations
     now = utcnow()

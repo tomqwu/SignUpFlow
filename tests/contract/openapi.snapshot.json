@@ -4334,6 +4334,42 @@
             }
           },
           {
+            "description": "Case-insensitive search on event type and id",
+            "in": "query",
+            "name": "q",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Case-insensitive search on event type and id",
+              "title": "Q"
+            }
+          },
+          {
+            "description": "Filter by computed status: 'upcoming', 'past', or 'ongoing'",
+            "in": "query",
+            "name": "status",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Filter by computed status: 'upcoming', 'past', or 'ongoing'",
+              "title": "Status"
+            }
+          },
+          {
             "description": "Page size, max 200",
             "in": "query",
             "name": "limit",
@@ -4782,7 +4818,7 @@
           {
             "description": "Filter by status (pending, accepted, expired, cancelled)",
             "in": "query",
-            "name": "status_filter",
+            "name": "status",
             "required": false,
             "schema": {
               "anyOf": [
@@ -4794,7 +4830,25 @@
                 }
               ],
               "description": "Filter by status (pending, accepted, expired, cancelled)",
-              "title": "Status Filter"
+              "title": "Status"
+            }
+          },
+          {
+            "description": "Case-insensitive search on email and name",
+            "in": "query",
+            "name": "q",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Case-insensitive search on email and name",
+              "title": "Q"
             }
           }
         ],
@@ -5089,6 +5143,24 @@
               "description": "Include organizations that have been cancelled (admin view)",
               "title": "Include Cancelled",
               "type": "boolean"
+            }
+          },
+          {
+            "description": "Case-insensitive search on organization name",
+            "in": "query",
+            "name": "q",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Case-insensitive search on organization name",
+              "title": "Q"
             }
           },
           {
@@ -5450,6 +5522,42 @@
               ],
               "description": "Filter by role",
               "title": "Role"
+            }
+          },
+          {
+            "description": "Case-insensitive search across name and email",
+            "in": "query",
+            "name": "q",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Case-insensitive search across name and email",
+              "title": "Q"
+            }
+          },
+          {
+            "description": "Filter by Person.status (active/inactive/invited)",
+            "in": "query",
+            "name": "status",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Filter by Person.status (active/inactive/invited)",
+              "title": "Status"
             }
           },
           {
@@ -6131,6 +6239,24 @@
               ],
               "description": "Filter by organization ID",
               "title": "Org Id"
+            }
+          },
+          {
+            "description": "Case-insensitive search on name and description",
+            "in": "query",
+            "name": "q",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Case-insensitive search on name and description",
+              "title": "Q"
             }
           },
           {

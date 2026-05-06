@@ -60,6 +60,7 @@ def list_organizations(
     include_cancelled: bool = Query(
         False, description="Include organizations that have been cancelled (admin view)"
     ),
+    q: str | None = Query(None, description="Case-insensitive search on organization name"),
     pagination: PaginationParams = Depends(get_pagination_params),
     db: Session = Depends(get_db),
 ):
@@ -67,6 +68,9 @@ def list_organizations(
     query = db.query(Organization)
     if not include_cancelled:
         query = query.filter(Organization.cancelled_at.is_(None))
+
+    if q:
+        query = query.filter(Organization.name.ilike(f"%{q}%"))
 
     orgs = query.offset(pagination.offset).limit(pagination.limit).all()
     total = query.count()
