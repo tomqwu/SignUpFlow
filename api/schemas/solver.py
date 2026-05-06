@@ -74,6 +74,8 @@ class SolutionResponse(BaseModel):
     health_score: float
     metrics: dict[str, Any] | None
     created_at: datetime
+    is_published: bool = False
+    published_at: datetime | None = None
     assignment_count: int = 0
 
 

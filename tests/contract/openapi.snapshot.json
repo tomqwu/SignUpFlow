@@ -2142,6 +2142,11 @@
             "title": "Id",
             "type": "integer"
           },
+          "is_published": {
+            "default": false,
+            "title": "Is Published",
+            "type": "boolean"
+          },
           "metrics": {
             "anyOf": [
               {
@@ -2157,6 +2162,18 @@
           "org_id": {
             "title": "Org Id",
             "type": "string"
+          },
+          "published_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Published At"
           },
           "soft_score": {
             "title": "Soft Score",
@@ -6166,6 +6183,102 @@
           }
         },
         "summary": "Export Solution",
+        "tags": [
+          "solutions"
+        ]
+      }
+    },
+    "/api/v1/solutions/{solution_id}/publish": {
+      "post": {
+        "description": "Publish a solution (admin only). Unpublishes any prior published in the same org.",
+        "operationId": "publishSolution",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "solution_id",
+            "required": true,
+            "schema": {
+              "title": "Solution Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SolutionResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Publish Solution",
+        "tags": [
+          "solutions"
+        ]
+      }
+    },
+    "/api/v1/solutions/{solution_id}/unpublish": {
+      "post": {
+        "description": "Unpublish a solution (admin only).",
+        "operationId": "unpublishSolution",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "solution_id",
+            "required": true,
+            "schema": {
+              "title": "Solution Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SolutionResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Unpublish Solution",
         "tags": [
           "solutions"
         ]
