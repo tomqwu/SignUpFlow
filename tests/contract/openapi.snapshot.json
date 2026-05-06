@@ -3820,7 +3820,7 @@
     },
     "/api/v1/calendar/reset-token": {
       "post": {
-        "description": "Reset calendar subscription token for a person.\n\nThis invalidates the old subscription URL and generates a new one.\nUse this if the subscription URL has been compromised.",
+        "description": "Reset calendar subscription token for a person.\n\nThis invalidates the old subscription URL and generates a new one. Caller\nmust be the target person or an admin in the same organization. Use\n`/calendar/{person_id}/admin-reset` for the admin-only flow.",
         "operationId": "resetCalendarToken",
         "parameters": [
           {
@@ -3855,6 +3855,11 @@
             "description": "Validation Error"
           }
         },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
         "summary": "Reset Calendar Token",
         "tags": [
           "calendar"
@@ -3863,7 +3868,7 @@
     },
     "/api/v1/calendar/subscribe": {
       "get": {
-        "description": "Get calendar subscription URL for a person.\n\nReturns a webcal:// URL that can be used to subscribe to the calendar\nin Google Calendar, Apple Calendar, Outlook, etc.",
+        "description": "Get calendar subscription URL for a person.\n\nReturns a webcal:// URL that can be used to subscribe to the calendar\nin Google Calendar, Apple Calendar, Outlook, etc. Caller must be the\ntarget person or an admin in the same organization.",
         "operationId": "getSubscriptionUrl",
         "parameters": [
           {
@@ -3898,7 +3903,60 @@
             "description": "Validation Error"
           }
         },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
         "summary": "Get Subscription Url",
+        "tags": [
+          "calendar"
+        ]
+      }
+    },
+    "/api/v1/calendar/{person_id}/admin-reset": {
+      "post": {
+        "description": "Admin-only force-reset of another user's calendar token.\n\nSame as `/calendar/reset-token` but explicitly an admin override of a\ntarget user's token. Always audited as `calendar.token.admin_reset`.",
+        "operationId": "adminResetCalendarToken",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "person_id",
+            "required": true,
+            "schema": {
+              "title": "Person Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CalendarTokenResetResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Admin Reset Calendar Token",
         "tags": [
           "calendar"
         ]
