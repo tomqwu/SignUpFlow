@@ -55,12 +55,18 @@ The count of unique `person_id`s appearing in the symmetric difference (added �
 When `SolveRequest.change_min == True`:
 
 1. Before the greedy loop runs, the router fetches `org`'s currently-published `Solution` and its `Assignment` rows.
-2. Builds the prior-key set `P = {(event_id, person_id, role) for each Assignment}`.
-3. Calls `solver.enable_change_minimization(enabled=True, weight=org.config.change_min_weight)`.
-4. Inside `_assign_event`'s candidate scoring (currently a fairness-driven sort at `heuristics.py:109-150`), each candidate `(event_id, person_id, role)` whose tuple is in `P` gets a score bonus equal to `change_min_weight` (default 100, configurable per-org).
-5. The bonus is applied only as a **tiebreaker among feasible candidates** — it never overrides hard-constraint violations or availability rejections.
+2. Builds the loose prior-key set `P = {(event_id, person_id) for each Assignment}`.
+3. Calls `solver.enable_change_minimization(enabled=True, weight=org_defaults.change_min_weight)` and `solver.set_prior_published_keys(P)`.
+4. Inside `_assign_event`'s candidate scoring, each candidate `(event_id, person_id)` whose tuple is in `P` has its penalty reduced by `change_min_weight` (default 100, configurable per-org via `OrgDefaults.change_min_weight`). Lower penalty wins.
+5. The bonus is applied only as a **tiebreaker among feasible candidates** — it never overrides hard-constraint rejections (vacation, exception dates, hard person-level constraints).
 
 When `change_min == False` (the default), no bonus is applied. Stability metrics are still computed (so admins can see what *would* have happened with change-min off).
+
+#### Loose vs. strict role match
+
+The 6.1 stability metric uses a **strict** key — `(event_id, person_id, role)` — because it diffs at the DB level where role is the literal stored value. Different roles on the same `(event_id, person_id)` count as separate `removed`+`added` rows.
+
+The 6.2 scoring bonus uses a **loose** key — `(event_id, person_id)` — because the solver writes `Assignment.role = NULL` when persisting (the in-memory `api.core.models.Assignment` does not carry per-assignee roles). A role-strict scoring match would never hit a candidate, defeating the purpose. When a future PR makes the solver role-aware, both can tighten to strict.
 
 ### Workload-cap predicate
 

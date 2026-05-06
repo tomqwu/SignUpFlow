@@ -72,7 +72,10 @@ from api.schemas.solver import (
     StabilityMetrics,
     ViolationInfo,
 )
-from api.utils.solver_stability import compute_stability_metrics
+from api.utils.solver_stability import (
+    compute_stability_metrics,
+    load_prior_published_loose_keys,
+)
 
 router = APIRouter(prefix="/solver", tags=["solver"])
 
@@ -271,6 +274,15 @@ def solve_schedule(
     # Solve
     solver = GreedyHeuristicSolver()
     solver.build_model(context)
+
+    # Wire change-minimization when requested. Bonus weight comes from
+    # OrgDefaults.change_min_weight (default 100). The solver applies it as a
+    # tiebreaker to candidates whose (event_id, person_id) was in the prior
+    # published solution.
+    if solve_request.change_min:
+        solver.enable_change_minimization(True, org_file.defaults.change_min_weight)
+        solver.set_prior_published_keys(load_prior_published_loose_keys(db, org_id=org.id))
+
     solution = solver.solve()
 
     # Compute stability vs the org's currently-published solution.

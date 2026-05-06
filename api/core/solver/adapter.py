@@ -61,6 +61,11 @@ class SolverAdapter(ABC):
         pass
 
     @abstractmethod
+    def set_prior_published_keys(self, keys: set[tuple[str, str]]) -> None:
+        """Provide ``(event_id, person_id)`` keys from the prior published solution."""
+        pass
+
+    @abstractmethod
     def incremental_update(self, changes: Patch) -> None:
         """Apply incremental changes to model."""
         pass
