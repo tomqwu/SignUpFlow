@@ -6,10 +6,13 @@ from sqlalchemy.orm import Session
 from api.database import get_db
 from api.models import (
     Availability,
+    AvailabilityException,
     Person,
     VacationPeriod,
 )
 from api.schemas.availability import (
+    AvailabilityExceptionCreate,
+    AvailabilityExceptionResponse,
     TimeOffCreate,
 )
 
@@ -194,6 +197,103 @@ def update_timeoff(
         "reason": vacation.reason,
         "message": "Time-off period updated successfully",
     }
+
+
+def _get_or_create_availability(person_id: str, db: Session) -> Availability:
+    """Mirror of the inline lookup used by add_timeoff."""
+    availability = db.query(Availability).filter(Availability.person_id == person_id).first()
+    if availability is not None:
+        return availability
+    person = db.query(Person).filter(Person.id == person_id).first()
+    if not person:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Person '{person_id}' not found",
+        )
+    availability = Availability(person_id=person_id, rrule=None, extra_data={})
+    db.add(availability)
+    db.flush()
+    return availability
+
+
+@router.get(
+    "/{person_id}/exceptions",
+    response_model=list[AvailabilityExceptionResponse],
+)
+def list_exceptions(person_id: str, db: Session = Depends(get_db)):
+    """List single-date availability exceptions for a person."""
+    availability = db.query(Availability).filter(Availability.person_id == person_id).first()
+    if availability is None:
+        return []
+    rows = (
+        db.query(AvailabilityException)
+        .filter(AvailabilityException.availability_id == availability.id)
+        .order_by(AvailabilityException.exception_date.asc())
+        .all()
+    )
+    return rows
+
+
+@router.post(
+    "/{person_id}/exceptions",
+    response_model=AvailabilityExceptionResponse,
+    status_code=status.HTTP_201_CREATED,
+)
+def add_exception(
+    person_id: str,
+    payload: AvailabilityExceptionCreate,
+    db: Session = Depends(get_db),
+):
+    """Add a single-date exception. Idempotent on (availability_id, date)."""
+    availability = _get_or_create_availability(person_id, db)
+    existing = (
+        db.query(AvailabilityException)
+        .filter(
+            AvailabilityException.availability_id == availability.id,
+            AvailabilityException.exception_date == payload.exception_date,
+        )
+        .first()
+    )
+    if existing is not None:
+        return existing
+    row = AvailabilityException(
+        availability_id=availability.id,
+        exception_date=payload.exception_date,
+    )
+    db.add(row)
+    db.commit()
+    db.refresh(row)
+    return row
+
+
+@router.delete(
+    "/{person_id}/exceptions/{exception_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+)
+def delete_exception(person_id: str, exception_id: int, db: Session = Depends(get_db)):
+    """Delete a single-date exception by id."""
+    availability = db.query(Availability).filter(Availability.person_id == person_id).first()
+    if availability is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"No availability found for person '{person_id}'",
+        )
+    row = (
+        db.query(AvailabilityException)
+        .filter(
+            AvailabilityException.id == exception_id,
+            AvailabilityException.availability_id == availability.id,
+        )
+        .first()
+    )
+    if row is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Exception {exception_id} not found",
+        )
+    db.delete(row)
+    db.commit()
+    return None
 
 
 @router.delete("/{person_id}/timeoff/{timeoff_id}", status_code=status.HTTP_204_NO_CONTENT)

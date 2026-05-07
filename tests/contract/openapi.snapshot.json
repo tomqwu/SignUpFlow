@@ -346,6 +346,42 @@
         "title": "AuthResponse",
         "type": "object"
       },
+      "AvailabilityExceptionCreate": {
+        "description": "Schema for adding a single-date availability exception.",
+        "properties": {
+          "exception_date": {
+            "description": "Single date the volunteer is blocked",
+            "format": "date",
+            "title": "Exception Date",
+            "type": "string"
+          }
+        },
+        "required": [
+          "exception_date"
+        ],
+        "title": "AvailabilityExceptionCreate",
+        "type": "object"
+      },
+      "AvailabilityExceptionResponse": {
+        "description": "Schema for an availability exception row.",
+        "properties": {
+          "exception_date": {
+            "format": "date",
+            "title": "Exception Date",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "exception_date"
+        ],
+        "title": "AvailabilityExceptionResponse",
+        "type": "object"
+      },
       "AvailablePerson": {
         "description": "Person available for an event.",
         "properties": {
@@ -5195,6 +5231,149 @@
           }
         },
         "summary": "Create Availability",
+        "tags": [
+          "availability"
+        ]
+      }
+    },
+    "/api/v1/availability/{person_id}/exceptions": {
+      "get": {
+        "description": "List single-date availability exceptions for a person.",
+        "operationId": "listExceptions",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "person_id",
+            "required": true,
+            "schema": {
+              "title": "Person Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/AvailabilityExceptionResponse"
+                  },
+                  "title": "Response List Exceptions Api V1 Availability  Person Id  Exceptions Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "List Exceptions",
+        "tags": [
+          "availability"
+        ]
+      },
+      "post": {
+        "description": "Add a single-date exception. Idempotent on (availability_id, date).",
+        "operationId": "addException",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "person_id",
+            "required": true,
+            "schema": {
+              "title": "Person Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AvailabilityExceptionCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AvailabilityExceptionResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Add Exception",
+        "tags": [
+          "availability"
+        ]
+      }
+    },
+    "/api/v1/availability/{person_id}/exceptions/{exception_id}": {
+      "delete": {
+        "description": "Delete a single-date exception by id.",
+        "operationId": "deleteException",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "person_id",
+            "required": true,
+            "schema": {
+              "title": "Person Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "exception_id",
+            "required": true,
+            "schema": {
+              "title": "Exception Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Delete Exception",
         "tags": [
           "availability"
         ]
