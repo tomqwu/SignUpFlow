@@ -278,22 +278,30 @@ update-openapi-snapshot: check-poetry
 # Regenerate the Dart API client from the OpenAPI snapshot.
 # Requires: openjdk@17 (`brew install openjdk@17`) and node (already required).
 # Run after any backend API change that you want surfaced to the iOS app.
+# Auto-detect Java: prefer brew openjdk@17 if installed (most common dev
+# setup), fall back to anything on PATH that responds to `java -version`.
+JAVA_HOME_BREW := $(shell brew --prefix openjdk@17 2>/dev/null)
+JAVA_BIN := $(if $(JAVA_HOME_BREW),$(JAVA_HOME_BREW)/bin/java,$(shell command -v java 2>/dev/null))
+
 mobile-codegen:
 	@echo "🔄 Generating Flutter API client from OpenAPI snapshot..."
-	@command -v java >/dev/null 2>&1 || { \
+	@if [ -z "$(JAVA_BIN)" ] || ! $(JAVA_BIN) -version >/dev/null 2>&1; then \
 		echo "❌ Java not found. Install with: brew install openjdk@17"; \
-		echo "   Then either re-link or set JAVA_HOME to /opt/homebrew/opt/openjdk@17."; \
+		echo "   The Make target auto-detects brew openjdk@17 — no need to set JAVA_HOME."; \
 		exit 1; \
-	}
-	@npx -y @openapitools/openapi-generator-cli@2.20.2 generate \
+	fi
+	@echo "ℹ️  Using $(JAVA_BIN)"
+	@PATH="$(dir $(JAVA_BIN)):$$PATH" \
+	  npx -y @openapitools/openapi-generator-cli@2.20.2 generate \
 	  -i tests/contract/openapi.snapshot.json \
 	  -g dart-dio \
-	  -o mobile/lib/api \
+	  -o mobile/api_client \
 	  --additional-properties=pubName=signupflow_api,pubVersion=0.0.1,nullSafe=true,nullableFields=true \
 	  --skip-validate-spec
+	@cd mobile/api_client && PATH=/Users/tomwu/Projects/flutter/bin:$$PATH flutter pub get
+	@cd mobile/api_client && PATH=/Users/tomwu/Projects/flutter/bin:$$PATH dart run build_runner build --delete-conflicting-outputs
 	@cd mobile && PATH=/Users/tomwu/Projects/flutter/bin:$$PATH flutter pub get
-	@cd mobile && PATH=/Users/tomwu/Projects/flutter/bin:$$PATH dart run build_runner build --delete-conflicting-outputs
-	@echo "✅ Mobile API client regenerated at mobile/lib/api/."
+	@echo "✅ Mobile API client regenerated as a path-dep package at mobile/api_client/."
 
 # ============================================================================
 # Docker Compose Commands (Development Environment)
