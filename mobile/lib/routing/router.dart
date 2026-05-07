@@ -22,8 +22,10 @@ import 'package:signupflow_mobile/features/admin/shell.dart';
 import 'package:signupflow_mobile/features/admin/solution_review_screen.dart';
 import 'package:signupflow_mobile/features/admin/solver_screen.dart';
 import 'package:signupflow_mobile/features/auth/create_org_screen.dart';
+import 'package:signupflow_mobile/features/auth/forgot_password_screen.dart';
 import 'package:signupflow_mobile/features/auth/invitation_screen.dart';
 import 'package:signupflow_mobile/features/auth/login_screen.dart';
+import 'package:signupflow_mobile/features/auth/reset_password_screen.dart';
 import 'package:signupflow_mobile/features/volunteer/assignment_detail_screen.dart';
 import 'package:signupflow_mobile/features/volunteer/availability_screen.dart';
 import 'package:signupflow_mobile/features/volunteer/inbox_screen.dart';
@@ -39,7 +41,9 @@ GoRouter buildRouter(WidgetRef ref) {
       final loc = state.matchedLocation;
       final isAuth = loc == '/login' ||
           loc == '/signup' ||
-          loc == '/invitation';
+          loc == '/invitation' ||
+          loc == '/forgot-password' ||
+          loc == '/reset-password';
 
       if (auth.role == AuthRole.unauth && !isAuth) return '/login';
       if (auth.role == AuthRole.volunteer && loc.startsWith('/a/')) {
@@ -55,6 +59,16 @@ GoRouter buildRouter(WidgetRef ref) {
       GoRoute(
         path: '/invitation',
         builder: (_, state) => InvitationScreen(
+          token: state.uri.queryParameters['token'] ?? '',
+        ),
+      ),
+      GoRoute(
+        path: '/forgot-password',
+        builder: (_, __) => const ForgotPasswordScreen(),
+      ),
+      GoRoute(
+        path: '/reset-password',
+        builder: (_, state) => ResetPasswordScreen(
           token: state.uri.queryParameters['token'] ?? '',
         ),
       ),

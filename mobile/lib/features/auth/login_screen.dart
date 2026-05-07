@@ -110,11 +110,13 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   label: _busy ? 'Signing in…' : 'Sign in',
                   onPressed: _busy ? null : _signIn,
                 ),
-                const SizedBox(height: 20),
-                Text(
-                  '· Forgot password? ·',
-                  style: BlockType.bodySm.copyWith(color: BlockColors.ink2),
-                  textAlign: TextAlign.center,
+                const SizedBox(height: 14),
+                TextButton(
+                  onPressed: () => context.go('/forgot-password'),
+                  child: Text(
+                    'Forgot password?',
+                    style: BlockType.bodySm.copyWith(color: BlockColors.ink2),
+                  ),
                 ),
                 const SizedBox(height: 8),
                 TextButton(
