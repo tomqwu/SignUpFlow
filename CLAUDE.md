@@ -67,6 +67,7 @@ make migrate              # Run Alembic migrations
 /api/v1/calendar       — ICS export of personal schedules
 /api/v1/analytics      — volunteer stats, event stats
 /api/v1/password-reset — request/confirm password reset
+/api/v1/notifications  — list / read / unread-count, email preferences (mobile Inbox)
 
 Bare `/api` is a 308 redirect to `/api/v1` for one release.
 ```
