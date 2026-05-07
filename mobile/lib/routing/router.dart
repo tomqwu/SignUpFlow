@@ -21,6 +21,7 @@ import 'package:signupflow_mobile/features/admin/publish_screen.dart';
 import 'package:signupflow_mobile/features/admin/shell.dart';
 import 'package:signupflow_mobile/features/admin/solution_review_screen.dart';
 import 'package:signupflow_mobile/features/admin/solver_screen.dart';
+import 'package:signupflow_mobile/features/auth/create_org_screen.dart';
 import 'package:signupflow_mobile/features/auth/invitation_screen.dart';
 import 'package:signupflow_mobile/features/auth/login_screen.dart';
 import 'package:signupflow_mobile/features/volunteer/assignment_detail_screen.dart';
@@ -36,7 +37,9 @@ GoRouter buildRouter(WidgetRef ref) {
     redirect: (context, state) {
       final auth = ref.read(authProvider);
       final loc = state.matchedLocation;
-      final isAuth = loc == '/login' || loc == '/invitation';
+      final isAuth = loc == '/login' ||
+          loc == '/signup' ||
+          loc == '/invitation';
 
       if (auth.role == AuthRole.unauth && !isAuth) return '/login';
       if (auth.role == AuthRole.volunteer && loc.startsWith('/a/')) {
@@ -48,6 +51,7 @@ GoRouter buildRouter(WidgetRef ref) {
     },
     routes: [
       GoRoute(path: '/login', builder: (_, __) => const LoginScreen()),
+      GoRoute(path: '/signup', builder: (_, __) => const CreateOrgScreen()),
       GoRoute(path: '/invitation', builder: (_, __) => const InvitationScreen()),
 
       ShellRoute(

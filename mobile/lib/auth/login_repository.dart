@@ -46,7 +46,11 @@ class LoginRepository {
 
   Future<void> signOut() => _storage.clearToken();
 
-  static AuthRole _resolveRole(List<String> roles) {
+  static AuthRole _resolveRole(List<String> roles) => resolveRole(roles);
+
+  /// Public helper so signup / invitation / reset flows map server roles
+  /// to [AuthRole] the same way login does.
+  static AuthRole resolveRole(List<String> roles) {
     final lower = roles.map((r) => r.toLowerCase()).toSet();
     if (lower.contains('admin')) return AuthRole.admin;
     if (lower.contains('volunteer')) return AuthRole.volunteer;

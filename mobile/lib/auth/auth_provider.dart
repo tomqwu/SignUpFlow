@@ -5,6 +5,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:signupflow_mobile/auth/login_repository.dart';
 import 'package:signupflow_mobile/auth/secure_token_storage.dart';
+import 'package:signupflow_mobile/auth/signup_repository.dart';
 
 enum AuthRole { unauth, volunteer, admin }
 
@@ -57,6 +58,33 @@ class AuthController extends Notifier<AuthState> {
       state = next;
       return null;
     } on LoginFailure catch (e) {
+      return e.message;
+    } on Exception catch (e) {
+      return 'Unexpected error: $e';
+    }
+  }
+
+  /// Create-org admin signup: chains POST /organizations + POST /auth/signup,
+  /// stores the JWT, and applies the auth state. Returns null on success;
+  /// returns a user-facing message on failure.
+  Future<String?> createOrgAndSignUp({
+    required String orgId,
+    required String orgName,
+    required String adminName,
+    required String email,
+    required String password,
+  }) async {
+    try {
+      final next = await ref.read(signupRepositoryProvider).createOrgAndSignUp(
+            orgId: orgId,
+            orgName: orgName,
+            adminName: adminName,
+            email: email.trim(),
+            password: password,
+          );
+      state = next;
+      return null;
+    } on SignupFailure catch (e) {
       return e.message;
     } on Exception catch (e) {
       return 'Unexpected error: $e';
