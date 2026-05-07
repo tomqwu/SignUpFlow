@@ -43,3 +43,30 @@ class TimeOffResponse(BaseModel):
     start_date: date
     end_date: date
     reason: str | None = None
+
+
+class AvailabilityExceptionCreate(BaseModel):
+    """Schema for adding a single-date availability exception."""
+
+    exception_date: date = Field(..., description="Single date the volunteer is blocked")
+
+
+class AvailabilityExceptionResponse(BaseModel):
+    """Schema for an availability exception row."""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    exception_date: date
+
+
+class AvailabilityRruleResponse(BaseModel):
+    """Schema for the single rrule string per person."""
+
+    rrule: str | None
+
+
+class AvailabilityRruleUpdate(BaseModel):
+    """Schema for setting the rrule string."""
+
+    rrule: str = Field(..., min_length=1, description="iCalendar RRULE expression")
