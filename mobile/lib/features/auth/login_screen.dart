@@ -154,6 +154,15 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   ),
                 ),
 
+                const SizedBox(height: 18),
+                TextButton(
+                  onPressed: () => context.go('/signup'),
+                  child: Text(
+                    'Create a new organization →',
+                    style: BlockType.bodySm.copyWith(color: BlockColors.ink2),
+                  ),
+                ),
+
                 const SizedBox(height: 24),
               ],
             ),
