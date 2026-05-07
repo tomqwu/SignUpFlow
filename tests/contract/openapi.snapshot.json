@@ -3207,6 +3207,132 @@
         "title": "SignupRequest",
         "type": "object"
       },
+      "SolutionAssignmentAssignee": {
+        "description": "One assignee inside a per-event assignment group.",
+        "properties": {
+          "assigned_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Assigned At"
+          },
+          "assignment_id": {
+            "title": "Assignment Id",
+            "type": "integer"
+          },
+          "person_id": {
+            "title": "Person Id",
+            "type": "string"
+          },
+          "person_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Person Name"
+          }
+        },
+        "required": [
+          "person_id",
+          "assignment_id"
+        ],
+        "title": "SolutionAssignmentAssignee",
+        "type": "object"
+      },
+      "SolutionAssignmentEntry": {
+        "description": "All assignees for one event in a solution.",
+        "properties": {
+          "assignees": {
+            "items": {
+              "$ref": "#/components/schemas/SolutionAssignmentAssignee"
+            },
+            "title": "Assignees",
+            "type": "array"
+          },
+          "event_end": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Event End"
+          },
+          "event_id": {
+            "title": "Event Id",
+            "type": "string"
+          },
+          "event_start": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Event Start"
+          },
+          "event_type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Event Type"
+          }
+        },
+        "required": [
+          "event_id",
+          "assignees"
+        ],
+        "title": "SolutionAssignmentEntry",
+        "type": "object"
+      },
+      "SolutionAssignmentsResponse": {
+        "description": "Typed response for ``GET /solutions/{id}/assignments`` \u2014 events grouped.",
+        "properties": {
+          "events": {
+            "items": {
+              "$ref": "#/components/schemas/SolutionAssignmentEntry"
+            },
+            "title": "Events",
+            "type": "array"
+          },
+          "solution_id": {
+            "title": "Solution Id",
+            "type": "integer"
+          },
+          "total_assignments": {
+            "title": "Total Assignments",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "solution_id",
+          "events",
+          "total_assignments"
+        ],
+        "title": "SolutionAssignmentsResponse",
+        "type": "object"
+      },
       "SolutionDiffResponse": {
         "description": "Diff between two solutions in the same org.",
         "properties": {
@@ -8580,7 +8706,7 @@
     },
     "/api/v1/solutions/{solution_id}/assignments": {
       "get": {
-        "description": "Get all assignments for a solution.",
+        "description": "Get all assignments for a solution, grouped by event.\n\nMobile Solution Review renders an event-grouped list, so we group server-side\nrather than forcing the client to do O(n\u00b2) regrouping every render.",
         "operationId": "getSolutionAssignments",
         "parameters": [
           {
@@ -8597,7 +8723,9 @@
           "200": {
             "content": {
               "application/json": {
-                "schema": {}
+                "schema": {
+                  "$ref": "#/components/schemas/SolutionAssignmentsResponse"
+                }
               }
             },
             "description": "Successful Response"

@@ -144,3 +144,30 @@ class SolutionStatsResponse(BaseModel):
     fairness: FairnessStats
     stability: StabilityMetrics
     workload: WorkloadStats
+
+
+class SolutionAssignmentAssignee(BaseModel):
+    """One assignee inside a per-event assignment group."""
+
+    person_id: str
+    person_name: str | None = None
+    assignment_id: int
+    assigned_at: datetime | None = None
+
+
+class SolutionAssignmentEntry(BaseModel):
+    """All assignees for one event in a solution."""
+
+    event_id: str
+    event_type: str | None = None
+    event_start: datetime | None = None
+    event_end: datetime | None = None
+    assignees: list[SolutionAssignmentAssignee]
+
+
+class SolutionAssignmentsResponse(BaseModel):
+    """Typed response for ``GET /solutions/{id}/assignments`` — events grouped."""
+
+    solution_id: int
+    events: list[SolutionAssignmentEntry]
+    total_assignments: int

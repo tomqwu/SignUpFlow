@@ -22,6 +22,9 @@ from api.schemas.solver import (
     AssignmentChange,
     ExportFormat,
     FairnessStats,
+    SolutionAssignmentAssignee,
+    SolutionAssignmentEntry,
+    SolutionAssignmentsResponse,
     SolutionDiffResponse,
     SolutionList,
     SolutionResponse,
@@ -84,9 +87,13 @@ def get_solution(solution_id: int, db: Session = Depends(get_db)):
     return response
 
 
-@router.get("/{solution_id}/assignments")
+@router.get("/{solution_id}/assignments", response_model=SolutionAssignmentsResponse)
 def get_solution_assignments(solution_id: int, db: Session = Depends(get_db)):
-    """Get all assignments for a solution."""
+    """Get all assignments for a solution, grouped by event.
+
+    Mobile Solution Review renders an event-grouped list, so we group server-side
+    rather than forcing the client to do O(n²) regrouping every render.
+    """
     solution = db.query(Solution).filter(Solution.id == solution_id).first()
     if not solution:
         raise HTTPException(
@@ -94,28 +101,45 @@ def get_solution_assignments(solution_id: int, db: Session = Depends(get_db)):
             detail=f"Solution {solution_id} not found",
         )
 
-    assignments = db.query(Assignment).filter(Assignment.solution_id == solution_id).all()
+    # Tenancy-guard requires an org_id filter on any cross-table SELECT;
+    # all three tables carry org_id and a single solution belongs to one org.
+    rows = (
+        db.query(Assignment, Event, Person)
+        .outerjoin(Event, Event.id == Assignment.event_id)
+        .outerjoin(Person, Person.id == Assignment.person_id)
+        .filter(Assignment.solution_id == solution_id)
+        .filter((Event.org_id == solution.org_id) | (Event.org_id.is_(None)))
+        .filter((Person.org_id == solution.org_id) | (Person.org_id.is_(None)))
+        .order_by(Event.start_time.asc().nullslast(), Event.id.asc())
+        .all()
+    )
 
-    # Group by event
-    result = []
-    for assignment in assignments:
-        event = db.query(Event).filter(Event.id == assignment.event_id).first()
-        person = db.query(Person).filter(Person.id == assignment.person_id).first()
-
-        result.append(
-            {
-                "assignment_id": assignment.id,
-                "event_id": assignment.event_id,
-                "event_type": event.type if event else None,
-                "event_start": event.start_time if event else None,
-                "event_end": event.end_time if event else None,
-                "person_id": assignment.person_id,
-                "person_name": person.name if person else None,
-                "assigned_at": assignment.assigned_at,
-            }
+    by_event: dict[str, SolutionAssignmentEntry] = {}
+    for assignment, event, person in rows:
+        entry = by_event.get(assignment.event_id)
+        if entry is None:
+            entry = SolutionAssignmentEntry(
+                event_id=assignment.event_id,
+                event_type=event.type if event else None,
+                event_start=event.start_time if event else None,
+                event_end=event.end_time if event else None,
+                assignees=[],
+            )
+            by_event[assignment.event_id] = entry
+        entry.assignees.append(
+            SolutionAssignmentAssignee(
+                person_id=assignment.person_id,
+                person_name=person.name if person else None,
+                assignment_id=assignment.id,
+                assigned_at=assignment.assigned_at,
+            )
         )
 
-    return {"assignments": result, "total": len(result)}
+    return SolutionAssignmentsResponse(
+        solution_id=solution_id,
+        events=list(by_event.values()),
+        total_assignments=sum(len(e.assignees) for e in by_event.values()),
+    )
 
 
 @router.post("/", response_model=SolutionResponse, status_code=status.HTTP_201_CREATED)
