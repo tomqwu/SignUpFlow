@@ -10,6 +10,7 @@ team_id("T32FW7PZ3S")
 #   export APPLE_ID="you@example.com"
 apple_id(ENV["APPLE_ID"])
 
-# App Store Connect app id — the numeric one assigned when the app was
-# registered in App Store Connect. Used by `pilot` to target the right app.
-itc_team_id("6767228040")
+# Note: do NOT set `itc_team_id` here — `6767228040` is the per-app
+# numeric Apple ID (referenced as the App Store Connect "Apple ID" on the
+# app's page), not the team's numeric ID. With only one ASC team
+# (`Qiang Wu` at T32FW7PZ3S), pilot picks the team automatically.
