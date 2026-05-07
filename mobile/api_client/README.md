@@ -79,10 +79,16 @@ Class | Method | HTTP request | Description
 [*AuthApi*](doc/AuthApi.md) | [**requestPasswordReset**](doc/AuthApi.md#requestpasswordreset) | **POST** /api/v1/auth/forgot-password | Request Password Reset
 [*AuthApi*](doc/AuthApi.md) | [**resetPassword**](doc/AuthApi.md#resetpassword) | **POST** /api/v1/auth/reset-password | Reset Password
 [*AuthApi*](doc/AuthApi.md) | [**signup**](doc/AuthApi.md#signup) | **POST** /api/v1/auth/signup | Signup
+[*AvailabilityApi*](doc/AvailabilityApi.md) | [**addException**](doc/AvailabilityApi.md#addexception) | **POST** /api/v1/availability/{person_id}/exceptions | Add Exception
 [*AvailabilityApi*](doc/AvailabilityApi.md) | [**addTimeoff**](doc/AvailabilityApi.md#addtimeoff) | **POST** /api/v1/availability/{person_id}/timeoff | Add Timeoff
+[*AvailabilityApi*](doc/AvailabilityApi.md) | [**clearRrule**](doc/AvailabilityApi.md#clearrrule) | **DELETE** /api/v1/availability/{person_id}/rrule | Clear Rrule
 [*AvailabilityApi*](doc/AvailabilityApi.md) | [**createAvailability**](doc/AvailabilityApi.md#createavailability) | **POST** /api/v1/availability/ | Create Availability
+[*AvailabilityApi*](doc/AvailabilityApi.md) | [**deleteException**](doc/AvailabilityApi.md#deleteexception) | **DELETE** /api/v1/availability/{person_id}/exceptions/{exception_id} | Delete Exception
 [*AvailabilityApi*](doc/AvailabilityApi.md) | [**deleteTimeoff**](doc/AvailabilityApi.md#deletetimeoff) | **DELETE** /api/v1/availability/{person_id}/timeoff/{timeoff_id} | Delete Timeoff
+[*AvailabilityApi*](doc/AvailabilityApi.md) | [**getRrule**](doc/AvailabilityApi.md#getrrule) | **GET** /api/v1/availability/{person_id}/rrule | Get Rrule
 [*AvailabilityApi*](doc/AvailabilityApi.md) | [**getTimeoff**](doc/AvailabilityApi.md#gettimeoff) | **GET** /api/v1/availability/{person_id}/timeoff | Get Timeoff
+[*AvailabilityApi*](doc/AvailabilityApi.md) | [**listExceptions**](doc/AvailabilityApi.md#listexceptions) | **GET** /api/v1/availability/{person_id}/exceptions | List Exceptions
+[*AvailabilityApi*](doc/AvailabilityApi.md) | [**setRrule**](doc/AvailabilityApi.md#setrrule) | **PUT** /api/v1/availability/{person_id}/rrule | Set Rrule
 [*AvailabilityApi*](doc/AvailabilityApi.md) | [**updateTimeoff**](doc/AvailabilityApi.md#updatetimeoff) | **PATCH** /api/v1/availability/{person_id}/timeoff/{timeoff_id} | Update Timeoff
 [*CalendarApi*](doc/CalendarApi.md) | [**adminResetCalendarToken**](doc/CalendarApi.md#adminresetcalendartoken) | **POST** /api/v1/calendar/{person_id}/admin-reset | Admin Reset Calendar Token
 [*CalendarApi*](doc/CalendarApi.md) | [**calendarFeed**](doc/CalendarApi.md#calendarfeed) | **GET** /api/v1/calendar/feed/{token} | Calendar Feed
@@ -119,6 +125,14 @@ Class | Method | HTTP request | Description
 [*InvitationsApi*](doc/InvitationsApi.md) | [**listInvitations**](doc/InvitationsApi.md#listinvitations) | **GET** /api/v1/invitations | List Invitations
 [*InvitationsApi*](doc/InvitationsApi.md) | [**resendInvitation**](doc/InvitationsApi.md#resendinvitation) | **POST** /api/v1/invitations/{invitation_id}/resend | Resend Invitation
 [*InvitationsApi*](doc/InvitationsApi.md) | [**verifyInvitation**](doc/InvitationsApi.md#verifyinvitation) | **GET** /api/v1/invitations/{token} | Verify Invitation
+[*NotificationsApi*](doc/NotificationsApi.md) | [**getMyEmailPreferences**](doc/NotificationsApi.md#getmyemailpreferences) | **GET** /api/v1/notifications/preferences/me | Get My Email Preferences
+[*NotificationsApi*](doc/NotificationsApi.md) | [**getNotification**](doc/NotificationsApi.md#getnotification) | **GET** /api/v1/notifications/{notification_id} | Get Notification
+[*NotificationsApi*](doc/NotificationsApi.md) | [**getOrganizationNotificationStats**](doc/NotificationsApi.md#getorganizationnotificationstats) | **GET** /api/v1/notifications/stats/organization | Get Organization Notification Stats
+[*NotificationsApi*](doc/NotificationsApi.md) | [**getUnreadCount**](doc/NotificationsApi.md#getunreadcount) | **GET** /api/v1/notifications/unread/count | Get Unread Count
+[*NotificationsApi*](doc/NotificationsApi.md) | [**listNotifications**](doc/NotificationsApi.md#listnotifications) | **GET** /api/v1/notifications/ | List Notifications
+[*NotificationsApi*](doc/NotificationsApi.md) | [**markNotificationRead**](doc/NotificationsApi.md#marknotificationread) | **POST** /api/v1/notifications/{notification_id}/read | Mark Notification Read
+[*NotificationsApi*](doc/NotificationsApi.md) | [**sendTestNotification**](doc/NotificationsApi.md#sendtestnotification) | **POST** /api/v1/notifications/test/send | Send Test Notification
+[*NotificationsApi*](doc/NotificationsApi.md) | [**updateMyEmailPreferences**](doc/NotificationsApi.md#updatemyemailpreferences) | **PUT** /api/v1/notifications/preferences/me | Update My Email Preferences
 [*OrganizationsApi*](doc/OrganizationsApi.md) | [**cancelOrganization**](doc/OrganizationsApi.md#cancelorganization) | **POST** /api/v1/organizations/{org_id}/cancel | Cancel Organization
 [*OrganizationsApi*](doc/OrganizationsApi.md) | [**createOrganization**](doc/OrganizationsApi.md#createorganization) | **POST** /api/v1/organizations/ | Create Organization
 [*OrganizationsApi*](doc/OrganizationsApi.md) | [**deleteOrganization**](doc/OrganizationsApi.md#deleteorganization) | **DELETE** /api/v1/organizations/{org_id} | Delete Organization
@@ -177,6 +191,10 @@ Class | Method | HTTP request | Description
  - [AssignmentSwapRequest](doc/AssignmentSwapRequest.md)
  - [AuditLogResponse](doc/AuditLogResponse.md)
  - [AuthResponse](doc/AuthResponse.md)
+ - [AvailabilityExceptionCreate](doc/AvailabilityExceptionCreate.md)
+ - [AvailabilityExceptionResponse](doc/AvailabilityExceptionResponse.md)
+ - [AvailabilityRruleResponse](doc/AvailabilityRruleResponse.md)
+ - [AvailabilityRruleUpdate](doc/AvailabilityRruleUpdate.md)
  - [AvailablePerson](doc/AvailablePerson.md)
  - [BulkImportItemError](doc/BulkImportItemError.md)
  - [BulkImportResponse](doc/BulkImportResponse.md)
@@ -188,6 +206,8 @@ Class | Method | HTTP request | Description
  - [ConstraintCreate](doc/ConstraintCreate.md)
  - [ConstraintResponse](doc/ConstraintResponse.md)
  - [ConstraintUpdate](doc/ConstraintUpdate.md)
+ - [EmailPreferenceResponse](doc/EmailPreferenceResponse.md)
+ - [EmailPreferenceUpdate](doc/EmailPreferenceUpdate.md)
  - [EventCreate](doc/EventCreate.md)
  - [EventResponse](doc/EventResponse.md)
  - [EventUpdate](doc/EventUpdate.md)
@@ -221,6 +241,9 @@ Class | Method | HTTP request | Description
  - [ListResponseSolutionResponse](doc/ListResponseSolutionResponse.md)
  - [ListResponseTeamResponse](doc/ListResponseTeamResponse.md)
  - [LoginRequest](doc/LoginRequest.md)
+ - [NotificationListResponse](doc/NotificationListResponse.md)
+ - [NotificationResponse](doc/NotificationResponse.md)
+ - [NotificationStatsResponse](doc/NotificationStatsResponse.md)
  - [OccurrencePreview](doc/OccurrencePreview.md)
  - [OrganizationCreate](doc/OrganizationCreate.md)
  - [OrganizationResponse](doc/OrganizationResponse.md)
@@ -237,6 +260,9 @@ Class | Method | HTTP request | Description
  - [ResourceResponse](doc/ResourceResponse.md)
  - [ResourceUpdate](doc/ResourceUpdate.md)
  - [SignupRequest](doc/SignupRequest.md)
+ - [SolutionAssignmentAssignee](doc/SolutionAssignmentAssignee.md)
+ - [SolutionAssignmentEntry](doc/SolutionAssignmentEntry.md)
+ - [SolutionAssignmentsResponse](doc/SolutionAssignmentsResponse.md)
  - [SolutionDiffResponse](doc/SolutionDiffResponse.md)
  - [SolutionMetrics](doc/SolutionMetrics.md)
  - [SolutionResponse](doc/SolutionResponse.md)
