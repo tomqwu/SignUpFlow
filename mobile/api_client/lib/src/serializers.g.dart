@@ -14,6 +14,10 @@ Serializers _$serializers = (Serializers().toBuilder()
       ..add(AssignmentSwapRequest.serializer)
       ..add(AuditLogResponse.serializer)
       ..add(AuthResponse.serializer)
+      ..add(AvailabilityExceptionCreate.serializer)
+      ..add(AvailabilityExceptionResponse.serializer)
+      ..add(AvailabilityRruleResponse.serializer)
+      ..add(AvailabilityRruleUpdate.serializer)
       ..add(AvailablePerson.serializer)
       ..add(BulkImportItemError.serializer)
       ..add(BulkImportResponse.serializer)
@@ -25,6 +29,8 @@ Serializers _$serializers = (Serializers().toBuilder()
       ..add(ConstraintCreate.serializer)
       ..add(ConstraintResponse.serializer)
       ..add(ConstraintUpdate.serializer)
+      ..add(EmailPreferenceResponse.serializer)
+      ..add(EmailPreferenceUpdate.serializer)
       ..add(EventCreate.serializer)
       ..add(EventResponse.serializer)
       ..add(EventUpdate.serializer)
@@ -58,6 +64,9 @@ Serializers _$serializers = (Serializers().toBuilder()
       ..add(ListResponseSolutionResponse.serializer)
       ..add(ListResponseTeamResponse.serializer)
       ..add(LoginRequest.serializer)
+      ..add(NotificationListResponse.serializer)
+      ..add(NotificationResponse.serializer)
+      ..add(NotificationStatsResponse.serializer)
       ..add(OccurrencePreview.serializer)
       ..add(OrganizationCreate.serializer)
       ..add(OrganizationResponse.serializer)
@@ -74,6 +83,9 @@ Serializers _$serializers = (Serializers().toBuilder()
       ..add(ResourceResponse.serializer)
       ..add(ResourceUpdate.serializer)
       ..add(SignupRequest.serializer)
+      ..add(SolutionAssignmentAssignee.serializer)
+      ..add(SolutionAssignmentEntry.serializer)
+      ..add(SolutionAssignmentsResponse.serializer)
       ..add(SolutionDiffResponse.serializer)
       ..add(SolutionMetrics.serializer)
       ..add(SolutionResponse.serializer)
@@ -138,6 +150,22 @@ Serializers _$serializers = (Serializers().toBuilder()
           () => ListBuilder<InvitationResponse>())
       ..addBuilderFactory(
           const FullType(
+              BuiltList, const [const FullType(NotificationResponse)]),
+          () => ListBuilder<NotificationResponse>())
+      ..addBuilderFactory(
+          const FullType(
+              BuiltList, const [const FullType(NotificationResponse)]),
+          () => ListBuilder<NotificationResponse>())
+      ..addBuilderFactory(
+          const FullType(
+              BuiltMap, const [const FullType(String), const FullType(int)]),
+          () => MapBuilder<String, int>())
+      ..addBuilderFactory(
+          const FullType(
+              BuiltMap, const [const FullType(String), const FullType(int)]),
+          () => MapBuilder<String, int>())
+      ..addBuilderFactory(
+          const FullType(
               BuiltList, const [const FullType(OrganizationResponse)]),
           () => ListBuilder<OrganizationResponse>())
       ..addBuilderFactory(
@@ -151,8 +179,22 @@ Serializers _$serializers = (Serializers().toBuilder()
           const FullType(BuiltList, const [const FullType(ResourceResponse)]),
           () => ListBuilder<ResourceResponse>())
       ..addBuilderFactory(
+          const FullType(
+              BuiltList, const [const FullType(SolutionAssignmentAssignee)]),
+          () => ListBuilder<SolutionAssignmentAssignee>())
+      ..addBuilderFactory(
+          const FullType(
+              BuiltList, const [const FullType(SolutionAssignmentEntry)]),
+          () => ListBuilder<SolutionAssignmentEntry>())
+      ..addBuilderFactory(
           const FullType(BuiltList, const [const FullType(SolutionResponse)]),
           () => ListBuilder<SolutionResponse>())
+      ..addBuilderFactory(
+          const FullType(BuiltList, const [const FullType(String)]),
+          () => ListBuilder<String>())
+      ..addBuilderFactory(
+          const FullType(BuiltList, const [const FullType(String)]),
+          () => ListBuilder<String>())
       ..addBuilderFactory(
           const FullType(BuiltList, const [const FullType(String)]),
           () => ListBuilder<String>())
@@ -208,6 +250,12 @@ Serializers _$serializers = (Serializers().toBuilder()
           const FullType(
               BuiltMap, const [const FullType(String), const FullType(int)]),
           () => MapBuilder<String, int>())
+      ..addBuilderFactory(
+          const FullType(BuiltMap, const [
+            const FullType(String),
+            const FullType.nullable(JsonObject)
+          ]),
+          () => MapBuilder<String, JsonObject?>())
       ..addBuilderFactory(
           const FullType(BuiltMap, const [
             const FullType(String),

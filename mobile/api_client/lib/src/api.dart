@@ -21,6 +21,7 @@ import 'package:signupflow_api/src/api/events_api.dart';
 import 'package:signupflow_api/src/api/health_api.dart';
 import 'package:signupflow_api/src/api/holidays_api.dart';
 import 'package:signupflow_api/src/api/invitations_api.dart';
+import 'package:signupflow_api/src/api/notifications_api.dart';
 import 'package:signupflow_api/src/api/organizations_api.dart';
 import 'package:signupflow_api/src/api/people_api.dart';
 import 'package:signupflow_api/src/api/recurring_events_api.dart';
@@ -154,6 +155,12 @@ class SignupflowApi {
   /// by doing that all interceptors will not be executed
   InvitationsApi getInvitationsApi() {
     return InvitationsApi(dio, serializers);
+  }
+
+  /// Get NotificationsApi instance, base route and serializer can be overridden by a given but be careful,
+  /// by doing that all interceptors will not be executed
+  NotificationsApi getNotificationsApi() {
+    return NotificationsApi(dio, serializers);
   }
 
   /// Get OrganizationsApi instance, base route and serializer can be overridden by a given but be careful,

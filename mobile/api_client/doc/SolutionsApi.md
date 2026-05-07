@@ -241,11 +241,11 @@ No authorization required
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
 # **getSolutionAssignments**
-> JsonObject getSolutionAssignments(solutionId)
+> SolutionAssignmentsResponse getSolutionAssignments(solutionId)
 
 Get Solution Assignments
 
-Get all assignments for a solution.
+Get all assignments for a solution, grouped by event.  Mobile Solution Review renders an event-grouped list, so we group server-side rather than forcing the client to do O(n²) regrouping every render.
 
 ### Example
 ```dart
@@ -270,7 +270,7 @@ Name | Type | Description  | Notes
 
 ### Return type
 
-[**JsonObject**](JsonObject.md)
+[**SolutionAssignmentsResponse**](SolutionAssignmentsResponse.md)
 
 ### Authorization
 

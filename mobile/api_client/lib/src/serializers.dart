@@ -21,6 +21,10 @@ import 'package:signupflow_api/src/model/assignment_response.dart';
 import 'package:signupflow_api/src/model/assignment_swap_request.dart';
 import 'package:signupflow_api/src/model/audit_log_response.dart';
 import 'package:signupflow_api/src/model/auth_response.dart';
+import 'package:signupflow_api/src/model/availability_exception_create.dart';
+import 'package:signupflow_api/src/model/availability_exception_response.dart';
+import 'package:signupflow_api/src/model/availability_rrule_response.dart';
+import 'package:signupflow_api/src/model/availability_rrule_update.dart';
 import 'package:signupflow_api/src/model/available_person.dart';
 import 'package:signupflow_api/src/model/bulk_import_item_error.dart';
 import 'package:signupflow_api/src/model/bulk_import_response.dart';
@@ -32,6 +36,8 @@ import 'package:signupflow_api/src/model/conflict_type.dart';
 import 'package:signupflow_api/src/model/constraint_create.dart';
 import 'package:signupflow_api/src/model/constraint_response.dart';
 import 'package:signupflow_api/src/model/constraint_update.dart';
+import 'package:signupflow_api/src/model/email_preference_response.dart';
+import 'package:signupflow_api/src/model/email_preference_update.dart';
 import 'package:signupflow_api/src/model/event_create.dart';
 import 'package:signupflow_api/src/model/event_response.dart';
 import 'package:signupflow_api/src/model/event_update.dart';
@@ -65,6 +71,9 @@ import 'package:signupflow_api/src/model/list_response_resource_response.dart';
 import 'package:signupflow_api/src/model/list_response_solution_response.dart';
 import 'package:signupflow_api/src/model/list_response_team_response.dart';
 import 'package:signupflow_api/src/model/login_request.dart';
+import 'package:signupflow_api/src/model/notification_list_response.dart';
+import 'package:signupflow_api/src/model/notification_response.dart';
+import 'package:signupflow_api/src/model/notification_stats_response.dart';
 import 'package:signupflow_api/src/model/occurrence_preview.dart';
 import 'package:signupflow_api/src/model/organization_create.dart';
 import 'package:signupflow_api/src/model/organization_response.dart';
@@ -81,6 +90,9 @@ import 'package:signupflow_api/src/model/resource_create.dart';
 import 'package:signupflow_api/src/model/resource_response.dart';
 import 'package:signupflow_api/src/model/resource_update.dart';
 import 'package:signupflow_api/src/model/signup_request.dart';
+import 'package:signupflow_api/src/model/solution_assignment_assignee.dart';
+import 'package:signupflow_api/src/model/solution_assignment_entry.dart';
+import 'package:signupflow_api/src/model/solution_assignments_response.dart';
 import 'package:signupflow_api/src/model/solution_diff_response.dart';
 import 'package:signupflow_api/src/model/solution_metrics.dart';
 import 'package:signupflow_api/src/model/solution_response.dart';
@@ -109,6 +121,10 @@ part 'serializers.g.dart';
   AssignmentSwapRequest,
   AuditLogResponse,
   AuthResponse,
+  AvailabilityExceptionCreate,
+  AvailabilityExceptionResponse,
+  AvailabilityRruleResponse,
+  AvailabilityRruleUpdate,
   AvailablePerson,
   BulkImportItemError,
   BulkImportResponse,
@@ -120,6 +136,8 @@ part 'serializers.g.dart';
   ConstraintCreate,
   ConstraintResponse,
   ConstraintUpdate,
+  EmailPreferenceResponse,
+  EmailPreferenceUpdate,
   EventCreate,
   EventResponse,
   EventUpdate,
@@ -153,6 +171,9 @@ part 'serializers.g.dart';
   ListResponseSolutionResponse,
   ListResponseTeamResponse,
   LoginRequest,
+  NotificationListResponse,
+  NotificationResponse,
+  NotificationStatsResponse,
   OccurrencePreview,
   OrganizationCreate,
   OrganizationResponse,
@@ -169,6 +190,9 @@ part 'serializers.g.dart';
   ResourceResponse,
   ResourceUpdate,
   SignupRequest,
+  SolutionAssignmentAssignee,
+  SolutionAssignmentEntry,
+  SolutionAssignmentsResponse,
   SolutionDiffResponse,
   SolutionMetrics,
   SolutionResponse,
@@ -188,6 +212,10 @@ part 'serializers.g.dart';
   WorkloadStats,
 ])
 Serializers serializers = (_$serializers.toBuilder()
+      ..addBuilderFactory(
+        const FullType(BuiltList, [FullType(AvailabilityExceptionResponse)]),
+        () => ListBuilder<AvailabilityExceptionResponse>(),
+      )
       ..addBuilderFactory(
         const FullType(BuiltList, [FullType(OccurrencePreview)]),
         () => ListBuilder<OccurrencePreview>(),
