@@ -1,21 +1,67 @@
-// Login screen — Sprint 7.1 stub. Real /auth/login wiring lands in 7.2.
-// Visual: matches mobile/prototype/screenshots/v2/01-login.png.
+// Login screen — wired to /auth/login + flutter_secure_storage in PR 7.2.
+// Visual matches mobile/prototype/screenshots/v2/01-login.png.
+// Demo shortcuts retained — they bypass the network for offline dev.
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-
 import 'package:signupflow_mobile/auth/auth_provider.dart';
 import 'package:signupflow_mobile/shared/widgets/brand.dart';
 import 'package:signupflow_mobile/theme/colors.dart';
 import 'package:signupflow_mobile/theme/components.dart';
 import 'package:signupflow_mobile/theme/typography.dart';
 
-class LoginScreen extends ConsumerWidget {
+class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<LoginScreen> createState() => _LoginScreenState();
+}
+
+class _LoginScreenState extends ConsumerState<LoginScreen> {
+  final _email = TextEditingController();
+  final _password = TextEditingController();
+  bool _busy = false;
+  String? _error;
+
+  @override
+  void dispose() {
+    _email.dispose();
+    _password.dispose();
+    super.dispose();
+  }
+
+  Future<void> _signIn() async {
+    if (_busy) return;
+    final email = _email.text.trim();
+    final pw = _password.text;
+    if (email.isEmpty || pw.isEmpty) {
+      setState(() => _error = 'Email and password required');
+      return;
+    }
+    setState(() {
+      _busy = true;
+      _error = null;
+    });
+    final err = await ref.read(authProvider.notifier).signIn(email, pw);
+    if (!mounted) return;
+    setState(() => _busy = false);
+    if (err != null) {
+      setState(() => _error = err);
+      return;
+    }
+    final role = ref.read(authProvider).role;
+    if (role == AuthRole.admin) {
+      context.go('/a/dashboard');
+    } else if (role == AuthRole.volunteer) {
+      context.go('/v/schedule');
+    } else {
+      setState(() => _error = 'No role assigned. Contact your admin.');
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final auth = ref.read(authProvider.notifier);
 
     return Scaffold(
@@ -36,21 +82,33 @@ class LoginScreen extends ConsumerWidget {
                 ),
                 const SizedBox(height: 44),
 
-                const _Field(label: 'Email', placeholder: 'you@church.org'),
+                _Field(
+                  label: 'Email',
+                  controller: _email,
+                  hint: 'you@church.org',
+                  keyboard: TextInputType.emailAddress,
+                ),
                 const SizedBox(height: 10),
-                const _Field(
+                _Field(
                   label: 'Password',
-                  placeholder: '•••••••',
+                  controller: _password,
+                  hint: '•••••••',
                   obscure: true,
                 ),
 
+                if (_error != null) ...[
+                  const SizedBox(height: 12),
+                  Text(
+                    _error!,
+                    style: BlockType.bodySm.copyWith(color: BlockColors.danger),
+                    textAlign: TextAlign.center,
+                  ),
+                ],
+
                 const SizedBox(height: 18),
                 BlockButton(
-                  label: 'Sign in',
-                  onPressed: () =>
-                      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-                    content: Text('Real /auth/login lands in PR 7.2'),
-                  )),
+                  label: _busy ? 'Signing in…' : 'Sign in',
+                  onPressed: _busy ? null : _signIn,
                 ),
                 const SizedBox(height: 20),
                 Text(
@@ -109,28 +167,42 @@ class LoginScreen extends ConsumerWidget {
 class _Field extends StatelessWidget {
   const _Field({
     required this.label,
-    required this.placeholder,
+    required this.controller,
+    required this.hint,
     this.obscure = false,
+    this.keyboard,
   });
 
   final String label;
-  final String placeholder;
+  final TextEditingController controller;
+  final String hint;
   final bool obscure;
+  final TextInputType? keyboard;
 
   @override
   Widget build(BuildContext context) {
     return BlockCard(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(label.toUpperCase(), style: BlockType.monoLabel.copyWith(fontSize: 10)),
-          const SizedBox(height: 4),
           Text(
-            placeholder,
-            style: BlockType.body.copyWith(
-              color: BlockColors.ink3,
-              letterSpacing: obscure ? 6 : 0,
+            label.toUpperCase(),
+            style: BlockType.monoLabel.copyWith(fontSize: 10),
+          ),
+          TextField(
+            controller: controller,
+            obscureText: obscure,
+            keyboardType: keyboard,
+            autocorrect: false,
+            enableSuggestions: !obscure,
+            style: BlockType.body,
+            decoration: InputDecoration(
+              hintText: hint,
+              hintStyle: BlockType.body.copyWith(color: BlockColors.ink3),
+              border: InputBorder.none,
+              isDense: true,
+              contentPadding: EdgeInsets.zero,
             ),
           ),
         ],
