@@ -1,0 +1,6 @@
+source "https://rubygems.org"
+
+# Fastlane is the standard iOS build/upload toolchain. Pinned to 2.x stable.
+gem "fastlane", "~> 2.227"
+
+# `pilot` and `match` are bundled with fastlane; no extra gems needed.

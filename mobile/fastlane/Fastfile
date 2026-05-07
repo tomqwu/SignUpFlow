@@ -1,0 +1,72 @@
+# Fastfile — Sprint 7 PR 7.11.
+#
+# Runs `flutter build ipa` to produce a signed archive, then uses `pilot`
+# (a fastlane action) to upload it to TestFlight. Authentication uses an
+# App Store Connect API key (preferred) — falls back to APPLE_ID + app-
+# specific password if APP_STORE_CONNECT_API_KEY_PATH isn't set.
+#
+# See mobile/TESTFLIGHT.md for the runbook.
+
+default_platform(:ios)
+
+platform :ios do
+  desc "Build the Flutter iOS app and upload to TestFlight"
+  lane :beta do |options|
+    flutter_root = File.expand_path("..", __dir__)
+
+    # 1. Make sure CocoaPods are up to date (flutter_secure_storage etc.).
+    sh("cd #{flutter_root}/ios && pod install --repo-update")
+
+    # 2. Bump the build number — uses git commit count for monotonicity.
+    build_number = sh("git rev-list --count HEAD").strip
+    UI.message("Using build number: #{build_number}")
+
+    # 3. Build the signed ipa via flutter.
+    sh(
+      "cd #{flutter_root} && flutter build ipa " \
+      "--release " \
+      "--build-number=#{build_number} " \
+      "--export-method=app-store"
+    )
+
+    ipa_path = "#{flutter_root}/build/ios/ipa/SignUpFlow.ipa"
+    UI.user_error!("ipa not found at #{ipa_path}") unless File.exist?(ipa_path)
+
+    # 4. Upload to TestFlight.
+    api_key_path = ENV["APP_STORE_CONNECT_API_KEY_PATH"]
+    if api_key_path && File.exist?(api_key_path)
+      api_key = app_store_connect_api_key(
+        key_id: ENV.fetch("APP_STORE_CONNECT_KEY_ID"),
+        issuer_id: ENV.fetch("APP_STORE_CONNECT_ISSUER_ID"),
+        key_filepath: api_key_path,
+      )
+      pilot(
+        api_key: api_key,
+        ipa: ipa_path,
+        skip_waiting_for_build_processing: true,
+        changelog: options[:changelog] || "Internal build",
+      )
+    else
+      UI.message("APP_STORE_CONNECT_API_KEY_PATH not set; falling back to APPLE_ID auth")
+      pilot(
+        ipa: ipa_path,
+        skip_waiting_for_build_processing: true,
+        changelog: options[:changelog] || "Internal build",
+      )
+    end
+
+    UI.success("✅ Uploaded build #{build_number} to TestFlight")
+  end
+
+  desc "Local-only: build the ipa without uploading (smoke test the build)"
+  lane :build_only do
+    flutter_root = File.expand_path("..", __dir__)
+    sh("cd #{flutter_root}/ios && pod install --repo-update")
+    sh(
+      "cd #{flutter_root} && flutter build ipa " \
+      "--release " \
+      "--export-method=app-store"
+    )
+    UI.success("✅ ipa built at build/ios/ipa/SignUpFlow.ipa")
+  end
+end

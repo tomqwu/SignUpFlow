@@ -1,0 +1,15 @@
+# Apple identifiers — these are public (Team ID + bundle ID appear on App Store).
+# Apple ID password / app-specific password / API key are NOT here — they live
+# in env vars (see TESTFLIGHT.md).
+
+app_identifier("app.signupflow.ios")
+team_id("T32FW7PZ3S")
+
+# Apple ID is read from env var to avoid embedding it in version control.
+# Set APPLE_ID before running fastlane. Example:
+#   export APPLE_ID="you@example.com"
+apple_id(ENV["APPLE_ID"])
+
+# App Store Connect app id — the numeric one assigned when the app was
+# registered in App Store Connect. Used by `pilot` to target the right app.
+itc_team_id("6767228040")

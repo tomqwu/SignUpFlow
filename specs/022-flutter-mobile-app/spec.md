@@ -177,22 +177,23 @@ mobile-codegen: check-poetry
 
 ## PR sequencing (Sprint 7)
 
-| PR     | Branch                                           | Scope |
-| ------ | ------------------------------------------------ | ----- |
-| **7.0** | `sprint-7-0-flutter-mobile-spec`                 | This spec doc + the HTML prototype + brand-spec.md (already built) |
-| **7.1** | `sprint-7-1-flutter-skeleton`                    | `flutter create mobile/`, theme, GoRouter, role-aware tab bar shells with empty screens |
-| **7.2** | `sprint-7-2-openapi-codegen-auth`                | `mobile-codegen` Make target wired, generated `lib/api/`, login flow + JWT secure storage + role detection |
-| **7.3** | `sprint-7-3-volunteer-schedule`                  | Real Schedule screen against `GET /people/me/assignments` |
-| **7.4** | `sprint-7-4-assignment-detail`                   | Assignment detail + accept/decline/swap |
-| **7.5** | `sprint-7-5-availability`                        | Calendar grid + recurring rule editor |
-| **7.6** | `sprint-7-6-volunteer-profile-ics`               | Profile + ICS export + log out |
-| **7.7** | `sprint-7-7-admin-dashboard`                     | Dashboard + KPI fetch + recent solutions list |
-| **7.8** | `sprint-7-8-admin-people-events`                 | People list + invite + Events list + recurring series |
-| **7.9** | `sprint-7-9-solver-flow`                         | Run Solver + Solution Review (assignments/stats/conflicts segments) |
-| **7.10** | `sprint-7-10-compare-publish-rollback`           | Compare diff + Publish + Rollback history |
-| **7.11** | `sprint-7-11-testflight`                         | TestFlight build, smoke test on real iPhone, fix any platform-specific bugs |
+| PR | Branch | Scope | Status |
+| -- | ------ | ----- | ------ |
+| **7.0** | `sprint-7-0-flutter-mobile-spec` | Spec doc + HTML prototype + brand-spec.md | ✅ shipped |
+| **7.1** | `sprint-7-1-flutter-skeleton` | `flutter create`, theme, GoRouter, role-aware tab bar shells | ✅ shipped |
+| **7.2** | `sprint-7-2-openapi-codegen-auth` | `mobile-codegen` target, hand-rolled client, login + JWT secure storage + role | ✅ shipped |
+| **7.2b** | `sprint-7-2b-run-mobile-codegen` | Real `signupflow_api` package generated, hand-rolled client retired | ✅ shipped |
+| **7.3** | `sprint-7-3-volunteer-schedule` | Schedule against `GET /people/me/assignments` | ✅ shipped |
+| **7.4** | `sprint-7-4-assignment-detail` | Assignment detail + Accept/Decline/Swap | ✅ shipped |
+| **7.5** | `sprint-7-5-availability` | Availability TimeOff (recurring rules deferred — backend gap) | ✅ shipped |
+| **7.6** | `sprint-7-6-volunteer-profile-ics` | Profile + ICS export + log out | ✅ shipped |
+| **7.7** | `sprint-7-7-admin-dashboard` | Dashboard with KPIs + recent solutions list | ✅ shipped |
+| **7.8** | `sprint-7-8-admin-people-events` | People list + invite + Events list + recurring series | ✅ shipped |
+| **7.9** | `sprint-7-9-solver-flow` | Run Solver + Solution Review (Assignments/Stats/Conflicts) | ✅ shipped |
+| **7.10** | `sprint-7-10-compare-publish-rollback` | Compare diff + Publish + Rollback history | ✅ shipped |
+| **7.11** | `sprint-7-11-testflight` | Fastlane lane + Gemfile + TESTFLIGHT.md runbook | ✅ shipped (build/upload is a manual user step) |
 
-If volunteer-only is enough for first ship, **MVP1 = 7.0–7.6** (volunteer journey complete, admin uses web for now). MVP2 = 7.7–7.11.
+**Sprint 7 status**: functionally complete. App is ready for TestFlight upload; the upload itself needs the user (Apple ID 2FA, sudo xcode-select). Runbook at `mobile/TESTFLIGHT.md`.
 
 ## Out of scope for Sprint 7
 
@@ -232,7 +233,39 @@ I'll add a `mobile/README.md` in 7.1 covering local setup; this list above is ju
 
 ## Open questions for the user (answer before 7.1)
 
-1. **Existing Apple Developer account**, or do we provision later? (Affects 7.11 only — fine to defer.)
-2. **Bundle identifier**: I'll suggest `app.signupflow.ios` (matches the placeholder calendar URL in the prototype `https://api.signupflow.app/...`). Confirm or override.
-3. **Dev API base URL**: prototype uses `localhost:8000`. For TestFlight we'll need a real hosted URL. Confirm hosting plan or note "pin localhost for now".
+1. **Existing Apple Developer account**, or do we provision later? (Affects 7.11 only — fine to defer.) — **Answered 2026-05-07**: Team `T32FW7PZ3S`, ASC App `6767228040`.
+2. **Bundle identifier**: I'll suggest `app.signupflow.ios` (matches the placeholder calendar URL in the prototype `https://api.signupflow.app/...`). Confirm or override. — **Answered 2026-05-07**: `app.signupflow.ios` confirmed.
+3. **Dev API base URL**: prototype uses `localhost:8000`. For TestFlight we'll need a real hosted URL. Confirm hosting plan or note "pin localhost for now". — **Pending** (Azure-hosted backend at TestFlight time; see follow-ups below).
+4. **MVP scope**: ship volunteer-only at 7.6, or wait for full 7.11. — **Answered 2026-05-07**: full Sprint 7.
+
+---
+
+## Sprint 7 closeout (2026-05-07)
+
+**What shipped**:
+
+- Volunteer journey end-to-end: login (Keychain JWT) → schedule → assignment detail (Accept/Decline/Swap) → availability (TimeOff) → profile (ICS export, log out).
+- Admin journey end-to-end: dashboard → people + invite → events + recurring series → solver → solution review (Assignments/Stats/Conflicts) → compare → publish/unpublish/rollback.
+- Block-Mono brand applied consistently per `mobile/prototype/brand-spec.md`.
+- 25 widget + unit tests passing.
+- Generated `signupflow_api` Dart package committed (regenerable via `make mobile-codegen`).
+- Fastlane `beta` lane + `mobile/TESTFLIGHT.md` runbook for the upload.
+
+**What still needs the user (cannot run headlessly)**:
+
+1. `sudo xcode-select -s /Applications/Xcode.app/Contents/Developer` — full Xcode active.
+2. Apple ID 2FA / app-specific password OR App Store Connect API key — either auth path works (see `TESTFLIGHT.md`).
+3. App Store Connect app registration with bundle id `app.signupflow.ios` and SKU.
+4. Azure-hosted backend URL — App ships pointing at `http://localhost:8000` until then. Set via `--dart-define=API_BASE_URL=https://...` at build time.
+5. `bundle exec fastlane beta` from `mobile/`.
+6. On-device smoke test before App Store review submission.
+
+**Known follow-ups (deferred, not regressions)**:
+
+- Recurring rule + single-date exception CRUD endpoints on the backend (would unlock the rrule editor in availability, currently a "COMING SOON" callout).
+- `/notifications` endpoint (would unlock the volunteer Inbox tab, currently dropped from MVP).
+- Per-event assignments view in Solution Review (currently a "coming in 7.10" callout — getSolutionAssignments returns `JsonObject`; rendering needs an enriched join. Solvable via a small backend response-model PR).
+- Token refresh (24h re-login is acceptable for MVP1).
+- Dark mode (Sprint 8 — needs brand-spec dark variant).
+- Android (Flutter codebase makes it cheap; pull when iOS is stable on TestFlight).
 4. **MVP scope**: ship volunteer-only (7.0–7.6) and call that MVP1, or wait until full 7.0–7.11 shipped together?
