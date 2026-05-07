@@ -30,6 +30,10 @@ class LoginRepository {
       return AuthState(
         role: _resolveRole(body.roles.toList()),
         token: body.token,
+        personId: body.personId,
+        email: body.email,
+        orgId: body.orgId,
+        name: body.name,
       );
     } on DioException catch (e) {
       final code = e.response?.statusCode;
