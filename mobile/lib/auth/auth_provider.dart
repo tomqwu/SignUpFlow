@@ -9,12 +9,38 @@ import 'package:signupflow_mobile/auth/secure_token_storage.dart';
 enum AuthRole { unauth, volunteer, admin }
 
 class AuthState {
-  const AuthState({this.role = AuthRole.unauth, this.token});
+  const AuthState({
+    this.role = AuthRole.unauth,
+    this.token,
+    this.personId,
+    this.email,
+    this.orgId,
+    this.name,
+  });
+
   final AuthRole role;
   final String? token;
+  final String? personId;
+  final String? email;
+  final String? orgId;
+  final String? name;
 
-  AuthState copyWith({AuthRole? role, String? token}) =>
-      AuthState(role: role ?? this.role, token: token ?? this.token);
+  AuthState copyWith({
+    AuthRole? role,
+    String? token,
+    String? personId,
+    String? email,
+    String? orgId,
+    String? name,
+  }) =>
+      AuthState(
+        role: role ?? this.role,
+        token: token ?? this.token,
+        personId: personId ?? this.personId,
+        email: email ?? this.email,
+        orgId: orgId ?? this.orgId,
+        name: name ?? this.name,
+      );
 }
 
 class AuthController extends Notifier<AuthState> {
