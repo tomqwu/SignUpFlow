@@ -273,29 +273,30 @@ class KpiCell extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          RichText(
-            text: TextSpan(
-              style: GoogleFonts.inter(
-                fontSize: 26,
-                fontWeight: FontWeight.w700,
-                letterSpacing: -0.65,
-                color: color,
-                height: 1.05,
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.baseline,
+            textBaseline: TextBaseline.alphabetic,
+            children: [
+              Text(
+                value,
+                style: GoogleFonts.inter(
+                  fontSize: 26,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: -0.65,
+                  color: color,
+                  height: 1.05,
+                ),
               ),
-              children: [
-                TextSpan(text: value),
-                if (unit != null)
-                  TextSpan(
-                    text: unit,
-                    style: GoogleFonts.inter(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w500,
-                      color: BlockColors.ink2,
-                      letterSpacing: 0,
-                    ),
+              if (unit != null)
+                Text(
+                  unit!,
+                  style: GoogleFonts.inter(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w500,
+                    color: BlockColors.ink2,
                   ),
-              ],
-            ),
+                ),
+            ],
           ),
           const SizedBox(height: 4),
           Text(label.toUpperCase(), style: BlockType.monoTiny),
