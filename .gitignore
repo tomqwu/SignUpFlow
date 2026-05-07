@@ -29,6 +29,13 @@ mobile/ios/Pods/
 mobile/ios/.symlinks/
 mobile/.idea/
 
+# macOS Finder / iCloud duplicates — `Podfile 2`, `lib 2/`, etc.
+# These are sync artifacts, never source.
+* 2
+* 2.*
+*\ 2
+*\ 2.*
+
 # Virtual environments
 venv/
 env/
