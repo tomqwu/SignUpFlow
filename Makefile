@@ -269,7 +269,31 @@ test-contract: check-poetry
 update-openapi-snapshot: check-poetry
 	@echo "🔄 Refreshing OpenAPI contract snapshot..."
 	@poetry run python -m tests.contract.test_openapi_snapshot --update
-	@echo "✅ Snapshot updated. Review the diff, run 'make mobile-codegen' once mobile/ exists, then commit."
+	@echo "✅ Snapshot updated. Review the diff, run 'make mobile-codegen' to refresh the Flutter client, then commit."
+
+# ============================================================================
+# Mobile (Flutter) — see specs/022-flutter-mobile-app/spec.md
+# ============================================================================
+
+# Regenerate the Dart API client from the OpenAPI snapshot.
+# Requires: openjdk@17 (`brew install openjdk@17`) and node (already required).
+# Run after any backend API change that you want surfaced to the iOS app.
+mobile-codegen:
+	@echo "🔄 Generating Flutter API client from OpenAPI snapshot..."
+	@command -v java >/dev/null 2>&1 || { \
+		echo "❌ Java not found. Install with: brew install openjdk@17"; \
+		echo "   Then either re-link or set JAVA_HOME to /opt/homebrew/opt/openjdk@17."; \
+		exit 1; \
+	}
+	@npx -y @openapitools/openapi-generator-cli@2.20.2 generate \
+	  -i tests/contract/openapi.snapshot.json \
+	  -g dart-dio \
+	  -o mobile/lib/api \
+	  --additional-properties=pubName=signupflow_api,pubVersion=0.0.1,nullSafe=true,nullableFields=true \
+	  --skip-validate-spec
+	@cd mobile && PATH=/Users/tomwu/Projects/flutter/bin:$$PATH flutter pub get
+	@cd mobile && PATH=/Users/tomwu/Projects/flutter/bin:$$PATH dart run build_runner build --delete-conflicting-outputs
+	@echo "✅ Mobile API client regenerated at mobile/lib/api/."
 
 # ============================================================================
 # Docker Compose Commands (Development Environment)
