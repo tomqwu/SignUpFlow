@@ -100,7 +100,7 @@ What this does:
 
 1. Runs `pod install --repo-update`.
 2. Runs `flutter build ipa --release --build-number=<git-rev-count> --export-method=app-store`.
-3. Uploads `build/ios/ipa/SignUpFlow.ipa` to TestFlight via `pilot`.
+3. Uploads `build/ios/ipa/signupflow_mobile.ipa` to TestFlight via `pilot`.
 4. Skips waiting for processing (Apple's processing usually takes 5–15 min; you'll get an email).
 
 Build number uses `git rev-list --count HEAD` so it's monotonic and never collides with prior uploads.
@@ -115,7 +115,7 @@ If you want to inspect the ipa locally first:
 bundle exec fastlane build_only
 ```
 
-Outputs `build/ios/ipa/SignUpFlow.ipa` without uploading. Drag it into Xcode → Window → Devices & Simulators → connected iPhone → install.
+Outputs `build/ios/ipa/signupflow_mobile.ipa` without uploading. Drag it into Xcode → Window → Devices & Simulators → connected iPhone → install.
 
 ---
 
@@ -144,7 +144,7 @@ If anything's off, file an issue against `specs/022-flutter-mobile-app/spec.md` 
 | `Could not find a development team` | Xcode automatic signing not enabled | Open `Runner.xcworkspace` in Xcode → Signing & Capabilities → tick "Automatically manage signing" |
 | `Pod install failed` | Stale lockfile | `cd mobile/ios && pod deintegrate && pod install` |
 | `2-factor required` during `pilot` | Need app-specific password | Use path B above |
-| `ipa not found at build/ios/ipa/SignUpFlow.ipa` | Flutter didn't produce an export | `flutter clean && flutter pub get` then retry |
+| `ipa not found at build/ios/ipa/signupflow_mobile.ipa` | Flutter didn't produce an export | `flutter clean && flutter pub get` then retry |
 | Upload succeeds but TestFlight says "Build is invalid" | Missing Info.plist key (push, etc.) | Read the email Apple sent; add the key in `mobile/ios/Runner/Info.plist` |
 
 ---
