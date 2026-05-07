@@ -26,6 +26,7 @@ from api.routers import (
     events,
     holidays,
     invitations,
+    notifications,
     organizations,
     password_reset,
     people,
@@ -144,6 +145,7 @@ app.include_router(audit.router, prefix="/api/v1")
 app.include_router(recurring_events.router, prefix="/api/v1")
 app.include_router(resources.router, prefix="/api/v1")
 app.include_router(holidays.router, prefix="/api/v1")
+app.include_router(notifications.router, prefix="/api/v1")
 
 
 @app.get("/api/v1", tags=["root"])

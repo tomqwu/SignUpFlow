@@ -806,6 +806,165 @@
         "title": "ConstraintUpdate",
         "type": "object"
       },
+      "EmailPreferenceResponse": {
+        "description": "Schema for email preference response.",
+        "properties": {
+          "digest_hour": {
+            "default": 8,
+            "description": "Hour to send digests (0-23)",
+            "maximum": 23.0,
+            "minimum": 0.0,
+            "title": "Digest Hour",
+            "type": "integer"
+          },
+          "enabled_types": {
+            "description": "List of enabled notification types",
+            "items": {
+              "type": "string"
+            },
+            "title": "Enabled Types",
+            "type": "array"
+          },
+          "frequency": {
+            "default": "immediate",
+            "description": "Email frequency (immediate, daily, weekly, disabled)",
+            "title": "Frequency",
+            "type": "string"
+          },
+          "id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Id"
+          },
+          "language": {
+            "default": "en",
+            "description": "Email language preference (ISO 639-1 code)",
+            "title": "Language",
+            "type": "string"
+          },
+          "org_id": {
+            "title": "Org Id",
+            "type": "string"
+          },
+          "person_id": {
+            "title": "Person Id",
+            "type": "string"
+          },
+          "timezone": {
+            "default": "UTC",
+            "description": "Timezone for digest scheduling",
+            "title": "Timezone",
+            "type": "string"
+          },
+          "unsubscribe_token": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Unsubscribe Token"
+          },
+          "updated_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Updated At"
+          }
+        },
+        "required": [
+          "person_id",
+          "org_id"
+        ],
+        "title": "EmailPreferenceResponse",
+        "type": "object"
+      },
+      "EmailPreferenceUpdate": {
+        "description": "Schema for updating email preferences.",
+        "properties": {
+          "digest_hour": {
+            "anyOf": [
+              {
+                "maximum": 23.0,
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Hour to send digests (0-23)",
+            "title": "Digest Hour"
+          },
+          "enabled_types": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "List of enabled notification types",
+            "title": "Enabled Types"
+          },
+          "frequency": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Email frequency (immediate, daily, weekly, disabled)",
+            "title": "Frequency"
+          },
+          "language": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Email language preference",
+            "title": "Language"
+          },
+          "timezone": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Timezone for digest scheduling",
+            "title": "Timezone"
+          }
+        },
+        "title": "EmailPreferenceUpdate",
+        "type": "object"
+      },
       "EventCreate": {
         "description": "Schema for creating an event.",
         "properties": {
@@ -1972,6 +2131,242 @@
           "password"
         ],
         "title": "LoginRequest",
+        "type": "object"
+      },
+      "NotificationListResponse": {
+        "description": "Schema for paginated notification list.",
+        "properties": {
+          "limit": {
+            "title": "Limit",
+            "type": "integer"
+          },
+          "notifications": {
+            "items": {
+              "$ref": "#/components/schemas/NotificationResponse"
+            },
+            "title": "Notifications",
+            "type": "array"
+          },
+          "offset": {
+            "title": "Offset",
+            "type": "integer"
+          },
+          "total": {
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "notifications",
+          "total",
+          "limit",
+          "offset"
+        ],
+        "title": "NotificationListResponse",
+        "type": "object"
+      },
+      "NotificationResponse": {
+        "description": "Schema for notification response.",
+        "properties": {
+          "clicked_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Clicked At"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "delivered_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Delivered At"
+          },
+          "error_message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error Message"
+          },
+          "event_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Related event ID",
+            "title": "Event Id"
+          },
+          "id": {
+            "title": "Id",
+            "type": "integer"
+          },
+          "opened_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Opened At"
+          },
+          "org_id": {
+            "title": "Org Id",
+            "type": "string"
+          },
+          "recipient_id": {
+            "title": "Recipient Id",
+            "type": "string"
+          },
+          "retry_count": {
+            "title": "Retry Count",
+            "type": "integer"
+          },
+          "sendgrid_message_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sendgrid Message Id"
+          },
+          "sent_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sent At"
+          },
+          "status": {
+            "description": "Notification status (pending, sent, delivered, etc.)",
+            "title": "Status",
+            "type": "string"
+          },
+          "template_data": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Template rendering data",
+            "title": "Template Data"
+          },
+          "type": {
+            "description": "Notification type (assignment, reminder, update, cancellation)",
+            "title": "Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "type",
+          "status",
+          "id",
+          "org_id",
+          "recipient_id",
+          "retry_count",
+          "created_at"
+        ],
+        "title": "NotificationResponse",
+        "type": "object"
+      },
+      "NotificationStatsResponse": {
+        "description": "Schema for organization notification statistics.",
+        "properties": {
+          "days_analyzed": {
+            "title": "Days Analyzed",
+            "type": "integer"
+          },
+          "delivered_notifications": {
+            "title": "Delivered Notifications",
+            "type": "integer"
+          },
+          "org_id": {
+            "title": "Org Id",
+            "type": "string"
+          },
+          "recent_failures": {
+            "description": "Recent failed notifications",
+            "items": {
+              "$ref": "#/components/schemas/NotificationResponse"
+            },
+            "title": "Recent Failures",
+            "type": "array"
+          },
+          "status_breakdown": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "description": "Count of notifications by status",
+            "title": "Status Breakdown",
+            "type": "object"
+          },
+          "success_rate": {
+            "description": "Delivery success rate percentage",
+            "title": "Success Rate",
+            "type": "number"
+          },
+          "total_notifications": {
+            "title": "Total Notifications",
+            "type": "integer"
+          },
+          "type_breakdown": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "description": "Count of notifications by type",
+            "title": "Type Breakdown",
+            "type": "object"
+          }
+        },
+        "required": [
+          "org_id",
+          "days_analyzed",
+          "total_notifications",
+          "delivered_notifications",
+          "success_rate",
+          "status_breakdown",
+          "type_breakdown",
+          "recent_failures"
+        ],
+        "title": "NotificationStatsResponse",
         "type": "object"
       },
       "OccurrencePreview": {
@@ -6778,6 +7173,435 @@
         "summary": "Accept Invitation",
         "tags": [
           "invitations"
+        ]
+      }
+    },
+    "/api/v1/notifications/": {
+      "get": {
+        "description": "List notifications for current user.\n\nVolunteers see only their own notifications.\nAdmins see all organization notifications.\n\n**RBAC**: Authenticated user (volunteer or admin)\n**Multi-tenant**: Filtered by org_id (and recipient_id for volunteers)",
+        "operationId": "listNotifications",
+        "parameters": [
+          {
+            "description": "Organization ID",
+            "in": "query",
+            "name": "org_id",
+            "required": true,
+            "schema": {
+              "description": "Organization ID",
+              "title": "Org Id",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Filter by status (pending, sent, delivered, etc.)",
+            "in": "query",
+            "name": "status",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Filter by status (pending, sent, delivered, etc.)",
+              "title": "Status"
+            }
+          },
+          {
+            "description": "Filter by type (assignment, reminder, update, cancellation)",
+            "in": "query",
+            "name": "type",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Filter by type (assignment, reminder, update, cancellation)",
+              "title": "Type"
+            }
+          },
+          {
+            "description": "Number of notifications to return",
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 50,
+              "description": "Number of notifications to return",
+              "maximum": 100,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          },
+          {
+            "description": "Pagination offset",
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "description": "Pagination offset",
+              "minimum": 0,
+              "title": "Offset",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotificationListResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "List Notifications",
+        "tags": [
+          "notifications"
+        ]
+      }
+    },
+    "/api/v1/notifications/preferences/me": {
+      "get": {
+        "description": "Get current user's email notification preferences.\n\nReturns default preferences if none exist yet.\n\n**RBAC**: Authenticated user",
+        "operationId": "getMyEmailPreferences",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EmailPreferenceResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Get My Email Preferences",
+        "tags": [
+          "notifications"
+        ]
+      },
+      "put": {
+        "description": "Update current user's email notification preferences.\n\nAllows users to:\n- Change notification frequency (immediate, daily, weekly, disabled)\n- Enable/disable specific notification types\n- Set language and timezone for emails\n- Set preferred digest delivery hour\n\n**RBAC**: Authenticated user",
+        "operationId": "updateMyEmailPreferences",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EmailPreferenceUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EmailPreferenceResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Update My Email Preferences",
+        "tags": [
+          "notifications"
+        ]
+      }
+    },
+    "/api/v1/notifications/stats/organization": {
+      "get": {
+        "description": "Get organization-wide notification statistics.\n\nProvides metrics for admins:\n- Total notifications sent by type\n- Delivery success rate\n- Open/click rates\n- Recent failures\n\n**RBAC**: Admin only\n**Multi-tenant**: Filtered by org_id",
+        "operationId": "getOrganizationNotificationStats",
+        "parameters": [
+          {
+            "description": "Organization ID",
+            "in": "query",
+            "name": "org_id",
+            "required": true,
+            "schema": {
+              "description": "Organization ID",
+              "title": "Org Id",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Number of days to analyze",
+            "in": "query",
+            "name": "days",
+            "required": false,
+            "schema": {
+              "default": 7,
+              "description": "Number of days to analyze",
+              "maximum": 90,
+              "minimum": 1,
+              "title": "Days",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotificationStatsResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Get Organization Notification Stats",
+        "tags": [
+          "notifications"
+        ]
+      }
+    },
+    "/api/v1/notifications/test/send": {
+      "post": {
+        "description": "Send a test email notification to verify email configuration.\n\nSends a test assignment notification to the specified email address.\nUseful for testing SendGrid configuration, SMTP settings, and template rendering.\n\n**RBAC**: Admin only\n**Multi-tenant**: Verified by admin's org_id",
+        "operationId": "sendTestNotification",
+        "parameters": [
+          {
+            "description": "Email address to send test notification",
+            "in": "query",
+            "name": "recipient_email",
+            "required": true,
+            "schema": {
+              "description": "Email address to send test notification",
+              "title": "Recipient Email",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Organization ID",
+            "in": "query",
+            "name": "org_id",
+            "required": true,
+            "schema": {
+              "description": "Organization ID",
+              "title": "Org Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Send Test Notification",
+        "tags": [
+          "notifications"
+        ]
+      }
+    },
+    "/api/v1/notifications/unread/count": {
+      "get": {
+        "description": "Return the number of unread notifications for the current user.\n\nMobile Inbox uses this for the unread-dot badge on the tab bar.\nA notification is \"unread\" when neither ``opened_at`` nor\n``clicked_at`` is set yet.",
+        "operationId": "getUnreadCount",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Get Unread Count",
+        "tags": [
+          "notifications"
+        ]
+      }
+    },
+    "/api/v1/notifications/{notification_id}": {
+      "get": {
+        "description": "Get single notification details.\n\nUsers can only view their own notifications.\n\n**RBAC**: Authenticated user (must be notification recipient)\n**Multi-tenant**: Verified by recipient_id",
+        "operationId": "getNotification",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "notification_id",
+            "required": true,
+            "schema": {
+              "title": "Notification Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotificationResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Get Notification",
+        "tags": [
+          "notifications"
+        ]
+      }
+    },
+    "/api/v1/notifications/{notification_id}/read": {
+      "post": {
+        "description": "Mark a notification as read by the recipient.\n\nSets ``opened_at`` to now (idempotent \u2014 does nothing if already set).\nThe mobile Inbox calls this when the user taps a row.",
+        "operationId": "markNotificationRead",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "notification_id",
+            "required": true,
+            "schema": {
+              "title": "Notification Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotificationResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Mark Notification Read",
+        "tags": [
+          "notifications"
         ]
       }
     },

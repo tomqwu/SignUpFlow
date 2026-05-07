@@ -112,6 +112,63 @@ async def get_notification(
     return notification
 
 
+@router.get("/notifications/unread/count")
+async def get_unread_count(
+    current_user: Person = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Return the number of unread notifications for the current user.
+
+    Mobile Inbox uses this for the unread-dot badge on the tab bar.
+    A notification is "unread" when neither ``opened_at`` nor
+    ``clicked_at`` is set yet.
+    """
+    count = (
+        db.query(func.count(Notification.id))
+        .filter(
+            Notification.org_id == current_user.org_id,
+            Notification.recipient_id == current_user.id,
+            Notification.opened_at.is_(None),
+            Notification.clicked_at.is_(None),
+        )
+        .scalar()
+    )
+    return {"unread": int(count or 0)}
+
+
+@router.post("/notifications/{notification_id}/read", response_model=NotificationResponse)
+async def mark_notification_read(
+    notification_id: int,
+    current_user: Person = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Mark a notification as read by the recipient.
+
+    Sets ``opened_at`` to now (idempotent — does nothing if already set).
+    The mobile Inbox calls this when the user taps a row.
+    """
+    from api.timeutils import utcnow
+
+    notification = db.query(Notification).filter(Notification.id == notification_id).first()
+    if not notification:
+        raise HTTPException(status_code=404, detail="Notification not found")
+    if notification.recipient_id != current_user.id:
+        raise HTTPException(
+            status_code=403,
+            detail="Access denied: You can only mark your own notifications read",
+        )
+    if notification.opened_at is None:
+        notification.opened_at = utcnow()
+        if notification.status not in (
+            NotificationStatus.OPENED,
+            NotificationStatus.CLICKED,
+        ):
+            notification.status = NotificationStatus.OPENED
+        db.commit()
+        db.refresh(notification)
+    return notification
+
+
 @router.get("/notifications/preferences/me", response_model=EmailPreferenceResponse)
 async def get_my_email_preferences(
     current_user: Person = Depends(get_current_user), db: Session = Depends(get_db)
