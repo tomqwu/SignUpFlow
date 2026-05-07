@@ -1,0 +1,602 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SignUpFlow · Brand v1 — 3 wordmark + icon directions</title>
+<!--
+  ============================================================================
+  SignUpFlow Brand exploration — Junior pass
+  ============================================================================
+
+  Three differentiated wordmark + icon directions, all anchored within the
+  Cron/Notion Calendar visual territory but pulling from three different
+  design schools (per huashu-design design-direction-advisor rule that
+  variations must come from different schools to be useful):
+
+    A · Calendar-Grid       — Pentagram-style information architecture
+    B · Soft-Overlap        — Community-warm, East-Asian restraint
+    C · Block-Mono          — Things/Linear confident-bold
+
+  The user picks one — that becomes the brand spec for the iOS Full pass
+  and the eventual Flutter app.
+  ============================================================================
+-->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=DM+Serif+Display&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+<style>
+  :root {
+    /* Shared neutral chrome for the gallery itself */
+    --gallery-bg:    #F0EFEC;
+    --gallery-card:  #FFFFFF;
+    --gallery-line:  #E4E4E7;
+    --gallery-ink-1: #18181B;
+    --gallery-ink-2: #52525B;
+    --gallery-ink-3: #A1A1AA;
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0; padding: 0;
+    background: var(--gallery-bg);
+    font-family: 'Inter', -apple-system, system-ui, sans-serif;
+    color: var(--gallery-ink-1);
+    -webkit-font-smoothing: antialiased;
+    font-feature-settings: 'cv11', 'ss01';
+  }
+
+  .stage {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 48px 32px 96px;
+  }
+
+  .header {
+    text-align: center;
+    margin-bottom: 56px;
+  }
+  .header h1 {
+    font-size: 28px;
+    font-weight: 600;
+    letter-spacing: -0.015em;
+    margin: 0 0 8px;
+  }
+  .header p {
+    color: var(--gallery-ink-2);
+    font-size: 14px;
+    margin: 0;
+    max-width: 720px;
+    margin-left: auto; margin-right: auto;
+    line-height: 1.6;
+  }
+
+  .gallery {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+    align-items: start;
+  }
+  @media (max-width: 1024px) {
+    .gallery { grid-template-columns: 1fr; gap: 32px; }
+  }
+
+  .card {
+    background: var(--gallery-card);
+    border: 1px solid var(--gallery-line);
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 1px 2px rgba(24,24,27,0.04), 0 4px 16px rgba(24,24,27,0.05);
+  }
+  .card-header {
+    padding: 18px 22px 14px;
+    border-bottom: 1px solid var(--gallery-line);
+  }
+  .card-letter {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    color: var(--gallery-ink-3);
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    font-weight: 500;
+  }
+  .card-title {
+    font-size: 20px;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    margin: 4px 0 4px;
+  }
+  .card-school {
+    font-size: 11px;
+    color: var(--gallery-ink-3);
+    font-style: italic;
+  }
+
+  .card-section {
+    padding: 22px;
+    border-bottom: 1px solid var(--gallery-line);
+  }
+  .card-section:last-child { border-bottom: 0; }
+  .section-label {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--gallery-ink-3);
+    font-weight: 500;
+    margin-bottom: 14px;
+  }
+
+  /* — Wordmark display areas — */
+  .wordmark-display {
+    display: flex; align-items: center; justify-content: center;
+    min-height: 120px;
+  }
+
+  /* — Icon grid — */
+  .icon-row {
+    display: flex; gap: 18px; align-items: flex-end;
+    justify-content: center;
+    padding: 8px 0;
+  }
+  .icon-cell {
+    display: flex; flex-direction: column;
+    align-items: center; gap: 6px;
+  }
+  .icon-cell-label {
+    font-size: 9px; color: var(--gallery-ink-3);
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  /* — Palette swatches — */
+  .palette {
+    display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px;
+  }
+  .swatch {
+    height: 56px;
+    border-radius: 8px;
+    position: relative;
+    border: 1px solid rgba(0,0,0,0.06);
+  }
+  .swatch-label {
+    position: absolute;
+    bottom: 6px; left: 8px;
+    font-size: 9px;
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 500;
+    letter-spacing: 0.02em;
+  }
+
+  /* — Typography pairing — */
+  .type-pair {
+    display: flex; flex-direction: column; gap: 14px;
+  }
+  .type-row {
+    border-left: 2px solid var(--gallery-line);
+    padding-left: 12px;
+  }
+  .type-meta {
+    font-size: 10px;
+    color: var(--gallery-ink-3);
+    font-family: 'JetBrains Mono', monospace;
+    margin-bottom: 4px;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+
+  /* — Philosophy line — */
+  .philosophy {
+    font-size: 14px;
+    line-height: 1.5;
+    color: var(--gallery-ink-1);
+    font-weight: 500;
+    margin: 0;
+    letter-spacing: -0.005em;
+  }
+  .philosophy-source {
+    margin-top: 8px;
+    font-size: 11px;
+    color: var(--gallery-ink-3);
+  }
+
+  /* ====================================================================== */
+  /* DIRECTION A — Calendar-Grid (Information-Architecture)                 */
+  /* ====================================================================== */
+  .a-bg { background: #FAFAF9; }
+  .a-wordmark {
+    font-family: 'Inter', sans-serif;
+    font-weight: 600;
+    font-size: 38px;
+    letter-spacing: -0.02em;
+    color: #18181B;
+  }
+  .a-wordmark .accent { color: #0F766E; }
+
+  /* — Direction A icon: 4×4 calendar grid with one filled cell — */
+  .a-icon {
+    background: #FAFAF9;
+    border-radius: 22.4%;  /* iOS app icon corner radius for 1024px */
+    display: grid; grid-template-columns: repeat(4, 1fr);
+    gap: 10%;
+    padding: 18%;
+    border: 1px solid rgba(0,0,0,0.04);
+  }
+  .a-icon .cell {
+    background: #E4E4E7;
+    border-radius: 12%;
+    aspect-ratio: 1;
+  }
+  .a-icon .cell.filled {
+    background: #0F766E;
+  }
+  .a-swatch-1 { background: #0F766E; color: white; }
+  .a-swatch-2 { background: #FAFAF9; color: #18181B; }
+  .a-swatch-3 { background: #18181B; color: white; }
+  .a-swatch-4 { background: #E4E4E7; color: #18181B; }
+
+  /* ====================================================================== */
+  /* DIRECTION B — Soft-Overlap (Community-Warm)                            */
+  /* ====================================================================== */
+  .b-bg { background: #FFFAF1; }
+  .b-wordmark {
+    font-family: 'Inter', sans-serif;
+    font-weight: 500;
+    font-size: 36px;
+    letter-spacing: -0.015em;
+    color: #18181B;
+    text-transform: lowercase;
+  }
+  .b-wordmark .italic {
+    font-family: 'DM Serif Display', 'Inter', serif;
+    font-style: italic;
+    color: #C2410C;  /* warm rust accent */
+    font-weight: 400;
+  }
+
+  /* — Direction B icon: two overlapping circles, teal + peach — */
+  .b-icon {
+    background: #FFFAF1;
+    border-radius: 22.4%;
+    position: relative;
+    overflow: hidden;
+    border: 1px solid rgba(0,0,0,0.04);
+  }
+  .b-icon .circle {
+    position: absolute;
+    border-radius: 50%;
+    width: 56%;
+    height: 56%;
+  }
+  .b-icon .circle.teal {
+    background: #0F766E;
+    top: 18%;
+    left: 14%;
+    mix-blend-mode: multiply;
+  }
+  .b-icon .circle.peach {
+    background: #F59E5C;
+    top: 26%;
+    left: 30%;
+    mix-blend-mode: multiply;
+  }
+  .b-swatch-1 { background: #0F766E; color: white; }
+  .b-swatch-2 { background: #F59E5C; color: white; }
+  .b-swatch-3 { background: #FFFAF1; color: #18181B; }
+  .b-swatch-4 { background: #18181B; color: white; }
+
+  /* ====================================================================== */
+  /* DIRECTION C — Block-Mono (Confident-Bold)                              */
+  /* ====================================================================== */
+  .c-bg { background: #18181B; color: #FAFAF9; }
+  .c-bg .swatch-label { mix-blend-mode: difference; }
+  .c-wordmark {
+    font-family: 'Inter', sans-serif;
+    font-weight: 700;
+    font-size: 34px;
+    letter-spacing: -0.025em;
+    color: #FAFAF9;
+    text-transform: uppercase;
+  }
+  .c-wordmark .slash { color: #0F766E; padding: 0 2px; font-weight: 500; }
+
+  /* — Direction C icon: solid teal rounded square with white "S" — */
+  .c-icon {
+    background: #0F766E;
+    border-radius: 22.4%;
+    display: grid; place-items: center;
+    color: white;
+    font-family: 'Inter', sans-serif;
+    font-weight: 700;
+    letter-spacing: -0.06em;
+  }
+  .c-swatch-1 { background: #0F766E; color: white; }
+  .c-swatch-2 { background: #18181B; color: #FAFAF9; }
+  .c-swatch-3 { background: #FAFAF9; color: #18181B; }
+  .c-swatch-4 { background: #404040; color: white; }
+
+  /* — Card backgrounds carry forward the direction's character — */
+  .card.dir-a .card-header { background: #FAFAF9; }
+  .card.dir-b .card-header { background: #FFFAF1; }
+  .card.dir-c {
+    background: #1F1F23;
+    border-color: #2A2A2F;
+    color: #FAFAF9;
+  }
+  .card.dir-c .card-header,
+  .card.dir-c .card-section {
+    background: transparent;
+    border-color: #2A2A2F;
+  }
+  .card.dir-c .card-letter,
+  .card.dir-c .section-label,
+  .card.dir-c .card-school,
+  .card.dir-c .type-meta { color: #71717A; }
+  .card.dir-c .philosophy { color: #FAFAF9; }
+  .card.dir-c .type-row { border-left-color: #2A2A2F; }
+
+  .footer {
+    margin-top: 64px;
+    text-align: center;
+    color: var(--gallery-ink-3);
+    font-size: 12px;
+    line-height: 1.7;
+  }
+  .footer code {
+    background: white;
+    padding: 1px 6px;
+    border-radius: 4px;
+    border: 1px solid var(--gallery-line);
+    font-size: 11px;
+    font-family: 'JetBrains Mono', monospace;
+  }
+</style>
+</head>
+<body>
+<div class="stage">
+  <div class="header">
+    <h1>SignUpFlow · Brand directions <span style="color:var(--gallery-ink-3); font-weight:400;">v1</span></h1>
+    <p>
+      Three differentiated wordmark + app-icon directions, all rooted in the
+      Cron/Notion Calendar visual territory you picked, but pulling from
+      three different design schools so the choice between them is real.
+      Pick one — that becomes the spec for the iOS Full pass.
+    </p>
+  </div>
+
+  <div class="gallery">
+
+    <!-- ==================== DIRECTION A ==================== -->
+    <div class="card dir-a">
+      <div class="card-header">
+        <div class="card-letter">Direction A</div>
+        <div class="card-title">Calendar-Grid</div>
+        <div class="card-school">Information architecture · Pentagram-aligned</div>
+      </div>
+
+      <div class="card-section a-bg">
+        <div class="section-label">Wordmark</div>
+        <div class="wordmark-display">
+          <span class="a-wordmark">SignUp<span class="accent">Flow</span></span>
+        </div>
+      </div>
+
+      <div class="card-section a-bg">
+        <div class="section-label">App icon · 4 sizes</div>
+        <div class="icon-row">
+          <div class="icon-cell">
+            <div class="a-icon" style="width:128px;height:128px;">
+              <div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div>
+              <div class="cell"></div><div class="cell filled"></div><div class="cell"></div><div class="cell"></div>
+              <div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div>
+              <div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div>
+            </div>
+            <div class="icon-cell-label">128</div>
+          </div>
+          <div class="icon-cell">
+            <div class="a-icon" style="width:64px;height:64px;">
+              <div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div>
+              <div class="cell"></div><div class="cell filled"></div><div class="cell"></div><div class="cell"></div>
+              <div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div>
+              <div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div>
+            </div>
+            <div class="icon-cell-label">64</div>
+          </div>
+          <div class="icon-cell">
+            <div class="a-icon" style="width:32px;height:32px;">
+              <div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div>
+              <div class="cell"></div><div class="cell filled"></div><div class="cell"></div><div class="cell"></div>
+              <div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div>
+              <div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div>
+            </div>
+            <div class="icon-cell-label">32</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card-section">
+        <div class="section-label">Palette</div>
+        <div class="palette">
+          <div class="swatch a-swatch-1"><span class="swatch-label">#0F766E</span></div>
+          <div class="swatch a-swatch-2"><span class="swatch-label">#FAFAF9</span></div>
+          <div class="swatch a-swatch-3"><span class="swatch-label">#18181B</span></div>
+          <div class="swatch a-swatch-4"><span class="swatch-label">#E4E4E7</span></div>
+        </div>
+      </div>
+
+      <div class="card-section">
+        <div class="section-label">Typography</div>
+        <div class="type-pair">
+          <div class="type-row">
+            <div class="type-meta">Display · Inter 600</div>
+            <div style="font-family:Inter; font-weight:600; font-size:24px; letter-spacing:-0.015em;">This Sunday's roster</div>
+          </div>
+          <div class="type-row">
+            <div class="type-meta">Body · Inter 400</div>
+            <div style="font-family:Inter; font-size:14px; color:#52525B;">Six volunteers assigned, three roles open.</div>
+          </div>
+          <div class="type-row">
+            <div class="type-meta">Mono · JetBrains 500</div>
+            <div style="font-family:'JetBrains Mono',monospace; font-size:13px; color:#0F766E;">solve_ms 274 · health 98</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card-section">
+        <div class="section-label">Philosophy</div>
+        <p class="philosophy">"Schedules are grids. Highlight what matters; let the rest be quiet."</p>
+        <div class="philosophy-source">Reference: Cron · Linear · Notion Calendar · Pentagram graphic design system work</div>
+      </div>
+    </div>
+
+    <!-- ==================== DIRECTION B ==================== -->
+    <div class="card dir-b">
+      <div class="card-header">
+        <div class="card-letter">Direction B</div>
+        <div class="card-title">Soft-Overlap</div>
+        <div class="card-school">Community-warm · East-Asian restraint</div>
+      </div>
+
+      <div class="card-section b-bg">
+        <div class="section-label">Wordmark</div>
+        <div class="wordmark-display">
+          <span class="b-wordmark">signup<span class="italic">flow</span></span>
+        </div>
+      </div>
+
+      <div class="card-section b-bg">
+        <div class="section-label">App icon · 4 sizes</div>
+        <div class="icon-row">
+          <div class="icon-cell">
+            <div class="b-icon" style="width:128px;height:128px;">
+              <div class="circle teal"></div>
+              <div class="circle peach"></div>
+            </div>
+            <div class="icon-cell-label">128</div>
+          </div>
+          <div class="icon-cell">
+            <div class="b-icon" style="width:64px;height:64px;">
+              <div class="circle teal"></div>
+              <div class="circle peach"></div>
+            </div>
+            <div class="icon-cell-label">64</div>
+          </div>
+          <div class="icon-cell">
+            <div class="b-icon" style="width:32px;height:32px;">
+              <div class="circle teal"></div>
+              <div class="circle peach"></div>
+            </div>
+            <div class="icon-cell-label">32</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card-section">
+        <div class="section-label">Palette</div>
+        <div class="palette">
+          <div class="swatch b-swatch-1"><span class="swatch-label">#0F766E</span></div>
+          <div class="swatch b-swatch-2"><span class="swatch-label">#F59E5C</span></div>
+          <div class="swatch b-swatch-3"><span class="swatch-label">#FFFAF1</span></div>
+          <div class="swatch b-swatch-4"><span class="swatch-label">#18181B</span></div>
+        </div>
+      </div>
+
+      <div class="card-section">
+        <div class="section-label">Typography</div>
+        <div class="type-pair">
+          <div class="type-row">
+            <div class="type-meta">Display · Inter 500</div>
+            <div style="font-family:Inter; font-weight:500; font-size:24px; letter-spacing:-0.015em;">this sunday's roster</div>
+          </div>
+          <div class="type-row">
+            <div class="type-meta">Accent · DM Serif Display Italic</div>
+            <div style="font-family:'DM Serif Display',serif; font-style:italic; font-size:22px; color:#C2410C;">six volunteers</div>
+          </div>
+          <div class="type-row">
+            <div class="type-meta">Body · Inter 400</div>
+            <div style="font-family:Inter; font-size:14px; color:#52525B;">Six volunteers assigned, three roles open.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card-section">
+        <div class="section-label">Philosophy</div>
+        <p class="philosophy">"Volunteers are humans, not rows in a database. The app should feel that."</p>
+        <div class="philosophy-source">Reference: Cal.com · Notion Calendar with warmth · Kenya Hara restraint · Things 3 personality</div>
+      </div>
+    </div>
+
+    <!-- ==================== DIRECTION C ==================== -->
+    <div class="card dir-c">
+      <div class="card-header">
+        <div class="card-letter">Direction C</div>
+        <div class="card-title">Block-Mono</div>
+        <div class="card-school">Confident-bold · Things/Linear</div>
+      </div>
+
+      <div class="card-section c-bg">
+        <div class="section-label">Wordmark</div>
+        <div class="wordmark-display">
+          <span class="c-wordmark">SIGNUP<span class="slash">/</span>FLOW</span>
+        </div>
+      </div>
+
+      <div class="card-section c-bg">
+        <div class="section-label">App icon · 4 sizes</div>
+        <div class="icon-row">
+          <div class="icon-cell">
+            <div class="c-icon" style="width:128px;height:128px;font-size:88px;">S</div>
+            <div class="icon-cell-label">128</div>
+          </div>
+          <div class="icon-cell">
+            <div class="c-icon" style="width:64px;height:64px;font-size:44px;">S</div>
+            <div class="icon-cell-label">64</div>
+          </div>
+          <div class="icon-cell">
+            <div class="c-icon" style="width:32px;height:32px;font-size:22px;">S</div>
+            <div class="icon-cell-label">32</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card-section">
+        <div class="section-label">Palette</div>
+        <div class="palette">
+          <div class="swatch c-swatch-1"><span class="swatch-label">#0F766E</span></div>
+          <div class="swatch c-swatch-2"><span class="swatch-label">#18181B</span></div>
+          <div class="swatch c-swatch-3"><span class="swatch-label">#FAFAF9</span></div>
+          <div class="swatch c-swatch-4"><span class="swatch-label">#404040</span></div>
+        </div>
+      </div>
+
+      <div class="card-section">
+        <div class="section-label">Typography</div>
+        <div class="type-pair">
+          <div class="type-row">
+            <div class="type-meta">Display · Inter 700 caps</div>
+            <div style="font-family:Inter; font-weight:700; font-size:22px; letter-spacing:-0.025em; text-transform:uppercase; color:#FAFAF9;">THIS SUNDAY'S ROSTER</div>
+          </div>
+          <div class="type-row">
+            <div class="type-meta">Body · Inter 500</div>
+            <div style="font-family:Inter; font-size:14px; color:#A1A1AA;">Six volunteers assigned, three roles open.</div>
+          </div>
+          <div class="type-row">
+            <div class="type-meta">Mono · JetBrains 500</div>
+            <div style="font-family:'JetBrains Mono',monospace; font-size:13px; color:#0F766E;">SOLVE_MS 274 · HEALTH 98</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card-section">
+        <div class="section-label">Philosophy</div>
+        <p class="philosophy">"Get out of the way. Show the schedule, ship it, move on."</p>
+        <div class="philosophy-source">Reference: Things 3 · Linear · brutalist tech tooling</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="footer">
+    Pick a direction by name (<code>A</code>, <code>B</code>, or <code>C</code>) and the iOS Full pass uses it.<br>
+    Mix-and-match is fine — say "B's icon, A's typography" or similar.
+  </div>
+</div>
+</body>
+</html>
