@@ -13,6 +13,8 @@ from api.models import (
 from api.schemas.availability import (
     AvailabilityExceptionCreate,
     AvailabilityExceptionResponse,
+    AvailabilityRruleResponse,
+    AvailabilityRruleUpdate,
     TimeOffCreate,
 )
 
@@ -293,6 +295,45 @@ def delete_exception(person_id: str, exception_id: int, db: Session = Depends(ge
         )
     db.delete(row)
     db.commit()
+    return None
+
+
+@router.get("/{person_id}/rrule", response_model=AvailabilityRruleResponse)
+def get_rrule(person_id: str, db: Session = Depends(get_db)):
+    """Return the single recurring-availability rrule for a person.
+
+    Returns ``rrule: null`` when the person has no Availability row or has
+    not set an rrule. Mobile renders this as "no recurring rule yet."
+    """
+    availability = db.query(Availability).filter(Availability.person_id == person_id).first()
+    return AvailabilityRruleResponse(rrule=availability.rrule if availability else None)
+
+
+@router.put("/{person_id}/rrule", response_model=AvailabilityRruleResponse)
+def set_rrule(
+    person_id: str,
+    payload: AvailabilityRruleUpdate,
+    db: Session = Depends(get_db),
+):
+    """Set (or replace) the rrule string for a person."""
+    availability = _get_or_create_availability(person_id, db)
+    availability.rrule = payload.rrule
+    db.commit()
+    db.refresh(availability)
+    return AvailabilityRruleResponse(rrule=availability.rrule)
+
+
+@router.delete("/{person_id}/rrule", status_code=status.HTTP_204_NO_CONTENT)
+def clear_rrule(person_id: str, db: Session = Depends(get_db)):
+    """Clear the rrule string for a person.
+
+    Idempotent — succeeds with 204 even if the row never had an rrule, or
+    even if the Availability row doesn't exist yet.
+    """
+    availability = db.query(Availability).filter(Availability.person_id == person_id).first()
+    if availability is not None and availability.rrule is not None:
+        availability.rrule = None
+        db.commit()
     return None
 
 

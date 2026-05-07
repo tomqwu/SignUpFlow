@@ -382,6 +382,43 @@
         "title": "AvailabilityExceptionResponse",
         "type": "object"
       },
+      "AvailabilityRruleResponse": {
+        "description": "Schema for the single rrule string per person.",
+        "properties": {
+          "rrule": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rrule"
+          }
+        },
+        "required": [
+          "rrule"
+        ],
+        "title": "AvailabilityRruleResponse",
+        "type": "object"
+      },
+      "AvailabilityRruleUpdate": {
+        "description": "Schema for setting the rrule string.",
+        "properties": {
+          "rrule": {
+            "description": "iCalendar RRULE expression",
+            "minLength": 1,
+            "title": "Rrule",
+            "type": "string"
+          }
+        },
+        "required": [
+          "rrule"
+        ],
+        "title": "AvailabilityRruleUpdate",
+        "type": "object"
+      },
       "AvailablePerson": {
         "description": "Person available for an event.",
         "properties": {
@@ -5374,6 +5411,134 @@
           }
         },
         "summary": "Delete Exception",
+        "tags": [
+          "availability"
+        ]
+      }
+    },
+    "/api/v1/availability/{person_id}/rrule": {
+      "delete": {
+        "description": "Clear the rrule string for a person.\n\nIdempotent \u2014 succeeds with 204 even if the row never had an rrule, or\neven if the Availability row doesn't exist yet.",
+        "operationId": "clearRrule",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "person_id",
+            "required": true,
+            "schema": {
+              "title": "Person Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Clear Rrule",
+        "tags": [
+          "availability"
+        ]
+      },
+      "get": {
+        "description": "Return the single recurring-availability rrule for a person.\n\nReturns ``rrule: null`` when the person has no Availability row or has\nnot set an rrule. Mobile renders this as \"no recurring rule yet.\"",
+        "operationId": "getRrule",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "person_id",
+            "required": true,
+            "schema": {
+              "title": "Person Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AvailabilityRruleResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Rrule",
+        "tags": [
+          "availability"
+        ]
+      },
+      "put": {
+        "description": "Set (or replace) the rrule string for a person.",
+        "operationId": "setRrule",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "person_id",
+            "required": true,
+            "schema": {
+              "title": "Person Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AvailabilityRruleUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AvailabilityRruleResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Set Rrule",
         "tags": [
           "availability"
         ]
