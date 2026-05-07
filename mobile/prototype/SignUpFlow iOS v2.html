@@ -1,0 +1,1661 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SignUpFlow · iOS v2 — Full pass (Block-Mono)</title>
+<!--
+  ============================================================================
+  SignUpFlow iOS · Full pass v2 · 2026-05-07
+  ============================================================================
+
+  STATUS:    Full pass — placeholder rectangles replaced with realistic
+             API-mapped data. Brand direction C "Block-Mono" applied per
+             mobile/prototype/brand-spec.md.
+
+  CHANGES FROM v1:
+   1. Brand: SIGNUP/FLOW wordmark + teal "S" icon. UPPERCASE Inter 700
+      page titles. JetBrains Mono for data/status. Black solid CTAs.
+   2. Volunteer: 3 tabs (Schedule / Availability / Profile). Inbox
+      reachable via dev jump-to only — deferred from MVP scope.
+   3. Admin: 4 tabs (Dashboard / People / Events / Solver). Compare and
+      Publish promoted to inline actions inside Solution Review.
+   4. Realistic data: church-volunteer scenario, names like Sarah K. /
+      James P., events like "Sunday 10am Service", solver metrics
+      borrowed from actual Sprint 6 SolveResponse output.
+
+  FILE NAMING: v1.html kept as the Junior pass record per
+               huashu-design rule (大改版时copy一份旧版保留).
+  ============================================================================
+-->
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+
+<style>
+  :root {
+    /* Brand spec — see mobile/prototype/brand-spec.md for canonical values */
+    --bg-page:      #F0EFEC;
+    --bg-app:       #FAFAF9;
+    --bg-card:      #FFFFFF;
+    --ink-1:        #18181B;
+    --ink-2:        #52525B;
+    --ink-3:        #A1A1AA;
+    --line-1:       #E4E4E7;
+    --line-2:       #F4F4F5;
+    --accent:       #0F766E;
+    --accent-soft:  #CCFBF1;
+    --accent-ink:   #134E4A;
+    --success:      #15803D;
+    --warning:      #B45309;
+    --danger:       #B91C1C;
+
+    --r-card:       14px;
+    --r-pill:       999px;
+    --r-chip:       6px;
+
+    --font-display: 'Inter', -apple-system, system-ui, sans-serif;
+    --font-mono:    'JetBrains Mono', 'SF Mono', ui-monospace, monospace;
+  }
+
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0; padding: 0;
+    background: var(--bg-page);
+    font-family: var(--font-display);
+    color: var(--ink-1);
+    -webkit-font-smoothing: antialiased;
+    font-feature-settings: 'cv11', 'ss01';
+  }
+
+  /* ─── Page-level (gallery chrome around the iPhone) ─────────────── */
+  .stage {
+    min-height: 100vh;
+    padding: 32px 16px 64px;
+    display: flex; flex-direction: column;
+    align-items: center; gap: 18px;
+  }
+  .header { text-align: center; max-width: 720px; }
+  .header h1 {
+    font-size: 22px; font-weight: 700; margin: 0;
+    letter-spacing: -0.025em; text-transform: uppercase;
+  }
+  .header .subtitle {
+    font-family: var(--font-mono);
+    font-size: 11px; color: var(--ink-2);
+    margin: 8px 0 0; letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+
+  /* Dev control strip — NOT product UI */
+  .dev-controls {
+    background: var(--bg-card);
+    border: 1px solid var(--line-1);
+    border-radius: 12px;
+    padding: 8px 12px;
+    display: inline-flex; align-items: center; gap: 10px;
+    font-size: 11px;
+  }
+  .dev-controls .label {
+    font-family: var(--font-mono);
+    color: var(--ink-3);
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-size: 10px;
+  }
+  .role-pill {
+    background: var(--line-2); border-radius: 999px;
+    padding: 3px; display: flex; gap: 2px;
+  }
+  .role-pill button {
+    border: 0; background: transparent;
+    padding: 5px 12px; font-size: 11px; font-weight: 500;
+    color: var(--ink-2); border-radius: 999px; cursor: pointer;
+    font-family: inherit;
+    text-transform: uppercase; letter-spacing: 0.05em;
+  }
+  .role-pill button.active { background: var(--ink-1); color: white; }
+  .dev-controls select {
+    font-size: 11px; padding: 4px 6px; border-radius: 6px;
+    border: 1px solid var(--line-1); background: white;
+    font-family: var(--font-mono);
+    color: var(--ink-1);
+  }
+  .dev-controls .reset {
+    background: transparent; border: 0; padding: 0;
+    color: var(--accent); font-weight: 500; font-size: 11px;
+    cursor: pointer; font-family: inherit;
+    text-transform: uppercase; letter-spacing: 0.05em;
+  }
+
+  /* ─── In-app shell ──────────────────────────────────────────────── */
+  .screen {
+    height: 100%;
+    background: var(--bg-app);
+    color: var(--ink-1);
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* iOS large-title nav header */
+  .nav {
+    padding: 4px 20px 6px;
+    display: flex; align-items: center; justify-content: space-between;
+    min-height: 32px;
+    background: var(--bg-app);
+  }
+  .nav .nav-back, .nav .nav-action {
+    background: transparent; border: 0; padding: 0;
+    cursor: pointer; font-family: inherit;
+    font-size: 13px; font-weight: 500; color: var(--accent);
+    text-transform: uppercase; letter-spacing: 0.04em;
+    min-width: 56px;
+  }
+  .nav .nav-back { text-align: left; }
+  .nav .nav-action { text-align: right; }
+
+  .page-title {
+    padding: 4px 20px 16px;
+    font-size: 28px; font-weight: 700;
+    letter-spacing: -0.025em;
+    text-transform: uppercase;
+    color: var(--ink-1);
+  }
+  .nav-title-inline {
+    /* compact title inline with nav bar (used on detail pushes) */
+    flex: 1; text-align: center;
+    font-size: 14px; font-weight: 600;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+  }
+
+  .scroll {
+    padding: 4px 16px 96px; /* leave room for tab bar */
+  }
+
+  /* ─── Mono labels & data ───────────────────────────────────────── */
+  .mono-label {
+    font-family: var(--font-mono);
+    font-size: 11px; font-weight: 500;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+    margin: 22px 4px 8px;
+  }
+  .mono-label:first-child { margin-top: 8px; }
+  .mono-data {
+    font-family: var(--font-mono);
+    font-size: 12px; font-weight: 500;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--ink-2);
+  }
+
+  /* ─── Cards / list rows ─────────────────────────────────────────── */
+  .card {
+    background: var(--bg-card);
+    border: 1px solid var(--line-1);
+    border-radius: var(--r-card);
+    padding: 14px;
+  }
+  .card + .card { margin-top: 8px; }
+
+  .row {
+    background: var(--bg-card);
+    border: 1px solid var(--line-1);
+    border-radius: var(--r-card);
+    padding: 14px;
+    display: flex; gap: 14px; align-items: center;
+    cursor: pointer;
+  }
+  .row + .row { margin-top: 8px; }
+  .row .row-main { flex: 1; min-width: 0; }
+  .row .row-title {
+    font-size: 15px; font-weight: 600;
+    letter-spacing: -0.01em;
+    color: var(--ink-1);
+    margin-bottom: 3px;
+  }
+  .row .row-sub {
+    font-size: 13px; color: var(--ink-2);
+  }
+  .row .chev {
+    color: var(--ink-3); font-size: 18px;
+    margin-left: 4px;
+  }
+
+  /* Group container - used to merge multiple rows under a single card */
+  .group {
+    background: var(--bg-card);
+    border: 1px solid var(--line-1);
+    border-radius: var(--r-card);
+    overflow: hidden;
+  }
+  .group .row {
+    border: 0; border-radius: 0;
+    border-bottom: 1px solid var(--line-2);
+    margin: 0 !important;
+    padding: 14px;
+  }
+  .group .row:last-child { border-bottom: 0; }
+
+  /* ─── Chips ─────────────────────────────────────────────────────── */
+  .time-chip {
+    display: inline-block;
+    background: var(--accent-soft); color: var(--accent-ink);
+    font-family: var(--font-mono);
+    font-size: 11px; font-weight: 500;
+    letter-spacing: 0.02em;
+    padding: 3px 8px; border-radius: var(--r-chip);
+  }
+  .role-chip {
+    display: inline-block;
+    background: white;
+    border: 1px solid var(--line-1);
+    color: var(--ink-2);
+    font-family: var(--font-mono);
+    font-size: 10px; font-weight: 500;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    padding: 2px 6px; border-radius: var(--r-chip);
+  }
+  .status-text {
+    font-family: var(--font-mono);
+    font-size: 10px; font-weight: 500;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    display: inline-flex; align-items: center; gap: 4px;
+  }
+  .status-text.confirmed { color: var(--success); }
+  .status-text.pending   { color: var(--warning); }
+  .status-text.declined  { color: var(--danger); }
+  .status-text::before {
+    content: '●'; font-size: 8px;
+  }
+
+  /* ─── Avatars ───────────────────────────────────────────────────── */
+  .avatar {
+    width: 36px; height: 36px;
+    border-radius: 999px;
+    display: grid; place-items: center;
+    color: white;
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 12px;
+    letter-spacing: -0.01em;
+    flex-shrink: 0;
+  }
+  .avatar.lg { width: 80px; height: 80px; font-size: 28px; }
+  .avatar.sm { width: 28px; height: 28px; font-size: 10px; }
+
+  /* ─── Buttons ───────────────────────────────────────────────────── */
+  .btn {
+    display: inline-flex; align-items: center; justify-content: center;
+    gap: 8px;
+    border-radius: 999px;
+    padding: 13px 20px;
+    font-family: inherit;
+    font-size: 13px; font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    cursor: pointer;
+    border: 1px solid transparent;
+    width: 100%;
+  }
+  .btn-primary {
+    background: var(--ink-1); color: white;
+  }
+  .btn-go {
+    background: var(--accent); color: white;
+  }
+  .btn-secondary {
+    background: white; color: var(--ink-1);
+    border-color: var(--line-1);
+  }
+  .btn-destructive {
+    background: white; color: var(--danger);
+    border-color: var(--line-1);
+  }
+  .btn-row {
+    display: grid; gap: 8px;
+  }
+  .btn-row.cols-2 { grid-template-columns: 1fr 1fr; }
+  .btn-row.cols-3 { grid-template-columns: repeat(3, 1fr); }
+
+  /* ─── Inputs ────────────────────────────────────────────────────── */
+  .field {
+    background: var(--bg-card);
+    border: 1px solid var(--line-1);
+    border-radius: var(--r-card);
+    padding: 14px 16px;
+    display: flex; flex-direction: column; gap: 4px;
+  }
+  .field-label {
+    font-family: var(--font-mono);
+    font-size: 10px; font-weight: 500;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+  }
+  .field-value {
+    font-size: 15px; font-weight: 500;
+    color: var(--ink-1);
+  }
+  .field-value.placeholder { color: var(--ink-3); font-weight: 400; }
+
+  /* Segmented control (for solver mode + solution review tabs) */
+  .seg {
+    background: var(--line-2);
+    border-radius: 999px;
+    padding: 3px;
+    display: grid;
+    gap: 2px;
+  }
+  .seg.cols-2 { grid-template-columns: 1fr 1fr; }
+  .seg.cols-3 { grid-template-columns: repeat(3, 1fr); }
+  .seg button {
+    background: transparent; border: 0;
+    padding: 7px 12px;
+    font-family: var(--font-mono);
+    font-size: 11px; font-weight: 500;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--ink-2);
+    border-radius: 999px;
+    cursor: pointer;
+  }
+  .seg button.active {
+    background: white;
+    color: var(--ink-1);
+    box-shadow: 0 1px 2px rgba(24,24,27,0.06);
+  }
+
+  /* ─── KPI grid (admin dashboard) ────────────────────────────────── */
+  .kpi-grid {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 8px;
+  }
+  .kpi {
+    background: var(--bg-card);
+    border: 1px solid var(--line-1);
+    border-radius: var(--r-card);
+    padding: 16px 14px;
+    display: flex; flex-direction: column; gap: 4px;
+  }
+  .kpi-value {
+    font-size: 26px; font-weight: 700;
+    letter-spacing: -0.025em;
+    color: var(--ink-1);
+    line-height: 1.05;
+  }
+  .kpi-value .unit {
+    font-size: 13px; font-weight: 500;
+    color: var(--ink-2);
+    margin-left: 3px;
+  }
+  .kpi-label {
+    font-family: var(--font-mono);
+    font-size: 10px; font-weight: 500;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+  }
+  .kpi.accent .kpi-value { color: var(--accent); }
+
+  /* ─── Tab bar ───────────────────────────────────────────────────── */
+  .tab-bar {
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    height: 80px;
+    background: rgba(255,255,255,0.96);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-top: 1px solid var(--line-1);
+    display: flex;
+    padding: 8px 0 28px;
+    z-index: 10;
+  }
+  .tab-bar button {
+    flex: 1;
+    background: transparent; border: 0; padding: 4px;
+    display: flex; flex-direction: column; align-items: center; gap: 3px;
+    color: var(--ink-3);
+    cursor: pointer;
+    font-family: inherit;
+  }
+  .tab-bar button.active { color: var(--ink-1); }
+  .tab-bar .tab-icon {
+    width: 22px; height: 22px;
+    display: grid; place-items: center;
+  }
+  .tab-bar .tab-label {
+    font-family: var(--font-mono);
+    font-size: 9px;
+    font-weight: 500;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  /* ─── Misc ──────────────────────────────────────────────────────── */
+  .calendar-grid {
+    display: grid; grid-template-columns: repeat(7, 1fr);
+    gap: 4px;
+  }
+  .calendar-grid .dow {
+    font-family: var(--font-mono);
+    font-size: 9px;
+    color: var(--ink-3);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    text-align: center;
+    padding: 4px 0;
+  }
+  .calendar-grid .day {
+    aspect-ratio: 1;
+    display: grid; place-items: center;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--ink-1);
+    border-radius: 8px;
+    cursor: pointer;
+  }
+  .calendar-grid .day.dim     { color: var(--ink-3); }
+  .calendar-grid .day.today   { box-shadow: 0 0 0 1.5px var(--ink-1) inset; }
+  .calendar-grid .day.blocked { background: var(--ink-1); color: white; }
+  .calendar-grid .day.partial { background: var(--accent-soft); color: var(--accent-ink); }
+
+  .footer-note {
+    margin-top: 18px;
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: var(--ink-3);
+    max-width: 720px;
+    text-align: center;
+    line-height: 1.7;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<script crossorigin src="https://unpkg.com/react@18.3.1/umd/react.development.js"></script>
+<script crossorigin src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js"></script>
+<script src="https://unpkg.com/@babel/standalone@7.25.6/babel.min.js"></script>
+
+<script type="text/babel" data-presets="react">
+/* ===== IosFrame (inlined from huashu-design assets/ios_frame.jsx) ===== */
+const iosFrameStyles = {
+  wrapper: { display: 'inline-block', padding: 12, background: '#000', borderRadius: 60,
+    boxShadow: '0 0 0 2px #1f2937, 0 20px 60px rgba(0,0,0,0.3)', position: 'relative' },
+  screen: { position: 'relative', borderRadius: 48, overflow: 'hidden', background: '#fff' },
+  statusBar: { position: 'absolute', top: 0, left: 0, right: 0, height: 54, display: 'flex',
+    alignItems: 'center', justifyContent: 'space-between', padding: '0 32px', fontSize: 16,
+    fontWeight: 600, fontFamily: '-apple-system,"SF Pro Text",sans-serif', zIndex: 20, pointerEvents: 'none' },
+  dynamicIsland: { position: 'absolute', top: 12, left: '50%', transform: 'translateX(-50%)',
+    width: 124, height: 36, background: '#000', borderRadius: 999, zIndex: 30 },
+  statusIcons: { display: 'flex', alignItems: 'center', gap: 6 },
+  signalIcon: { display: 'flex', alignItems: 'flex-end', gap: 2, height: 12 },
+  signalBar: { width: 3, background: 'currentColor', borderRadius: 1 },
+  batteryIcon: { width: 26, height: 12, border: '1.5px solid currentColor', borderRadius: 3, padding: 1, position: 'relative', opacity: 0.8 },
+  batteryCap: { position: 'absolute', top: 3, right: -3, width: 2, height: 6, background: 'currentColor', borderRadius: '0 1px 1px 0' },
+  content: { position: 'absolute', top: 54, left: 0, right: 0, bottom: 0, overflow: 'hidden' },
+  homeIndicator: { position: 'absolute', bottom: 10, left: '50%', transform: 'translateX(-50%)',
+    width: 140, height: 5, background: 'rgba(0,0,0,0.3)', borderRadius: 999, zIndex: 10 },
+};
+function IosFrame({ children, width = 393, height = 852, time = '9:41', battery = 85 }) {
+  return (
+    <div style={iosFrameStyles.wrapper}>
+      <div style={{ ...iosFrameStyles.screen, width, height }}>
+        <div style={{ ...iosFrameStyles.statusBar, color: '#000' }}>
+          <span>{time}</span>
+          <div style={iosFrameStyles.statusIcons}>
+            <div style={iosFrameStyles.signalIcon}>
+              <div style={{ ...iosFrameStyles.signalBar, height: 4 }} />
+              <div style={{ ...iosFrameStyles.signalBar, height: 6 }} />
+              <div style={{ ...iosFrameStyles.signalBar, height: 9 }} />
+              <div style={{ ...iosFrameStyles.signalBar, height: 11 }} />
+            </div>
+            <svg width="16" height="12" viewBox="0 0 16 12" fill="none">
+              <path d="M8 11.5a1 1 0 100-2 1 1 0 000 2z" fill="currentColor" />
+              <path d="M3 7.5a7 7 0 0110 0" stroke="currentColor" strokeWidth="1.3" fill="none" strokeLinecap="round" />
+              <path d="M1 4.5a11 11 0 0114 0" stroke="currentColor" strokeWidth="1.3" fill="none" strokeLinecap="round" opacity="0.7" />
+            </svg>
+            <div style={iosFrameStyles.batteryIcon}>
+              <div style={{ width: `${battery}%`, height: '100%', background: 'currentColor', borderRadius: 1, opacity: 0.9 }} />
+              <div style={iosFrameStyles.batteryCap} />
+            </div>
+          </div>
+        </div>
+        <div style={iosFrameStyles.dynamicIsland} />
+        <div style={iosFrameStyles.content}>{children}</div>
+        <div style={iosFrameStyles.homeIndicator} />
+      </div>
+    </div>
+  );
+}
+
+/* ===== Brand mark (the "S" icon from brand-spec) ===== */
+function BrandIcon({ size = 64 }) {
+  return (
+    <div style={{
+      width: size, height: size,
+      background: 'var(--accent)',
+      borderRadius: size * 0.224,
+      display: 'grid', placeItems: 'center',
+      color: 'white',
+      fontFamily: 'var(--font-display)',
+      fontWeight: 700,
+      fontSize: size * 0.72,
+      letterSpacing: '-0.06em',
+      lineHeight: 1,
+    }}>S</div>
+  );
+}
+
+function Wordmark({ size = 18 }) {
+  return (
+    <span style={{
+      fontFamily: 'var(--font-display)',
+      fontWeight: 700,
+      fontSize: size,
+      letterSpacing: '-0.025em',
+      textTransform: 'uppercase',
+      color: 'var(--ink-1)',
+    }}>
+      SIGNUP<span style={{ color: 'var(--accent)', fontWeight: 500, padding: '0 1px' }}>/</span>FLOW
+    </span>
+  );
+}
+
+/* ===== Reusable primitives ===== */
+function Avatar({ name, size = 'md' }) {
+  // Deterministic teal-tone variant from the first char.
+  const palette = ['#0F766E', '#0D5F58', '#14807A', '#1F8E87', '#B45309'];
+  const initials = name.split(' ').map(s => s[0]).slice(0,2).join('').toUpperCase();
+  const bg = palette[(name.charCodeAt(0) || 0) % palette.length];
+  return <div className={`avatar ${size}`} style={{ background: bg }}>{initials}</div>;
+}
+
+function Status({ kind = 'confirmed', children }) {
+  return <span className={`status-text ${kind}`}>{children}</span>;
+}
+
+function NavBar({ back, action, onBack, onAction, title }) {
+  return (
+    <div className="nav">
+      <div style={{ flex: '0 0 auto' }}>
+        {back && <button className="nav-back" onClick={onBack}>‹ {back}</button>}
+      </div>
+      {title && <div className="nav-title-inline">{title}</div>}
+      <div style={{ flex: '0 0 auto' }}>
+        {action && <button className="nav-action" onClick={onAction}>{action}</button>}
+      </div>
+    </div>
+  );
+}
+
+/* ===========================================================================
+ * SCREEN: Login
+ * =========================================================================== */
+function ScreenLogin({ go }) {
+  return (
+    <div className="screen">
+      <div style={{ padding: '64px 28px 32px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+        <BrandIcon size={72} />
+        <div style={{ height: 22 }} />
+        <Wordmark size={24} />
+        <div style={{ height: 8 }} />
+        <div className="mono-data" style={{ fontSize: 10, color: 'var(--ink-3)' }}>VOLUNTEER SCHEDULING · v1.0</div>
+        <div style={{ height: 44 }} />
+
+        <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: 10 }}>
+          <div className="field">
+            <span className="field-label">Email</span>
+            <span className="field-value placeholder">you@church.org</span>
+          </div>
+          <div className="field">
+            <span className="field-label">Password</span>
+            <span className="field-value placeholder" style={{ letterSpacing: '0.4em' }}>•••••••</span>
+          </div>
+        </div>
+
+        <div style={{ height: 18 }} />
+        <button className="btn btn-primary" onClick={() => alert('POST /auth/login')}>SIGN IN</button>
+
+        <div style={{ marginTop: 20, fontSize: 13, color: 'var(--ink-2)', textAlign: 'center' }}>
+          Have an invitation?{' '}
+          <span style={{ color: 'var(--accent)', fontWeight: 600, cursor: 'pointer' }}
+                onClick={() => go(null, 'invitation')}>Tap here</span>
+          <div style={{ marginTop: 4 }}>· Forgot password? ·</div>
+        </div>
+
+        <div style={{ marginTop: 36, padding: 14, background: 'white', borderRadius: 10, border: '1px solid var(--line-1)', width: '100%' }}>
+          <div className="mono-label" style={{ margin: '0 0 8px', color: 'var(--ink-3)' }}>Demo shortcut</div>
+          <div className="btn-row cols-2">
+            <button className="btn btn-secondary" onClick={() => go('volunteer', 'v-schedule')}>Volunteer</button>
+            <button className="btn btn-secondary" onClick={() => go('admin', 'a-dashboard')}>Admin</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ===========================================================================
+ * SCREEN: Invitation accept (deep-link entry)
+ * =========================================================================== */
+function ScreenInvitation({ go }) {
+  return (
+    <div className="screen">
+      <div style={{ padding: '40px 24px 32px' }}>
+        <NavBar back="Login" onBack={() => go(null, 'login')} />
+        <div style={{ height: 16 }} />
+        <div className="card" style={{ textAlign: 'center', padding: '24px 18px' }}>
+          <div style={{ display: 'flex', justifyContent: 'center' }}><BrandIcon size={48} /></div>
+          <div style={{ height: 16 }} />
+          <div style={{ fontSize: 13, color: 'var(--ink-2)' }}>You've been invited to</div>
+          <div style={{ fontSize: 20, fontWeight: 700, letterSpacing: '-0.02em', margin: '4px 0' }}>Hope Community Church</div>
+          <div className="mono-data" style={{ marginTop: 8 }}>ROLE: VOLUNTEER · BY PASTOR D. KIM</div>
+        </div>
+
+        <div className="mono-label">Your details</div>
+        <div className="field" style={{ marginBottom: 8 }}>
+          <span className="field-label">Name</span>
+          <span className="field-value">Sarah Kowalski</span>
+        </div>
+        <div className="field" style={{ marginBottom: 8 }}>
+          <span className="field-label">Email</span>
+          <span className="field-value">sarah.k@gmail.com</span>
+        </div>
+        <div className="field">
+          <span className="field-label">Set password</span>
+          <span className="field-value placeholder" style={{ letterSpacing: '0.4em' }}>•••••••</span>
+        </div>
+
+        <div style={{ height: 18 }} />
+        <button className="btn btn-primary" onClick={() => go('volunteer', 'v-schedule')}>ACCEPT INVITATION</button>
+        <div className="mono-data" style={{ textAlign: 'center', marginTop: 10, fontSize: 10, color: 'var(--ink-3)' }}>
+          POST /invitations/accept
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ===========================================================================
+ * SCREEN: Volunteer Schedule (tab 1 of 3)
+ * =========================================================================== */
+function ScreenVolunteerSchedule({ go }) {
+  // Realistic data drawn from /people/me/assignments.
+  // Grouped by date — date label is mono caps, event card carries time chip.
+  const groups = [
+    {
+      date: 'SUN 25 MAY',
+      tag: 'THIS WEEK',
+      items: [
+        { id: 1, time: '10:00–11:30', title: 'Sunday 10am Service', role: 'USHER', status: 'confirmed', loc: 'Main Hall' },
+        { id: 2, time: '18:00–19:30', title: 'Evening Worship',     role: 'GREETER', status: 'pending', loc: 'Chapel' },
+      ],
+    },
+    {
+      date: 'WED 28 MAY',
+      tag: null,
+      items: [
+        { id: 3, time: '19:00–20:30', title: 'Youth Group',          role: 'LEADER', status: 'confirmed', loc: 'Youth Room' },
+      ],
+    },
+    {
+      date: 'SUN 1 JUN',
+      tag: 'NEXT WEEK',
+      items: [
+        { id: 4, time: '10:00–11:30', title: 'Sunday 10am Service',  role: 'SOUND', status: 'confirmed', loc: 'Main Hall' },
+      ],
+    },
+  ];
+
+  return (
+    <div className="screen">
+      <NavBar action="Export" onAction={() => alert('Calendar export sheet · /calendar/{token}')} />
+      <div className="page-title">Schedule</div>
+
+      <div className="scroll" style={{ paddingTop: 0 }}>
+        <div className="card" style={{ background: '#FFF7ED', borderColor: '#FED7AA', display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
+          <span style={{ fontSize: 16 }}>⚠</span>
+          <div style={{ fontSize: 13, color: 'var(--ink-1)', flex: 1 }}>
+            <div style={{ fontWeight: 600 }}>1 conflict needs review</div>
+            <div className="mono-data" style={{ fontSize: 10, color: 'var(--warning)', letterSpacing: '0.06em' }}>
+              MAY 25 · OVERLAPS WITH VACATION
+            </div>
+          </div>
+          <span style={{ color: 'var(--accent)', fontSize: 13, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em' }}>Resolve</span>
+        </div>
+
+        {groups.map((g, gi) => (
+          <div key={gi}>
+            <div className="mono-label" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
+              <span>{g.date}</span>
+              {g.tag && <span style={{ color: 'var(--accent)' }}>{g.tag}</span>}
+            </div>
+            <div className="group">
+              {g.items.map(a => (
+                <div key={a.id} className="row" onClick={() => go(null, 'v-assignment')}>
+                  <div className="row-main">
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+                      <span className="time-chip">{a.time}</span>
+                      <span className="role-chip">{a.role}</span>
+                    </div>
+                    <div className="row-title">{a.title}</div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 4 }}>
+                      <span className="row-sub">{a.loc}</span>
+                      <Status kind={a.status}>{a.status}</Status>
+                    </div>
+                  </div>
+                  <span className="chev">›</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        ))}
+
+        <div className="mono-data" style={{ marginTop: 18, textAlign: 'center', fontSize: 10, color: 'var(--ink-3)' }}>
+          GET /people/me/assignments
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ===========================================================================
+ * SCREEN: Assignment detail (push from Schedule)
+ * =========================================================================== */
+function ScreenAssignmentDetail({ go }) {
+  const others = [
+    { name: 'James Park',   role: 'GREETER' },
+    { name: 'Maya Robinson', role: 'WELCOME' },
+    { name: 'Daniel Khan',  role: 'GREETER' },
+  ];
+  return (
+    <div className="screen">
+      <NavBar back="Schedule" onBack={() => go(null, 'v-schedule')} title="Assignment" />
+      <div className="scroll">
+        <div className="card" style={{ marginTop: 8 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
+            <span className="time-chip">10:00–11:30</span>
+            <span className="role-chip">USHER</span>
+            <Status kind="pending">pending</Status>
+          </div>
+          <div style={{ fontSize: 22, fontWeight: 700, letterSpacing: '-0.02em' }}>Sunday 10am Service</div>
+          <div className="mono-data" style={{ marginTop: 6, fontSize: 11 }}>SUN 25 MAY 2026 · MAIN HALL</div>
+          <div style={{ marginTop: 14, fontSize: 14, color: 'var(--ink-2)', lineHeight: 1.5 }}>
+            Gathering for weekly worship service. Ushers needed at 9:30 for setup;
+            service runs 10:00–11:30.
+          </div>
+        </div>
+
+        <div className="mono-label">Other volunteers (3)</div>
+        <div className="group">
+          {others.map((p, i) => (
+            <div key={i} className="row" style={{ cursor: 'default' }}>
+              <Avatar name={p.name} />
+              <div className="row-main">
+                <div className="row-title">{p.name}</div>
+                <div className="mono-data" style={{ fontSize: 10 }}>{p.role}</div>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <div className="mono-label">Your response</div>
+        <div className="btn-row cols-3" style={{ marginTop: 4 }}>
+          <button className="btn btn-go" style={{ fontSize: 11, padding: '12px 4px' }}>ACCEPT</button>
+          <button className="btn btn-secondary" style={{ fontSize: 11, padding: '12px 4px' }}>SWAP</button>
+          <button className="btn btn-destructive" style={{ fontSize: 11, padding: '12px 4px' }}>DECLINE</button>
+        </div>
+        <div className="mono-data" style={{ textAlign: 'center', marginTop: 10, fontSize: 10, color: 'var(--ink-3)' }}>
+          POST /assignments/142/accept
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ===========================================================================
+ * SCREEN: Volunteer Availability (tab 2 of 3)
+ * =========================================================================== */
+function ScreenVolunteerAvailability({ go }) {
+  // Calendar data: May 2026 starts Friday. Mark some days blocked + partial.
+  const dow = ['M','T','W','T','F','S','S'];
+  const days = [];
+  for (let i = 0; i < 4; i++) days.push({ n: 27 + i, dim: true });   // prev month
+  for (let i = 1; i <= 31; i++) days.push({ n: i });
+  const days_ = days.slice();
+  // Apply markings
+  const blocked = new Set([12, 13, 19]);
+  const partial = new Set([6, 20, 27]);
+  const today = 7;
+  return (
+    <div className="screen">
+      <NavBar action="Add" onAction={() => alert('Add blocked date sheet')} />
+      <div className="page-title">Availability</div>
+      <div className="scroll" style={{ paddingTop: 0 }}>
+
+        <div className="card">
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 10 }}>
+            <div style={{ fontSize: 17, fontWeight: 700, letterSpacing: '-0.015em' }}>May 2026</div>
+            <div className="mono-data" style={{ fontSize: 10 }}>3 BLOCKED · 3 PARTIAL</div>
+          </div>
+          <div className="calendar-grid">
+            {dow.map((d, i) => <div key={'h'+i} className="dow">{d}</div>)}
+            {days_.map((d, i) => {
+              const cls = ['day'];
+              if (d.dim) cls.push('dim');
+              if (!d.dim && d.n === today) cls.push('today');
+              if (!d.dim && blocked.has(d.n)) cls.push('blocked');
+              if (!d.dim && partial.has(d.n)) cls.push('partial');
+              return <div key={i} className={cls.join(' ')}>{d.n}</div>;
+            })}
+          </div>
+          <div style={{ display: 'flex', gap: 14, marginTop: 12, fontSize: 11, color: 'var(--ink-2)' }}>
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}>
+              <span style={{ width: 10, height: 10, background: 'var(--ink-1)', borderRadius: 3 }}></span>
+              Blocked
+            </span>
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}>
+              <span style={{ width: 10, height: 10, background: 'var(--accent-soft)', borderRadius: 3 }}></span>
+              Partial
+            </span>
+          </div>
+        </div>
+
+        <div className="mono-label">Recurring rules</div>
+        <div className="group">
+          <div className="row" style={{ cursor: 'default' }}>
+            <div className="row-main">
+              <div className="row-title">Every Monday</div>
+              <div className="mono-data" style={{ fontSize: 10 }}>FREQ=WEEKLY;BYDAY=MO · STARTED 1 JAN</div>
+            </div>
+            <button style={{ background: 'transparent', border: 0, color: 'var(--danger)', fontSize: 18, cursor: 'pointer' }}>×</button>
+          </div>
+          <div className="row" style={{ cursor: 'default' }}>
+            <div className="row-main">
+              <div className="row-title">Every other Friday</div>
+              <div className="mono-data" style={{ fontSize: 10 }}>FREQ=WEEKLY;INTERVAL=2;BYDAY=FR</div>
+            </div>
+            <button style={{ background: 'transparent', border: 0, color: 'var(--danger)', fontSize: 18, cursor: 'pointer' }}>×</button>
+          </div>
+        </div>
+
+        <div style={{ marginTop: 12 }}>
+          <button className="btn btn-secondary">+ ADD RECURRING RULE</button>
+        </div>
+
+        <div className="mono-data" style={{ marginTop: 18, textAlign: 'center', fontSize: 10, color: 'var(--ink-3)' }}>
+          GET /availability · POST /availability/exceptions
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ===========================================================================
+ * SCREEN: Volunteer Inbox (deferred from MVP — kept reachable via dropdown)
+ * =========================================================================== */
+function ScreenVolunteerInbox({ go }) {
+  return (
+    <div className="screen">
+      <div className="page-title">Inbox</div>
+      <div className="scroll" style={{ paddingTop: 0 }}>
+        <div className="card" style={{ background: '#FFF7ED', borderColor: '#FED7AA', marginBottom: 14 }}>
+          <div className="mono-label" style={{ margin: 0, color: 'var(--warning)' }}>Deferred from MVP</div>
+          <div style={{ fontSize: 13, color: 'var(--ink-2)', marginTop: 4, lineHeight: 1.5 }}>
+            No /notifications endpoint exists yet. Closest: query /audit_logs filtered to actor=me
+            and assignment-related actions. Decide whether to ship a thin notifications service
+            (small backend PR) or leave this empty.
+          </div>
+        </div>
+
+        <div className="mono-label">If shipped — example rows</div>
+        <div className="group">
+          {[
+            { t: 'Swap accepted', s: 'James Park took your May 25 usher slot', d: '2H AGO' },
+            { t: 'New assignment', s: 'You were added to Youth Group · Wed May 28', d: '1D AGO' },
+            { t: 'Schedule published', s: 'June schedule is now live (43 events)', d: '3D AGO' },
+          ].map((n, i) => (
+            <div key={i} className="row" style={{ cursor: 'default' }}>
+              <div style={{ width: 8, height: 8, borderRadius: 999, background: 'var(--accent)' }}></div>
+              <div className="row-main">
+                <div className="row-title" style={{ fontSize: 14 }}>{n.t}</div>
+                <div className="row-sub">{n.s}</div>
+              </div>
+              <div className="mono-data" style={{ fontSize: 9 }}>{n.d}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ===========================================================================
+ * SCREEN: Volunteer Profile (tab 3 of 3)
+ * =========================================================================== */
+function ScreenVolunteerProfile({ go, switchToLogin }) {
+  return (
+    <div className="screen">
+      <div className="page-title">Profile</div>
+      <div className="scroll" style={{ paddingTop: 0 }}>
+
+        <div className="card" style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+          <Avatar name="Sarah Kowalski" size="lg" />
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontSize: 18, fontWeight: 700, letterSpacing: '-0.02em' }}>Sarah Kowalski</div>
+            <div className="mono-data" style={{ fontSize: 10, marginTop: 2 }}>SARAH.K@GMAIL.COM</div>
+            <div className="mono-data" style={{ fontSize: 10, color: 'var(--accent)' }}>HOPE COMMUNITY CHURCH</div>
+          </div>
+        </div>
+
+        <div className="kpi-grid" style={{ marginTop: 8 }}>
+          <div className="kpi">
+            <div className="kpi-value">23</div>
+            <div className="kpi-label">Assignments YTD</div>
+          </div>
+          <div className="kpi accent">
+            <div className="kpi-value">2</div>
+            <div className="kpi-label">Pending response</div>
+          </div>
+        </div>
+
+        <div className="mono-label">Calendar export</div>
+        <div className="card">
+          <div className="mono-data" style={{ fontSize: 11, color: 'var(--accent-ink)', background: 'var(--accent-soft)', padding: '6px 8px', borderRadius: 6, wordBreak: 'break-all' }}>
+            HTTPS://API.SIGNUPFLOW.APP/CALENDAR/A93F2C…/ICS
+          </div>
+          <div className="btn-row cols-2" style={{ marginTop: 10 }}>
+            <button className="btn btn-secondary" style={{ fontSize: 11 }}>COPY URL</button>
+            <button className="btn btn-secondary" style={{ fontSize: 11 }}>RESET TOKEN</button>
+          </div>
+          <div style={{ fontSize: 12, color: 'var(--ink-2)', marginTop: 10, lineHeight: 1.5 }}>
+            Subscribe in Apple Calendar, Google Calendar, or Outlook. Updates within 1 hour of publish.
+          </div>
+        </div>
+
+        <div className="mono-label">Settings</div>
+        <div className="group">
+          {[
+            ['Language', 'English'],
+            ['Time zone', 'America / Los Angeles'],
+            ['Notifications', 'Email + Push'],
+          ].map(([k, v], i) => (
+            <div key={i} className="row" style={{ cursor: 'default' }}>
+              <div className="row-main">
+                <div className="row-title" style={{ fontSize: 14 }}>{k}</div>
+                <div className="row-sub">{v}</div>
+              </div>
+              <span className="chev">›</span>
+            </div>
+          ))}
+        </div>
+
+        <div style={{ marginTop: 12 }}>
+          <button className="btn btn-destructive" onClick={switchToLogin}>LOG OUT</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ===========================================================================
+ * SCREEN: Admin Dashboard (tab 1 of 4)
+ * =========================================================================== */
+function ScreenAdminDashboard({ go }) {
+  const recent = [
+    { id: 142, when: 'today · 2:14 PM', health: 98, status: 'pending' },
+    { id: 141, when: '3d ago',          health: 96, status: 'published' },
+    { id: 140, when: '10d ago',         health: 87, status: 'archived' },
+  ];
+  return (
+    <div className="screen">
+      <NavBar action="Settings" onAction={() => alert('Org settings drawer')} />
+      <div className="page-title">Dashboard</div>
+      <div className="scroll" style={{ paddingTop: 0 }}>
+
+        <div className="kpi-grid">
+          <div className="kpi">
+            <div className="kpi-value">47</div>
+            <div className="kpi-label">Active volunteers</div>
+          </div>
+          <div className="kpi">
+            <div className="kpi-value">12</div>
+            <div className="kpi-label">Events this week</div>
+          </div>
+          <div className="kpi accent">
+            <div className="kpi-value">98<span className="unit">/100</span></div>
+            <div className="kpi-label">Health score</div>
+          </div>
+          <div className="kpi">
+            <div className="kpi-value" style={{ fontSize: 13, fontWeight: 600, letterSpacing: 0 }}>
+              <span className="status-text confirmed" style={{ fontSize: 11 }}>PUBLISHED</span>
+              <div style={{ fontSize: 11, color: 'var(--ink-2)', fontWeight: 500, marginTop: 4 }}>3 days ago</div>
+            </div>
+            <div className="kpi-label">Solution #141</div>
+          </div>
+        </div>
+
+        <div className="mono-label">Recent solutions</div>
+        <div className="group">
+          {recent.map(s => (
+            <div key={s.id} className="row" onClick={() => go(null, 'a-solution')}>
+              <div className="row-main">
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <span className="row-title" style={{ marginBottom: 0 }}>Solution #{s.id}</span>
+                  {s.status === 'published' && <Status kind="confirmed">live</Status>}
+                  {s.status === 'pending'   && <Status kind="pending">draft</Status>}
+                  {s.status === 'archived'  && <span className="mono-data" style={{ fontSize: 9, color: 'var(--ink-3)' }}>ARCHIVED</span>}
+                </div>
+                <div className="mono-data" style={{ fontSize: 10, marginTop: 2 }}>
+                  HEALTH {s.health} · {s.when.toUpperCase()}
+                </div>
+              </div>
+              <span className="chev">›</span>
+            </div>
+          ))}
+        </div>
+
+        <div className="mono-label">Quick actions</div>
+        <div className="btn-row cols-2">
+          <button className="btn btn-go" onClick={() => go(null, 'a-solver')}>RUN SOLVER</button>
+          <button className="btn btn-secondary" onClick={() => go(null, 'a-people')}>INVITE PEOPLE</button>
+        </div>
+
+        <div className="mono-data" style={{ marginTop: 18, textAlign: 'center', fontSize: 10, color: 'var(--ink-3)' }}>
+          GET /analytics/org · GET /solutions
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ===========================================================================
+ * SCREEN: Admin People (tab 2 of 4)
+ * =========================================================================== */
+function ScreenAdminPeople({ go }) {
+  const people = [
+    { name: 'Sarah Kowalski', email: 'sarah.k@gmail.com',   roles: ['VOLUNTEER'], status: 'active' },
+    { name: 'James Park',     email: 'jpark@hcc.org',       roles: ['VOLUNTEER', 'TEAM LEAD'], status: 'active' },
+    { name: 'Maya Robinson',  email: 'maya.r@hcc.org',      roles: ['VOLUNTEER'], status: 'active' },
+    { name: 'Daniel Kim',     email: 'pastord@hcc.org',     roles: ['ADMIN'],     status: 'active' },
+    { name: 'Aisha Patel',    email: 'aisha@gmail.com',     roles: ['VOLUNTEER'], status: 'invited' },
+    { name: 'Marcus Lee',     email: 'mlee@gmail.com',      roles: ['VOLUNTEER'], status: 'active' },
+    { name: 'Beatriz Souza',  email: 'b.souza@hcc.org',     roles: ['VOLUNTEER'], status: 'active' },
+  ];
+  return (
+    <div className="screen">
+      <NavBar action="Invite" onAction={() => alert('POST /invitations')} />
+      <div className="page-title">People <span style={{ color: 'var(--ink-3)' }}>{people.length}</span></div>
+      <div className="scroll" style={{ paddingTop: 0 }}>
+
+        <div className="field" style={{ marginBottom: 12 }}>
+          <span className="field-value placeholder" style={{ fontSize: 14 }}>🔍  Search by name or email…</span>
+        </div>
+
+        <div className="group">
+          {people.map((p, i) => (
+            <div key={i} className="row">
+              <Avatar name={p.name} />
+              <div className="row-main">
+                <div className="row-title">{p.name}</div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 2 }}>
+                  <span className="row-sub" style={{ fontSize: 12 }}>{p.email}</span>
+                </div>
+                <div style={{ display: 'flex', gap: 4, marginTop: 6 }}>
+                  {p.roles.map(r => <span key={r} className="role-chip">{r}</span>)}
+                  {p.status === 'invited' && <span className="role-chip" style={{ color: 'var(--warning)', borderColor: 'var(--warning)' }}>INVITED</span>}
+                </div>
+              </div>
+              <span className="chev">›</span>
+            </div>
+          ))}
+        </div>
+
+        <div className="mono-data" style={{ marginTop: 18, textAlign: 'center', fontSize: 10, color: 'var(--ink-3)' }}>
+          GET /people?org_id=hcc · POST /invitations
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ===========================================================================
+ * SCREEN: Admin Events (tab 3 of 4)
+ * =========================================================================== */
+function ScreenAdminEvents({ go }) {
+  const events = [
+    { d: 'SUN 25 MAY · 10:00', title: 'Sunday 10am Service', need: '4/4', need_ok: true },
+    { d: 'SUN 25 MAY · 18:00', title: 'Evening Worship',     need: '2/3', need_ok: false },
+    { d: 'WED 28 MAY · 19:00', title: 'Youth Group',         need: '3/3', need_ok: true },
+    { d: 'SUN 1 JUN · 10:00',  title: 'Sunday 10am Service', need: '4/4', need_ok: true },
+  ];
+  const series = [
+    { title: 'Sunday 10am Service', cad: 'WEEKLY · 12 OCCURRENCES', next: 'May 25' },
+    { title: 'Wednesday Youth Group', cad: 'WEEKLY · 8 OCCURRENCES', next: 'May 28' },
+  ];
+  return (
+    <div className="screen">
+      <NavBar action="+ New" onAction={() => alert('Create event sheet')} />
+      <div className="page-title">Events</div>
+      <div className="scroll" style={{ paddingTop: 0 }}>
+
+        <div className="mono-label">This month · 4</div>
+        <div className="group">
+          {events.map((e, i) => (
+            <div key={i} className="row">
+              <div className="row-main">
+                <div className="mono-data" style={{ fontSize: 10, marginBottom: 4 }}>{e.d}</div>
+                <div className="row-title">{e.title}</div>
+                <div style={{ marginTop: 6 }}>
+                  {e.need_ok
+                    ? <Status kind="confirmed">{e.need} ROLES FILLED</Status>
+                    : <Status kind="pending">{e.need} ROLES — 1 OPEN</Status>}
+                </div>
+              </div>
+              <span className="chev">›</span>
+            </div>
+          ))}
+        </div>
+
+        <div className="mono-label">Recurring series · 2</div>
+        <div className="group">
+          {series.map((s, i) => (
+            <div key={i} className="row">
+              <div className="row-main">
+                <div className="row-title">{s.title}</div>
+                <div className="mono-data" style={{ fontSize: 10, marginTop: 2 }}>{s.cad}</div>
+                <div className="row-sub" style={{ marginTop: 4 }}>Next: {s.next}</div>
+              </div>
+              <span className="chev">›</span>
+            </div>
+          ))}
+        </div>
+
+        <div className="mono-data" style={{ marginTop: 18, textAlign: 'center', fontSize: 10, color: 'var(--ink-3)' }}>
+          GET /events · GET /recurring_events
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ===========================================================================
+ * SCREEN: Admin Solver (tab 4 of 4)
+ * =========================================================================== */
+function ScreenAdminSolver({ go }) {
+  return (
+    <div className="screen">
+      <NavBar />
+      <div className="page-title">Run Solver</div>
+      <div className="scroll" style={{ paddingTop: 0 }}>
+
+        <div className="mono-label">Date range</div>
+        <div className="kpi-grid" style={{ gap: 8 }}>
+          <div className="field">
+            <span className="field-label">From</span>
+            <span className="field-value">25 May 2026</span>
+          </div>
+          <div className="field">
+            <span className="field-label">To</span>
+            <span className="field-value">21 Jun 2026</span>
+          </div>
+        </div>
+
+        <div className="mono-label">Mode</div>
+        <div className="seg cols-2">
+          <button className="active">STRICT</button>
+          <button>RELAXED</button>
+        </div>
+
+        <div className="mono-label">Options</div>
+        <div className="card" style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <div style={{ flex: 1 }}>
+            <div style={{ fontSize: 14, fontWeight: 600 }}>Minimize moves from published</div>
+            <div className="row-sub" style={{ fontSize: 12, marginTop: 2 }}>
+              Bias the solver toward keeping current published assignments
+            </div>
+          </div>
+          <div style={{ width: 44, height: 28, background: 'var(--accent)', borderRadius: 999, position: 'relative' }}>
+            <div style={{ width: 24, height: 24, background: 'white', borderRadius: '50%', position: 'absolute', top: 2, right: 2, boxShadow: '0 1px 2px rgba(0,0,0,0.2)' }}></div>
+          </div>
+        </div>
+
+        <div style={{ marginTop: 16 }}>
+          <button className="btn btn-go" onClick={() => go(null, 'a-solution')}>RUN SOLVER →</button>
+        </div>
+
+        <div className="mono-label">Last solve · #142 · today</div>
+        <div className="card" onClick={() => go(null, 'a-solution')} style={{ cursor: 'pointer' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
+            <div style={{ fontSize: 17, fontWeight: 700, letterSpacing: '-0.015em' }}>Solution #142</div>
+            <Status kind="pending">draft</Status>
+          </div>
+          <div className="kpi-grid" style={{ marginTop: 12, gridTemplateColumns: 'repeat(3, 1fr)' }}>
+            <div>
+              <div className="mono-data" style={{ fontSize: 10 }}>SOLVE_MS</div>
+              <div style={{ fontSize: 18, fontWeight: 700, letterSpacing: '-0.02em' }}>274</div>
+            </div>
+            <div>
+              <div className="mono-data" style={{ fontSize: 10 }}>HEALTH</div>
+              <div style={{ fontSize: 18, fontWeight: 700, letterSpacing: '-0.02em' }}>98</div>
+            </div>
+            <div>
+              <div className="mono-data" style={{ fontSize: 10 }}>MOVES</div>
+              <div style={{ fontSize: 18, fontWeight: 700, letterSpacing: '-0.02em', color: 'var(--accent)' }}>+4</div>
+            </div>
+          </div>
+          <div style={{ marginTop: 8 }}>
+            <Status kind="confirmed">0 hard violations</Status>
+            <span style={{ marginLeft: 10 }}><Status kind="pending">2 soft</Status></span>
+          </div>
+        </div>
+
+        <div className="mono-data" style={{ marginTop: 18, textAlign: 'center', fontSize: 10, color: 'var(--ink-3)' }}>
+          POST /solver/solve
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ===========================================================================
+ * SCREEN: Admin Solution Review (push from Solver)
+ *  · segmented control: ASSIGNMENTS / STATS / CONFLICTS
+ *  · inline actions: PUBLISH (top right) + COMPARE (bottom)
+ * =========================================================================== */
+function ScreenAdminSolutionReview({ go }) {
+  const [tab, setTab] = React.useState('assignments');
+
+  const events = [
+    { date: 'SUN 25 MAY · 10:00', title: 'Sunday 10am Service', people: ['Sarah Kowalski', 'James Park', 'Maya Robinson', 'Daniel Kim'] },
+    { date: 'SUN 25 MAY · 18:00', title: 'Evening Worship',     people: ['Aisha Patel', 'Marcus Lee'] },
+    { date: 'WED 28 MAY · 19:00', title: 'Youth Group',         people: ['James Park', 'Beatriz Souza', 'Maya Robinson'] },
+  ];
+
+  return (
+    <div className="screen">
+      <NavBar back="Solver" onBack={() => go(null, 'a-solver')} action="Publish" onAction={() => go(null, 'a-publish')} title="Solution #142" />
+      <div className="scroll">
+        <div className="seg cols-3" style={{ marginTop: 8 }}>
+          <button className={tab==='assignments'?'active':''} onClick={() => setTab('assignments')}>ASSIGNMENTS</button>
+          <button className={tab==='stats'?'active':''} onClick={() => setTab('stats')}>STATS</button>
+          <button className={tab==='conflicts'?'active':''} onClick={() => setTab('conflicts')}>CONFLICTS</button>
+        </div>
+
+        {tab === 'assignments' && (
+          <>
+            {events.map((e, i) => (
+              <div key={i}>
+                <div className="mono-label">{e.date}</div>
+                <div className="card">
+                  <div style={{ fontSize: 15, fontWeight: 600, marginBottom: 10 }}>{e.title}</div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                    {e.people.map((p, pi) => (
+                      <div key={pi} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                        <Avatar name={p} size="sm" />
+                        <span style={{ fontSize: 13 }}>{p}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </>
+        )}
+
+        {tab === 'stats' && (
+          <>
+            <div className="mono-label">Fairness</div>
+            <div className="card">
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 14 }}>
+                <div>
+                  <div className="mono-data" style={{ fontSize: 10 }}>STDEV</div>
+                  <div style={{ fontSize: 22, fontWeight: 700 }}>0.42</div>
+                </div>
+                <div>
+                  <div className="mono-data" style={{ fontSize: 10 }}>MAX/PERSON</div>
+                  <div style={{ fontSize: 22, fontWeight: 700 }}>3</div>
+                </div>
+                <div>
+                  <div className="mono-data" style={{ fontSize: 10 }}>MEDIAN</div>
+                  <div style={{ fontSize: 22, fontWeight: 700 }}>2</div>
+                </div>
+              </div>
+              <div className="mono-data" style={{ fontSize: 10, marginBottom: 6 }}>HISTOGRAM · ASSIGNMENTS PER PERSON</div>
+              <div style={{ display: 'flex', alignItems: 'flex-end', gap: 6, height: 60 }}>
+                {[{c:1,n:8},{c:2,n:21},{c:3,n:14}].map((b,i)=>(
+                  <div key={i} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
+                    <div style={{ background: 'var(--accent)', width: '100%', height: `${b.n*2.4}px`, borderRadius: '4px 4px 0 0' }}></div>
+                    <div className="mono-data" style={{ fontSize: 9 }}>{b.c} · {b.n}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="mono-label">Stability vs published #141</div>
+            <div className="kpi-grid">
+              <div className="kpi accent">
+                <div className="kpi-value">+4</div>
+                <div className="kpi-label">Moves</div>
+              </div>
+              <div className="kpi">
+                <div className="kpi-value">2</div>
+                <div className="kpi-label">People affected</div>
+              </div>
+            </div>
+
+            <div className="mono-label">Health</div>
+            <div className="card">
+              <div style={{ fontSize: 32, fontWeight: 700, letterSpacing: '-0.03em', color: 'var(--accent)' }}>98<span style={{ fontSize: 16, color: 'var(--ink-2)', fontWeight: 500 }}>/100</span></div>
+              <div className="row-sub" style={{ marginTop: 4 }}>0 hard violations · 2 soft (acceptable)</div>
+            </div>
+          </>
+        )}
+
+        {tab === 'conflicts' && (
+          <div className="card" style={{ marginTop: 12, textAlign: 'center', padding: '32px 18px', color: 'var(--ink-3)' }}>
+            <div style={{ fontSize: 28, marginBottom: 8 }}>✓</div>
+            <div className="mono-data" style={{ fontSize: 12 }}>NO HARD CONFLICTS</div>
+            <div style={{ fontSize: 12, marginTop: 4 }}>2 soft violations are listed under Stats.</div>
+          </div>
+        )}
+
+        <div style={{ marginTop: 18 }}>
+          <button className="btn btn-secondary" onClick={() => go(null, 'a-compare')}>COMPARE WITH ANOTHER SOLUTION</button>
+        </div>
+        <div className="mono-data" style={{ marginTop: 16, textAlign: 'center', fontSize: 10, color: 'var(--ink-3)' }}>
+          GET /solutions/142 · GET /solutions/142/stats
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ===========================================================================
+ * SCREEN: Admin Compare (push from Solution Review)
+ * =========================================================================== */
+function ScreenAdminCompare({ go }) {
+  const removed = [
+    { event: 'Sunday 10am Service · May 25', name: 'Daniel Kim',  role: 'USHER' },
+    { event: 'Sunday 10am Service · May 25', name: 'Aisha Patel', role: 'GREETER' },
+  ];
+  const added = [
+    { event: 'Sunday 10am Service · May 25', name: 'Sarah Kowalski', role: 'USHER' },
+    { event: 'Sunday 10am Service · May 25', name: 'Maya Robinson',  role: 'GREETER' },
+  ];
+  return (
+    <div className="screen">
+      <NavBar back="Review" onBack={() => go(null, 'a-solution')} title="Compare" />
+      <div className="scroll">
+
+        <div className="kpi-grid" style={{ marginTop: 8, gridTemplateColumns: 'repeat(2,1fr)' }}>
+          <div className="field">
+            <span className="field-label">Solution A</span>
+            <span className="field-value">#141 · published</span>
+          </div>
+          <div className="field">
+            <span className="field-label">Solution B</span>
+            <span className="field-value">#142 · draft</span>
+          </div>
+        </div>
+
+        <div className="mono-label">Diff summary</div>
+        <div className="card">
+          <div className="kpi-grid" style={{ gridTemplateColumns: 'repeat(4, 1fr)', gap: 4 }}>
+            <div>
+              <div className="mono-data" style={{ fontSize: 9 }}>ADDED</div>
+              <div style={{ fontSize: 20, fontWeight: 700, color: 'var(--success)' }}>+4</div>
+            </div>
+            <div>
+              <div className="mono-data" style={{ fontSize: 9 }}>REMOVED</div>
+              <div style={{ fontSize: 20, fontWeight: 700, color: 'var(--danger)' }}>−4</div>
+            </div>
+            <div>
+              <div className="mono-data" style={{ fontSize: 9 }}>UNCHANGED</div>
+              <div style={{ fontSize: 20, fontWeight: 700 }}>18</div>
+            </div>
+            <div>
+              <div className="mono-data" style={{ fontSize: 9 }}>AFFECTED</div>
+              <div style={{ fontSize: 20, fontWeight: 700, color: 'var(--accent)' }}>4</div>
+            </div>
+          </div>
+        </div>
+
+        <div className="mono-label" style={{ color: 'var(--danger)' }}>Removed · 2</div>
+        <div className="group" style={{ borderColor: '#FECACA' }}>
+          {removed.map((d, i) => (
+            <div key={i} className="row" style={{ cursor: 'default' }}>
+              <span style={{ color: 'var(--danger)', fontSize: 16, fontWeight: 700, width: 16, textAlign: 'center' }}>−</span>
+              <div className="row-main">
+                <div className="row-title" style={{ fontSize: 14 }}>{d.name}</div>
+                <div className="mono-data" style={{ fontSize: 10 }}>{d.role} · {d.event.toUpperCase()}</div>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <div className="mono-label" style={{ color: 'var(--success)' }}>Added · 2</div>
+        <div className="group" style={{ borderColor: '#BBF7D0' }}>
+          {added.map((d, i) => (
+            <div key={i} className="row" style={{ cursor: 'default' }}>
+              <span style={{ color: 'var(--success)', fontSize: 16, fontWeight: 700, width: 16, textAlign: 'center' }}>+</span>
+              <div className="row-main">
+                <div className="row-title" style={{ fontSize: 14 }}>{d.name}</div>
+                <div className="mono-data" style={{ fontSize: 10 }}>{d.role} · {d.event.toUpperCase()}</div>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <div className="mono-data" style={{ marginTop: 18, textAlign: 'center', fontSize: 10, color: 'var(--ink-3)' }}>
+          GET /solutions/141/compare/142
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ===========================================================================
+ * SCREEN: Admin Publish (push from Solution Review)
+ * =========================================================================== */
+function ScreenAdminPublish({ go }) {
+  const history = [
+    { id: 141, when: '3 DAYS AGO · APR 25–MAY 24', health: 96 },
+    { id: 138, when: '17 DAYS AGO · APR 1–APR 30', health: 91 },
+    { id: 134, when: '46 DAYS AGO · MAR 1–MAR 31', health: 88 },
+  ];
+  return (
+    <div className="screen">
+      <NavBar back="Review" onBack={() => go(null, 'a-solution')} title="Publish" />
+      <div className="scroll">
+
+        <div className="mono-label">Currently published</div>
+        <div className="card" style={{ background: 'var(--accent-soft)', borderColor: 'var(--accent)' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
+            <div style={{ fontSize: 18, fontWeight: 700 }}>Solution #141</div>
+            <Status kind="confirmed">live</Status>
+          </div>
+          <div className="mono-data" style={{ fontSize: 10, marginTop: 4 }}>HEALTH 96 · 24 ASSIGNMENTS · APR 25–MAY 24</div>
+        </div>
+
+        <div className="mono-label">Publish a new draft</div>
+        <div className="card" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div>
+            <div style={{ fontSize: 15, fontWeight: 600 }}>Solution #142</div>
+            <div className="mono-data" style={{ fontSize: 10, marginTop: 2 }}>DRAFT · HEALTH 98 · +4 MOVES VS #141</div>
+          </div>
+          <span className="chev">›</span>
+        </div>
+        <div style={{ marginTop: 10 }}>
+          <button className="btn btn-go">PUBLISH #142 →</button>
+        </div>
+        <div className="mono-data" style={{ fontSize: 10, color: 'var(--ink-3)', textAlign: 'center', marginTop: 6 }}>
+          REPLACES #141 · AUDIT ROW WRITTEN
+        </div>
+
+        <div className="mono-label">Rollback history · {history.length}</div>
+        <div className="group">
+          {history.map(h => (
+            <div key={h.id} className="row" style={{ cursor: 'default' }}>
+              <div className="row-main">
+                <div className="row-title">Solution #{h.id}</div>
+                <div className="mono-data" style={{ fontSize: 10 }}>{h.when} · HEALTH {h.health}</div>
+              </div>
+              <button className="btn btn-secondary" style={{ width: 'auto', fontSize: 10, padding: '6px 12px' }}>ROLLBACK</button>
+            </div>
+          ))}
+        </div>
+
+        <div className="mono-data" style={{ marginTop: 18, textAlign: 'center', fontSize: 10, color: 'var(--ink-3)' }}>
+          POST /solutions/{'{id}'}/publish · POST /solutions/{'{id}'}/rollback
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ===========================================================================
+ * Tab bar
+ * =========================================================================== */
+function TabBar({ role, current, onChange }) {
+  // Junior pass v2 structure user-confirmed:
+  // Volunteer · 3 tabs (Inbox dropped from MVP)
+  // Admin    · 4 tabs (More dropped; Compare/Publish promoted to Solution Review actions)
+  const tabs = role === 'volunteer'
+    ? [
+        { key: 'v-schedule',     icon: '📅', label: 'Schedule' },
+        { key: 'v-availability', icon: '📆', label: 'Avail' },
+        { key: 'v-profile',      icon: '👤', label: 'Profile' },
+      ]
+    : [
+        { key: 'a-dashboard', icon: '⌂', label: 'Home' },
+        { key: 'a-people',    icon: '◉', label: 'People' },
+        { key: 'a-events',    icon: '▦', label: 'Events' },
+        { key: 'a-solver',    icon: '⚙', label: 'Solver' },
+      ];
+  return (
+    <div className="tab-bar">
+      {tabs.map(t => (
+        <button key={t.key}
+          className={current === t.key ? 'active' : ''}
+          onClick={() => onChange(t.key)}>
+          <div className="tab-icon">{t.icon}</div>
+          <div className="tab-label">{t.label}</div>
+        </button>
+      ))}
+    </div>
+  );
+}
+
+/* ===========================================================================
+ * AppPhone — clickable state machine
+ * =========================================================================== */
+function AppPhone() {
+  const [role, setRole] = React.useState('volunteer');
+  const [screen, setScreen] = React.useState('login');
+
+  const go = (newRole, newScreen) => {
+    if (newRole) setRole(newRole);
+    setScreen(newScreen);
+  };
+  const reset = () => { setRole('volunteer'); setScreen('login'); };
+
+  const tabRoots = new Set(role === 'volunteer'
+    ? ['v-schedule', 'v-availability', 'v-profile']
+    : ['a-dashboard', 'a-people', 'a-events', 'a-solver']);
+  const showTabBar = tabRoots.has(screen);
+
+  let body;
+  switch (screen) {
+    case 'login':            body = <ScreenLogin go={go} />; break;
+    case 'invitation':       body = <ScreenInvitation go={go} />; break;
+    case 'v-schedule':       body = <ScreenVolunteerSchedule go={go} />; break;
+    case 'v-assignment':     body = <ScreenAssignmentDetail go={go} />; break;
+    case 'v-availability':   body = <ScreenVolunteerAvailability go={go} />; break;
+    case 'v-inbox':          body = <ScreenVolunteerInbox go={go} />; break;
+    case 'v-profile':        body = <ScreenVolunteerProfile go={go} switchToLogin={reset} />; break;
+    case 'a-dashboard':      body = <ScreenAdminDashboard go={go} />; break;
+    case 'a-people':         body = <ScreenAdminPeople go={go} />; break;
+    case 'a-events':         body = <ScreenAdminEvents go={go} />; break;
+    case 'a-solver':         body = <ScreenAdminSolver go={go} />; break;
+    case 'a-solution':       body = <ScreenAdminSolutionReview go={go} />; break;
+    case 'a-compare':        body = <ScreenAdminCompare go={go} />; break;
+    case 'a-publish':        body = <ScreenAdminPublish go={go} />; break;
+    default:                 body = <ScreenLogin go={go} />;
+  }
+
+  return (
+    <>
+      <div className="dev-controls">
+        <span className="label">Demo</span>
+        <div className="role-pill">
+          <button className={role === 'volunteer' ? 'active' : ''}
+                  onClick={() => go('volunteer', 'v-schedule')}>Volunteer</button>
+          <button className={role === 'admin' ? 'active' : ''}
+                  onClick={() => go('admin', 'a-dashboard')}>Admin</button>
+        </div>
+        <select
+          value={screen}
+          onChange={(e) => setScreen(e.target.value)}>
+          <optgroup label="Pre-auth">
+            <option value="login">login</option>
+            <option value="invitation">invitation accept</option>
+          </optgroup>
+          <optgroup label="Volunteer">
+            <option value="v-schedule">v · schedule</option>
+            <option value="v-assignment">v · assignment detail</option>
+            <option value="v-availability">v · availability</option>
+            <option value="v-inbox">v · inbox (deferred)</option>
+            <option value="v-profile">v · profile</option>
+          </optgroup>
+          <optgroup label="Admin">
+            <option value="a-dashboard">a · dashboard</option>
+            <option value="a-people">a · people</option>
+            <option value="a-events">a · events</option>
+            <option value="a-solver">a · solver</option>
+            <option value="a-solution">a · solution review</option>
+            <option value="a-compare">a · compare</option>
+            <option value="a-publish">a · publish</option>
+          </optgroup>
+        </select>
+        <button className="reset" onClick={reset}>↺ Login</button>
+      </div>
+
+      <IosFrame>
+        {body}
+        {showTabBar && <TabBar role={role} current={screen} onChange={(k) => go(null, k)} />}
+      </IosFrame>
+    </>
+  );
+}
+
+/* ===== Page shell ===== */
+function Page() {
+  return (
+    <div className="stage">
+      <div className="header">
+        <h1><Wordmark size={20} /> · iOS v2</h1>
+        <div className="subtitle">Full Pass · Block-Mono · 14 screens · Maps to /api/v1</div>
+      </div>
+      <AppPhone />
+      <div className="footer-note">
+        Brand spec: mobile/prototype/brand-spec.md · use jump-to dropdown to see deferred screens
+      </div>
+    </div>
+  );
+}
+
+const root = ReactDOM.createRoot(document.getElementById('root'));
+root.render(<Page />);
+</script>
+</body>
+</html>

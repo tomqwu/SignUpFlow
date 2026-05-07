@@ -1,0 +1,1009 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SignUpFlow · iOS Prototype v1 (Junior pass)</title>
+<!--
+  ============================================================================
+  SignUpFlow iOS Prototype — Junior pass · 2026-05-06
+  ============================================================================
+
+  PURPOSE: Design spec for a future Flutter app, in clickable HTML form so the
+  visual & interaction system can be reviewed before any Dart is written.
+
+  DESIGN REFERENCE (user-picked): Cron / Notion Calendar.
+    Soft warm off-white background, generous padding, restrained accent
+    color, sans typography (Inter as a stand-in for Söhne), colored time
+    chips, minimal chrome, big tap targets.
+
+  SCOPE: Both volunteer & admin journeys end-to-end against the actual
+  /api/v1 endpoints. Single iPhone with a dev-only role toggle above.
+
+  STATUS: This is the JUNIOR PASS — placeholders + reasoning comments only.
+    Each screen names what API endpoint it talks to and what fields show.
+    Awaiting user direction before filling in real visual detail.
+
+  ARCHITECTURE: Single-file inline React per huashu-design app-prototype rule.
+    No external scripts, double-click to open from filesystem.
+
+  STRUCTURE OF THIS FILE:
+    - <style> ··············· visual system (CSS variables, base styles)
+    - IosFrame component ···· inlined from skill assets (DO NOT hand-roll)
+    - Screen components ····· 14 stubs, each ~30-40 lines with comments
+    - AppPhone state machine  routing between screens, role-aware
+    - Dev-mode role toggle ·· above the iPhone, lets reviewer flip roles
+  ============================================================================
+-->
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+<style>
+  :root {
+    /* Cron/Notion direction: warm off-white, near-black ink, single teal accent */
+    --bg-page:        #F0EFEC;
+    --bg-app:         #FAFAF9;
+    --bg-card:        #FFFFFF;
+    --ink-1:          #18181B;
+    --ink-2:          #52525B;
+    --ink-3:          #A1A1AA;
+    --line:           #E4E4E7;
+    --line-soft:      #F4F4F5;
+
+    --accent:         #0F766E;   /* teal-700 — calm, calendar-app appropriate */
+    --accent-soft:    #CCFBF1;   /* teal-100 — for time chip backgrounds */
+    --accent-ink:     #134E4A;   /* teal-900 — text on accent-soft */
+
+    --success:        #16A34A;
+    --warning:        #D97706;
+    --danger:         #DC2626;
+
+    --r-card:         12px;
+    --r-pill:         999px;
+    --r-chip:         6px;
+
+    --shadow-card:    0 1px 2px rgba(24,24,27,0.04), 0 4px 12px rgba(24,24,27,0.04);
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body {
+    margin: 0;
+    padding: 0;
+    background: var(--bg-page);
+    font-family: 'Inter', -apple-system, "SF Pro Text", system-ui, sans-serif;
+    font-feature-settings: 'cv11', 'ss01';  /* Inter's "more Söhne-like" variants */
+    color: var(--ink-1);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* — Reusable placeholder helpers — */
+  .placeholder-block {
+    background: var(--line-soft);
+    border-radius: 8px;
+    color: var(--ink-3);
+    font-size: 12px;
+    padding: 16px;
+    text-align: center;
+    border: 1px dashed var(--line);
+  }
+
+  .stub-note {
+    font-size: 10.5px;
+    color: var(--ink-3);
+    line-height: 1.4;
+    font-style: italic;
+    padding: 6px 0;
+    /* annotation: explains what this section will become in full pass */
+  }
+
+  /* — Page layout — */
+  .stage {
+    min-height: 100vh;
+    padding: 32px 16px 64px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+  }
+
+  .header {
+    text-align: center;
+    max-width: 720px;
+  }
+  .header h1 {
+    font-size: 22px;
+    font-weight: 600;
+    margin: 0;
+    letter-spacing: -0.01em;
+  }
+  .header .subtitle {
+    font-size: 13px;
+    color: var(--ink-2);
+    margin: 6px 0 0;
+  }
+
+  /* — Dev-mode role toggle — above the iPhone, NOT part of the product UI — */
+  .dev-controls {
+    background: var(--bg-card);
+    border: 1px solid var(--line);
+    border-radius: var(--r-card);
+    padding: 10px 14px;
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+    box-shadow: var(--shadow-card);
+    font-size: 12px;
+  }
+  .dev-controls .label {
+    color: var(--ink-3);
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    font-size: 10px;
+  }
+  .role-pill {
+    background: var(--line-soft);
+    border-radius: var(--r-pill);
+    padding: 3px;
+    display: flex;
+    gap: 2px;
+  }
+  .role-pill button {
+    border: 0;
+    background: transparent;
+    padding: 5px 12px;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--ink-2);
+    border-radius: var(--r-pill);
+    cursor: pointer;
+    font-family: inherit;
+  }
+  .role-pill button.active {
+    background: var(--ink-1);
+    color: white;
+  }
+  .dev-controls .reset {
+    color: var(--accent);
+    cursor: pointer;
+    font-weight: 500;
+    background: transparent;
+    border: 0;
+    padding: 0;
+    font-family: inherit;
+    font-size: 12px;
+  }
+
+  /* — In-app screen primitives — */
+  .screen {
+    height: 100%;
+    background: var(--bg-app);
+    color: var(--ink-1);
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  .nav-header {
+    /* iOS nav header — appears under status bar */
+    padding: 8px 20px 10px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: var(--bg-app);
+  }
+  .nav-header .title {
+    font-size: 22px;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+  }
+  .nav-header .back {
+    color: var(--accent);
+    font-size: 14px;
+    font-weight: 500;
+    background: transparent;
+    border: 0;
+    padding: 0;
+    cursor: pointer;
+    font-family: inherit;
+  }
+  .nav-header .action {
+    color: var(--accent);
+    font-size: 14px;
+    font-weight: 500;
+    background: transparent;
+    border: 0;
+    padding: 0;
+    cursor: pointer;
+    font-family: inherit;
+  }
+
+  .scroll {
+    padding: 4px 16px 96px;  /* bottom padding leaves room for tab bar */
+  }
+
+  .screen-section {
+    margin-bottom: 24px;
+  }
+  .screen-section .section-label {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--ink-3);
+    font-weight: 500;
+    margin: 0 4px 8px;
+  }
+
+  .card {
+    background: var(--bg-card);
+    border-radius: var(--r-card);
+    border: 1px solid var(--line);
+    padding: 14px;
+    box-shadow: var(--shadow-card);
+  }
+  .card + .card { margin-top: 10px; }
+
+  /* — Tab bar (iOS bottom) — */
+  .tab-bar {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 78px;  /* iOS tab bar height incl. home indicator pad */
+    background: rgba(255,255,255,0.92);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border-top: 1px solid var(--line);
+    display: flex;
+    padding: 6px 0 24px;
+    z-index: 10;
+  }
+  .tab-bar button {
+    flex: 1;
+    background: transparent;
+    border: 0;
+    padding: 4px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    color: var(--ink-3);
+    font-size: 10px;
+    font-weight: 500;
+    cursor: pointer;
+    font-family: inherit;
+  }
+  .tab-bar button.active { color: var(--accent); }
+  .tab-bar .icon {
+    width: 24px; height: 24px;
+    display: grid; place-items: center;
+    font-size: 18px;  /* placeholder emoji until SF Symbols swap */
+  }
+
+  /* — Time chip (Cron-style colored block for time/role) — */
+  .time-chip {
+    display: inline-block;
+    background: var(--accent-soft);
+    color: var(--accent-ink);
+    padding: 2px 8px;
+    border-radius: var(--r-chip);
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.01em;
+  }
+
+  /* — Avatar circle (initials) — */
+  .avatar {
+    width: 36px; height: 36px;
+    border-radius: 999px;
+    display: grid; place-items: center;
+    color: white;
+    font-size: 13px;
+    font-weight: 600;
+    flex-shrink: 0;
+  }
+
+  /* — Endpoint annotation badge (visible in Junior pass to aid review) — */
+  .api-tag {
+    display: inline-block;
+    background: #1F2937;
+    color: #E5E7EB;
+    font-family: ui-monospace, "SF Mono", monospace;
+    font-size: 10px;
+    padding: 1px 6px;
+    border-radius: 4px;
+    letter-spacing: 0;
+  }
+
+  .footer-note {
+    margin-top: 24px;
+    font-size: 11px;
+    color: var(--ink-3);
+    max-width: 720px;
+    text-align: center;
+    line-height: 1.6;
+  }
+  .footer-note code {
+    background: white;
+    border: 1px solid var(--line);
+    padding: 1px 5px;
+    border-radius: 4px;
+    font-size: 10px;
+  }
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<!-- Pinned versions per huashu-design react-setup rules -->
+<script crossorigin src="https://unpkg.com/react@18.3.1/umd/react.development.js"></script>
+<script crossorigin src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js"></script>
+<script src="https://unpkg.com/@babel/standalone@7.25.6/babel.min.js"></script>
+
+<script type="text/babel" data-presets="react">
+/* ===========================================================================
+ * IosFrame — inlined from huashu-design assets/ios_frame.jsx
+ * iPhone 15 Pro spec (393×852). DO NOT hand-roll Dynamic Island/status bar.
+ * =========================================================================== */
+const iosFrameStyles = {
+  wrapper: { display: 'inline-block', padding: 12, background: '#000', borderRadius: 60,
+    boxShadow: '0 0 0 2px #1f2937, 0 20px 60px rgba(0,0,0,0.3)', position: 'relative' },
+  screen: { position: 'relative', borderRadius: 48, overflow: 'hidden', background: '#fff' },
+  statusBar: { position: 'absolute', top: 0, left: 0, right: 0, height: 54, display: 'flex',
+    alignItems: 'center', justifyContent: 'space-between', padding: '0 32px', fontSize: 16,
+    fontWeight: 600, fontFamily: '-apple-system,"SF Pro Text",sans-serif', zIndex: 20, pointerEvents: 'none' },
+  dynamicIsland: { position: 'absolute', top: 12, left: '50%', transform: 'translateX(-50%)',
+    width: 124, height: 36, background: '#000', borderRadius: 999, zIndex: 30 },
+  statusIcons: { display: 'flex', alignItems: 'center', gap: 6 },
+  signalIcon: { display: 'flex', alignItems: 'flex-end', gap: 2, height: 12 },
+  signalBar: { width: 3, background: 'currentColor', borderRadius: 1 },
+  batteryIcon: { width: 26, height: 12, border: '1.5px solid currentColor', borderRadius: 3, padding: 1, position: 'relative', opacity: 0.8 },
+  batteryCap: { position: 'absolute', top: 3, right: -3, width: 2, height: 6, background: 'currentColor', borderRadius: '0 1px 1px 0' },
+  content: { position: 'absolute', top: 54, left: 0, right: 0, bottom: 0, overflow: 'hidden' },
+  homeIndicator: { position: 'absolute', bottom: 10, left: '50%', transform: 'translateX(-50%)',
+    width: 140, height: 5, background: 'rgba(0,0,0,0.3)', borderRadius: 999, zIndex: 10 },
+};
+function IosFrame({ children, width = 393, height = 852, time = '9:41', battery = 85 }) {
+  return (
+    <div style={iosFrameStyles.wrapper}>
+      <div style={{ ...iosFrameStyles.screen, width, height }}>
+        <div style={{ ...iosFrameStyles.statusBar, color: '#000' }}>
+          <span>{time}</span>
+          <div style={iosFrameStyles.statusIcons}>
+            <div style={iosFrameStyles.signalIcon}>
+              <div style={{ ...iosFrameStyles.signalBar, height: 4 }} />
+              <div style={{ ...iosFrameStyles.signalBar, height: 6 }} />
+              <div style={{ ...iosFrameStyles.signalBar, height: 9 }} />
+              <div style={{ ...iosFrameStyles.signalBar, height: 11 }} />
+            </div>
+            <svg width="16" height="12" viewBox="0 0 16 12" fill="none">
+              <path d="M8 11.5a1 1 0 100-2 1 1 0 000 2z" fill="currentColor" />
+              <path d="M3 7.5a7 7 0 0110 0" stroke="currentColor" strokeWidth="1.3" fill="none" strokeLinecap="round" />
+              <path d="M1 4.5a11 11 0 0114 0" stroke="currentColor" strokeWidth="1.3" fill="none" strokeLinecap="round" opacity="0.7" />
+            </svg>
+            <div style={iosFrameStyles.batteryIcon}>
+              <div style={{ width: `${battery}%`, height: '100%', background: 'currentColor', borderRadius: 1, opacity: 0.9 }} />
+              <div style={iosFrameStyles.batteryCap} />
+            </div>
+          </div>
+        </div>
+        <div style={iosFrameStyles.dynamicIsland} />
+        <div style={iosFrameStyles.content}>{children}</div>
+        <div style={iosFrameStyles.homeIndicator} />
+      </div>
+    </div>
+  );
+}
+
+/* ===========================================================================
+ * Reusable in-app primitives
+ * =========================================================================== */
+function NavHeader({ title, back, action, onBack, onAction }) {
+  return (
+    <div className="nav-header">
+      <div style={{ minWidth: 60 }}>
+        {back && <button className="back" onClick={onBack}>‹ {back}</button>}
+      </div>
+      <div className="title" style={{ flex: 1, textAlign: back ? 'center' : 'left' }}>{title}</div>
+      <div style={{ minWidth: 60, textAlign: 'right' }}>
+        {action && <button className="action" onClick={onAction}>{action}</button>}
+      </div>
+    </div>
+  );
+}
+
+function Placeholder({ label, height = 60, note }) {
+  return (
+    <>
+      <div className="placeholder-block" style={{ height }}>
+        {label}
+      </div>
+      {note && <div className="stub-note">{note}</div>}
+    </>
+  );
+}
+
+function ApiTag({ method = 'GET', path }) {
+  return <span className="api-tag">{method} {path}</span>;
+}
+
+function TabBar({ role, current, onChange }) {
+  // Junior pass v2 — user-picked structure (2026-05-07):
+  //   Volunteer: 3 tabs · Inbox dropped from MVP (no /notifications endpoint yet)
+  //   Admin:     4 tabs · "More" dropped; Compare/Publish promoted to inline actions
+  //              inside the Solution Review screen; secondary screens (Holidays,
+  //              Constraints, Org settings, Log out) reachable via avatar-tap drawer
+  //              in Full pass.
+  const tabs = role === 'volunteer'
+    ? [
+        { key: 'v-schedule',     icon: '📅', label: 'Schedule' },
+        { key: 'v-availability', icon: '🌴', label: 'Availability' },
+        { key: 'v-profile',      icon: '👤', label: 'Profile' },
+      ]
+    : [
+        { key: 'a-dashboard', icon: '🏠', label: 'Dashboard' },
+        { key: 'a-people',    icon: '👥', label: 'People' },
+        { key: 'a-events',    icon: '🗓', label: 'Events' },
+        { key: 'a-solver',    icon: '🧮', label: 'Solver' },
+      ];
+  return (
+    <div className="tab-bar">
+      {tabs.map(t => (
+        <button key={t.key}
+          className={current === t.key ? 'active' : ''}
+          onClick={() => onChange(t.key)}>
+          <div className="icon">{t.icon}</div>
+          <div>{t.label}</div>
+        </button>
+      ))}
+    </div>
+  );
+}
+
+/* ===========================================================================
+ * SCREEN STUBS — Junior pass
+ * Each screen: header + 1-3 placeholder sections + reasoning + API tag.
+ * NOT styled for final delivery yet — just enough to validate the screen tree.
+ * =========================================================================== */
+
+/* — Pre-auth — */
+
+function ScreenLogin({ go }) {
+  // Volunteer + Admin both enter here. Email/password → JWT.
+  // Magic-link or "join via invitation" route for first-time users.
+  return (
+    <div className="screen">
+      <div style={{ padding: '60px 24px 24px' }}>
+        <div className="placeholder-block" style={{ height: 64, marginBottom: 28 }}>
+          [SignUpFlow logo + wordmark — greenfield brand mark TBD]
+        </div>
+        <Placeholder label="email field"     height={48} />
+        <div style={{ height: 10 }} />
+        <Placeholder label="password field"  height={48} />
+        <div style={{ height: 16 }} />
+        <Placeholder label="[ Sign in ] primary button"  height={48} />
+        <div style={{ marginTop: 24, textAlign: 'center', fontSize: 13, color: 'var(--ink-2)' }}>
+          New here? · Forgot password
+        </div>
+        <div className="stub-note" style={{ marginTop: 30 }}>
+          Endpoints: <ApiTag method="POST" path="/auth/login" /> · <ApiTag method="POST" path="/password-reset/request" />.
+          Returns JWT + role claim — drives whether the app routes to volunteer or admin shell.
+        </div>
+        <div style={{ marginTop: 40, padding: 16, background: 'white', borderRadius: 8, border: '1px solid var(--line)' }}>
+          <div style={{ fontSize: 12, fontWeight: 600, marginBottom: 6 }}>Demo shortcut (dev only)</div>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <button onClick={() => go('volunteer', 'v-schedule')} style={{ flex: 1, padding: '8px', fontSize: 12, border: '1px solid var(--line)', background: 'white', borderRadius: 6, cursor: 'pointer' }}>Continue as Volunteer</button>
+            <button onClick={() => go('admin', 'a-dashboard')} style={{ flex: 1, padding: '8px', fontSize: 12, border: '1px solid var(--line)', background: 'white', borderRadius: 6, cursor: 'pointer' }}>Continue as Admin</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ScreenInvitation({ go }) {
+  // Deep-link entry: app receives a token, calls /invitations/verify,
+  // shows "You've been invited to {org_name} as {role}", then prompts to set password.
+  return (
+    <div className="screen">
+      <div style={{ padding: '60px 24px 24px' }}>
+        <Placeholder label="big invitation card · org logo · org name · role tags"
+                     height={140}
+                     note="Loaded from /invitations/verify?token=… — this lands users via email link." />
+        <div style={{ height: 16 }} />
+        <Placeholder label="name field (pre-filled if invite has it)" height={48} />
+        <div style={{ height: 10 }} />
+        <Placeholder label="set password field"                       height={48} />
+        <div style={{ height: 16 }} />
+        <Placeholder label="[ Accept invitation ] primary"            height={48} />
+        <div className="stub-note" style={{ marginTop: 16 }}>
+          <ApiTag method="GET" path="/invitations/verify" /> · <ApiTag method="POST" path="/invitations/accept" />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ============== VOLUNTEER FLOWS ============== */
+
+function ScreenVolunteerSchedule({ go }) {
+  // Tab 1 of 4. Spine of the volunteer experience: list of upcoming assignments
+  // grouped by date. Each row = one assignment (one event_id × this person).
+  // Cron-inspired: dates as section headers, events as colored time-chip cards.
+  return (
+    <div className="screen">
+      <NavHeader title="Schedule" action="📤" onAction={() => alert('Calendar export sheet opens')} />
+      <div className="scroll">
+        <div className="screen-section">
+          <div className="section-label">This week</div>
+          <Placeholder label="assignment row · event title · time chip · role · status" height={70} />
+          <div style={{ height: 10 }} />
+          <Placeholder label="assignment row" height={70} />
+          <div className="stub-note">
+            Each row binds 1 row from <ApiTag method="GET" path="/people/me/assignments" />. Tap → ScreenAssignmentDetail.
+          </div>
+        </div>
+        <div className="screen-section">
+          <div className="section-label">Next week</div>
+          <Placeholder label="assignment row" height={70} />
+        </div>
+        <div className="screen-section">
+          <div className="section-label">Conflicts</div>
+          <Placeholder label="conflict banner · 1 conflict needs your attention" height={56}
+                       note="From /conflicts — flag if person is double-booked or overlapping a vacation." />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ScreenAssignmentDetail({ go }) {
+  // Pushed from Schedule. Shows event metadata + assignment status + actions.
+  // Actions: Accept / Decline (with reason) / Request swap.
+  return (
+    <div className="screen">
+      <NavHeader title="Assignment" back="Schedule" onBack={() => go(null, 'v-schedule')} />
+      <div className="scroll">
+        <Placeholder label="event title · time chip · location · role" height={140}
+                     note="From /events/{id} + assignment status from /assignments/{id}." />
+        <div style={{ height: 16 }} />
+        <Placeholder label="other assignees on this event (avatars + names)" height={84} />
+        <div style={{ height: 16 }} />
+        <Placeholder label="[ Accept ] · [ Decline ] · [ Request swap ] action row" height={56}
+                     note="Decline → modal with reason (decline_reason field in Assignment table). Swap → /assignments/{id}/swap_requested." />
+        <div style={{ height: 16 }} />
+        <Placeholder label="event description / notes (collapsible)" height={64} />
+        <div className="stub-note" style={{ marginTop: 8 }}>
+          <ApiTag method="POST" path="/assignments/{id}/accept" /> · <ApiTag method="POST" path="/assignments/{id}/decline" />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ScreenVolunteerAvailability({ go }) {
+  // Tab 2. Calendar grid for blocking dates + recurring (rrule) editor.
+  // Two sections: "Blocked dates" (one-offs) and "Recurring rules" (e.g. every Monday).
+  return (
+    <div className="screen">
+      <NavHeader title="Availability" action="+" onAction={() => alert('Add blocked date sheet')} />
+      <div className="scroll">
+        <div className="screen-section">
+          <div className="section-label">Calendar</div>
+          <Placeholder label="month grid · selected dates highlighted in accent · today ringed"
+                       height={280}
+                       note="Tap a day to toggle. Long-press → range select. Scroll vertical = next month." />
+        </div>
+        <div className="screen-section">
+          <div className="section-label">Recurring rules</div>
+          <Placeholder label="rule row · 'Every Monday' · trash icon" height={50} />
+          <div style={{ height: 10 }} />
+          <Placeholder label="[ + Add recurring rule ] button" height={48}
+                       note="Sheet → weekday picker + start/end date → builds an iCal RRULE string for /availability." />
+        </div>
+        <div className="stub-note" style={{ marginTop: 8 }}>
+          <ApiTag method="GET" path="/availability" /> · <ApiTag method="POST" path="/availability/exceptions" /> · <ApiTag method="POST" path="/availability/rrule" />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ScreenVolunteerInbox({ go }) {
+  // Tab 3. System notifications: swap-request status, decline confirmations,
+  // assignment changes, conflict alerts. Read/unread state.
+  return (
+    <div className="screen">
+      <NavHeader title="Inbox" />
+      <div className="scroll">
+        <div className="screen-section">
+          <div className="section-label">Unread (3)</div>
+          <Placeholder label="notification row · subject · timestamp · unread dot" height={66} />
+          <div style={{ height: 8 }} />
+          <Placeholder label="notification row" height={66} />
+          <div style={{ height: 8 }} />
+          <Placeholder label="notification row" height={66} />
+        </div>
+        <div className="screen-section">
+          <div className="section-label">Earlier</div>
+          <Placeholder label="notification row" height={66} />
+        </div>
+        <div className="stub-note">
+          Endpoint TBD — could derive from <ApiTag method="GET" path="/audit_logs?actor=me" /> filtered to
+          assignment-related events. Or a dedicated /notifications endpoint (not yet implemented).
+          <strong>Open question:</strong> Do we ship this tab in MVP, or defer until backend has an inbox endpoint?
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ScreenVolunteerProfile({ go, switchRole }) {
+  // Tab 4. Standard profile: name/email/photo, calendar export link,
+  // language/timezone, log out. "Switch role" only in dev mode (for the prototype).
+  return (
+    <div className="screen">
+      <NavHeader title="Profile" />
+      <div className="scroll">
+        <Placeholder label="avatar · name · email · org" height={120}
+                     note="From /people/me. Tap → edit name + photo." />
+        <div className="screen-section" style={{ marginTop: 24 }}>
+          <div className="section-label">Calendar</div>
+          <Placeholder label="ICS subscription URL · copy button"
+                       height={64}
+                       note="From /calendar/{calendar_token} — long-lived token; reset via /calendar/reset." />
+        </div>
+        <div className="screen-section">
+          <div className="section-label">Settings</div>
+          <Placeholder label="Language · Timezone · Notifications" height={120} />
+        </div>
+        <div className="screen-section">
+          <Placeholder label="[ Log out ]" height={48} />
+        </div>
+        <div className="stub-note">
+          <ApiTag method="GET" path="/people/me" /> · <ApiTag method="PUT" path="/people/me" /> · <ApiTag method="POST" path="/calendar/reset" />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ============== ADMIN FLOWS ============== */
+
+function ScreenAdminDashboard({ go }) {
+  // Tab 1 of 5. KPI strip + recent solutions + quick actions.
+  // Pulls from /analytics + /solutions + the live published solution's stats.
+  return (
+    <div className="screen">
+      <NavHeader title="Dashboard" />
+      <div className="scroll">
+        <div className="screen-section">
+          <Placeholder label="KPI grid · # volunteers · # events this week · health score · publish status" height={140}
+                       note="Sources: /analytics (rollups) + /solutions/{published_id}/stats." />
+        </div>
+        <div className="screen-section">
+          <div className="section-label">Recent solutions</div>
+          <Placeholder label="solution row · created_at · health · publish badge" height={66} />
+          <div style={{ height: 8 }} />
+          <Placeholder label="solution row" height={66} />
+        </div>
+        <div className="screen-section">
+          <div className="section-label">Quick actions</div>
+          <Placeholder label="[ Run solver ] [ Invite ] [ Compare ] action grid" height={88} />
+        </div>
+        <div className="stub-note">
+          <ApiTag path="/analytics/org" /> · <ApiTag path="/solutions" /> · <ApiTag path="/solutions/{id}/stats" />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ScreenAdminPeople({ go }) {
+  // Tab 2. People list with search + invite. Each row → person detail (not in MVP).
+  return (
+    <div className="screen">
+      <NavHeader title="People" action="Invite" onAction={() => alert('Invite sheet opens')} />
+      <div className="scroll">
+        <Placeholder label="search field" height={40} />
+        <div style={{ height: 12 }} />
+        <Placeholder label="person row · avatar · name · roles · status" height={62} />
+        <div style={{ height: 8 }} />
+        <Placeholder label="person row" height={62} />
+        <div style={{ height: 8 }} />
+        <Placeholder label="person row" height={62} />
+        <div style={{ height: 8 }} />
+        <Placeholder label="person row" height={62} />
+        <div className="stub-note">
+          <ApiTag path="/people?org_id=…" /> · <ApiTag method="POST" path="/invitations" />.
+          Invite sheet collects name + email + role array → POST to /invitations.
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ScreenAdminEvents({ go }) {
+  // Tab 3. Events list + create. Events with required_roles drive the solver.
+  // Recurring events covered by Sprint 5 PR 5.1 router.
+  return (
+    <div className="screen">
+      <NavHeader title="Events" action="+" onAction={() => alert('Create event sheet')} />
+      <div className="scroll">
+        <div className="screen-section">
+          <div className="section-label">This month</div>
+          <Placeholder label="event row · title · date · role coverage badge" height={72} />
+          <div style={{ height: 8 }} />
+          <Placeholder label="event row" height={72} />
+        </div>
+        <div className="screen-section">
+          <div className="section-label">Series (recurring)</div>
+          <Placeholder label="series row · 'Sunday 10am Service · weekly · 12 occurrences'" height={62}
+                       note="From /recurring_events — series unfurls into events." />
+        </div>
+        <div className="stub-note">
+          <ApiTag path="/events" /> · <ApiTag path="/recurring_events" /> · <ApiTag method="POST" path="/events" />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ScreenAdminSolver({ go }) {
+  // Tab 4. Run solver: pick date range + flags → POST /solver/solve → see Solution.
+  return (
+    <div className="screen">
+      <NavHeader title="Run solver" />
+      <div className="scroll">
+        <div className="screen-section">
+          <div className="section-label">Range</div>
+          <Placeholder label="from_date / to_date pickers" height={72} />
+        </div>
+        <div className="screen-section">
+          <div className="section-label">Options</div>
+          <Placeholder label="change_min toggle · 'Minimize moves from published'" height={56}
+                       note="When on, solver biases toward keeping published assignments (Sprint 6 PR 6.2 wired this)." />
+          <div style={{ height: 10 }} />
+          <Placeholder label="strict / relaxed mode segmented control" height={48} />
+        </div>
+        <div className="screen-section">
+          <Placeholder label="[ Run solver ] big primary button" height={56} />
+        </div>
+        <div className="screen-section">
+          <div className="section-label">Last solve</div>
+          <Placeholder label="solution result card · solve_ms · health score · violations · → Review"
+                       height={120}
+                       note="On completion → push ScreenAdminSolutionReview." />
+        </div>
+        <div className="stub-note">
+          <ApiTag method="POST" path="/solver/solve" /> → returns SolveResponse incl. metrics + solution_id.
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ScreenAdminSolutionReview({ go }) {
+  // Pushed from Solver tab. Tabs at top: Assignments / Stats / Conflicts.
+  // Big "Publish" button at the bottom (or "Rollback" if there's a prior published).
+  return (
+    <div className="screen">
+      <NavHeader title="Solution #142" back="Solver" onBack={() => go(null, 'a-solver')} action="Publish" onAction={() => go(null, 'a-publish')} />
+      <div className="scroll">
+        <Placeholder label="segmented control · [Assignments] [Stats] [Conflicts]" height={40}
+                     note="In-page segments, not a new screen. Default = Assignments." />
+        <div style={{ height: 14 }} />
+        <Placeholder label="grouped by event · event title + assignees row × 6"
+                     height={300} />
+        <div className="stub-note">
+          <ApiTag path="/solutions/{id}" /> · <ApiTag path="/solutions/{id}/assignments" /> · <ApiTag path="/solutions/{id}/stats" />.
+          Stats segment renders fairness histogram + workload + stability (all 6.5 endpoint output).
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ScreenAdminMore({ go }) {
+  // Tab 5. Less-frequent screens: Compare, Publish history, Constraints, Settings.
+  return (
+    <div className="screen">
+      <NavHeader title="More" />
+      <div className="scroll">
+        <div className="screen-section">
+          <Placeholder label="Compare two solutions" height={56} note="→ ScreenAdminCompare" />
+          <div style={{ height: 8 }} />
+          <Placeholder label="Publish history & rollback" height={56} note="→ ScreenAdminPublish" />
+          <div style={{ height: 8 }} />
+          <Placeholder label="Holidays" height={56} note="From /holidays, with bulk import." />
+          <div style={{ height: 8 }} />
+          <Placeholder label="Constraints (DSL)" height={56} note="Power-user only — read-only initially." />
+          <div style={{ height: 8 }} />
+          <Placeholder label="Org settings" height={56} />
+          <div style={{ height: 8 }} />
+          <Placeholder label="[ Log out ]" height={48} />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ScreenAdminCompare({ go }) {
+  // Pushed from More. Pick solution A + B from the same org → diff view (Sprint 5.5).
+  return (
+    <div className="screen">
+      <NavHeader title="Compare" back="More" onBack={() => go(null, 'a-more')} />
+      <div className="scroll">
+        <div className="screen-section">
+          <Placeholder label="picker · solution A" height={50} />
+          <div style={{ height: 8 }} />
+          <Placeholder label="picker · solution B" height={50} />
+        </div>
+        <div className="screen-section">
+          <div className="section-label">Diff</div>
+          <Placeholder label="counts strip · added: 4 · removed: 4 · unchanged: 18 · affected people: 5" height={56} />
+          <div style={{ height: 12 }} />
+          <Placeholder label="grouped diff list · removed (red) / added (green) per event" height={260} />
+        </div>
+        <div className="stub-note">
+          <ApiTag path="/solutions/{a}/compare/{b}" />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ScreenAdminPublish({ go }) {
+  // Pushed from More OR from Solution Review's "Publish" action. Confirm publish,
+  // or roll back to a previously-published solution.
+  return (
+    <div className="screen">
+      <NavHeader title="Publish" back="More" onBack={() => go(null, 'a-more')} />
+      <div className="scroll">
+        <div className="screen-section">
+          <div className="section-label">Currently published</div>
+          <Placeholder label="published solution card · published_at · health · move count vs prior" height={120} />
+        </div>
+        <div className="screen-section">
+          <div className="section-label">Publish a different solution</div>
+          <Placeholder label="picker · pending solution → big [ Publish ] button"
+                       height={120}
+                       note="Replaces the current published. Audit row written automatically." />
+        </div>
+        <div className="screen-section">
+          <div className="section-label">Rollback history</div>
+          <Placeholder label="prior published solutions · each → [ Rollback to this ] button" height={140}
+                       note="Sprint 5.5 endpoint. Eligible only if solution was previously published." />
+        </div>
+        <div className="stub-note">
+          <ApiTag method="POST" path="/solutions/{id}/publish" /> · <ApiTag method="POST" path="/solutions/{id}/unpublish" /> · <ApiTag method="POST" path="/solutions/{id}/rollback" />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ===========================================================================
+ * AppPhone — clickable state machine
+ * =========================================================================== */
+function AppPhone() {
+  const [role, setRole] = React.useState('volunteer');   // 'volunteer' | 'admin'
+  const [screen, setScreen] = React.useState('login');   // current screen key
+
+  // Helper: navigate. If first arg is non-null, also switch role.
+  const go = (newRole, newScreen) => {
+    if (newRole) setRole(newRole);
+    setScreen(newScreen);
+  };
+
+  // Reset to login (logout / dev-mode reset)
+  const reset = () => { setRole('volunteer'); setScreen('login'); };
+
+  // Tab bar appears only on root tab screens (not on pushed detail screens or pre-auth).
+  const tabRoots = new Set(role === 'volunteer'
+    ? ['v-schedule', 'v-availability', 'v-profile']
+    : ['a-dashboard', 'a-people', 'a-events', 'a-solver']);
+  const showTabBar = tabRoots.has(screen);
+
+  // Render the active screen.
+  let body;
+  switch (screen) {
+    case 'login':            body = <ScreenLogin go={go} />; break;
+    case 'invitation':       body = <ScreenInvitation go={go} />; break;
+    case 'v-schedule':       body = <ScreenVolunteerSchedule go={go} />; break;
+    case 'v-assignment':     body = <ScreenAssignmentDetail go={go} />; break;
+    case 'v-availability':   body = <ScreenVolunteerAvailability go={go} />; break;
+    case 'v-inbox':          body = <ScreenVolunteerInbox go={go} />; break;
+    case 'v-profile':        body = <ScreenVolunteerProfile go={go} />; break;
+    case 'a-dashboard':      body = <ScreenAdminDashboard go={go} />; break;
+    case 'a-people':         body = <ScreenAdminPeople go={go} />; break;
+    case 'a-events':         body = <ScreenAdminEvents go={go} />; break;
+    case 'a-solver':         body = <ScreenAdminSolver go={go} />; break;
+    case 'a-solution':       body = <ScreenAdminSolutionReview go={go} />; break;
+    case 'a-more':           body = <ScreenAdminMore go={go} />; break;
+    case 'a-compare':        body = <ScreenAdminCompare go={go} />; break;
+    case 'a-publish':        body = <ScreenAdminPublish go={go} />; break;
+    default:                 body = <ScreenLogin go={go} />;
+  }
+
+  return (
+    <>
+      {/* Dev controls — NOT part of the product. Lets reviewer flip role/screen quickly. */}
+      <div className="dev-controls">
+        <span className="label">Demo</span>
+        <div className="role-pill">
+          <button className={role === 'volunteer' ? 'active' : ''}
+                  onClick={() => go('volunteer', 'v-schedule')}>Volunteer</button>
+          <button className={role === 'admin' ? 'active' : ''}
+                  onClick={() => go('admin', 'a-dashboard')}>Admin</button>
+        </div>
+        <select
+          value={screen}
+          onChange={(e) => setScreen(e.target.value)}
+          style={{ fontSize: 11, padding: '4px 6px', borderRadius: 6,
+                   border: '1px solid var(--line)', background: 'white',
+                   fontFamily: 'inherit' }}>
+          <optgroup label="Pre-auth">
+            <option value="login">login</option>
+            <option value="invitation">invitation accept</option>
+          </optgroup>
+          <optgroup label="Volunteer">
+            <option value="v-schedule">v · schedule</option>
+            <option value="v-assignment">v · assignment detail</option>
+            <option value="v-availability">v · availability</option>
+            <option value="v-inbox">v · inbox (deferred MVP)</option>
+            <option value="v-profile">v · profile</option>
+          </optgroup>
+          <optgroup label="Admin">
+            <option value="a-dashboard">a · dashboard</option>
+            <option value="a-people">a · people</option>
+            <option value="a-events">a · events</option>
+            <option value="a-solver">a · solver</option>
+            <option value="a-solution">a · solution review</option>
+            <option value="a-compare">a · compare</option>
+            <option value="a-publish">a · publish</option>
+            <option value="a-more">a · more (deferred MVP)</option>
+          </optgroup>
+        </select>
+        <button className="reset" onClick={reset}>↺ Login</button>
+      </div>
+
+      <IosFrame>
+        {body}
+        {showTabBar && (
+          <TabBar role={role} current={screen} onChange={(k) => go(null, k)} />
+        )}
+      </IosFrame>
+    </>
+  );
+}
+
+/* ===========================================================================
+ * Page shell
+ * =========================================================================== */
+function Page() {
+  return (
+    <div className="stage">
+      <div className="header">
+        <h1>SignUpFlow · iOS prototype <span style={{ color: 'var(--ink-3)' }}>v1</span></h1>
+        <p className="subtitle">
+          Junior pass · screen-tree validation · Cron / Notion Calendar visual direction · 14 screens · against /api/v1
+        </p>
+      </div>
+      <AppPhone />
+      <div className="footer-note">
+        Each screen tags its API source. Stubs are placeholder rectangles + reasoning notes — no final styling yet.
+        <br/>
+        Tap <code>Volunteer</code> / <code>Admin</code> in the demo strip to flip roles, or use the tab bar at the bottom.
+        Detail screens (assignment, solution review, compare, publish) are reachable via the demo controls or future buttons.
+      </div>
+    </div>
+  );
+}
+
+const root = ReactDOM.createRoot(document.getElementById('root'));
+root.render(<Page />);
+</script>
+</body>
+</html>
