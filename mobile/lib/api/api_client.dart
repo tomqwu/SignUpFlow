@@ -1,24 +1,21 @@
-// Hand-rolled dio client for the endpoints PR 7.2 needs (login + people/me).
-//
-// Note: this file lives at mobile/lib/api/ so it'll be REPLACED by generated
-// code once `make mobile-codegen` is run with Java available. Keep the public
-// surface (api_client provider, AuthApi, PeopleApi) compatible so the swap
-// is mechanical.
-//
-// Until then, any new endpoint added here must be done by hand and tracked
-// against tests/contract/openapi.snapshot.json so signatures stay in sync.
+// Wraps the generated `SignupflowApi` (from package:signupflow_api) with our
+// dio + auth interceptor + base URL. Provides one Riverpod provider for the
+// generated client; `lib/auth/login_repository.dart` and other call sites
+// access the typed APIs through `ref.watch(signupflowApiProvider)`.
 
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:signupflow_api/signupflow_api.dart';
 import 'package:signupflow_mobile/auth/secure_token_storage.dart';
 
 const String defaultApiBaseUrl = String.fromEnvironment(
   'API_BASE_URL',
-  defaultValue: 'http://localhost:8000/api/v1',
+  // Generated paths already include `/api/v1` (taken from the OpenAPI spec),
+  // so the base URL is the bare host.
+  defaultValue: 'http://localhost:8000',
 );
 
-/// Provides a dio instance configured with the API base URL + a token
-/// interceptor that adds `Authorization: Bearer <jwt>` from secure storage.
+/// dio configured with the API base URL + a token interceptor.
 final dioProvider = Provider<Dio>((ref) {
   final storage = ref.watch(secureTokenStorageProvider);
   final dio = Dio(BaseOptions(
@@ -39,7 +36,7 @@ final dioProvider = Provider<Dio>((ref) {
         handler.next(options);
       },
       onError: (e, handler) async {
-        // 401 → wipe token; router redirect handles the bounce to /login.
+        // 401 → wipe token; router redirect handles bounce to /login.
         if (e.response?.statusCode == 401) {
           await storage.clearToken();
         }
@@ -49,4 +46,10 @@ final dioProvider = Provider<Dio>((ref) {
   );
 
   return dio;
+});
+
+/// The generated typed API client. Construct call sites via
+/// `ref.watch(signupflowApiProvider).getAuthApi()` etc.
+final signupflowApiProvider = Provider<SignupflowApi>((ref) {
+  return SignupflowApi(dio: ref.watch(dioProvider));
 });
