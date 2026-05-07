@@ -3,6 +3,7 @@
 // offline dev and the widget smoke test.
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:signupflow_mobile/auth/invitation_repository.dart';
 import 'package:signupflow_mobile/auth/login_repository.dart';
 import 'package:signupflow_mobile/auth/secure_token_storage.dart';
 import 'package:signupflow_mobile/auth/signup_repository.dart';
@@ -85,6 +86,29 @@ class AuthController extends Notifier<AuthState> {
       state = next;
       return null;
     } on SignupFailure catch (e) {
+      return e.message;
+    } on Exception catch (e) {
+      return 'Unexpected error: $e';
+    }
+  }
+
+  /// Accept an invitation token. Returns null on success; returns a
+  /// user-facing message on failure. Caller is expected to verify the
+  /// token first via [InvitationRepository.verify].
+  Future<String?> acceptInvitation({
+    required String token,
+    required String password,
+    String? timezone,
+  }) async {
+    try {
+      final next = await ref.read(invitationRepositoryProvider).accept(
+            token: token,
+            password: password,
+            timezone: timezone,
+          );
+      state = next;
+      return null;
+    } on InvitationFailure catch (e) {
       return e.message;
     } on Exception catch (e) {
       return 'Unexpected error: $e';

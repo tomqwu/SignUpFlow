@@ -52,7 +52,12 @@ GoRouter buildRouter(WidgetRef ref) {
     routes: [
       GoRoute(path: '/login', builder: (_, __) => const LoginScreen()),
       GoRoute(path: '/signup', builder: (_, __) => const CreateOrgScreen()),
-      GoRoute(path: '/invitation', builder: (_, __) => const InvitationScreen()),
+      GoRoute(
+        path: '/invitation',
+        builder: (_, state) => InvitationScreen(
+          token: state.uri.queryParameters['token'] ?? '',
+        ),
+      ),
 
       ShellRoute(
         builder: (_, __, child) => VolunteerShell(child: child),

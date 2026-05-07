@@ -116,7 +116,15 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   style: BlockType.bodySm.copyWith(color: BlockColors.ink2),
                   textAlign: TextAlign.center,
                 ),
-                const SizedBox(height: 36),
+                const SizedBox(height: 8),
+                TextButton(
+                  onPressed: () => context.go('/invitation'),
+                  child: Text(
+                    'Have an invitation? Tap here →',
+                    style: BlockType.bodySm.copyWith(color: BlockColors.ink2),
+                  ),
+                ),
+                const SizedBox(height: 28),
 
                 BlockCard(
                   padding: const EdgeInsets.all(14),

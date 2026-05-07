@@ -18,6 +18,7 @@ void main() {
     expect(find.text('DEMO SHORTCUT'), findsOneWidget);
 
     // Demo shortcut → Volunteer.
+    await tester.ensureVisible(find.text('VOLUNTEER'));
     await tester.tap(find.text('VOLUNTEER'));
     await tester.pumpAndSettle();
 
