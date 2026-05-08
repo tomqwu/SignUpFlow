@@ -108,12 +108,16 @@ class EmailService:
 
         # Email enabled flag
         # Auto-enable if explicit SMTP credentials provided (for integration tests)
-        # Otherwise respect EMAIL_ENABLED environment variable (defaults to true)
+        # Otherwise respect EMAIL_ENABLED environment variable (defaults to false).
+        # Default-off matches the repo's safety contract that transactional
+        # email stays disabled until an operator opts in — without this,
+        # /forgot-password queues real SMTP sends in dev/Docker deployments
+        # that lack credentials and burns 60/120/240s retry sleeps per request.
         # Forced OFF under TESTING=true so synchronous BackgroundTasks (e.g.
         # via FastAPI TestClient) don't block on real SMTP retries when a
         # test doesn't explicitly mock the email service.
         explicit_smtp_config = bool(smtp_user and smtp_password)
-        env_enabled = os.getenv("EMAIL_ENABLED", "true").lower() == "true"
+        env_enabled = os.getenv("EMAIL_ENABLED", "false").lower() == "true"
         testing_mode = os.getenv("TESTING", "").lower() == "true"
         self.enabled = (explicit_smtp_config or env_enabled) and not testing_mode
 

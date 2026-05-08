@@ -105,7 +105,17 @@ def request_password_reset(
     synchronously; email delivery is best-effort.
     """
     generic_response = {"message": "If the email exists, a password reset link will be sent"}
-    person = db.query(Person).filter(Person.email == request.email).first()
+    # Roster-only Persons (created via /people or bulk import) live in the
+    # database without a login account — ``password_hash IS NULL``. Issuing
+    # a reset for those rows would let anyone controlling the listed email
+    # bypass invitation/onboarding and inherit the row's roles, since
+    # /reset-password writes ``password_hash`` unconditionally. Treat them
+    # like an unknown email: no token, generic response.
+    person = (
+        db.query(Person)
+        .filter(Person.email == request.email, Person.password_hash.isnot(None))
+        .first()
+    )
 
     log_audit_event(
         db,
