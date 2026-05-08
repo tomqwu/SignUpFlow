@@ -230,7 +230,7 @@ class _Body extends ConsumerWidget {
                       style: BlockType.subhead,
                     ),
                     Text(
-                      '${data.entries.length} BLOCKED',
+                      '${data.blockedDays.length} BLOCKED',
                       style: BlockType.monoData.copyWith(fontSize: 10),
                     ),
                   ],
@@ -260,26 +260,9 @@ class _Body extends ConsumerWidget {
           else
             for (final e in data.entries) _TimeOffRow(entry: e),
           const MonoLabel('Recurring rules · weekly / biweekly'),
-          BlockCard(
-            color: const Color(0xFFFFF7ED),
-            borderColor: const Color(0xFFFED7AA),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'COMING SOON',
-                  style: BlockType.monoLabel.copyWith(color: BlockColors.warning),
-                ),
-                const SizedBox(height: 6),
-                Text(
-                  'Recurring availability rules (e.g. "Every Monday") are honoured by '
-                  'the solver but not yet exposed via the API. They land once the '
-                  'backend ships /availability/rrule endpoints.',
-                  style: BlockType.bodySm,
-                ),
-              ],
-            ),
-          ),
+          const _RruleCard(),
+          const MonoLabel('One-off blocked dates'),
+          _ExceptionsCard(exceptions: data.exceptions),
         ],
       ),
     );
@@ -426,6 +409,262 @@ class _TimeOffRow extends ConsumerWidget {
         ),
       ),
     );
+  }
+}
+
+class _RruleCard extends ConsumerWidget {
+  const _RruleCard();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final asyncRrule = ref.watch(availabilityRruleProvider);
+    return BlockCard(
+      child: asyncRrule.when(
+        loading: () => const SizedBox(
+          height: 40,
+          child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
+        ),
+        error: (e, _) => Text('Failed to load: $e', style: BlockType.bodySm),
+        data: (rrule) {
+          if (rrule == null || rrule.isEmpty) {
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'No recurring rule yet.',
+                  style: BlockType.bodySm.copyWith(color: BlockColors.ink2),
+                ),
+                const SizedBox(height: 10),
+                BlockButton(
+                  label: 'Set recurring rule',
+                  onPressed: () => _openPresetSheet(context, ref, current: null),
+                ),
+              ],
+            );
+          }
+          final presetLabel = kRrulePresets
+              .firstWhere(
+                (p) => p.rrule == rrule,
+                orElse: () => RrulePreset(label: rrule, rrule: rrule),
+              )
+              .label;
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('CURRENT', style: BlockType.monoLabel.copyWith(fontSize: 10)),
+              const SizedBox(height: 4),
+              Text(presetLabel, style: BlockType.body),
+              if (presetLabel != rrule) ...[
+                const SizedBox(height: 4),
+                Text(rrule, style: BlockType.bodySm.copyWith(color: BlockColors.ink2)),
+              ],
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  Expanded(
+                    child: BlockButton(
+                      label: 'Change',
+                      kind: BlockButtonKind.secondary,
+                      onPressed: () =>
+                          _openPresetSheet(context, ref, current: rrule),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: BlockButton(
+                      label: 'Clear',
+                      kind: BlockButtonKind.destructive,
+                      onPressed: () async {
+                        final err = await ref
+                            .read(availabilityMutationsProvider.notifier)
+                            .clearRrule();
+                        if (!context.mounted) return;
+                        if (err != null) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text('Failed: $err')),
+                          );
+                        }
+                      },
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+
+  Future<void> _openPresetSheet(
+    BuildContext context,
+    WidgetRef ref, {
+    required String? current,
+  }) async {
+    final customCtrl = TextEditingController(
+      text: current != null &&
+              !kRrulePresets.any((p) => p.rrule == current)
+          ? current
+          : '',
+    );
+    final picked = await showModalBottomSheet<String?>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: BlockColors.bgCard,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (sheetCtx) => Padding(
+        padding: EdgeInsets.fromLTRB(
+          20,
+          16,
+          20,
+          MediaQuery.of(sheetCtx).viewInsets.bottom + 20,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text(
+              'CHOOSE A RULE',
+              style: BlockType.monoLabel.copyWith(color: BlockColors.ink1),
+            ),
+            const SizedBox(height: 10),
+            for (final p in kRrulePresets)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 6),
+                child: BlockButton(
+                  label: p.label,
+                  kind: current == p.rrule
+                      ? BlockButtonKind.primary
+                      : BlockButtonKind.secondary,
+                  onPressed: () => Navigator.of(sheetCtx).pop(p.rrule),
+                ),
+              ),
+            const SizedBox(height: 10),
+            Text(
+              'OR CUSTOM RRULE',
+              style: BlockType.monoLabel.copyWith(fontSize: 10),
+            ),
+            const SizedBox(height: 4),
+            TextField(
+              controller: customCtrl,
+              style: BlockType.bodySm,
+              decoration: InputDecoration(
+                hintText: 'FREQ=WEEKLY;BYDAY=MO,WE',
+                hintStyle: BlockType.bodySm.copyWith(color: BlockColors.ink3),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: const BorderSide(color: BlockColors.line1),
+                ),
+              ),
+            ),
+            const SizedBox(height: 10),
+            BlockButton(
+              label: 'Save custom',
+              onPressed: () {
+                final t = customCtrl.text.trim();
+                if (t.isEmpty) return;
+                Navigator.of(sheetCtx).pop(t);
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+
+    if (picked == null || !context.mounted) return;
+    final err =
+        await ref.read(availabilityMutationsProvider.notifier).setRrule(picked);
+    if (!context.mounted) return;
+    if (err != null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed: $err')),
+      );
+    }
+  }
+}
+
+class _ExceptionsCard extends ConsumerWidget {
+  const _ExceptionsCard({required this.exceptions});
+  final List<ExceptionEntry> exceptions;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        if (exceptions.isEmpty)
+          BlockCard(
+            child: Text(
+              'No one-off blocked dates yet.',
+              style: BlockType.bodySm.copyWith(color: BlockColors.ink2),
+              textAlign: TextAlign.center,
+            ),
+          )
+        else
+          for (final e in exceptions)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: BlockCard(
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        DateFormat('EEEE, d MMM y').format(e.date),
+                        style: BlockType.body,
+                      ),
+                    ),
+                    IconButton(
+                      onPressed: () async {
+                        final err = await ref
+                            .read(availabilityMutationsProvider.notifier)
+                            .deleteException(e.id);
+                        if (!context.mounted) return;
+                        if (err != null) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text('Failed: $err')),
+                          );
+                        }
+                      },
+                      icon: const Icon(
+                        Icons.close,
+                        color: BlockColors.danger,
+                        size: 20,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+        const SizedBox(height: 4),
+        BlockButton(
+          label: '+ Add date',
+          kind: BlockButtonKind.secondary,
+          onPressed: () => _openAddDate(context, ref),
+        ),
+      ],
+    );
+  }
+
+  Future<void> _openAddDate(BuildContext context, WidgetRef ref) async {
+    final now = DateTime.now();
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: now,
+      firstDate: DateTime(now.year, now.month - 1),
+      lastDate: DateTime(now.year + 2),
+    );
+    if (picked == null || !context.mounted) return;
+    final err = await ref
+        .read(availabilityMutationsProvider.notifier)
+        .addException(picked);
+    if (!context.mounted) return;
+    if (err != null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed: $err')),
+      );
+    }
   }
 }
 
