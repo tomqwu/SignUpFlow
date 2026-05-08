@@ -50,7 +50,10 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('AVAILABILITY'), findsOneWidget);
-      // Calendar block count is timeoff days + exceptions (3 + 1 + 1 = 5).
+      // BLOCKED header counts every day in blockedDays — 3 days from the
+      // 2-day timeoff range (May 12-13) + 1 day from the single-day timeoff
+      // (May 27) + 1 exception (Jul 4) = 4 distinct blocked days.
+      expect(find.text('4 BLOCKED'), findsOneWidget);
       expect(find.text('Family trip'), findsOneWidget);
       // rrule preset matched and shown by friendly label.
       expect(find.text('Every Monday'), findsOneWidget);
@@ -58,6 +61,39 @@ void main() {
       expect(find.textContaining('Jul 2026'), findsOneWidget);
       // No COMING SOON anywhere.
       expect(find.text('COMING SOON'), findsNothing);
+    },
+  );
+
+  testWidgets(
+    'BLOCKED header counts exception-only days (no time-off)',
+    (tester) async {
+      // Regression for Codex review on PR 8.9: header used to bind to
+      // `entries.length`, which would say "0 BLOCKED" for a volunteer with
+      // only single-date exceptions even though the calendar shaded those
+      // days. Header must derive from blockedDays.
+      final exceptionsOnly = AvailabilityData(
+        entries: const [],
+        exceptions: [
+          ExceptionEntry(id: 1, date: DateTime(2026, 7, 4)),
+          ExceptionEntry(id: 2, date: DateTime(2026, 7, 11)),
+          ExceptionEntry(id: 3, date: DateTime(2026, 7, 18)),
+        ],
+      );
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            availabilityProvider.overrideWith((ref) async => exceptionsOnly),
+            availabilityRruleProvider.overrideWith((ref) async => null),
+          ],
+          child: MaterialApp(
+            theme: buildBlockMonoTheme(),
+            home: const AvailabilityScreen(),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('3 BLOCKED'), findsOneWidget);
+      expect(find.text('0 BLOCKED'), findsNothing);
     },
   );
 

@@ -230,7 +230,7 @@ class _Body extends ConsumerWidget {
                       style: BlockType.subhead,
                     ),
                     Text(
-                      '${data.entries.length} BLOCKED',
+                      '${data.blockedDays.length} BLOCKED',
                       style: BlockType.monoData.copyWith(fontSize: 10),
                     ),
                   ],
