@@ -4,7 +4,7 @@ import os
 import secrets
 from datetime import datetime, timedelta
 
-from fastapi import APIRouter, Depends, HTTPException, Request, status
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Request, status
 from pydantic import BaseModel, EmailStr
 from sqlalchemy.orm import Session
 
@@ -41,10 +41,35 @@ class PasswordResetConfirm(BaseModel):
     new_password: str
 
 
+def _send_reset_email_quiet(to_email: str, name: str, reset_token: str, app_url: str) -> None:
+    """Background-task wrapper around send_password_reset_email.
+
+    Swallows all exceptions: a flaky SendGrid (or any other email backend)
+    must never affect the HTTP response timing of /forgot-password, both
+    to preserve anti-enumeration guarantees and to avoid a DoS path where
+    a slow upstream blocks request handlers. Any failure is logged and
+    discarded — the reset token is already issued and the user can retry.
+    """
+    try:
+        email_service.send_password_reset_email(
+            to_email=to_email,
+            name=name,
+            reset_token=reset_token,
+            app_url=app_url,
+        )
+    except Exception:  # noqa: BLE001 — see docstring; we never want this to bubble
+        import logging
+
+        logging.getLogger("password_reset").exception(
+            "send_password_reset_email failed for %s (token still valid)", to_email
+        )
+
+
 @router.post("/forgot-password", dependencies=[Depends(rate_limit("password_reset"))])
 def request_password_reset(
     request: PasswordResetRequest,
     http_request: Request,
+    background_tasks: BackgroundTasks,
     db: Session = Depends(get_db),
 ):
     """Request a password reset token.
@@ -54,6 +79,11 @@ def request_password_reset(
     NEVER returned in the response in production. Set
     `DEBUG_RETURN_RESET_TOKEN=true` in dev/test environments to opt into
     receiving the token in the JSON body for E2E exercise.
+
+    Email send is queued via ``BackgroundTasks`` so the HTTP response
+    timing is independent of email backend latency — both for anti-
+    enumeration and to prevent slow-SMTP DoS. The reset token is issued
+    synchronously; email delivery is best-effort.
     """
     generic_response = {"message": "If the email exists, a password reset link will be sent"}
     person = db.query(Person).filter(Person.email == request.email).first()
@@ -78,11 +108,11 @@ def request_password_reset(
         "expires": datetime.now() + timedelta(hours=1),
     }
 
-    # Fire-and-forget email send. The endpoint always returns the generic
-    # response regardless of whether the email goes through (anti-enum).
-    # email_service.send_password_reset_email handles the EMAIL_ENABLED
-    # gate internally and is a no-op when disabled.
-    email_service.send_password_reset_email(
+    # Queue the email send. Starlette runs background tasks AFTER the
+    # response is sent, so HTTP timing is independent of email backend
+    # latency (anti-enumeration + anti-DoS).
+    background_tasks.add_task(
+        _send_reset_email_quiet,
         to_email=person.email,
         name=person.name,
         reset_token=token,
