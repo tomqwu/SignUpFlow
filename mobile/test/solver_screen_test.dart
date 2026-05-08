@@ -6,10 +6,46 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:signupflow_api/signupflow_api.dart' as api;
+import 'package:signupflow_mobile/features/admin/solution_assignments_provider.dart';
 import 'package:signupflow_mobile/features/admin/solution_review_screen.dart';
 import 'package:signupflow_mobile/features/admin/solver_provider.dart';
 import 'package:signupflow_mobile/features/admin/solver_screen.dart';
 import 'package:signupflow_mobile/theme/theme.dart';
+
+api.SolutionAssignmentsResponse _emptyAssignments(int id) {
+  return (api.SolutionAssignmentsResponseBuilder()
+        ..solutionId = id
+        ..events = ListBuilder<api.SolutionAssignmentEntry>()
+        ..totalAssignments = 0)
+      .build();
+}
+
+api.SolutionAssignmentsResponse _twoAssignees(int id) {
+  return (api.SolutionAssignmentsResponseBuilder()
+        ..solutionId = id
+        ..totalAssignments = 2
+        ..events = ListBuilder<api.SolutionAssignmentEntry>([
+          (api.SolutionAssignmentEntryBuilder()
+                ..eventId = 'evt-1'
+                ..eventType = 'Sunday Service'
+                ..eventStart = DateTime(2026, 5, 17, 10).toUtc()
+                ..eventEnd = DateTime(2026, 5, 17, 11, 30).toUtc()
+                ..assignees = ListBuilder<api.SolutionAssignmentAssignee>([
+                  (api.SolutionAssignmentAssigneeBuilder()
+                        ..personId = 'p1'
+                        ..personName = 'Alice Johnson'
+                        ..assignmentId = 1)
+                      .build(),
+                  (api.SolutionAssignmentAssigneeBuilder()
+                        ..personId = 'p2'
+                        ..personName = 'Bob Lee'
+                        ..assignmentId = 2)
+                      .build(),
+                ]))
+              .build(),
+        ]))
+      .build();
+}
 
 void main() {
   testWidgets('solver screen renders date range + mode + run button',
@@ -64,6 +100,8 @@ void main() {
       ProviderScope(
         overrides: [
           solutionDetailProvider(142).overrideWith((ref) async => data),
+          solutionAssignmentsProvider(142)
+              .overrideWith((ref) async => _emptyAssignments(142)),
         ],
         child: MaterialApp(
           theme: buildBlockMonoTheme(),
@@ -117,6 +155,8 @@ void main() {
       ProviderScope(
         overrides: [
           solutionDetailProvider(142).overrideWith((ref) async => data),
+          solutionAssignmentsProvider(142)
+              .overrideWith((ref) async => _emptyAssignments(142)),
         ],
         child: MaterialApp(
           theme: buildBlockMonoTheme(),
@@ -133,5 +173,47 @@ void main() {
     expect(find.text('4'), findsOneWidget);     // movesFromPublished KPI
     expect(find.text('3'), findsOneWidget);     // max/person KPI
     expect(find.text('0.42'), findsOneWidget);  // stdev
+  });
+
+  testWidgets('solution review ASSIGNMENTS segment groups assignees per event',
+      (tester) async {
+    final solution = (api.SolutionResponseBuilder()
+          ..id = 142
+          ..orgId = 'hcc'
+          ..solveMs = 274
+          ..hardViolations = 0
+          ..softScore = 1.5
+          ..healthScore = 98
+          ..isPublished = false
+          ..assignmentCount = 2
+          ..createdAt = DateTime(2026, 5, 7, 14, 14).toUtc()
+          ..metrics = MapBuilder<String, JsonObject?>())
+        .build();
+    final data = SolutionDetailData(solution: solution, stats: null);
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          solutionDetailProvider(142).overrideWith((ref) async => data),
+          solutionAssignmentsProvider(142)
+              .overrideWith((ref) async => _twoAssignees(142)),
+        ],
+        child: MaterialApp(
+          theme: buildBlockMonoTheme(),
+          home: const SolutionReviewScreen(solutionId: '142'),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    // Event card renders with assignees grouped under it.
+    expect(find.text('Sunday Service'), findsOneWidget);
+    expect(find.text('Alice Johnson'), findsOneWidget);
+    expect(find.text('Bob Lee'), findsOneWidget);
+    // Initials chip shows "AJ" / "BL".
+    expect(find.text('AJ'), findsOneWidget);
+    expect(find.text('BL'), findsOneWidget);
+    // Old "coming in 7.10" copy is gone.
+    expect(find.text('Per-event breakdown — coming in 7.10'), findsNothing);
   });
 }

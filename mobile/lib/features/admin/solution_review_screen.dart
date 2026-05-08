@@ -5,6 +5,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
+import 'package:signupflow_api/signupflow_api.dart' as api;
+import 'package:signupflow_mobile/features/admin/solution_assignments_provider.dart';
 import 'package:signupflow_mobile/features/admin/solver_provider.dart';
 import 'package:signupflow_mobile/theme/colors.dart';
 import 'package:signupflow_mobile/theme/components.dart';
@@ -187,15 +189,17 @@ class _Segment extends StatelessWidget {
   }
 }
 
-class _AssignmentsView extends StatelessWidget {
+class _AssignmentsView extends ConsumerWidget {
   const _AssignmentsView({required this.data});
   final SolutionDetailData data;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final created = DateFormat('EEE d MMM y · h:mm a')
         .format(data.solution.createdAt.toLocal())
         .toUpperCase();
+    final asyncAssignments =
+        ref.watch(solutionAssignmentsProvider(data.solution.id));
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -230,20 +234,144 @@ class _AssignmentsView extends StatelessWidget {
             ],
           ),
         ),
-        const MonoLabel('Per-event breakdown — coming in 7.10'),
-        BlockCard(
-          color: const Color(0xFFFFF7ED),
-          borderColor: const Color(0xFFFED7AA),
-          child: Text(
-            'Listing assignments grouped by event needs an enriched API '
-            'response (event title + assignees in one call). The current '
-            'getSolutionAssignments returns a JsonObject; rendering it '
-            'cleanly will land alongside Compare in 7.10.',
-            style: BlockType.bodySm,
+        const MonoLabel('Per-event breakdown'),
+        asyncAssignments.when(
+          loading: () => const Padding(
+            padding: EdgeInsets.symmetric(vertical: 24),
+            child: Center(child: CircularProgressIndicator()),
           ),
+          error: (e, _) => BlockCard(
+            child: Text('Failed to load assignments: $e', style: BlockType.bodySm),
+          ),
+          data: _AssignmentsList.new,
         ),
       ],
     );
+  }
+}
+
+class _AssignmentsList extends StatelessWidget {
+  const _AssignmentsList(this.body);
+  final api.SolutionAssignmentsResponse body;
+
+  @override
+  Widget build(BuildContext context) {
+    if (body.events.isEmpty) {
+      return BlockCard(
+        child: Text(
+          'No assignments in this solution.',
+          style: BlockType.bodySm.copyWith(color: BlockColors.ink2),
+          textAlign: TextAlign.center,
+        ),
+      );
+    }
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        for (final event in body.events) _EventGroup(event: event),
+      ],
+    );
+  }
+}
+
+class _EventGroup extends StatelessWidget {
+  const _EventGroup({required this.event});
+  final api.SolutionAssignmentEntry event;
+
+  @override
+  Widget build(BuildContext context) {
+    final start = event.eventStart;
+    final dateLabel =
+        start == null ? '' : DateFormat('EEE d MMM').format(start.toLocal());
+    final timeLabel = start == null
+        ? ''
+        : DateFormat('HH:mm').format(start.toLocal());
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: BlockCard(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    event.eventType ?? event.eventId,
+                    style: BlockType.subhead,
+                  ),
+                ),
+                if (timeLabel.isNotEmpty) TimeChip(timeLabel),
+              ],
+            ),
+            if (dateLabel.isNotEmpty) ...[
+              const SizedBox(height: 2),
+              Text(
+                dateLabel.toUpperCase(),
+                style: BlockType.monoTiny.copyWith(fontSize: 10),
+              ),
+            ],
+            const SizedBox(height: 10),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                for (final a in event.assignees) _AssigneeChip(assignee: a),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _AssigneeChip extends StatelessWidget {
+  const _AssigneeChip({required this.assignee});
+  final api.SolutionAssignmentAssignee assignee;
+
+  @override
+  Widget build(BuildContext context) {
+    final label = assignee.personName ?? assignee.personId;
+    final initials = _initials(label);
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: BlockColors.bgApp,
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(color: BlockColors.line1),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 22,
+            height: 22,
+            decoration: const BoxDecoration(
+              color: BlockColors.ink1,
+              shape: BoxShape.circle,
+            ),
+            alignment: Alignment.center,
+            child: Text(
+              initials,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 10,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ),
+          const SizedBox(width: 6),
+          Text(label, style: BlockType.bodySm),
+        ],
+      ),
+    );
+  }
+
+  static String _initials(String name) {
+    final parts = name.trim().split(RegExp(r'\s+'));
+    if (parts.isEmpty || parts.first.isEmpty) return '?';
+    if (parts.length == 1) return parts.first[0].toUpperCase();
+    return (parts.first[0] + parts.last[0]).toUpperCase();
   }
 }
 
