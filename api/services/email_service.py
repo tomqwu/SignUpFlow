@@ -990,7 +990,13 @@ class EmailService:
             to_email: Recipient email address
             name: Recipient's display name (Person.name)
             reset_token: Reset token from request_password_reset
-            app_url: Base application URL (used for the web fallback)
+            app_url: Base **frontend** URL used to build the web fallback
+                link (``{app_url}/reset-password?token=...``). Must point
+                at a host that serves a ``GET /reset-password`` page; in
+                this codebase the caller passes ``FRONTEND_URL`` (with
+                ``APP_URL`` as a last-ditch fallback). The mobile deep
+                link uses the hard-coded ``signupflow://`` scheme and is
+                independent of this argument.
 
         Returns:
             True if email sent successfully, False otherwise. Also returns

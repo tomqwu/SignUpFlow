@@ -115,12 +115,22 @@ def request_password_reset(
     # Queue the email send. Starlette runs background tasks AFTER the
     # response is sent, so HTTP timing is independent of email backend
     # latency (anti-enumeration + anti-DoS).
+    #
+    # The web fallback link in the email body must point at a host that
+    # actually serves a `GET /reset-password` page — i.e., the frontend,
+    # not the API. ``FRONTEND_URL`` is the dedicated knob (see
+    # ``.env.example`` line 133); we fall back to ``APP_URL`` only as a
+    # last-ditch default so dev deploys without a frontend still produce
+    # a structurally valid email.
+    web_app_url = os.getenv("FRONTEND_URL") or os.getenv(
+        "APP_URL", "http://localhost:8000"
+    )
     background_tasks.add_task(
         _send_reset_email_quiet,
         to_email=person.email,
         name=person.name,
         reset_token=token,
-        app_url=os.getenv("APP_URL", "http://localhost:8000"),
+        app_url=web_app_url,
     )
 
     if _debug_return_reset_token():
