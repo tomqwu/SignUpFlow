@@ -138,4 +138,8 @@ RATE_LIMITS = {
         "max_requests": get_env_int("RATE_LIMIT_PASSWORD_RESET_CONFIRM_MAX", 5),
         "window_seconds": get_env_int("RATE_LIMIT_PASSWORD_RESET_CONFIRM_WINDOW", 300),
     },
+    "refresh_token": {
+        "max_requests": get_env_int("RATE_LIMIT_REFRESH_TOKEN_MAX", 60),
+        "window_seconds": get_env_int("RATE_LIMIT_REFRESH_TOKEN_WINDOW", 3600),
+    },
 }

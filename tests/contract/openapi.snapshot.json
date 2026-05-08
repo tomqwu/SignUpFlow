@@ -317,6 +317,12 @@
             "title": "Person Id",
             "type": "string"
           },
+          "refresh_token": {
+            "default": "",
+            "description": "Refresh token (long-lived). Use POST /auth/refresh to exchange for a fresh access+refresh token pair.",
+            "title": "Refresh Token",
+            "type": "string"
+          },
           "roles": {
             "items": {
               "type": "string"
@@ -3408,6 +3414,40 @@
         "title": "RecurringSeriesResponse",
         "type": "object"
       },
+      "RefreshRequest": {
+        "description": "Request to exchange a refresh token for a new access+refresh pair.",
+        "properties": {
+          "refresh_token": {
+            "description": "The refresh_token from the prior auth response",
+            "title": "Refresh Token",
+            "type": "string"
+          }
+        },
+        "required": [
+          "refresh_token"
+        ],
+        "title": "RefreshRequest",
+        "type": "object"
+      },
+      "RefreshResponse": {
+        "description": "Refresh response \u2014 both tokens are rotated on every refresh.",
+        "properties": {
+          "refresh_token": {
+            "title": "Refresh Token",
+            "type": "string"
+          },
+          "token": {
+            "title": "Token",
+            "type": "string"
+          }
+        },
+        "required": [
+          "token",
+          "refresh_token"
+        ],
+        "title": "RefreshResponse",
+        "type": "object"
+      },
       "ResourceCreate": {
         "properties": {
           "capacity": {
@@ -5145,6 +5185,48 @@
           }
         },
         "summary": "Login",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/api/v1/auth/refresh": {
+      "post": {
+        "description": "Exchange a refresh token for a new access+refresh pair.\n\nOn every successful refresh:\n- Both tokens are rotated and returned.\n- ``Person.refresh_token_version`` is incremented and persisted.\n- The new refresh JWT carries the post-increment ``rtv``.\n- **The prior refresh JWT becomes unusable** because its ``rtv`` is\n  now older than the user's current ``refresh_token_version``.\n\nValidates:\n- JWT signature + non-expired\n- ``type == \"refresh\"`` (rejects access tokens)\n- ``sub`` (person_id) AND ``org_id`` claims present and match a\n  live user (multi-tenant filter on the DB lookup; project rule:\n  every Person query filters by ``org_id``).\n- ``pwd_iat`` matches current ``password_changed_at`` (refresh\n  issued before a password change is rejected).\n- ``rtv`` matches current ``refresh_token_version`` (replay of a\n  prior refresh JWT is rejected).",
+        "operationId": "refresh",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RefreshRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RefreshResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Refresh",
         "tags": [
           "auth"
         ]

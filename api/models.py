@@ -147,6 +147,9 @@ class Person(Base):
     password_changed_at = Column(
         DateTime, nullable=True
     )  # Tokens with pwd_iat older than this are revoked.
+    refresh_token_version = Column(
+        Integer, default=0, nullable=False, server_default="0"
+    )  # Bumped on every successful /auth/refresh; old refresh JWTs (with rtv < this) are rejected.
     extra_data = Column(JSONType, nullable=True)
     created_at = Column(DateTime, default=utcnow)
     updated_at = Column(DateTime, default=utcnow, onupdate=utcnow)

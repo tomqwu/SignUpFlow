@@ -53,7 +53,7 @@ make migrate              # Run Alembic migrations
 ### Active API Routers (registered in `api/main.py`)
 
 ```
-/api/v1/auth           — signup, login, email check
+/api/v1/auth           — signup, login, refresh, email check
 /api/v1/organizations  — CRUD for organizations
 /api/v1/people         — CRUD for people, /me profile
 /api/v1/teams          — CRUD for teams + membership
