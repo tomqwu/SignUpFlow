@@ -17,13 +17,13 @@ Example Usage:
 """
 
 import os
-from datetime import datetime
 from typing import Any
 
 from sqlalchemy.orm import Session, joinedload
 
 from api.logging_config import logger
 from api.models import Organization, Subscription, UsageMetrics
+from api.timeutils import utcnow
 
 
 class UsageService:
@@ -352,7 +352,7 @@ class UsageService:
                 metric.current_value = volunteer_count
                 metric.plan_limit = plan_limit
                 metric.percentage_used = percentage_used
-                metric.last_updated = datetime.utcnow()
+                metric.last_updated = utcnow()
             else:
                 metric = UsageMetrics(
                     org_id=org_id,

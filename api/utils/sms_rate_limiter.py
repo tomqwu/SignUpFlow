@@ -8,9 +8,11 @@ Prevents SMS spam by enforcing:
 """
 
 import os
-from datetime import datetime, timedelta
+from datetime import timedelta
 
 import redis
+
+from api.timeutils import utcnow
 
 
 class SmsRateLimiter:
@@ -114,7 +116,7 @@ class SmsRateLimiter:
 
     def _seconds_until_midnight(self) -> int:
         """Calculate seconds until midnight for expiration."""
-        now = datetime.utcnow()
+        now = utcnow()
         midnight = (now + timedelta(days=1)).replace(hour=0, minute=0, second=0, microsecond=0)
         delta = midnight - now
         return int(delta.total_seconds())

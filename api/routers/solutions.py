@@ -1,6 +1,5 @@
 """Solutions router - view and export generated solutions."""
 
-from datetime import datetime
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response, status
 from sqlalchemy.orm import Session
@@ -167,7 +166,7 @@ def create_manual_solution(
         soft_score=solution_data.get("soft_score", 0.0),
         health_score=solution_data.get("health_score", 0.0),
         metrics=solution_data.get("metrics", {}),
-        created_at=datetime.utcnow(),
+        created_at=utcnow(),
     )
 
     db.add(new_solution)

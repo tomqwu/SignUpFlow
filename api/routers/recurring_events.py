@@ -26,6 +26,7 @@ from api.services.recurrence_generator import (
     generate_occurrences,
     validate_series_duration,
 )
+from api.timeutils import utcnow
 
 router = APIRouter(tags=["recurring-events"])
 
@@ -454,7 +455,7 @@ def update_series_template(
     if role_requirements is not None:
         series.role_requirements = role_requirements
 
-    series.updated_at = datetime.utcnow()
+    series.updated_at = utcnow()
 
     db.commit()
     db.refresh(series)
