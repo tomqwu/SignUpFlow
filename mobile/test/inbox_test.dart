@@ -65,4 +65,36 @@ void main() {
     expect(find.text('ASSIGNMENT'), findsOneWidget);
     expect(find.text('REMINDER'), findsOneWidget);
   });
+
+  test('isUnread mirrors backend predicate (opened_at AND clicked_at null)',
+      () {
+    final pristine = InboxRow(
+      id: 1,
+      type: 'assignment',
+      status: 'sent',
+      createdAt: DateTime(2026, 5, 7),
+    );
+    expect(pristine.isUnread, isTrue);
+
+    final opened = InboxRow(
+      id: 2,
+      type: 'assignment',
+      status: 'opened',
+      createdAt: DateTime(2026, 5, 7),
+      openedAt: DateTime(2026, 5, 7, 9),
+    );
+    expect(opened.isUnread, isFalse);
+
+    // SendGrid can land a click webhook before an open webhook, so
+    // clicked_at can be set while opened_at is still null. The backend
+    // unread count excludes such rows; the row state must agree.
+    final clickedNotOpened = InboxRow(
+      id: 3,
+      type: 'assignment',
+      status: 'clicked',
+      createdAt: DateTime(2026, 5, 7),
+      clickedAt: DateTime(2026, 5, 7, 9, 5),
+    );
+    expect(clickedNotOpened.isUnread, isFalse);
+  });
 }

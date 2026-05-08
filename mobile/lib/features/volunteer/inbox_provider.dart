@@ -12,6 +12,7 @@ class InboxRow {
     required this.status,
     required this.createdAt,
     this.openedAt,
+    this.clickedAt,
     this.eventId,
   });
   final int id;
@@ -19,9 +20,15 @@ class InboxRow {
   final String status;
   final DateTime createdAt;
   final DateTime? openedAt;
+  final DateTime? clickedAt;
   final String? eventId;
 
-  bool get isUnread => openedAt == null;
+  /// Mirrors the backend unread predicate exactly:
+  /// ``Notification.opened_at IS NULL AND Notification.clicked_at IS NULL``
+  /// (api/routers/notifications.py:get_unread_count). A notification that
+  /// was clicked but never explicitly opened still counts as read so that
+  /// the row state agrees with the tab badge.
+  bool get isUnread => openedAt == null && clickedAt == null;
 
   /// Human-readable subject. The backend stores no rendered subject yet
   /// (templates are rendered on send), so we synthesise one from the type.
@@ -88,6 +95,7 @@ InboxRow _fromApi(api.NotificationResponse n) => InboxRow(
       status: n.status,
       createdAt: n.createdAt,
       openedAt: n.openedAt,
+      clickedAt: n.clickedAt,
       eventId: n.eventId,
     );
 
