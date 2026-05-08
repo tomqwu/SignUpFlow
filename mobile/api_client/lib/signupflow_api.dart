@@ -104,6 +104,8 @@ export 'package:signupflow_api/src/model/person_update.dart';
 export 'package:signupflow_api/src/model/preview_request.dart';
 export 'package:signupflow_api/src/model/recurring_series_create.dart';
 export 'package:signupflow_api/src/model/recurring_series_response.dart';
+export 'package:signupflow_api/src/model/refresh_request.dart';
+export 'package:signupflow_api/src/model/refresh_response.dart';
 export 'package:signupflow_api/src/model/resource_create.dart';
 export 'package:signupflow_api/src/model/resource_response.dart';
 export 'package:signupflow_api/src/model/resource_update.dart';

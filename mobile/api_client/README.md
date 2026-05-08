@@ -76,6 +76,7 @@ Class | Method | HTTP request | Description
 [*AuditApi*](doc/AuditApi.md) | [**listAuditLogs**](doc/AuditApi.md#listauditlogs) | **GET** /api/v1/audit-logs | List Audit Logs
 [*AuthApi*](doc/AuthApi.md) | [**checkEmail**](doc/AuthApi.md#checkemail) | **POST** /api/v1/auth/check-email | Check Email
 [*AuthApi*](doc/AuthApi.md) | [**login**](doc/AuthApi.md#login) | **POST** /api/v1/auth/login | Login
+[*AuthApi*](doc/AuthApi.md) | [**refresh**](doc/AuthApi.md#refresh) | **POST** /api/v1/auth/refresh | Refresh
 [*AuthApi*](doc/AuthApi.md) | [**requestPasswordReset**](doc/AuthApi.md#requestpasswordreset) | **POST** /api/v1/auth/forgot-password | Request Password Reset
 [*AuthApi*](doc/AuthApi.md) | [**resetPassword**](doc/AuthApi.md#resetpassword) | **POST** /api/v1/auth/reset-password | Reset Password
 [*AuthApi*](doc/AuthApi.md) | [**signup**](doc/AuthApi.md#signup) | **POST** /api/v1/auth/signup | Signup
@@ -256,6 +257,8 @@ Class | Method | HTTP request | Description
  - [PreviewRequest](doc/PreviewRequest.md)
  - [RecurringSeriesCreate](doc/RecurringSeriesCreate.md)
  - [RecurringSeriesResponse](doc/RecurringSeriesResponse.md)
+ - [RefreshRequest](doc/RefreshRequest.md)
+ - [RefreshResponse](doc/RefreshResponse.md)
  - [ResourceCreate](doc/ResourceCreate.md)
  - [ResourceResponse](doc/ResourceResponse.md)
  - [ResourceUpdate](doc/ResourceUpdate.md)

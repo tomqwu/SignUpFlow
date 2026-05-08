@@ -89,6 +89,8 @@ doc/PreviewRequest.md
 doc/RecurringEventsApi.md
 doc/RecurringSeriesCreate.md
 doc/RecurringSeriesResponse.md
+doc/RefreshRequest.md
+doc/RefreshResponse.md
 doc/ResourceCreate.md
 doc/ResourceResponse.md
 doc/ResourceUpdate.md
@@ -221,6 +223,8 @@ lib/src/model/person_update.dart
 lib/src/model/preview_request.dart
 lib/src/model/recurring_series_create.dart
 lib/src/model/recurring_series_response.dart
+lib/src/model/refresh_request.dart
+lib/src/model/refresh_response.dart
 lib/src/model/resource_create.dart
 lib/src/model/resource_response.dart
 lib/src/model/resource_update.dart
@@ -247,16 +251,5 @@ lib/src/model/violation_info.dart
 lib/src/model/workload_stats.dart
 lib/src/serializers.dart
 pubspec.yaml
-test/availability_exception_create_test.dart
-test/availability_exception_response_test.dart
-test/availability_rrule_response_test.dart
-test/availability_rrule_update_test.dart
-test/email_preference_response_test.dart
-test/email_preference_update_test.dart
-test/notification_list_response_test.dart
-test/notification_response_test.dart
-test/notification_stats_response_test.dart
-test/notifications_api_test.dart
-test/solution_assignment_assignee_test.dart
-test/solution_assignment_entry_test.dart
-test/solution_assignments_response_test.dart
+test/refresh_request_test.dart
+test/refresh_response_test.dart

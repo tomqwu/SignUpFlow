@@ -27,6 +27,12 @@ class LoginRepository {
         throw const LoginFailure('Server returned an empty token');
       }
       await _storage.writeToken(body.token);
+      // Persist the refresh token if the server issued one (Sprint 9 PR 9.3+).
+      // Older backends may omit it; treat empty/null as "no refresh available".
+      final refreshToken = body.refreshToken;
+      if (refreshToken != null && refreshToken.isNotEmpty) {
+        await _storage.writeRefreshToken(refreshToken);
+      }
       return AuthState(
         role: _resolveRole(body.roles.toList()),
         token: body.token,
@@ -44,7 +50,7 @@ class LoginRepository {
     }
   }
 
-  Future<void> signOut() => _storage.clearToken();
+  Future<void> signOut() => _storage.clearAll();
 
   static AuthRole _resolveRole(List<String> roles) => resolveRole(roles);
 

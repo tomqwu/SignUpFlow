@@ -13,6 +13,7 @@ Name | Type | Description | Notes
 **name** | **String** |  | 
 **orgId** | **String** |  | 
 **personId** | **String** |  | 
+**refreshToken** | **String** | Refresh token (long-lived). Use POST /auth/refresh to exchange for a fresh access+refresh token pair. | [optional] [default to '']
 **roles** | **BuiltList&lt;String&gt;** |  | 
 **timezone** | **String** |  | 
 **token** | **String** |  | 

@@ -11,6 +11,7 @@ Method | HTTP request | Description
 ------------- | ------------- | -------------
 [**checkEmail**](AuthApi.md#checkemail) | **POST** /api/v1/auth/check-email | Check Email
 [**login**](AuthApi.md#login) | **POST** /api/v1/auth/login | Login
+[**refresh**](AuthApi.md#refresh) | **POST** /api/v1/auth/refresh | Refresh
 [**requestPasswordReset**](AuthApi.md#requestpasswordreset) | **POST** /api/v1/auth/forgot-password | Request Password Reset
 [**resetPassword**](AuthApi.md#resetpassword) | **POST** /api/v1/auth/reset-password | Reset Password
 [**signup**](AuthApi.md#signup) | **POST** /api/v1/auth/signup | Signup
@@ -90,6 +91,49 @@ Name | Type | Description  | Notes
 ### Return type
 
 [**AuthResponse**](AuthResponse.md)
+
+### Authorization
+
+No authorization required
+
+### HTTP request headers
+
+ - **Content-Type**: application/json
+ - **Accept**: application/json
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **refresh**
+> RefreshResponse refresh(refreshRequest)
+
+Refresh
+
+Exchange a refresh token for a new access+refresh pair.  On every successful refresh: - Both tokens are rotated and returned. - ``Person.refresh_token_version`` is incremented and persisted. - The new refresh JWT carries the post-increment ``rtv``. - **The prior refresh JWT becomes unusable** because its ``rtv`` is   now older than the user's current ``refresh_token_version``.  Validates: - JWT signature + non-expired - ``type == \"refresh\"`` (rejects access tokens) - ``sub`` (person_id) AND ``org_id`` claims present and match a   live user (multi-tenant filter on the DB lookup; project rule:   every Person query filters by ``org_id``). - ``pwd_iat`` matches current ``password_changed_at`` (refresh   issued before a password change is rejected). - ``rtv`` matches current ``refresh_token_version`` (replay of a   prior refresh JWT is rejected).
+
+### Example
+```dart
+import 'package:signupflow_api/api.dart';
+
+final api = SignupflowApi().getAuthApi();
+final RefreshRequest refreshRequest = ; // RefreshRequest | 
+
+try {
+    final response = api.refresh(refreshRequest);
+    print(response);
+} catch on DioException (e) {
+    print('Exception when calling AuthApi->refresh: $e\n');
+}
+```
+
+### Parameters
+
+Name | Type | Description  | Notes
+------------- | ------------- | ------------- | -------------
+ **refreshRequest** | [**RefreshRequest**](RefreshRequest.md)|  | 
+
+### Return type
+
+[**RefreshResponse**](RefreshResponse.md)
 
 ### Authorization
 

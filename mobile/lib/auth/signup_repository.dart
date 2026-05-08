@@ -55,6 +55,10 @@ class SignupRepository {
         throw const SignupFailure('Server returned an empty token.');
       }
       await _storage.writeToken(body.token);
+      final refreshToken = body.refreshToken;
+      if (refreshToken != null && refreshToken.isNotEmpty) {
+        await _storage.writeRefreshToken(refreshToken);
+      }
       return AuthState(
         role: LoginRepository.resolveRole(body.roles.toList()),
         token: body.token,
