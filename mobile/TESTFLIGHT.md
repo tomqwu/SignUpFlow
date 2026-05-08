@@ -1,11 +1,18 @@
 # TestFlight Upload Runbook
 
-> Sprint 7 PR 7.11 · last step in the Flutter mobile sprint.
+> Last sprint pushed: Sprint 8 (build #438).
 >
-> The Flutter app is API-complete (Sprint 7 PR 7.0–7.10). This document is
-> the human-side runbook for getting a build onto TestFlight. It needs
-> sudo, Apple ID 2FA, and an Apple Developer account — all things this
-> agent can't do.
+> The Flutter app is API-complete (Sprint 7) + auth/feature complete
+> (Sprint 8). This document is the human-side runbook for getting a
+> build onto TestFlight. It needs sudo, Apple ID 2FA, and an Apple
+> Developer account.
+
+## Build history
+
+| Build | Sprint | Changelog |
+|-------|--------|-----------|
+| #425  | Sprint 7 | Volunteer journey + admin solver flow |
+| #438  | Sprint 8 | Auth (signup/invitation/reset) + every COMING SOON closed (availability rrule + exceptions, volunteer Inbox, per-event Solution Review) |
 
 ---
 
@@ -93,7 +100,7 @@ If multiple machines will build, set up `fastlane match` against a private git r
 
 ```bash
 cd mobile
-bundle exec fastlane beta changelog:"Volunteer journey + admin solver flow"
+bundle exec fastlane beta changelog:"Sprint 8 — auth + feature closeout"
 ```
 
 What this does:
