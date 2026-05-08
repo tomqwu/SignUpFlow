@@ -125,7 +125,12 @@ class TestAuthRefreshRejection:
         person = _seed_login_user(db, email="refresh-expired@example.com")
         # Mint a refresh token that's already expired.
         expired = create_refresh_token(
-            data={"sub": person.id, "pwd_iat": utcnow().timestamp()},
+            data={
+                "sub": person.id,
+                "org_id": person.org_id,
+                "pwd_iat": utcnow().timestamp(),
+                "rtv": person.refresh_token_version,
+            },
             expires_delta=timedelta(seconds=-60),
         )
         resp = client.post("/api/v1/auth/refresh", json={"refresh_token": expired})
@@ -136,7 +141,14 @@ class TestAuthRefreshRejection:
         # Mint a refresh token with a stale pwd_iat (representing a
         # refresh issued before the user changed their password).
         stale_pwd_iat = (utcnow() - timedelta(days=1)).timestamp()
-        stale_refresh = create_refresh_token(data={"sub": person.id, "pwd_iat": stale_pwd_iat})
+        stale_refresh = create_refresh_token(
+            data={
+                "sub": person.id,
+                "org_id": person.org_id,
+                "pwd_iat": stale_pwd_iat,
+                "rtv": person.refresh_token_version,
+            }
+        )
         resp = client.post("/api/v1/auth/refresh", json={"refresh_token": stale_refresh})
         assert resp.status_code == 401
         assert (
@@ -152,9 +164,68 @@ class TestAuthRefreshRejection:
     def test_unknown_user_rejected(self, client, db):
         # Mint a refresh token for a user that doesn't exist.
         ghost_refresh = create_refresh_token(
-            data={"sub": "ghost_person_id", "pwd_iat": utcnow().timestamp()}
+            data={
+                "sub": "ghost_person_id",
+                "org_id": "refresh_org",
+                "pwd_iat": utcnow().timestamp(),
+                "rtv": 0,
+            }
         )
         resp = client.post("/api/v1/auth/refresh", json={"refresh_token": ghost_refresh})
+        assert resp.status_code == 401
+
+    def test_replay_of_used_refresh_token_rejected(self, client, db):
+        """The original refresh token must become 401 after one successful
+        rotation — replay-prevention is the whole point of rotation.
+        """
+        person = _seed_login_user(db, email="refresh-replay@example.com")
+        login = client.post(
+            "/api/v1/auth/login",
+            json={"email": person.email, "password": "RefreshPass1!"},
+        )
+        first_refresh = login.json()["refresh_token"]
+
+        # First exchange succeeds.
+        first_resp = client.post("/api/v1/auth/refresh", json={"refresh_token": first_refresh})
+        assert first_resp.status_code == 200
+
+        # Replay the same refresh token → 401, because Person.refresh_token_version
+        # was bumped and the prior token's rtv is now stale.
+        replay_resp = client.post("/api/v1/auth/refresh", json={"refresh_token": first_refresh})
+        assert replay_resp.status_code == 401
+        assert (
+            "superseded" in replay_resp.json()["detail"].lower()
+            or "invalid" in replay_resp.json()["detail"].lower()
+        )
+
+    def test_cross_org_refresh_token_rejected(self, client, db):
+        """A refresh token whose org_id claim doesn't match the user's
+        org_id must be rejected (multi-tenant filter)."""
+        person = _seed_login_user(db, email="refresh-crossorg@example.com")
+        # Mint a refresh token with the right person_id but the WRONG org_id.
+        forged = create_refresh_token(
+            data={
+                "sub": person.id,
+                "org_id": "some_other_org_the_attacker_owns",
+                "pwd_iat": utcnow().timestamp(),
+                "rtv": person.refresh_token_version,
+            }
+        )
+        resp = client.post("/api/v1/auth/refresh", json={"refresh_token": forged})
+        assert resp.status_code == 401
+
+    def test_refresh_token_missing_org_id_rejected(self, client, db):
+        """Old-style refresh tokens (no org_id claim) are rejected so we
+        can't be tricked into the unfiltered Person.id-only lookup path."""
+        person = _seed_login_user(db, email="refresh-noorg@example.com")
+        legacy = create_refresh_token(
+            data={
+                "sub": person.id,
+                # NO org_id, NO rtv — pre-fix shape.
+                "pwd_iat": utcnow().timestamp(),
+            }
+        )
+        resp = client.post("/api/v1/auth/refresh", json={"refresh_token": legacy})
         assert resp.status_code == 401
 
 
