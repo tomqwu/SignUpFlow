@@ -11,6 +11,7 @@ from sqlalchemy.orm import Session
 from api.database import get_db
 from api.models import AuditAction, Person
 from api.security import hash_password
+from api.services.email_service import email_service
 from api.timeutils import utcnow
 from api.utils.audit_logger import log_audit_event
 from api.utils.rate_limit_middleware import rate_limit
@@ -76,6 +77,17 @@ def request_password_reset(
         "person_id": person.id,
         "expires": datetime.now() + timedelta(hours=1),
     }
+
+    # Fire-and-forget email send. The endpoint always returns the generic
+    # response regardless of whether the email goes through (anti-enum).
+    # email_service.send_password_reset_email handles the EMAIL_ENABLED
+    # gate internally and is a no-op when disabled.
+    email_service.send_password_reset_email(
+        to_email=person.email,
+        name=person.name,
+        reset_token=token,
+        app_url=os.getenv("APP_URL", "http://localhost:8000"),
+    )
 
     if _debug_return_reset_token():
         # Test/dev affordance ONLY. Default off.

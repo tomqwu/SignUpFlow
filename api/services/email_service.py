@@ -971,6 +971,142 @@ class EmailService:
 
         return self.send_email(to_email, subject, html_content, plain_content)
 
+    def send_password_reset_email(
+        self,
+        to_email: str,
+        name: str,
+        reset_token: str,
+        app_url: str = "http://localhost:8000",
+    ) -> bool:
+        """
+        Send password-reset email with a one-hour token link.
+
+        Args:
+            to_email: Recipient email address
+            name: Recipient's display name (Person.name)
+            reset_token: Reset token from request_password_reset
+            app_url: Base application URL (used for the web fallback)
+
+        Returns:
+            True if email sent successfully, False otherwise. Also returns
+            True (no-op) when ``self.enabled`` is False — caller treats the
+            "no email service configured" case as a successful no-op so the
+            invitation/reset endpoints don't 5xx in dev.
+
+        Notes:
+            The mobile app registers the ``signupflow://`` URL scheme so the
+            primary link is a custom-scheme deep link that opens the iOS or
+            Android app at the reset screen. The web fallback exists for
+            users opening the email on desktop without the app installed.
+        """
+        # Custom-scheme deep link → opens the mobile app at /reset-password.
+        deep_link = f"signupflow://reset-password?token={reset_token}"
+        # Web fallback for desktop / no-app users.
+        web_url = f"{app_url}/reset-password?token={reset_token}"
+
+        subject = "Reset your SignUpFlow password"
+
+        html_content = f"""
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <style>
+                body {{
+                    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+                    line-height: 1.6;
+                    color: #333;
+                    max-width: 600px;
+                    margin: 0 auto;
+                    padding: 20px;
+                }}
+                .header {{
+                    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                    color: white;
+                    padding: 30px;
+                    text-align: center;
+                    border-radius: 10px 10px 0 0;
+                }}
+                .content {{
+                    background: white;
+                    padding: 30px;
+                    border: 1px solid #e0e0e0;
+                    border-top: none;
+                }}
+                .button {{
+                    display: inline-block;
+                    padding: 12px 30px;
+                    background: #667eea;
+                    color: white !important;
+                    text-decoration: none;
+                    border-radius: 5px;
+                    margin: 10px 5px;
+                }}
+                .alt-link {{
+                    color: #667eea;
+                    word-break: break-all;
+                }}
+                .footer {{
+                    text-align: center;
+                    padding: 20px;
+                    color: #666;
+                    font-size: 12px;
+                }}
+            </style>
+        </head>
+        <body>
+            <div class="header">
+                <h1>Reset your password</h1>
+            </div>
+            <div class="content">
+                <p>Hi {name},</p>
+
+                <p>We received a request to reset your SignUpFlow password.
+                Tap the button below to set a new one:</p>
+
+                <div style="text-align: center; margin: 30px 0;">
+                    <a href="{deep_link}" class="button">Open in SignUpFlow app</a>
+                </div>
+
+                <p>If the button doesn't open the app, paste this link into a
+                browser instead:</p>
+
+                <p><a href="{web_url}" class="alt-link">{web_url}</a></p>
+
+                <p>This link expires in <strong>1 hour</strong>. If you
+                didn't request a reset, you can safely ignore this email.</p>
+
+                <p>Best,<br>
+                The SignUpFlow Team</p>
+            </div>
+            <div class="footer">
+                <p>SignUpFlow - Volunteer Scheduling Made Simple</p>
+            </div>
+        </body>
+        </html>
+        """
+
+        plain_content = f"""
+        Hi {name},
+
+        We received a request to reset your SignUpFlow password.
+
+        Open in the SignUpFlow app:
+        {deep_link}
+
+        Or paste this URL into a browser:
+        {web_url}
+
+        This link expires in 1 hour. If you didn't request a reset, you can
+        safely ignore this email.
+
+        Best,
+        The SignUpFlow Team
+        """
+
+        return self.send_email(to_email, subject, html_content, plain_content)
+
 
 # Global email service instance
 email_service = EmailService()
