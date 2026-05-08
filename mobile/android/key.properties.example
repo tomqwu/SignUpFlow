@@ -1,0 +1,20 @@
+# Android release-signing credentials.
+#
+# Copy this file to `mobile/android/key.properties` (gitignored) and fill in
+# the values. If `key.properties` is absent, release builds fall back to
+# debug-signing so dev `flutter run --release` still works.
+#
+# Generate a release keystore once with:
+#
+#   keytool -genkey -v \
+#     -keystore $HOME/keystores/signupflow-android.jks \
+#     -keyalg RSA -keysize 2048 -validity 10000 \
+#     -alias upload
+#
+# Then point storeFile at it (absolute or relative to mobile/android/).
+# The aliases / passwords below match the keytool prompts.
+
+storeFile=/Users/you/keystores/signupflow-android.jks
+storePassword=CHANGE_ME
+keyAlias=upload
+keyPassword=CHANGE_ME

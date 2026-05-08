@@ -1,6 +1,6 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <application
-        android:label="signupflow_mobile"
+        android:label="SignUpFlow"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <activity
@@ -23,6 +23,15 @@
             <intent-filter>
                 <action android:name="android.intent.action.MAIN"/>
                 <category android:name="android.intent.category.LAUNCHER"/>
+            </intent-filter>
+            <!-- signupflow:// custom-scheme deep links (mirrors iOS Info.plist).
+                 Used by invitation accept (signupflow://invitation?token=...)
+                 and password reset (signupflow://reset-password?token=...). -->
+            <intent-filter android:autoVerify="false">
+                <action android:name="android.intent.action.VIEW"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+                <category android:name="android.intent.category.BROWSABLE"/>
+                <data android:scheme="signupflow"/>
             </intent-filter>
         </activity>
         <!-- Don't delete the meta-data below.
