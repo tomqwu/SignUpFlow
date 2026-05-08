@@ -356,6 +356,173 @@ class TestResetTokenPersistedToDatabase:
         assert row.used_at is not None
 
 
+class TestForgotPasswordInvalidatesPriorTokens:
+    """Regression for Codex review on PR #78 (and docs/features/
+    password-reset.md Scenario 6) — when a user requests a second
+    password reset, any earlier emailed link must be invalidated.
+    Otherwise a brief mailbox compromise lets an attacker race the user
+    to redeem a stale link.
+    """
+
+    def test_second_request_invalidates_first_token(self, db, monkeypatch):
+        from api.models import PasswordResetToken
+        from api.routers.password_reset import _hash_reset_token
+
+        monkeypatch.setenv("DEBUG_RETURN_RESET_TOKEN", "true")
+        _seed_reset_user(db)
+
+        monkeypatch.setattr(
+            password_reset_router.email_service,
+            "send_password_reset_email",
+            MagicMock(return_value=True),
+        )
+
+        client = TestClient(app)
+
+        # First /forgot-password — capture token #1.
+        r1 = client.post(
+            "/api/v1/auth/forgot-password",
+            json={"email": "reset-email@example.com"},
+        )
+        token1 = r1.json()["token"]
+
+        # Second /forgot-password — issues token #2 and stamps token #1.
+        r2 = client.post(
+            "/api/v1/auth/forgot-password",
+            json={"email": "reset-email@example.com"},
+        )
+        token2 = r2.json()["token"]
+        assert token1 != token2
+
+        db.expire_all()
+        row1 = (
+            db.query(PasswordResetToken)
+            .filter(PasswordResetToken.token_hash == _hash_reset_token(token1))
+            .one()
+        )
+        row2 = (
+            db.query(PasswordResetToken)
+            .filter(PasswordResetToken.token_hash == _hash_reset_token(token2))
+            .one()
+        )
+        # First is invalidated, second is fresh.
+        assert row1.used_at is not None
+        assert row2.used_at is None
+
+        # Redeeming the now-stale token #1 must 400.
+        stale = client.post(
+            "/api/v1/auth/reset-password",
+            json={"token": token1, "new_password": "DoesNotMatter!2026"},
+        )
+        assert stale.status_code == 400, stale.text
+
+        # Token #2 still works.
+        ok = client.post(
+            "/api/v1/auth/reset-password",
+            json={"token": token2, "new_password": "FreshPassword!2026"},
+        )
+        assert ok.status_code == 200, ok.text
+
+
+class TestResetPasswordIsAtomic:
+    """Regression for Codex review on PR #78 — a SELECT-then-update flow
+    leaks a race where two concurrent /reset-password calls with the
+    same token both pass the "unused" check and both change the password
+    (last-write-wins). The handler now uses a single conditional UPDATE
+    that returns rowcount; the loser sees 0 and 400s.
+
+    True multi-thread concurrency is hard to simulate inside a single
+    in-memory SQLite test session, so we exercise the *contract* the
+    atomic UPDATE provides — the second redemption attempt of an
+    already-used token must 400 — which is what the prod multi-worker
+    case ultimately reduces to once one worker has commited.
+    """
+
+    def test_second_redemption_of_used_token_is_rejected(self, db, monkeypatch):
+        monkeypatch.setenv("DEBUG_RETURN_RESET_TOKEN", "true")
+        _seed_reset_user(db)
+
+        monkeypatch.setattr(
+            password_reset_router.email_service,
+            "send_password_reset_email",
+            MagicMock(return_value=True),
+        )
+
+        client = TestClient(app)
+        forgot = client.post(
+            "/api/v1/auth/forgot-password",
+            json={"email": "reset-email@example.com"},
+        )
+        token = forgot.json()["token"]
+
+        first = client.post(
+            "/api/v1/auth/reset-password",
+            json={"token": token, "new_password": "FirstPassword!2026"},
+        )
+        assert first.status_code == 200, first.text
+
+        # Second submission with the same token: the conditional UPDATE
+        # finds 0 rows matching `used_at IS NULL`, so it rolls back and
+        # 400s without touching the person's password.
+        second = client.post(
+            "/api/v1/auth/reset-password",
+            json={"token": token, "new_password": "SecondPassword!2026"},
+        )
+        assert second.status_code == 400
+
+    def test_expired_token_is_rejected_atomically(self, db, monkeypatch):
+        """The conditional UPDATE includes ``expires_at > now``, so an
+        expired token never claims the row — it 400s like any other
+        invalid token, and ``used_at`` stays NULL on the expired row."""
+        from api.models import PasswordResetToken
+        from api.routers.password_reset import _hash_reset_token
+
+        monkeypatch.setenv("DEBUG_RETURN_RESET_TOKEN", "true")
+        _seed_reset_user(db)
+
+        monkeypatch.setattr(
+            password_reset_router.email_service,
+            "send_password_reset_email",
+            MagicMock(return_value=True),
+        )
+
+        client = TestClient(app)
+        forgot = client.post(
+            "/api/v1/auth/forgot-password",
+            json={"email": "reset-email@example.com"},
+        )
+        token = forgot.json()["token"]
+
+        # Force the token to be expired by editing the DB directly.
+        from datetime import timedelta as _td
+
+        from api.timeutils import utcnow as _utcnow
+
+        row = (
+            db.query(PasswordResetToken)
+            .filter(PasswordResetToken.token_hash == _hash_reset_token(token))
+            .one()
+        )
+        row.expires_at = _utcnow() - _td(seconds=1)
+        db.commit()
+
+        response = client.post(
+            "/api/v1/auth/reset-password",
+            json={"token": token, "new_password": "WontApply!2026"},
+        )
+        assert response.status_code == 400
+
+        # And used_at on the expired row is still NULL — not stamped
+        # by a partial claim.
+        db.expire_all()
+        row_after = (
+            db.query(PasswordResetToken)
+            .filter(PasswordResetToken.token_hash == _hash_reset_token(token))
+            .one()
+        )
+        assert row_after.used_at is None
+
+
 class TestSendPasswordResetEmailEscapesUserContent:
     """Regression for Codex review on PR #78 — Person.name flows directly
     into the reset email's HTML body. An unescaped name like

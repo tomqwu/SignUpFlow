@@ -5234,7 +5234,7 @@
     },
     "/api/v1/auth/reset-password": {
       "post": {
-        "description": "Reset password using token.\n\nLooks up the token in the ``password_reset_tokens`` table. Tokens are\none-time-use: a successful reset stamps ``used_at`` so a replay of the\nsame emailed link is rejected with the generic \"invalid or expired\"\nerror.",
+        "description": "Reset password using token.\n\nThe token row is *claimed* with a single conditional UPDATE rather\nthan a SELECT-then-update sequence. Two concurrent /reset-password\nsubmissions of the same emailed link otherwise both pass a SELECT\n(``used_at IS NULL``) before either can stamp it, and both proceed\nto change the password \u2014 last-write-wins semantics, not the\none-time-use guarantee the endpoint advertises. The atomic UPDATE\ncloses that race: at most one row transitions from NULL to a\ntimestamp, ``rowcount == 0`` for the loser.",
         "operationId": "resetPassword",
         "requestBody": {
           "content": {

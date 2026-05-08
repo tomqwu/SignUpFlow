@@ -121,12 +121,24 @@ def request_password_reset(
     if not person:
         return generic_response
 
+    now = utcnow()
+
+    # Invalidate any prior unused reset tokens for this person before
+    # issuing a new one. Per docs/features/password-reset.md Scenario 6,
+    # a fresh /forgot-password call must render any earlier emailed link
+    # invalid — otherwise an attacker who briefly accessed the user's
+    # inbox could race them to redeem the stale link.
+    db.query(PasswordResetToken).filter(
+        PasswordResetToken.person_id == person.id,
+        PasswordResetToken.used_at.is_(None),
+    ).update({"used_at": now}, synchronize_session=False)
+
     token = secrets.token_urlsafe(32)
     db.add(
         PasswordResetToken(
             token_hash=_hash_reset_token(token),
             person_id=person.id,
-            expires_at=utcnow() + timedelta(hours=1),
+            expires_at=now + timedelta(hours=1),
         )
     )
     db.commit()
@@ -164,31 +176,47 @@ def reset_password(
 ):
     """Reset password using token.
 
-    Looks up the token in the ``password_reset_tokens`` table. Tokens are
-    one-time-use: a successful reset stamps ``used_at`` so a replay of the
-    same emailed link is rejected with the generic "invalid or expired"
-    error.
+    The token row is *claimed* with a single conditional UPDATE rather
+    than a SELECT-then-update sequence. Two concurrent /reset-password
+    submissions of the same emailed link otherwise both pass a SELECT
+    (``used_at IS NULL``) before either can stamp it, and both proceed
+    to change the password — last-write-wins semantics, not the
+    one-time-use guarantee the endpoint advertises. The atomic UPDATE
+    closes that race: at most one row transitions from NULL to a
+    timestamp, ``rowcount == 0`` for the loser.
     """
-    record = (
+    now = utcnow()
+    token_hash = _hash_reset_token(request.token)
+
+    # Atomic claim: set used_at on the row IFF it's currently unused
+    # AND not expired. Any of {wrong token, already used, expired,
+    # raced} produces rowcount == 0.
+    claimed = (
         db.query(PasswordResetToken)
-        .filter(PasswordResetToken.token_hash == _hash_reset_token(request.token))
-        .first()
+        .filter(
+            PasswordResetToken.token_hash == token_hash,
+            PasswordResetToken.used_at.is_(None),
+            PasswordResetToken.expires_at > now,
+        )
+        .update({"used_at": now}, synchronize_session=False)
     )
 
-    if record is None or record.used_at is not None:
+    if claimed == 0:
+        db.rollback()
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Invalid or expired reset token",
         )
 
-    if utcnow() > record.expires_at:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Reset token has expired",
-        )
+    # We hold the claim. Re-fetch the row to learn the person_id, then
+    # change the password — both within the same transaction so a
+    # rollback path (e.g., person missing) un-claims the token rather
+    # than burning it.
+    record = db.query(PasswordResetToken).filter(PasswordResetToken.token_hash == token_hash).one()
 
     person = db.query(Person).filter(Person.id == record.person_id).first()
     if not person:
+        db.rollback()
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="User not found",
@@ -196,9 +224,7 @@ def reset_password(
 
     person.password_hash = hash_password(request.new_password)
     # Invalidate any auth tokens issued before this reset.
-    person.password_changed_at = utcnow()
-    # Mark the reset token used so it can't be replayed.
-    record.used_at = utcnow()
+    person.password_changed_at = now
 
     db.commit()
 
