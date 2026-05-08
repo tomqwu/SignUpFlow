@@ -23,7 +23,8 @@ depends_on: str | Sequence[str] | None = None
 def upgrade() -> None:
     op.create_table(
         "password_reset_tokens",
-        sa.Column("token", sa.String(), primary_key=True),
+        # Stores SHA-256 digest of the emailed token, not the raw token.
+        sa.Column("token_hash", sa.String(), primary_key=True),
         sa.Column(
             "person_id",
             sa.String(),

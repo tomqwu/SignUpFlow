@@ -1,5 +1,6 @@
 """Password reset endpoints."""
 
+import hashlib
 import os
 import secrets
 from datetime import timedelta
@@ -20,6 +21,19 @@ from api.utils.rate_limit_middleware import rate_limit
 def _debug_return_reset_token() -> bool:
     """True iff DEBUG_RETURN_RESET_TOKEN is opted into via env. Default off."""
     return os.getenv("DEBUG_RETURN_RESET_TOKEN", "false").strip().lower() in ("1", "true", "yes")
+
+
+def _hash_reset_token(token: str) -> str:
+    """SHA-256 digest of the bearer token, used as the PK in
+    ``password_reset_tokens``. We store the digest rather than the raw
+    token so a leaked DB dump / backup / replica cannot be used to
+    redeem outstanding reset links — the attacker would still need the
+    raw token from the user's email. SHA-256 is sufficient here (no
+    bcrypt) because the token is already 256 bits of cryptographic
+    randomness from ``secrets.token_urlsafe(32)``; brute force is
+    intractable, so a slow KDF buys nothing.
+    """
+    return hashlib.sha256(token.encode("utf-8")).hexdigest()
 
 
 router = APIRouter(prefix="/auth", tags=["auth"])
@@ -110,7 +124,7 @@ def request_password_reset(
     token = secrets.token_urlsafe(32)
     db.add(
         PasswordResetToken(
-            token=token,
+            token_hash=_hash_reset_token(token),
             person_id=person.id,
             expires_at=utcnow() + timedelta(hours=1),
         )
@@ -155,7 +169,11 @@ def reset_password(
     same emailed link is rejected with the generic "invalid or expired"
     error.
     """
-    record = db.query(PasswordResetToken).filter(PasswordResetToken.token == request.token).first()
+    record = (
+        db.query(PasswordResetToken)
+        .filter(PasswordResetToken.token_hash == _hash_reset_token(request.token))
+        .first()
+    )
 
     if record is None or record.used_at is not None:
         raise HTTPException(

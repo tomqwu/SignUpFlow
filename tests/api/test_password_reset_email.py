@@ -261,6 +261,7 @@ class TestResetTokenPersistedToDatabase:
 
     def test_token_row_persisted_after_forgot_password(self, db, monkeypatch):
         from api.models import PasswordResetToken
+        from api.routers.password_reset import _hash_reset_token
 
         monkeypatch.setenv("DEBUG_RETURN_RESET_TOKEN", "true")
         person = _seed_reset_user(db)
@@ -282,8 +283,17 @@ class TestResetTokenPersistedToDatabase:
 
         # Re-query through a fresh expire-on-commit cycle so we're not
         # reading the same identity-mapped object the router commited.
+        # Lookup by the digest (raw bearer token is never stored — see
+        # _hash_reset_token's docstring for rationale).
         db.expire_all()
-        row = db.query(PasswordResetToken).filter(PasswordResetToken.token == token).one()
+        row = (
+            db.query(PasswordResetToken)
+            .filter(PasswordResetToken.token_hash == _hash_reset_token(token))
+            .one()
+        )
+        # Confirm the *raw* token is NOT what was stored — defense against
+        # a future regression that accidentally writes the bearer.
+        assert row.token_hash != token
         assert row.person_id == person.id
         assert row.used_at is None
         assert row.expires_at is not None
@@ -295,6 +305,7 @@ class TestResetTokenPersistedToDatabase:
         (it does, because the token is in the DB rather than a per-process
         dict), the multi-worker case works too."""
         from api.models import PasswordResetToken
+        from api.routers.password_reset import _hash_reset_token
         from api.security import verify_password
 
         monkeypatch.setenv("DEBUG_RETURN_RESET_TOKEN", "true")
@@ -337,7 +348,11 @@ class TestResetTokenPersistedToDatabase:
 
         # And the token row exists with used_at stamped.
         db.expire_all()
-        row = db.query(PasswordResetToken).filter(PasswordResetToken.token == token).one()
+        row = (
+            db.query(PasswordResetToken)
+            .filter(PasswordResetToken.token_hash == _hash_reset_token(token))
+            .one()
+        )
         assert row.used_at is not None
 
 
