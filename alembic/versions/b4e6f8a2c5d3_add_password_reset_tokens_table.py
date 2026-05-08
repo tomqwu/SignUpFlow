@@ -1,7 +1,7 @@
 """add_password_reset_tokens_table
 
 Revision ID: b4e6f8a2c5d3
-Revises: cf7914ee40c0
+Revises: a3c5d7e9b1f2
 Create Date: 2026-05-08 16:55:00.000000
 
 Replaces the in-memory reset_tokens dict in api/routers/password_reset.py
@@ -15,7 +15,7 @@ import sqlalchemy as sa
 from alembic import op
 
 revision: str = "b4e6f8a2c5d3"
-down_revision: str | Sequence[str] | None = "cf7914ee40c0"
+down_revision: str | Sequence[str] | None = "a3c5d7e9b1f2"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 
