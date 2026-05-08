@@ -53,38 +53,74 @@ Already set in `mobile/android/app/build.gradle.kts`:
 This pairs with iOS's `app.signupflow.ios` under the shared `app.signupflow.*`
 prefix. Reserve the package on Google Play Console under that name.
 
+### 5. Create the Play Console app listing
+
+(One-time, owner-side. The Fastlane lane uploads to an existing app
+listing; it doesn't create it.)
+
+1. Go to Play Console → **Create app**.
+2. App name: **SignUpFlow** · Default language: English (United States).
+3. App or game: App · Free or paid: Free.
+4. Package name: `app.signupflow.android` (must match `applicationId`).
+5. Open **Internal testing** → create a new track → add the owner's
+   Google account to the testers list.
+6. Upload at least one `.aab` manually the first time (any signed build
+   works) so Play Console finalizes the package + signing-key
+   association. Future uploads can go through the Fastlane lane.
+
+### 6. Generate a service-account JSON key for Fastlane uploads
+
+The Fastlane Android lane needs a Google Cloud service account with
+Play Console permissions:
+
+1. Google Cloud Console → IAM & Admin → Service Accounts → **Create**.
+   Name: `signupflow-fastlane`. Skip optional permissions.
+2. On the new service account → **Keys** → Add key → JSON. Save the
+   downloaded file as `~/play-store-key.json` (gitignored by default).
+3. Play Console → Setup → API access → link the same Google Cloud
+   project, then grant the service account **Release Manager** role on
+   the SignUpFlow app.
+
+The path can be overridden via env var:
+```bash
+export GOOGLE_PLAY_JSON_KEY_PATH="$HOME/.signupflow/play-store-key.json"
+```
+
+`mobile/fastlane/Appfile` reads from `GOOGLE_PLAY_JSON_KEY_PATH` first,
+falls back to `~/play-store-key.json`.
+
 ---
 
 ## Per-release flow
 
-### Build a signed `.aab`
+### Recommended: Fastlane internal lane
 
 ```bash
 cd mobile
-flutter build appbundle --release
+bundle exec fastlane android internal
 ```
 
-Output: `mobile/build/app/outputs/bundle/release/app-release.aab` (signed
-with the release keystore when `key.properties` exists).
+What this does:
+1. `flutter build appbundle --release --build-number=<git-rev-count>` →
+   produces a signed `.aab` (release keystore from `key.properties`).
+2. `upload_to_play_store(track: "internal", release_status: "draft", ...)` →
+   uploads to the Play Console internal testing track as a draft.
 
-### Smoke-install on a device / emulator
+The `release_status: "draft"` setting means the upload doesn't auto-roll
+out; you finalize it manually in Play Console after smoke-testing the
+build. Flip to `"completed"` in `Fastfile` if/when you want auto-roll-out
+on every push.
+
+### Smoke-install before publishing
 
 ```bash
-flutter build apk --release
+bundle exec fastlane android build_only   # build .aab without uploading
+flutter build apk --release                # or apk for adb install
 adb install -r mobile/build/app/outputs/flutter-apk/app-release.apk
 ```
 
 Then walk the volunteer + admin journeys (mirror the iOS smoke checklist
 in `mobile/TESTFLIGHT.md`).
-
-### Upload to Play Console internal testing
-
-(Sprint 9 PR 9.6 will add a Fastlane lane for this. Until then, manual:)
-
-1. Play Console → SignUpFlow → Internal testing → Create new release.
-2. Upload `app-release.aab`.
-3. Add release notes.
-4. Roll out → Internal testing.
 
 ### Deep-link smoke
 
