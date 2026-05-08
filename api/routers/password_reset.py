@@ -49,6 +49,10 @@ def _send_reset_email_quiet(to_email: str, name: str, reset_token: str, app_url:
     to preserve anti-enumeration guarantees and to avoid a DoS path where
     a slow upstream blocks request handlers. Any failure is logged and
     discarded — the reset token is already issued and the user can retry.
+
+    The email service itself short-circuits when ``TESTING=true`` is set
+    (see ``EmailService.__init__``), so tests that don't explicitly mock
+    the service won't hang on a real SMTP retry loop.
     """
     try:
         email_service.send_password_reset_email(

@@ -6,9 +6,14 @@ import uuid
 from sqlalchemy import create_engine, text
 from sqlalchemy.orm import Session, sessionmaker
 
-# Force a deterministic test database path before any application import.
+# Force deterministic env BEFORE any application import. Module-level so
+# singletons like `EmailService` (created at import time) see the right
+# values when constructed. `TESTING=true` in particular gates email_service
+# off so synchronous BackgroundTasks under FastAPI TestClient don't block
+# on real SMTP retries.
 os.environ.setdefault("DATABASE_URL", "sqlite:////tmp/signupflow_test.db")
 os.environ["TESTING_FORCE_MEMORY"] = "true"
+os.environ["TESTING"] = "true"
 
 import pytest
 from fastapi.testclient import TestClient

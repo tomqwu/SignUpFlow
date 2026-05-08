@@ -108,9 +108,13 @@ class EmailService:
         # Email enabled flag
         # Auto-enable if explicit SMTP credentials provided (for integration tests)
         # Otherwise respect EMAIL_ENABLED environment variable (defaults to true)
+        # Forced OFF under TESTING=true so synchronous BackgroundTasks (e.g.
+        # via FastAPI TestClient) don't block on real SMTP retries when a
+        # test doesn't explicitly mock the email service.
         explicit_smtp_config = bool(smtp_user and smtp_password)
         env_enabled = os.getenv("EMAIL_ENABLED", "true").lower() == "true"
-        self.enabled = explicit_smtp_config or env_enabled
+        testing_mode = os.getenv("TESTING", "").lower() == "true"
+        self.enabled = (explicit_smtp_config or env_enabled) and not testing_mode
 
         # Initialize Jinja2 template environment
         template_dir = Path(__file__).parent.parent / "templates" / "email"
