@@ -247,6 +247,100 @@ class TestForgotPasswordTimingDoesNotLeakExistence:
         assert t_unknown < 0.5, f"unknown-email path took {t_unknown:.2f}s"
 
 
+class TestResetTokenPersistedToDatabase:
+    """Regression for Codex review on PR #78 — the reset token must NOT
+    live in a per-process in-memory dict, because the default deployment
+    runs ``WORKERS=4`` and the worker handling ``POST /reset-password``
+    isn't guaranteed to be the one that issued the token. The token is
+    persisted to the ``password_reset_tokens`` table; we verify by:
+
+    1. Requesting a reset and checking the token row exists in the DB.
+    2. Issuing the reset on a *fresh* SQLAlchemy session (proxy for a
+       different worker) and confirming the password actually changed.
+    """
+
+    def test_token_row_persisted_after_forgot_password(self, db, monkeypatch):
+        from api.models import PasswordResetToken
+
+        monkeypatch.setenv("DEBUG_RETURN_RESET_TOKEN", "true")
+        person = _seed_reset_user(db)
+
+        # Mock the email send so we don't depend on EmailService at all.
+        monkeypatch.setattr(
+            password_reset_router.email_service,
+            "send_password_reset_email",
+            MagicMock(return_value=True),
+        )
+
+        client = TestClient(app)
+        response = client.post(
+            "/api/v1/auth/forgot-password",
+            json={"email": "reset-email@example.com"},
+        )
+        assert response.status_code == 200, response.text
+        token = response.json()["token"]
+
+        # Re-query through a fresh expire-on-commit cycle so we're not
+        # reading the same identity-mapped object the router commited.
+        db.expire_all()
+        row = db.query(PasswordResetToken).filter(PasswordResetToken.token == token).one()
+        assert row.person_id == person.id
+        assert row.used_at is None
+        assert row.expires_at is not None
+
+    def test_reset_succeeds_on_separate_session(self, db, monkeypatch):
+        """Proxy for the multi-worker scenario: issue the token on one
+        SQLAlchemy session, then redeem it via a TestClient request that
+        gets a fresh session through ``Depends(get_db)``. If this works
+        (it does, because the token is in the DB rather than a per-process
+        dict), the multi-worker case works too."""
+        from api.models import PasswordResetToken
+        from api.security import verify_password
+
+        monkeypatch.setenv("DEBUG_RETURN_RESET_TOKEN", "true")
+        person = _seed_reset_user(db)
+
+        monkeypatch.setattr(
+            password_reset_router.email_service,
+            "send_password_reset_email",
+            MagicMock(return_value=True),
+        )
+
+        client = TestClient(app)
+        forgot_response = client.post(
+            "/api/v1/auth/forgot-password",
+            json={"email": "reset-email@example.com"},
+        )
+        token = forgot_response.json()["token"]
+
+        # The forgot-password handler used its own get_db session; the
+        # token is now committed and visible to anyone — including the
+        # next TestClient request, which gets a fresh session.
+        reset_response = client.post(
+            "/api/v1/auth/reset-password",
+            json={"token": token, "new_password": "NewPassword!2026"},
+        )
+        assert reset_response.status_code == 200, reset_response.text
+
+        # Verify the password actually changed by reloading the person
+        # on yet another fresh fetch.
+        db.expire_all()
+        person_reloaded = db.query(person.__class__).filter_by(id=person.id).one()
+        assert verify_password("NewPassword!2026", person_reloaded.password_hash)
+
+        # Replay must be rejected: token now marked used.
+        replay = client.post(
+            "/api/v1/auth/reset-password",
+            json={"token": token, "new_password": "DifferentPassword!2026"},
+        )
+        assert replay.status_code == 400
+
+        # And the token row exists with used_at stamped.
+        db.expire_all()
+        row = db.query(PasswordResetToken).filter(PasswordResetToken.token == token).one()
+        assert row.used_at is not None
+
+
 class TestSendPasswordResetEmailEscapesUserContent:
     """Regression for Codex review on PR #78 — Person.name flows directly
     into the reset email's HTML body. An unescaped name like

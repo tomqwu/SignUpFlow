@@ -2,14 +2,14 @@
 
 import os
 import secrets
-from datetime import datetime, timedelta
+from datetime import timedelta
 
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Request, status
 from pydantic import BaseModel, EmailStr
 from sqlalchemy.orm import Session
 
 from api.database import get_db
-from api.models import AuditAction, Person
+from api.models import AuditAction, PasswordResetToken, Person
 from api.security import hash_password
 from api.services.email_service import email_service
 from api.timeutils import utcnow
@@ -23,9 +23,6 @@ def _debug_return_reset_token() -> bool:
 
 
 router = APIRouter(prefix="/auth", tags=["auth"])
-
-# In-memory token store (in production, use Redis or database)
-reset_tokens = {}
 
 
 class PasswordResetRequest(BaseModel):
@@ -79,9 +76,13 @@ def request_password_reset(
     """Request a password reset token.
 
     Always returns the same generic message regardless of whether the email
-    exists. Audits every request. The reset token is held in-memory and is
-    NEVER returned in the response in production. Set
-    `DEBUG_RETURN_RESET_TOKEN=true` in dev/test environments to opt into
+    exists. Audits every request. The reset token is persisted in the
+    ``password_reset_tokens`` table (see model in ``api/models.py``) so it
+    survives multi-worker deployments — the legacy in-memory dict broke
+    under the documented default ``WORKERS=4`` because the worker handling
+    ``POST /reset-password`` may differ from the one that issued the token.
+    The token is NEVER returned in the response in production. Set
+    ``DEBUG_RETURN_RESET_TOKEN=true`` in dev/test environments to opt into
     receiving the token in the JSON body for E2E exercise.
 
     Email send is queued via ``BackgroundTasks`` so the HTTP response
@@ -107,10 +108,14 @@ def request_password_reset(
         return generic_response
 
     token = secrets.token_urlsafe(32)
-    reset_tokens[token] = {
-        "person_id": person.id,
-        "expires": datetime.now() + timedelta(hours=1),
-    }
+    db.add(
+        PasswordResetToken(
+            token=token,
+            person_id=person.id,
+            expires_at=utcnow() + timedelta(hours=1),
+        )
+    )
+    db.commit()
 
     # Queue the email send. Starlette runs background tasks AFTER the
     # response is sent, so HTTP timing is independent of email backend
@@ -122,9 +127,7 @@ def request_password_reset(
     # ``.env.example`` line 133); we fall back to ``APP_URL`` only as a
     # last-ditch default so dev deploys without a frontend still produce
     # a structurally valid email.
-    web_app_url = os.getenv("FRONTEND_URL") or os.getenv(
-        "APP_URL", "http://localhost:8000"
-    )
+    web_app_url = os.getenv("FRONTEND_URL") or os.getenv("APP_URL", "http://localhost:8000")
     background_tasks.add_task(
         _send_reset_email_quiet,
         to_email=person.email,
@@ -145,38 +148,40 @@ def reset_password(
     request: PasswordResetConfirm,
     db: Session = Depends(get_db),
 ):
-    """Reset password using token."""
-    token_data = reset_tokens.get(request.token)
+    """Reset password using token.
 
-    if not token_data:
+    Looks up the token in the ``password_reset_tokens`` table. Tokens are
+    one-time-use: a successful reset stamps ``used_at`` so a replay of the
+    same emailed link is rejected with the generic "invalid or expired"
+    error.
+    """
+    record = db.query(PasswordResetToken).filter(PasswordResetToken.token == request.token).first()
+
+    if record is None or record.used_at is not None:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Invalid or expired reset token",
         )
 
-    if datetime.now() > token_data["expires"]:
-        del reset_tokens[request.token]
+    if utcnow() > record.expires_at:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Reset token has expired",
         )
 
-    # Get person
-    person = db.query(Person).filter(Person.id == token_data["person_id"]).first()
+    person = db.query(Person).filter(Person.id == record.person_id).first()
     if not person:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="User not found",
         )
 
-    # Hash new password using bcrypt (same as signup/login)
     person.password_hash = hash_password(request.new_password)
-    # Invalidate any tokens issued before this reset.
+    # Invalidate any auth tokens issued before this reset.
     person.password_changed_at = utcnow()
+    # Mark the reset token used so it can't be replayed.
+    record.used_at = utcnow()
 
     db.commit()
-
-    # Remove used token
-    del reset_tokens[request.token]
 
     return {"message": "Password reset successfully"}

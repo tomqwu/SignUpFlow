@@ -192,6 +192,31 @@ class Person(Base):
     )
 
 
+class PasswordResetToken(Base):
+    """One-time-use password-reset token, persisted across workers.
+
+    Replaces the legacy in-memory ``reset_tokens`` dict, which broke under
+    multi-worker deployments (default ``WORKERS=4``) — a token issued by
+    one worker was invisible to another, so the user's emailed reset
+    link could fail intermittently.
+    """
+
+    __tablename__ = "password_reset_tokens"
+
+    token = Column(String, primary_key=True)
+    person_id = Column(String, ForeignKey("people.id", ondelete="CASCADE"), nullable=False)
+    expires_at = Column(DateTime, nullable=False)
+    created_at = Column(DateTime, default=utcnow, nullable=False)
+    used_at = Column(DateTime, nullable=True)
+
+    person = relationship("Person")
+
+    __table_args__ = (
+        Index("idx_password_reset_tokens_person_id", "person_id"),
+        Index("idx_password_reset_tokens_expires_at", "expires_at"),
+    )
+
+
 class Team(Base):
     """Team entity."""
 
