@@ -14,11 +14,19 @@ platform :ios do
   lane :beta do |options|
     flutter_root = File.expand_path("..", __dir__)
 
+    # `flutter` may live outside the default PATH (e.g. ~/Projects/flutter/bin
+    # on this dev machine). Capture its directory now while the outer shell
+    # has it; we'll re-inject it into the `with_clean_env` subshell PATH.
+    flutter_bin = `which flutter`.strip
+    UI.user_error!("flutter not on PATH — install or `export PATH=/path/to/flutter/bin:$PATH`") if flutter_bin.empty?
+    flutter_dir = File.dirname(flutter_bin)
+
     # 1. Make sure CocoaPods are up to date (flutter_secure_storage etc.).
     # `pod` uses Homebrew's Ruby; if we leave BUNDLE_GEMFILE set, its bundler
     # tries to materialize *our* Gemfile.lock against a different Ruby ABI
     # and explodes. Clear bundler env vars for the inner shell.
     Bundler.with_clean_env do
+      ENV["PATH"] = "#{flutter_dir}:#{ENV['PATH']}"
       sh("cd #{flutter_root}/ios && pod install --repo-update")
     end
 
@@ -29,6 +37,7 @@ platform :ios do
     # 3. Build the signed ipa via flutter. `flutter build ipa` shells out
     # to xcodebuild + pod, which need a clean bundler env (see step 1).
     Bundler.with_clean_env do
+      ENV["PATH"] = "#{flutter_dir}:#{ENV['PATH']}"
       sh(
         "cd #{flutter_root} && flutter build ipa " \
         "--release " \
@@ -69,7 +78,11 @@ platform :ios do
   desc "Local-only: build the ipa without uploading (smoke test the build)"
   lane :build_only do
     flutter_root = File.expand_path("..", __dir__)
+    flutter_bin = `which flutter`.strip
+    UI.user_error!("flutter not on PATH") if flutter_bin.empty?
+    flutter_dir = File.dirname(flutter_bin)
     Bundler.with_clean_env do
+      ENV["PATH"] = "#{flutter_dir}:#{ENV['PATH']}"
       sh("cd #{flutter_root}/ios && pod install --repo-update")
       sh(
         "cd #{flutter_root} && flutter build ipa " \

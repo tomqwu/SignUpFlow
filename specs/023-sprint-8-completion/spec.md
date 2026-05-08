@@ -252,3 +252,41 @@ Sprint close (8.12):
 - **`org_id` field on the create-org form** — slug the user types (must be unique) or auto-generated from the org name? Defer the decision into 8.6 implementation; either is fine.
 - **Invitation deep-link delivery** — SendGrid is off, so the invitation email never goes out. PR 8.7 includes a manual-token-paste affordance on the login screen so the flow is testable end-to-end without email.
 - **`notification_reads` migration on prod** — Alembic migration is additive (new table, no existing-row rewrite); safe to roll forward.
+
+---
+
+## Closeout (2026-05-08)
+
+Sprint 8 shipped 12 PRs to main:
+
+| PR | Sprint task | Status |
+|----|----|----|
+| #64 | 8.0 Spec doc (this file) | merged |
+| #65 | 8.6 Mobile create-org signup flow | merged |
+| #66 | 8.7 Mobile invitation accept screen | merged |
+| #67 | 8.8 Mobile forgot + reset password screens | merged |
+| #68 | 8.1 Backend — typed + event-grouped /solutions/{id}/assignments | merged |
+| #69 | 8.2 Backend — /availability/{person_id}/exceptions CRUD | merged |
+| #70 | 8.3 Backend — /availability/{person_id}/rrule CRUD | merged |
+| #71 | 8.4 Backend — register /notifications router + mark-read + unread-count | merged |
+| #72 | 8.5 Mobile codegen refresh against new endpoints | merged |
+| #73 | 8.9 Mobile availability rrule editor + single-date exceptions UI | merged |
+| #74 | 8.10 Mobile Volunteer Inbox tab (re-added 4th tab) | merged |
+| #75 | 8.11 Mobile per-event Solution Review assignments | merged |
+
+Plus #63 (post-7.11 fastlane fixes for the iCloud xattr / simulator codesign issues that surfaced during 8.0 setup).
+
+### TestFlight build
+
+**Build #438** uploaded 2026-05-08 with changelog `"Sprint 8 — auth + feature closeout"`. Available at App Store Connect → SignUpFlow → TestFlight.
+
+The fastlane lane needed a small fix (rolled into PR 9.0): `Bundler.with_clean_env` was stripping `flutter` from PATH on this dev machine where Flutter lives at `~/Projects/flutter/bin`. Fastfile now captures Flutter's directory before the clean-env block and re-injects it.
+
+### What's still deferred (Sprint 9 + Sprint 10)
+
+- **Token refresh** (24h re-login still needed — Sprint 9 PRs 9.3 + 9.4)
+- **Real SendGrid sending** (Sprint 9 PRs 9.1 + 9.2)
+- **Android target** (Sprint 9 PRs 9.5 / 9.6 / 9.7)
+- **Dark mode** (Sprint 10)
+- **APNS / FCM push** (Sprint 10 — Inbox is poll-based today)
+- **Solution Review live refresh** (Sprint 10 — pull-to-refresh covers v1)
