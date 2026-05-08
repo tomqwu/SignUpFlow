@@ -9,7 +9,13 @@ from sqlalchemy.orm import Session
 from api.database import get_db
 from api.dependencies import get_organization_by_id
 from api.models import Person
-from api.security import create_access_token, hash_password, verify_password
+from api.security import (
+    create_access_token,
+    create_refresh_token,
+    decode_refresh_token,
+    hash_password,
+    verify_password,
+)
 from api.timeutils import utcnow
 from api.utils.rate_limit_middleware import rate_limit
 
@@ -55,6 +61,24 @@ class AuthResponse(BaseModel):
     timezone: str
     language: str
     token: str
+    refresh_token: str = Field(
+        default="",
+        description="Refresh token (long-lived). Use POST /auth/refresh to "
+        "exchange for a fresh access+refresh token pair.",
+    )
+
+
+class RefreshRequest(BaseModel):
+    """Request to exchange a refresh token for a new access+refresh pair."""
+
+    refresh_token: str = Field(..., description="The refresh_token from the prior auth response")
+
+
+class RefreshResponse(BaseModel):
+    """Refresh response — both tokens are rotated on every refresh."""
+
+    token: str
+    refresh_token: str
 
 
 # Endpoints
@@ -116,8 +140,10 @@ def signup(request: SignupRequest, db: Session = Depends(get_db)):
     db.commit()
     db.refresh(person)
 
-    # Generate JWT access token (pwd_iat allows revocation on password change).
-    access_token = create_access_token(data={"sub": person.id, "pwd_iat": _pwd_iat_for(person)})
+    # Generate access + refresh tokens (pwd_iat allows revocation on password change).
+    pwd_iat = _pwd_iat_for(person)
+    access_token = create_access_token(data={"sub": person.id, "pwd_iat": pwd_iat})
+    refresh_token = create_refresh_token(data={"sub": person.id, "pwd_iat": pwd_iat})
 
     return AuthResponse(
         person_id=person.id,
@@ -128,6 +154,7 @@ def signup(request: SignupRequest, db: Session = Depends(get_db)):
         timezone=person.timezone or "UTC",
         language=person.language or "en",
         token=access_token,
+        refresh_token=refresh_token,
     )
 
 
@@ -148,8 +175,10 @@ def login(request: LoginRequest, db: Session = Depends(get_db)):
             status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid email or password"
         )
 
-    # Generate JWT access token (pwd_iat allows revocation on password change).
-    access_token = create_access_token(data={"sub": person.id, "pwd_iat": _pwd_iat_for(person)})
+    # Generate access + refresh tokens (pwd_iat allows revocation on password change).
+    pwd_iat = _pwd_iat_for(person)
+    access_token = create_access_token(data={"sub": person.id, "pwd_iat": pwd_iat})
+    refresh_token = create_refresh_token(data={"sub": person.id, "pwd_iat": pwd_iat})
 
     return AuthResponse(
         person_id=person.id,
@@ -160,7 +189,60 @@ def login(request: LoginRequest, db: Session = Depends(get_db)):
         timezone=person.timezone or "UTC",
         language=person.language or "en",
         token=access_token,
+        refresh_token=refresh_token,
     )
+
+
+@router.post(
+    "/refresh",
+    response_model=RefreshResponse,
+    dependencies=[Depends(rate_limit("refresh_token"))],
+)
+def refresh(request: RefreshRequest, db: Session = Depends(get_db)):
+    """Exchange a refresh token for a new access+refresh pair.
+
+    Both tokens are rotated on every successful refresh, so the prior
+    refresh token can no longer be used after this call (one-time-use
+    semantics for the rotation, even though the JWT itself is still
+    technically valid until ``exp`` — the mobile client overwrites the
+    stored refresh token immediately).
+
+    Validates:
+    - JWT signature + non-expired
+    - ``type == "refresh"`` (rejects access tokens)
+    - The user still exists
+    - ``pwd_iat`` matches the user's current ``password_changed_at`` —
+      i.e., the refresh token was not invalidated by a subsequent
+      password change.
+    """
+    payload = decode_refresh_token(request.refresh_token)
+    person_id = payload.get("sub")
+    token_pwd_iat = payload.get("pwd_iat")
+
+    if not person_id or token_pwd_iat is None:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid refresh token"
+        )
+
+    person = db.query(Person).filter(Person.id == person_id).first()
+    if not person:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="User not found")
+
+    # If the password was changed after this refresh token was issued,
+    # invalidate the refresh token (mirrors how access tokens get
+    # revoked via pwd_iat in get_current_user).
+    if abs(_pwd_iat_for(person) - float(token_pwd_iat)) > 1.0:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Refresh token invalidated by password change",
+        )
+
+    # Rotate both tokens.
+    pwd_iat = _pwd_iat_for(person)
+    new_access = create_access_token(data={"sub": person.id, "pwd_iat": pwd_iat})
+    new_refresh = create_refresh_token(data={"sub": person.id, "pwd_iat": pwd_iat})
+
+    return RefreshResponse(token=new_access, refresh_token=new_refresh)
 
 
 @router.post("/check-email")

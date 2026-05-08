@@ -22,6 +22,14 @@ if not hasattr(bcrypt, "__about__"):
 SECRET_KEY = os.getenv("SECRET_KEY", "your-secret-key-change-in-production-use-env-var")
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24  # 24 hours
+REFRESH_TOKEN_EXPIRE_DAYS = 30  # Refresh token lifetime (rotated on every refresh)
+
+# Token type marker — distinguishes access from refresh in the `type` claim.
+# Access tokens are accepted by `verify_token` for normal API auth; refresh
+# tokens are only accepted by `decode_refresh_token` for the /auth/refresh
+# endpoint. This prevents stealing one and using it as the other.
+TOKEN_TYPE_ACCESS = "access"
+TOKEN_TYPE_REFRESH = "refresh"
 
 # Password hashing configuration
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
@@ -73,6 +81,9 @@ def create_access_token(data: dict, expires_delta: timedelta | None = None) -> s
     """
     Create a JWT access token.
 
+    Tags the token with ``type:"access"`` so refresh-only endpoints can
+    reject access tokens being misused as refresh tokens (and vice versa).
+
     Args:
         data: Dictionary of claims to encode in the token
         expires_delta: Optional custom expiration time
@@ -87,15 +98,50 @@ def create_access_token(data: dict, expires_delta: timedelta | None = None) -> s
     else:
         expire = utcnow() + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
 
-    to_encode.update({"exp": expire})
+    to_encode.update({"exp": expire, "type": TOKEN_TYPE_ACCESS})
     encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
 
     return encoded_jwt
 
 
+def create_refresh_token(data: dict, expires_delta: timedelta | None = None) -> str:
+    """
+    Create a JWT refresh token.
+
+    Same shape as the access token but with ``type:"refresh"`` and a
+    longer lifetime. Refresh tokens are only accepted by
+    ``/auth/refresh`` (via ``decode_refresh_token``); they cannot be used
+    to authenticate normal API requests.
+
+    Args:
+        data: Dictionary of claims to encode (must include ``sub`` and
+              ``pwd_iat`` so the refresh endpoint can detect post-password-
+              change invalidation, mirroring the access-token claims).
+        expires_delta: Optional custom expiration; default
+              ``REFRESH_TOKEN_EXPIRE_DAYS``.
+
+    Returns:
+        JWT refresh token string
+    """
+    to_encode = data.copy()
+
+    if expires_delta:
+        expire = utcnow() + expires_delta
+    else:
+        expire = utcnow() + timedelta(days=REFRESH_TOKEN_EXPIRE_DAYS)
+
+    to_encode.update({"exp": expire, "type": TOKEN_TYPE_REFRESH})
+    return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+
+
 def verify_token(token: str) -> dict:
     """
-    Verify and decode a JWT token.
+    Verify and decode a JWT access token.
+
+    Rejects refresh tokens (``type:"refresh"``) so they can't be used to
+    authenticate normal API requests. Tokens minted before the ``type``
+    claim was introduced are also accepted for backward compatibility —
+    they were always access tokens by construction.
 
     Args:
         token: JWT token string
@@ -104,17 +150,59 @@ def verify_token(token: str) -> dict:
         Decoded token payload
 
     Raises:
-        HTTPException: If token is invalid or expired
+        HTTPException: If token is invalid, expired, or is a refresh token
     """
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        return payload
     except JWTError:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Could not validate credentials",
             headers={"WWW-Authenticate": "Bearer"},
         )
+
+    token_type = payload.get("type")
+    if token_type is not None and token_type != TOKEN_TYPE_ACCESS:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Wrong token type",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
+    return payload
+
+
+def decode_refresh_token(token: str) -> dict:
+    """
+    Decode and validate a refresh token. Used by /auth/refresh.
+
+    Rejects access tokens (``type != "refresh"``) so they can't be used
+    to mint new access tokens.
+
+    Args:
+        token: Refresh token string
+
+    Returns:
+        Decoded token payload (sub, pwd_iat, exp, type)
+
+    Raises:
+        HTTPException: If invalid, expired, or not a refresh token
+    """
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+    except JWTError:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid or expired refresh token",
+        )
+
+    if payload.get("type") != TOKEN_TYPE_REFRESH:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Wrong token type",
+        )
+
+    return payload
 
 
 def get_password_hash(password: str) -> str:

@@ -317,6 +317,12 @@
             "title": "Person Id",
             "type": "string"
           },
+          "refresh_token": {
+            "default": "",
+            "description": "Refresh token (long-lived). Use POST /auth/refresh to exchange for a fresh access+refresh token pair.",
+            "title": "Refresh Token",
+            "type": "string"
+          },
           "roles": {
             "items": {
               "type": "string"
@@ -3408,6 +3414,40 @@
         "title": "RecurringSeriesResponse",
         "type": "object"
       },
+      "RefreshRequest": {
+        "description": "Request to exchange a refresh token for a new access+refresh pair.",
+        "properties": {
+          "refresh_token": {
+            "description": "The refresh_token from the prior auth response",
+            "title": "Refresh Token",
+            "type": "string"
+          }
+        },
+        "required": [
+          "refresh_token"
+        ],
+        "title": "RefreshRequest",
+        "type": "object"
+      },
+      "RefreshResponse": {
+        "description": "Refresh response \u2014 both tokens are rotated on every refresh.",
+        "properties": {
+          "refresh_token": {
+            "title": "Refresh Token",
+            "type": "string"
+          },
+          "token": {
+            "title": "Token",
+            "type": "string"
+          }
+        },
+        "required": [
+          "token",
+          "refresh_token"
+        ],
+        "title": "RefreshResponse",
+        "type": "object"
+      },
       "ResourceCreate": {
         "properties": {
           "capacity": {
@@ -5145,6 +5185,48 @@
           }
         },
         "summary": "Login",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/api/v1/auth/refresh": {
+      "post": {
+        "description": "Exchange a refresh token for a new access+refresh pair.\n\nBoth tokens are rotated on every successful refresh, so the prior\nrefresh token can no longer be used after this call (one-time-use\nsemantics for the rotation, even though the JWT itself is still\ntechnically valid until ``exp`` \u2014 the mobile client overwrites the\nstored refresh token immediately).\n\nValidates:\n- JWT signature + non-expired\n- ``type == \"refresh\"`` (rejects access tokens)\n- The user still exists\n- ``pwd_iat`` matches the user's current ``password_changed_at`` \u2014\n  i.e., the refresh token was not invalidated by a subsequent\n  password change.",
+        "operationId": "refresh",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RefreshRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RefreshResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Refresh",
         "tags": [
           "auth"
         ]
