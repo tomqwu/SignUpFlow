@@ -6,7 +6,7 @@ and admin summaries asynchronously.
 """
 
 import logging
-from datetime import datetime, timedelta
+from datetime import timedelta
 from typing import Any
 
 from sqlalchemy.orm import Session
@@ -25,6 +25,7 @@ from api.models import (
     Person,
 )
 from api.services.email_service import email_service
+from api.timeutils import utcnow
 
 logger = logging.getLogger(__name__)
 
@@ -209,7 +210,7 @@ def _send_reminder_notification(
         return None
 
     # Calculate hours remaining
-    now = datetime.utcnow()
+    now = utcnow()
     hours_remaining = int((event.start_time - now).total_seconds() / 3600)
 
     # Format event datetime
@@ -377,7 +378,7 @@ def send_reminder_emails() -> dict[str, Any]:
 
     try:
         # Find events happening in 23-25 hours (24-hour window with 1-hour buffer)
-        now = datetime.utcnow()
+        now = utcnow()
         reminder_start = now + timedelta(hours=23)
         reminder_end = now + timedelta(hours=25)
 
@@ -437,7 +438,7 @@ def send_reminder_emails() -> dict[str, Any]:
                         "role": assignment.role if hasattr(assignment, "role") else None,
                         "hours_remaining": int((event.start_time - now).total_seconds() / 3600),
                     },
-                    created_at=datetime.utcnow(),
+                    created_at=utcnow(),
                 )
                 db.add(notification)
                 db.flush()

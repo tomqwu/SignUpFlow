@@ -27,6 +27,7 @@ from api.schemas.notifications import (
     NotificationResponse,
     NotificationStatsResponse,
 )
+from api.timeutils import utcnow
 
 router = APIRouter(tags=["notifications"])
 
@@ -147,8 +148,6 @@ async def mark_notification_read(
     Sets ``opened_at`` to now (idempotent — does nothing if already set).
     The mobile Inbox calls this when the user taps a row.
     """
-    from api.timeutils import utcnow
-
     notification = db.query(Notification).filter(Notification.id == notification_id).first()
     if not notification:
         raise HTTPException(status_code=404, detail="Notification not found")
@@ -282,9 +281,9 @@ async def get_organization_notification_stats(
     # Verify admin belongs to organization
     verify_org_member(admin, org_id)
 
-    from datetime import datetime, timedelta
+    from datetime import timedelta
 
-    cutoff_date = datetime.utcnow() - timedelta(days=days)
+    cutoff_date = utcnow() - timedelta(days=days)
 
     # Total notifications by status
     status_counts = (

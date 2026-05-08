@@ -7,12 +7,12 @@ Tracks SMS usage and costs per organization with budget alerts.
 - Auto-pause at budget limit (optional)
 """
 
-from datetime import datetime
 from typing import Any
 
 from sqlalchemy.orm import Session
 
 from api.models import SmsUsage
+from api.timeutils import utcnow
 
 
 class CostTracker:
@@ -56,7 +56,7 @@ class CostTracker:
             Dictionary with budget status and alert info
         """
         # Get or create usage record for current month
-        month_year = datetime.utcnow().strftime("%Y-%m")
+        month_year = utcnow().strftime("%Y-%m")
 
         usage = (
             db.query(SmsUsage)
@@ -134,7 +134,7 @@ class CostTracker:
         Returns:
             Dictionary with budget status
         """
-        month_year = datetime.utcnow().strftime("%Y-%m")
+        month_year = utcnow().strftime("%Y-%m")
 
         usage = (
             db.query(SmsUsage)

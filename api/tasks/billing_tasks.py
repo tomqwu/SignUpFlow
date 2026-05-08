@@ -21,6 +21,7 @@ logger = logging.getLogger(__name__)
 
 # Use the same Celery app instance
 from api.tasks.sms_tasks import celery_app
+from api.timeutils import utcnow
 
 
 @celery_app.task(bind=True, max_retries=3)
@@ -257,11 +258,11 @@ def process_cancelled_subscriptions(self) -> dict[str, Any]:
     db = SessionLocal()
 
     try:
-        from datetime import datetime, timedelta
+        from datetime import timedelta
 
         from api.models import Organization, Subscription, SubscriptionEvent
 
-        now = datetime.utcnow()
+        now = utcnow()
         cancelled_orgs = []
 
         # Find all subscriptions marked for cancellation at period end
@@ -368,11 +369,9 @@ def mark_organizations_for_deletion(self) -> dict[str, Any]:
     db = SessionLocal()
 
     try:
-        from datetime import datetime
-
         from api.models import Organization
 
-        now = datetime.utcnow()
+        now = utcnow()
         marked_orgs = []
 
         # Find organizations past retention period

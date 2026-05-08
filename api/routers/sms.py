@@ -23,6 +23,7 @@ from api.tasks.sms_tasks import (
     send_broadcast_message,
     send_event_reminder,
 )
+from api.timeutils import utcnow
 
 router = APIRouter(prefix="/api/sms", tags=["sms"])
 
@@ -166,9 +167,9 @@ def send_verification_code(
             db=db, person_id=request.person_id, phone_number=request.phone_number
         )
 
-        from datetime import datetime, timedelta
+        from datetime import timedelta
 
-        expires_at = (datetime.utcnow() + timedelta(minutes=10)).isoformat()
+        expires_at = (utcnow() + timedelta(minutes=10)).isoformat()
 
         return VerificationCodeResponse(
             message="Verification code sent via SMS",
@@ -308,7 +309,6 @@ def get_sms_usage_stats(
 
     Returns current month usage with budget tracking.
     """
-    from datetime import datetime
 
     from api.models import SmsUsage
 
@@ -318,7 +318,7 @@ def get_sms_usage_stats(
         raise HTTPException(status_code=403, detail="Access denied: wrong organization")
 
     # Get current month usage
-    current_month = datetime.utcnow().strftime("%Y-%m")
+    current_month = utcnow().strftime("%Y-%m")
 
     usage = (
         db.query(SmsUsage)
@@ -548,7 +548,6 @@ async def twilio_delivery_status_webhook(request: Request, db: Session = Depends
             raise HTTPException(status_code=422, detail="Missing required fields")
 
         # Update message status in database
-        from datetime import datetime
 
         from api.models import SmsMessage
 
@@ -560,9 +559,9 @@ async def twilio_delivery_status_webhook(request: Request, db: Session = Depends
             sms_message.status = message_status
 
             if message_status == "delivered":
-                sms_message.delivered_at = datetime.utcnow()
+                sms_message.delivered_at = utcnow()
             elif message_status in ["failed", "undelivered"]:
-                sms_message.failed_at = datetime.utcnow()
+                sms_message.failed_at = utcnow()
                 sms_message.error_message = form_data.get("ErrorMessage", "Unknown error")
 
             db.commit()

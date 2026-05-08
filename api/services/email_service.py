@@ -401,7 +401,6 @@ class EmailService:
             sendgrid_message_id: Optional SendGrid message ID
             error_message: Optional error message
         """
-        from datetime import datetime
 
         notification.status = status
 
@@ -412,7 +411,7 @@ class EmailService:
             notification.error_message = error_message
 
         if status == "sent":
-            notification.sent_at = datetime.utcnow()
+            notification.sent_at = utcnow()
 
         db.commit()
 

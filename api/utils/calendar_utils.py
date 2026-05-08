@@ -14,6 +14,8 @@ from zoneinfo import ZoneInfo
 from icalendar import Calendar, vDatetime
 from icalendar import Event as ICalEvent
 
+from api.timeutils import utcnow
+
 
 def generate_ics_from_assignments(
     assignments: list[dict[str, Any]],
@@ -45,7 +47,7 @@ def generate_ics_from_assignments(
         # Required fields
         event_data = assignment.get("event", {})
         event.add("uid", f"rostio-assignment-{assignment.get('id')}@rostio.app")
-        event.add("dtstamp", datetime.utcnow().replace(tzinfo=ZoneInfo("UTC")))
+        event.add("dtstamp", utcnow().replace(tzinfo=ZoneInfo("UTC")))
 
         # Event times
         start_time = event_data.get("start_time")
@@ -133,7 +135,7 @@ def generate_ics_from_events(
 
         # Required fields
         event.add("uid", f"rostio-event-{event_data.get('id')}@rostio.app")
-        event.add("dtstamp", datetime.utcnow().replace(tzinfo=ZoneInfo("UTC")))
+        event.add("dtstamp", utcnow().replace(tzinfo=ZoneInfo("UTC")))
 
         # Event times
         start_time = event_data.get("start_time")

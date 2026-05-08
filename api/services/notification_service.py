@@ -8,7 +8,6 @@ triggering Celery tasks for sending emails.
 import logging
 import os
 import secrets
-from datetime import datetime
 from typing import Any
 
 from sqlalchemy.orm import Session
@@ -24,6 +23,7 @@ from api.models import (
     Person,
 )
 from api.tasks.notifications import send_email_task
+from api.timeutils import utcnow
 
 logger = logging.getLogger(__name__)
 _TRUTHY_VALUES = {"1", "true", "yes", "on"}
@@ -141,7 +141,7 @@ def create_assignment_notifications(
                 "assignment_id": assignment.id,
                 "role": assignment.role if hasattr(assignment, "role") else None,
             },
-            created_at=datetime.utcnow(),
+            created_at=utcnow(),
         )
         db.add(notification)
         db.flush()  # Flush to get notification ID
@@ -217,7 +217,7 @@ def create_notification(
         status=NotificationStatus.PENDING,
         event_id=event_id,
         template_data=template_data or {},
-        created_at=datetime.utcnow(),
+        created_at=utcnow(),
     )
     db.add(notification)
     db.flush()
