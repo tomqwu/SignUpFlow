@@ -1,4 +1,4 @@
-package app.signupflow.signupflow_mobile
+package app.signupflow.android
 
 import io.flutter.embedding.android.FlutterActivity
 
