@@ -9,6 +9,7 @@ Supports:
 - Database notification tracking
 """
 
+import html
 import logging
 import os
 import smtplib
@@ -1008,6 +1009,12 @@ class EmailService:
         # Web fallback for desktop / no-app users.
         web_url = f"{app_url}/reset-password?token={reset_token}"
 
+        # Escape the recipient name before HTML interpolation. Person.name is
+        # user-supplied (signup form / admin-created) and not constrained to
+        # plain text, so an unescaped f-string would let a malicious display
+        # name inject arbitrary markup into the reset email body.
+        safe_name = html.escape(name, quote=True)
+
         subject = "Reset your SignUpFlow password"
 
         html_content = f"""
@@ -1064,7 +1071,7 @@ class EmailService:
                 <h1>Reset your password</h1>
             </div>
             <div class="content">
-                <p>Hi {name},</p>
+                <p>Hi {safe_name},</p>
 
                 <p>We received a request to reset your SignUpFlow password.
                 Tap the button below to set a new one:</p>

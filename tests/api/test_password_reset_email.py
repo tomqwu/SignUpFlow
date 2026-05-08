@@ -245,3 +245,45 @@ class TestForgotPasswordTimingDoesNotLeakExistence:
         # Both should be << 2s (i.e., the slow-email-backend never blocks).
         assert t_known < 0.5, f"known-email path took {t_known:.2f}s"
         assert t_unknown < 0.5, f"unknown-email path took {t_unknown:.2f}s"
+
+
+class TestSendPasswordResetEmailEscapesUserContent:
+    """Regression for Codex review on PR #78 — Person.name flows directly
+    into the reset email's HTML body. An unescaped name like
+    ``<script>alert(1)</script>`` or ``<a href=evil>Click</a>`` would let a
+    malicious display name inject markup into a security-sensitive email
+    that arrives in the victim's inbox. Build the email content in isolation
+    (no router, no DB) and assert HTML escaping at the source.
+    """
+
+    def test_html_escapes_name_in_body(self, monkeypatch):
+        from api.services.email_service import EmailService
+
+        captured: dict[str, str] = {}
+
+        def _capture(self, to_email, subject, html_content, plain_content=None):
+            captured["html"] = html_content
+            captured["plain"] = plain_content or ""
+            return True
+
+        monkeypatch.setattr(EmailService, "send_email", _capture)
+        # Force-enable the service for this isolated test (TESTING gate
+        # would short-circuit send_password_reset_email before our capture
+        # ran). We replaced send_email above, so no real I/O happens.
+        svc = EmailService()
+        svc.enabled = True
+
+        nasty = '<script>alert("xss")</script>'
+        ok = svc.send_password_reset_email(
+            to_email="victim@example.com",
+            name=nasty,
+            reset_token="t" * 40,
+            app_url="http://localhost:8000",
+        )
+        assert ok is True
+        # Raw markup must NOT appear; the escaped form MUST.
+        assert nasty not in captured["html"]
+        assert "&lt;script&gt;" in captured["html"]
+        # Plain-text variant is plain text by definition; no escaping needed
+        # there, but the test pins that the function still produces it.
+        assert "Hi " in captured["plain"]
