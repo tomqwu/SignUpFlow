@@ -5110,7 +5110,7 @@
     },
     "/api/v1/auth/forgot-password": {
       "post": {
-        "description": "Request a password reset token.\n\nAlways returns the same generic message regardless of whether the email\nexists. Audits every request. The reset token is held in-memory and is\nNEVER returned in the response in production. Set\n`DEBUG_RETURN_RESET_TOKEN=true` in dev/test environments to opt into\nreceiving the token in the JSON body for E2E exercise.\n\nEmail send is queued via ``BackgroundTasks`` so the HTTP response\ntiming is independent of email backend latency \u2014 both for anti-\nenumeration and to prevent slow-SMTP DoS. The reset token is issued\nsynchronously; email delivery is best-effort.",
+        "description": "Request a password reset token.\n\nAlways returns the same generic message regardless of whether the email\nexists. Audits every request. The reset token is persisted in the\n``password_reset_tokens`` table (see model in ``api/models.py``) so it\nsurvives multi-worker deployments \u2014 the legacy in-memory dict broke\nunder the documented default ``WORKERS=4`` because the worker handling\n``POST /reset-password`` may differ from the one that issued the token.\nThe token is NEVER returned in the response in production. Set\n``DEBUG_RETURN_RESET_TOKEN=true`` in dev/test environments to opt into\nreceiving the token in the JSON body for E2E exercise.\n\nEmail send is queued via ``BackgroundTasks`` so the HTTP response\ntiming is independent of email backend latency \u2014 both for anti-\nenumeration and to prevent slow-SMTP DoS. The reset token is issued\nsynchronously; email delivery is best-effort.",
         "operationId": "requestPasswordReset",
         "requestBody": {
           "content": {
@@ -5234,7 +5234,7 @@
     },
     "/api/v1/auth/reset-password": {
       "post": {
-        "description": "Reset password using token.",
+        "description": "Reset password using token.\n\nLooks up the token in the ``password_reset_tokens`` table. Tokens are\none-time-use: a successful reset stamps ``used_at`` so a replay of the\nsame emailed link is rejected with the generic \"invalid or expired\"\nerror.",
         "operationId": "resetPassword",
         "requestBody": {
           "content": {
