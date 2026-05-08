@@ -119,7 +119,112 @@ Pytest markers: `@pytest.mark.unit`, `@pytest.mark.integration`, `@pytest.mark.s
 
 1. **Run tests after every code change.** After any edit to code or tests, run `make test-unit` (or `make test-unit-fast` during iteration). The change is not "done" until local tests pass. Run `make test-all` before pushing a PR.
 2. **Commit and let CI run.** After local tests pass, commit and push. Do not declare a change shippable based on local results alone — wait for CI on the branch.
-3. **Merge only when CI is green.** A PR may merge only after CI passes. If CI is red, fix the cause before merging. Do not bypass, force-merge, or skip required checks.
+3. **Merge only when CI is green and the review gate has passed** (see next section).
+
+## PR Review Gate
+
+You may write code, push branches, open PRs, respond to PR feedback, resolve
+merge conflicts, and merge your PR after the review gate passes.
+
+Do not merge before the review gate passes.
+
+After opening or updating a PR:
+1. Push the branch.
+2. Wait for CI to finish.
+3. Wait for independent review.
+4. Treat "Not LGTM yet" as blocking feedback.
+
+A PR is mergeable only when all of these are true:
+1. The PR is not draft.
+2. CI/checks are green: no failing, cancelled, or pending required checks.
+3. An independent reviewer comment says:
+
+```
+LGTM
+<!-- codex-pr-review: <head_sha> -->
+```
+
+4. The `<head_sha>` marker exactly matches the current PR head SHA.
+5. No newer comment, review, or review thread after that LGTM contains blocking
+   feedback.
+6. No new commit was pushed after the LGTM marker.
+7. GitHub reports the PR can merge cleanly, with no merge conflicts.
+
+Important rules:
+- Do not post LGTM yourself.
+- Do not treat an LGTM for an older commit as valid.
+- If you push a new commit, the prior LGTM is stale; wait for review again.
+- If the reviewer comments "Not LGTM yet", fix the issue, run relevant checks,
+  push a follow-up commit, reply on the PR with what changed, and wait for
+  review again.
+- Keep review and fix discussion visible on the PR.
+
+### Merge conflict responsibility
+
+You are responsible for keeping your PR mergeable.
+
+Before waiting for review, before merging, and after any base branch update,
+check whether the PR has merge conflicts or is behind the base branch.
+
+Use commands such as:
+
+```bash
+git fetch origin
+gh pr view --json number,url,headRefName,baseRefName,headRefOid,mergeStateStatus,statusCheckRollup
+gh pr checks
+```
+
+If the PR has merge conflicts, a dirty merge state, or GitHub reports it cannot
+be merged cleanly:
+1. Do not ask the reviewer to fix it.
+2. Update your branch against the latest base branch using the repo's normal
+   workflow. If no workflow is specified, prefer:
+
+   ```bash
+   git fetch origin
+   git checkout <pr-branch>
+   git merge origin/<base-branch>
+   ```
+
+3. Resolve conflicts carefully. Preserve both the requested branch changes and
+   the current base branch behavior unless the conflict makes that impossible.
+4. Run relevant local checks.
+5. Commit the conflict resolution.
+6. Push the branch.
+7. Reply on the PR with a short summary of the conflict resolution.
+8. Wait for CI and independent review again.
+
+### Before merging
+
+Re-fetch PR state immediately:
+- current head SHA
+- CI/check status
+- comments
+- reviews
+- review threads if available
+- draft state
+- mergeability / merge conflict state
+
+Use GitHub CLI when available, for example:
+
+```bash
+gh pr view --json number,url,isDraft,headRefName,headRefOid,mergeStateStatus,statusCheckRollup,comments,reviews
+gh pr checks
+gh pr merge
+```
+
+Only merge if the fresh state still satisfies the gate.
+
+If the gate passes, merge the PR. Use the repository's normal merge method if it
+is clear from repo policy or branch protection. Otherwise prefer squash merge:
+
+```bash
+gh pr merge --squash --delete-branch
+```
+
+If GitHub blocks the merge, report the exact blocker and leave the PR unmerged.
+If CI is pending, review is missing, LGTM is stale, merge conflicts exist, or
+blocking feedback exists, do not merge; report what is still needed.
 
 ## Common Gotchas
 
