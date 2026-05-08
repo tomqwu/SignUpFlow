@@ -1593,7 +1593,7 @@
         "type": "object"
       },
       "InvitationAcceptResponse": {
-        "description": "Schema for invitation acceptance response.",
+        "description": "Schema for invitation acceptance response.\n\nReturns a JWT access token + refresh token pair so the mobile client\ncan use ``token`` as a Bearer immediately and call ``/auth/refresh``\nwhen it expires (mirrors login/signup since Sprint 9 PR 9.3).",
         "properties": {
           "email": {
             "title": "Email",
@@ -1613,6 +1613,12 @@
           },
           "person_id": {
             "title": "Person Id",
+            "type": "string"
+          },
+          "refresh_token": {
+            "default": "",
+            "description": "Refresh token (long-lived). Use POST /auth/refresh to exchange for a fresh access+refresh token pair.",
+            "title": "Refresh Token",
             "type": "string"
           },
           "roles": {

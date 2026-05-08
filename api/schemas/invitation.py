@@ -54,7 +54,12 @@ class InvitationAccept(BaseModel):
 
 
 class InvitationAcceptResponse(BaseModel):
-    """Schema for invitation acceptance response."""
+    """Schema for invitation acceptance response.
+
+    Returns a JWT access token + refresh token pair so the mobile client
+    can use ``token`` as a Bearer immediately and call ``/auth/refresh``
+    when it expires (mirrors login/signup since Sprint 9 PR 9.3).
+    """
 
     person_id: str
     org_id: str
@@ -62,5 +67,10 @@ class InvitationAcceptResponse(BaseModel):
     email: str
     roles: list[str]
     timezone: str
-    token: str  # Auth token for immediate login
+    token: str  # JWT access token (Authorization: Bearer ...)
+    refresh_token: str = Field(
+        default="",
+        description="Refresh token (long-lived). Use POST /auth/refresh "
+        "to exchange for a fresh access+refresh token pair.",
+    )
     message: str

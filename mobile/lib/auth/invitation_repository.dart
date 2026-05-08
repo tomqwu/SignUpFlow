@@ -85,6 +85,13 @@ class InvitationRepository {
         throw const InvitationFailure('Server returned an empty token.');
       }
       await _storage.writeToken(data.token);
+      // Persist the refresh token (Sprint 9 PR 9.4b makes invitation accept
+      // mint real JWT pairs like login/signup). Pre-9.4b backends omit the
+      // field; treat null/empty as "no refresh — fall back to re-login".
+      final refreshToken = data.refreshToken;
+      if (refreshToken != null && refreshToken.isNotEmpty) {
+        await _storage.writeRefreshToken(refreshToken);
+      }
       return AuthState(
         role: LoginRepository.resolveRole(data.roles.toList()),
         token: data.token,

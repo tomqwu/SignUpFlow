@@ -23,10 +23,11 @@ from api.schemas.invitation import (
     InvitationResponse,
     InvitationVerify,
 )
+from api.security import create_access_token, create_refresh_token
 from api.timeutils import utcnow
 from api.utils.db_helpers import check_email_exists
 from api.utils.rate_limit_middleware import rate_limit
-from api.utils.security import generate_auth_token, generate_invitation_token, hash_password
+from api.utils.security import generate_invitation_token, hash_password
 
 router = APIRouter(prefix="/invitations", tags=["invitations"])
 
@@ -246,6 +247,7 @@ def accept_invitation(
         timezone=request.timezone,
         status="active",
         invited_by=invitation.invited_by,
+        password_changed_at=utcnow(),
         extra_data={},
     )
 
@@ -258,8 +260,23 @@ def accept_invitation(
     db.commit()
     db.refresh(person)
 
-    # Generate auth token for immediate login
-    auth_token = generate_auth_token()
+    # Mint real JWT access + refresh tokens (same shape as /auth/login
+    # and /auth/signup). The refresh token carries org_id + rtv so it
+    # works with /auth/refresh's atomic conditional UPDATE.
+    pwd_iat = (
+        person.password_changed_at.timestamp()
+        if person.password_changed_at is not None
+        else utcnow().timestamp()
+    )
+    access_token = create_access_token(data={"sub": person.id, "pwd_iat": pwd_iat})
+    refresh_token = create_refresh_token(
+        data={
+            "sub": person.id,
+            "org_id": person.org_id,
+            "pwd_iat": pwd_iat,
+            "rtv": person.refresh_token_version or 0,
+        }
+    )
 
     return InvitationAcceptResponse(
         person_id=person.id,
@@ -268,7 +285,8 @@ def accept_invitation(
         email=person.email,
         roles=person.roles or [],
         timezone=person.timezone,
-        token=auth_token,
+        token=access_token,
+        refresh_token=refresh_token,
         message="Account created successfully. You are now logged in.",
     )
 

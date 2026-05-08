@@ -9,7 +9,7 @@ import 'package:built_value/serializer.dart';
 
 part 'invitation_accept_response.g.dart';
 
-/// Schema for invitation acceptance response.
+/// Schema for invitation acceptance response.  Returns a JWT access token + refresh token pair so the mobile client can use ``token`` as a Bearer immediately and call ``/auth/refresh`` when it expires (mirrors login/signup since Sprint 9 PR 9.3).
 ///
 /// Properties:
 /// * [email] 
@@ -17,6 +17,7 @@ part 'invitation_accept_response.g.dart';
 /// * [name] 
 /// * [orgId] 
 /// * [personId] 
+/// * [refreshToken] - Refresh token (long-lived). Use POST /auth/refresh to exchange for a fresh access+refresh token pair.
 /// * [roles] 
 /// * [timezone] 
 /// * [token] 
@@ -37,6 +38,10 @@ abstract class InvitationAcceptResponse implements Built<InvitationAcceptRespons
   @BuiltValueField(wireName: r'person_id')
   String get personId;
 
+  /// Refresh token (long-lived). Use POST /auth/refresh to exchange for a fresh access+refresh token pair.
+  @BuiltValueField(wireName: r'refresh_token')
+  String? get refreshToken;
+
   @BuiltValueField(wireName: r'roles')
   BuiltList<String> get roles;
 
@@ -51,7 +56,8 @@ abstract class InvitationAcceptResponse implements Built<InvitationAcceptRespons
   factory InvitationAcceptResponse([void updates(InvitationAcceptResponseBuilder b)]) = _$InvitationAcceptResponse;
 
   @BuiltValueHook(initializeBuilder: true)
-  static void _defaults(InvitationAcceptResponseBuilder b) => b;
+  static void _defaults(InvitationAcceptResponseBuilder b) => b
+      ..refreshToken = '';
 
   @BuiltValueSerializer(custom: true)
   static Serializer<InvitationAcceptResponse> get serializer => _$InvitationAcceptResponseSerializer();
@@ -94,6 +100,13 @@ class _$InvitationAcceptResponseSerializer implements PrimitiveSerializer<Invita
       object.personId,
       specifiedType: const FullType(String),
     );
+    if (object.refreshToken != null) {
+      yield r'refresh_token';
+      yield serializers.serialize(
+        object.refreshToken,
+        specifiedType: const FullType(String),
+      );
+    }
     yield r'roles';
     yield serializers.serialize(
       object.roles,
@@ -166,6 +179,13 @@ class _$InvitationAcceptResponseSerializer implements PrimitiveSerializer<Invita
             specifiedType: const FullType(String),
           ) as String;
           result.personId = valueDes;
+          break;
+        case r'refresh_token':
+          final valueDes = serializers.deserialize(
+            value,
+            specifiedType: const FullType(String),
+          ) as String;
+          result.refreshToken = valueDes;
           break;
         case r'roles':
           final valueDes = serializers.deserialize(
