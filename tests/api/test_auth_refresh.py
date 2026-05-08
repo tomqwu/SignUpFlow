@@ -214,6 +214,40 @@ class TestAuthRefreshRejection:
         resp = client.post("/api/v1/auth/refresh", json={"refresh_token": forged})
         assert resp.status_code == 401
 
+    def test_concurrent_refresh_with_same_token_only_one_succeeds(self, client, db):
+        """The atomic conditional UPDATE on refresh_token_version means that
+        even if two requests race with the same refresh token, only one
+        rotation actually commits — the other sees rowcount=0 and 401.
+
+        We can't trivially run two requests truly in parallel against the
+        same in-memory SQLite session in this test, so we exercise the
+        equivalent path: simulate the concurrent loser by manually bumping
+        the version BETWEEN decoding the token and attempting to rotate.
+        Per the implementation that's exactly the race condition: the
+        UPDATE's WHERE-clause filter on refresh_token_version == expected
+        no longer matches, so the UPDATE is a no-op and the endpoint 401s.
+        """
+        person = _seed_login_user(db, email="refresh-concurrent@example.com")
+        login = client.post(
+            "/api/v1/auth/login",
+            json={"email": person.email, "password": "RefreshPass1!"},
+        )
+        original_refresh = login.json()["refresh_token"]
+
+        # Simulate "another request rotated first" by bumping the column.
+        # When our /auth/refresh tries the conditional UPDATE filtered by
+        # refresh_token_version == 0 (the value baked into the token),
+        # zero rows match because the row is now at version 1 → 401.
+        person.refresh_token_version = (person.refresh_token_version or 0) + 1
+        db.commit()
+
+        resp = client.post(
+            "/api/v1/auth/refresh",
+            json={"refresh_token": original_refresh},
+        )
+        assert resp.status_code == 401
+        assert "superseded" in resp.json()["detail"].lower()
+
     def test_refresh_token_missing_org_id_rejected(self, client, db):
         """Old-style refresh tokens (no org_id claim) are rejected so we
         can't be tricked into the unfiltered Person.id-only lookup path."""

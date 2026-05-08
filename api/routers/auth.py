@@ -260,16 +260,32 @@ def refresh(request: RefreshRequest, db: Session = Depends(get_db)):
             detail="Refresh token invalidated by password change",
         )
 
-    # Replay-prevention: the token's rtv must match the user's current value.
-    if int(token_rtv) != (person.refresh_token_version or 0):
+    # ATOMIC rotate: a single conditional UPDATE filtered by id + org_id +
+    # current refresh_token_version. Whichever request commits first wins;
+    # all others get rowcount==0 and 401, even under concurrent traffic
+    # with the same refresh JWT.
+    expected_rtv = int(token_rtv)
+    new_rtv = expected_rtv + 1
+    rows = (
+        db.query(Person)
+        .filter(
+            Person.id == person_id,
+            Person.org_id == token_org_id,
+            Person.refresh_token_version == expected_rtv,
+        )
+        .update({Person.refresh_token_version: new_rtv}, synchronize_session=False)
+    )
+    db.commit()
+
+    if rows == 0:
+        # Either the rtv was already stale at decode time, or we lost a
+        # concurrent rotation race. Either way the token is dead.
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Refresh token superseded",
         )
 
-    # Bump the version, persist, then mint the new pair off the new value.
-    person.refresh_token_version = (person.refresh_token_version or 0) + 1
-    db.commit()
+    # Re-read the now-updated row so we mint tokens from a known-good value.
     db.refresh(person)
 
     new_access = create_access_token(data={"sub": person.id, "pwd_iat": _pwd_iat_for(person)})
