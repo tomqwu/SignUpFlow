@@ -93,3 +93,65 @@ platform :ios do
     UI.success("✅ ipa built at build/ios/ipa/signupflow_mobile.ipa")
   end
 end
+
+platform :android do
+  desc "Build the Flutter Android app bundle and upload to Play Console internal track"
+  lane :internal do |options|
+    flutter_root = File.expand_path("..", __dir__)
+
+    # `flutter` may live outside the default PATH (same situation as iOS).
+    flutter_bin = `which flutter`.strip
+    UI.user_error!("flutter not on PATH — install or `export PATH=/path/to/flutter/bin:$PATH`") if flutter_bin.empty?
+    flutter_dir = File.dirname(flutter_bin)
+
+    # 1. Bump the build number — same git-rev-count strategy as iOS so the
+    # two platforms move together.
+    build_number = sh("git rev-list --count HEAD").strip
+    UI.message("Using version code: #{build_number}")
+
+    # 2. Build the signed .aab. The release keystore is read from
+    # mobile/android/key.properties (gitignored); see ANDROID_RELEASE.md.
+    # Without that file, gradle falls back to debug signing — Play Console
+    # will reject the upload, which is the correct failure mode.
+    Bundler.with_clean_env do
+      ENV["PATH"] = "#{flutter_dir}:#{ENV['PATH']}"
+      sh(
+        "cd #{flutter_root} && flutter build appbundle " \
+        "--release " \
+        "--build-number=#{build_number}"
+      )
+    end
+
+    aab_path = "#{flutter_root}/build/app/outputs/bundle/release/app-release.aab"
+    UI.user_error!("aab not found at #{aab_path}") unless File.exist?(aab_path)
+
+    # 3. Upload to Play Console internal testing track. Authenticates via
+    # the service-account JSON key referenced in Appfile (env var
+    # GOOGLE_PLAY_JSON_KEY_PATH or the default /Users/tomwu/play-store-key.json).
+    upload_to_play_store(
+      track: "internal",
+      aab: aab_path,
+      skip_upload_apk: true,
+      skip_upload_metadata: true,
+      skip_upload_images: true,
+      skip_upload_screenshots: true,
+      release_status: "draft",
+      changes_not_sent_for_review: true,
+    )
+
+    UI.success("✅ Uploaded version code #{build_number} to Play Console internal track")
+  end
+
+  desc "Local-only: build the .aab without uploading (smoke test the build)"
+  lane :build_only do
+    flutter_root = File.expand_path("..", __dir__)
+    flutter_bin = `which flutter`.strip
+    UI.user_error!("flutter not on PATH") if flutter_bin.empty?
+    flutter_dir = File.dirname(flutter_bin)
+    Bundler.with_clean_env do
+      ENV["PATH"] = "#{flutter_dir}:#{ENV['PATH']}"
+      sh("cd #{flutter_root} && flutter build appbundle --release")
+    end
+    UI.success("✅ aab built at build/app/outputs/bundle/release/app-release.aab")
+  end
+end

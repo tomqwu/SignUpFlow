@@ -1,16 +1,27 @@
-# Apple identifiers — these are public (Team ID + bundle ID appear on App Store).
-# Apple ID password / app-specific password / API key are NOT here — they live
-# in env vars (see TESTFLIGHT.md).
+# Apple + Google identifiers — these are public (Team ID, bundle ID, and
+# package name appear on App Store / Play Store). Auth credentials are NOT
+# here — they live in env vars (see TESTFLIGHT.md and ANDROID_RELEASE.md).
 
-app_identifier("app.signupflow.ios")
-team_id("T32FW7PZ3S")
+for_platform :ios do
+  app_identifier("app.signupflow.ios")
+  team_id("T32FW7PZ3S")
 
-# Apple ID is read from env var to avoid embedding it in version control.
-# Set APPLE_ID before running fastlane. Example:
-#   export APPLE_ID="you@example.com"
-apple_id(ENV["APPLE_ID"])
+  # Apple ID is read from env var to avoid embedding it in version control.
+  # Set APPLE_ID before running fastlane. Example:
+  #   export APPLE_ID="you@example.com"
+  apple_id(ENV["APPLE_ID"])
 
-# Note: do NOT set `itc_team_id` here — `6767228040` is the per-app
-# numeric Apple ID (referenced as the App Store Connect "Apple ID" on the
-# app's page), not the team's numeric ID. With only one ASC team
-# (`Qiang Wu` at T32FW7PZ3S), pilot picks the team automatically.
+  # Note: do NOT set `itc_team_id` here — `6767228040` is the per-app
+  # numeric Apple ID (referenced as the App Store Connect "Apple ID" on the
+  # app's page), not the team's numeric ID. With only one ASC team
+  # (`Qiang Wu` at T32FW7PZ3S), pilot picks the team automatically.
+end
+
+# Google Play identifiers — package name is public (appears in the
+# Play Store URL). The service-account JSON key authenticates uploads;
+# its path is read from GOOGLE_PLAY_JSON_KEY_PATH or defaults to
+# ~/play-store-key.json (see ANDROID_RELEASE.md for setup).
+for_platform :android do
+  package_name("app.signupflow.android")
+  json_key_file(ENV["GOOGLE_PLAY_JSON_KEY_PATH"] || File.expand_path("~/play-store-key.json"))
+end
