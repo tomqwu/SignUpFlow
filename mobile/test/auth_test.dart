@@ -71,6 +71,10 @@ void main() {
     final repo = _FakeLoginRepo();
     final storage = InMemoryTokenStorage();
     await storage.writeToken('tok');
+    // Pre-seed a refresh token: signOut must wipe this too, otherwise the
+    // dio interceptor can mint a fresh access token after the next 401 and
+    // silently re-auth a user who explicitly signed out.
+    await storage.writeRefreshToken('refresh-tok');
     final container = ProviderContainer(
       overrides: [
         loginRepositoryProvider.overrideWithValue(repo),
@@ -85,5 +89,6 @@ void main() {
     await container.read(authProvider.notifier).signOut();
     expect(container.read(authProvider).role, AuthRole.unauth);
     expect(await storage.readToken(), isNull);
+    expect(await storage.readRefreshToken(), isNull);
   });
 }

@@ -29,9 +29,14 @@ class LoginRepository {
       await _storage.writeToken(body.token);
       // Persist the refresh token if the server issued one (Sprint 9 PR 9.3+).
       // Older backends may omit it; treat empty/null as "no refresh available".
+      // If absent, also clear any previously-stored refresh token — otherwise
+      // an old session's refresh credential survives this fresh login and the
+      // interceptor can rotate the next 401 back into the prior session.
       final refreshToken = body.refreshToken;
       if (refreshToken != null && refreshToken.isNotEmpty) {
         await _storage.writeRefreshToken(refreshToken);
+      } else {
+        await _storage.clearRefreshToken();
       }
       return AuthState(
         role: _resolveRole(body.roles.toList()),

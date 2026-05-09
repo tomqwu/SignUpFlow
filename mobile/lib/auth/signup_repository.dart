@@ -55,9 +55,14 @@ class SignupRepository {
         throw const SignupFailure('Server returned an empty token.');
       }
       await _storage.writeToken(body.token);
+      // Mirror login_repository: clear any prior refresh token if the server
+      // didn't issue one, so a brand-new account can't inherit the previous
+      // user's refresh credential.
       final refreshToken = body.refreshToken;
       if (refreshToken != null && refreshToken.isNotEmpty) {
         await _storage.writeRefreshToken(refreshToken);
+      } else {
+        await _storage.clearRefreshToken();
       }
       return AuthState(
         role: LoginRepository.resolveRole(body.roles.toList()),
