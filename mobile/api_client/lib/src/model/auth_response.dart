@@ -17,6 +17,7 @@ part 'auth_response.g.dart';
 /// * [name] 
 /// * [orgId] 
 /// * [personId] 
+/// * [refreshToken] - Refresh token (long-lived). Use POST /auth/refresh to exchange for a fresh access+refresh token pair.
 /// * [roles] 
 /// * [timezone] 
 /// * [token] 
@@ -37,6 +38,10 @@ abstract class AuthResponse implements Built<AuthResponse, AuthResponseBuilder> 
   @BuiltValueField(wireName: r'person_id')
   String get personId;
 
+  /// Refresh token (long-lived). Use POST /auth/refresh to exchange for a fresh access+refresh token pair.
+  @BuiltValueField(wireName: r'refresh_token')
+  String? get refreshToken;
+
   @BuiltValueField(wireName: r'roles')
   BuiltList<String> get roles;
 
@@ -51,7 +56,8 @@ abstract class AuthResponse implements Built<AuthResponse, AuthResponseBuilder> 
   factory AuthResponse([void updates(AuthResponseBuilder b)]) = _$AuthResponse;
 
   @BuiltValueHook(initializeBuilder: true)
-  static void _defaults(AuthResponseBuilder b) => b;
+  static void _defaults(AuthResponseBuilder b) => b
+      ..refreshToken = '';
 
   @BuiltValueSerializer(custom: true)
   static Serializer<AuthResponse> get serializer => _$AuthResponseSerializer();
@@ -94,6 +100,13 @@ class _$AuthResponseSerializer implements PrimitiveSerializer<AuthResponse> {
       object.personId,
       specifiedType: const FullType(String),
     );
+    if (object.refreshToken != null) {
+      yield r'refresh_token';
+      yield serializers.serialize(
+        object.refreshToken,
+        specifiedType: const FullType(String),
+      );
+    }
     yield r'roles';
     yield serializers.serialize(
       object.roles,
@@ -166,6 +179,13 @@ class _$AuthResponseSerializer implements PrimitiveSerializer<AuthResponse> {
             specifiedType: const FullType(String),
           ) as String;
           result.personId = valueDes;
+          break;
+        case r'refresh_token':
+          final valueDes = serializers.deserialize(
+            value,
+            specifiedType: const FullType(String),
+          ) as String;
+          result.refreshToken = valueDes;
           break;
         case r'roles':
           final valueDes = serializers.deserialize(

@@ -86,6 +86,8 @@ import 'package:signupflow_api/src/model/person_update.dart';
 import 'package:signupflow_api/src/model/preview_request.dart';
 import 'package:signupflow_api/src/model/recurring_series_create.dart';
 import 'package:signupflow_api/src/model/recurring_series_response.dart';
+import 'package:signupflow_api/src/model/refresh_request.dart';
+import 'package:signupflow_api/src/model/refresh_response.dart';
 import 'package:signupflow_api/src/model/resource_create.dart';
 import 'package:signupflow_api/src/model/resource_response.dart';
 import 'package:signupflow_api/src/model/resource_update.dart';
@@ -186,6 +188,8 @@ part 'serializers.g.dart';
   PreviewRequest,
   RecurringSeriesCreate,
   RecurringSeriesResponse,
+  RefreshRequest,
+  RefreshResponse,
   ResourceCreate,
   ResourceResponse,
   ResourceUpdate,

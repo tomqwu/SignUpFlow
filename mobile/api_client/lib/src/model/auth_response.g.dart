@@ -18,6 +18,8 @@ class _$AuthResponse extends AuthResponse {
   @override
   final String personId;
   @override
+  final String? refreshToken;
+  @override
   final BuiltList<String> roles;
   @override
   final String timezone;
@@ -33,6 +35,7 @@ class _$AuthResponse extends AuthResponse {
       required this.name,
       required this.orgId,
       required this.personId,
+      this.refreshToken,
       required this.roles,
       required this.timezone,
       required this.token})
@@ -53,6 +56,7 @@ class _$AuthResponse extends AuthResponse {
         name == other.name &&
         orgId == other.orgId &&
         personId == other.personId &&
+        refreshToken == other.refreshToken &&
         roles == other.roles &&
         timezone == other.timezone &&
         token == other.token;
@@ -66,6 +70,7 @@ class _$AuthResponse extends AuthResponse {
     _$hash = $jc(_$hash, name.hashCode);
     _$hash = $jc(_$hash, orgId.hashCode);
     _$hash = $jc(_$hash, personId.hashCode);
+    _$hash = $jc(_$hash, refreshToken.hashCode);
     _$hash = $jc(_$hash, roles.hashCode);
     _$hash = $jc(_$hash, timezone.hashCode);
     _$hash = $jc(_$hash, token.hashCode);
@@ -81,6 +86,7 @@ class _$AuthResponse extends AuthResponse {
           ..add('name', name)
           ..add('orgId', orgId)
           ..add('personId', personId)
+          ..add('refreshToken', refreshToken)
           ..add('roles', roles)
           ..add('timezone', timezone)
           ..add('token', token))
@@ -112,6 +118,10 @@ class AuthResponseBuilder
   String? get personId => _$this._personId;
   set personId(String? personId) => _$this._personId = personId;
 
+  String? _refreshToken;
+  String? get refreshToken => _$this._refreshToken;
+  set refreshToken(String? refreshToken) => _$this._refreshToken = refreshToken;
+
   ListBuilder<String>? _roles;
   ListBuilder<String> get roles => _$this._roles ??= ListBuilder<String>();
   set roles(ListBuilder<String>? roles) => _$this._roles = roles;
@@ -136,6 +146,7 @@ class AuthResponseBuilder
       _name = $v.name;
       _orgId = $v.orgId;
       _personId = $v.personId;
+      _refreshToken = $v.refreshToken;
       _roles = $v.roles.toBuilder();
       _timezone = $v.timezone;
       _token = $v.token;
@@ -172,6 +183,7 @@ class AuthResponseBuilder
                 orgId, r'AuthResponse', 'orgId'),
             personId: BuiltValueNullFieldError.checkNotNull(
                 personId, r'AuthResponse', 'personId'),
+            refreshToken: refreshToken,
             roles: roles.build(),
             timezone: BuiltValueNullFieldError.checkNotNull(
                 timezone, r'AuthResponse', 'timezone'),

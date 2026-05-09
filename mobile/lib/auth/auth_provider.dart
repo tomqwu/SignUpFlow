@@ -125,7 +125,11 @@ class AuthController extends Notifier<AuthState> {
       state = state.copyWith(role: AuthRole.admin, token: 'demo-admin');
 
   Future<void> signOut() async {
-    await ref.read(secureTokenStorageProvider).clearToken();
+    // clearAll() — not clearToken() — because the refresh token is the
+    // long-lived credential. Leaving it behind lets the dio interceptor
+    // mint a fresh access token after a 401, silently re-authing a user
+    // who just hit "Sign out".
+    await ref.read(secureTokenStorageProvider).clearAll();
     state = const AuthState();
   }
 }

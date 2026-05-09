@@ -15,6 +15,8 @@ import 'package:signupflow_api/src/model/http_validation_error.dart';
 import 'package:signupflow_api/src/model/login_request.dart';
 import 'package:signupflow_api/src/model/password_reset_confirm.dart';
 import 'package:signupflow_api/src/model/password_reset_request.dart';
+import 'package:signupflow_api/src/model/refresh_request.dart';
+import 'package:signupflow_api/src/model/refresh_response.dart';
 import 'package:signupflow_api/src/model/signup_request.dart';
 
 class AuthApi {
@@ -189,6 +191,101 @@ class AuthApi {
     }
 
     return Response<AuthResponse>(
+      data: _responseData,
+      headers: _response.headers,
+      isRedirect: _response.isRedirect,
+      requestOptions: _response.requestOptions,
+      redirects: _response.redirects,
+      statusCode: _response.statusCode,
+      statusMessage: _response.statusMessage,
+      extra: _response.extra,
+    );
+  }
+
+  /// Refresh
+  /// Exchange a refresh token for a new access+refresh pair.  On every successful refresh: - Both tokens are rotated and returned. - &#x60;&#x60;Person.refresh_token_version&#x60;&#x60; is incremented and persisted. - The new refresh JWT carries the post-increment &#x60;&#x60;rtv&#x60;&#x60;. - **The prior refresh JWT becomes unusable** because its &#x60;&#x60;rtv&#x60;&#x60; is   now older than the user&#39;s current &#x60;&#x60;refresh_token_version&#x60;&#x60;.  Validates: - JWT signature + non-expired - &#x60;&#x60;type &#x3D;&#x3D; \&quot;refresh\&quot;&#x60;&#x60; (rejects access tokens) - &#x60;&#x60;sub&#x60;&#x60; (person_id) AND &#x60;&#x60;org_id&#x60;&#x60; claims present and match a   live user (multi-tenant filter on the DB lookup; project rule:   every Person query filters by &#x60;&#x60;org_id&#x60;&#x60;). - &#x60;&#x60;pwd_iat&#x60;&#x60; matches current &#x60;&#x60;password_changed_at&#x60;&#x60; (refresh   issued before a password change is rejected). - &#x60;&#x60;rtv&#x60;&#x60; matches current &#x60;&#x60;refresh_token_version&#x60;&#x60; (replay of a   prior refresh JWT is rejected).
+  ///
+  /// Parameters:
+  /// * [refreshRequest] 
+  /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
+  /// * [headers] - Can be used to add additional headers to the request
+  /// * [extras] - Can be used to add flags to the request
+  /// * [validateStatus] - A [ValidateStatus] callback that can be used to determine request success based on the HTTP status of the response
+  /// * [onSendProgress] - A [ProgressCallback] that can be used to get the send progress
+  /// * [onReceiveProgress] - A [ProgressCallback] that can be used to get the receive progress
+  ///
+  /// Returns a [Future] containing a [Response] with a [RefreshResponse] as data
+  /// Throws [DioException] if API call or serialization fails
+  Future<Response<RefreshResponse>> refresh({ 
+    required RefreshRequest refreshRequest,
+    CancelToken? cancelToken,
+    Map<String, dynamic>? headers,
+    Map<String, dynamic>? extra,
+    ValidateStatus? validateStatus,
+    ProgressCallback? onSendProgress,
+    ProgressCallback? onReceiveProgress,
+  }) async {
+    final _path = r'/api/v1/auth/refresh';
+    final _options = Options(
+      method: r'POST',
+      headers: <String, dynamic>{
+        ...?headers,
+      },
+      extra: <String, dynamic>{
+        'secure': <Map<String, String>>[],
+        ...?extra,
+      },
+      contentType: 'application/json',
+      validateStatus: validateStatus,
+    );
+
+    dynamic _bodyData;
+
+    try {
+      const _type = FullType(RefreshRequest);
+      _bodyData = _serializers.serialize(refreshRequest, specifiedType: _type);
+
+    } catch(error, stackTrace) {
+      throw DioException(
+         requestOptions: _options.compose(
+          _dio.options,
+          _path,
+        ),
+        type: DioExceptionType.unknown,
+        error: error,
+        stackTrace: stackTrace,
+      );
+    }
+
+    final _response = await _dio.request<Object>(
+      _path,
+      data: _bodyData,
+      options: _options,
+      cancelToken: cancelToken,
+      onSendProgress: onSendProgress,
+      onReceiveProgress: onReceiveProgress,
+    );
+
+    RefreshResponse? _responseData;
+
+    try {
+      final rawResponse = _response.data;
+      _responseData = rawResponse == null ? null : _serializers.deserialize(
+        rawResponse,
+        specifiedType: const FullType(RefreshResponse),
+      ) as RefreshResponse;
+
+    } catch (error, stackTrace) {
+      throw DioException(
+        requestOptions: _response.requestOptions,
+        response: _response,
+        type: DioExceptionType.unknown,
+        error: error,
+        stackTrace: stackTrace,
+      );
+    }
+
+    return Response<RefreshResponse>(
       data: _responseData,
       headers: _response.headers,
       isRedirect: _response.isRedirect,
