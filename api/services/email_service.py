@@ -9,6 +9,7 @@ Supports:
 - Database notification tracking
 """
 
+import html
 import logging
 import os
 import smtplib
@@ -107,10 +108,18 @@ class EmailService:
 
         # Email enabled flag
         # Auto-enable if explicit SMTP credentials provided (for integration tests)
-        # Otherwise respect EMAIL_ENABLED environment variable (defaults to true)
+        # Otherwise respect EMAIL_ENABLED environment variable (defaults to false).
+        # Default-off matches the repo's safety contract that transactional
+        # email stays disabled until an operator opts in — without this,
+        # /forgot-password queues real SMTP sends in dev/Docker deployments
+        # that lack credentials and burns 60/120/240s retry sleeps per request.
+        # Forced OFF under TESTING=true so synchronous BackgroundTasks (e.g.
+        # via FastAPI TestClient) don't block on real SMTP retries when a
+        # test doesn't explicitly mock the email service.
         explicit_smtp_config = bool(smtp_user and smtp_password)
-        env_enabled = os.getenv("EMAIL_ENABLED", "true").lower() == "true"
-        self.enabled = explicit_smtp_config or env_enabled
+        env_enabled = os.getenv("EMAIL_ENABLED", "false").lower() == "true"
+        testing_mode = os.getenv("TESTING", "").lower() == "true"
+        self.enabled = (explicit_smtp_config or env_enabled) and not testing_mode
 
         # Initialize Jinja2 template environment
         template_dir = Path(__file__).parent.parent / "templates" / "email"
@@ -964,6 +973,154 @@ class EmailService:
         This invitation expires in 7 days.
 
         Questions? Reply to this email and we'll help you get started.
+
+        Best,
+        The SignUpFlow Team
+        """
+
+        return self.send_email(to_email, subject, html_content, plain_content)
+
+    def send_password_reset_email(
+        self,
+        to_email: str,
+        name: str,
+        reset_token: str,
+        app_url: str = "http://localhost:8000",
+    ) -> bool:
+        """
+        Send password-reset email with a one-hour token link.
+
+        Args:
+            to_email: Recipient email address
+            name: Recipient's display name (Person.name)
+            reset_token: Reset token from request_password_reset
+            app_url: Base **frontend** URL used to build the web fallback
+                link (``{app_url}/reset-password?token=...``). Must point
+                at a host that serves a ``GET /reset-password`` page; in
+                this codebase the caller passes ``FRONTEND_URL`` (with
+                ``APP_URL`` as a last-ditch fallback). The mobile deep
+                link uses the hard-coded ``signupflow://`` scheme and is
+                independent of this argument.
+
+        Returns:
+            True if email sent successfully, False otherwise. Also returns
+            True (no-op) when ``self.enabled`` is False — caller treats the
+            "no email service configured" case as a successful no-op so the
+            invitation/reset endpoints don't 5xx in dev.
+
+        Notes:
+            The mobile app registers the ``signupflow://`` URL scheme so the
+            primary link is a custom-scheme deep link that opens the iOS or
+            Android app at the reset screen. The web fallback exists for
+            users opening the email on desktop without the app installed.
+        """
+        # Custom-scheme deep link → opens the mobile app at /reset-password.
+        deep_link = f"signupflow://reset-password?token={reset_token}"
+        # Web fallback for desktop / no-app users.
+        web_url = f"{app_url}/reset-password?token={reset_token}"
+
+        # Escape the recipient name before HTML interpolation. Person.name is
+        # user-supplied (signup form / admin-created) and not constrained to
+        # plain text, so an unescaped f-string would let a malicious display
+        # name inject arbitrary markup into the reset email body.
+        safe_name = html.escape(name, quote=True)
+
+        subject = "Reset your SignUpFlow password"
+
+        html_content = f"""
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <style>
+                body {{
+                    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+                    line-height: 1.6;
+                    color: #333;
+                    max-width: 600px;
+                    margin: 0 auto;
+                    padding: 20px;
+                }}
+                .header {{
+                    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                    color: white;
+                    padding: 30px;
+                    text-align: center;
+                    border-radius: 10px 10px 0 0;
+                }}
+                .content {{
+                    background: white;
+                    padding: 30px;
+                    border: 1px solid #e0e0e0;
+                    border-top: none;
+                }}
+                .button {{
+                    display: inline-block;
+                    padding: 12px 30px;
+                    background: #667eea;
+                    color: white !important;
+                    text-decoration: none;
+                    border-radius: 5px;
+                    margin: 10px 5px;
+                }}
+                .alt-link {{
+                    color: #667eea;
+                    word-break: break-all;
+                }}
+                .footer {{
+                    text-align: center;
+                    padding: 20px;
+                    color: #666;
+                    font-size: 12px;
+                }}
+            </style>
+        </head>
+        <body>
+            <div class="header">
+                <h1>Reset your password</h1>
+            </div>
+            <div class="content">
+                <p>Hi {safe_name},</p>
+
+                <p>We received a request to reset your SignUpFlow password.
+                Tap the button below to set a new one:</p>
+
+                <div style="text-align: center; margin: 30px 0;">
+                    <a href="{deep_link}" class="button">Open in SignUpFlow app</a>
+                </div>
+
+                <p>If the button doesn't open the app, paste this link into a
+                browser instead:</p>
+
+                <p><a href="{web_url}" class="alt-link">{web_url}</a></p>
+
+                <p>This link expires in <strong>1 hour</strong>. If you
+                didn't request a reset, you can safely ignore this email.</p>
+
+                <p>Best,<br>
+                The SignUpFlow Team</p>
+            </div>
+            <div class="footer">
+                <p>SignUpFlow - Volunteer Scheduling Made Simple</p>
+            </div>
+        </body>
+        </html>
+        """
+
+        plain_content = f"""
+        Hi {name},
+
+        We received a request to reset your SignUpFlow password.
+
+        Open in the SignUpFlow app:
+        {deep_link}
+
+        Or paste this URL into a browser:
+        {web_url}
+
+        This link expires in 1 hour. If you didn't request a reset, you can
+        safely ignore this email.
 
         Best,
         The SignUpFlow Team

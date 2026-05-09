@@ -78,7 +78,7 @@ services:
       # Email Configuration (SendGrid)
       SENDGRID_API_KEY: ${SENDGRID_API_KEY}
       FROM_EMAIL: ${FROM_EMAIL:-noreply@signupflow.io}
-      EMAIL_ENABLED: ${EMAIL_ENABLED:-true}
+      EMAIL_ENABLED: ${EMAIL_ENABLED:-false}
 
       # SMS Configuration (Twilio)
       TWILIO_ACCOUNT_SID: ${TWILIO_ACCOUNT_SID}

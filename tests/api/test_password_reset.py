@@ -92,6 +92,51 @@ class TestForgotPasswordDebugFlag:
         assert "token" in login.json()
 
 
+class TestForgotPasswordRosterOnlyPerson:
+    """Roster-only Persons (password_hash IS NULL) must NOT receive reset tokens.
+
+    A Person row created via /people or bulk import is just a roster entry,
+    not a login account. Issuing a reset token would let anyone in control
+    of the listed email bypass invitation/onboarding and pick up whatever
+    roles the row carries — /reset-password writes password_hash without
+    re-checking that the row was ever activated.
+    """
+
+    def test_no_token_issued_for_person_without_password_hash(self, db, monkeypatch):
+        from api.models import PasswordResetToken
+
+        monkeypatch.setenv("DEBUG_RETURN_RESET_TOKEN", "true")
+
+        org = Organization(id="roster_only_org", name="Roster Only Org", region="Test")
+        db.add(org)
+        db.add(
+            Person(
+                id="roster_only_person",
+                org_id="roster_only_org",
+                name="Roster Only",
+                email="roster-only@example.com",
+                password_hash=None,
+                roles=["volunteer"],
+            )
+        )
+        db.commit()
+
+        before = db.query(PasswordResetToken).count()
+
+        client = TestClient(app)
+        response = client.post(
+            "/api/v1/auth/forgot-password", json={"email": "roster-only@example.com"}
+        )
+
+        assert response.status_code == 200
+        body = response.json()
+        # Even with DEBUG_RETURN_RESET_TOKEN=true the response must not carry
+        # a token, because the lookup should treat this email as unknown.
+        assert "token" not in body
+        assert "reset_link" not in body
+        assert db.query(PasswordResetToken).count() == before
+
+
 class TestForgotPasswordAuditTrail:
     """The forgot-password endpoint should leave an audit row regardless of leak flag."""
 
