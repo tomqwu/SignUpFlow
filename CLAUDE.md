@@ -119,112 +119,59 @@ Pytest markers: `@pytest.mark.unit`, `@pytest.mark.integration`, `@pytest.mark.s
 
 1. **Run tests after every code change.** After any edit to code or tests, run `make test-unit` (or `make test-unit-fast` during iteration). The change is not "done" until local tests pass. Run `make test-all` before pushing a PR.
 2. **Commit and let CI run.** After local tests pass, commit and push. Do not declare a change shippable based on local results alone — wait for CI on the branch.
-3. **Merge only when CI is green and the review gate has passed** (see next section).
+3. **Merge only when CI is green and Codex local review reports no blocking issues** (see next section).
 
-## PR Review Gate
+## PR Workflow With Codex Review
 
-You may write code, push branches, open PRs, respond to PR feedback, resolve
-merge conflicts, and merge your PR after the review gate passes.
+This repository uses local Codex review through `openai/codex-plugin-cc`.
 
-Do not merge before the review gate passes.
-
-After opening or updating a PR:
-1. Push the branch.
-2. Wait for CI to finish.
-3. Wait for independent review.
-4. Treat "Not LGTM yet" as blocking feedback.
-
-A PR is mergeable only when all of these are true:
-1. The PR is not draft.
-2. CI/checks are green: no failing, cancelled, or pending required checks.
-3. An independent reviewer comment says:
+Before shipping or merging a PR, run Codex review from Claude Code:
 
 ```
-LGTM
-<!-- codex-pr-review: <head_sha> -->
+/codex:review --base main
 ```
 
-4. The `<head_sha>` marker exactly matches the current PR head SHA.
-5. No newer comment, review, or review thread after that LGTM contains blocking
-   feedback.
-6. No new commit was pushed after the LGTM marker.
-7. GitHub reports the PR can merge cleanly, with no merge conflicts.
+For larger changes, prefer background review:
 
-Important rules:
-- Do not post LGTM yourself.
-- Do not treat an LGTM for an older commit as valid.
-- If you push a new commit, the prior LGTM is stale; wait for review again.
-- If the reviewer comments "Not LGTM yet", fix the issue, run relevant checks,
-  push a follow-up commit, reply on the PR with what changed, and wait for
-  review again.
-- Keep review and fix discussion visible on the PR.
-
-### Merge conflict responsibility
-
-You are responsible for keeping your PR mergeable.
-
-Before waiting for review, before merging, and after any base branch update,
-check whether the PR has merge conflicts or is behind the base branch.
-
-Use commands such as:
-
-```bash
-git fetch origin
-gh pr view --json number,url,headRefName,baseRefName,headRefOid,mergeStateStatus,statusCheckRollup
-gh pr checks
+```
+/codex:review --base main --background
+/codex:status
+/codex:result
 ```
 
-If the PR has merge conflicts, a dirty merge state, or GitHub reports it cannot
-be merged cleanly:
-1. Do not ask the reviewer to fix it.
-2. Update your branch against the latest base branch using the repo's normal
-   workflow. If no workflow is specified, prefer:
+Do not self-approve by posting `LGTM` markers.
+Do not require or wait for the old GitHub `codex-pr-review-gate` check.
 
-   ```bash
-   git fetch origin
-   git checkout <pr-branch>
-   git merge origin/<base-branch>
-   ```
+A PR may merge only when:
+1. CI is green.
+2. GitHub says the PR is mergeable.
+3. Codex local review reports no blocking issues.
+4. There are no unresolved review comments or merge conflicts.
 
-3. Resolve conflicts carefully. Preserve both the requested branch changes and
-   the current base branch behavior unless the conflict makes that impossible.
-4. Run relevant local checks.
-5. Commit the conflict resolution.
-6. Push the branch.
-7. Reply on the PR with a short summary of the conflict resolution.
-8. Wait for CI and independent review again.
+If Codex review reports blockers:
+1. Keep the PR open.
+2. Fix the issues.
+3. Run relevant local checks.
+4. Push a follow-up commit.
+5. Run Codex review again.
 
-### Before merging
+If the PR has merge conflicts:
+1. Update the branch against the latest base branch.
+2. Resolve conflicts carefully.
+3. Run relevant local checks.
+4. Push the resolution.
+5. Run Codex review again.
 
-Re-fetch PR state immediately:
-- current head SHA
-- CI/check status
-- comments
-- reviews
-- review threads if available
-- draft state
-- mergeability / merge conflict state
+If CI passes and Codex review passes:
+- Merge the PR using the repository's normal merge method.
+- Do not manually close the PR as the success path.
 
-Use GitHub CLI when available, for example:
+If GitHub blocks the merge:
+- Report the exact blocker.
+- Leave the PR open.
 
-```bash
-gh pr view --json number,url,isDraft,headRefName,headRefOid,mergeStateStatus,statusCheckRollup,comments,reviews
-gh pr checks
-gh pr merge
-```
-
-Only merge if the fresh state still satisfies the gate.
-
-If the gate passes, merge the PR. Use the repository's normal merge method if it
-is clear from repo policy or branch protection. Otherwise prefer squash merge:
-
-```bash
-gh pr merge --squash --delete-branch
-```
-
-If GitHub blocks the merge, report the exact blocker and leave the PR unmerged.
-If CI is pending, review is missing, LGTM is stale, merge conflicts exist, or
-blocking feedback exists, do not merge; report what is still needed.
+Only close without merging if the work is abandoned, duplicated, or superseded,
+and leave a PR comment explaining why.
 
 ## Common Gotchas
 
