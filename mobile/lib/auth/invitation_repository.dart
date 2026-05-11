@@ -88,9 +88,14 @@ class InvitationRepository {
       // Persist the refresh token (Sprint 9 PR 9.4b makes invitation accept
       // mint real JWT pairs like login/signup). Pre-9.4b backends omit the
       // field; treat null/empty as "no refresh — fall back to re-login".
+      // Mirror login_repository / signup_repository: clear any prior refresh
+      // token when the response omits one, so accepting an invitation can't
+      // inherit the previous session's refresh credential.
       final refreshToken = data.refreshToken;
       if (refreshToken != null && refreshToken.isNotEmpty) {
         await _storage.writeRefreshToken(refreshToken);
+      } else {
+        await _storage.clearRefreshToken();
       }
       return AuthState(
         role: LoginRepository.resolveRole(data.roles.toList()),

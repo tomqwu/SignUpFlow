@@ -111,9 +111,19 @@ def request_password_reset(
     # bypass invitation/onboarding and inherit the row's roles, since
     # /reset-password writes ``password_hash`` unconditionally. Treat them
     # like an unknown email: no token, generic response.
+    #
+    # ``with_for_update()`` serializes concurrent /forgot-password calls
+    # for the same Person. Without it, two parallel requests can each pass
+    # the "invalidate prior tokens" UPDATE before either INSERT commits,
+    # leaving two valid reset tokens in the table — the freshness contract
+    # in docs/features/password-reset.md Scenario 6 then doesn't hold.
+    # The row lock is held until db.commit() below. SQLite ignores
+    # FOR UPDATE (its global lock already serializes writers); PostgreSQL
+    # enforces a real row lock under READ COMMITTED.
     person = (
         db.query(Person)
         .filter(Person.email == request.email, Person.password_hash.isnot(None))
+        .with_for_update()
         .first()
     )
 

@@ -113,6 +113,15 @@ Future<bool> _attemptRefresh(Dio dio, SecureTokenStorage storage) async {
     if (body is Map &&
         body['token'] is String &&
         body['refresh_token'] is String) {
+      // If signOut() / clearAll() ran while /auth/refresh was in flight,
+      // the refresh slot in storage is now empty (or replaced by a fresh
+      // login's token). Persisting the response would resurrect the old
+      // session after the user explicitly logged out. Drop the write.
+      final stillStored = await storage.readRefreshToken();
+      if (stillStored != refreshToken) {
+        completer.complete(false);
+        return false;
+      }
       await storage.writeToken(body['token'] as String);
       await storage.writeRefreshToken(body['refresh_token'] as String);
       completer.complete(true);

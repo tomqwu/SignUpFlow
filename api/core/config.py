@@ -36,7 +36,12 @@ class Settings(BaseSettings):
     # Email Service (General)
     EMAIL_FROM: str = "noreply@signupflow.io"
     EMAIL_FROM_NAME: str = "SignUpFlow"
-    EMAIL_ENABLED: bool = True
+    # Default off, matching EmailService.__init__ (api/services/email_service.py).
+    # Both gates must agree — otherwise notification_service._should_queue_email()
+    # reads True from Settings and queues Celery jobs that the worker silently
+    # no-ops because EmailService.enabled is False. See docs/saas/SMOKE_TESTING_EMAIL.md
+    # for how to flip this on (env: EMAIL_ENABLED=true).
+    EMAIL_ENABLED: bool = False
     SMS_ENABLED: bool = False
 
     # Mailtrap (Development Email Testing)

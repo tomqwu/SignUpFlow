@@ -32,7 +32,22 @@ def main() -> int:
     )
     args = parser.parse_args()
 
-    load_dotenv()
+    # override=True so a blank SENDGRID_API_KEY in .env actually wins over a
+    # stale `export SENDGRID_API_KEY=...` from the operator's shell — without
+    # it, dotenv silently keeps the shell value and the Mailtrap smoke would
+    # accidentally hit live SendGrid.
+    load_dotenv(override=True)
+
+    sendgrid_set = bool(os.getenv("SENDGRID_API_KEY"))
+    mailtrap_set = bool(os.getenv("MAILTRAP_SMTP_USER"))
+    if sendgrid_set and mailtrap_set:
+        print(
+            "warning: both SENDGRID_API_KEY and MAILTRAP_SMTP_USER are set. "
+            "EmailService will pick SendGrid (real send). If you intended "
+            "the Mailtrap smoke, blank SENDGRID_API_KEY in .env or "
+            "`unset SENDGRID_API_KEY` in your shell.",
+            file=sys.stderr,
+        )
 
     if os.getenv("TESTING", "").lower() == "true":
         print(

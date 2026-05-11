@@ -130,6 +130,48 @@ void main() {
     expect(await storage.readToken(), isNull);
   });
 
+  test('refresh in flight when storage is cleared does NOT resurrect tokens', () async {
+    // P2 from #82: a 401-triggered /auth/refresh that's mid-flight when
+    // signOut()/clearAll() runs must not persist the response, otherwise
+    // the user who explicitly logged out gets silently re-authed.
+    final storage = InMemoryTokenStorage();
+    await storage.writeToken('expired_access');
+    await storage.writeRefreshToken('valid_refresh');
+
+    final adapter = _FakeAdapter((opts) async {
+      if (opts.path.endsWith('/auth/refresh')) {
+        // Delay so we can simulate signOut clearing storage *during* the
+        // refresh round-trip.
+        await Future<void>.delayed(const Duration(milliseconds: 30));
+        return _json(
+          200,
+          '{"token":"resurrected_access","refresh_token":"resurrected_refresh"}',
+        );
+      }
+      return _json(401, '{"detail":"expired"}');
+    });
+
+    final container = _container(storage);
+    addTearDown(container.dispose);
+    final dio = container.read(dioProvider)..httpClientAdapter = adapter;
+
+    // Kick off the request that triggers refresh.
+    final pending = dio.get<dynamic>('/api/v1/events');
+    // While refresh is in flight, simulate signOut clearing storage.
+    await Future<void>.delayed(const Duration(milliseconds: 10));
+    await storage.clearAll();
+
+    // The request itself fails (no valid auth could be restored).
+    await expectLater(pending, throwsA(isA<DioException>()));
+    await Future<void>.delayed(const Duration(milliseconds: 10));
+
+    // Critical: storage must remain cleared. The refresh response
+    // returned new tokens after clearAll(), but the interceptor must
+    // detect the storage mismatch and drop the write.
+    expect(await storage.readToken(), isNull);
+    expect(await storage.readRefreshToken(), isNull);
+  });
+
   test('two concurrent 401s coalesce to a single /auth/refresh call', () async {
     final storage = InMemoryTokenStorage();
     await storage.writeToken('expired_access');
