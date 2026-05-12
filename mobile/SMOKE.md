@@ -96,10 +96,12 @@ is dev/staging-only, this can be skipped — note it in the closeout.
 
 ### 2. Token refresh interceptor (#79 + #82)
 
-To exercise the refresh path the **server** must reject the access token while the refresh token remains valid. Device clock forwarding doesn't work (the JWT `exp` claim is checked server-side against server time), and rotating the user's `refresh_token_version` invalidates the *refresh* token (the opposite of what we want). Pick one of these:
+To exercise the refresh path the **server** must reject the access token while the refresh token remains valid. Device clock forwarding doesn't work (the JWT `exp` claim is checked server-side against server time), and rotating the user's `refresh_token_version` invalidates the *refresh* token (the opposite of what we want).
 
-- **Short-lived access tokens (preferred):** in the deployed backend's `.env`, set `ACCESS_TOKEN_EXPIRE_HOURS=0.05` (≈3 min) and restart the API process before the smoke session. New logins will get access tokens that expire during the smoke walk.
-- **Admin force-expire (alternative):** if the backend has an admin endpoint to invalidate a single access token (check `api/routers/auth.py`; not present at time of writing — add one if missing), use that.
+There is currently **no env-driven knob** for the access-token TTL — `api/core/config.py:26` declares `ACCESS_TOKEN_EXPIRE_HOURS` but `api/security.py:24` uses a hard-coded `ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24`. Until that's wired up (separate ticket), use one of:
+
+- **Source patch + redeploy (preferred):** temporarily change `ACCESS_TOKEN_EXPIRE_MINUTES = 3` in `api/security.py` on the staging deploy, restart the API, run the smoke, revert. The refresh interceptor exercises the same code path the prod 24h expiry will hit later.
+- **Admin force-expire (future):** if/when an admin endpoint to invalidate a single access token lands (none in `api/routers/auth.py` at time of writing), point this section at it.
 
 Steps:
 
@@ -113,7 +115,7 @@ Steps:
 
 > The backend's `create_invitation` endpoint returns the invitation token in the response body — **it doesn't send an email yet** (`resend_invitation` still has a TODO for SMTP dispatch). Until that lands, the smoke walks the token through manually.
 
-1. As admin, create an invitation for a new email via the API or admin UI. Capture the `token` from the response.
+1. As admin, create an invitation via the **API** (e.g. `curl -X POST /api/v1/invitations -H 'Authorization: Bearer <admin-jwt>' -d '{"email": "..."}'`) — the response body carries the raw invitation token. The mobile admin UI currently discards that response and only shows "Invitation sent", so it can't surface the token until invitation-email dispatch lands.
 2. On the test device, open `signupflow://invitation?token=<captured-token>` (paste into Safari address bar on iOS; use `adb shell am start` on Android — see `ANDROID_RELEASE.md:130-140`).
 3. App launches at the accept screen.
 4. Enter a password, confirm.
@@ -174,8 +176,8 @@ Sprint 9 backend integrations
 - [ ] Token refresh + signOut race doesn't resurrect session
 - [ ] Invitation accept lands directly in app
 
-Deep-links
-- [ ] iOS Universal Link routes to in-app screen
+Deep-links (signupflow:// custom scheme on both platforms — no Universal Links yet)
+- [ ] iOS signupflow:// scheme routes to in-app screen
 - [ ] Android signupflow:// scheme routes to in-app screen
 
 Issues filed:
