@@ -195,11 +195,7 @@ class TestEventProcessing:
         assert resp.status_code == 200
 
         db.expire_all()
-        n = (
-            db.query(Notification)
-            .filter(Notification.sendgrid_message_id == "sg_bounce_001")
-            .one()
-        )
+        n = db.query(Notification).filter(Notification.sendgrid_message_id == "sg_bounce_001").one()
         assert n.status == NotificationStatus.BOUNCED
         assert "Address not found" in (n.error_message or "")
 

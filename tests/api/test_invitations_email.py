@@ -76,9 +76,7 @@ class TestCreateInvitationSendsEmail:
         def _raise(**_kw):
             raise RuntimeError("simulated SendGrid 500")
 
-        monkeypatch.setattr(
-            invitations_router.email_service, "send_invitation_email", _raise
-        )
+        monkeypatch.setattr(invitations_router.email_service, "send_invitation_email", _raise)
 
         client = TestClient(app)
         resp = client.post(

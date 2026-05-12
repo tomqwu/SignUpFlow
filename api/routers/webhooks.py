@@ -152,9 +152,7 @@ def _apply_sendgrid_event(db: Session, event: dict[str, Any]) -> None:
     if not notification:
         # Event for a message we don't know about (e.g. test send from
         # the dashboard). Log + drop — don't 500 the webhook.
-        logger.info(
-            "SendGrid event %s for unknown sg_message_id=%s", event_type, sg_id_base
-        )
+        logger.info("SendGrid event %s for unknown sg_message_id=%s", event_type, sg_id_base)
         return
 
     ts_unix = event.get("timestamp")
