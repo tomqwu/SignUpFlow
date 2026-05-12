@@ -40,7 +40,7 @@ for the SHA you're smoking, and that the deployed backend
 
 ## Pre-flight
 
-1. **Backend health:** `curl -s https://api.signupflow.io/api/config/safe-flags | jq` returns 200 with the expected feature flags (`EMAIL_ENABLED=true` only after #85's smoke runbook is exercised, per `docs/saas/SMOKE_TESTING_EMAIL.md`). For staging, swap the host.
+1. **Backend health:** `curl -s -o /dev/null -w '%{http_code}\n' https://api.signupflow.io/health` returns `200`. (The repo currently only exposes `/health` and `/api/v1/*`; there is no `/api/config/safe-flags` endpoint despite older docs referencing one. For email-enabled checks see `docs/saas/SMOKE_TESTING_EMAIL.md`.)
 2. **Test users:** keep one volunteer account and one admin account seeded in the backend (not the developer's daily driver — these will get reset password emails, logged-out states, etc.). Note their credentials.
 3. **Devices:** one iPhone with TestFlight build #N installed; one Android phone with Play internal build #N installed via the testers-track invitation link. **Don't smoke on an emulator** — keychain/secure-storage behavior differs and a passing emulator run won't catch real-device issues.
 
@@ -89,42 +89,57 @@ is dev/staging-only, this can be skipped — note it in the closeout.
 2. Enter the volunteer's email. Submit.
 3. Email lands within ~30s (real inbox for prod / Mailtrap for staging — see `docs/saas/SMOKE_TESTING_EMAIL.md`).
 4. Open the reset link on the same device.
-   - **iOS:** the Universal Link should route into the app's reset-password screen.
-   - **Android:** the `signupflow://reset-password?token=...` link should route into the app.
+   - **iOS:** the `signupflow://reset-password?token=...` custom-scheme link should route into the app's reset-password screen. (The iOS app currently only registers the `signupflow` custom URL scheme in `Info.plist` — no Universal Link / Associated Domains setup. Tap the link from the email body in Mail.app; Safari paste also works.)
+   - **Android:** the `signupflow://reset-password?token=...` link should route into the app (verified via the manifest's `<intent-filter>` for the `signupflow` scheme).
 5. Set a new password. Confirm.
 6. Login with the new password succeeds.
 
 ### 2. Token refresh interceptor (#79 + #82)
 
+To exercise the refresh path the **server** must reject the access token while the refresh token remains valid. Device clock forwarding doesn't work (the JWT `exp` claim is checked server-side against server time), and rotating the user's `refresh_token_version` invalidates the *refresh* token (the opposite of what we want). Pick one of these:
+
+- **Short-lived access tokens (preferred):** in the deployed backend's `.env`, set `ACCESS_TOKEN_EXPIRE_HOURS=0.05` (≈3 min) and restart the API process before the smoke session. New logins will get access tokens that expire during the smoke walk.
+- **Admin force-expire (alternative):** if the backend has an admin endpoint to invalidate a single access token (check `api/routers/auth.py`; not present at time of writing — add one if missing), use that.
+
+Steps:
+
 1. Login as the volunteer.
-2. Use the app for >24h OR manually expire the access token (set device clock forward, or have an admin force-rotate the user's `refresh_token_version` on the backend).
+2. Wait for the access token to expire (≥3 min if you took the short-expiry path).
 3. Open the app → tap a screen that makes an API call.
-4. Expected: app silently refreshes (no /login prompt). Look in device logs (Xcode console / `adb logcat | grep dio`) for the single `/auth/refresh` round-trip.
+4. Expected: app silently refreshes (no /login prompt). In device logs (Xcode console / `adb logcat | grep dio`) you'll see one `/auth/refresh` round-trip.
 5. **Edge case:** tap "Sign out" immediately as a refresh is in flight (this is the #82 P2 race). Expected: app lands on /login. Verify secure storage is empty (re-launch lands on /login, not back into the session).
 
 ### 3. Invitation accept JWT pair (#84)
 
-1. As admin, create an invitation for a new email.
-2. Open the invitation email on the device.
-3. Tap the link → the app launches, accept screen renders.
+> The backend's `create_invitation` endpoint returns the invitation token in the response body — **it doesn't send an email yet** (`resend_invitation` still has a TODO for SMTP dispatch). Until that lands, the smoke walks the token through manually.
+
+1. As admin, create an invitation for a new email via the API or admin UI. Capture the `token` from the response.
+2. On the test device, open `signupflow://invitation?token=<captured-token>` (paste into Safari address bar on iOS; use `adb shell am start` on Android — see `ANDROID_RELEASE.md:130-140`).
+3. App launches at the accept screen.
 4. Enter a password, confirm.
 5. Expected: lands directly on the volunteer dashboard (no re-login). Secure storage now has both access and refresh tokens.
 
+(When invitation-email dispatch ships, this section will simplify to "open the invitation email on the device → tap the link" — same as the password-reset section.)
+
 ### 4. Deep-link verification
 
-Already covered for Android in `ANDROID_RELEASE.md`'s "Deep-link smoke"
-section. For iOS, manually fire the Universal Link via Safari address
-bar:
+The mobile app registers the `signupflow` custom URL scheme on both
+platforms — no Universal Link / App Links setup yet. Verify both
+deep-link entrypoints route correctly.
+
+For iOS, paste each URL into Safari's address bar:
 
 ```
 signupflow://invitation?token=fake_test_token
 signupflow://reset-password?token=fake_test_token
 ```
 
-Each should launch the app at the expected screen.
+Each should launch the app at the expected screen (then bail out with
+an "invalid token" message — that's fine, we're testing routing, not
+acceptance).
 
 For Android, repeat the `adb shell am start` commands from
-`ANDROID_RELEASE.md:130-140`.
+`ANDROID_RELEASE.md` (the section "Deep-link smoke").
 
 ---
 
