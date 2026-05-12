@@ -109,10 +109,15 @@ is dev/staging-only, this can be skipped — note it in the closeout.
 
 To exercise the refresh path the **server** must reject the access token while the refresh token remains valid. Device clock forwarding doesn't work (the JWT `exp` claim is checked server-side against server time), and rotating the user's `refresh_token_version` invalidates the *refresh* token (the opposite of what we want).
 
-There is currently **no env-driven knob** for the access-token TTL — `api/core/config.py:26` declares `ACCESS_TOKEN_EXPIRE_HOURS` but `api/security.py:24` uses a hard-coded `ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24`. Until that's wired up (separate ticket), use one of:
+Use the `ACCESS_TOKEN_EXPIRE_HOURS` env var (read by `api/security.py:24`) to set a sub-hour TTL on the staging deploy. Fractional values supported — 0.05 ≈ 3 min, which is long enough to login and reach a screen but short enough to expire during the smoke walk:
 
-- **Source patch + redeploy (preferred):** temporarily change `ACCESS_TOKEN_EXPIRE_MINUTES = 3` in `api/security.py` on the staging deploy, restart the API, run the smoke, revert. The refresh interceptor exercises the same code path the prod 24h expiry will hit later.
-- **Admin force-expire (future):** if/when an admin endpoint to invalidate a single access token lands (none in `api/routers/auth.py` at time of writing), point this section at it.
+```bash
+# in the staging .env (or via deployment env injection)
+ACCESS_TOKEN_EXPIRE_HOURS=0.05
+# restart the API process so the new value takes effect at import time
+```
+
+After the smoke, revert to `ACCESS_TOKEN_EXPIRE_HOURS=24` (or remove the line) and restart.
 
 Steps:
 

@@ -35,6 +35,7 @@ from api.routers import (
     solutions,
     solver,
     teams,
+    webhooks,
 )
 
 
@@ -146,6 +147,9 @@ app.include_router(recurring_events.router, prefix="/api/v1")
 app.include_router(resources.router, prefix="/api/v1")
 app.include_router(holidays.router, prefix="/api/v1")
 app.include_router(notifications.router, prefix="/api/v1")
+# Webhooks (Stripe + SendGrid event tracking). Mounted at root (not
+# /api/v1) because external services expect stable, version-free paths.
+app.include_router(webhooks.router)
 
 
 @app.get("/api/v1", tags=["root"])

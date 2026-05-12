@@ -870,20 +870,36 @@ class EmailService:
         invitation_token: str,
         app_url: str = "http://localhost:8000",
     ) -> bool:
-        """
-        Send invitation email to new user.
+        """Send invitation email with a `signupflow://` mobile deep link
+        plus a web fallback. Mirrors `send_password_reset_email`'s pattern.
 
         Args:
-            to_email: Recipient email address
-            admin_name: Name of admin sending invitation
-            org_name: Organization name
-            invitation_token: Invitation token for acceptance link
-            app_url: Base application URL
+            to_email: Recipient email address.
+            admin_name: Name of admin sending invitation (user-supplied,
+                HTML-escaped before interpolation).
+            org_name: Organization name (also user-supplied, escaped).
+            invitation_token: Invitation token for the accept link.
+            app_url: Base **frontend** URL used to build the web fallback
+                (``{app_url}/invitation?token=...`` — matches the mobile
+                go_router path so the same handler renders on both web
+                and mobile). The mobile deep link uses the hard-coded
+                ``signupflow://`` scheme and is independent of this arg.
 
         Returns:
-            True if email sent successfully, False otherwise
+            True on success or `self.enabled == False` no-op; False on
+            transport failure (same convention as the rest of EmailService).
         """
-        invitation_url = f"{app_url}/accept-invitation?token={invitation_token}"
+        # Mobile deep link → opens the app at /invitation.
+        deep_link = f"signupflow://invitation?token={invitation_token}"
+        # Web fallback. Path matches mobile/lib/routing/router.dart's
+        # /invitation route so the same URL works in both targets.
+        web_url = f"{app_url}/invitation?token={invitation_token}"
+
+        # Escape admin-supplied strings before HTML interpolation. Same
+        # threat model as the password-reset name escape in #78 P1 —
+        # admin display name + org name are not constrained to plain text.
+        safe_admin = html.escape(admin_name, quote=True)
+        safe_org = html.escape(org_name, quote=True)
 
         subject = f"You're invited to join {org_name} on SignUpFlow"
 
@@ -924,6 +940,10 @@ class EmailService:
                     border-radius: 5px;
                     margin: 10px 5px;
                 }}
+                .alt-link {{
+                    color: #667eea;
+                    word-break: break-all;
+                }}
                 .footer {{
                     text-align: center;
                     padding: 20px;
@@ -939,15 +959,20 @@ class EmailService:
             <div class="content">
                 <p>Hi,</p>
 
-                <p>{admin_name} has invited you to join <strong>{org_name}</strong> on SignUpFlow!</p>
+                <p>{safe_admin} has invited you to join <strong>{safe_org}</strong> on SignUpFlow.</p>
 
                 <p>SignUpFlow makes volunteer scheduling simple with AI-powered schedule generation.</p>
 
                 <div style="text-align: center; margin: 30px 0;">
-                    <a href="{invitation_url}" class="button">Accept Invitation</a>
+                    <a href="{deep_link}" class="button">Open in SignUpFlow app</a>
                 </div>
 
-                <p>This invitation expires in 7 days.</p>
+                <p>If the button doesn't open the app, paste this link into a
+                browser instead:</p>
+
+                <p><a href="{web_url}" class="alt-link">{web_url}</a></p>
+
+                <p>This invitation expires in <strong>7 days</strong>.</p>
 
                 <p>Questions? Reply to this email and we'll help you get started.</p>
 
@@ -966,9 +991,11 @@ class EmailService:
 
         {admin_name} has invited you to join their organization.
 
-        SignUpFlow makes volunteer scheduling simple with AI-powered schedule generation.
+        Open in the SignUpFlow app:
+        {deep_link}
 
-        Accept your invitation: {invitation_url}
+        Or paste this URL into a browser:
+        {web_url}
 
         This invitation expires in 7 days.
 

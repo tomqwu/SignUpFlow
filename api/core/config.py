@@ -23,7 +23,12 @@ class Settings(BaseSettings):
     # JWT Authentication
     SECRET_KEY: str = "change-this-to-a-random-secret-key-in-production"
     ALGORITHM: str = "HS256"
-    ACCESS_TOKEN_EXPIRE_HOURS: int = 24
+    # Float so sub-hour values work (e.g. 0.05 = 3 min for short-TTL
+    # refresh smoke per mobile/SMOKE.md). Read via os.getenv in
+    # api/security.py:24 — Settings is for code that needs structured
+    # access; the security module reads env directly to decouple from
+    # Settings reload cycles.
+    ACCESS_TOKEN_EXPIRE_HOURS: float = 24
 
     # Application
     APP_URL: str = "http://localhost:8000"
