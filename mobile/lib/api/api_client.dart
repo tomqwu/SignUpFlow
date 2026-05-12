@@ -108,6 +108,14 @@ Future<_RefreshOutcome> _attemptRefresh(Dio dio, SecureTokenStorage storage) asy
   _refreshInFlight = completer;
 
   try {
+    // Snapshot the storage generation at the start. Any storage mutation
+    // (signOut, fresh login, another refresh landing first) bumps it;
+    // we check before persisting so an in-flight stale response can't
+    // overwrite whatever's currently in storage. Value comparison on
+    // the refresh token alone has a TOCTOU window between the read and
+    // the writes — a logout that lands between them would still pass
+    // value check but invalidate the session.
+    final genAtStart = storage.sessionGeneration;
     final refreshToken = await storage.readRefreshToken();
     if (refreshToken == null || refreshToken.isEmpty) {
       completer.complete(_RefreshOutcome.failure);
@@ -128,14 +136,10 @@ Future<_RefreshOutcome> _attemptRefresh(Dio dio, SecureTokenStorage storage) asy
     if (body is Map &&
         body['token'] is String &&
         body['refresh_token'] is String) {
-      // If signOut() / clearAll() ran while /auth/refresh was in flight,
-      // the refresh slot in storage is now empty (or replaced by a fresh
-      // login's token). Persisting the response would resurrect the old
-      // session or clobber a brand-new login. Return `stale` so the
-      // interceptor neither replays the original request nor wipes the
-      // current session's tokens.
-      final stillStored = await storage.readRefreshToken();
-      if (stillStored != refreshToken) {
+      // Drop the response if anything else mutated storage during the
+      // round-trip. Returns `stale` so the interceptor neither replays
+      // the original request nor wipes the current session.
+      if (storage.sessionGeneration != genAtStart) {
         completer.complete(_RefreshOutcome.stale);
         return _RefreshOutcome.stale;
       }

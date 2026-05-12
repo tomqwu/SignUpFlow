@@ -142,7 +142,14 @@ def request_password_reset(
     # freshness contract in docs/features/password-reset.md Scenario 6
     # holds. SQLite ignores FOR UPDATE (its global lock already serializes
     # writers); PostgreSQL enforces a real row lock under READ COMMITTED.
-    db.query(Person).filter(Person.id == person.id).with_for_update().one()
+    # Scope by org_id too — repo-wide tenancy contract is "every Person
+    # query filters by org_id". Filtering by primary key alone is
+    # technically sufficient here (Person.id is globally unique), but the
+    # convention exists so reviewers can grep for missing org filters in
+    # new code paths.
+    db.query(Person).filter(
+        Person.id == person.id, Person.org_id == person.org_id
+    ).with_for_update().one()
 
     now = utcnow()
 

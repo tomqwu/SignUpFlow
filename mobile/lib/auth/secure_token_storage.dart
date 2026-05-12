@@ -18,6 +18,14 @@ abstract class SecureTokenStorage {
   /// Convenience: nukes both tokens. Used on logout and on a 401 that
   /// can't be recovered via /auth/refresh.
   Future<void> clearAll();
+
+  /// Monotonic counter bumped on every write/clear. The refresh
+  /// interceptor captures this at request time and verifies it hasn't
+  /// changed before persisting response tokens. If it has — signOut(),
+  /// a fresh login, or another refresh response landed in between —
+  /// the response is dropped without mutating storage. Closes the
+  /// TOCTOU window in `readRefreshToken() → compare → writeToken()`.
+  int get sessionGeneration;
 }
 
 class _RealStorage implements SecureTokenStorage {
@@ -26,27 +34,44 @@ class _RealStorage implements SecureTokenStorage {
   final _impl = const FlutterSecureStorage(
     iOptions: IOSOptions(accessibility: KeychainAccessibility.first_unlock),
   );
+  int _gen = 0;
+
+  @override
+  int get sessionGeneration => _gen;
 
   @override
   Future<String?> readToken() => _impl.read(key: _accessKey);
 
   @override
-  Future<void> writeToken(String token) => _impl.write(key: _accessKey, value: token);
+  Future<void> writeToken(String token) async {
+    _gen++;
+    await _impl.write(key: _accessKey, value: token);
+  }
 
   @override
-  Future<void> clearToken() => _impl.delete(key: _accessKey);
+  Future<void> clearToken() async {
+    _gen++;
+    await _impl.delete(key: _accessKey);
+  }
 
   @override
   Future<String?> readRefreshToken() => _impl.read(key: _refreshKey);
 
   @override
-  Future<void> writeRefreshToken(String token) => _impl.write(key: _refreshKey, value: token);
+  Future<void> writeRefreshToken(String token) async {
+    _gen++;
+    await _impl.write(key: _refreshKey, value: token);
+  }
 
   @override
-  Future<void> clearRefreshToken() => _impl.delete(key: _refreshKey);
+  Future<void> clearRefreshToken() async {
+    _gen++;
+    await _impl.delete(key: _refreshKey);
+  }
 
   @override
   Future<void> clearAll() async {
+    _gen++;
     await _impl.delete(key: _accessKey);
     await _impl.delete(key: _refreshKey);
   }
@@ -56,27 +81,44 @@ class _RealStorage implements SecureTokenStorage {
 class InMemoryTokenStorage implements SecureTokenStorage {
   String? _token;
   String? _refresh;
+  int _gen = 0;
+
+  @override
+  int get sessionGeneration => _gen;
 
   @override
   Future<String?> readToken() async => _token;
 
   @override
-  Future<void> writeToken(String token) async => _token = token;
+  Future<void> writeToken(String token) async {
+    _gen++;
+    _token = token;
+  }
 
   @override
-  Future<void> clearToken() async => _token = null;
+  Future<void> clearToken() async {
+    _gen++;
+    _token = null;
+  }
 
   @override
   Future<String?> readRefreshToken() async => _refresh;
 
   @override
-  Future<void> writeRefreshToken(String token) async => _refresh = token;
+  Future<void> writeRefreshToken(String token) async {
+    _gen++;
+    _refresh = token;
+  }
 
   @override
-  Future<void> clearRefreshToken() async => _refresh = null;
+  Future<void> clearRefreshToken() async {
+    _gen++;
+    _refresh = null;
+  }
 
   @override
   Future<void> clearAll() async {
+    _gen++;
     _token = null;
     _refresh = null;
   }
