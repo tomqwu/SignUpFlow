@@ -6,6 +6,11 @@
 > (Sprint 8). This document is the human-side runbook for getting a
 > build onto TestFlight. It needs sudo, Apple ID 2FA, and an Apple
 > Developer account.
+>
+> **For the cross-platform smoke checklist (iOS + Android volunteer +
+> admin journeys, backend integration paths, deep-link verification),
+> see `mobile/SMOKE.md`. This doc remains the iOS-specific upload +
+> signing detail.**
 
 ## Build history
 

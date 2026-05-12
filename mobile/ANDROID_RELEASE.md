@@ -5,6 +5,11 @@
 > Counterpart to `mobile/TESTFLIGHT.md` (iOS). The Flutter codebase ships
 > the same Dart UI on both platforms; only the build / signing /
 > distribution pipeline differs.
+>
+> **For the cross-platform smoke checklist (iOS + Android volunteer +
+> admin journeys, backend integration paths, deep-link verification),
+> see `mobile/SMOKE.md`. This doc remains the Android-specific
+> keystore + Play Console upload + deep-link manifest detail.**
 
 ---
 
