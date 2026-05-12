@@ -107,15 +107,14 @@ Future<_RefreshOutcome> _attemptRefresh(Dio dio, SecureTokenStorage storage) asy
   final completer = Completer<_RefreshOutcome>();
   _refreshInFlight = completer;
 
+  // Snapshot the storage generation at the start. Any storage mutation
+  // (signOut, fresh login, another refresh landing first) bumps it;
+  // we check before persisting so an in-flight stale response can't
+  // overwrite whatever's currently in storage. Hoisted out of the try
+  // block so the DioException catch can also see it (Dart scoping).
+  final genAtStart = storage.sessionGeneration;
+
   try {
-    // Snapshot the storage generation at the start. Any storage mutation
-    // (signOut, fresh login, another refresh landing first) bumps it;
-    // we check before persisting so an in-flight stale response can't
-    // overwrite whatever's currently in storage. Value comparison on
-    // the refresh token alone has a TOCTOU window between the read and
-    // the writes — a logout that lands between them would still pass
-    // value check but invalidate the session.
-    final genAtStart = storage.sessionGeneration;
     final refreshToken = await storage.readRefreshToken();
     if (refreshToken == null || refreshToken.isEmpty) {
       completer.complete(_RefreshOutcome.failure);
@@ -138,17 +137,15 @@ Future<_RefreshOutcome> _attemptRefresh(Dio dio, SecureTokenStorage storage) asy
         body['refresh_token'] is String) {
       // Drop the response if anything mutated storage during the
       // /auth/refresh round-trip — the response is for a session
-      // that's already been replaced or cleared.
-      //
-      // KNOWN RESIDUAL RACE: within Dart's single-isolate cooperative
-      // model, between the two awaited writes below another mutator
-      // can interleave. We don't attempt to roll back the first write,
-      // because by the time we detect it the "current" access token
-      // may belong to a fresh login that ran after our write — and
-      // clearing it would log that user out. The realistic exploit
-      // window is platform-call latency (microseconds); on the next
-      // 401 the interceptor sees whatever session is actually in
-      // storage and rotates from there.
+      // that's already been replaced or cleared. KNOWN RESIDUAL RACE:
+      // within Dart's single-isolate cooperative model, between the
+      // two awaited writes below another mutator can interleave. We
+      // don't attempt to roll back the first write, because by the
+      // time we detect it the "current" access token may belong to a
+      // fresh login that ran after our write — clearing it would log
+      // that user out. The realistic window is platform-call latency
+      // (microseconds); on the next 401 the interceptor sees whatever
+      // session is actually in storage and rotates from there.
       if (storage.sessionGeneration != genAtStart) {
         completer.complete(_RefreshOutcome.stale);
         return _RefreshOutcome.stale;
