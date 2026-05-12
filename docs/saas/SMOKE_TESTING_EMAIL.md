@@ -189,6 +189,9 @@ need to immediately stop further sends:
 
 ## Related
 
+- `mobile/SMOKE.md` — cross-platform mobile smoke runbook. The
+  "Password reset email" step there depends on this doc having been
+  exercised for the deployed backend first.
 - `docs/saas/EMAIL_INTEGRATION_PLAN.md` — design doc for the email
   pipeline (templates, notification model, future webhook).
 - `specs/001-email-notifications/spec.md` — original spec, including the
