@@ -1,6 +1,6 @@
 # TestFlight Upload Runbook
 
-> Last sprint pushed: Sprint 8 (build #438).
+> Last sprint pushed: Sprint 9 (build #_TBD_).
 >
 > The Flutter app is API-complete (Sprint 7) + auth/feature complete
 > (Sprint 8). This document is the human-side runbook for getting a
@@ -18,6 +18,7 @@
 |-------|--------|-----------|
 | #425  | Sprint 7 | Volunteer journey + admin solver flow |
 | #438  | Sprint 8 | Auth (signup/invitation/reset) + every COMING SOON closed (availability rrule + exceptions, volunteer Inbox, per-event Solution Review) |
+| #_TBD_ | Sprint 9 | Token refresh + real password-reset email + Android target (first Play internal build at same #) |
 
 ---
 
@@ -105,7 +106,7 @@ If multiple machines will build, set up `fastlane match` against a private git r
 
 ```bash
 cd mobile
-bundle exec fastlane beta changelog:"Sprint 8 — auth + feature closeout"
+bundle exec fastlane beta changelog:"Sprint 9 — token refresh + real password-reset email + Android target"
 ```
 
 What this does:
