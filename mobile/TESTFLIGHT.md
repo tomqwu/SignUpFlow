@@ -106,7 +106,7 @@ If multiple machines will build, set up `fastlane match` against a private git r
 
 ```bash
 cd mobile
-bundle exec fastlane beta changelog:"Sprint 8 — auth + feature closeout"
+bundle exec fastlane beta changelog:"Sprint 9 — token refresh + real password-reset email + Android target"
 ```
 
 What this does:
