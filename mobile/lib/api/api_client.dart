@@ -136,14 +136,25 @@ Future<_RefreshOutcome> _attemptRefresh(Dio dio, SecureTokenStorage storage) asy
     if (body is Map &&
         body['token'] is String &&
         body['refresh_token'] is String) {
-      // Drop the response if anything else mutated storage during the
-      // round-trip. Returns `stale` so the interceptor neither replays
-      // the original request nor wipes the current session.
+      // First gate: nothing mutated storage during the /auth/refresh
+      // round-trip. If it did, the response is for a session that's
+      // already been replaced — drop without touching state.
       if (storage.sessionGeneration != genAtStart) {
         completer.complete(_RefreshOutcome.stale);
         return _RefreshOutcome.stale;
       }
+      // Each storage mutator bumps the counter exactly once. After our
+      // writeToken below, the expected generation is genAtStart + 1.
+      // If it's higher, another mutator (signOut, fresh login) raced
+      // between our two awaited writes — we'd be persisting an access
+      // token from one session and a refresh token from another. Roll
+      // back the access write and abort.
       await storage.writeToken(body['token'] as String);
+      if (storage.sessionGeneration != genAtStart + 1) {
+        await storage.clearToken();
+        completer.complete(_RefreshOutcome.stale);
+        return _RefreshOutcome.stale;
+      }
       await storage.writeRefreshToken(body['refresh_token'] as String);
       completer.complete(_RefreshOutcome.success);
       return _RefreshOutcome.success;
