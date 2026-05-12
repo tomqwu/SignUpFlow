@@ -36,6 +36,17 @@ Before walking the runbook below: confirm with `flutter --version`,
 for the SHA you're smoking, and that the deployed backend
 (`api.signupflow.io` or staging) is on the same Sprint's main.
 
+> **API base URL — important.** The Flutter client defaults to
+> `http://localhost:8000` (`mobile/lib/api/api_client.dart`). For a
+> real-device smoke against the deployed backend, the build must be
+> produced with `--dart-define=API_BASE_URL=https://api.signupflow.io`
+> (or the staging host). The Fastlane lanes don't currently inject
+> this flag; pass it manually to `flutter build ipa --release` /
+> `flutter build appbundle --release`, or wire a `--dart-define` arg
+> into the lanes before running them. If you skip this, the smoke
+> build will try to hit the device's localhost and every API call
+> will fail.
+
 ---
 
 ## Pre-flight
