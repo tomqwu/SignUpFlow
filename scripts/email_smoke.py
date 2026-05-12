@@ -19,7 +19,7 @@ import os
 import sys
 from datetime import datetime, timezone
 
-from dotenv import load_dotenv
+from dotenv import dotenv_values, load_dotenv
 
 
 def main() -> int:
@@ -32,11 +32,16 @@ def main() -> int:
     )
     args = parser.parse_args()
 
-    # override=True so a blank SENDGRID_API_KEY in .env actually wins over a
-    # stale `export SENDGRID_API_KEY=...` from the operator's shell — without
-    # it, dotenv silently keeps the shell value and the Mailtrap smoke would
-    # accidentally hit live SendGrid.
-    load_dotenv(override=True)
+    load_dotenv()
+    # Narrow override: if .env *explicitly* sets SENDGRID_API_KEY to blank,
+    # force-clear any stale exported value so the Mailtrap smoke path can't
+    # be hijacked by a leftover `export SENDGRID_API_KEY=...` in the shell.
+    # We deliberately don't pass override=True to load_dotenv because that
+    # would also overwrite operator-set safety toggles like TESTING=true or
+    # EMAIL_ENABLED=false in the shell.
+    env_file_values = dotenv_values()
+    if "SENDGRID_API_KEY" in env_file_values and not env_file_values["SENDGRID_API_KEY"]:
+        os.environ.pop("SENDGRID_API_KEY", None)
 
     sendgrid_set = bool(os.getenv("SENDGRID_API_KEY"))
     mailtrap_set = bool(os.getenv("MAILTRAP_SMTP_USER"))

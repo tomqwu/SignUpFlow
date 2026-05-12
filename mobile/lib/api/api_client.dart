@@ -17,10 +17,16 @@ const String defaultApiBaseUrl = String.fromEnvironment(
   defaultValue: 'http://localhost:8000',
 );
 
+/// Outcome of one /auth/refresh attempt. The interceptor must distinguish
+/// "refresh failed" (wipe storage) from "refresh succeeded but storage was
+/// mutated mid-flight" (leave storage alone) — otherwise a signOut / fresh
+/// login that races a stale refresh response gets clobbered.
+enum _RefreshOutcome { success, failure, stale }
+
 /// Pump a single concurrent /auth/refresh attempt. If two requests hit
 /// 401 at the same time, only one fires the refresh; the others await
 /// the same `Future` and replay against the new token.
-Completer<bool>? _refreshInFlight;
+Completer<_RefreshOutcome>? _refreshInFlight;
 
 /// dio configured with the API base URL + a token-refresh interceptor.
 final dioProvider = Provider<Dio>((ref) {
@@ -52,11 +58,18 @@ final dioProvider = Provider<Dio>((ref) {
           return;
         }
 
-        final refreshed = await _attemptRefresh(dio, storage);
-        if (!refreshed) {
+        final outcome = await _attemptRefresh(dio, storage);
+        if (outcome == _RefreshOutcome.failure) {
           // No refresh token, refresh failed, or 401 from /auth/refresh
           // itself — wipe both tokens and let the router bounce to /login.
           await storage.clearAll();
+          handler.next(e);
+          return;
+        }
+        if (outcome == _RefreshOutcome.stale) {
+          // Storage was mutated (signOut / fresh login) while /auth/refresh
+          // was in flight. Don't replay with the dropped tokens, but also
+          // don't clear the user's current session — leave storage alone.
           handler.next(e);
           return;
         }
@@ -81,22 +94,24 @@ final dioProvider = Provider<Dio>((ref) {
 });
 
 /// Fires `/auth/refresh` against the stored refresh token. Coalesces
-/// concurrent calls so only one round-trip happens at a time. Returns
-/// true on success (new tokens persisted), false otherwise.
-Future<bool> _attemptRefresh(Dio dio, SecureTokenStorage storage) async {
+/// concurrent calls so only one round-trip happens at a time. The
+/// outcome tells the caller whether to (success) replay the original
+/// request, (failure) clear storage and propagate 401, or (stale) just
+/// propagate 401 without touching storage.
+Future<_RefreshOutcome> _attemptRefresh(Dio dio, SecureTokenStorage storage) async {
   // Coalesce concurrent refreshes.
   final inFlight = _refreshInFlight;
   if (inFlight != null) {
     return inFlight.future;
   }
-  final completer = Completer<bool>();
+  final completer = Completer<_RefreshOutcome>();
   _refreshInFlight = completer;
 
   try {
     final refreshToken = await storage.readRefreshToken();
     if (refreshToken == null || refreshToken.isEmpty) {
-      completer.complete(false);
-      return false;
+      completer.complete(_RefreshOutcome.failure);
+      return _RefreshOutcome.failure;
     }
     final res = await dio.post<dynamic>(
       '/api/v1/auth/refresh',
@@ -116,22 +131,24 @@ Future<bool> _attemptRefresh(Dio dio, SecureTokenStorage storage) async {
       // If signOut() / clearAll() ran while /auth/refresh was in flight,
       // the refresh slot in storage is now empty (or replaced by a fresh
       // login's token). Persisting the response would resurrect the old
-      // session after the user explicitly logged out. Drop the write.
+      // session or clobber a brand-new login. Return `stale` so the
+      // interceptor neither replays the original request nor wipes the
+      // current session's tokens.
       final stillStored = await storage.readRefreshToken();
       if (stillStored != refreshToken) {
-        completer.complete(false);
-        return false;
+        completer.complete(_RefreshOutcome.stale);
+        return _RefreshOutcome.stale;
       }
       await storage.writeToken(body['token'] as String);
       await storage.writeRefreshToken(body['refresh_token'] as String);
-      completer.complete(true);
-      return true;
+      completer.complete(_RefreshOutcome.success);
+      return _RefreshOutcome.success;
     }
-    completer.complete(false);
-    return false;
+    completer.complete(_RefreshOutcome.failure);
+    return _RefreshOutcome.failure;
   } on DioException {
-    completer.complete(false);
-    return false;
+    completer.complete(_RefreshOutcome.failure);
+    return _RefreshOutcome.failure;
   } finally {
     _refreshInFlight = null;
   }
