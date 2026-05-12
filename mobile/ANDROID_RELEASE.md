@@ -147,11 +147,9 @@ adb shell am start -a android.intent.action.VIEW \
 
 ## Build history
 
-(populated as releases ship)
-
-| Version code | Sprint | Track | Changelog |
-|--------------|--------|-------|-----------|
-| _none yet_   | 9      | internal | first internal release after Sprint 9 |
+| Version code | Sprint | Track | Date | Changelog |
+|--------------|--------|-------|------|-----------|
+| #_TBD_       | 9      | internal | _TBD_ | Token refresh + real password-reset email + Android target (first internal build) |
 
 ---
 
