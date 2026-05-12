@@ -128,13 +128,20 @@ This repository uses local Codex review through `openai/codex-plugin-cc`.
 Before shipping or merging a PR, run Codex review from Claude Code:
 
 ```
-/codex:review --base main
+git fetch origin main
+/codex:review --base origin/main
 ```
+
+Use the remote ref (`origin/main`), not local `main` — if your checkout
+hasn't fetched recently, reviewing against local `main` runs the
+comparison against a stale base and the verdict won't reflect the diff
+GitHub will actually merge.
 
 For larger changes, prefer background review:
 
 ```
-/codex:review --base main --background
+git fetch origin main
+/codex:review --base origin/main --background
 /codex:status
 /codex:result
 ```

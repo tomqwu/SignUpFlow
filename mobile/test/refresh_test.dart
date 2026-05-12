@@ -130,6 +130,89 @@ void main() {
     expect(await storage.readToken(), isNull);
   });
 
+  test('refresh in flight when storage is cleared does NOT resurrect tokens', () async {
+    // P2 from #82: a 401-triggered /auth/refresh that's mid-flight when
+    // signOut()/clearAll() runs must not persist the response, otherwise
+    // the user who explicitly logged out gets silently re-authed.
+    final storage = InMemoryTokenStorage();
+    await storage.writeToken('expired_access');
+    await storage.writeRefreshToken('valid_refresh');
+
+    final adapter = _FakeAdapter((opts) async {
+      if (opts.path.endsWith('/auth/refresh')) {
+        // Delay so we can simulate signOut clearing storage *during* the
+        // refresh round-trip.
+        await Future<void>.delayed(const Duration(milliseconds: 30));
+        return _json(
+          200,
+          '{"token":"resurrected_access","refresh_token":"resurrected_refresh"}',
+        );
+      }
+      return _json(401, '{"detail":"expired"}');
+    });
+
+    final container = _container(storage);
+    addTearDown(container.dispose);
+    final dio = container.read(dioProvider)..httpClientAdapter = adapter;
+
+    // Kick off the request that triggers refresh.
+    final pending = dio.get<dynamic>('/api/v1/events');
+    // While refresh is in flight, simulate signOut clearing storage.
+    await Future<void>.delayed(const Duration(milliseconds: 10));
+    await storage.clearAll();
+
+    // The request itself fails (no valid auth could be restored).
+    await expectLater(pending, throwsA(isA<DioException>()));
+    await Future<void>.delayed(const Duration(milliseconds: 10));
+
+    // Critical: storage must remain cleared. The refresh response
+    // returned new tokens after clearAll(), but the interceptor must
+    // detect the storage mismatch and drop the write.
+    expect(await storage.readToken(), isNull);
+    expect(await storage.readRefreshToken(), isNull);
+  });
+
+  test('refresh in flight when user signs back in does NOT clobber fresh login', () async {
+    // Companion to the previous test: if storage is *replaced* (not just
+    // cleared) by a fresh sign-in during the refresh round-trip, the
+    // stale refresh response must neither persist the old tokens nor
+    // call clearAll() on the fresh tokens. Storage must reflect the
+    // fresh login at the end.
+    final storage = InMemoryTokenStorage();
+    await storage.writeToken('expired_access');
+    await storage.writeRefreshToken('old_refresh');
+
+    final adapter = _FakeAdapter((opts) async {
+      if (opts.path.endsWith('/auth/refresh')) {
+        await Future<void>.delayed(const Duration(milliseconds: 30));
+        return _json(
+          200,
+          '{"token":"old_session_new_access","refresh_token":"old_session_new_refresh"}',
+        );
+      }
+      return _json(401, '{"detail":"expired"}');
+    });
+
+    final container = _container(storage);
+    addTearDown(container.dispose);
+    final dio = container.read(dioProvider)..httpClientAdapter = adapter;
+
+    final pending = dio.get<dynamic>('/api/v1/events');
+    // Mid-flight: user signs back in with new credentials.
+    await Future<void>.delayed(const Duration(milliseconds: 10));
+    await storage.writeToken('fresh_login_access');
+    await storage.writeRefreshToken('fresh_login_refresh');
+
+    await expectLater(pending, throwsA(isA<DioException>()));
+    await Future<void>.delayed(const Duration(milliseconds: 10));
+
+    // Fresh login's tokens must survive. The interceptor's "stale"
+    // outcome must NOT call clearAll() — that would log out a user who
+    // had just signed in.
+    expect(await storage.readToken(), 'fresh_login_access');
+    expect(await storage.readRefreshToken(), 'fresh_login_refresh');
+  });
+
   test('two concurrent 401s coalesce to a single /auth/refresh call', () async {
     final storage = InMemoryTokenStorage();
     await storage.writeToken('expired_access');

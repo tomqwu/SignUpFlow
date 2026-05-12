@@ -17,10 +17,16 @@ const String defaultApiBaseUrl = String.fromEnvironment(
   defaultValue: 'http://localhost:8000',
 );
 
+/// Outcome of one /auth/refresh attempt. The interceptor must distinguish
+/// "refresh failed" (wipe storage) from "refresh succeeded but storage was
+/// mutated mid-flight" (leave storage alone) — otherwise a signOut / fresh
+/// login that races a stale refresh response gets clobbered.
+enum _RefreshOutcome { success, failure, stale }
+
 /// Pump a single concurrent /auth/refresh attempt. If two requests hit
 /// 401 at the same time, only one fires the refresh; the others await
 /// the same `Future` and replay against the new token.
-Completer<bool>? _refreshInFlight;
+Completer<_RefreshOutcome>? _refreshInFlight;
 
 /// dio configured with the API base URL + a token-refresh interceptor.
 final dioProvider = Provider<Dio>((ref) {
@@ -52,11 +58,18 @@ final dioProvider = Provider<Dio>((ref) {
           return;
         }
 
-        final refreshed = await _attemptRefresh(dio, storage);
-        if (!refreshed) {
+        final outcome = await _attemptRefresh(dio, storage);
+        if (outcome == _RefreshOutcome.failure) {
           // No refresh token, refresh failed, or 401 from /auth/refresh
           // itself — wipe both tokens and let the router bounce to /login.
           await storage.clearAll();
+          handler.next(e);
+          return;
+        }
+        if (outcome == _RefreshOutcome.stale) {
+          // Storage was mutated (signOut / fresh login) while /auth/refresh
+          // was in flight. Don't replay with the dropped tokens, but also
+          // don't clear the user's current session — leave storage alone.
           handler.next(e);
           return;
         }
@@ -81,22 +94,31 @@ final dioProvider = Provider<Dio>((ref) {
 });
 
 /// Fires `/auth/refresh` against the stored refresh token. Coalesces
-/// concurrent calls so only one round-trip happens at a time. Returns
-/// true on success (new tokens persisted), false otherwise.
-Future<bool> _attemptRefresh(Dio dio, SecureTokenStorage storage) async {
+/// concurrent calls so only one round-trip happens at a time. The
+/// outcome tells the caller whether to (success) replay the original
+/// request, (failure) clear storage and propagate 401, or (stale) just
+/// propagate 401 without touching storage.
+Future<_RefreshOutcome> _attemptRefresh(Dio dio, SecureTokenStorage storage) async {
   // Coalesce concurrent refreshes.
   final inFlight = _refreshInFlight;
   if (inFlight != null) {
     return inFlight.future;
   }
-  final completer = Completer<bool>();
+  final completer = Completer<_RefreshOutcome>();
   _refreshInFlight = completer;
+
+  // Snapshot the storage generation at the start. Any storage mutation
+  // (signOut, fresh login, another refresh landing first) bumps it;
+  // we check before persisting so an in-flight stale response can't
+  // overwrite whatever's currently in storage. Hoisted out of the try
+  // block so the DioException catch can also see it (Dart scoping).
+  final genAtStart = storage.sessionGeneration;
 
   try {
     final refreshToken = await storage.readRefreshToken();
     if (refreshToken == null || refreshToken.isEmpty) {
-      completer.complete(false);
-      return false;
+      completer.complete(_RefreshOutcome.failure);
+      return _RefreshOutcome.failure;
     }
     final res = await dio.post<dynamic>(
       '/api/v1/auth/refresh',
@@ -113,16 +135,38 @@ Future<bool> _attemptRefresh(Dio dio, SecureTokenStorage storage) async {
     if (body is Map &&
         body['token'] is String &&
         body['refresh_token'] is String) {
+      // Drop the response if anything mutated storage during the
+      // /auth/refresh round-trip — the response is for a session
+      // that's already been replaced or cleared. KNOWN RESIDUAL RACE:
+      // within Dart's single-isolate cooperative model, between the
+      // two awaited writes below another mutator can interleave. We
+      // don't attempt to roll back the first write, because by the
+      // time we detect it the "current" access token may belong to a
+      // fresh login that ran after our write — clearing it would log
+      // that user out. The realistic window is platform-call latency
+      // (microseconds); on the next 401 the interceptor sees whatever
+      // session is actually in storage and rotates from there.
+      if (storage.sessionGeneration != genAtStart) {
+        completer.complete(_RefreshOutcome.stale);
+        return _RefreshOutcome.stale;
+      }
       await storage.writeToken(body['token'] as String);
       await storage.writeRefreshToken(body['refresh_token'] as String);
-      completer.complete(true);
-      return true;
+      completer.complete(_RefreshOutcome.success);
+      return _RefreshOutcome.success;
     }
-    completer.complete(false);
-    return false;
+    completer.complete(_RefreshOutcome.failure);
+    return _RefreshOutcome.failure;
   } on DioException {
-    completer.complete(false);
-    return false;
+    // If the refresh failed AND storage changed since we started, the
+    // failure belongs to a session that's already gone. Don't make the
+    // caller clearAll() — that would wipe the new session.
+    if (storage.sessionGeneration != genAtStart) {
+      completer.complete(_RefreshOutcome.stale);
+      return _RefreshOutcome.stale;
+    }
+    completer.complete(_RefreshOutcome.failure);
+    return _RefreshOutcome.failure;
   } finally {
     _refreshInFlight = null;
   }

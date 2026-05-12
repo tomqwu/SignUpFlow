@@ -44,6 +44,20 @@ Mailtrap captures every send to a virtual inbox you can view in the
 browser. Nothing leaves their network — safe to use without any domain
 authentication.
 
+> **Shell prelude (important):** before running the smoke, ensure no
+> stale `SENDGRID_API_KEY` is exported in your shell:
+>
+> ```bash
+> unset SENDGRID_API_KEY
+> ```
+>
+> The smoke script reloads `.env` with `override=True`, so a blank
+> `SENDGRID_API_KEY=` line in `.env` will clear it for the run; but an
+> exported value in the shell can still leak in via subprocess
+> inheritance for the Python interpreter that imports SendGrid. The
+> unset is a belt-and-braces guarantee that you're testing the SMTP
+> path, not accidentally hitting live SendGrid.
+
 ### 1. Get credentials
 
 1. Sign up / log in at <https://mailtrap.io/>.

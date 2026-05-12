@@ -131,6 +131,26 @@ def request_password_reset(
     if not person:
         return generic_response
 
+    # Re-acquire the Person row with ``FOR UPDATE`` immediately before the
+    # critical section (invalidate prior tokens + insert new + commit).
+    # The initial Person lookup above can't hold the lock, because
+    # ``log_audit_event`` commits the audit row in between — which would
+    # release any row lock taken on the original query. Re-locking here
+    # scopes the lock tightly to the rotation block: two concurrent
+    # /forgot-password requests for the same person serialize on this
+    # SELECT, then run the UPDATE/INSERT/commit one at a time, so the
+    # freshness contract in docs/features/password-reset.md Scenario 6
+    # holds. SQLite ignores FOR UPDATE (its global lock already serializes
+    # writers); PostgreSQL enforces a real row lock under READ COMMITTED.
+    # Scope by org_id too — repo-wide tenancy contract is "every Person
+    # query filters by org_id". Filtering by primary key alone is
+    # technically sufficient here (Person.id is globally unique), but the
+    # convention exists so reviewers can grep for missing org filters in
+    # new code paths.
+    db.query(Person).filter(
+        Person.id == person.id, Person.org_id == person.org_id
+    ).with_for_update().one()
+
     now = utcnow()
 
     # Invalidate any prior unused reset tokens for this person before
