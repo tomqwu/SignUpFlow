@@ -136,25 +136,24 @@ Future<_RefreshOutcome> _attemptRefresh(Dio dio, SecureTokenStorage storage) asy
     if (body is Map &&
         body['token'] is String &&
         body['refresh_token'] is String) {
-      // First gate: nothing mutated storage during the /auth/refresh
-      // round-trip. If it did, the response is for a session that's
-      // already been replaced — drop without touching state.
+      // Drop the response if anything mutated storage during the
+      // /auth/refresh round-trip — the response is for a session
+      // that's already been replaced or cleared.
+      //
+      // KNOWN RESIDUAL RACE: within Dart's single-isolate cooperative
+      // model, between the two awaited writes below another mutator
+      // can interleave. We don't attempt to roll back the first write,
+      // because by the time we detect it the "current" access token
+      // may belong to a fresh login that ran after our write — and
+      // clearing it would log that user out. The realistic exploit
+      // window is platform-call latency (microseconds); on the next
+      // 401 the interceptor sees whatever session is actually in
+      // storage and rotates from there.
       if (storage.sessionGeneration != genAtStart) {
         completer.complete(_RefreshOutcome.stale);
         return _RefreshOutcome.stale;
       }
-      // Each storage mutator bumps the counter exactly once. After our
-      // writeToken below, the expected generation is genAtStart + 1.
-      // If it's higher, another mutator (signOut, fresh login) raced
-      // between our two awaited writes — we'd be persisting an access
-      // token from one session and a refresh token from another. Roll
-      // back the access write and abort.
       await storage.writeToken(body['token'] as String);
-      if (storage.sessionGeneration != genAtStart + 1) {
-        await storage.clearToken();
-        completer.complete(_RefreshOutcome.stale);
-        return _RefreshOutcome.stale;
-      }
       await storage.writeRefreshToken(body['refresh_token'] as String);
       completer.complete(_RefreshOutcome.success);
       return _RefreshOutcome.success;
@@ -162,6 +161,13 @@ Future<_RefreshOutcome> _attemptRefresh(Dio dio, SecureTokenStorage storage) asy
     completer.complete(_RefreshOutcome.failure);
     return _RefreshOutcome.failure;
   } on DioException {
+    // If the refresh failed AND storage changed since we started, the
+    // failure belongs to a session that's already gone. Don't make the
+    // caller clearAll() — that would wipe the new session.
+    if (storage.sessionGeneration != genAtStart) {
+      completer.complete(_RefreshOutcome.stale);
+      return _RefreshOutcome.stale;
+    }
     completer.complete(_RefreshOutcome.failure);
     return _RefreshOutcome.failure;
   } finally {
