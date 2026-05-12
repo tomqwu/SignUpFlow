@@ -16,7 +16,6 @@ from __future__ import annotations
 import base64
 import json
 import time
-from datetime import datetime, timezone
 
 import pytest
 from cryptography.hazmat.primitives.asymmetric.ec import (

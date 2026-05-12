@@ -3,7 +3,7 @@
 import base64
 import json
 import os
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 
 from cryptography.exceptions import InvalidSignature
@@ -157,9 +157,9 @@ def _apply_sendgrid_event(db: Session, event: dict[str, Any]) -> None:
 
     ts_unix = event.get("timestamp")
     ts_dt = (
-        datetime.fromtimestamp(ts_unix, tz=timezone.utc)
-        if isinstance(ts_unix, (int, float))
-        else datetime.now(timezone.utc)
+        datetime.fromtimestamp(ts_unix, tz=UTC)
+        if isinstance(ts_unix, int | float)
+        else datetime.now(UTC)
     )
 
     new_status = _SENDGRID_EVENT_TO_STATUS.get(event_type)
