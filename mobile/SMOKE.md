@@ -115,7 +115,16 @@ Steps:
 
 > The backend's `create_invitation` endpoint returns the invitation token in the response body — **it doesn't send an email yet** (`resend_invitation` still has a TODO for SMTP dispatch). Until that lands, the smoke walks the token through manually.
 
-1. As admin, create an invitation via the **API** (e.g. `curl -X POST /api/v1/invitations -H 'Authorization: Bearer <admin-jwt>' -d '{"email": "..."}'`) — the response body carries the raw invitation token. The mobile admin UI currently discards that response and only shows "Invitation sent", so it can't surface the token until invitation-email dispatch lands.
+1. As admin, create an invitation via the **API** — the response body carries the raw invitation token. The mobile admin UI currently discards that response and only shows "Invitation sent", so it can't surface the token until invitation-email dispatch lands.
+
+   ```bash
+   curl -X POST 'https://api.signupflow.io/api/v1/invitations?org_id=<your-org-id>' \
+     -H 'Authorization: Bearer <admin-jwt>' \
+     -H 'Content-Type: application/json' \
+     -d '{"email":"newvolunteer@example.com","name":"New Volunteer","roles":["volunteer"]}'
+   ```
+
+   `org_id` is a required query param; `email` / `name` / `roles` are required body fields per `api/schemas/invitation.py:InvitationCreate`. Pluck `token` out of the JSON response.
 2. On the test device, open `signupflow://invitation?token=<captured-token>` (paste into Safari address bar on iOS; use `adb shell am start` on Android — see `ANDROID_RELEASE.md:130-140`).
 3. App launches at the accept screen.
 4. Enter a password, confirm.
