@@ -101,8 +101,13 @@ jobs:
             exit 1
           fi
           echo "Codex verdict: $verdict_line"
-          case "$verdict_line" in
-            *"SAFE TO MERGE"*) exit 0 ;;
+          # Normalize: strip leading/trailing whitespace, collapse internal
+          # whitespace, uppercase. Exact match prevents a verdict like
+          # "Verdict: NOT SAFE TO MERGE" or "Verdict: UNSAFE TO MERGE" from
+          # passing on substring containment.
+          normalized=$(printf '%s' "$verdict_line" | tr -s '[:space:]' ' ' | awk '{$1=$1; print toupper($0)}')
+          case "$normalized" in
+            "VERDICT: SAFE TO MERGE") exit 0 ;;
             *) exit 1 ;;
           esac
 
@@ -110,7 +115,10 @@ jobs:
     name: Post Codex feedback as PR comment
     runs-on: ubuntu-latest
     needs: codex
-    if: needs.codex.outputs.final_message != ''
+    # always() so feedback gets posted even when the codex job FAILED
+    # (NEEDS FIX / NEEDS DISCUSSION verdict). Without it the PR ends up
+    # with a red check and no explanation of why.
+    if: always() && needs.codex.outputs.final_message != ''
     permissions:
       issues: write
       pull-requests: write
