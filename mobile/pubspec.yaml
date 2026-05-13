@@ -28,6 +28,12 @@ dev_dependencies:
   custom_lint: ^0.7.0
   flutter_test:
     sdk: flutter
+  # On-device end-to-end tests. Lives at mobile/integration_test/ and runs
+  # via `flutter test integration_test/` against an iOS simulator or Android
+  # emulator. CI doesn't run these (device-dependent); they're operator-
+  # invoked. See mobile/scripts/run_integration_tests.sh for the harness.
+  integration_test:
+    sdk: flutter
   riverpod_generator: ^2.6.4
   riverpod_lint: ^2.6.4
   very_good_analysis: ^7.0.0
