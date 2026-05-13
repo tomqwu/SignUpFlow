@@ -34,7 +34,11 @@ void main() {
   }
 
   GoRouter _routerOf(WidgetTester tester) {
-    final ctx = tester.element(find.byType(SignUpFlowApp));
+    // SignUpFlowApp is the ancestor that installs MaterialApp.router;
+    // the InheritedGoRouter lives BELOW MaterialApp's Navigator. Find
+    // any Material widget (the login screen renders one) and pull the
+    // router from that context.
+    final ctx = tester.element(find.byType(MaterialApp));
     return GoRouter.of(ctx);
   }
 
