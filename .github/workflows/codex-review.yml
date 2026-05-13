@@ -78,13 +78,33 @@ jobs:
             - Report P0 / P1 findings only when they would block merge (correctness, security, tenant data leakage, broken contracts).
             - P2 / P3 are nice-to-haves; surface them but don't gate.
             - Be specific: file:line + the issue + a one-line fix proposal.
-            - Verdict line at top: SAFE TO MERGE / NEEDS FIX / NEEDS DISCUSSION.
+            - **First line of your response must be exactly one of:** `Verdict: SAFE TO MERGE` / `Verdict: NEEDS FIX` / `Verdict: NEEDS DISCUSSION`. The CI step below greps this line; anything other than `SAFE TO MERGE` fails the job.
             - Keep the report under 600 words.
 
             PR title + body:
             ----
             ${{ github.event.pull_request.title }}
             ${{ github.event.pull_request.body }}
+
+      - name: Enforce verdict (fail on NEEDS FIX / NEEDS DISCUSSION)
+        env:
+          CODEX_FINAL_MESSAGE: ${{ steps.run_codex.outputs.final-message }}
+        run: |
+          # Parse the first occurrence of `Verdict: <X>` and exit non-zero
+          # unless it's exactly "SAFE TO MERGE". Without this, a blocking
+          # Codex verdict would still mark the check green and could merge
+          # under branch protection / auto-merge gates.
+          verdict_line=$(printf '%s\n' "$CODEX_FINAL_MESSAGE" | grep -m1 -i '^Verdict:' || true)
+          if [ -z "$verdict_line" ]; then
+            echo "::warning::Codex output did not include a 'Verdict:' line; treating as needs-discussion."
+            echo "$CODEX_FINAL_MESSAGE" | head -40
+            exit 1
+          fi
+          echo "Codex verdict: $verdict_line"
+          case "$verdict_line" in
+            *"SAFE TO MERGE"*) exit 0 ;;
+            *) exit 1 ;;
+          esac
 
   post_feedback:
     name: Post Codex feedback as PR comment
