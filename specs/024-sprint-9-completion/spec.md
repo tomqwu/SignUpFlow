@@ -130,9 +130,9 @@ Sprint 9 shipped 10 PRs to main:
 - **SendGrid event webhook** — `POST /webhooks/sendgrid` for delivery/bounce/open tracking (`docs/saas/EMAIL_INTEGRATION_PLAN.md:401`).
 - **Invitation email dispatch** — `resend_invitation` TODO; admin UI also discards the `createInvitation` response token (Sprint 10).
 - **`ACCESS_TOKEN_EXPIRE_HOURS` env knob** — declared in `api/core/config.py:26` but ignored; `api/security.py:24` uses a hardcoded `ACCESS_TOKEN_EXPIRE_MINUTES`. Documented in `mobile/SMOKE.md` as a source-patch workaround.
-- **Inter-write race in `_attemptRefresh`** — Dart cooperative-async narrow window between the two awaited `writeToken` / `writeRefreshToken` calls. Closing it needs either `package:synchronized` or an atomic `compareAndWriteTokens` on `SecureTokenStorage`.
+- ~~**Inter-write race in `_attemptRefresh`**~~ — closed by Sprint 10 PR 10.3 (`SecureTokenStorage.compareAndWriteTokens` atomic gen-check + dual write). Narrow platform-call-latency window remains in `_RealStorage` between the two awaited platform writes; documented inline.
 - **Server-side refresh-token rotation interaction** — discarding a rotated refresh after the stale path could theoretically leave a same-account re-login at a stale version. Depends on backend rotation semantics.
-- **Custom-scheme deep-link routing** — Codex flagged that `signupflow://invitation?...` puts `invitation` in the URI host, not the path, and `go_router` matches by path. The same format appears in production email bodies (`api/services/email_service.py:1018`) and Android manifest comments. If those don't actually route in production, a fix updates URL generation + manifest + runbook.
+- ~~**Custom-scheme deep-link routing**~~ — closed by Sprint 10 PR 10.3. Added a `_hostRouteRemap` redirect in `mobile/lib/routing/router.dart` that maps `signupflow://<route>` (host form) to `/<route>` defensively, so both URL forms route correctly without changing the backend email URL generation. Verified by `mobile/integration_test/deep_link_test.dart`.
 - **Dark mode** — Sprint 10.
 - **APNS / FCM push** — Sprint 10 (Inbox is still poll-based).
 - **Solution Review live refresh** — Sprint 10 (pull-to-refresh covers v1).

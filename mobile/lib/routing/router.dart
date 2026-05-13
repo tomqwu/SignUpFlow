@@ -33,12 +33,37 @@ import 'package:signupflow_mobile/features/volunteer/profile_screen.dart';
 import 'package:signupflow_mobile/features/volunteer/schedule_screen.dart';
 import 'package:signupflow_mobile/features/volunteer/shell.dart';
 
+/// Custom-scheme deep links that the backend / Android manifest may emit
+/// in the host position rather than the path. The backend currently
+/// generates `signupflow://invitation?token=...` (host=invitation, path
+/// empty) — go_router matches by path, so without this remap the link
+/// lands on `/` instead of the accept screen. Defensive: handles both
+/// `signupflow://<route>?...` and `signupflow:///<route>?...` URL forms
+/// so we don't break any production email already in flight.
+const _hostRouteRemap = <String, String>{
+  'invitation': '/invitation',
+  'reset-password': '/reset-password',
+  'forgot-password': '/forgot-password',
+};
+
 GoRouter buildRouter(WidgetRef ref) {
   return GoRouter(
     initialLocation: '/login',
     redirect: (context, state) {
       final auth = ref.read(authProvider);
-      final loc = state.matchedLocation;
+      var loc = state.matchedLocation;
+
+      // Deep-link host remap: when the platform hands us a URL whose
+      // host names one of our routes but the path is empty, route by
+      // host. URI: scheme="signupflow", host="invitation", path="" →
+      // /invitation?token=...
+      if ((loc == '/' || loc.isEmpty) &&
+          _hostRouteRemap.containsKey(state.uri.host)) {
+        final remapped = _hostRouteRemap[state.uri.host]!;
+        final query = state.uri.hasQuery ? '?${state.uri.query}' : '';
+        return '$remapped$query';
+      }
+
       final isAuth = loc == '/login' ||
           loc == '/signup' ||
           loc == '/invitation' ||

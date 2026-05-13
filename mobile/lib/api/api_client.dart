@@ -135,23 +135,27 @@ Future<_RefreshOutcome> _attemptRefresh(Dio dio, SecureTokenStorage storage) asy
     if (body is Map &&
         body['token'] is String &&
         body['refresh_token'] is String) {
-      // Drop the response if anything mutated storage during the
-      // /auth/refresh round-trip — the response is for a session
-      // that's already been replaced or cleared. KNOWN RESIDUAL RACE:
-      // within Dart's single-isolate cooperative model, between the
-      // two awaited writes below another mutator can interleave. We
-      // don't attempt to roll back the first write, because by the
-      // time we detect it the "current" access token may belong to a
-      // fresh login that ran after our write — clearing it would log
-      // that user out. The realistic window is platform-call latency
-      // (microseconds); on the next 401 the interceptor sees whatever
-      // session is actually in storage and rotates from there.
-      if (storage.sessionGeneration != genAtStart) {
+      // Atomic compare-and-set: if storage hasn't been mutated since
+      // we started (`expectedGen == genAtStart`), persist both tokens
+      // in one operation. Otherwise the write is rejected and we
+      // return stale so the interceptor doesn't replay and doesn't
+      // clearAll a fresh session.
+      //
+      // KNOWN RESIDUAL RACE: in _RealStorage, between the platform
+      // writes inside compareAndWriteTokens another mutator can still
+      // interleave; the final storage state is whichever write lands
+      // last. That window is platform-call latency. Closing it fully
+      // would require package:synchronized or a platform-side atomic
+      // write API.
+      final applied = await storage.compareAndWriteTokens(
+        expectedGen: genAtStart,
+        access: body['token'] as String,
+        refresh: body['refresh_token'] as String,
+      );
+      if (!applied) {
         completer.complete(_RefreshOutcome.stale);
         return _RefreshOutcome.stale;
       }
-      await storage.writeToken(body['token'] as String);
-      await storage.writeRefreshToken(body['refresh_token'] as String);
       completer.complete(_RefreshOutcome.success);
       return _RefreshOutcome.success;
     }
