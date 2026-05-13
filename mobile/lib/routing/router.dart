@@ -51,7 +51,7 @@ GoRouter buildRouter(WidgetRef ref) {
     initialLocation: '/login',
     redirect: (context, state) {
       final auth = ref.read(authProvider);
-      var loc = state.matchedLocation;
+      final loc = state.matchedLocation;
 
       // Deep-link host remap: when the platform hands us a URL whose
       // host names one of our routes but the path is empty, route by
