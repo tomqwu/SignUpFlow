@@ -17,6 +17,7 @@ import 'package:go_router/go_router.dart';
 import 'package:integration_test/integration_test.dart';
 import 'package:signupflow_mobile/app.dart';
 import 'package:signupflow_mobile/auth/secure_token_storage.dart';
+import 'package:signupflow_mobile/features/auth/login_screen.dart';
 
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
@@ -34,11 +35,12 @@ void main() {
   }
 
   GoRouter _routerOf(WidgetTester tester) {
-    // SignUpFlowApp is the ancestor that installs MaterialApp.router;
-    // the InheritedGoRouter lives BELOW MaterialApp's Navigator. Find
-    // any Material widget (the login screen renders one) and pull the
-    // router from that context.
-    final ctx = tester.element(find.byType(MaterialApp));
+    // GoRouter.of walks up the InheritedGoRouter inheritance chain.
+    // The InheritedGoRouter is installed by MaterialApp.router AROUND
+    // the Navigator, so we need a context strictly inside that
+    // subtree. Initial route is /login → LoginScreen is in the tree;
+    // its context is below the Navigator, below InheritedGoRouter.
+    final ctx = tester.element(find.byType(LoginScreen));
     return GoRouter.of(ctx);
   }
 
