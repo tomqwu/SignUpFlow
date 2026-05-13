@@ -21,7 +21,12 @@ if not hasattr(bcrypt, "__about__"):
 # JWT Configuration
 SECRET_KEY = os.getenv("SECRET_KEY", "your-secret-key-change-in-production-use-env-var")
 ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24  # 24 hours
+# Read from env via direct os.getenv (not Settings) so the smoke runbook's
+# short-TTL workflow works without restart-coupling to Settings reload.
+# Default 24h matches the prior hardcoded value. Fractional hours via
+# float lets the mobile refresh-interceptor smoke set e.g. 0.05 (3 min)
+# to deterministically force a 401 during a smoke walk.
+ACCESS_TOKEN_EXPIRE_MINUTES = int(float(os.getenv("ACCESS_TOKEN_EXPIRE_HOURS", "24")) * 60)
 REFRESH_TOKEN_EXPIRE_DAYS = 30  # Refresh token lifetime (rotated on every refresh)
 
 # Token type marker — distinguishes access from refresh in the `type` claim.

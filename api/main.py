@@ -146,6 +146,13 @@ app.include_router(recurring_events.router, prefix="/api/v1")
 app.include_router(resources.router, prefix="/api/v1")
 app.include_router(holidays.router, prefix="/api/v1")
 app.include_router(notifications.router, prefix="/api/v1")
+# webhooks.router (SendGrid event tracking) is intentionally NOT
+# mounted yet. The handler code lives in api/routers/webhooks.py and is
+# functional, but tenant scoping requires plumbing org_id through
+# SendGrid Custom Args at send time (Notification.org_id → SendGrid
+# custom_args → webhook event payload → filter on both sg_message_id
+# AND org_id). That's a separate PR. Until it lands, the endpoint
+# stays unmounted so it can't accept events.
 
 
 @app.get("/api/v1", tags=["root"])

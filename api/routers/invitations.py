@@ -1,10 +1,11 @@
 """Invitation endpoints for user onboarding."""
 
+import os
 import secrets
 import time
 from datetime import timedelta
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query, status
 from sqlalchemy import or_
 from sqlalchemy.orm import Session
 
@@ -14,6 +15,7 @@ from api.dependencies import (
     get_organization_by_id,
     verify_org_member,
 )
+from api.logging_config import logger
 from api.models import Invitation, Person
 from api.schemas.invitation import (
     InvitationAccept,
@@ -24,12 +26,41 @@ from api.schemas.invitation import (
     InvitationVerify,
 )
 from api.security import create_access_token, create_refresh_token
+from api.services.email_service import email_service
 from api.timeutils import utcnow
 from api.utils.db_helpers import check_email_exists
 from api.utils.rate_limit_middleware import rate_limit
 from api.utils.security import generate_invitation_token, hash_password
 
 router = APIRouter(prefix="/invitations", tags=["invitations"])
+
+
+def _queue_invitation_email(
+    background_tasks: BackgroundTasks,
+    *,
+    to_email: str,
+    admin_name: str,
+    org_name: str,
+    invitation_token: str,
+) -> None:
+    """Queue the invitation email send via BackgroundTasks. Centralized so
+    create + resend take the same path, including the FRONTEND_URL / APP_URL
+    fallback that send_password_reset_email uses (see #78's notes)."""
+    web_app_url = os.getenv("FRONTEND_URL") or os.getenv("APP_URL", "http://localhost:8000")
+
+    def _send_quiet() -> None:
+        try:
+            email_service.send_invitation_email(
+                to_email=to_email,
+                admin_name=admin_name,
+                org_name=org_name,
+                invitation_token=invitation_token,
+                app_url=web_app_url,
+            )
+        except Exception as exc:  # never let a send failure 5xx the user-facing endpoint
+            logger.warning("invitation email send failed for %s: %s", to_email, exc)
+
+    background_tasks.add_task(_send_quiet)
 
 
 # Endpoints
@@ -41,6 +72,7 @@ router = APIRouter(prefix="/invitations", tags=["invitations"])
 )
 def create_invitation(
     request: InvitationCreate,
+    background_tasks: BackgroundTasks,
     org_id: str = Query(..., description="Organization ID"),
     inviter: Person = Depends(get_current_admin_user),
     db: Session = Depends(get_db),
@@ -99,6 +131,17 @@ def create_invitation(
     db.add(invitation)
     db.commit()
     db.refresh(invitation)
+
+    # Get inviter's display name + org name for the email body. Inviter
+    # is already loaded; fetch org name from the verified Organization.
+    org = get_organization_by_id(org_id, db)
+    _queue_invitation_email(
+        background_tasks,
+        to_email=invitation.email,
+        admin_name=inviter.name,
+        org_name=org.name,
+        invitation_token=token,
+    )
 
     return invitation
 
@@ -319,6 +362,7 @@ def cancel_invitation(
 @router.post("/{invitation_id}/resend", response_model=InvitationResponse)
 def resend_invitation(
     invitation_id: str,
+    background_tasks: BackgroundTasks,
     admin: Person = Depends(get_current_admin_user),
     db: Session = Depends(get_db),
 ):
@@ -350,7 +394,16 @@ def resend_invitation(
     db.commit()
     db.refresh(invitation)
 
-    # TODO: Send invitation email with new token
-    # This would integrate with an email service in production
+    # Send the invitation email with the rotated token. Same dispatch
+    # path as create_invitation — backgrounded so HTTP response timing
+    # is independent of SMTP/SendGrid latency.
+    org = get_organization_by_id(invitation.org_id, db)
+    _queue_invitation_email(
+        background_tasks,
+        to_email=invitation.email,
+        admin_name=admin.name,
+        org_name=org.name,
+        invitation_token=invitation.token,
+    )
 
     return invitation
