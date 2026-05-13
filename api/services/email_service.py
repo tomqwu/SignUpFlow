@@ -889,8 +889,14 @@ class EmailService:
             True on success or `self.enabled == False` no-op; False on
             transport failure (same convention as the rest of EmailService).
         """
-        # Mobile deep link → opens the app at /invitation.
-        deep_link = f"signupflow://invitation?token={invitation_token}"
+        # Mobile deep link → opens the app at /invitation. Triple-slash
+        # so the URI's *path* is "/invitation" (empty authority); a
+        # host-form URL puts the route name in URI.host and go_router
+        # drops it during cold-start bootstrap. PR 10.3 also added a
+        # defensive _hostRouteRemap in mobile/lib/routing/router.dart so
+        # any old host-form URL still in flight keeps working on warm
+        # start.
+        deep_link = f"signupflow:///invitation?token={invitation_token}"
         # Web fallback. Path matches mobile/lib/routing/router.dart's
         # /invitation route so the same URL works in both targets.
         web_url = f"{app_url}/invitation?token={invitation_token}"
@@ -1042,7 +1048,7 @@ class EmailService:
             users opening the email on desktop without the app installed.
         """
         # Custom-scheme deep link → opens the mobile app at /reset-password.
-        deep_link = f"signupflow://reset-password?token={reset_token}"
+        deep_link = f"signupflow:///reset-password?token={reset_token}"
         # Web fallback for desktop / no-app users.
         web_url = f"{app_url}/reset-password?token={reset_token}"
 

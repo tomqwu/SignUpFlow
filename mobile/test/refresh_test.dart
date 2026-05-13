@@ -213,6 +213,51 @@ void main() {
     expect(await storage.readRefreshToken(), 'fresh_login_refresh');
   });
 
+  test('compareAndWriteTokens rejects stale writes atomically', () async {
+    // P2 from #86 (Sprint 9): the previous gen-check + two-separate-writes
+    // shape had a TOCTOU window between check and first write. The new
+    // SecureTokenStorage.compareAndWriteTokens API consolidates the check
+    // and bump into a synchronous prelude that runs to completion before
+    // any await. This test pins the contract.
+    final storage = InMemoryTokenStorage();
+    await storage.writeToken('a0');
+    await storage.writeRefreshToken('r0');
+    final genAtStart = storage.sessionGeneration;
+
+    // Race: another mutator bumps generation before our compareAndWrite.
+    await storage.writeToken('a_intervening');
+
+    final applied = await storage.compareAndWriteTokens(
+      expectedGen: genAtStart,
+      access: 'a_new',
+      refresh: 'r_new',
+    );
+
+    expect(applied, isFalse, reason: 'gen has advanced — write must be rejected');
+    expect(await storage.readToken(), 'a_intervening',
+        reason: 'storage left untouched on rejection');
+    expect(await storage.readRefreshToken(), 'r0');
+  });
+
+  test('compareAndWriteTokens applies when generation matches', () async {
+    final storage = InMemoryTokenStorage();
+    await storage.writeToken('a0');
+    await storage.writeRefreshToken('r0');
+    final genAtStart = storage.sessionGeneration;
+
+    final applied = await storage.compareAndWriteTokens(
+      expectedGen: genAtStart,
+      access: 'a_new',
+      refresh: 'r_new',
+    );
+
+    expect(applied, isTrue);
+    expect(await storage.readToken(), 'a_new');
+    expect(await storage.readRefreshToken(), 'r_new');
+    expect(storage.sessionGeneration, genAtStart + 1,
+        reason: 'one and only one gen bump per atomic write');
+  });
+
   test('two concurrent 401s coalesce to a single /auth/refresh call', () async {
     final storage = InMemoryTokenStorage();
     await storage.writeToken('expired_access');
