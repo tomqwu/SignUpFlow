@@ -13,7 +13,7 @@ from cryptography.hazmat.primitives.asymmetric.ec import (
 )
 from cryptography.hazmat.primitives.hashes import SHA256
 from cryptography.hazmat.primitives.serialization import load_der_public_key
-from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Request
+from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy.orm import Session
 
 from api.database import get_db
@@ -189,17 +189,20 @@ def _apply_sendgrid_event(db: Session, event: dict[str, Any]) -> None:
 @router.post("/webhooks/sendgrid")
 async def sendgrid_webhook(
     request: Request,
-    background_tasks: BackgroundTasks,
     db: Session = Depends(get_db),
 ) -> dict[str, Any]:
     """Consume SendGrid Event Webhook payloads, update Notification +
     append DeliveryLog rows.
 
-    Returns 200 quickly; per-event processing runs in BackgroundTasks so
-    SendGrid doesn't retry on slow DB writes. Signature verification is
-    mandatory when SENDGRID_WEBHOOK_PUBLIC_KEY is set; if unset the
-    endpoint rejects all requests (fail closed — don't accept unsigned
-    events in any environment).
+    Signature verification is mandatory when SENDGRID_WEBHOOK_PUBLIC_KEY
+    is set; if unset the endpoint rejects all requests (fail closed —
+    don't accept unsigned events in any environment).
+
+    Event processing runs synchronously on the request-scoped session.
+    SendGrid retries on 5xx (not on slow), so the slightly-elevated p99
+    latency on this endpoint is preferable to the cross-session
+    visibility issues that come with a BackgroundTask + fresh
+    SessionLocal — those would also miss the test-scoped DB engine.
     """
     payload = await request.body()
     signature = request.headers.get("X-Twilio-Email-Event-Webhook-Signature")
@@ -222,22 +225,16 @@ async def sendgrid_webhook(
     if not isinstance(events, list):
         raise HTTPException(status_code=400, detail="Expected JSON array")
 
-    def _process() -> None:
-        # Re-open a session for the background task — the request-scoped
-        # one is closed by FastAPI's dependency cleanup once we return.
-        from api.database import SessionLocal
+    try:
+        for event in events:
+            if isinstance(event, dict):
+                _apply_sendgrid_event(db, event)
+        db.commit()
+    except Exception as exc:
+        db.rollback()
+        logger.error("SendGrid event batch processing failed: %s", exc, exc_info=True)
+        # Return 200 anyway — re-delivering won't help if our code
+        # raised. Log + drop is the safer choice than asking SendGrid
+        # to retry a broken event forever.
 
-        bg_db = SessionLocal()
-        try:
-            for event in events:
-                if isinstance(event, dict):
-                    _apply_sendgrid_event(bg_db, event)
-            bg_db.commit()
-        except Exception as exc:
-            bg_db.rollback()
-            logger.error("SendGrid event batch processing failed: %s", exc, exc_info=True)
-        finally:
-            bg_db.close()
-
-    background_tasks.add_task(_process)
     return {"received": len(events)}
