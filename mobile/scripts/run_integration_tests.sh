@@ -22,11 +22,19 @@ echo "==> Resolving Flutter device target"
 DEVICES_JSON=$(flutter devices --machine 2>/dev/null || echo "[]")
 
 # Pick an iOS simulator if present; else first Android device; else bail.
+# `flutter devices --machine` emits `targetPlatform` (e.g. "ios",
+# "android-arm64", "android-x64") + `emulator` (bool). platformType is
+# NOT in the device listing's JSON shape.
 TARGET_DEVICE=$(printf '%s' "$DEVICES_JSON" | python3 -c '
 import json, sys
 devs = json.load(sys.stdin)
-ios = [d for d in devs if d.get("platformType") == "ios" and d.get("emulator")]
-android = [d for d in devs if d.get("platformType") == "android"]
+def is_ios_sim(d):
+    return d.get("targetPlatform") == "ios" and d.get("emulator")
+def is_android(d):
+    tp = d.get("targetPlatform") or ""
+    return tp.startswith("android")
+ios = [d for d in devs if is_ios_sim(d)]
+android = [d for d in devs if is_android(d)]
 pick = (ios + android)[:1]
 print(pick[0]["id"] if pick else "")
 ')
