@@ -61,15 +61,16 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    // The unauthenticated app lands on /login. We expect at least the
-    // email + password fields to be visible.
-    expect(find.byType(TextField), findsAtLeastNWidgets(2));
+    // The unauthenticated app lands on /login. LoginScreen wraps its
+    // inputs in a custom `_Field` widget — TextField hint text is the
+    // stable selector (label is a separate sibling Text in uppercase,
+    // not a TextField decoration). Hints come from
+    // mobile/lib/features/auth/login_screen.dart:88,95.
+    final textFields = find.byType(TextField);
+    expect(textFields, findsAtLeastNWidgets(2));
 
-    // Find the email and password inputs by their decoration label (the
-    // login screen labels them; if those labels change this test fails
-    // fast, which is the point of an end-to-end smoke).
-    final emailField = find.widgetWithText(TextField, 'Email');
-    final passwordField = find.widgetWithText(TextField, 'Password');
+    final emailField = find.widgetWithText(TextField, 'you@church.org');
+    final passwordField = find.widgetWithText(TextField, '•••••••');
     expect(emailField, findsOneWidget);
     expect(passwordField, findsOneWidget);
 
@@ -77,11 +78,12 @@ void main() {
     await tester.enterText(passwordField, 'irrelevant-fake-pw');
     await tester.pumpAndSettle();
 
-    // Tap the primary login button. The label is the same in both
-    // light and dark themes; if the label changes update this string.
-    final loginButton = find.widgetWithText(ElevatedButton, 'Log in');
-    expect(loginButton, findsOneWidget);
-    await tester.tap(loginButton);
+    // The sign-in CTA is a custom BlockButton, not a Material
+    // ElevatedButton. find.text matches the rendered label inside it;
+    // the tap walks up to the gesture target.
+    final loginButtonLabel = find.text('Sign in');
+    expect(loginButtonLabel, findsOneWidget);
+    await tester.tap(loginButtonLabel);
     await tester.pumpAndSettle();
 
     // After successful sign-in, the auth state's token must be set.
