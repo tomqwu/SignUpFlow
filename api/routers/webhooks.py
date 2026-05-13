@@ -1,6 +1,7 @@
 """Webhook handlers: Stripe (subscription sync) + SendGrid (email events)."""
 
 import base64
+import binascii
 import json
 import os
 from datetime import UTC, datetime
@@ -21,6 +22,13 @@ from api.logging_config import logger
 from api.models import DeliveryLog, Notification, NotificationStatus
 from api.services.webhook_service import WebhookService
 
+# Two separate routers so the Sprint 10 SendGrid handler can be wired up
+# without also re-exposing the legacy Stripe handler. The Stripe handler
+# has been intentionally unregistered since billing was disabled; mounting
+# it would accept forged events in deployments where STRIPE_WEBHOOK_SECRET
+# isn't set. The split keeps `router` (SendGrid + future signed handlers)
+# mountable while `stripe_router` stays parked until billing is re-enabled.
+stripe_router = APIRouter(tags=["webhooks"])
 router = APIRouter(tags=["webhooks"])
 
 # SendGrid event types we care about. Anything else is ignored (200 OK,
@@ -37,8 +45,26 @@ _SENDGRID_EVENT_TO_STATUS = {
     "deferred": NotificationStatus.RETRY,
 }
 
+# Precedence order: a later index dominates an earlier one. When an
+# out-of-order webhook arrives (e.g. a delayed "processed" after
+# "delivered"), we don't regress to the earlier state. Bounced and
+# failed are terminal-ish — they only get overwritten by themselves
+# (no-op) or by click/open (which would be unusual but indicates the
+# message did reach the user despite the bounce signal).
+_STATUS_RANK = {
+    NotificationStatus.PENDING: 0,
+    NotificationStatus.SENDING: 1,
+    NotificationStatus.RETRY: 1,
+    NotificationStatus.SENT: 2,
+    NotificationStatus.BOUNCED: 3,
+    NotificationStatus.FAILED: 3,
+    NotificationStatus.DELIVERED: 4,
+    NotificationStatus.OPENED: 5,
+    NotificationStatus.CLICKED: 6,
+}
 
-@router.post("/webhooks/stripe")
+
+@stripe_router.post("/webhooks/stripe")
 async def stripe_webhook(request: Request, db: Session = Depends(get_db)) -> dict[str, Any]:
     """
     Handle incoming Stripe webhook events.
@@ -127,7 +153,7 @@ def _verify_sendgrid_signature(payload: bytes, signature_b64: str, timestamp: st
         signed_payload = timestamp.encode("utf-8") + payload
         public_key.verify(signature_der, signed_payload, ECDSA(SHA256()))
         return True
-    except (InvalidSignature, ValueError, TypeError):
+    except (InvalidSignature, ValueError, TypeError, binascii.Error):
         return False
 
 
@@ -164,7 +190,12 @@ def _apply_sendgrid_event(db: Session, event: dict[str, Any]) -> None:
 
     new_status = _SENDGRID_EVENT_TO_STATUS.get(event_type)
     if new_status:
-        notification.status = new_status
+        # Don't regress: a delayed "processed" arriving after a
+        # "delivered" / "opened" event must not move the status back.
+        current_rank = _STATUS_RANK.get(notification.status, 0)
+        new_rank = _STATUS_RANK.get(new_status, 0)
+        if new_rank >= current_rank:
+            notification.status = new_status
     if event_type == "delivered":
         notification.delivered_at = ts_dt
     elif event_type == "open":

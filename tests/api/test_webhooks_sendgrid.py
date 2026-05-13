@@ -119,6 +119,20 @@ class TestSignatureRejection:
         )
         assert resp.status_code == 401
 
+    def test_malformed_base64_signature_returns_401_not_500(self, db, signing_keypair):
+        # binascii.Error from base64.b64decode on bad padding must
+        # surface as 401, not as a 500 from an unhandled exception.
+        client = TestClient(app)
+        resp = client.post(
+            "/webhooks/sendgrid",
+            content=b"[]",
+            headers={
+                "X-Twilio-Email-Event-Webhook-Signature": "not!valid!base64!!!",
+                "X-Twilio-Email-Event-Webhook-Timestamp": "1700000000",
+            },
+        )
+        assert resp.status_code == 401
+
 
 class TestEventProcessing:
     def test_delivered_event_updates_status_and_delivered_at(self, db, signing_keypair):
@@ -197,6 +211,52 @@ class TestEventProcessing:
         n = db.query(Notification).filter(Notification.sendgrid_message_id == "sg_bounce_001").one()
         assert n.status == NotificationStatus.BOUNCED
         assert "Address not found" in (n.error_message or "")
+
+    def test_late_processed_event_does_not_regress_status(self, db, signing_keypair):
+        # Notification has already transitioned to DELIVERED via an
+        # earlier event. A delayed "processed" arriving out-of-order
+        # must not move the status backward to SENDING.
+        from api.models import Notification
+
+        _seed_notification(db, sendgrid_message_id="sg_late_processed_001")
+        notif = (
+            db.query(Notification)
+            .filter(Notification.sendgrid_message_id == "sg_late_processed_001")
+            .one()
+        )
+        notif.status = NotificationStatus.DELIVERED
+        db.commit()
+
+        events = [
+            {
+                "event": "processed",
+                "sg_message_id": "sg_late_processed_001",
+                "timestamp": int(time.time()),
+            }
+        ]
+        payload = json.dumps(events).encode()
+        timestamp = "1700000600"
+        client = TestClient(app)
+        resp = client.post(
+            "/webhooks/sendgrid",
+            content=payload,
+            headers={
+                "X-Twilio-Email-Event-Webhook-Signature": _sign(
+                    signing_keypair, payload, timestamp
+                ),
+                "X-Twilio-Email-Event-Webhook-Timestamp": timestamp,
+            },
+        )
+        assert resp.status_code == 200
+
+        db.expire_all()
+        notif_after = (
+            db.query(Notification)
+            .filter(Notification.sendgrid_message_id == "sg_late_processed_001")
+            .one()
+        )
+        # Status must stay at DELIVERED — not regressed to SENDING.
+        assert notif_after.status == NotificationStatus.DELIVERED
 
     def test_unknown_message_id_is_dropped_not_500(self, db, signing_keypair):
         events = [

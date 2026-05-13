@@ -10726,30 +10726,6 @@
           "webhooks"
         ]
       }
-    },
-    "/webhooks/stripe": {
-      "post": {
-        "description": "Handle incoming Stripe webhook events.\n\nStripe sends webhook events for subscription lifecycle:\n- customer.subscription.created\n- customer.subscription.updated\n- customer.subscription.deleted\n- invoice.payment_succeeded\n- invoice.payment_failed\n- payment_method.attached\n\nWebhook signature verification ensures authenticity.\n\nArgs:\n    request: FastAPI request with webhook payload\n    db: Database session\n\nReturns:\n    dict: {\"success\": bool, \"message\": str}\n\nRaises:\n    HTTPException: 400 if signature invalid or event processing fails",
-        "operationId": "stripeWebhook",
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "additionalProperties": true,
-                  "title": "Response Stripe Webhook Webhooks Stripe Post",
-                  "type": "object"
-                }
-              }
-            },
-            "description": "Successful Response"
-          }
-        },
-        "summary": "Stripe Webhook",
-        "tags": [
-          "webhooks"
-        ]
-      }
     }
   }
 }
