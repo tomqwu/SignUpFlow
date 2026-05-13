@@ -63,11 +63,6 @@ _SAFE_FILTER_FRAGMENTS = (
     ".email IN",
     ".token =",
     ".calendar_token =",
-    # SendGrid event webhooks identify a Notification by the message ID
-    # SendGrid issued — globally unique across orgs and the only handle
-    # the webhook payload carries. The webhook handler can't know
-    # org_id at query time (the event payload doesn't include it).
-    ".sendgrid_message_id =",
 )
 
 

@@ -10702,30 +10702,6 @@
           "health"
         ]
       }
-    },
-    "/webhooks/sendgrid": {
-      "post": {
-        "description": "Consume SendGrid Event Webhook payloads, update Notification +\nappend DeliveryLog rows.\n\nSignature verification is mandatory when SENDGRID_WEBHOOK_PUBLIC_KEY\nis set; if unset the endpoint rejects all requests (fail closed \u2014\ndon't accept unsigned events in any environment).\n\nEvent processing runs synchronously on the request-scoped session.\nSendGrid retries on 5xx (not on slow), so the slightly-elevated p99\nlatency on this endpoint is preferable to the cross-session\nvisibility issues that come with a BackgroundTask + fresh\nSessionLocal \u2014 those would also miss the test-scoped DB engine.",
-        "operationId": "sendgridWebhook",
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "additionalProperties": true,
-                  "title": "Response Sendgrid Webhook Webhooks Sendgrid Post",
-                  "type": "object"
-                }
-              }
-            },
-            "description": "Successful Response"
-          }
-        },
-        "summary": "Sendgrid Webhook",
-        "tags": [
-          "webhooks"
-        ]
-      }
     }
   }
 }
