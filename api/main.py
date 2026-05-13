@@ -35,7 +35,6 @@ from api.routers import (
     solutions,
     solver,
     teams,
-    webhooks,
 )
 
 
