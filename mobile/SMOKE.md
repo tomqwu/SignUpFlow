@@ -211,6 +211,19 @@ Issues filed:
 
 ---
 
+## Automated subset
+
+Portions of this runbook are starting to land as Flutter integration
+tests under `mobile/integration_test/` (run via
+`mobile/scripts/run_integration_tests.sh`). The first one is the
+cold-launch → login → authenticated landing flow. Future PRs (10.3
+mobile-concurrency) add deep-link routing verification. Everything
+else here remains manual until the integration_test/ harness grows
+to cover it.
+
+CI does NOT run integration tests (device-dependent); operator
+invokes them locally before/after the manual smoke walk.
+
 ## Related
 
 - `mobile/TESTFLIGHT.md` — iOS-specific upload + signing details.
