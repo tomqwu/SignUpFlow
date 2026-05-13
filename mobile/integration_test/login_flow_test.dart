@@ -78,10 +78,11 @@ void main() {
     await tester.enterText(passwordField, 'irrelevant-fake-pw');
     await tester.pumpAndSettle();
 
-    // The sign-in CTA is a custom BlockButton, not a Material
-    // ElevatedButton. find.text matches the rendered label inside it;
-    // the tap walks up to the gesture target.
-    final loginButtonLabel = find.text('Sign in');
+    // BlockButton renders label.toUpperCase() so the widget tree shows
+    // "SIGN IN" even though the constructor arg is "Sign in" — match the
+    // rendered text. find.text matches the inner Text inside the
+    // BlockButton; tester.tap walks up to the gesture target.
+    final loginButtonLabel = find.text('SIGN IN');
     expect(loginButtonLabel, findsOneWidget);
     await tester.tap(loginButtonLabel);
     await tester.pumpAndSettle();
