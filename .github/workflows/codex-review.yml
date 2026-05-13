@@ -1,0 +1,145 @@
+name: Codex review
+
+# Runs Codex review on every PR push so reviewers (and auto-merge bots
+# acting on the Codex+CI gate) see findings without anyone having to
+# invoke /codex:review locally. Mirrors the local Codex review the
+# CLAUDE.md PR Review Gate previously required to be run manually.
+#
+# Prereq: repo secret OPENAI_API_KEY (https://platform.openai.com/api-keys).
+# Without it, the action fails fast in the precondition step below.
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+concurrency:
+  # One Codex review per PR at a time — cancel a previous run if a new
+  # push arrives so we don't review a stale head.
+  group: codex-review-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  precondition:
+    name: Check OPENAI_API_KEY is set
+    runs-on: ubuntu-latest
+    outputs:
+      configured: ${{ steps.check.outputs.configured }}
+    steps:
+      - id: check
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        run: |
+          if [ -z "$OPENAI_API_KEY" ]; then
+            echo "::warning::OPENAI_API_KEY secret is not configured. Skipping Codex review. Set it under repo settings → Secrets → Actions to enable automatic review."
+            echo "configured=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "configured=true" >> "$GITHUB_OUTPUT"
+          fi
+
+  codex:
+    name: Run Codex on the PR diff
+    runs-on: ubuntu-latest
+    needs: precondition
+    if: needs.precondition.outputs.configured == 'true'
+    permissions:
+      contents: read
+    outputs:
+      final_message: ${{ steps.run_codex.outputs.final-message }}
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          # Check out the merge ref so Codex reviews the post-merge state,
+          # matching what CI itself tests.
+          ref: refs/pull/${{ github.event.pull_request.number }}/merge
+
+      - name: Pre-fetch base + head refs
+        env:
+          PR_BASE_REF: ${{ github.event.pull_request.base.ref }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          git fetch --no-tags origin \
+            "$PR_BASE_REF" \
+            "+refs/pull/$PR_NUMBER/head"
+
+      - name: Run Codex
+        id: run_codex
+        uses: openai/codex-action@v1
+        with:
+          openai-api-key: ${{ secrets.OPENAI_API_KEY }}
+          sandbox: read-only
+          prompt: |
+            Review the changes introduced by PR #${{ github.event.pull_request.number }} on ${{ github.repository }}.
+
+            Diff range:
+              git log --oneline ${{ github.event.pull_request.base.sha }}...${{ github.event.pull_request.head.sha }}
+
+            Mirror the local Codex review behaviour the team has used through Sprint 9 + 10:
+
+            - Report P0 / P1 findings only when they would block merge (correctness, security, tenant data leakage, broken contracts).
+            - P2 / P3 are nice-to-haves; surface them but don't gate.
+            - Be specific: file:line + the issue + a one-line fix proposal.
+            - **First line of your response must be exactly one of:** `Verdict: SAFE TO MERGE` / `Verdict: NEEDS FIX` / `Verdict: NEEDS DISCUSSION`. The CI step below greps this line; anything other than `SAFE TO MERGE` fails the job.
+            - Keep the report under 600 words.
+
+            PR title + body:
+            ----
+            ${{ github.event.pull_request.title }}
+            ${{ github.event.pull_request.body }}
+
+      - name: Enforce verdict (fail on NEEDS FIX / NEEDS DISCUSSION)
+        env:
+          CODEX_FINAL_MESSAGE: ${{ steps.run_codex.outputs.final-message }}
+        run: |
+          # Parse the first occurrence of `Verdict: <X>` and exit non-zero
+          # unless it's exactly "SAFE TO MERGE". Without this, a blocking
+          # Codex verdict would still mark the check green and could merge
+          # under branch protection / auto-merge gates.
+          verdict_line=$(printf '%s\n' "$CODEX_FINAL_MESSAGE" | grep -m1 -i '^Verdict:' || true)
+          if [ -z "$verdict_line" ]; then
+            echo "::warning::Codex output did not include a 'Verdict:' line; treating as needs-discussion."
+            echo "$CODEX_FINAL_MESSAGE" | head -40
+            exit 1
+          fi
+          echo "Codex verdict: $verdict_line"
+          # Normalize: strip leading/trailing whitespace, collapse internal
+          # whitespace, uppercase. Exact match prevents a verdict like
+          # "Verdict: NOT SAFE TO MERGE" or "Verdict: UNSAFE TO MERGE" from
+          # passing on substring containment.
+          normalized=$(printf '%s' "$verdict_line" | tr -s '[:space:]' ' ' | awk '{$1=$1; print toupper($0)}')
+          case "$normalized" in
+            "VERDICT: SAFE TO MERGE") exit 0 ;;
+            *) exit 1 ;;
+          esac
+
+  post_feedback:
+    name: Post Codex feedback as PR comment
+    runs-on: ubuntu-latest
+    needs: codex
+    # always() so feedback gets posted even when the codex job FAILED
+    # (NEEDS FIX / NEEDS DISCUSSION verdict). Without it the PR ends up
+    # with a red check and no explanation of why.
+    if: always() && needs.codex.outputs.final_message != ''
+    permissions:
+      issues: write
+      pull-requests: write
+    steps:
+      - name: Comment on PR
+        uses: actions/github-script@v7
+        env:
+          CODEX_FINAL_MESSAGE: ${{ needs.codex.outputs.final_message }}
+        with:
+          github-token: ${{ github.token }}
+          script: |
+            const body = [
+              '## 🤖 Codex review',
+              '',
+              process.env.CODEX_FINAL_MESSAGE,
+              '',
+              '<sub>Posted by `.github/workflows/codex-review.yml`. To re-run, push a new commit.</sub>',
+            ].join('\n');
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.payload.pull_request.number,
+              body,
+            });
