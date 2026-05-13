@@ -1,0 +1,117 @@
+name: Codex review
+
+# Runs Codex review on every PR push so reviewers (and auto-merge bots
+# acting on the Codex+CI gate) see findings without anyone having to
+# invoke /codex:review locally. Mirrors the local Codex review the
+# CLAUDE.md PR Review Gate previously required to be run manually.
+#
+# Prereq: repo secret OPENAI_API_KEY (https://platform.openai.com/api-keys).
+# Without it, the action fails fast in the precondition step below.
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+concurrency:
+  # One Codex review per PR at a time — cancel a previous run if a new
+  # push arrives so we don't review a stale head.
+  group: codex-review-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  precondition:
+    name: Check OPENAI_API_KEY is set
+    runs-on: ubuntu-latest
+    outputs:
+      configured: ${{ steps.check.outputs.configured }}
+    steps:
+      - id: check
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        run: |
+          if [ -z "$OPENAI_API_KEY" ]; then
+            echo "::warning::OPENAI_API_KEY secret is not configured. Skipping Codex review. Set it under repo settings → Secrets → Actions to enable automatic review."
+            echo "configured=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "configured=true" >> "$GITHUB_OUTPUT"
+          fi
+
+  codex:
+    name: Run Codex on the PR diff
+    runs-on: ubuntu-latest
+    needs: precondition
+    if: needs.precondition.outputs.configured == 'true'
+    permissions:
+      contents: read
+    outputs:
+      final_message: ${{ steps.run_codex.outputs.final-message }}
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          # Check out the merge ref so Codex reviews the post-merge state,
+          # matching what CI itself tests.
+          ref: refs/pull/${{ github.event.pull_request.number }}/merge
+
+      - name: Pre-fetch base + head refs
+        env:
+          PR_BASE_REF: ${{ github.event.pull_request.base.ref }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          git fetch --no-tags origin \
+            "$PR_BASE_REF" \
+            "+refs/pull/$PR_NUMBER/head"
+
+      - name: Run Codex
+        id: run_codex
+        uses: openai/codex-action@v1
+        with:
+          openai-api-key: ${{ secrets.OPENAI_API_KEY }}
+          sandbox: read-only
+          prompt: |
+            Review the changes introduced by PR #${{ github.event.pull_request.number }} on ${{ github.repository }}.
+
+            Diff range:
+              git log --oneline ${{ github.event.pull_request.base.sha }}...${{ github.event.pull_request.head.sha }}
+
+            Mirror the local Codex review behaviour the team has used through Sprint 9 + 10:
+
+            - Report P0 / P1 findings only when they would block merge (correctness, security, tenant data leakage, broken contracts).
+            - P2 / P3 are nice-to-haves; surface them but don't gate.
+            - Be specific: file:line + the issue + a one-line fix proposal.
+            - Verdict line at top: SAFE TO MERGE / NEEDS FIX / NEEDS DISCUSSION.
+            - Keep the report under 600 words.
+
+            PR title + body:
+            ----
+            ${{ github.event.pull_request.title }}
+            ${{ github.event.pull_request.body }}
+
+  post_feedback:
+    name: Post Codex feedback as PR comment
+    runs-on: ubuntu-latest
+    needs: codex
+    if: needs.codex.outputs.final_message != ''
+    permissions:
+      issues: write
+      pull-requests: write
+    steps:
+      - name: Comment on PR
+        uses: actions/github-script@v7
+        env:
+          CODEX_FINAL_MESSAGE: ${{ needs.codex.outputs.final_message }}
+        with:
+          github-token: ${{ github.token }}
+          script: |
+            const body = [
+              '## 🤖 Codex review',
+              '',
+              process.env.CODEX_FINAL_MESSAGE,
+              '',
+              '<sub>Posted by `.github/workflows/codex-review.yml`. To re-run, push a new commit.</sub>',
+            ].join('\n');
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.payload.pull_request.number,
+              body,
+            });

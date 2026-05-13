@@ -123,28 +123,30 @@ Pytest markers: `@pytest.mark.unit`, `@pytest.mark.integration`, `@pytest.mark.s
 
 ## PR Workflow With Codex Review
 
-This repository uses local Codex review through `openai/codex-plugin-cc`.
+PR review is run automatically by `openai/codex-action` in CI
+(`.github/workflows/codex-review.yml`). On every PR push, the action
+checks out the merge ref, runs Codex against the diff, and posts the
+verdict as a PR comment.
 
-Before shipping or merging a PR, run Codex review from Claude Code:
+Prereq: the `OPENAI_API_KEY` repo secret must be set. Without it the
+precondition job emits a warning and skips review; the rest of CI
+still runs.
+
+If you need to re-run a review (e.g., after fixing a finding), just
+push another commit — the workflow's concurrency group cancels the
+prior run and starts a fresh review on the new head.
+
+For local iteration before pushing, the legacy
+`openai/codex-plugin-cc` plugin still works:
 
 ```
 git fetch origin main
 /codex:review --base origin/main
 ```
 
-Use the remote ref (`origin/main`), not local `main` — if your checkout
-hasn't fetched recently, reviewing against local `main` runs the
-comparison against a stale base and the verdict won't reflect the diff
-GitHub will actually merge.
-
-For larger changes, prefer background review:
-
-```
-git fetch origin main
-/codex:review --base origin/main --background
-/codex:status
-/codex:result
-```
+Use it when you want a verdict without opening a PR, or when CI is
+unavailable. For routine PR review, lean on the CI action — it runs
+without anyone having to remember.
 
 Do not self-approve by posting `LGTM` markers.
 Do not require or wait for the old GitHub `codex-pr-review-gate` check.
