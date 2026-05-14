@@ -1,7 +1,9 @@
 """Solutions router - view and export generated solutions."""
 
+import json
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response, status
+from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
 
 from api.core.models import (
@@ -31,6 +33,7 @@ from api.schemas.solver import (
     StabilityMetrics,
     WorkloadStats,
 )
+from api.services import event_bus
 from api.timeutils import utcnow
 from api.utils.audit_logger import log_audit_event
 from api.utils.pdf_export import generate_schedule_pdf
@@ -84,6 +87,78 @@ def get_solution(solution_id: int, db: Session = Depends(get_db)):
     response = SolutionResponse.model_validate(solution)
     response.assignment_count = assignment_count
     return response
+
+
+@router.get(
+    "/{solution_id}/assignments/stream",
+    responses={
+        200: {
+            "content": {"text/event-stream": {}},
+            "description": "SSE stream of assignment-change events",
+        },
+        404: {"description": "Solution not found"},
+    },
+)
+async def stream_solution_assignments(
+    solution_id: int,
+    request: Request,
+    db: Session = Depends(get_db),
+    admin: Person = Depends(get_current_admin_user),
+):
+    """Server-Sent Events stream of assignment-change events for a solution.
+
+    Sprint 10 PR 10.4: replaces pull-to-refresh on the admin Solution
+    Review with live updates. Each subscriber gets its own per-process
+    asyncio.Queue (see api/services/event_bus.py); publishers fan-out
+    via `event_bus.publish(\"solution:{id}\", ...)` from assignment-mutation
+    endpoints.
+
+    Format: standard `text/event-stream` per W3C SSE. Each event is a
+    JSON object on a single `data:` line. The client reconnects on
+    drop; on reconnect it should re-fetch the snapshot via the
+    non-stream `/assignments` endpoint and resume.
+
+    Tenant scoping: tenancy via `get_current_admin_user` +
+    `verify_org_member` below — the stream only emits events for a
+    solution the admin can already read. No org_id is published in the
+    event body because the subscriber is already scoped.
+    """
+    # Scope the lookup by the admin's org so an existence probe across
+    # tenants returns the same 404 as an actually-missing solution.
+    # Without this scoping, an admin from org A querying a solution in
+    # org B would get 403 (the later verify_org_member) while an unknown
+    # id returns 404 — leaking cross-tenant solution existence.
+    solution = (
+        db.query(Solution)
+        .filter(Solution.id == solution_id, Solution.org_id == admin.org_id)
+        .first()
+    )
+    if not solution:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Solution not found",
+        )
+
+    topic = f"solution:{solution_id}"
+
+    async def _event_stream():
+        # Initial comment line so the connection is fully established
+        # before the first real event (some clients buffer until first
+        # byte arrives).
+        yield ": stream open\n\n"
+        async for event in event_bus.subscribe(topic):
+            if await request.is_disconnected():
+                break
+            yield f"data: {json.dumps(event)}\n\n"
+
+    return StreamingResponse(
+        _event_stream(),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache, no-transform",
+            "X-Accel-Buffering": "no",  # tell nginx not to buffer
+        },
+    )
 
 
 @router.get("/{solution_id}/assignments", response_model=SolutionAssignmentsResponse)
@@ -265,12 +340,16 @@ def export_solution(
             health_score=solution.health_score,
             solve_ms=solution.solve_ms,
             fairness=FairnessMetrics(
-                stdev=solution.metrics.get("fairness", {}).get("stdev", 0.0)
-                if solution.metrics
-                else 0.0,
-                per_person_counts=solution.metrics.get("fairness", {}).get("per_person_counts", {})
-                if solution.metrics
-                else {},
+                stdev=(
+                    solution.metrics.get("fairness", {}).get("stdev", 0.0)
+                    if solution.metrics
+                    else 0.0
+                ),
+                per_person_counts=(
+                    solution.metrics.get("fairness", {}).get("per_person_counts", {})
+                    if solution.metrics
+                    else {}
+                ),
             ),
             stability=StabilityMetrics(moves_from_published=0, affected_persons=0),
         ),

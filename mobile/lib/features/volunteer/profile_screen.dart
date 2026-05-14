@@ -15,6 +15,7 @@ import 'package:signupflow_mobile/auth/auth_provider.dart';
 import 'package:signupflow_mobile/features/volunteer/profile_provider.dart';
 import 'package:signupflow_mobile/theme/colors.dart';
 import 'package:signupflow_mobile/theme/components.dart';
+import 'package:signupflow_mobile/theme/theme_provider.dart';
 import 'package:signupflow_mobile/theme/typography.dart';
 
 class VolunteerProfileScreen extends ConsumerWidget {
@@ -119,6 +120,7 @@ class _Body extends ConsumerWidget {
             label: 'Roles',
             value: (person.roles?.toList() ?? const <String>[]).join(' · ').toUpperCase(),
           ),
+          const _ThemeToggle(),
           const SizedBox(height: 16),
           BlockButton(
             label: 'Log out',
@@ -222,6 +224,46 @@ class _CalendarCard extends ConsumerWidget {
             style: BlockType.bodySm,
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _ThemeToggle extends ConsumerWidget {
+  const _ThemeToggle();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final asyncMode = ref.watch(themeModeProvider);
+    final current = asyncMode.valueOrNull ?? ThemeMode.system;
+    final notifier = ref.read(themeModeProvider.notifier);
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: BlockCard(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'THEME',
+              style: BlockType.monoLabel.copyWith(fontSize: 10),
+            ),
+            const SizedBox(height: 8),
+            SegmentedButton<ThemeMode>(
+              segments: const [
+                ButtonSegment(value: ThemeMode.system, label: Text('System')),
+                ButtonSegment(value: ThemeMode.light, label: Text('Light')),
+                ButtonSegment(value: ThemeMode.dark, label: Text('Dark')),
+              ],
+              selected: {current},
+              onSelectionChanged: (selected) async {
+                if (selected.isEmpty) return;
+                await notifier.set(selected.first);
+              },
+              showSelectedIcon: false,
+            ),
+          ],
+        ),
       ),
     );
   }
