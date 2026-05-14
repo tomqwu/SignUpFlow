@@ -280,7 +280,10 @@ class _Body extends ConsumerWidget {
     final ctrl = TextEditingController();
     return showModalBottomSheet<String?>(
       context: context,
-      backgroundColor: BlockColors.bgCard,
+      backgroundColor: context.blockColor(
+        light: BlockColors.bgCard,
+        dark: BlockColors.bgCardDark,
+      ),
       isScrollControlled: true,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),

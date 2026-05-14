@@ -77,7 +77,10 @@ class AvailabilityScreen extends ConsumerWidget {
     final result = await showModalBottomSheet<bool>(
       context: context,
       isScrollControlled: true,
-      backgroundColor: BlockColors.bgCard,
+      backgroundColor: context.blockColor(
+        light: BlockColors.bgCard,
+        dark: BlockColors.bgCardDark,
+      ),
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
@@ -510,7 +513,10 @@ class _RruleCard extends ConsumerWidget {
     final picked = await showModalBottomSheet<String?>(
       context: context,
       isScrollControlled: true,
-      backgroundColor: BlockColors.bgCard,
+      backgroundColor: context.blockColor(
+        light: BlockColors.bgCard,
+        dark: BlockColors.bgCardDark,
+      ),
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
