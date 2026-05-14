@@ -110,7 +110,10 @@ class _PeopleScreenState extends ConsumerState<PeopleScreen> {
     final ok = await showModalBottomSheet<bool>(
       context: context,
       isScrollControlled: true,
-      backgroundColor: BlockColors.bgCard,
+      backgroundColor: context.blockColor(
+        light: BlockColors.bgCard,
+        dark: BlockColors.bgCardDark,
+      ),
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
