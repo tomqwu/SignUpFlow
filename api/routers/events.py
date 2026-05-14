@@ -2,7 +2,7 @@
 
 from datetime import datetime
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query, status
 from pydantic import BaseModel
 from sqlalchemy import or_
 from sqlalchemy.orm import Session
@@ -19,6 +19,7 @@ from api.models import (
 )
 from api.schemas.common import PaginationParams, get_pagination_params
 from api.schemas.event import EventCreate, EventList, EventResponse, EventUpdate
+from api.services import event_bus
 from api.timeutils import utcnow
 from api.utils.event_helpers import (
     count_people_with_role,
@@ -371,6 +372,7 @@ def validate_event(event_id: str, db: Session = Depends(get_db)) -> dict:
 def manage_assignment(
     event_id: str,
     request: AssignmentRequest,
+    background_tasks: BackgroundTasks,
     current_admin: Person = Depends(get_current_admin_user),
     db: Session = Depends(get_db),
 ):
@@ -406,7 +408,9 @@ def manage_assignment(
                 person=person.name,
             )
 
-        # Create new assignment (solution_id is None for manual assignments)
+        # Create new assignment (solution_id is None for manual assignments).
+        # No event_bus publish here: solution_id is None so there's no
+        # Solution Review stream to notify.
         assignment = Assignment(
             event_id=event_id,
             person_id=request.person_id,
@@ -438,8 +442,22 @@ def manage_assignment(
                 person=person.name,
             )
 
+        # Capture before delete — SQLAlchemy clears attributes post-delete.
+        deleted_solution_id = assignment.solution_id
+        deleted_assignment_id = assignment.id
         db.delete(assignment)
         db.commit()
+        if deleted_solution_id is not None:
+            background_tasks.add_task(
+                event_bus.publish,
+                f"solution:{deleted_solution_id}",
+                {
+                    "type": "assignment.changed",
+                    "assignment_id": deleted_assignment_id,
+                    "solution_id": deleted_solution_id,
+                    "status": "deleted",
+                },
+            )
         return success_response("events.assign.unassigned", person=person.name)
 
     else:
