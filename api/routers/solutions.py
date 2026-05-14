@@ -89,7 +89,16 @@ def get_solution(solution_id: int, db: Session = Depends(get_db)):
     return response
 
 
-@router.get("/{solution_id}/assignments/stream")
+@router.get(
+    "/{solution_id}/assignments/stream",
+    responses={
+        200: {
+            "content": {"text/event-stream": {}},
+            "description": "SSE stream of assignment-change events",
+        },
+        404: {"description": "Solution not found"},
+    },
+)
 async def stream_solution_assignments(
     solution_id: int,
     request: Request,
@@ -114,13 +123,21 @@ async def stream_solution_assignments(
     solution the admin can already read. No org_id is published in the
     event body because the subscriber is already scoped.
     """
-    solution = db.query(Solution).filter(Solution.id == solution_id).first()
+    # Scope the lookup by the admin's org so an existence probe across
+    # tenants returns the same 404 as an actually-missing solution.
+    # Without this scoping, an admin from org A querying a solution in
+    # org B would get 403 (the later verify_org_member) while an unknown
+    # id returns 404 — leaking cross-tenant solution existence.
+    solution = (
+        db.query(Solution)
+        .filter(Solution.id == solution_id, Solution.org_id == admin.org_id)
+        .first()
+    )
     if not solution:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Solution not found",
         )
-    verify_org_member(admin, solution.org_id)
 
     topic = f"solution:{solution_id}"
 

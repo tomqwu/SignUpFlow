@@ -10023,9 +10023,13 @@
             "content": {
               "application/json": {
                 "schema": {}
-              }
+              },
+              "text/event-stream": {}
             },
-            "description": "Successful Response"
+            "description": "SSE stream of assignment-change events"
+          },
+          "404": {
+            "description": "Solution not found"
           },
           "422": {
             "content": {
