@@ -11,7 +11,7 @@ Admins keep their existing entry points in api/routers/events.py
  `GET /events/assignments/all` for org-wide listing).
 """
 
-from fastapi import APIRouter, Depends, HTTPException, Request, status
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Request, status
 from sqlalchemy.orm import Session
 
 from api.database import get_db
@@ -23,6 +23,7 @@ from api.schemas.assignment import (
     AssignmentSwapRequest,
 )
 from api.schemas.common import ListResponse, PaginationParams, get_pagination_params
+from api.services import event_bus
 from api.utils.audit_logger import log_audit_event
 
 router = APIRouter(prefix="/assignments", tags=["assignments"])
@@ -64,10 +65,32 @@ def _audit_status_change(
     )
 
 
+def _publish_assignment_change(
+    background_tasks: BackgroundTasks,
+    assignment: Assignment,
+) -> None:
+    # Manual/admin-created assignments have solution_id=None and don't
+    # belong to a Solution Review stream. Skip them to avoid publishing
+    # under the "solution:None" topic.
+    if assignment.solution_id is None:
+        return
+    background_tasks.add_task(
+        event_bus.publish,
+        f"solution:{assignment.solution_id}",
+        {
+            "type": "assignment.changed",
+            "assignment_id": assignment.id,
+            "solution_id": assignment.solution_id,
+            "status": assignment.status,
+        },
+    )
+
+
 @router.post("/{assignment_id}/accept", response_model=AssignmentResponse)
 def accept_assignment(
     assignment_id: int,
     http_request: Request,
+    background_tasks: BackgroundTasks,
     current_user: Person = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
@@ -84,6 +107,7 @@ def accept_assignment(
         assignment=assignment,
         http_request=http_request,
     )
+    _publish_assignment_change(background_tasks, assignment)
     return assignment
 
 
@@ -92,6 +116,7 @@ def decline_assignment(
     assignment_id: int,
     body: AssignmentDeclineRequest,
     http_request: Request,
+    background_tasks: BackgroundTasks,
     current_user: Person = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
@@ -109,6 +134,7 @@ def decline_assignment(
         http_request=http_request,
         details={"decline_reason": body.decline_reason},
     )
+    _publish_assignment_change(background_tasks, assignment)
     return assignment
 
 
@@ -117,6 +143,7 @@ def request_swap(
     assignment_id: int,
     body: AssignmentSwapRequest,
     http_request: Request,
+    background_tasks: BackgroundTasks,
     current_user: Person = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
@@ -134,6 +161,7 @@ def request_swap(
         http_request=http_request,
         details=details,
     )
+    _publish_assignment_change(background_tasks, assignment)
     return assignment
 
 

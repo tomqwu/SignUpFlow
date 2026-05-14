@@ -18,6 +18,7 @@ dependencies:
   flutter_secure_storage: ^9.2.2    # JWT in iOS Keychain
   go_router: ^14.6.0                # declarative routing + deep links
   google_fonts: ^6.2.1              # Inter + JetBrains Mono per brand-spec
+  http: ^1.2.0                      # SSE consumer for Solution Review (Sprint 10.4b)
   intl: ^0.19.0                     # dates / timezones
   riverpod_annotation: ^2.6.1       # Riverpod codegen annotation
   signupflow_api:                   # generated dart-dio client; run `make mobile-codegen` to refresh

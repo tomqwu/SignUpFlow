@@ -7,6 +7,7 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:signupflow_api/signupflow_api.dart' as api;
 import 'package:signupflow_mobile/features/admin/solution_assignments_provider.dart';
+import 'package:signupflow_mobile/features/admin/solution_assignments_stream_provider.dart';
 import 'package:signupflow_mobile/features/admin/solver_provider.dart';
 import 'package:signupflow_mobile/theme/colors.dart';
 import 'package:signupflow_mobile/theme/components.dart';
@@ -33,6 +34,15 @@ class _SolutionReviewScreenState extends ConsumerState<SolutionReviewScreen> {
         const Center(child: Text('Invalid solution id')),
       );
     }
+    // Sprint 10.4b: each SSE event from the backend is a refetch signal.
+    // Invalidating the FutureProvider re-fires the existing GET /assignments
+    // call, so the UI stays canonical without merging deltas into state.
+    ref.listen<AsyncValue<AssignmentChangedEvent>>(
+      solutionAssignmentsStreamProvider(id),
+      (previous, next) {
+        next.whenData((_) => ref.invalidate(solutionAssignmentsProvider(id)));
+      },
+    );
     final asyncData = ref.watch(solutionDetailProvider(id));
     return _frame(
       asyncData.when(
