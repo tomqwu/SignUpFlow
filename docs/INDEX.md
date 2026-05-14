@@ -168,7 +168,7 @@ Code quality and refactoring documentation.
 
 | Document | Description | Status |
 |----------|-------------|--------|
-| [TECHNICAL_DEBT.md](TECHNICAL_DEBT.md) | Technical debt tracking | ✅ Active |
+| [TECHNICAL_DEBT.md](archive/TECHNICAL_DEBT.md) | Technical debt tracking | 📦 Archived 2026-05-14 (snapshot from 2025-10-15; recreate when needed) |
 | [REFACTORING.md](REFACTORING.md) | Refactoring plans | ✅ Reference |
 | [REFACTORING_SUMMARY.md](REFACTORING_SUMMARY.md) | Completed refactorings | ✅ Historical |
 | [DEBUG_REFACTORING.md](DEBUG_REFACTORING.md) | Debug-related refactoring | ✅ Complete |
@@ -223,7 +223,7 @@ Outdated or superseded documentation (kept for historical reference).
 | Document | Description | Status |
 |----------|-------------|--------|
 | [SPEC_KIT_SETUP.md](SPEC_KIT_SETUP.md) | SpecKit setup guide | 🔮 Future feature |
-| [SPEC_KIT_PROGRESS.md](SPEC_KIT_PROGRESS.md) | SpecKit progress tracking | 🔮 Future feature |
+| [SPEC_KIT_PROGRESS.md](archive/SPEC_KIT_PROGRESS.md) | SpecKit progress tracking | 📦 Archived 2026-05-14 (superseded by per-sprint `specs/0XX-sprint-N-completion/`) |
 
 ### Archive Folder
 Additional archived docs in [docs/archive/](archive/)
