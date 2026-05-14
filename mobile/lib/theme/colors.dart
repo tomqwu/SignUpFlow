@@ -35,4 +35,18 @@ abstract final class BlockColors {
   static const ink3Dark = Color(0xFF71717A);
 
   static const line1Dark = Color(0xFF27272A);
+  // Sits between bgCardDark (#18181B) and line1Dark (#27272A) so the
+  // segment-toggle group background reads as a subtle inset surface in
+  // dark mode the same way `line2` does in light mode.
+  static const line2Dark = Color(0xFF1F1F23);
+}
+
+extension BlockColorsBrightness on BuildContext {
+  /// Pick the brightness-appropriate variant of a paired color token.
+  ///
+  /// Use at call sites instead of hardcoding `Colors.white` or a
+  /// light-only `BlockColors.*` token where the surface should follow
+  /// the active theme.
+  Color blockColor({required Color light, required Color dark}) =>
+      Theme.of(this).brightness == Brightness.dark ? dark : light;
 }
