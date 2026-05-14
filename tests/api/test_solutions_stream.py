@@ -36,7 +36,9 @@ def _seed_admin_and_solution(db, *, org_id="sse_org", solution_id=987):
     solution = Solution(
         id=solution_id,
         org_id=org_id,
-        name="Test Solution",
+        hard_violations=0,
+        soft_score=0.0,
+        health_score=1.0,
     )
     db.add(solution)
     db.commit()
