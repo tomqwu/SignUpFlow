@@ -24,11 +24,28 @@ class BlockButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Outlined buttons (secondary/destructive) need a surface that
+    // tracks the theme — the same hardcoded white that reads as a
+    // "raised pill" on a light background becomes an invisible blob
+    // on dark. Use `bgCardDark` as the dark-mode raised surface.
+    final outlinedBg = context.blockColor(
+      light: Colors.white,
+      dark: BlockColors.bgCardDark,
+    );
+    final outlinedFg = context.blockColor(
+      light: BlockColors.ink1,
+      dark: BlockColors.ink1Dark,
+    );
+    final outlinedBorder = context.blockColor(
+      light: BlockColors.line1,
+      dark: BlockColors.line1Dark,
+    );
     final (bg, fg, border) = switch (kind) {
       BlockButtonKind.primary => (BlockColors.ink1, Colors.white, null),
       BlockButtonKind.go => (BlockColors.accent, Colors.white, null),
-      BlockButtonKind.secondary => (Colors.white, BlockColors.ink1, BlockColors.line1),
-      BlockButtonKind.destructive => (Colors.white, BlockColors.danger, BlockColors.line1),
+      BlockButtonKind.secondary => (outlinedBg, outlinedFg, outlinedBorder),
+      BlockButtonKind.destructive =>
+        (outlinedBg, BlockColors.danger, outlinedBorder),
     };
     return SizedBox(
       width: double.infinity,
@@ -97,8 +114,16 @@ class RoleChip extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
       decoration: BoxDecoration(
-        color: Colors.white,
-        border: Border.all(color: BlockColors.line1),
+        color: context.blockColor(
+          light: Colors.white,
+          dark: BlockColors.bgCardDark,
+        ),
+        border: Border.all(
+          color: context.blockColor(
+            light: BlockColors.line1,
+            dark: BlockColors.line1Dark,
+          ),
+        ),
         borderRadius: BorderRadius.circular(6),
       ),
       child: Text(
@@ -107,7 +132,10 @@ class RoleChip extends StatelessWidget {
           fontSize: 10,
           fontWeight: FontWeight.w500,
           letterSpacing: 0.6,
-          color: BlockColors.ink2,
+          color: context.blockColor(
+            light: BlockColors.ink2,
+            dark: BlockColors.ink2Dark,
+          ),
         ),
       ),
     );

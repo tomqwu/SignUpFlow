@@ -163,27 +163,35 @@ class _Segment extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(3),
       decoration: BoxDecoration(
-        color: BlockColors.line2,
+        color: context.blockColor(
+          light: BlockColors.line2,
+          dark: BlockColors.line2Dark,
+        ),
         borderRadius: BorderRadius.circular(999),
       ),
       child: Row(
         children: [
-          Expanded(child: _seg('ASSIGNMENTS', 'assignments')),
-          Expanded(child: _seg('STATS', 'stats')),
-          Expanded(child: _seg('CONFLICTS', 'conflicts')),
+          Expanded(child: _seg(context, 'ASSIGNMENTS', 'assignments')),
+          Expanded(child: _seg(context, 'STATS', 'stats')),
+          Expanded(child: _seg(context, 'CONFLICTS', 'conflicts')),
         ],
       ),
     );
   }
 
-  Widget _seg(String label, String key) {
+  Widget _seg(BuildContext context, String label, String key) {
     final active = value == key;
     return GestureDetector(
       onTap: () => onChanged(key),
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 7),
         decoration: BoxDecoration(
-          color: active ? Colors.white : Colors.transparent,
+          color: active
+              ? context.blockColor(
+                  light: Colors.white,
+                  dark: BlockColors.bgCardDark,
+                )
+              : Colors.transparent,
           borderRadius: BorderRadius.circular(999),
         ),
         alignment: Alignment.center,
@@ -191,7 +199,15 @@ class _Segment extends StatelessWidget {
           label,
           style: BlockType.monoLabel.copyWith(
             fontSize: 11,
-            color: active ? BlockColors.ink1 : BlockColors.ink2,
+            color: active
+                ? context.blockColor(
+                    light: BlockColors.ink1,
+                    dark: BlockColors.ink1Dark,
+                  )
+                : context.blockColor(
+                    light: BlockColors.ink2,
+                    dark: BlockColors.ink2Dark,
+                  ),
           ),
         ),
       ),
