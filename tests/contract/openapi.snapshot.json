@@ -10003,6 +10003,52 @@
         ]
       }
     },
+    "/api/v1/solutions/{solution_id}/assignments/stream": {
+      "get": {
+        "description": "Server-Sent Events stream of assignment-change events for a solution.\n\nSprint 10 PR 10.4: replaces pull-to-refresh on the admin Solution\nReview with live updates. Each subscriber gets its own per-process\nasyncio.Queue (see api/services/event_bus.py); publishers fan-out\nvia `event_bus.publish(\"solution:{id}\", ...)` from assignment-mutation\nendpoints.\n\nFormat: standard `text/event-stream` per W3C SSE. Each event is a\nJSON object on a single `data:` line. The client reconnects on\ndrop; on reconnect it should re-fetch the snapshot via the\nnon-stream `/assignments` endpoint and resume.\n\nTenant scoping: tenancy via `get_current_admin_user` +\n`verify_org_member` below \u2014 the stream only emits events for a\nsolution the admin can already read. No org_id is published in the\nevent body because the subscriber is already scoped.",
+        "operationId": "streamSolutionAssignments",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "solution_id",
+            "required": true,
+            "schema": {
+              "title": "Solution Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Stream Solution Assignments",
+        "tags": [
+          "solutions"
+        ]
+      }
+    },
     "/api/v1/solutions/{solution_id}/export": {
       "post": {
         "description": "Export solution in various formats (CSV, ICS, JSON).",
