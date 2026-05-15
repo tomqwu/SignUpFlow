@@ -41,9 +41,7 @@ def _landing_for(person: Person) -> str:
 
 
 def set_session_cookie(response, person: Person) -> None:
-    token = create_access_token(
-        data={"sub": person.id, "pwd_iat": _pwd_iat_for(person)}
-    )
+    token = create_access_token(data={"sub": person.id, "pwd_iat": _pwd_iat_for(person)})
     response.set_cookie(
         key=SESSION_COOKIE,
         value=token,
@@ -65,9 +63,7 @@ def login_form(
         return RedirectResponse(url=_landing_for(person), status_code=303)
     from web.app import templates
 
-    return templates.TemplateResponse(
-        request, "auth/login.html", {"error": None}
-    )
+    return templates.TemplateResponse(request, "auth/login.html", {"error": None})
 
 
 @router.post("/auth/login")

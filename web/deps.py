@@ -52,9 +52,7 @@ def _resolve_person(request: Request, db: Session) -> Person | None:
     return person
 
 
-def get_session_user(
-    request: Request, db: Session = Depends(get_db)
-) -> Person:
+def get_session_user(request: Request, db: Session = Depends(get_db)) -> Person:
     """Require an authenticated browser session. Redirects to /auth/login
     (303) when absent or invalid."""
     person = _resolve_person(request, db)
@@ -74,9 +72,7 @@ def get_session_admin(
     return person
 
 
-def get_optional_session_user(
-    request: Request, db: Session = Depends(get_db)
-) -> Person | None:
+def get_optional_session_user(request: Request, db: Session = Depends(get_db)) -> Person | None:
     """Resolve the session user if present, else None. For pages like
     /auth/login that render differently when already signed in."""
     return _resolve_person(request, db)

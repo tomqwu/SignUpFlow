@@ -31,9 +31,7 @@ def root(request: Request):
 
 
 @router.get("/v/schedule", response_class=HTMLResponse)
-def volunteer_schedule(
-    request: Request, person: Person = Depends(get_session_user)
-):
+def volunteer_schedule(request: Request, person: Person = Depends(get_session_user)):
     from web.app import templates
 
     return templates.TemplateResponse(
@@ -44,9 +42,7 @@ def volunteer_schedule(
 
 
 @router.get("/v/profile", response_class=HTMLResponse)
-def volunteer_profile(
-    request: Request, person: Person = Depends(get_session_user)
-):
+def volunteer_profile(request: Request, person: Person = Depends(get_session_user)):
     from web.app import templates
 
     return templates.TemplateResponse(
@@ -57,9 +53,7 @@ def volunteer_profile(
 
 
 @router.get("/a/dashboard", response_class=HTMLResponse)
-def admin_dashboard(
-    request: Request, person: Person = Depends(get_session_admin)
-):
+def admin_dashboard(request: Request, person: Person = Depends(get_session_admin)):
     from web.app import templates
 
     return templates.TemplateResponse(

@@ -13,11 +13,7 @@ def _all_api_routes():
     # include_in_schema=False — they're not API endpoints and correctly
     # carry no codegen operationId, so they're excluded here just as they
     # are from /openapi.json and the contract snapshot.
-    return [
-        r
-        for r in app.routes
-        if isinstance(r, APIRoute) and r.include_in_schema
-    ]
+    return [r for r in app.routes if isinstance(r, APIRoute) and r.include_in_schema]
 
 
 def test_every_api_route_has_operation_id():
