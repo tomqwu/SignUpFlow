@@ -97,7 +97,7 @@ class AvailabilityScreen extends ConsumerWidget {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                Text('ADD TIME OFF', style: BlockType.monoLabel.copyWith(color: BlockColors.ink1)),
+                Text('ADD TIME OFF', style: BlockType.monoLabel.copyWith(color: context.blockColor(light: BlockColors.ink1, dark: BlockColors.ink1Dark))),
                 const SizedBox(height: 12),
                 Row(
                   children: [
@@ -130,7 +130,7 @@ class AvailabilityScreen extends ConsumerWidget {
                   style: BlockType.body,
                   decoration: InputDecoration(
                     hintText: 'Reason (optional)',
-                    hintStyle: BlockType.bodySm.copyWith(color: BlockColors.ink3),
+                    hintStyle: BlockType.bodySm.copyWith(color: context.blockColor(light: BlockColors.ink3, dark: BlockColors.ink3Dark)),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
                       borderSide: const BorderSide(color: BlockColors.line1),
@@ -435,7 +435,7 @@ class _RruleCard extends ConsumerWidget {
               children: [
                 Text(
                   'No recurring rule yet.',
-                  style: BlockType.bodySm.copyWith(color: BlockColors.ink2),
+                  style: BlockType.bodySm.copyWith(color: context.blockColor(light: BlockColors.ink2, dark: BlockColors.ink2Dark)),
                 ),
                 const SizedBox(height: 10),
                 BlockButton(
@@ -459,7 +459,7 @@ class _RruleCard extends ConsumerWidget {
               Text(presetLabel, style: BlockType.body),
               if (presetLabel != rrule) ...[
                 const SizedBox(height: 4),
-                Text(rrule, style: BlockType.bodySm.copyWith(color: BlockColors.ink2)),
+                Text(rrule, style: BlockType.bodySm.copyWith(color: context.blockColor(light: BlockColors.ink2, dark: BlockColors.ink2Dark))),
               ],
               const SizedBox(height: 12),
               Row(
@@ -533,7 +533,7 @@ class _RruleCard extends ConsumerWidget {
           children: [
             Text(
               'CHOOSE A RULE',
-              style: BlockType.monoLabel.copyWith(color: BlockColors.ink1),
+              style: BlockType.monoLabel.copyWith(color: context.blockColor(light: BlockColors.ink1, dark: BlockColors.ink1Dark)),
             ),
             const SizedBox(height: 10),
             for (final p in kRrulePresets)
@@ -558,7 +558,7 @@ class _RruleCard extends ConsumerWidget {
               style: BlockType.bodySm,
               decoration: InputDecoration(
                 hintText: 'FREQ=WEEKLY;BYDAY=MO,WE',
-                hintStyle: BlockType.bodySm.copyWith(color: BlockColors.ink3),
+                hintStyle: BlockType.bodySm.copyWith(color: context.blockColor(light: BlockColors.ink3, dark: BlockColors.ink3Dark)),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
                   borderSide: const BorderSide(color: BlockColors.line1),
@@ -604,7 +604,7 @@ class _ExceptionsCard extends ConsumerWidget {
           BlockCard(
             child: Text(
               'No one-off blocked dates yet.',
-              style: BlockType.bodySm.copyWith(color: BlockColors.ink2),
+              style: BlockType.bodySm.copyWith(color: context.blockColor(light: BlockColors.ink2, dark: BlockColors.ink2Dark)),
               textAlign: TextAlign.center,
             ),
           )

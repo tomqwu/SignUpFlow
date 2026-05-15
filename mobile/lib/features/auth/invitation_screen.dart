@@ -118,7 +118,7 @@ class _InvitationScreenState extends ConsumerState<InvitationScreen> {
                     child: Text(
                       '← Back to sign in',
                       style: BlockType.bodySm
-                          .copyWith(color: BlockColors.ink2),
+                          .copyWith(color: context.blockColor(light: BlockColors.ink2, dark: BlockColors.ink2Dark)),
                     ),
                   ),
                 ),
@@ -196,7 +196,7 @@ class _PasteTokenForm extends StatelessWidget {
               const SizedBox(height: 6),
               Text(
                 'Paste the invitation token from your email below.',
-                style: BlockType.bodySm.copyWith(color: BlockColors.ink2),
+                style: BlockType.bodySm.copyWith(color: context.blockColor(light: BlockColors.ink2, dark: BlockColors.ink2Dark)),
               ),
             ],
           ),
@@ -253,7 +253,7 @@ class _AcceptForm extends StatelessWidget {
               ),
               Text(
                 preview.invitedEmail,
-                style: BlockType.bodySm.copyWith(color: BlockColors.ink2),
+                style: BlockType.bodySm.copyWith(color: context.blockColor(light: BlockColors.ink2, dark: BlockColors.ink2Dark)),
               ),
               const SizedBox(height: 12),
               _row('Organization', preview.orgId),
@@ -330,7 +330,7 @@ class _InvitationError extends StatelessWidget {
           Text(
             'Ask your admin to resend the invitation, or paste the token '
             'manually below.',
-            style: BlockType.bodySm.copyWith(color: BlockColors.ink2),
+            style: BlockType.bodySm.copyWith(color: context.blockColor(light: BlockColors.ink2, dark: BlockColors.ink2Dark)),
           ),
         ],
       ),

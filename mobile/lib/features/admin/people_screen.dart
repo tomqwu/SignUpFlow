@@ -130,7 +130,7 @@ class _PeopleScreenState extends ConsumerState<PeopleScreen> {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                Text('INVITE PERSON', style: BlockType.monoLabel.copyWith(color: BlockColors.ink1)),
+                Text('INVITE PERSON', style: BlockType.monoLabel.copyWith(color: context.blockColor(light: BlockColors.ink1, dark: BlockColors.ink1Dark))),
                 const SizedBox(height: 12),
                 TextField(
                   controller: nameCtrl,
@@ -245,7 +245,7 @@ class _SearchField extends StatelessWidget {
               style: BlockType.body,
               decoration: InputDecoration(
                 hintText: 'Search by name or email…',
-                hintStyle: BlockType.body.copyWith(color: BlockColors.ink3),
+                hintStyle: BlockType.body.copyWith(color: context.blockColor(light: BlockColors.ink3, dark: BlockColors.ink3Dark)),
                 border: InputBorder.none,
                 isDense: true,
               ),

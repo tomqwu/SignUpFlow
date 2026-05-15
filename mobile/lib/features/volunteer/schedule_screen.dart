@@ -187,7 +187,7 @@ class _AssignmentRow extends StatelessWidget {
                           // location field.
                           Text(
                             'Event ${row.event.id}',
-                            style: BlockType.bodySm.copyWith(color: BlockColors.ink2),
+                            style: BlockType.bodySm.copyWith(color: context.blockColor(light: BlockColors.ink2, dark: BlockColors.ink2Dark)),
                           ),
                           StatusText(kind: _status(), label: row.assignment.status),
                         ],
