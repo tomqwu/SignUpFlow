@@ -8,7 +8,16 @@ from api.main import app
 
 
 def _all_api_routes():
-    return [r for r in app.routes if isinstance(r, APIRoute)]
+    # Only schema routes: these checks are about the OpenAPI / Dart-codegen
+    # surface. The web app (Sprint 11) mounts HTML routes with
+    # include_in_schema=False — they're not API endpoints and correctly
+    # carry no codegen operationId, so they're excluded here just as they
+    # are from /openapi.json and the contract snapshot.
+    return [
+        r
+        for r in app.routes
+        if isinstance(r, APIRoute) and r.include_in_schema
+    ]
 
 
 def test_every_api_route_has_operation_id():
