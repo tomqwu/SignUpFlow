@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block title %}Sign in · SignUpFlow{% endblock %}
+{% block body %}
+<div class="auth-wrap">
+  <div class="brand-mark">S</div>
+  <div class="wordmark">SIGNUP<span class="slash">/</span>FLOW</div>
+  <div class="auth-sub">Volunteer scheduling</div>
+
+  {% if error %}
+  <div class="form-error" role="alert">{{ error }}</div>
+  {% endif %}
+
+  <form method="post" action="/auth/login">
+    <div class="field">
+      <label class="field-label" for="email">Email</label>
+      <input id="email" name="email" type="email" autocomplete="email"
+             placeholder="you@church.org" required autofocus>
+    </div>
+    <div class="field">
+      <label class="field-label" for="password">Password</label>
+      <input id="password" name="password" type="password"
+             autocomplete="current-password" placeholder="••••••••" required>
+    </div>
+    <div class="spacer-12"></div>
+    <button class="btn btn-primary" type="submit">Sign in</button>
+  </form>
+
+  <a class="auth-link" href="/auth/forgot">Forgot password?</a>
+</div>
+{% endblock %}

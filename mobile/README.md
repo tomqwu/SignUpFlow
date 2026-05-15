@@ -1,3 +1,11 @@
+> ## ⏸️ Sprint 11+: mobile feature work is paused
+>
+> The product is moving to a responsive **web app** (`/web`, HTMX +
+> FastAPI on the same backend). New screens and features land there.
+> This Flutter app stays in the repo, its CI lane keeps running, and
+> bug fixes are still welcome — but no new feature work until the web
+> app reaches parity. See the Sprint 11 plan.
+
 # signupflow_mobile
 
 A new Flutter project.

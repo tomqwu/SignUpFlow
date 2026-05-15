@@ -1,0 +1,10 @@
+{# Bottom tab bar. `tabs` is a list of (href, icon, label, key);
+   `active_tab` selects the highlighted one. #}
+<nav class="tab-bar">
+  {% for href, icon, label, key in tabs %}
+  <a href="{{ href }}" class="{{ 'active' if active_tab == key else '' }}">
+    <span class="tab-icon">{{ icon }}</span>
+    <span class="tab-label">{{ label }}</span>
+  </a>
+  {% endfor %}
+</nav>

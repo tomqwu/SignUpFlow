@@ -206,6 +206,12 @@ def _set_camel_case_operation_ids(app: FastAPI) -> None:
 
 _set_camel_case_operation_ids(app)
 
+# Server-rendered responsive web app (Sprint 11). Mounted last; routes
+# are include_in_schema=False so they stay out of the OpenAPI contract.
+from web.app import mount_web  # noqa: E402
+
+mount_web(app)
+
 
 def start():
     """Start the API server (used by poetry script)."""
