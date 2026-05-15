@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block title %}Profile · SignUpFlow{% endblock %}
+{% block body %}
+<div class="nav"><span class="nav-back"></span><span class="nav-action"></span></div>
+<div class="page-title">Profile</div>
+<div class="scroll" x-data="{
+    theme: document.documentElement.getAttribute('data-theme'),
+    set(t){ this.theme = t;
+            document.documentElement.setAttribute('data-theme', t);
+            try { localStorage.setItem('sf-theme', t); } catch(e){} }
+  }">
+  <div class="mono-label">Account</div>
+  <div class="card">
+    <div class="row-title">{{ person.name }}</div>
+    <div class="row-sub">{{ person.email or '—' }}</div>
+    <div class="spacer-12"></div>
+    <div class="mono-data">{{ (person.roles or ['volunteer'])|join(' · ')|upper }}</div>
+  </div>
+
+  <div class="mono-label">Appearance</div>
+  <div class="seg cols-3" role="group" aria-label="Theme">
+    <button type="button" :class="theme==='light' ? 'active' : ''" @click="set('light')">Light</button>
+    <button type="button" :class="theme==='dark' ? 'active' : ''" @click="set('dark')">Dark</button>
+    <button type="button"
+            @click="set(window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark':'light')">
+      System
+    </button>
+  </div>
+
+  <div class="spacer-18"></div>
+  <form method="post" action="/auth/logout">
+    <button class="btn btn-destructive" type="submit">Sign out</button>
+  </form>
+</div>
+{% set tabs = [
+  ('/v/schedule', '▦', 'Schedule', 'schedule'),
+  ('/v/profile', '◍', 'Profile', 'profile'),
+] %}
+{% include "_nav.html" %}
+{% endblock %}

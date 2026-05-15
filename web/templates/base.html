@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>{% block title %}SignUpFlow{% endblock %}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/web/static/css/styles.css">
+  <!-- No-flash theme: apply persisted/system theme before first paint. -->
+  <script>
+    (function () {
+      try {
+        var t = localStorage.getItem('sf-theme');
+        if (!t) {
+          t = window.matchMedia('(prefers-color-scheme: dark)').matches
+            ? 'dark' : 'light';
+        }
+        document.documentElement.setAttribute('data-theme', t);
+      } catch (e) {}
+    })();
+  </script>
+  <script src="/web/static/js/htmx.min.js" defer></script>
+  <script src="/web/static/js/sse.js" defer></script>
+  <script src="/web/static/js/alpine.min.js" defer></script>
+</head>
+<body>
+  <div class="app">
+    {% block body %}{% endblock %}
+  </div>
+</body>
+</html>

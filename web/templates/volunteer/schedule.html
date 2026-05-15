@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block title %}Schedule · SignUpFlow{% endblock %}
+{% block body %}
+<div class="nav">
+  <span class="nav-back"></span>
+  <span class="nav-action"></span>
+</div>
+<div class="page-title">Schedule</div>
+<div class="scroll">
+  <div class="empty">
+    Signed in as <strong>{{ person.name }}</strong>.<br>
+    Your upcoming assignments will appear here.<br>
+    <span class="mono-data">(Sprint 11.1)</span>
+  </div>
+</div>
+{% set tabs = [
+  ('/v/schedule', '▦', 'Schedule', 'schedule'),
+  ('/v/profile', '◍', 'Profile', 'profile'),
+] %}
+{% include "_nav.html" %}
+{% endblock %}
