@@ -153,7 +153,7 @@ class _SolutionDropdown extends StatelessWidget {
           DropdownButtonHideUnderline(
             child: DropdownButton<int>(
               value: value,
-              hint: Text('Pick…', style: BlockType.body.copyWith(color: BlockColors.ink3)),
+              hint: Text('Pick…', style: BlockType.body.copyWith(color: context.blockColor(light: BlockColors.ink3, dark: BlockColors.ink3Dark))),
               isExpanded: true,
               items: [
                 for (final s in solutions)

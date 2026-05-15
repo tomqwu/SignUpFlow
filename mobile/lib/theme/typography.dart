@@ -1,10 +1,15 @@
 // Block-Mono typography. Inter for display/body, JetBrains Mono for data/labels.
 // Weights and tracking match mobile/prototype/brand-spec.md.
+//
+// Colors are deliberately NOT baked into these styles — they flow from the
+// active ThemeData.textTheme via Material's DefaultTextStyle inheritance,
+// so dark mode picks up `BlockColors.ink*Dark` automatically. Call sites
+// that want a specific ink role (e.g. `ink3` for secondary text) should
+// override via `.copyWith(color: ...)` and prefer the theme-aware helper
+// `context.blockColor(light: ..., dark: ...)` from `colors.dart`.
 
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-
-import 'package:signupflow_mobile/theme/colors.dart';
 
 abstract final class BlockType {
   // Display roles — Inter
@@ -12,7 +17,6 @@ abstract final class BlockType {
         fontSize: size,
         fontWeight: FontWeight.w700,
         letterSpacing: -0.025 * size,
-        color: BlockColors.ink1,
         height: 1.05,
       );
 
@@ -20,20 +24,17 @@ abstract final class BlockType {
     fontSize: 17,
     fontWeight: FontWeight.w600,
     letterSpacing: -0.255,
-    color: BlockColors.ink1,
   );
 
   static TextStyle body = GoogleFonts.inter(
     fontSize: 15,
     fontWeight: FontWeight.w500,
-    color: BlockColors.ink1,
     height: 1.4,
   );
 
   static TextStyle bodySm = GoogleFonts.inter(
     fontSize: 13,
     fontWeight: FontWeight.w400,
-    color: BlockColors.ink2,
     height: 1.5,
   );
 
@@ -41,7 +42,6 @@ abstract final class BlockType {
     fontSize: 11,
     fontWeight: FontWeight.w500,
     letterSpacing: 0.11,
-    color: BlockColors.ink2,
   );
 
   // Mono roles — JetBrains Mono, always uppercase by convention
@@ -49,20 +49,17 @@ abstract final class BlockType {
     fontSize: 11,
     fontWeight: FontWeight.w500,
     letterSpacing: 0.88,
-    color: BlockColors.ink3,
   );
 
   static TextStyle monoData = GoogleFonts.jetBrainsMono(
     fontSize: 12,
     fontWeight: FontWeight.w500,
     letterSpacing: 0.48,
-    color: BlockColors.ink2,
   );
 
   static TextStyle monoTiny = GoogleFonts.jetBrainsMono(
     fontSize: 10,
     fontWeight: FontWeight.w500,
     letterSpacing: 0.6,
-    color: BlockColors.ink3,
   );
 }

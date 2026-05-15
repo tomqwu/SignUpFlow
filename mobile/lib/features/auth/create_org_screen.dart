@@ -148,7 +148,7 @@ class _CreateOrgScreenState extends ConsumerState<CreateOrgScreen> {
                     child: Text(
                       '← Back to sign in',
                       style: BlockType.bodySm
-                          .copyWith(color: BlockColors.ink2),
+                          .copyWith(color: context.blockColor(light: BlockColors.ink2, dark: BlockColors.ink2Dark)),
                     ),
                   ),
                 ),
@@ -217,7 +217,7 @@ class _CreateOrgScreenState extends ConsumerState<CreateOrgScreen> {
                 Text(
                   'You become the first admin of the new organization.',
                   textAlign: TextAlign.center,
-                  style: BlockType.bodySm.copyWith(color: BlockColors.ink3),
+                  style: BlockType.bodySm.copyWith(color: context.blockColor(light: BlockColors.ink3, dark: BlockColors.ink3Dark)),
                 ),
                 const SizedBox(height: 32),
               ],

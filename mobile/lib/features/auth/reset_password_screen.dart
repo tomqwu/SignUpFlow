@@ -103,8 +103,12 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
                     ),
                     child: Text(
                       '← Back to sign in',
-                      style: BlockType.bodySm
-                          .copyWith(color: BlockColors.ink2),
+                      style: BlockType.bodySm.copyWith(
+                        color: context.blockColor(
+                          light: BlockColors.ink2,
+                          dark: BlockColors.ink2Dark,
+                        ),
+                      ),
                     ),
                   ),
                 ),

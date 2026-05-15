@@ -226,8 +226,18 @@ class BlockCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: color ?? BlockColors.bgCard,
-        border: Border.all(color: borderColor ?? BlockColors.line1),
+        color: color ??
+            context.blockColor(
+              light: BlockColors.bgCard,
+              dark: BlockColors.bgCardDark,
+            ),
+        border: Border.all(
+          color: borderColor ??
+              context.blockColor(
+                light: BlockColors.line1,
+                dark: BlockColors.line1Dark,
+              ),
+        ),
         borderRadius: BorderRadius.circular(14),
       ),
       padding: padding,
@@ -353,7 +363,7 @@ class PageTitle extends StatelessWidget {
             const SizedBox(width: 8),
             Text(
               trailingCount!,
-              style: BlockType.displayUpper(28).copyWith(color: BlockColors.ink3),
+              style: BlockType.displayUpper(28).copyWith(color: context.blockColor(light: BlockColors.ink3, dark: BlockColors.ink3Dark)),
             ),
           ],
         ],

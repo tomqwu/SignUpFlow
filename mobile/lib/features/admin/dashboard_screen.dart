@@ -184,7 +184,7 @@ class _PublishedKpi extends StatelessWidget {
           const Spacer(),
           Text(
             'Solution #${published!.id}',
-            style: BlockType.monoTiny.copyWith(color: BlockColors.ink2),
+            style: BlockType.monoTiny.copyWith(color: context.blockColor(light: BlockColors.ink2, dark: BlockColors.ink2Dark)),
           ),
         ],
       ),

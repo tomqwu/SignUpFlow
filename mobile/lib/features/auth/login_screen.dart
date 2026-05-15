@@ -115,7 +115,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   onPressed: () => context.go('/forgot-password'),
                   child: Text(
                     'Forgot password?',
-                    style: BlockType.bodySm.copyWith(color: BlockColors.ink2),
+                    style: BlockType.bodySm.copyWith(color: context.blockColor(light: BlockColors.ink2, dark: BlockColors.ink2Dark)),
                   ),
                 ),
                 const SizedBox(height: 8),
@@ -123,7 +123,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   onPressed: () => context.go('/invitation'),
                   child: Text(
                     'Have an invitation? Tap here →',
-                    style: BlockType.bodySm.copyWith(color: BlockColors.ink2),
+                    style: BlockType.bodySm.copyWith(color: context.blockColor(light: BlockColors.ink2, dark: BlockColors.ink2Dark)),
                   ),
                 ),
                 const SizedBox(height: 28),
@@ -169,7 +169,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   onPressed: () => context.go('/signup'),
                   child: Text(
                     'Create a new organization →',
-                    style: BlockType.bodySm.copyWith(color: BlockColors.ink2),
+                    style: BlockType.bodySm.copyWith(color: context.blockColor(light: BlockColors.ink2, dark: BlockColors.ink2Dark)),
                   ),
                 ),
 
@@ -218,7 +218,7 @@ class _Field extends StatelessWidget {
             style: BlockType.body,
             decoration: InputDecoration(
               hintText: hint,
-              hintStyle: BlockType.body.copyWith(color: BlockColors.ink3),
+              hintStyle: BlockType.body.copyWith(color: context.blockColor(light: BlockColors.ink3, dark: BlockColors.ink3Dark)),
               border: InputBorder.none,
               isDense: true,
               contentPadding: EdgeInsets.zero,

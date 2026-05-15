@@ -58,7 +58,7 @@ class _Body extends ConsumerWidget {
           child: Text(
             'No notifications yet.\n\nWhen you get assigned to an event, '
             'or when a schedule changes, a row will appear here.',
-            style: BlockType.bodySm.copyWith(color: BlockColors.ink2),
+            style: BlockType.bodySm.copyWith(color: context.blockColor(light: BlockColors.ink2, dark: BlockColors.ink2Dark)),
             textAlign: TextAlign.center,
           ),
         ),
@@ -132,7 +132,7 @@ class _Row extends ConsumerWidget {
                     Text(
                       DateFormat('d MMM y · HH:mm').format(row.createdAt),
                       style:
-                          BlockType.bodySm.copyWith(color: BlockColors.ink2),
+                          BlockType.bodySm.copyWith(color: context.blockColor(light: BlockColors.ink2, dark: BlockColors.ink2Dark)),
                     ),
                   ],
                 ),

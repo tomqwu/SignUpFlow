@@ -286,7 +286,7 @@ class _AssignmentsList extends StatelessWidget {
       return BlockCard(
         child: Text(
           'No assignments in this solution.',
-          style: BlockType.bodySm.copyWith(color: BlockColors.ink2),
+          style: BlockType.bodySm.copyWith(color: context.blockColor(light: BlockColors.ink2, dark: BlockColors.ink2Dark)),
           textAlign: TextAlign.center,
         ),
       );

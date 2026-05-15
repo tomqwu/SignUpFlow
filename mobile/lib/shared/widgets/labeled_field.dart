@@ -47,7 +47,7 @@ class LabeledField extends StatelessWidget {
             style: BlockType.body,
             decoration: InputDecoration(
               hintText: hint,
-              hintStyle: BlockType.body.copyWith(color: BlockColors.ink3),
+              hintStyle: BlockType.body.copyWith(color: context.blockColor(light: BlockColors.ink3, dark: BlockColors.ink3Dark)),
               border: InputBorder.none,
               isDense: true,
               contentPadding: EdgeInsets.zero,

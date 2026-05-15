@@ -85,7 +85,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
                     child: Text(
                       '← Back to sign in',
                       style: BlockType.bodySm
-                          .copyWith(color: BlockColors.ink2),
+                          .copyWith(color: context.blockColor(light: BlockColors.ink2, dark: BlockColors.ink2Dark)),
                     ),
                   ),
                 ),
@@ -128,7 +128,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
                     'account.',
                     textAlign: TextAlign.center,
                     style: BlockType.bodySm
-                        .copyWith(color: BlockColors.ink3),
+                        .copyWith(color: context.blockColor(light: BlockColors.ink3, dark: BlockColors.ink3Dark)),
                   ),
                 ],
                 const SizedBox(height: 32),
@@ -163,7 +163,7 @@ class _SubmittedCard extends StatelessWidget {
           const SizedBox(height: 14),
           Text(
             "Didn't get an email? Check your spam folder or try again.",
-            style: BlockType.bodySm.copyWith(color: BlockColors.ink2),
+            style: BlockType.bodySm.copyWith(color: context.blockColor(light: BlockColors.ink2, dark: BlockColors.ink2Dark)),
           ),
         ],
       ),

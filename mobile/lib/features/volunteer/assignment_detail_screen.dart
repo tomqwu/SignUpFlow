@@ -300,7 +300,7 @@ class _Body extends ConsumerWidget {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Text(title, style: BlockType.monoLabel.copyWith(color: BlockColors.ink1)),
+              Text(title, style: BlockType.monoLabel.copyWith(color: context.blockColor(light: BlockColors.ink1, dark: BlockColors.ink1Dark))),
               const SizedBox(height: 8),
               TextField(
                 controller: ctrl,
@@ -309,7 +309,7 @@ class _Body extends ConsumerWidget {
                 style: BlockType.body,
                 decoration: InputDecoration(
                   hintText: hint,
-                  hintStyle: BlockType.bodySm.copyWith(color: BlockColors.ink3),
+                  hintStyle: BlockType.bodySm.copyWith(color: context.blockColor(light: BlockColors.ink3, dark: BlockColors.ink3Dark)),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
                     borderSide: const BorderSide(color: BlockColors.line1),

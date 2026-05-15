@@ -47,7 +47,10 @@ class Wordmark extends StatelessWidget {
           fontSize: size,
           fontWeight: FontWeight.w700,
           letterSpacing: -0.025 * size,
-          color: BlockColors.ink1,
+          color: context.blockColor(
+            light: BlockColors.ink1,
+            dark: BlockColors.ink1Dark,
+          ),
         ),
         children: [
           const TextSpan(text: 'SIGNUP'),
