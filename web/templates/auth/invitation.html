@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% block title %}Accept invitation · SignUpFlow{% endblock %}
+{% block body %}
+<div class="auth-wrap">
+  <div class="brand-mark">S</div>
+  <div class="wordmark">SIGNUP<span class="slash">/</span>FLOW</div>
+
+  {% if not valid %}
+  <div class="auth-sub">Invitation</div>
+  <div class="form-error" role="alert">
+    {{ message or "This invitation link is invalid." }}
+  </div>
+  <a class="auth-link" href="/auth/login">Go to sign in</a>
+  {% else %}
+  <div class="auth-sub">You're invited</div>
+  <div class="card">
+    <div class="row-title">{{ invitation.name }}</div>
+    <div class="row-sub">{{ invitation.email }}</div>
+    <div class="spacer-12"></div>
+    <div class="mono-data">
+      {{ (invitation.roles or ['volunteer'])|join(' · ')|upper }}
+    </div>
+  </div>
+  <div class="spacer-12"></div>
+
+  {% if error %}
+  <div class="form-error" role="alert">{{ error }}</div>
+  {% endif %}
+
+  <form method="post" action="/auth/invitation/{{ token }}">
+    <div class="field">
+      <label class="field-label" for="password">Choose a password</label>
+      <input id="password" name="password" type="password"
+             autocomplete="new-password" placeholder="At least 6 characters"
+             minlength="6" required autofocus>
+    </div>
+    <div class="spacer-12"></div>
+    <button class="btn btn-primary" type="submit">Accept &amp; continue</button>
+  </form>
+  {% endif %}
+</div>
+{% endblock %}
