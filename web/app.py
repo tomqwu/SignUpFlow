@@ -19,11 +19,13 @@ templates = Jinja2Templates(directory=str(_WEB_DIR / "templates"))
 # elsewhere to avoid circular imports with `templates`.
 from web import auth as _auth  # noqa: E402
 from web.routers import pages as _pages  # noqa: E402
+from web.routers import partials as _partials  # noqa: E402
 from web.deps import _RedirectToLogin  # noqa: E402
 
 router = APIRouter()
 router.include_router(_auth.router)
 router.include_router(_pages.router)
+router.include_router(_partials.router)
 
 
 def mount_web(app: FastAPI) -> None:

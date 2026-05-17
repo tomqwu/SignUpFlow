@@ -1,0 +1,58 @@
+{# Assignment detail card + response actions. Rendered both inside the
+   full detail page and returned standalone by the HTMX action POSTs
+   (outerHTML-swapped into #assignment-card). #}
+<div id="assignment-card" x-data="{ declining: false }">
+  <div class="card">
+    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:10px">
+      {% if row.time_label %}<span class="time-chip">{{ row.time_label }}</span>{% endif %}
+      {% if row.role %}<span class="role-chip">{{ row.role }}</span>{% endif %}
+      <span class="status-text {{ row.status }}">{{ row.status }}</span>
+    </div>
+    <div class="page-title" style="padding:0;font-size:24px">{{ row.event_type }}</div>
+    <div class="row-sub" style="margin-top:6px">{{ row.date_label }}</div>
+    {% if row.decline_reason %}
+    <div class="spacer-12"></div>
+    <div class="mono-label" style="margin:0 0 4px">Decline reason</div>
+    <div class="row-sub">{{ row.decline_reason }}</div>
+    {% endif %}
+  </div>
+
+  <div class="spacer-18"></div>
+  <div class="mono-label" style="margin-top:0">Your response</div>
+
+  <div class="btn-row cols-2">
+    <button class="btn btn-go" type="button"
+            hx-post="/v/schedule/{{ row.id }}/accept"
+            hx-target="#assignment-card" hx-swap="outerHTML">
+      Accept
+    </button>
+    <button class="btn btn-secondary" type="button"
+            hx-post="/v/schedule/{{ row.id }}/swap-request"
+            hx-target="#assignment-card" hx-swap="outerHTML">
+      Request swap
+    </button>
+  </div>
+  <div class="spacer-12"></div>
+
+  <button class="btn btn-destructive" type="button"
+          x-show="!declining" @click="declining = true">
+    Decline
+  </button>
+
+  <form x-show="declining" x-cloak
+        hx-post="/v/schedule/{{ row.id }}/decline"
+        hx-target="#assignment-card" hx-swap="outerHTML">
+    <div class="field">
+      <label class="field-label" for="decline_reason">Reason</label>
+      <input id="decline_reason" name="decline_reason" type="text"
+             required minlength="1" maxlength="500"
+             placeholder="Briefly, why can't you make it?">
+    </div>
+    <div class="spacer-12"></div>
+    <div class="btn-row cols-2">
+      <button class="btn btn-secondary" type="button"
+              @click="declining = false">Cancel</button>
+      <button class="btn btn-destructive" type="submit">Confirm decline</button>
+    </div>
+  </form>
+</div>

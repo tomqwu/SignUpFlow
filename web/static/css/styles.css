@@ -405,3 +405,5 @@ a { color: var(--accent); text-decoration: none; }
 }
 .spacer-12 { height: 12px; }
 .spacer-18 { height: 18px; }
+[x-cloak] { display: none !important; }
+.htmx-request.btn, .htmx-request .btn { opacity: 0.6; pointer-events: none; }
