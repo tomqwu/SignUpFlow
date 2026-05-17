@@ -1,0 +1,49 @@
+{# Time-off list + add form. Whole block is #timeoff-list so HTMX
+   outerHTML-swaps it after add/delete. #}
+<div id="timeoff-list">
+  {% if error %}
+  <div class="form-error" role="alert">{{ error }}</div>
+  <div class="spacer-12"></div>
+  {% endif %}
+
+  <form hx-post="/v/availability/timeoff"
+        hx-target="#timeoff-list" hx-swap="outerHTML">
+    <div class="field">
+      <label class="field-label" for="start_date">From</label>
+      <input id="start_date" name="start_date" type="date" required>
+    </div>
+    <div class="field">
+      <label class="field-label" for="end_date">To</label>
+      <input id="end_date" name="end_date" type="date" required>
+    </div>
+    <div class="field">
+      <label class="field-label" for="reason">Reason (optional)</label>
+      <input id="reason" name="reason" type="text" maxlength="200"
+             placeholder="Vacation, travel, …">
+    </div>
+    <div class="spacer-12"></div>
+    <button class="btn btn-primary" type="submit">Add time-off</button>
+  </form>
+
+  <div class="mono-label">Your time-off</div>
+  {% if not timeoff %}
+  <div class="empty">No time-off booked.</div>
+  {% else %}
+  <div class="group">
+    {% for t in timeoff %}
+    <div class="row">
+      <div class="row-main">
+        <div class="row-title">{{ t.label }}</div>
+        {% if t.reason %}<div class="row-sub">{{ t.reason }}</div>{% endif %}
+      </div>
+      <button class="btn btn-destructive" style="width:auto;padding:6px 12px"
+              hx-post="/v/availability/timeoff/{{ t.id }}/delete"
+              hx-target="#timeoff-list" hx-swap="outerHTML"
+              hx-confirm="Remove this time-off?">
+        Remove
+      </button>
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+</div>
