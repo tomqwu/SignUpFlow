@@ -20,6 +20,7 @@ from sqlalchemy.orm import Session
 from api.database import get_db
 from api.models import Person
 from api.routers.auth import SignupRequest, signup as api_signup
+from api.routers.invitations import accept_invitation, verify_invitation
 from api.routers.organizations import create_organization
 from api.routers.password_reset import (
     PasswordResetConfirm,
@@ -27,6 +28,7 @@ from api.routers.password_reset import (
     request_password_reset,
     reset_password,
 )
+from api.schemas.invitation import InvitationAccept
 from api.schemas.organization import OrganizationCreate
 from api.security import create_access_token, verify_password
 from api.timeutils import utcnow
@@ -260,6 +262,66 @@ def reset_submit(
 
     # Success → bounce to login with a one-shot banner via query flag.
     return RedirectResponse(url="/auth/login?reset=1", status_code=303)
+
+
+@router.get("/auth/invitation/{token}", response_class=HTMLResponse)
+def invitation_form(request: Request, token: str, db: Session = Depends(get_db)):
+    from web.app import templates
+
+    result = verify_invitation(token, db)
+    return templates.TemplateResponse(
+        request,
+        "auth/invitation.html",
+        {
+            "token": token,
+            "valid": result.valid,
+            "invitation": result.invitation,
+            "message": result.message,
+            "error": None,
+        },
+        status_code=200 if result.valid else 410,
+    )
+
+
+@router.post("/auth/invitation/{token}")
+def invitation_submit(
+    request: Request,
+    token: str,
+    password: str = Form(...),
+    db: Session = Depends(get_db),
+):
+    """Accept the invitation, create the account, and land the user
+    authenticated (mirrors api accept_invitation which returns a JWT)."""
+    from web.app import templates
+
+    def _rerender(error: str, code: int):
+        result = verify_invitation(token, db)
+        return templates.TemplateResponse(
+            request,
+            "auth/invitation.html",
+            {
+                "token": token,
+                "valid": result.valid,
+                "invitation": result.invitation,
+                "message": result.message,
+                "error": error,
+            },
+            status_code=code,
+        )
+
+    try:
+        accept = InvitationAccept(password=password, timezone="UTC")
+    except ValidationError:
+        return _rerender("Password must be at least 6 characters.", 400)
+    try:
+        result = accept_invitation(token, accept, db)
+    except HTTPException as exc:
+        return _rerender(str(exc.detail), exc.status_code or 400)
+
+    landing = "/a/dashboard" if "admin" in (result.roles or []) else "/v/schedule"
+    response = RedirectResponse(url=landing, status_code=303)
+    _set_cookie(response, result.token)
+    return response
 
 
 @router.post("/auth/logout")
