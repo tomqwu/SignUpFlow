@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block title %}Availability · SignUpFlow{% endblock %}
+{% block body %}
+<div class="nav"><span class="nav-back"></span><span class="nav-action"></span></div>
+<div class="page-title">Availability</div>
+<div class="scroll">
+  <div class="row-sub" style="margin:0 4px 8px">
+    Book time-off so the scheduler won't assign you on those days.
+  </div>
+  {% include "partials/timeoff_list.html" %}
+</div>
+{% set tabs = [
+  ('/v/schedule', '▦', 'Schedule', 'schedule'),
+  ('/v/availability', '◷', 'Availability', 'availability'),
+  ('/v/profile', '◍', 'Profile', 'profile'),
+] %}
+{% include "_nav.html" %}
+{% endblock %}

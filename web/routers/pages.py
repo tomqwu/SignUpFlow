@@ -122,6 +122,50 @@ def volunteer_assignment_detail(
     )
 
 
+def _my_timeoff(db: Session, person: Person) -> list[dict]:
+    """Time-off rows for the caller via the API handler, formatted for
+    display."""
+    from datetime import date as _date
+
+    from api.routers.availability import get_timeoff
+
+    out = []
+    for t in get_timeoff(person.id, db)["timeoff"]:
+        s = _date.fromisoformat(t["start_date"])
+        e = _date.fromisoformat(t["end_date"])
+        out.append(
+            {
+                "id": t["id"],
+                "label": (
+                    s.strftime("%d %b %Y").upper()
+                    if s == e
+                    else f"{s.strftime('%d %b').upper()} – {e.strftime('%d %b %Y').upper()}"
+                ),
+                "reason": t["reason"],
+            }
+        )
+    return out
+
+
+@router.get("/v/availability", response_class=HTMLResponse)
+def volunteer_availability(
+    request: Request,
+    person: Person = Depends(get_session_user),
+    db: Session = Depends(get_db),
+):
+    from web.app import templates
+
+    return templates.TemplateResponse(
+        request,
+        "volunteer/availability.html",
+        {
+            "person": person,
+            "active_tab": "availability",
+            "timeoff": _my_timeoff(db, person),
+        },
+    )
+
+
 @router.get("/v/profile", response_class=HTMLResponse)
 def volunteer_profile(request: Request, person: Person = Depends(get_session_user)):
     from web.app import templates
