@@ -11,6 +11,9 @@
 
   <div class="mono-label">Recurring availability</div>
   {% include "partials/rrule_section.html" %}
+
+  <div class="mono-label">Single-date blocks</div>
+  {% include "partials/exceptions_list.html" %}
 </div>
 {% set tabs = [
   ('/v/schedule', '▦', 'Schedule', 'schedule'),

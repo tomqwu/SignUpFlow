@@ -164,6 +164,20 @@ def _my_rrule(db: Session, person: Person) -> str | None:
     return get_rrule(person.id, db).rrule
 
 
+def _my_exceptions(db: Session, person: Person) -> list[dict]:
+    """Single-date blocked exceptions for the caller, formatted."""
+    from api.routers.availability import list_exceptions
+
+    return [
+        {
+            "id": r.id,
+            "date": r.exception_date.isoformat(),
+            "label": r.exception_date.strftime("%a %d %b %Y").upper(),
+        }
+        for r in list_exceptions(person.id, db)
+    ]
+
+
 @router.get("/v/availability", response_class=HTMLResponse)
 def volunteer_availability(
     request: Request,
@@ -181,6 +195,7 @@ def volunteer_availability(
             "timeoff": _my_timeoff(db, person),
             "rrule": _my_rrule(db, person),
             "rrule_presets": RRULE_PRESETS,
+            "exceptions": _my_exceptions(db, person),
         },
     )
 

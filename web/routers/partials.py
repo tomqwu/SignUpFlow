@@ -21,15 +21,27 @@ from api.routers.assignments import (
     request_swap,
 )
 from api.routers.availability import (
+    add_exception,
     add_timeoff,
     clear_rrule,
+    delete_exception,
     delete_timeoff,
     set_rrule,
 )
 from api.schemas.assignment import AssignmentDeclineRequest, AssignmentSwapRequest
-from api.schemas.availability import AvailabilityRruleUpdate, TimeOffCreate
+from api.schemas.availability import (
+    AvailabilityExceptionCreate,
+    AvailabilityRruleUpdate,
+    TimeOffCreate,
+)
 from web.deps import get_session_user
-from web.routers.pages import RRULE_PRESETS, _my_assignment, _my_rrule, _my_timeoff
+from web.routers.pages import (
+    RRULE_PRESETS,
+    _my_assignment,
+    _my_exceptions,
+    _my_rrule,
+    _my_timeoff,
+)
 
 router = APIRouter(tags=["web-partials"])
 
@@ -196,3 +208,48 @@ def rrule_clear(
 ):
     clear_rrule(person.id, db)
     return _rrule_section(request, person, db)
+
+
+# ── Availability: single-date exceptions ─────────────────────────────
+
+
+def _exceptions_list(request: Request, person: Person, db: Session, *, error=None):
+    from web.app import templates
+
+    return templates.TemplateResponse(
+        request,
+        "partials/exceptions_list.html",
+        {"exceptions": _my_exceptions(db, person), "error": error},
+    )
+
+
+@router.post("/v/availability/exception", response_class=HTMLResponse)
+def exception_add(
+    request: Request,
+    exception_date: str = Form(...),
+    person: Person = Depends(get_session_user),
+    db: Session = Depends(get_db),
+):
+    try:
+        payload = AvailabilityExceptionCreate(exception_date=exception_date)
+    except ValueError:
+        return _exceptions_list(request, person, db, error="Pick a valid date.")
+    add_exception(person.id, payload, db)
+    return _exceptions_list(request, person, db)
+
+
+@router.post(
+    "/v/availability/exception/{exception_id}/delete",
+    response_class=HTMLResponse,
+)
+def exception_delete(
+    request: Request,
+    exception_id: int,
+    person: Person = Depends(get_session_user),
+    db: Session = Depends(get_db),
+):
+    try:
+        delete_exception(person.id, exception_id, db)
+    except HTTPException:
+        pass  # already gone — return a fresh, correct list
+    return _exceptions_list(request, person, db)
