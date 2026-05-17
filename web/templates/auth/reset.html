@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block title %}Set new password · SignUpFlow{% endblock %}
+{% block body %}
+<div class="auth-wrap">
+  <div class="brand-mark">S</div>
+  <div class="wordmark">SIGNUP<span class="slash">/</span>FLOW</div>
+  <div class="auth-sub">Choose a new password</div>
+
+  {% if error %}
+  <div class="form-error" role="alert">{{ error }}</div>
+  {% endif %}
+
+  <form method="post" action="/auth/reset/{{ token }}">
+    <div class="field">
+      <label class="field-label" for="password">New password</label>
+      <input id="password" name="password" type="password"
+             autocomplete="new-password" placeholder="At least 6 characters"
+             minlength="6" required autofocus>
+    </div>
+    <div class="spacer-12"></div>
+    <button class="btn btn-primary" type="submit">Update password</button>
+  </form>
+  <a class="auth-link" href="/auth/login">Back to sign in</a>
+</div>
+{% endblock %}

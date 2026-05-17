@@ -6,6 +6,9 @@
   <div class="wordmark">SIGNUP<span class="slash">/</span>FLOW</div>
   <div class="auth-sub">Volunteer scheduling</div>
 
+  {% if notice %}
+  <div class="form-notice" role="status">{{ notice }}</div>
+  {% endif %}
   {% if error %}
   <div class="form-error" role="alert">{{ error }}</div>
   {% endif %}
