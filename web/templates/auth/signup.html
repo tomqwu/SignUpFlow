@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% block title %}Create organization · SignUpFlow{% endblock %}
+{% block body %}
+<div class="auth-wrap">
+  <div class="brand-mark">S</div>
+  <div class="wordmark">SIGNUP<span class="slash">/</span>FLOW</div>
+  <div class="auth-sub">Create your organization</div>
+
+  {% if error %}
+  <div class="form-error" role="alert">{{ error }}</div>
+  {% endif %}
+
+  <form method="post" action="/auth/signup">
+    <div class="field">
+      <label class="field-label" for="org_name">Organization name</label>
+      <input id="org_name" name="org_name" type="text"
+             placeholder="Hope Community Church" required autofocus
+             value="{{ form.org_name or '' }}">
+    </div>
+    <div class="field">
+      <label class="field-label" for="name">Your name</label>
+      <input id="name" name="name" type="text" autocomplete="name"
+             placeholder="Sarah Kim" required value="{{ form.name or '' }}">
+    </div>
+    <div class="field">
+      <label class="field-label" for="email">Email</label>
+      <input id="email" name="email" type="email" autocomplete="email"
+             placeholder="you@church.org" required value="{{ form.email or '' }}">
+    </div>
+    <div class="field">
+      <label class="field-label" for="password">Password</label>
+      <input id="password" name="password" type="password"
+             autocomplete="new-password" placeholder="At least 6 characters"
+             minlength="6" required>
+    </div>
+    <div class="spacer-12"></div>
+    <button class="btn btn-primary" type="submit">Create organization</button>
+  </form>
+
+  <div class="auth-sub" style="margin-top:14px;text-transform:none;letter-spacing:0">
+    The first account is the admin.
+  </div>
+  <a class="auth-link" href="/auth/login">Already have an account? Sign in</a>
+</div>
+{% endblock %}

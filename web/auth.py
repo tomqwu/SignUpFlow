@@ -9,13 +9,19 @@ redirect the browser to the role-appropriate landing page.
 from __future__ import annotations
 
 import os
+import re
+import uuid
 
-from fastapi import APIRouter, Depends, Form, Request
+from fastapi import APIRouter, Depends, Form, HTTPException, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
+from pydantic import ValidationError
 from sqlalchemy.orm import Session
 
 from api.database import get_db
 from api.models import Person
+from api.routers.auth import SignupRequest, signup as api_signup
+from api.routers.organizations import create_organization
+from api.schemas.organization import OrganizationCreate
 from api.security import create_access_token, verify_password
 from api.timeutils import utcnow
 from web.deps import SESSION_COOKIE, get_optional_session_user
@@ -40,8 +46,7 @@ def _landing_for(person: Person) -> str:
     return "/a/dashboard" if "admin" in (person.roles or []) else "/v/schedule"
 
 
-def set_session_cookie(response, person: Person) -> None:
-    token = create_access_token(data={"sub": person.id, "pwd_iat": _pwd_iat_for(person)})
+def _set_cookie(response, token: str) -> None:
     response.set_cookie(
         key=SESSION_COOKIE,
         value=token,
@@ -51,6 +56,19 @@ def set_session_cookie(response, person: Person) -> None:
         samesite="lax",
         path="/",
     )
+
+
+def set_session_cookie(response, person: Person) -> None:
+    _set_cookie(
+        response,
+        create_access_token(data={"sub": person.id, "pwd_iat": _pwd_iat_for(person)}),
+    )
+
+
+def _slugify(name: str) -> str:
+    """org name → url-safe id. Mirrors the mobile create-org slug rule."""
+    slug = re.sub(r"[^a-z0-9]+", "-", name.strip().lower()).strip("-")
+    return slug or "org"
 
 
 @router.get("/auth/login", response_class=HTMLResponse)
@@ -94,6 +112,67 @@ def login_submit(
 
     response = RedirectResponse(url=_landing_for(person), status_code=303)
     set_session_cookie(response, person)
+    return response
+
+
+@router.get("/auth/signup", response_class=HTMLResponse)
+def signup_form(
+    request: Request,
+    person: Person | None = Depends(get_optional_session_user),
+):
+    if person is not None:
+        return RedirectResponse(url=_landing_for(person), status_code=303)
+    from web.app import templates
+
+    return templates.TemplateResponse(request, "auth/signup.html", {"error": None, "form": {}})
+
+
+@router.post("/auth/signup")
+def signup_submit(
+    request: Request,
+    org_name: str = Form(...),
+    name: str = Form(...),
+    email: str = Form(...),
+    password: str = Form(...),
+    db: Session = Depends(get_db),
+):
+    """Create an organization and its first user (auto-admin). Reuses the
+    API's create_organization + signup so all validation/limits apply."""
+    from web.app import templates
+
+    form = {"org_name": org_name, "name": name, "email": email}
+
+    def _err(msg: str, code: int = 400):
+        return templates.TemplateResponse(
+            request,
+            "auth/signup.html",
+            {"error": msg, "form": form},
+            status_code=code,
+        )
+
+    org_id = f"{_slugify(org_name)}-{uuid.uuid4().hex[:6]}"
+
+    # Validate the signup payload BEFORE creating the org, so a bad
+    # password (pydantic min_length) can't leave an orphan organization.
+    try:
+        signup_req = SignupRequest(org_id=org_id, name=name, email=email, password=password)
+    except ValidationError as exc:
+        first = exc.errors()[0]
+        field = first.get("loc", ["field"])[-1]
+        return _err(f"{field}: {first.get('msg', 'invalid value')}", code=400)
+
+    try:
+        create_organization(OrganizationCreate(id=org_id, name=org_name), db)
+    except HTTPException as exc:
+        return _err(f"Could not create organization: {exc.detail}")
+
+    try:
+        auth = api_signup(signup_req, db)
+    except HTTPException as exc:
+        return _err(str(exc.detail), code=exc.status_code or 400)
+
+    response = RedirectResponse(url="/a/dashboard", status_code=303)
+    _set_cookie(response, auth.token)
     return response
 
 
