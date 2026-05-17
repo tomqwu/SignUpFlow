@@ -13,25 +13,7 @@
     It may have been reassigned or the schedule republished.
   </div>
   {% else %}
-  <div class="card">
-    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:10px">
-      {% if row.time_label %}<span class="time-chip">{{ row.time_label }}</span>{% endif %}
-      {% if row.role %}<span class="role-chip">{{ row.role }}</span>{% endif %}
-      <span class="status-text {{ row.status }}">{{ row.status }}</span>
-    </div>
-    <div class="page-title" style="padding:0;font-size:24px">{{ row.event_type }}</div>
-    <div class="row-sub" style="margin-top:6px">{{ row.date_label }}</div>
-    {% if row.decline_reason %}
-    <div class="spacer-12"></div>
-    <div class="mono-label" style="margin:0 0 4px">Decline reason</div>
-    <div class="row-sub">{{ row.decline_reason }}</div>
-    {% endif %}
-    <div class="spacer-18"></div>
-    <div class="row-sub">
-      Respond to this assignment from the actions below
-      <span class="mono-data">(Sprint 11.7)</span>.
-    </div>
-  </div>
+  {% include "partials/assignment_detail_card.html" %}
   {% endif %}
 </div>
 {% set tabs = [
