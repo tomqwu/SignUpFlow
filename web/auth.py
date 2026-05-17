@@ -12,7 +12,7 @@ import os
 import re
 import uuid
 
-from fastapi import APIRouter, Depends, Form, HTTPException, Request
+from fastapi import APIRouter, BackgroundTasks, Depends, Form, HTTPException, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
 from pydantic import ValidationError
 from sqlalchemy.orm import Session
@@ -21,6 +21,12 @@ from api.database import get_db
 from api.models import Person
 from api.routers.auth import SignupRequest, signup as api_signup
 from api.routers.organizations import create_organization
+from api.routers.password_reset import (
+    PasswordResetConfirm,
+    PasswordResetRequest,
+    request_password_reset,
+    reset_password,
+)
 from api.schemas.organization import OrganizationCreate
 from api.security import create_access_token, verify_password
 from api.timeutils import utcnow
@@ -81,7 +87,18 @@ def login_form(
         return RedirectResponse(url=_landing_for(person), status_code=303)
     from web.app import templates
 
-    return templates.TemplateResponse(request, "auth/login.html", {"error": None})
+    return templates.TemplateResponse(
+        request,
+        "auth/login.html",
+        {
+            "error": None,
+            "notice": (
+                "Password updated — sign in with your new password."
+                if request.query_params.get("reset") == "1"
+                else None
+            ),
+        },
+    )
 
 
 @router.post("/auth/login")
@@ -174,6 +191,75 @@ def signup_submit(
     response = RedirectResponse(url="/a/dashboard", status_code=303)
     _set_cookie(response, auth.token)
     return response
+
+
+@router.get("/auth/forgot", response_class=HTMLResponse)
+def forgot_form(request: Request):
+    from web.app import templates
+
+    return templates.TemplateResponse(request, "auth/forgot.html", {"sent": False, "error": None})
+
+
+@router.post("/auth/forgot")
+def forgot_submit(
+    request: Request,
+    email: str = Form(...),
+    db: Session = Depends(get_db),
+):
+    """Always renders the same 'if it exists, a link was sent' message —
+    no user enumeration (mirrors the API's generic response)."""
+    from web.app import templates
+
+    try:
+        req = PasswordResetRequest(email=email)
+    except ValidationError:
+        return templates.TemplateResponse(
+            request,
+            "auth/forgot.html",
+            {"sent": False, "error": "Enter a valid email address."},
+            status_code=400,
+        )
+    # Reuse the API handler; a throwaway BackgroundTasks collects the
+    # (best-effort) email send. Generic response regardless of outcome.
+    request_password_reset(req, request, BackgroundTasks(), db)
+    return templates.TemplateResponse(request, "auth/forgot.html", {"sent": True, "error": None})
+
+
+@router.get("/auth/reset/{token}", response_class=HTMLResponse)
+def reset_form(request: Request, token: str):
+    from web.app import templates
+
+    return templates.TemplateResponse(request, "auth/reset.html", {"token": token, "error": None})
+
+
+@router.post("/auth/reset/{token}")
+def reset_submit(
+    request: Request,
+    token: str,
+    password: str = Form(...),
+    db: Session = Depends(get_db),
+):
+    from web.app import templates
+
+    def _err(msg: str, code: int = 400):
+        return templates.TemplateResponse(
+            request,
+            "auth/reset.html",
+            {"token": token, "error": msg},
+            status_code=code,
+        )
+
+    try:
+        confirm = PasswordResetConfirm(token=token, new_password=password)
+    except ValidationError:
+        return _err("Password must be at least 6 characters.")
+    try:
+        reset_password(confirm, db)
+    except HTTPException as exc:
+        return _err(str(exc.detail), code=exc.status_code or 400)
+
+    # Success → bounce to login with a one-shot banner via query flag.
+    return RedirectResponse(url="/auth/login?reset=1", status_code=303)
 
 
 @router.post("/auth/logout")

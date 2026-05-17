@@ -388,6 +388,15 @@ a { color: var(--accent); text-decoration: none; }
   padding: 10px 12px;
   font-size: 13px;
 }
+.form-notice {
+  background: color-mix(in srgb, var(--success) 12%, transparent);
+  border: 1px solid var(--success);
+  color: var(--success);
+  border-radius: var(--r-chip);
+  padding: 10px 12px;
+  font-size: 13px;
+  line-height: 1.45;
+}
 
 /* ─── Misc ──────────────────────────────────────────────────────────── */
 .empty {
