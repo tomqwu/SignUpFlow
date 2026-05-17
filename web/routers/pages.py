@@ -15,8 +15,23 @@ from web.deps import get_session_admin, get_session_user
 router = APIRouter(tags=["web-pages"])
 
 
+def _row_dict(a: Assignment, e: Event) -> dict:
+    start, end = e.start_time, e.end_time
+    return {
+        "id": a.id,
+        "event_type": e.type,
+        "date_label": start.strftime("%a %d %b %Y").upper() if start else "",
+        "time_label": (
+            f"{start.strftime('%H:%M')}–{end.strftime('%H:%M')}" if start and end else ""
+        ),
+        "role": a.role,
+        "status": (a.status or "pending").lower(),
+        "decline_reason": a.decline_reason,
+    }
+
+
 def _my_schedule_rows(db: Session, person: Person) -> list[dict]:
-    """Assignment ⋈ Event for the caller, newest first. Enriched with
+    """Assignment ⋈ Event for the caller, by event start. Enriched with
     event type + times — richer than the bare /api/v1/assignments/me
     shape, which omits event details the schedule list needs."""
     rows = (
@@ -29,22 +44,22 @@ def _my_schedule_rows(db: Session, person: Person) -> list[dict]:
         .order_by(Event.start_time.asc())
         .all()
     )
-    out = []
-    for a, e in rows:
-        start, end = e.start_time, e.end_time
-        out.append(
-            {
-                "id": a.id,
-                "event_type": e.type,
-                "date_label": start.strftime("%a %d %b %Y").upper() if start else "",
-                "time_label": (
-                    f"{start.strftime('%H:%M')}–{end.strftime('%H:%M')}" if start and end else ""
-                ),
-                "role": a.role,
-                "status": (a.status or "pending").lower(),
-            }
+    return [_row_dict(a, e) for a, e in rows]
+
+
+def _my_assignment(db: Session, person: Person, aid: int) -> dict | None:
+    """Single Assignment ⋈ Event owned by the caller, or None (404)."""
+    row = (
+        db.query(Assignment, Event)
+        .join(Event, Assignment.event_id == Event.id)
+        .filter(
+            Assignment.id == aid,
+            Assignment.person_id == person.id,
+            Event.org_id == person.org_id,
         )
-    return out
+        .first()
+    )
+    return _row_dict(*row) if row else None
 
 
 @router.get("/")
@@ -80,6 +95,30 @@ def volunteer_schedule(
             "active_tab": "schedule",
             "rows": _my_schedule_rows(db, person),
         },
+    )
+
+
+@router.get("/v/schedule/{assignment_id}", response_class=HTMLResponse)
+def volunteer_assignment_detail(
+    request: Request,
+    assignment_id: int,
+    person: Person = Depends(get_session_user),
+    db: Session = Depends(get_db),
+):
+    from web.app import templates
+
+    row = _my_assignment(db, person, assignment_id)
+    if row is None:
+        return templates.TemplateResponse(
+            request,
+            "volunteer/assignment_detail.html",
+            {"person": person, "active_tab": "schedule", "row": None},
+            status_code=404,
+        )
+    return templates.TemplateResponse(
+        request,
+        "volunteer/assignment_detail.html",
+        {"person": person, "active_tab": "schedule", "row": row},
     )
 
 
