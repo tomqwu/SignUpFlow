@@ -66,8 +66,10 @@ def test_authenticated_session_can_load_schedule(client, db):
     token = login.cookies[SESSION_COOKIE]
     resp = client.get("/v/schedule", cookies={SESSION_COOKIE: token})
     assert resp.status_code == 200
+    # 11.5 replaced the placeholder with the real schedule page; a fresh
+    # user with no assignments sees the empty state.
     assert "Schedule" in resp.text
-    assert "Web User" in resp.text
+    assert "No assignments yet" in resp.text
 
 
 def test_volunteer_cannot_load_admin_dashboard(client, db):

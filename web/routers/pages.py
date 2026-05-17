@@ -6,11 +6,45 @@ from __future__ import annotations
 
 from fastapi import APIRouter, Depends, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
+from sqlalchemy.orm import Session
 
-from api.models import Person
+from api.database import get_db
+from api.models import Assignment, Event, Person
 from web.deps import get_session_admin, get_session_user
 
 router = APIRouter(tags=["web-pages"])
+
+
+def _my_schedule_rows(db: Session, person: Person) -> list[dict]:
+    """Assignment ⋈ Event for the caller, newest first. Enriched with
+    event type + times — richer than the bare /api/v1/assignments/me
+    shape, which omits event details the schedule list needs."""
+    rows = (
+        db.query(Assignment, Event)
+        .join(Event, Assignment.event_id == Event.id)
+        .filter(
+            Assignment.person_id == person.id,
+            Event.org_id == person.org_id,
+        )
+        .order_by(Event.start_time.asc())
+        .all()
+    )
+    out = []
+    for a, e in rows:
+        start, end = e.start_time, e.end_time
+        out.append(
+            {
+                "id": a.id,
+                "event_type": e.type,
+                "date_label": start.strftime("%a %d %b %Y").upper() if start else "",
+                "time_label": (
+                    f"{start.strftime('%H:%M')}–{end.strftime('%H:%M')}" if start and end else ""
+                ),
+                "role": a.role,
+                "status": (a.status or "pending").lower(),
+            }
+        )
+    return out
 
 
 @router.get("/")
@@ -31,13 +65,21 @@ def root(request: Request):
 
 
 @router.get("/v/schedule", response_class=HTMLResponse)
-def volunteer_schedule(request: Request, person: Person = Depends(get_session_user)):
+def volunteer_schedule(
+    request: Request,
+    person: Person = Depends(get_session_user),
+    db: Session = Depends(get_db),
+):
     from web.app import templates
 
     return templates.TemplateResponse(
         request,
         "volunteer/schedule.html",
-        {"person": person, "active_tab": "schedule"},
+        {
+            "person": person,
+            "active_tab": "schedule",
+            "rows": _my_schedule_rows(db, person),
+        },
     )
 
 
