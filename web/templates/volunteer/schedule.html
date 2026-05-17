@@ -1,17 +1,31 @@
 {% extends "base.html" %}
 {% block title %}Schedule · SignUpFlow{% endblock %}
 {% block body %}
-<div class="nav">
-  <span class="nav-back"></span>
-  <span class="nav-action"></span>
-</div>
+<div class="nav"><span class="nav-back"></span><span class="nav-action"></span></div>
 <div class="page-title">Schedule</div>
 <div class="scroll">
+  {% if not rows %}
   <div class="empty">
-    Signed in as <strong>{{ person.name }}</strong>.<br>
-    Your upcoming assignments will appear here.<br>
-    <span class="mono-data">(Sprint 11.1)</span>
+    No assignments yet.<br>
+    When an admin publishes a schedule with you on it,
+    your shifts show up here.
   </div>
+  {% else %}
+  {% for r in rows %}
+  <a class="row" href="/v/schedule/{{ r.id }}">
+    <div class="row-main">
+      <div class="row-title">{{ r.event_type }}</div>
+      <div class="row-sub">{{ r.date_label }}</div>
+      <div style="margin-top:6px;display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+        {% if r.time_label %}<span class="time-chip">{{ r.time_label }}</span>{% endif %}
+        {% if r.role %}<span class="role-chip">{{ r.role }}</span>{% endif %}
+        <span class="status-text {{ r.status }}">{{ r.status }}</span>
+      </div>
+    </div>
+    <span class="chev">›</span>
+  </a>
+  {% endfor %}
+  {% endif %}
 </div>
 {% set tabs = [
   ('/v/schedule', '▦', 'Schedule', 'schedule'),
