@@ -147,6 +147,23 @@ def _my_timeoff(db: Session, person: Person) -> list[dict]:
     return out
 
 
+# Preset recurring patterns. label → RRULE; the editor also accepts a
+# custom expression. Mirrors the mobile kRrulePresets intent.
+RRULE_PRESETS = [
+    ("Every Sunday", "FREQ=WEEKLY;BYDAY=SU"),
+    ("Every Saturday", "FREQ=WEEKLY;BYDAY=SA"),
+    ("Weekdays", "FREQ=WEEKLY;BYDAY=MO,TU,WE,TH,FR"),
+    ("Every other week", "FREQ=WEEKLY;INTERVAL=2"),
+    ("Monthly (1st)", "FREQ=MONTHLY;BYMONTHDAY=1"),
+]
+
+
+def _my_rrule(db: Session, person: Person) -> str | None:
+    from api.routers.availability import get_rrule
+
+    return get_rrule(person.id, db).rrule
+
+
 @router.get("/v/availability", response_class=HTMLResponse)
 def volunteer_availability(
     request: Request,
@@ -162,6 +179,8 @@ def volunteer_availability(
             "person": person,
             "active_tab": "availability",
             "timeoff": _my_timeoff(db, person),
+            "rrule": _my_rrule(db, person),
+            "rrule_presets": RRULE_PRESETS,
         },
     )
 

@@ -20,11 +20,16 @@ from api.routers.assignments import (
     decline_assignment,
     request_swap,
 )
-from api.routers.availability import add_timeoff, delete_timeoff
+from api.routers.availability import (
+    add_timeoff,
+    clear_rrule,
+    delete_timeoff,
+    set_rrule,
+)
 from api.schemas.assignment import AssignmentDeclineRequest, AssignmentSwapRequest
-from api.schemas.availability import TimeOffCreate
+from api.schemas.availability import AvailabilityRruleUpdate, TimeOffCreate
 from web.deps import get_session_user
-from web.routers.pages import _my_assignment, _my_timeoff
+from web.routers.pages import RRULE_PRESETS, _my_assignment, _my_rrule, _my_timeoff
 
 router = APIRouter(tags=["web-partials"])
 
@@ -149,3 +154,45 @@ def timeoff_delete(
     except HTTPException:
         pass  # already gone — fall through to a fresh (correct) list
     return _timeoff_list(request, person, db)
+
+
+# ── Availability: recurring rrule ────────────────────────────────────
+
+
+def _rrule_section(request: Request, person: Person, db: Session, *, error=None):
+    from web.app import templates
+
+    return templates.TemplateResponse(
+        request,
+        "partials/rrule_section.html",
+        {
+            "rrule": _my_rrule(db, person),
+            "rrule_presets": RRULE_PRESETS,
+            "error": error,
+        },
+    )
+
+
+@router.post("/v/availability/rrule", response_class=HTMLResponse)
+def rrule_set(
+    request: Request,
+    rrule: str = Form(...),
+    person: Person = Depends(get_session_user),
+    db: Session = Depends(get_db),
+):
+    try:
+        payload = AvailabilityRruleUpdate(rrule=rrule.strip())
+    except ValueError:
+        return _rrule_section(request, person, db, error="Enter a recurrence rule.")
+    set_rrule(person.id, payload, db)
+    return _rrule_section(request, person, db)
+
+
+@router.post("/v/availability/rrule/clear", response_class=HTMLResponse)
+def rrule_clear(
+    request: Request,
+    person: Person = Depends(get_session_user),
+    db: Session = Depends(get_db),
+):
+    clear_rrule(person.id, db)
+    return _rrule_section(request, person, db)

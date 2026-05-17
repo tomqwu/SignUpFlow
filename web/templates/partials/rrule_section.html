@@ -1,0 +1,50 @@
+{# Recurring-availability editor. Whole block is #rrule-section so HTMX
+   outerHTML-swaps it after set/clear. #}
+<div id="rrule-section">
+  {% if error %}
+  <div class="form-error" role="alert">{{ error }}</div>
+  <div class="spacer-12"></div>
+  {% endif %}
+
+  <div class="card">
+    <div class="field-label">Current recurring rule</div>
+    <div class="spacer-12" style="height:4px"></div>
+    {% if rrule %}
+    <div class="mono-data" style="text-transform:none">{{ rrule }}</div>
+    <div class="spacer-12"></div>
+    <button class="btn btn-destructive" type="button"
+            hx-post="/v/availability/rrule/clear"
+            hx-target="#rrule-section" hx-swap="outerHTML">
+      Clear recurring rule
+    </button>
+    {% else %}
+    <div class="row-sub">No recurring rule — you're considered available
+      unless you book time-off.</div>
+    {% endif %}
+  </div>
+
+  <div class="mono-label">Quick presets</div>
+  <div class="btn-row cols-2">
+    {% for label, expr in rrule_presets %}
+    <button class="btn btn-secondary" type="button"
+            hx-post="/v/availability/rrule"
+            hx-vals='{"rrule": "{{ expr }}"}'
+            hx-target="#rrule-section" hx-swap="outerHTML">
+      {{ label }}
+    </button>
+    {% endfor %}
+  </div>
+
+  <div class="mono-label">Custom rule</div>
+  <form hx-post="/v/availability/rrule"
+        hx-target="#rrule-section" hx-swap="outerHTML">
+    <div class="field">
+      <label class="field-label" for="rrule">iCalendar RRULE</label>
+      <input id="rrule" name="rrule" type="text" required
+             placeholder="FREQ=WEEKLY;BYDAY=SU"
+             value="{{ rrule or '' }}">
+    </div>
+    <div class="spacer-12"></div>
+    <button class="btn btn-primary" type="submit">Save rule</button>
+  </form>
+</div>

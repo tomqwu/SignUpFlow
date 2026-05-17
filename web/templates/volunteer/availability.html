@@ -8,6 +8,9 @@
     Book time-off so the scheduler won't assign you on those days.
   </div>
   {% include "partials/timeoff_list.html" %}
+
+  <div class="mono-label">Recurring availability</div>
+  {% include "partials/rrule_section.html" %}
 </div>
 {% set tabs = [
   ('/v/schedule', '▦', 'Schedule', 'schedule'),
