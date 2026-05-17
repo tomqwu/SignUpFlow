@@ -1,0 +1,39 @@
+{# Single-date blocked exceptions + add form. Whole block is
+   #exceptions-section so HTMX outerHTML-swaps after add/delete. #}
+<div id="exceptions-section">
+  {% if error %}
+  <div class="form-error" role="alert">{{ error }}</div>
+  <div class="spacer-12"></div>
+  {% endif %}
+
+  <form hx-post="/v/availability/exception"
+        hx-target="#exceptions-section" hx-swap="outerHTML">
+    <div class="field">
+      <label class="field-label" for="exception_date">Block a single date</label>
+      <input id="exception_date" name="exception_date" type="date" required>
+    </div>
+    <div class="spacer-12"></div>
+    <button class="btn btn-primary" type="submit">Block this date</button>
+  </form>
+
+  <div class="mono-label">Blocked dates</div>
+  {% if not exceptions %}
+  <div class="empty">No single-date blocks.</div>
+  {% else %}
+  <div class="group">
+    {% for x in exceptions %}
+    <div class="row">
+      <div class="row-main">
+        <div class="row-title">{{ x.label }}</div>
+      </div>
+      <button class="btn btn-destructive" style="width:auto;padding:6px 12px"
+              hx-post="/v/availability/exception/{{ x.id }}/delete"
+              hx-target="#exceptions-section" hx-swap="outerHTML"
+              hx-confirm="Unblock this date?">
+        Remove
+      </button>
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+</div>
