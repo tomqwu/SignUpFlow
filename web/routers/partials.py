@@ -14,7 +14,7 @@ from fastapi.responses import HTMLResponse
 from sqlalchemy.orm import Session
 
 from api.database import get_db
-from api.models import Person
+from api.models import EmailPreference, Notification, Person
 from api.routers.assignments import (
     accept_assignment,
     decline_assignment,
@@ -61,11 +61,15 @@ from api.schemas.organization import OrganizationUpdate
 from api.schemas.person import PersonUpdate
 from api.schemas.solver import SolveRequest
 from api.schemas.team import TeamCreate, TeamMemberAdd, TeamMemberRemove, TeamUpdate
+from api.timeutils import utcnow
 from web.deps import get_session_admin, get_session_user
 from web.routers.pages import (
+    NOTIF_TYPES,
     RRULE_PRESETS,
     _constraints,
+    _email_prefs,
     _events,
+    _inbox,
     _my_assignment,
     _my_calendar,
     _my_exceptions,
@@ -623,6 +627,125 @@ def team_member_remove(
     except HTTPException as exc:
         return _teams_list(request, person, db, error=str(exc.detail))
     return _teams_list(request, person, db)
+
+
+# ── Notifications inbox + email preferences ──────────────────────────
+
+
+def _inbox_list(request: Request, person: Person, db: Session):
+    from web.app import templates
+
+    return templates.TemplateResponse(
+        request,
+        "partials/inbox_list.html",
+        {"inbox": _inbox(db, person)},
+    )
+
+
+def _notif_prefs(request: Request, person: Person, db: Session, *, saved=False, error=None):
+    from web.app import templates
+
+    return templates.TemplateResponse(
+        request,
+        "partials/notif_prefs.html",
+        {
+            "prefs": _email_prefs(db, person),
+            "notif_types": NOTIF_TYPES,
+            "saved": saved,
+            "error": error,
+        },
+        status_code=400 if error else 200,
+    )
+
+
+@router.post("/v/inbox/{notification_id}/read", response_class=HTMLResponse)
+def inbox_mark_read(
+    request: Request,
+    notification_id: int,
+    person: Person = Depends(get_session_user),
+    db: Session = Depends(get_db),
+):
+    """Org-scoped + recipient-scoped direct update (reusing the API
+    handler would query Notification without an org_id filter, which
+    the strict tenancy guard rejects)."""
+    n = (
+        db.query(Notification)
+        .filter(
+            Notification.org_id == person.org_id,
+            Notification.id == notification_id,
+            Notification.recipient_id == person.id,
+        )
+        .first()
+    )
+    if n is not None and n.opened_at is None:
+        n.opened_at = utcnow()
+        db.commit()
+    return _inbox_list(request, person, db)
+
+
+@router.post("/v/inbox/read-all", response_class=HTMLResponse)
+def inbox_mark_all_read(
+    request: Request,
+    person: Person = Depends(get_session_user),
+    db: Session = Depends(get_db),
+):
+    """No bulk API endpoint exists — stamp opened_at directly (same
+    org-scoped recipient filter the API's per-item handler enforces)."""
+    now = utcnow()
+    (
+        db.query(Notification)
+        .filter(
+            Notification.org_id == person.org_id,
+            Notification.recipient_id == person.id,
+            Notification.opened_at.is_(None),
+        )
+        .update({Notification.opened_at: now}, synchronize_session=False)
+    )
+    db.commit()
+    return _inbox_list(request, person, db)
+
+
+@router.post("/v/inbox/preferences", response_class=HTMLResponse)
+def inbox_save_preferences(
+    request: Request,
+    frequency: str = Form("immediate"),
+    digest_hour: int = Form(8),
+    types: list[str] = Form(default=[]),
+    person: Person = Depends(get_session_user),
+    db: Session = Depends(get_db),
+):
+    """Upsert the signed-in user's email preferences (org-scoped direct
+    write — the API handler isn't org-filtered for the tenancy guard)."""
+    if not 0 <= digest_hour <= 23:
+        return _notif_prefs(request, person, db, error="Digest hour must be between 0 and 23.")
+    if frequency not in ("immediate", "daily", "weekly", "disabled"):
+        frequency = "immediate"
+    valid_types = [t for t in types if t in NOTIF_TYPES]
+
+    pref = (
+        db.query(EmailPreference)
+        .filter(
+            EmailPreference.org_id == person.org_id,
+            EmailPreference.person_id == person.id,
+        )
+        .first()
+    )
+    if pref is None:
+        import secrets
+
+        pref = EmailPreference(
+            person_id=person.id,
+            org_id=person.org_id,
+            language=person.language or "en",
+            timezone=person.timezone or "UTC",
+            unsubscribe_token=secrets.token_urlsafe(32),
+        )
+        db.add(pref)
+    pref.frequency = frequency
+    pref.enabled_types = valid_types
+    pref.digest_hour = digest_hour
+    db.commit()
+    return _notif_prefs(request, person, db, saved=True)
 
 
 # ── Admin: constraints ───────────────────────────────────────────────

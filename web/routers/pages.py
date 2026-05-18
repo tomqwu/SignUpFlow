@@ -9,7 +9,16 @@ from fastapi.responses import HTMLResponse, RedirectResponse
 from sqlalchemy.orm import Session
 
 from api.database import get_db
-from api.models import Assignment, Constraint, Event, Person, Team, TeamMember
+from api.models import (
+    Assignment,
+    Constraint,
+    EmailPreference,
+    Event,
+    Notification,
+    Person,
+    Team,
+    TeamMember,
+)
 from web.deps import get_session_admin, get_session_user
 
 router = APIRouter(tags=["web-pages"])
@@ -94,6 +103,7 @@ def volunteer_schedule(
             "person": person,
             "active_tab": "schedule",
             "rows": _my_schedule_rows(db, person),
+            "unread": _unread_count(db, person),
         },
     )
 
@@ -209,6 +219,110 @@ def _account_ctx(person: Person) -> dict:
         "saved": False,
         "error": None,
     }
+
+
+NOTIF_TYPES = ["assignment", "reminder", "update", "cancellation"]
+_NOTIF_LABELS = {
+    "assignment": "New assignment",
+    "reminder": "Reminder",
+    "update": "Schedule update",
+    "cancellation": "Cancellation",
+}
+
+
+def _notif_label(t: str | None) -> str:
+    key = (t or "").lower()
+    return _NOTIF_LABELS.get(key, (t or "Notification").replace("_", " ").title())
+
+
+def _inbox(db: Session, person: Person) -> dict:
+    """The signed-in user's own notifications, newest first."""
+    rows = (
+        db.query(Notification)
+        .filter(
+            Notification.org_id == person.org_id,
+            Notification.recipient_id == person.id,
+        )
+        .order_by(Notification.created_at.desc())
+        .limit(100)
+        .all()
+    )
+    out = []
+    unread = 0
+    for n in rows:
+        is_unread = n.opened_at is None and n.clicked_at is None
+        if is_unread:
+            unread += 1
+        out.append(
+            {
+                "id": n.id,
+                "label": _notif_label(n.type),
+                "event_id": n.event_id,
+                "when": n.created_at.strftime("%a %d %b %Y, %H:%M") if n.created_at else "",
+                "unread": is_unread,
+                "status": (n.status or "").lower(),
+            }
+        )
+    return {"rows": out, "unread": unread}
+
+
+def _unread_count(db: Session, person: Person) -> int:
+    from sqlalchemy import func
+
+    return (
+        db.query(func.count(Notification.id))
+        .filter(
+            Notification.org_id == person.org_id,
+            Notification.recipient_id == person.id,
+            Notification.opened_at.is_(None),
+            Notification.clicked_at.is_(None),
+        )
+        .scalar()
+        or 0
+    )
+
+
+def _email_prefs(db: Session, person: Person) -> dict:
+    p = (
+        db.query(EmailPreference)
+        .filter(
+            EmailPreference.org_id == person.org_id,
+            EmailPreference.person_id == person.id,
+        )
+        .first()
+    )
+    if not p:
+        return {
+            "frequency": "immediate",
+            "enabled_types": list(NOTIF_TYPES),
+            "digest_hour": 8,
+        }
+    return {
+        "frequency": p.frequency or "immediate",
+        "enabled_types": list(p.enabled_types or NOTIF_TYPES),
+        "digest_hour": p.digest_hour if p.digest_hour is not None else 8,
+    }
+
+
+@router.get("/v/inbox", response_class=HTMLResponse)
+def volunteer_inbox(
+    request: Request,
+    person: Person = Depends(get_session_user),
+    db: Session = Depends(get_db),
+):
+    from web.app import templates
+
+    return templates.TemplateResponse(
+        request,
+        "volunteer/inbox.html",
+        {
+            "person": person,
+            "active_tab": None,
+            "inbox": _inbox(db, person),
+            "prefs": _email_prefs(db, person),
+            "notif_types": NOTIF_TYPES,
+        },
+    )
 
 
 def _my_calendar(request: Request, db: Session, person: Person) -> dict:

@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block title %}Inbox · SignUpFlow{% endblock %}
+{% block body %}
+<div class="nav">
+  <a class="nav-back" href="/v/schedule">‹ Schedule</a>
+  <form method="post" action="/auth/logout" style="margin:0">
+    <button class="nav-action" type="submit">Sign out</button>
+  </form>
+</div>
+<div class="page-title">Inbox</div>
+<div class="scroll">
+  {% include "partials/inbox_list.html" %}
+
+  <div class="mono-label" style="margin-top:18px">Email preferences</div>
+  {% include "partials/notif_prefs.html" %}
+</div>
+{% set tabs = [
+  ('/v/schedule', '▦', 'Schedule', 'schedule'),
+  ('/v/availability', '◷', 'Availability', 'availability'),
+  ('/v/profile', '◍', 'Profile', 'profile'),
+] %}
+{% include "_nav.html" %}
+{% endblock %}

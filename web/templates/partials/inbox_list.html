@@ -1,0 +1,48 @@
+{# Notification inbox list. #inbox-list so HTMX swaps it after read /
+   read-all. #}
+<div id="inbox-list">
+  <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+    <div class="mono-label" style="margin:0;flex:1">
+      Inbox{% if inbox.unread %} · {{ inbox.unread }} unread{% endif %}
+    </div>
+    {% if inbox.unread %}
+    <button class="btn btn-secondary" style="width:auto;padding:6px 12px"
+            hx-post="/v/inbox/read-all"
+            hx-target="#inbox-list" hx-swap="outerHTML">
+      Mark all read
+    </button>
+    {% endif %}
+  </div>
+  <div class="spacer-12"></div>
+
+  {% if not inbox.rows %}
+  <div class="empty">No notifications yet.</div>
+  {% else %}
+  <div class="group">
+    {% for n in inbox.rows %}
+    <div class="row">
+      <div class="row-main">
+        <div class="row-title">
+          {% if n.unread %}<span aria-hidden="true">● </span>{% endif %}{{ n.label }}
+        </div>
+        <div class="row-sub">
+          {{ n.when }}{% if n.event_id %} · {{ n.event_id }}{% endif %}
+        </div>
+        <div style="margin-top:4px">
+          <span class="status-text {{ 'pending' if n.unread else 'confirmed' }}">
+            {{ 'unread' if n.unread else 'read' }}
+          </span>
+        </div>
+      </div>
+      {% if n.unread %}
+      <button class="btn btn-secondary" style="width:auto;padding:6px 12px"
+              hx-post="/v/inbox/{{ n.id }}/read"
+              hx-target="#inbox-list" hx-swap="outerHTML">
+        Mark read
+      </button>
+      {% endif %}
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+</div>
