@@ -11,6 +11,7 @@ from __future__ import annotations
 
 from fastapi import APIRouter, BackgroundTasks, Depends, Form, HTTPException, Request
 from fastapi.responses import HTMLResponse
+from pydantic import ValidationError
 from sqlalchemy.orm import Session
 
 from api.database import get_db
@@ -39,6 +40,11 @@ from api.routers.events import AssignmentRequest, create_event, delete_event, ma
 from api.routers.invitations import create_invitation
 from api.routers.organizations import get_organization, update_organization
 from api.routers.people import update_current_person
+from api.routers.recurring_events import (
+    RecurringSeriesCreate,
+    create_recurring_series,
+    delete_recurring_series,
+)
 from api.routers.solutions import (
     compare_solutions,
     publish_solution,
@@ -81,6 +87,7 @@ from web.routers.pages import (
     _my_exceptions,
     _my_rrule,
     _my_timeoff,
+    _recurring,
     _solution_owned,
     _solution_review,
     _teams,
@@ -820,6 +827,101 @@ def event_assignment_remove(
     except HTTPException:
         pass  # already gone — return a fresh, correct list
     return _event_assignments_partial(request, person, db, event_id)
+
+
+# ── Admin: recurring series ──────────────────────────────────────────
+
+
+def _recurring_list(request: Request, person: Person, db: Session, *, error=None):
+    from web.app import templates
+
+    return templates.TemplateResponse(
+        request,
+        "partials/recurring_list.html",
+        {"series": _recurring(db, person.org_id), "error": error},
+        status_code=400 if error else 200,
+    )
+
+
+@router.post("/a/recurring/create", response_class=HTMLResponse)
+def recurring_create(
+    request: Request,
+    title: str = Form(""),
+    duration: int = Form(60),
+    location: str = Form(""),
+    pattern_type: str = Form("weekly"),
+    selected_days: list[str] = Form(default=[]),
+    weekday_position: str = Form(""),
+    weekday_name: str = Form(""),
+    frequency_interval: int = Form(0),
+    start_date: str = Form(""),
+    start_time: str = Form(""),
+    end_condition_type: str = Form("count"),
+    end_date: str = Form(""),
+    occurrence_count: int = Form(0),
+    role_name: list[str] = Form(default=[]),
+    role_count: list[str] = Form(default=[]),
+    person: Person = Depends(get_session_admin),
+    db: Session = Depends(get_db),
+):
+    from datetime import date as _date
+    from datetime import time as _time
+
+    if not title.strip():
+        return _recurring_list(request, person, db, error="Title is required.")
+
+    role_requirements: dict[str, int] = {}
+    for idx, raw in enumerate(role_name):
+        nm = raw.strip()
+        if not nm:
+            continue
+        try:
+            cnt = int(role_count[idx]) if idx < len(role_count) else 1
+        except (TypeError, ValueError):
+            continue
+        if cnt >= 1:
+            role_requirements[nm] = role_requirements.get(nm, 0) + cnt
+
+    try:
+        payload = RecurringSeriesCreate(
+            title=title.strip(),
+            duration=duration,
+            location=location.strip() or None,
+            role_requirements=role_requirements or None,
+            pattern_type=pattern_type,
+            frequency_interval=frequency_interval or None,
+            selected_days=[d for d in selected_days if d] or None,
+            weekday_position=weekday_position or None,
+            weekday_name=weekday_name or None,
+            start_date=_date.fromisoformat(start_date),
+            start_time=_time.fromisoformat(start_time),
+            end_condition_type=end_condition_type,
+            end_date=_date.fromisoformat(end_date) if end_date else None,
+            occurrence_count=occurrence_count or None,
+        )
+    except (ValidationError, ValueError):
+        return _recurring_list(
+            request, person, db, error="Check the pattern, dates, and end condition."
+        )
+    try:
+        create_recurring_series(payload, person.org_id, person, db)
+    except HTTPException as exc:
+        return _recurring_list(request, person, db, error=str(exc.detail))
+    return _recurring_list(request, person, db)
+
+
+@router.post("/a/recurring/{series_id}/delete", response_class=HTMLResponse)
+def recurring_delete(
+    request: Request,
+    series_id: str,
+    person: Person = Depends(get_session_admin),
+    db: Session = Depends(get_db),
+):
+    try:
+        delete_recurring_series(series_id, person, db)
+    except HTTPException:
+        pass  # already gone — return a fresh, correct list
+    return _recurring_list(request, person, db)
 
 
 # ── Admin: constraints ───────────────────────────────────────────────

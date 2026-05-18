@@ -16,6 +16,7 @@ from api.models import (
     Event,
     Notification,
     Person,
+    RecurringSeries,
     Team,
     TeamMember,
 )
@@ -651,6 +652,63 @@ def _events(db: Session, org_id: str) -> dict:
         (upcoming if e.start_time and e.start_time >= now else past).append(item)
     past.reverse()  # most-recent past first
     return {"upcoming": upcoming, "past": past}
+
+
+def _recurring(db: Session, org_id: str) -> list[dict]:
+    """Active recurring series for the org (direct org-scoped query)."""
+    rows = (
+        db.query(RecurringSeries)
+        .filter(RecurringSeries.org_id == org_id, RecurringSeries.active.is_(True))
+        .order_by(RecurringSeries.created_at.desc())
+        .all()
+    )
+    out = []
+    for s in rows:
+        if s.pattern_type in ("weekly", "biweekly") and s.selected_days:
+            when = ", ".join(d.title()[:3] for d in s.selected_days)
+        elif s.pattern_type == "monthly" and s.weekday_position and s.weekday_name:
+            when = f"{s.weekday_position} {s.weekday_name.title()}"
+        elif s.pattern_type == "custom" and s.frequency_interval:
+            when = f"every {s.frequency_interval} wk"
+        else:
+            when = ""
+        if s.end_condition_type == "date" and s.end_date:
+            ends = f"until {s.end_date.isoformat()}"
+        elif s.end_condition_type == "count" and s.occurrence_count:
+            ends = f"{s.occurrence_count}×"
+        else:
+            ends = "ongoing"
+        out.append(
+            {
+                "id": s.id,
+                "title": s.title,
+                "pattern": s.pattern_type,
+                "when": when,
+                "ends": ends,
+                "from": s.start_date.isoformat() if s.start_date else "",
+            }
+        )
+    return out
+
+
+@router.get("/a/recurring", response_class=HTMLResponse)
+def admin_recurring(
+    request: Request,
+    person: Person = Depends(get_session_admin),
+    db: Session = Depends(get_db),
+):
+    from web.app import templates
+
+    return templates.TemplateResponse(
+        request,
+        "admin/recurring.html",
+        {
+            "person": person,
+            "active_tab": "events",
+            "series": _recurring(db, person.org_id),
+            "error": None,
+        },
+    )
 
 
 @router.get("/a/events", response_class=HTMLResponse)
