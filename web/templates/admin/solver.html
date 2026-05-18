@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+{% block title %}Run solver · SignUpFlow{% endblock %}
+{% block body %}
+<div class="nav">
+  <span class="nav-back"></span>
+  <form method="post" action="/auth/logout" style="margin:0">
+    <button class="nav-action" type="submit">Sign out</button>
+  </form>
+</div>
+<div class="page-title">Run Solver</div>
+<div class="scroll" x-data="{ mode: 'strict' }">
+  <form hx-post="/a/solver/run"
+        hx-target="#solver-result" hx-swap="outerHTML"
+        hx-indicator="#solver-busy">
+    <div class="mono-label" style="margin-top:8px">Date range</div>
+    <div class="field">
+      <label class="field-label" for="from_date">From</label>
+      <input id="from_date" name="from_date" type="date" required
+             value="{{ default_from }}">
+    </div>
+    <div class="field">
+      <label class="field-label" for="to_date">To</label>
+      <input id="to_date" name="to_date" type="date" required
+             value="{{ default_to }}">
+    </div>
+
+    <div class="mono-label">Mode</div>
+    <input type="hidden" name="mode" :value="mode">
+    <div class="seg cols-2">
+      <button type="button" :class="mode==='strict' ? 'active' : ''"
+              @click="mode='strict'">Strict</button>
+      <button type="button" :class="mode==='relaxed' ? 'active' : ''"
+              @click="mode='relaxed'">Relaxed</button>
+    </div>
+
+    <div class="mono-label">Options</div>
+    <div class="card">
+      <label style="display:flex;align-items:center;gap:10px;cursor:pointer">
+        <input type="checkbox" name="change_min" value="true">
+        <span>
+          <span class="row-title" style="font-size:14px">Minimize moves from published</span>
+          <span class="row-sub">Bias toward keeping current published assignments.</span>
+        </span>
+      </label>
+    </div>
+
+    <div class="spacer-18"></div>
+    <button class="btn btn-go" type="submit">
+      Run solver →
+      <span id="solver-busy" class="htmx-indicator">…</span>
+    </button>
+  </form>
+
+  <div class="spacer-18"></div>
+  <div id="solver-result"></div>
+</div>
+{% set tabs = [
+  ('/a/dashboard', '▣', 'Dashboard', 'dashboard'),
+  ('/a/people', '◔', 'People', 'people'),
+  ('/a/events', '▤', 'Events', 'events'),
+  ('/a/solver', '◈', 'Solver', 'solver'),
+] %}
+{% include "_nav.html" %}
+{% endblock %}
