@@ -35,7 +35,7 @@ from api.routers.constraints import (
     delete_constraint,
     update_constraint,
 )
-from api.routers.events import create_event, delete_event
+from api.routers.events import AssignmentRequest, create_event, delete_event, manage_assignment
 from api.routers.invitations import create_invitation
 from api.routers.organizations import get_organization, update_organization
 from api.routers.people import update_current_person
@@ -68,6 +68,7 @@ from web.routers.pages import (
     RRULE_PRESETS,
     _constraints,
     _email_prefs,
+    _event_assignments,
     _events,
     _inbox,
     _my_assignment,
@@ -746,6 +747,73 @@ def inbox_save_preferences(
     pref.digest_hour = digest_hour
     db.commit()
     return _notif_prefs(request, person, db, saved=True)
+
+
+# ── Admin: manual assignment editing ─────────────────────────────────
+
+
+def _event_assignments_partial(
+    request: Request, person: Person, db: Session, event_id: str, *, error=None
+):
+    from web.app import templates
+
+    data = _event_assignments(db, person.org_id, event_id)
+    if data is None:
+        return HTMLResponse(
+            '<div id="event-assignments" class="empty">Event not found.</div>',
+            status_code=404,
+        )
+    return templates.TemplateResponse(
+        request,
+        "partials/event_assignments.html",
+        {"data": data, "error": error},
+        status_code=400 if error else 200,
+    )
+
+
+@router.post("/a/events/{event_id}/assignments/add", response_class=HTMLResponse)
+def event_assignment_add(
+    request: Request,
+    event_id: str,
+    background_tasks: BackgroundTasks,
+    person_id: str = Form(...),
+    role: str = Form(""),
+    person: Person = Depends(get_session_admin),
+    db: Session = Depends(get_db),
+):
+    try:
+        manage_assignment(
+            event_id,
+            AssignmentRequest(person_id=person_id, action="assign", role=role.strip() or None),
+            background_tasks,
+            person,
+            db,
+        )
+    except HTTPException as exc:
+        return _event_assignments_partial(request, person, db, event_id, error=str(exc.detail))
+    return _event_assignments_partial(request, person, db, event_id)
+
+
+@router.post("/a/events/{event_id}/assignments/remove", response_class=HTMLResponse)
+def event_assignment_remove(
+    request: Request,
+    event_id: str,
+    background_tasks: BackgroundTasks,
+    person_id: str = Form(...),
+    person: Person = Depends(get_session_admin),
+    db: Session = Depends(get_db),
+):
+    try:
+        manage_assignment(
+            event_id,
+            AssignmentRequest(person_id=person_id, action="unassign"),
+            background_tasks,
+            person,
+            db,
+        )
+    except HTTPException:
+        pass  # already gone — return a fresh, correct list
+    return _event_assignments_partial(request, person, db, event_id)
 
 
 # ── Admin: constraints ───────────────────────────────────────────────

@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block title %}Assignees · SignUpFlow{% endblock %}
+{% block body %}
+<div class="nav">
+  <a class="nav-back" href="/a/events">‹ Events</a>
+  <form method="post" action="/auth/logout" style="margin:0">
+    <button class="nav-action" type="submit">Sign out</button>
+  </form>
+</div>
+<div class="page-title">Assignees</div>
+<div class="scroll">
+  {% if data is none %}
+  <div class="empty">Event not found in your organization.</div>
+  {% else %}
+  {% include "partials/event_assignments.html" %}
+  {% endif %}
+</div>
+{% set tabs = [
+  ('/a/dashboard', '▣', 'Dashboard', 'dashboard'),
+  ('/a/people', '◔', 'People', 'people'),
+  ('/a/events', '▤', 'Events', 'events'),
+  ('/a/solver', '◈', 'Solver', 'solver'),
+] %}
+{% include "_nav.html" %}
+{% endblock %}

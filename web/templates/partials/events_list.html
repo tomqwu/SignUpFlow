@@ -66,6 +66,8 @@
         <div class="row-title">{{ e.type }}</div>
         <div class="row-sub">{{ e.date_label }}{% if e.time_label %} · {{ e.time_label }}{% endif %}</div>
       </div>
+      <a class="btn btn-secondary" style="width:auto;padding:6px 12px"
+         href="/a/events/{{ e.id }}/assignments">Manage</a>
       <button class="btn btn-destructive" style="width:auto;padding:6px 12px"
               hx-post="/a/events/{{ e.id }}/delete"
               hx-target="#events-list" hx-swap="outerHTML"
@@ -88,6 +90,8 @@
         <div class="row-title">{{ e.type }}</div>
         <div class="row-sub">{{ e.date_label }}{% if e.time_label %} · {{ e.time_label }}{% endif %}</div>
       </div>
+      <a class="btn btn-secondary" style="width:auto;padding:6px 12px"
+         href="/a/events/{{ e.id }}/assignments">Manage</a>
       <button class="btn btn-destructive" style="width:auto;padding:6px 12px"
               hx-post="/a/events/{{ e.id }}/delete"
               hx-target="#events-list" hx-swap="outerHTML"
