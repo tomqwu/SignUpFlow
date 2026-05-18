@@ -1,0 +1,31 @@
+{# Calendar subscription card. #calendar-section so HTMX outerHTML-
+   swaps it after a token reset. #}
+<div id="calendar-section">
+  <div class="card" x-data="{ copied: false,
+        copy(){ navigator.clipboard
+                 .writeText('{{ calendar.https_url }}')
+                 .then(() => { this.copied = true;
+                               setTimeout(() => this.copied = false, 1500); }); } }">
+    <div class="field-label">Subscription URL</div>
+    <div class="spacer-12" style="height:4px"></div>
+    <div class="mono-data" style="text-transform:none;word-break:break-all">
+      {{ calendar.https_url }}
+    </div>
+    <div class="row-sub" style="margin-top:8px">
+      Add this to Google / Apple / Outlook Calendar to see your shifts.
+    </div>
+    <div class="spacer-12"></div>
+    <div class="btn-row cols-2">
+      <button class="btn btn-secondary" type="button" @click="copy()">
+        <span x-show="!copied">Copy link</span>
+        <span x-show="copied" x-cloak>Copied ✓</span>
+      </button>
+      <button class="btn btn-destructive" type="button"
+              hx-post="/v/profile/calendar/reset"
+              hx-target="#calendar-section" hx-swap="outerHTML"
+              hx-confirm="Reset the link? Existing calendar subscriptions will stop updating until re-added.">
+        Reset link
+      </button>
+    </div>
+  </div>
+</div>

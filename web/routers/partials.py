@@ -35,9 +35,11 @@ from api.schemas.availability import (
     TimeOffCreate,
 )
 from web.deps import get_session_user
+from api.routers.calendar import reset_calendar_token
 from web.routers.pages import (
     RRULE_PRESETS,
     _my_assignment,
+    _my_calendar,
     _my_exceptions,
     _my_rrule,
     _my_timeoff,
@@ -253,3 +255,24 @@ def exception_delete(
     except HTTPException:
         pass  # already gone — return a fresh, correct list
     return _exceptions_list(request, person, db)
+
+
+# ── Profile: calendar subscription ───────────────────────────────────
+
+
+@router.post("/v/profile/calendar/reset", response_class=HTMLResponse)
+def calendar_reset(
+    request: Request,
+    person: Person = Depends(get_session_user),
+    db: Session = Depends(get_db),
+):
+    """Rotate the calendar token (invalidates the old subscription URL)
+    and re-render the calendar card with the fresh URL."""
+    from web.app import templates
+
+    reset_calendar_token(person.id, person, db, request)
+    return templates.TemplateResponse(
+        request,
+        "partials/calendar_section.html",
+        {"calendar": _my_calendar(request, db, person)},
+    )
