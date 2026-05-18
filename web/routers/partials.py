@@ -39,7 +39,7 @@ from api.routers.constraints import (
 from api.routers.events import AssignmentRequest, create_event, delete_event, manage_assignment
 from api.routers.invitations import create_invitation
 from api.routers.organizations import get_organization, update_organization
-from api.routers.people import update_current_person
+from api.routers.people import bulk_import_people, update_current_person
 from api.routers.recurring_events import (
     RecurringSeriesCreate,
     create_recurring_series,
@@ -373,6 +373,73 @@ def people_invite(
     except HTTPException as exc:
         return _result(False, str(exc.detail), exc.status_code or 400)
     return _result(True, f"Invitation sent to {email}.")
+
+
+@router.post("/a/people/import", response_class=HTMLResponse)
+def people_import(
+    request: Request,
+    csv_text: str = Form(""),
+    person: Person = Depends(get_session_admin),
+    db: Session = Depends(get_db),
+):
+    """Bulk-import people from pasted CSV (name,email,roles). Each row
+    becomes a PersonCreate; reuses the API bulk_import_people so the
+    same validation, dedupe, and caps apply."""
+    import csv
+    import io
+    import uuid
+
+    from web.app import templates
+    from web.auth import _slugify
+
+    def _render(*, result=None, error=None):
+        return templates.TemplateResponse(
+            request,
+            "partials/import_result.html",
+            {"result": result, "error": error},
+            status_code=400 if error else 200,
+        )
+
+    text = csv_text.strip()
+    if not text:
+        return _render(error="Paste at least one CSV row (name,email,roles).")
+
+    items = []
+    reader = csv.reader(io.StringIO(text))
+    for row in reader:
+        cells = [c.strip() for c in row]
+        if not cells or not cells[0]:
+            continue
+        if cells[0].lower() == "name":  # header row
+            continue
+        name = cells[0]
+        email = cells[1] if len(cells) > 1 and cells[1] else None
+        roles_raw = cells[2] if len(cells) > 2 and cells[2] else ""
+        roles = [r.strip() for r in roles_raw.replace("|", ";").split(";") if r.strip()]
+        items.append(
+            {
+                "id": f"{_slugify(name)}-{uuid.uuid4().hex[:8]}",
+                "org_id": person.org_id,
+                "name": name,
+                "email": email,
+                "roles": roles or ["volunteer"],
+            }
+        )
+
+    if not items:
+        return _render(error="No data rows found (a header line alone isn't enough).")
+
+    try:
+        resp = bulk_import_people(request, {"items": items}, person.org_id, person, db)
+    except HTTPException as exc:
+        return _render(error=str(exc.detail))
+    return _render(
+        result={
+            "created": resp.created,
+            "skipped": resp.skipped,
+            "errors": [{"index": e.index, "reason": e.reason} for e in resp.errors],
+        }
+    )
 
 
 # ── Admin: organization settings ─────────────────────────────────────
