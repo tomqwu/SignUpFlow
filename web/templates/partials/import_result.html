@@ -1,0 +1,24 @@
+{# CSV import outcome. #import-result so HTMX swaps it after submit. #}
+<div id="import-result">
+  {% if error %}
+  <div class="form-error" role="alert">{{ error }}</div>
+  {% elif result %}
+  <div class="form-notice" role="status">
+    Imported {{ result.created }} · skipped {{ result.skipped }}
+    (duplicates){% if result.errors %} · {{ result.errors|length }} error(s){% endif %}.
+  </div>
+  {% if result.errors %}
+  <div class="spacer-12"></div>
+  <div class="group">
+    {% for e in result.errors %}
+    <div class="row">
+      <div class="row-main">
+        <div class="row-title">Row {{ e.index + 1 }}</div>
+        <div class="row-sub">{{ e.reason }}</div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+  {% endif %}
+</div>
