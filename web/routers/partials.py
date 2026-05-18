@@ -39,7 +39,12 @@ from api.routers.events import AssignmentRequest, create_event, delete_event, ma
 from api.routers.invitations import create_invitation
 from api.routers.organizations import get_organization, update_organization
 from api.routers.people import update_current_person
-from api.routers.solutions import compare_solutions, publish_solution
+from api.routers.solutions import (
+    compare_solutions,
+    publish_solution,
+    rollback_solution,
+    unpublish_solution,
+)
 from api.routers.solver import solve_schedule
 from api.routers.teams import (
     add_team_members,
@@ -77,6 +82,7 @@ from web.routers.pages import (
     _my_rrule,
     _my_timeoff,
     _solution_owned,
+    _solution_review,
     _teams,
 )
 
@@ -1087,6 +1093,31 @@ def solver_run(
 # ── Admin: publish solution + compare ────────────────────────────────
 
 
+def _publish_state(request: Request, person: Person, db: Session, sid: int, *, error=None):
+    """Re-render #publish-state from the solution's current state
+    (is_published + rollback eligibility), always carrying solution_id
+    so the swapped fragment's buttons keep working."""
+    from web.app import templates
+
+    review = _solution_review(db, person, sid)
+    if review is None:
+        return HTMLResponse(
+            '<div id="publish-state" class="empty">Solution not found.</div>',
+            status_code=404,
+        )
+    return templates.TemplateResponse(
+        request,
+        "partials/publish_state.html",
+        {
+            "solution_id": sid,
+            "published": review["is_published"],
+            "can_rollback": review["can_rollback"],
+            "error": error,
+        },
+        status_code=400 if error else 200,
+    )
+
+
 @router.post("/a/solution/{solution_id}/publish", response_class=HTMLResponse)
 def solution_publish(
     request: Request,
@@ -1094,10 +1125,7 @@ def solution_publish(
     person: Person = Depends(get_session_admin),
     db: Session = Depends(get_db),
 ):
-    """Publish the solution (unpublishes any prior in the org). Returns
-    the refreshed publish-state fragment."""
-    from web.app import templates
-
+    """Publish the solution (unpublishes any prior in the org)."""
     if _solution_owned(db, person, solution_id) is None:
         return HTMLResponse(
             '<div id="publish-state" class="empty">Solution not found.</div>',
@@ -1106,15 +1134,49 @@ def solution_publish(
     try:
         publish_solution(solution_id, request, person, db)
     except HTTPException as exc:
-        return templates.TemplateResponse(
-            request,
-            "partials/publish_state.html",
-            {"published": False, "error": str(exc.detail)},
-            status_code=exc.status_code or 400,
+        return _publish_state(request, person, db, solution_id, error=str(exc.detail))
+    return _publish_state(request, person, db, solution_id)
+
+
+@router.post("/a/solution/{solution_id}/unpublish", response_class=HTMLResponse)
+def solution_unpublish(
+    request: Request,
+    solution_id: int,
+    person: Person = Depends(get_session_admin),
+    db: Session = Depends(get_db),
+):
+    """Unpublish the solution; volunteers stop seeing its assignments."""
+    if _solution_owned(db, person, solution_id) is None:
+        return HTMLResponse(
+            '<div id="publish-state" class="empty">Solution not found.</div>',
+            status_code=404,
         )
-    return templates.TemplateResponse(
-        request, "partials/publish_state.html", {"published": True, "error": None}
-    )
+    try:
+        unpublish_solution(solution_id, request, person, db)
+    except HTTPException as exc:
+        return _publish_state(request, person, db, solution_id, error=str(exc.detail))
+    return _publish_state(request, person, db, solution_id)
+
+
+@router.post("/a/solution/{solution_id}/rollback", response_class=HTMLResponse)
+def solution_rollback(
+    request: Request,
+    solution_id: int,
+    person: Person = Depends(get_session_admin),
+    db: Session = Depends(get_db),
+):
+    """Re-publish a previously-published solution, replacing the current
+    one (rejected with a friendly error if it was never published)."""
+    if _solution_owned(db, person, solution_id) is None:
+        return HTMLResponse(
+            '<div id="publish-state" class="empty">Solution not found.</div>',
+            status_code=404,
+        )
+    try:
+        rollback_solution(solution_id, request, person, db)
+    except HTTPException as exc:
+        return _publish_state(request, person, db, solution_id, error=str(exc.detail))
+    return _publish_state(request, person, db, solution_id)
 
 
 @router.post("/a/compare", response_class=HTMLResponse)
