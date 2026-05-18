@@ -356,11 +356,16 @@ def event_create(
     event_date: str = Form(...),
     start_time: str = Form(...),
     end_time: str = Form(...),
+    role_name: list[str] = Form(default=[]),
+    role_count: list[str] = Form(default=[]),
     person: Person = Depends(get_session_admin),
     db: Session = Depends(get_db),
 ):
     """Create an event in the admin's org. Combines the date + two time
-    inputs into start/end datetimes; generates a unique slug id."""
+    inputs into start/end datetimes; generates a unique slug id. Parallel
+    role_name/role_count rows become extra_data.role_counts so the solver
+    has roles to assign — without this a web-created event gets 0
+    assignments (issue #141)."""
     import uuid
     from datetime import datetime
 
@@ -377,6 +382,20 @@ def event_create(
     if end_dt <= start_dt:
         return _err("End time must be after start time.")
 
+    role_counts: dict[str, int] = {}
+    for idx, raw_name in enumerate(role_name):
+        name = raw_name.strip()
+        if not name:
+            continue
+        raw_count = role_count[idx] if idx < len(role_count) else "1"
+        try:
+            count = int(raw_count)
+        except (TypeError, ValueError):
+            continue
+        if count < 1:
+            continue
+        role_counts[name] = role_counts.get(name, 0) + count
+
     event_id = f"{_slugify(type)}-{uuid.uuid4().hex[:8]}"
     try:
         payload = EventCreate(
@@ -385,6 +404,7 @@ def event_create(
             type=type,
             start_time=start_dt,
             end_time=end_dt,
+            extra_data={"role_counts": role_counts} if role_counts else None,
         )
     except ValueError:
         return _err("Invalid event details.")

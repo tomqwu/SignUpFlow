@@ -49,6 +49,73 @@ def test_create_event(client, db):
     assert ev.end_time == datetime(2099, 6, 7, 11, 30)
 
 
+def test_events_create_form_has_roles_field(client, db):
+    token = _admin(client, db, org="ec_roles_form", email="ecrf@web.test")
+    resp = client.get("/a/events", cookies={SESSION_COOKIE: token})
+    assert resp.status_code == 200
+    assert "Roles needed" in resp.text
+    assert 'name="role_name"' in resp.text
+    assert 'name="role_count"' in resp.text
+
+
+def test_create_event_with_roles(client, db):
+    token = _admin(client, db, org="ec_roles", email="ecroles@web.test")
+    resp = client.post(
+        "/a/events/create",
+        data={
+            "type": "Sunday Service",
+            "event_date": "2099-06-07",
+            "start_time": "10:00",
+            "end_time": "11:30",
+            "role_name": ["volunteer", "greeter"],
+            "role_count": ["2", "1"],
+        },
+        cookies={SESSION_COOKIE: token},
+    )
+    assert resp.status_code == 200
+    ev = db.query(Event).filter(Event.org_id == "ec_roles", Event.type == "Sunday Service").first()
+    assert ev is not None
+    assert ev.extra_data.get("role_counts") == {"volunteer": 2, "greeter": 1}
+
+
+def test_create_event_skips_blank_and_invalid_roles(client, db):
+    token = _admin(client, db, org="ec_roles2", email="ecroles2@web.test")
+    resp = client.post(
+        "/a/events/create",
+        data={
+            "type": "Partial Roles",
+            "event_date": "2099-06-08",
+            "start_time": "10:00",
+            "end_time": "11:00",
+            "role_name": ["volunteer", "", "  ", "usher"],
+            "role_count": ["3", "5", "2", "0"],
+        },
+        cookies={SESSION_COOKIE: token},
+    )
+    assert resp.status_code == 200
+    ev = db.query(Event).filter(Event.org_id == "ec_roles2", Event.type == "Partial Roles").first()
+    assert ev is not None
+    assert ev.extra_data.get("role_counts") == {"volunteer": 3}
+
+
+def test_create_event_without_roles_has_no_role_counts(client, db):
+    token = _admin(client, db, org="ec_roles3", email="ecroles3@web.test")
+    resp = client.post(
+        "/a/events/create",
+        data={
+            "type": "No Roles Event",
+            "event_date": "2099-06-09",
+            "start_time": "10:00",
+            "end_time": "11:00",
+        },
+        cookies={SESSION_COOKIE: token},
+    )
+    assert resp.status_code == 200
+    ev = db.query(Event).filter(Event.org_id == "ec_roles3", Event.type == "No Roles Event").first()
+    assert ev is not None
+    assert "role_counts" not in (ev.extra_data or {})
+
+
 def test_create_event_end_before_start_rejected(client, db):
     token = _admin(client, db, org="ec_org3", email="ecadmin3@web.test")
     resp = client.post(
