@@ -1332,6 +1332,39 @@ def solver_run(
 # ── Admin: publish solution + compare ────────────────────────────────
 
 
+def _emit_publish_notifications(db: Session, person: Person, sid: int) -> None:
+    """Best-effort: create inbox Notification rows for everyone assigned
+    in the just-published solution. Inline + org-scoped on purpose —
+    notification_service.create_assignment_notifications queries Person
+    un-scoped, which the strict tenancy guard rejects. DB-only, no email
+    dependency. Never breaks the publish response."""
+    try:
+        rows = (
+            db.query(Assignment.person_id, Assignment.event_id)
+            .join(Event, Assignment.event_id == Event.id)
+            .filter(
+                Event.org_id == person.org_id,
+                Assignment.solution_id == sid,
+            )
+            .all()
+        )
+        for person_id, event_id in rows:
+            db.add(
+                Notification(
+                    org_id=person.org_id,
+                    recipient_id=person_id,
+                    type="assignment",
+                    status="pending",
+                    event_id=event_id,
+                    template_data={"event_id": event_id, "solution_id": sid},
+                )
+            )
+        if rows:
+            db.commit()
+    except Exception:
+        db.rollback()
+
+
 def _publish_state(request: Request, person: Person, db: Session, sid: int, *, error=None):
     """Re-render #publish-state from the solution's current state
     (is_published + rollback eligibility), always carrying solution_id
@@ -1374,6 +1407,7 @@ def solution_publish(
         publish_solution(solution_id, request, person, db)
     except HTTPException as exc:
         return _publish_state(request, person, db, solution_id, error=str(exc.detail))
+    _emit_publish_notifications(db, person, solution_id)
     return _publish_state(request, person, db, solution_id)
 
 
