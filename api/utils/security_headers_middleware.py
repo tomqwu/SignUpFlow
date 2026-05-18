@@ -81,6 +81,14 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
         # X-XSS-Protection - Enable browser XSS protection (legacy, but doesn't hurt)
         response.headers["X-XSS-Protection"] = "1; mode=block"
 
+        # Cross-origin isolation — the app (API + same-origin web UI)
+        # never needs to be embedded or read cross-origin.
+        response.headers["Cross-Origin-Opener-Policy"] = "same-origin"
+        response.headers["Cross-Origin-Resource-Policy"] = "same-origin"
+
+        # Block legacy Adobe cross-domain policy files outright.
+        response.headers["X-Permitted-Cross-Domain-Policies"] = "none"
+
         return response
 
     def _get_csp_policy(self) -> str:

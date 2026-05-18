@@ -45,6 +45,17 @@ from api.routers import (
 async def lifespan(app: FastAPI):
     """Handle application startup and shutdown."""
     init_db()
+
+    # Launch-readiness guard: never run production on a guessable JWT key.
+    import os as _os
+
+    from api.security import SECRET_KEY, secret_key_issues
+
+    _issues = secret_key_issues(SECRET_KEY)
+    if _issues and _os.getenv("ENVIRONMENT", "development").lower() == "production":
+        for _msg in _issues:
+            logger.critical("SECURITY: %s", _msg)
+
     logger.info("🚀 SignUpFlow API started")
     logger.info("📖 API docs available at http://localhost:8000/docs")
     print("🚀 SignUpFlow API started")

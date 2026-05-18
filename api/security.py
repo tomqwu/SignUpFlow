@@ -19,8 +19,23 @@ if not hasattr(bcrypt, "__about__"):
     bcrypt.__about__ = _BcryptAbout()
 
 # JWT Configuration
-SECRET_KEY = os.getenv("SECRET_KEY", "your-secret-key-change-in-production-use-env-var")
+_DEFAULT_SECRET_KEY = "your-secret-key-change-in-production-use-env-var"
+SECRET_KEY = os.getenv("SECRET_KEY", _DEFAULT_SECRET_KEY)
 ALGORITHM = "HS256"
+
+
+def secret_key_issues(secret_key: str) -> list[str]:
+    """Return human-readable problems with the JWT signing key (empty =
+    OK). Pure — callable from a startup guard or a unit test. A guessable
+    HS256 key lets anyone forge tokens, so this is a launch blocker."""
+    issues: list[str] = []
+    if secret_key == _DEFAULT_SECRET_KEY:
+        issues.append("SECRET_KEY is the built-in default — set a unique value")
+    if len(secret_key) < 32:
+        issues.append(f"SECRET_KEY is too short ({len(secret_key)} chars; need >= 32)")
+    return issues
+
+
 # Read from env via direct os.getenv (not Settings) so the smoke runbook's
 # short-TTL workflow works without restart-coupling to Settings reload.
 # Default 24h matches the prior hardcoded value. Fractional hours via
