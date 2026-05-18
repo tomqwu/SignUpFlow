@@ -654,6 +654,59 @@ def _events(db: Session, org_id: str) -> dict:
     return {"upcoming": upcoming, "past": past}
 
 
+def _billing(db: Session, org_id: str) -> dict:
+    """Subscription + usage summary — DB-only services, no Stripe call
+    (Stripe-live management is gated on STRIPE_SECRET_KEY)."""
+    import os
+
+    from api.services.billing_service import BillingService
+    from api.services.usage_service import UsageService
+
+    sub = BillingService(db).get_subscription(org_id)
+    try:
+        summary = UsageService(db).get_usage_summary(org_id)
+    except Exception:
+        summary = {}
+    usage_rows = []
+    for name, v in (summary.get("usage") or {}).items():
+        if isinstance(v, dict):
+            usage_rows.append(
+                {
+                    "name": name.replace("_", " ").title(),
+                    "current": v.get("current", 0),
+                    "limit": v.get("limit", "—"),
+                    "percentage": v.get("percentage", 0),
+                }
+            )
+    return {
+        "tier": (sub.plan_tier if sub else "free"),
+        "status": (sub.status if sub else "—"),
+        "billing_cycle": (sub.billing_cycle if sub else None),
+        "trial_end": (
+            sub.trial_end_date.strftime("%d %b %Y") if sub and sub.trial_end_date else None
+        ),
+        "has_sub": sub is not None,
+        "stripe_ready": bool(os.getenv("STRIPE_SECRET_KEY")),
+        "usage_rows": usage_rows,
+        "warnings": (summary.get("warnings") or []),
+    }
+
+
+@router.get("/a/billing", response_class=HTMLResponse)
+def admin_billing(
+    request: Request,
+    person: Person = Depends(get_session_admin),
+    db: Session = Depends(get_db),
+):
+    from web.app import templates
+
+    return templates.TemplateResponse(
+        request,
+        "admin/billing.html",
+        {"person": person, "active_tab": "dashboard", "b": _billing(db, person.org_id)},
+    )
+
+
 def _swap_requests(db: Session, org_id: str) -> list[dict]:
     """Assignments the volunteer flagged for swap, org-scoped via the
     Event join."""
