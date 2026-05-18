@@ -9,7 +9,7 @@ from fastapi.responses import HTMLResponse, RedirectResponse
 from sqlalchemy.orm import Session
 
 from api.database import get_db
-from api.models import Assignment, Event, Person, Team, TeamMember
+from api.models import Assignment, Constraint, Event, Person, Team, TeamMember
 from web.deps import get_session_admin, get_session_user
 
 router = APIRouter(tags=["web-pages"])
@@ -373,6 +373,49 @@ def _teams(db: Session, org_id: str) -> list[dict]:
             }
         )
     return out
+
+
+def _constraints(db: Session, org_id: str) -> list[dict]:
+    """Scheduling constraints for the org (direct org-scoped query)."""
+    import json
+
+    rows = (
+        db.query(Constraint)
+        .filter(Constraint.org_id == org_id)
+        .order_by(Constraint.key.asc())
+        .all()
+    )
+    return [
+        {
+            "id": c.id,
+            "key": c.key,
+            "type": (c.type or "hard").lower(),
+            "weight": c.weight,
+            "predicate": c.predicate,
+            "params_json": json.dumps(c.params) if c.params else "",
+        }
+        for c in rows
+    ]
+
+
+@router.get("/a/constraints", response_class=HTMLResponse)
+def admin_constraints(
+    request: Request,
+    person: Person = Depends(get_session_admin),
+    db: Session = Depends(get_db),
+):
+    from web.app import templates
+
+    return templates.TemplateResponse(
+        request,
+        "admin/constraints.html",
+        {
+            "person": person,
+            "active_tab": "solver",
+            "constraints": _constraints(db, person.org_id),
+            "error": None,
+        },
+    )
 
 
 @router.get("/a/teams", response_class=HTMLResponse)

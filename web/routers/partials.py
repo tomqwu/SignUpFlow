@@ -30,6 +30,11 @@ from api.routers.availability import (
     set_rrule,
 )
 from api.routers.calendar import reset_calendar_token
+from api.routers.constraints import (
+    create_constraint,
+    delete_constraint,
+    update_constraint,
+)
 from api.routers.events import create_event, delete_event
 from api.routers.invitations import create_invitation
 from api.routers.organizations import get_organization, update_organization
@@ -49,6 +54,7 @@ from api.schemas.availability import (
     AvailabilityRruleUpdate,
     TimeOffCreate,
 )
+from api.schemas.constraint import ConstraintCreate, ConstraintUpdate
 from api.schemas.event import EventCreate
 from api.schemas.invitation import InvitationCreate
 from api.schemas.organization import OrganizationUpdate
@@ -58,6 +64,7 @@ from api.schemas.team import TeamCreate, TeamMemberAdd, TeamMemberRemove, TeamUp
 from web.deps import get_session_admin, get_session_user
 from web.routers.pages import (
     RRULE_PRESETS,
+    _constraints,
     _events,
     _my_assignment,
     _my_calendar,
@@ -616,6 +623,127 @@ def team_member_remove(
     except HTTPException as exc:
         return _teams_list(request, person, db, error=str(exc.detail))
     return _teams_list(request, person, db)
+
+
+# ── Admin: constraints ───────────────────────────────────────────────
+
+
+def _constraints_list(request: Request, person: Person, db: Session, *, error=None):
+    from web.app import templates
+
+    return templates.TemplateResponse(
+        request,
+        "partials/constraints_list.html",
+        {"constraints": _constraints(db, person.org_id), "error": error},
+        status_code=400 if error else 200,
+    )
+
+
+def _parse_constraint_form(ctype: str, weight: str, params: str):
+    """Returns (type, weight|None, params|None) or raises ValueError."""
+    import json
+
+    ctype = ctype if ctype in ("hard", "soft") else "hard"
+    w = weight.strip()
+    weight_val = None
+    if w:
+        try:
+            weight_val = int(w)
+        except ValueError as exc:
+            raise ValueError("Weight must be a whole number.") from exc
+    p = params.strip()
+    params_val = None
+    if p:
+        try:
+            parsed = json.loads(p)
+        except json.JSONDecodeError as exc:
+            raise ValueError("Params must be valid JSON.") from exc
+        if not isinstance(parsed, dict):
+            raise ValueError("Params must be a JSON object.")
+        params_val = parsed
+    return ctype, weight_val, params_val
+
+
+@router.post("/a/constraints/create", response_class=HTMLResponse)
+def constraint_create(
+    request: Request,
+    key: str = Form(""),
+    type: str = Form("hard"),
+    weight: str = Form(""),
+    predicate: str = Form(""),
+    params: str = Form(""),
+    person: Person = Depends(get_session_admin),
+    db: Session = Depends(get_db),
+):
+    if not key.strip():
+        return _constraints_list(request, person, db, error="Key is required.")
+    if not predicate.strip():
+        return _constraints_list(request, person, db, error="Predicate is required.")
+    try:
+        ctype, weight_val, params_val = _parse_constraint_form(type, weight, params)
+    except ValueError as exc:
+        return _constraints_list(request, person, db, error=str(exc))
+    payload = ConstraintCreate(
+        org_id=person.org_id,
+        key=key.strip(),
+        type=ctype,
+        weight=weight_val,
+        predicate=predicate.strip(),
+        params=params_val,
+    )
+    try:
+        create_constraint(payload, person, db)
+    except HTTPException as exc:
+        return _constraints_list(request, person, db, error=str(exc.detail))
+    return _constraints_list(request, person, db)
+
+
+@router.post("/a/constraints/{constraint_id}/update", response_class=HTMLResponse)
+def constraint_update(
+    request: Request,
+    constraint_id: int,
+    type: str = Form("hard"),
+    weight: str = Form(""),
+    predicate: str = Form(""),
+    params: str = Form(""),
+    person: Person = Depends(get_session_admin),
+    db: Session = Depends(get_db),
+):
+    if not predicate.strip():
+        return _constraints_list(request, person, db, error="Predicate is required.")
+    try:
+        ctype, weight_val, params_val = _parse_constraint_form(type, weight, params)
+    except ValueError as exc:
+        return _constraints_list(request, person, db, error=str(exc))
+    try:
+        update_constraint(
+            constraint_id,
+            ConstraintUpdate(
+                type=ctype,
+                weight=weight_val,
+                predicate=predicate.strip(),
+                params=params_val,
+            ),
+            person,
+            db,
+        )
+    except HTTPException as exc:
+        return _constraints_list(request, person, db, error=str(exc.detail))
+    return _constraints_list(request, person, db)
+
+
+@router.post("/a/constraints/{constraint_id}/delete", response_class=HTMLResponse)
+def constraint_delete(
+    request: Request,
+    constraint_id: int,
+    person: Person = Depends(get_session_admin),
+    db: Session = Depends(get_db),
+):
+    try:
+        delete_constraint(constraint_id, person, db)
+    except HTTPException:
+        pass  # already gone — return a fresh, correct list
+    return _constraints_list(request, person, db)
 
 
 # ── Admin: event create / delete ─────────────────────────────────────
