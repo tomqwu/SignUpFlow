@@ -1,0 +1,122 @@
+{# Constraints list + CRUD. #constraints-list so HTMX swaps it after
+   any mutation. #}
+<div id="constraints-list" x-data="{ creating: false, editId: null }">
+  {% if error %}
+  <div class="form-error" role="alert">{{ error }}</div>
+  <div class="spacer-12"></div>
+  {% endif %}
+
+  <button class="btn btn-primary" type="button"
+          x-show="!creating" @click="creating = true; editId = null">
+    New constraint
+  </button>
+  <form x-show="creating" x-cloak
+        hx-post="/a/constraints/create"
+        hx-target="#constraints-list" hx-swap="outerHTML">
+    <div class="field">
+      <label class="field-label" for="c_key">Key</label>
+      <input id="c_key" name="key" type="text" required
+             placeholder="max_two_per_month">
+    </div>
+    <div class="field">
+      <label class="field-label" for="c_type">Type</label>
+      <select id="c_type" name="type"
+              style="border:0;background:transparent;font-family:inherit;font-size:15px;color:var(--ink-1)">
+        <option value="hard">hard</option>
+        <option value="soft">soft</option>
+      </select>
+    </div>
+    <div class="field">
+      <label class="field-label" for="c_weight">Weight (soft only)</label>
+      <input id="c_weight" name="weight" type="number" step="1"
+             placeholder="e.g. 10">
+    </div>
+    <div class="field">
+      <label class="field-label" for="c_pred">Predicate</label>
+      <input id="c_pred" name="predicate" type="text" required
+             placeholder="min_gap_hours_satisfied(person_id, 12)">
+      <div class="row-sub" style="margin-top:6px">
+        DSL expression (e.g. <code>has_role(role)</code>,
+        <code>is_day_of_week(day)</code>,
+        <code>count_assignments_in_period(person_id, start, end)</code>).
+      </div>
+    </div>
+    <div class="field">
+      <label class="field-label" for="c_params">Params (JSON, optional)</label>
+      <input id="c_params" name="params" type="text"
+             placeholder='{"min_hours": 12}'>
+    </div>
+    <div class="spacer-12"></div>
+    <div class="btn-row cols-2">
+      <button class="btn btn-secondary" type="button" @click="creating = false">Cancel</button>
+      <button class="btn btn-primary" type="submit">Create constraint</button>
+    </div>
+  </form>
+
+  <div class="mono-label" style="margin-top:18px">Constraints</div>
+  {% if not constraints %}
+  <div class="empty">No constraints yet. The solver runs with defaults.</div>
+  {% else %}
+  {% for c in constraints %}
+  <div class="card" style="margin-bottom:12px">
+    <div x-show="editId !== {{ c.id }}">
+      <div style="display:flex;align-items:flex-start;gap:8px">
+        <div class="row-main" style="flex:1">
+          <div class="row-title">{{ c.key }}</div>
+          <div style="margin-top:4px;display:flex;gap:6px;flex-wrap:wrap;align-items:center">
+            <span class="role-chip">{{ c.type }}</span>
+            {% if c.weight is not none %}<span class="role-chip">w={{ c.weight }}</span>{% endif %}
+          </div>
+          <div class="mono-data" style="margin-top:8px;word-break:break-all">{{ c.predicate }}</div>
+          {% if c.params_json %}
+          <div class="row-sub" style="margin-top:4px;word-break:break-all">{{ c.params_json }}</div>
+          {% endif %}
+        </div>
+        <button class="btn btn-secondary" style="width:auto;padding:6px 12px"
+                type="button" @click="editId = {{ c.id }}">Edit</button>
+        <button class="btn btn-destructive" style="width:auto;padding:6px 12px"
+                hx-post="/a/constraints/{{ c.id }}/delete"
+                hx-target="#constraints-list" hx-swap="outerHTML"
+                hx-confirm="Delete constraint '{{ c.key }}'?">Delete</button>
+      </div>
+    </div>
+
+    <form x-show="editId === {{ c.id }}" x-cloak
+          hx-post="/a/constraints/{{ c.id }}/update"
+          hx-target="#constraints-list" hx-swap="outerHTML">
+      <div class="field">
+        <label class="field-label">Key</label>
+        <input type="text" value="{{ c.key }}" disabled
+               style="opacity:.6">
+      </div>
+      <div class="field">
+        <label class="field-label">Type</label>
+        <select name="type"
+                style="border:0;background:transparent;font-family:inherit;font-size:15px;color:var(--ink-1)">
+          <option value="hard" {% if c.type == 'hard' %}selected{% endif %}>hard</option>
+          <option value="soft" {% if c.type == 'soft' %}selected{% endif %}>soft</option>
+        </select>
+      </div>
+      <div class="field">
+        <label class="field-label">Weight</label>
+        <input name="weight" type="number" step="1"
+               value="{{ c.weight if c.weight is not none else '' }}">
+      </div>
+      <div class="field">
+        <label class="field-label">Predicate</label>
+        <input name="predicate" type="text" required value="{{ c.predicate }}">
+      </div>
+      <div class="field">
+        <label class="field-label">Params (JSON)</label>
+        <input name="params" type="text" value="{{ c.params_json }}">
+      </div>
+      <div class="spacer-12"></div>
+      <div class="btn-row cols-2">
+        <button class="btn btn-secondary" type="button" @click="editId = null">Cancel</button>
+        <button class="btn btn-primary" type="submit">Save</button>
+      </div>
+    </form>
+  </div>
+  {% endfor %}
+  {% endif %}
+</div>
