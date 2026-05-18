@@ -200,14 +200,31 @@ def volunteer_availability(
     )
 
 
+def _my_calendar(request: Request, db: Session, person: Person) -> dict:
+    """Calendar subscription URL for the caller (token generated lazily
+    by the API handler)."""
+    from api.routers.calendar import get_subscription_url
+
+    resp = get_subscription_url(person.id, person, db, request)
+    return {"https_url": resp.https_url, "webcal_url": resp.webcal_url}
+
+
 @router.get("/v/profile", response_class=HTMLResponse)
-def volunteer_profile(request: Request, person: Person = Depends(get_session_user)):
+def volunteer_profile(
+    request: Request,
+    person: Person = Depends(get_session_user),
+    db: Session = Depends(get_db),
+):
     from web.app import templates
 
     return templates.TemplateResponse(
         request,
         "volunteer/profile.html",
-        {"person": person, "active_tab": "profile"},
+        {
+            "person": person,
+            "active_tab": "profile",
+            "calendar": _my_calendar(request, db, person),
+        },
     )
 
 
