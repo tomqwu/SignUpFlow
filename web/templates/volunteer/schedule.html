@@ -1,7 +1,10 @@
 {% extends "base.html" %}
 {% block title %}Schedule · SignUpFlow{% endblock %}
 {% block body %}
-<div class="nav"><span class="nav-back"></span><span class="nav-action"></span></div>
+<div class="nav">
+  <span class="nav-back"></span>
+  <a class="nav-action" href="/v/inbox">Inbox{% if unread %} ({{ unread }}){% endif %}</a>
+</div>
 <div class="page-title">Schedule</div>
 <div class="scroll">
   {% if not rows %}

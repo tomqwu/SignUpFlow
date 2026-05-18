@@ -1,0 +1,43 @@
+{# Email-notification preferences. #notif-prefs so HTMX swaps it after
+   save. #}
+<div id="notif-prefs">
+  {% if error %}
+  <div class="form-error" role="alert">{{ error }}</div>
+  <div class="spacer-12"></div>
+  {% elif saved %}
+  <div class="form-notice" role="status">Preferences saved.</div>
+  <div class="spacer-12"></div>
+  {% endif %}
+
+  <form hx-post="/v/inbox/preferences"
+        hx-target="#notif-prefs" hx-swap="outerHTML">
+    <div class="field">
+      <label class="field-label" for="np_freq">Email frequency</label>
+      <select id="np_freq" name="frequency"
+              style="border:0;background:transparent;font-family:inherit;font-size:15px;color:var(--ink-1)">
+        {% for f in ['immediate', 'daily', 'weekly', 'disabled'] %}
+        <option value="{{ f }}" {% if prefs.frequency == f %}selected{% endif %}>{{ f }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div class="field">
+      <label class="field-label">Notify me about</label>
+      {% for t in notif_types %}
+      <label style="display:flex;align-items:center;gap:10px;padding:6px 0;cursor:pointer">
+        <input type="checkbox" name="types" value="{{ t }}"
+               {% if t in prefs.enabled_types %}checked{% endif %}>
+        <span class="row-title" style="font-size:14px;text-transform:capitalize">{{ t }}</span>
+      </label>
+      {% endfor %}
+    </div>
+
+    <div class="field">
+      <label class="field-label" for="np_hour">Digest hour (0–23)</label>
+      <input id="np_hour" name="digest_hour" type="number" min="0" max="23"
+             step="1" value="{{ prefs.digest_hour }}">
+    </div>
+    <div class="spacer-12"></div>
+    <button class="btn btn-primary" type="submit">Save preferences</button>
+  </form>
+</div>
