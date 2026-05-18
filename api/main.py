@@ -56,6 +56,15 @@ async def lifespan(app: FastAPI):
         for _msg in _issues:
             logger.critical("SECURITY: %s", _msg)
 
+    # Observability summary — error reporting is config-gated (no hard
+    # dependency): a DSN turns it on, its absence is a normal dev/sandbox
+    # state, not an error.
+    _err_reporting = "enabled" if _os.getenv("SENTRY_DSN") else "disabled (no SENTRY_DSN)"
+    logger.info(
+        "observability: error_reporting=%s liveness=/health readiness=/ready",
+        _err_reporting,
+    )
+
     logger.info("🚀 SignUpFlow API started")
     logger.info("📖 API docs available at http://localhost:8000/docs")
     print("🚀 SignUpFlow API started")
@@ -137,6 +146,29 @@ def health_check():
         return JSONResponse(status_code=503, content=health_status)
 
     return health_status
+
+
+@app.get("/ready", include_in_schema=False)
+def readiness_check():
+    """Readiness probe (ops-only, not part of the client contract).
+
+    Distinct from /health (liveness): a 503 here tells an orchestrator
+    to keep this instance out of rotation until the DB is reachable.
+    """
+    from sqlalchemy import text
+
+    from api.database import SessionLocal
+
+    try:
+        db = SessionLocal()
+        db.execute(text("SELECT 1"))
+        db.close()
+    except Exception as exc:
+        return JSONResponse(
+            status_code=503,
+            content={"status": "not_ready", "reason": str(exc)},
+        )
+    return {"status": "ready"}
 
 
 app.include_router(auth.router, prefix="/api/v1")
