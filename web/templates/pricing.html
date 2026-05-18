@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block title %}Pricing · SignUpFlow{% endblock %}
+{% block body %}
+<div class="auth-wrap">
+  <div class="brand-mark">S</div>
+  <div class="wordmark">SIGNUP<span class="slash">/</span>FLOW</div>
+  <div class="auth-sub">Pricing</div>
+</div>
+<div class="scroll">
+  {% for t in tiers %}
+  <div class="card" style="margin-bottom:12px">
+    <div class="page-title" style="padding:0;font-size:22px;text-transform:uppercase">
+      {{ t.tier }}
+    </div>
+    <div class="row-sub" style="margin-top:4px">{{ t.blurb }}</div>
+    <div class="spacer-12"></div>
+    <div class="group">
+      <div class="row">
+        <div class="row-main"><div class="row-title">Volunteers</div></div>
+        <span class="mono-data">{{ t.volunteers }}</span>
+      </div>
+      <div class="row">
+        <div class="row-main"><div class="row-title">Events / month</div></div>
+        <span class="mono-data">{{ t.events }}</span>
+      </div>
+      <div class="row">
+        <div class="row-main"><div class="row-title">Storage</div></div>
+        <span class="mono-data">{{ t.storage_mb }} MB</span>
+      </div>
+      <div class="row">
+        <div class="row-main"><div class="row-title">API calls / day</div></div>
+        <span class="mono-data">{{ t.api_per_day }}</span>
+      </div>
+    </div>
+  </div>
+  {% endfor %}
+
+  <div class="spacer-12"></div>
+  <a class="btn btn-primary" href="/auth/signup">Create your organization</a>
+  <div class="spacer-12"></div>
+  <a class="auth-link" href="/auth/login">Already have an account? Sign in</a>
+</div>
+{% endblock %}
