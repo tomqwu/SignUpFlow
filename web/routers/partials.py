@@ -36,6 +36,13 @@ from api.routers.organizations import get_organization, update_organization
 from api.routers.people import update_current_person
 from api.routers.solutions import compare_solutions, publish_solution
 from api.routers.solver import solve_schedule
+from api.routers.teams import (
+    add_team_members,
+    create_team,
+    delete_team,
+    remove_team_members,
+    update_team,
+)
 from api.schemas.assignment import AssignmentDeclineRequest, AssignmentSwapRequest
 from api.schemas.availability import (
     AvailabilityExceptionCreate,
@@ -47,6 +54,7 @@ from api.schemas.invitation import InvitationCreate
 from api.schemas.organization import OrganizationUpdate
 from api.schemas.person import PersonUpdate
 from api.schemas.solver import SolveRequest
+from api.schemas.team import TeamCreate, TeamMemberAdd, TeamMemberRemove, TeamUpdate
 from web.deps import get_session_admin, get_session_user
 from web.routers.pages import (
     RRULE_PRESETS,
@@ -57,6 +65,7 @@ from web.routers.pages import (
     _my_rrule,
     _my_timeoff,
     _solution_owned,
+    _teams,
 )
 
 router = APIRouter(tags=["web-partials"])
@@ -498,6 +507,115 @@ def password_change(
     )
     set_session_cookie(resp, person)
     return resp
+
+
+# ── Admin: teams ─────────────────────────────────────────────────────
+
+
+def _teams_list(request: Request, person: Person, db: Session, *, error=None):
+    from web.app import templates
+
+    return templates.TemplateResponse(
+        request,
+        "partials/teams_list.html",
+        {"teams": _teams(db, person.org_id), "error": error},
+        status_code=400 if error else 200,
+    )
+
+
+@router.post("/a/teams/create", response_class=HTMLResponse)
+def team_create(
+    request: Request,
+    name: str = Form(...),
+    description: str = Form(""),
+    person: Person = Depends(get_session_admin),
+    db: Session = Depends(get_db),
+):
+    import uuid
+
+    from web.auth import _slugify
+
+    if not name.strip():
+        return _teams_list(request, person, db, error="Team name is required.")
+    payload = TeamCreate(
+        id=f"{_slugify(name)}-{uuid.uuid4().hex[:8]}",
+        org_id=person.org_id,
+        name=name.strip(),
+        description=description.strip() or None,
+        member_ids=[],
+    )
+    try:
+        create_team(payload, person, db)
+    except HTTPException as exc:
+        return _teams_list(request, person, db, error=str(exc.detail))
+    return _teams_list(request, person, db)
+
+
+@router.post("/a/teams/{team_id}/update", response_class=HTMLResponse)
+def team_update(
+    request: Request,
+    team_id: str,
+    name: str = Form(...),
+    description: str = Form(""),
+    person: Person = Depends(get_session_admin),
+    db: Session = Depends(get_db),
+):
+    if not name.strip():
+        return _teams_list(request, person, db, error="Team name is required.")
+    try:
+        update_team(
+            team_id,
+            TeamUpdate(name=name.strip(), description=description.strip() or None),
+            person,
+            db,
+        )
+    except HTTPException as exc:
+        return _teams_list(request, person, db, error=str(exc.detail))
+    return _teams_list(request, person, db)
+
+
+@router.post("/a/teams/{team_id}/delete", response_class=HTMLResponse)
+def team_delete(
+    request: Request,
+    team_id: str,
+    person: Person = Depends(get_session_admin),
+    db: Session = Depends(get_db),
+):
+    try:
+        delete_team(team_id, person, db)
+    except HTTPException:
+        pass  # already gone — return a fresh, correct list
+    return _teams_list(request, person, db)
+
+
+@router.post("/a/teams/{team_id}/members/add", response_class=HTMLResponse)
+def team_member_add(
+    request: Request,
+    team_id: str,
+    person_id: str = Form(...),
+    person: Person = Depends(get_session_admin),
+    db: Session = Depends(get_db),
+):
+    try:
+        add_team_members(team_id, TeamMemberAdd(person_ids=[person_id]), person, db)
+    except HTTPException as exc:
+        return _teams_list(request, person, db, error=str(exc.detail))
+    return _teams_list(request, person, db)
+
+
+@router.post("/a/teams/{team_id}/members/remove", response_class=HTMLResponse)
+def team_member_remove(
+    request: Request,
+    team_id: str,
+    person_id: str = Form(...),
+    person: Person = Depends(get_session_admin),
+    db: Session = Depends(get_db),
+):
+    try:
+        remove_team_members(team_id, TeamMemberRemove(person_ids=[person_id]), person, db)
+    except HTTPException as exc:
+        return _teams_list(request, person, db, error=str(exc.detail))
+    return _teams_list(request, person, db)
 
 
 # ── Admin: event create / delete ─────────────────────────────────────

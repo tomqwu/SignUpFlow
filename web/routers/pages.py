@@ -9,7 +9,7 @@ from fastapi.responses import HTMLResponse, RedirectResponse
 from sqlalchemy.orm import Session
 
 from api.database import get_db
-from api.models import Assignment, Event, Person
+from api.models import Assignment, Event, Person, Team, TeamMember
 from web.deps import get_session_admin, get_session_user
 
 router = APIRouter(tags=["web-pages"])
@@ -344,6 +344,55 @@ def _people(db: Session, org_id: str, q: str | None) -> list[dict]:
         }
         for p in rows
     ]
+
+
+def _teams(db: Session, org_id: str) -> list[dict]:
+    """Teams in the org with members + the people who could still be
+    added (org-scoped direct queries — the API has no team-members
+    listing endpoint)."""
+    teams = db.query(Team).filter(Team.org_id == org_id).order_by(Team.name.asc()).all()
+    people = db.query(Person).filter(Person.org_id == org_id).order_by(Person.name.asc()).all()
+    by_id = {p.id: p for p in people}
+    out = []
+    for t in teams:
+        member_ids = [
+            m.person_id for m in db.query(TeamMember).filter(TeamMember.team_id == t.id).all()
+        ]
+        member_set = set(member_ids)
+        out.append(
+            {
+                "id": t.id,
+                "name": t.name,
+                "description": t.description,
+                "members": [
+                    {"id": pid, "name": by_id[pid].name} for pid in member_ids if pid in by_id
+                ],
+                "candidates": [
+                    {"id": p.id, "name": p.name} for p in people if p.id not in member_set
+                ],
+            }
+        )
+    return out
+
+
+@router.get("/a/teams", response_class=HTMLResponse)
+def admin_teams(
+    request: Request,
+    person: Person = Depends(get_session_admin),
+    db: Session = Depends(get_db),
+):
+    from web.app import templates
+
+    return templates.TemplateResponse(
+        request,
+        "admin/teams.html",
+        {
+            "person": person,
+            "active_tab": "people",
+            "teams": _teams(db, person.org_id),
+            "error": None,
+        },
+    )
 
 
 @router.get("/a/people", response_class=HTMLResponse)

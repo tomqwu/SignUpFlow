@@ -1,0 +1,106 @@
+{# Teams list + CRUD + membership. #teams-list so HTMX swaps it after
+   any mutation. #}
+<div id="teams-list" x-data="{ creating: false, editId: null }">
+  {% if error %}
+  <div class="form-error" role="alert">{{ error }}</div>
+  <div class="spacer-12"></div>
+  {% endif %}
+
+  <button class="btn btn-primary" type="button"
+          x-show="!creating" @click="creating = true; editId = null">
+    New team
+  </button>
+  <form x-show="creating" x-cloak
+        hx-post="/a/teams/create" hx-target="#teams-list" hx-swap="outerHTML">
+    <div class="field">
+      <label class="field-label" for="tm_name">Name</label>
+      <input id="tm_name" name="name" type="text" required
+             placeholder="Worship Team">
+    </div>
+    <div class="field">
+      <label class="field-label" for="tm_desc">Description</label>
+      <input id="tm_desc" name="description" type="text"
+             placeholder="Optional">
+    </div>
+    <div class="spacer-12"></div>
+    <div class="btn-row cols-2">
+      <button class="btn btn-secondary" type="button" @click="creating = false">Cancel</button>
+      <button class="btn btn-primary" type="submit">Create team</button>
+    </div>
+  </form>
+
+  <div class="mono-label" style="margin-top:18px">Teams</div>
+  {% if not teams %}
+  <div class="empty">No teams yet.</div>
+  {% else %}
+  {% for t in teams %}
+  <div class="card" style="margin-bottom:12px">
+    <div x-show="editId !== '{{ t.id }}'">
+      <div style="display:flex;align-items:flex-start;gap:8px">
+        <div class="row-main" style="flex:1">
+          <div class="row-title">{{ t.name }}</div>
+          {% if t.description %}<div class="row-sub">{{ t.description }}</div>{% endif %}
+        </div>
+        <button class="btn btn-secondary" style="width:auto;padding:6px 12px"
+                type="button" @click="editId = '{{ t.id }}'">Edit</button>
+        <button class="btn btn-destructive" style="width:auto;padding:6px 12px"
+                hx-post="/a/teams/{{ t.id }}/delete"
+                hx-target="#teams-list" hx-swap="outerHTML"
+                hx-confirm="Delete team '{{ t.name }}'?">Delete</button>
+      </div>
+
+      <div class="spacer-12"></div>
+      <div class="mono-label" style="margin:0 0 6px">Members ({{ t.members|length }})</div>
+      {% if t.members %}
+      <div style="display:flex;flex-wrap:wrap;gap:6px">
+        {% for m in t.members %}
+        <form hx-post="/a/teams/{{ t.id }}/members/remove"
+              hx-target="#teams-list" hx-swap="outerHTML"
+              style="display:inline;margin:0">
+          <input type="hidden" name="person_id" value="{{ m.id }}">
+          <button class="role-chip" type="submit"
+                  title="Remove {{ m.name }}">{{ m.name }} ✕</button>
+        </form>
+        {% endfor %}
+      </div>
+      {% else %}
+      <div class="row-sub">No members yet.</div>
+      {% endif %}
+
+      {% if t.candidates %}
+      <div class="spacer-12"></div>
+      <form hx-post="/a/teams/{{ t.id }}/members/add"
+            hx-target="#teams-list" hx-swap="outerHTML"
+            class="btn-row cols-2">
+        <select name="person_id" required
+                style="border:0;background:transparent;font-family:inherit;font-size:15px;color:var(--ink-1)">
+          {% for c in t.candidates %}
+          <option value="{{ c.id }}">{{ c.name }}</option>
+          {% endfor %}
+        </select>
+        <button class="btn btn-secondary" type="submit">Add member</button>
+      </form>
+      {% endif %}
+    </div>
+
+    <form x-show="editId === '{{ t.id }}'" x-cloak
+          hx-post="/a/teams/{{ t.id }}/update"
+          hx-target="#teams-list" hx-swap="outerHTML">
+      <div class="field">
+        <label class="field-label">Name</label>
+        <input name="name" type="text" required value="{{ t.name }}">
+      </div>
+      <div class="field">
+        <label class="field-label">Description</label>
+        <input name="description" type="text" value="{{ t.description or '' }}">
+      </div>
+      <div class="spacer-12"></div>
+      <div class="btn-row cols-2">
+        <button class="btn btn-secondary" type="button" @click="editId = null">Cancel</button>
+        <button class="btn btn-primary" type="submit">Save</button>
+      </div>
+    </form>
+  </div>
+  {% endfor %}
+  {% endif %}
+</div>
