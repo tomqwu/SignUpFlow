@@ -11,11 +11,15 @@
   }">
   <div class="mono-label">Account</div>
   <div class="card">
-    <div class="row-title">{{ person.name }}</div>
     <div class="row-sub">{{ person.email or '—' }}</div>
-    <div class="spacer-12"></div>
+    <div class="spacer-12" style="height:4px"></div>
     <div class="mono-data">{{ (person.roles or ['volunteer'])|join(' · ')|upper }}</div>
   </div>
+  <div class="spacer-12"></div>
+  {% include "partials/profile_form.html" %}
+
+  <div class="mono-label">Security</div>
+  {% include "partials/password_form.html" %}
 
   <div class="mono-label">Appearance</div>
   <div class="seg cols-3" role="group" aria-label="Theme">

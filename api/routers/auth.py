@@ -7,7 +7,7 @@ from pydantic import BaseModel, EmailStr, Field
 from sqlalchemy.orm import Session
 
 from api.database import get_db
-from api.dependencies import get_organization_by_id
+from api.dependencies import get_current_user, get_organization_by_id
 from api.models import Person
 from api.security import (
     create_access_token,
@@ -79,6 +79,13 @@ class RefreshResponse(BaseModel):
 
     token: str
     refresh_token: str
+
+
+class ChangePasswordRequest(BaseModel):
+    """Authenticated self-service password change."""
+
+    current_password: str = Field(..., description="The user's existing password")
+    new_password: str = Field(..., min_length=6, description="New password (min 6 characters)")
 
 
 # Endpoints
@@ -204,6 +211,54 @@ def login(request: LoginRequest, db: Session = Depends(get_db)):
         roles=person.roles or [],
         timezone=person.timezone or "UTC",
         language=person.language or "en",
+        token=access_token,
+        refresh_token=refresh_token,
+    )
+
+
+@router.post("/change-password", response_model=AuthResponse)
+def change_password(
+    request: ChangePasswordRequest,
+    current_user: Person = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Change the authenticated user's password. Verifies the current
+    password, then rotates the hash and stamps password_changed_at so
+    previously-issued access tokens are invalidated (same revocation
+    mechanism as password reset). Returns a fresh token pair so the
+    caller stays signed in."""
+    if not current_user.password_hash or not verify_password(
+        request.current_password, current_user.password_hash
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Current password is incorrect",
+        )
+
+    current_user.password_hash = hash_password(request.new_password)
+    current_user.password_changed_at = utcnow()
+    db.commit()
+    db.refresh(current_user)
+
+    access_token = create_access_token(
+        data={"sub": current_user.id, "pwd_iat": _pwd_iat_for(current_user)}
+    )
+    refresh_token = create_refresh_token(
+        data={
+            "sub": current_user.id,
+            "org_id": current_user.org_id,
+            "pwd_iat": _pwd_iat_for(current_user),
+            "rtv": current_user.refresh_token_version,
+        }
+    )
+    return AuthResponse(
+        person_id=current_user.id,
+        org_id=current_user.org_id,
+        name=current_user.name,
+        email=current_user.email,
+        roles=current_user.roles or [],
+        timezone=current_user.timezone or "UTC",
+        language=current_user.language or "en",
         token=access_token,
         refresh_token=refresh_token,
     )
