@@ -30,7 +30,9 @@ def test_signup_creates_org_and_admin_then_redirects(client, db):
     token = resp.cookies[SESSION_COOKIE]
     dash = client.get("/a/dashboard", cookies={SESSION_COOKIE: token})
     assert dash.status_code == 200
-    assert "Sarah Kim" in dash.text
+    # 11.12 replaced the placeholder with the real KPI dashboard.
+    assert "Dashboard" in dash.text
+    assert "Active volunteers" in dash.text
 
 
 def test_signup_duplicate_email_shows_error(client, db):
