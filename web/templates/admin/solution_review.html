@@ -1,0 +1,102 @@
+{% extends "base.html" %}
+{% block title %}Solution review · SignUpFlow{% endblock %}
+{% block body %}
+<div class="nav">
+  <a class="nav-back" href="/a/solver">‹ Solver</a>
+  <span class="nav-title-inline">Solution</span>
+  <span class="nav-action"></span>
+</div>
+<div class="scroll">
+  {% if review is none %}
+  <div class="empty">Solution not found in your organization.</div>
+  {% else %}
+  <div class="card">
+    <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+      <div class="page-title" style="padding:0;font-size:22px">
+        Solution #{{ review.id }}
+      </div>
+      {% if review.is_published %}
+      <span class="status-text confirmed">published</span>
+      {% endif %}
+    </div>
+    <div class="row-sub" style="margin-top:4px">{{ review.created_label }}</div>
+    <div class="spacer-12"></div>
+    <div class="kpi-grid">
+      <div class="kpi accent">
+        <div class="kpi-value">{{ review.health_score }}</div>
+        <div class="kpi-label">Health</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-value">{{ review.assignment_count }}</div>
+        <div class="kpi-label">Assignments</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-value">{{ review.hard_violations }}</div>
+        <div class="kpi-label">Hard violations</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-value">{{ review.soft_score }}</div>
+        <div class="kpi-label">Soft score</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="spacer-12"></div>
+  <div x-data="{ seg: 'assignments' }">
+    <div class="seg cols-2">
+      <button type="button" :class="seg==='assignments' ? 'active' : ''"
+              @click="seg='assignments'">Assignments</button>
+      <button type="button" :class="seg==='stats' ? 'active' : ''"
+              @click="seg='stats'">Stats</button>
+    </div>
+    <div class="spacer-12"></div>
+
+    <div x-show="seg==='assignments'">
+      {% if not review.events %}
+      <div class="empty">No assignments in this solution.</div>
+      {% else %}
+      {% for e in review.events %}
+      <div class="card">
+        <div class="row-title">{{ e.event_type }}</div>
+        <div class="row-sub">{{ e.date_label }}</div>
+        <div class="spacer-12" style="height:8px"></div>
+        <div style="display:flex;flex-wrap:wrap;gap:6px">
+          {% for name in e.assignees %}
+          <span class="role-chip">{{ name }}</span>
+          {% endfor %}
+          {% if not e.assignees %}
+          <span class="row-sub">Unfilled</span>
+          {% endif %}
+        </div>
+      </div>
+      {% endfor %}
+      {% endif %}
+    </div>
+
+    <div x-show="seg==='stats'" x-cloak>
+      <div class="group">
+        <div class="row"><div class="row-main"><div class="row-title">Fairness stdev</div></div>
+          <span class="mono-data">{{ review.stats.fairness_stdev }}</span></div>
+        <div class="row"><div class="row-main"><div class="row-title">Events / person (max)</div></div>
+          <span class="mono-data">{{ review.stats.workload_max }}</span></div>
+        <div class="row"><div class="row-main"><div class="row-title">Events / person (min)</div></div>
+          <span class="mono-data">{{ review.stats.workload_min }}</span></div>
+        <div class="row"><div class="row-main"><div class="row-title">Events / person (median)</div></div>
+          <span class="mono-data">{{ review.stats.workload_median }}</span></div>
+        <div class="row"><div class="row-main"><div class="row-title">Distinct people</div></div>
+          <span class="mono-data">{{ review.stats.distinct }}</span></div>
+        <div class="row"><div class="row-main"><div class="row-title">Total assigned</div></div>
+          <span class="mono-data">{{ review.stats.total }}</span></div>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+</div>
+{% set tabs = [
+  ('/a/dashboard', '▣', 'Dashboard', 'dashboard'),
+  ('/a/people', '◔', 'People', 'people'),
+  ('/a/events', '▤', 'Events', 'events'),
+  ('/a/solver', '◈', 'Solver', 'solver'),
+] %}
+{% include "_nav.html" %}
+{% endblock %}

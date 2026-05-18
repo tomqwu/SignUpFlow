@@ -401,3 +401,74 @@ def admin_solver(
             "default_to": (today + timedelta(days=28)).isoformat(),
         },
     )
+
+
+def _solution_review(db: Session, person: Person, sid: int) -> dict | None:
+    """Solution header + event-grouped assignments + stats for a solution
+    in the admin's org. None → 404."""
+    from api.models import Solution
+    from api.routers.solutions import get_solution, get_solution_assignments
+    from api.routers.solutions import get_solution_stats
+
+    sol = db.query(Solution).filter(Solution.id == sid, Solution.org_id == person.org_id).first()
+    if sol is None:
+        return None
+    detail = get_solution(sid, db)
+    assignments = get_solution_assignments(sid, db)
+    stats = get_solution_stats(sid, person, db)
+
+    events = []
+    for e in assignments.events:
+        events.append(
+            {
+                "event_type": e.event_type or e.event_id,
+                "date_label": e.event_start.strftime("%a %d %b %Y · %H:%M").upper()
+                if e.event_start
+                else "",
+                "assignees": [a.person_name or a.person_id for a in e.assignees],
+            }
+        )
+    return {
+        "id": detail.id,
+        "health_score": round(detail.health_score),
+        "hard_violations": detail.hard_violations,
+        "soft_score": round(detail.soft_score, 1),
+        "assignment_count": detail.assignment_count,
+        "is_published": detail.is_published,
+        "created_label": detail.created_at.strftime("%a %d %b %Y").upper()
+        if detail.created_at
+        else "",
+        "events": events,
+        "stats": {
+            "fairness_stdev": round(stats.fairness.stdev, 2),
+            "workload_max": stats.workload.max_events_per_person,
+            "workload_min": stats.workload.min_events_per_person,
+            "workload_median": stats.workload.median_events_per_person,
+            "distinct": stats.workload.distinct_persons_assigned,
+            "total": stats.workload.total_events_assigned,
+        },
+    }
+
+
+@router.get("/a/solution/{solution_id}", response_class=HTMLResponse)
+def admin_solution_review(
+    request: Request,
+    solution_id: int,
+    person: Person = Depends(get_session_admin),
+    db: Session = Depends(get_db),
+):
+    from web.app import templates
+
+    review = _solution_review(db, person, solution_id)
+    if review is None:
+        return templates.TemplateResponse(
+            request,
+            "admin/solution_review.html",
+            {"person": person, "active_tab": "solver", "review": None},
+            status_code=404,
+        )
+    return templates.TemplateResponse(
+        request,
+        "admin/solution_review.html",
+        {"person": person, "active_tab": "solver", "review": review},
+    )
