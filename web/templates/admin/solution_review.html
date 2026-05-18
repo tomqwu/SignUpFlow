@@ -39,6 +39,13 @@
         <div class="kpi-label">Soft score</div>
       </div>
     </div>
+    <div class="spacer-12"></div>
+    {% set solution_id = review.id %}
+    {% set published = review.is_published %}
+    {% set error = None %}
+    {% include "partials/publish_state.html" %}
+    <div class="spacer-12"></div>
+    <a class="btn btn-secondary" href="/a/compare">Compare with another solution</a>
   </div>
 
   <div class="spacer-12"></div>

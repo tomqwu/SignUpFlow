@@ -1,0 +1,17 @@
+{# Publish control / state for a solution. #publish-state. #}
+<div id="publish-state">
+  {% if error %}
+  <div class="form-error" role="alert">{{ error }}</div>
+  {% elif published %}
+  <div class="form-notice" role="status">
+    Published — volunteers now see these assignments on their schedule.
+  </div>
+  {% else %}
+  <button class="btn btn-go" type="button"
+          hx-post="/a/solution/{{ solution_id }}/publish"
+          hx-target="#publish-state" hx-swap="outerHTML"
+          hx-confirm="Publish this solution? Any previously published solution in your org is replaced.">
+    Publish this solution
+  </button>
+  {% endif %}
+</div>

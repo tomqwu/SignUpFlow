@@ -38,6 +38,7 @@ from web.deps import get_session_admin, get_session_user
 from api.routers.calendar import reset_calendar_token
 from api.routers.events import create_event, delete_event
 from api.routers.invitations import create_invitation
+from api.routers.solutions import compare_solutions, publish_solution
 from api.routers.solver import solve_schedule
 from api.schemas.event import EventCreate
 from api.schemas.invitation import InvitationCreate
@@ -50,6 +51,8 @@ from web.routers.pages import (
     _my_exceptions,
     _my_rrule,
     _my_timeoff,
+    _org_solutions,
+    _solution_owned,
 )
 
 router = APIRouter(tags=["web-partials"])
@@ -456,5 +459,83 @@ def solver_run(
                 "hard_violations": m.hard_violations,
                 "solve_ms": round(m.solve_ms),
             }
+        },
+    )
+
+
+# ── Admin: publish solution + compare ────────────────────────────────
+
+
+@router.post("/a/solution/{solution_id}/publish", response_class=HTMLResponse)
+def solution_publish(
+    request: Request,
+    solution_id: int,
+    person: Person = Depends(get_session_admin),
+    db: Session = Depends(get_db),
+):
+    """Publish the solution (unpublishes any prior in the org). Returns
+    the refreshed publish-state fragment."""
+    from web.app import templates
+
+    if _solution_owned(db, person, solution_id) is None:
+        return HTMLResponse(
+            '<div id="publish-state" class="empty">Solution not found.</div>',
+            status_code=404,
+        )
+    try:
+        publish_solution(solution_id, request, person, db)
+    except HTTPException as exc:
+        return templates.TemplateResponse(
+            request,
+            "partials/publish_state.html",
+            {"published": False, "error": str(exc.detail)},
+            status_code=exc.status_code or 400,
+        )
+    return templates.TemplateResponse(
+        request, "partials/publish_state.html", {"published": True, "error": None}
+    )
+
+
+@router.post("/a/compare", response_class=HTMLResponse)
+def compare_run(
+    request: Request,
+    solution_a: int = Form(...),
+    solution_b: int = Form(...),
+    person: Person = Depends(get_session_admin),
+    db: Session = Depends(get_db),
+):
+    from web.app import templates
+
+    def _err(msg: str, code: int = 400):
+        return templates.TemplateResponse(
+            request,
+            "partials/compare_result.html",
+            {"diff": None, "error": msg},
+            status_code=code,
+        )
+
+    if (
+        _solution_owned(db, person, solution_a) is None
+        or _solution_owned(db, person, solution_b) is None
+    ):
+        return _err("Pick two solutions from your organization.", 404)
+    try:
+        diff = compare_solutions(solution_a, solution_b, person, db)
+    except HTTPException as exc:
+        return _err(str(exc.detail), exc.status_code or 400)
+    return templates.TemplateResponse(
+        request,
+        "partials/compare_result.html",
+        {
+            "diff": {
+                "a": diff.solution_a_id,
+                "b": diff.solution_b_id,
+                "added": len(diff.added),
+                "removed": len(diff.removed),
+                "unchanged": diff.unchanged_count,
+                "moves": diff.moves,
+                "affected": diff.affected_persons,
+            },
+            "error": None,
         },
     )
