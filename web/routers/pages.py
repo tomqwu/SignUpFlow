@@ -415,6 +415,26 @@ def _org_settings(db: Session, org_id: str) -> dict:
     }
 
 
+def _email_status() -> dict:
+    """Non-secret email-delivery config for the settings page. Reflects
+    the same gate the password-reset / invitation senders use."""
+    from api.services.email_service import EmailService
+
+    svc = EmailService()
+    if not svc.enabled:
+        backend = "disabled"
+    elif svc.use_sendgrid:
+        backend = "SendGrid"
+    else:
+        backend = "SMTP / Mailtrap"
+    return {
+        "enabled": svc.enabled,
+        "backend": backend,
+        "host": None if svc.use_sendgrid else svc.smtp_host,
+        "from_email": svc.from_email,
+    }
+
+
 @router.get("/a/settings", response_class=HTMLResponse)
 def admin_settings(
     request: Request,
@@ -434,6 +454,7 @@ def admin_settings(
             "saved": False,
             "profile": _account_ctx(person),
             "pw": {"error": None, "saved": False},
+            "email": _email_status(),
         },
     )
 

@@ -17,6 +17,29 @@
 
   <div class="mono-label">Security</div>
   {% include "partials/password_form.html" %}
+
+  <div class="mono-label">Email delivery</div>
+  <div class="card">
+    <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+      <div class="row-title">Transactional email</div>
+      <span class="status-text {{ 'confirmed' if email.enabled else 'pending' }}">
+        {{ email.backend }}
+      </span>
+    </div>
+    {% if email.enabled %}
+    <div class="row-sub" style="margin-top:4px">
+      Sending as {{ email.from_email }}{% if email.host %} via {{ email.host }}{% endif %}.
+      Password-reset &amp; invitation emails are delivered.
+    </div>
+    {% else %}
+    <div class="row-sub" style="margin-top:4px">
+      Password-reset &amp; invitation emails are wired but not sent. For a
+      sandbox, set <code>EMAIL_ENABLED=true</code> and the
+      <code>MAILTRAP_SMTP_USER</code> / <code>MAILTRAP_SMTP_PASSWORD</code>
+      env vars (or <code>SENDGRID_API_KEY</code> for production).
+    </div>
+    {% endif %}
+  </div>
 </div>
 {% set tabs = [
   ('/a/dashboard', '▣', 'Dashboard', 'dashboard'),
