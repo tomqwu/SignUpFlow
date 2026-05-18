@@ -52,25 +52,19 @@
     <div class="spacer-12"></div>
 
     <div x-show="seg==='assignments'">
-      {% if not review.events %}
-      <div class="empty">No assignments in this solution.</div>
-      {% else %}
-      {% for e in review.events %}
-      <div class="card">
-        <div class="row-title">{{ e.event_type }}</div>
-        <div class="row-sub">{{ e.date_label }}</div>
-        <div class="spacer-12" style="height:8px"></div>
-        <div style="display:flex;flex-wrap:wrap;gap:6px">
-          {% for name in e.assignees %}
-          <span class="role-chip">{{ name }}</span>
-          {% endfor %}
-          {% if not e.assignees %}
-          <span class="row-sub">Unfilled</span>
-          {% endif %}
+      {# Live updates: HTMX SSE ext connects to the cookie-authed web
+         stream; each event triggers a refetch of #solution-assignments
+         (Sprint 10.4 event_bus → Sprint 11.19). #}
+      <div hx-ext="sse"
+           sse-connect="/a/solution/{{ review.id }}/stream">
+        <div hx-get="/a/solution/{{ review.id }}/assignments"
+             hx-trigger="sse:message"
+             hx-target="#solution-assignments"
+             hx-swap="outerHTML">
+          {% set events = review.events %}
+          {% include "partials/solution_assignments.html" %}
         </div>
       </div>
-      {% endfor %}
-      {% endif %}
     </div>
 
     <div x-show="seg==='stats'" x-cloak>

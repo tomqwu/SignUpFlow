@@ -1,0 +1,23 @@
+{# Event-grouped assignments for a solution. #solution-assignments so
+   the SSE refetch (sse:message) outerHTML-swaps it live. #}
+<div id="solution-assignments">
+  {% if not events %}
+  <div class="empty">No assignments in this solution.</div>
+  {% else %}
+  {% for e in events %}
+  <div class="card">
+    <div class="row-title">{{ e.event_type }}</div>
+    <div class="row-sub">{{ e.date_label }}</div>
+    <div class="spacer-12" style="height:8px"></div>
+    <div style="display:flex;flex-wrap:wrap;gap:6px">
+      {% for name in e.assignees %}
+      <span class="role-chip">{{ name }}</span>
+      {% endfor %}
+      {% if not e.assignees %}
+      <span class="row-sub">Unfilled</span>
+      {% endif %}
+    </div>
+  </div>
+  {% endfor %}
+  {% endif %}
+</div>

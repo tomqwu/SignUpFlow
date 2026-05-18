@@ -72,15 +72,24 @@ def _card(request: Request, person: Person, db: Session, aid: int):
     return templates.TemplateResponse(request, "partials/assignment_detail_card.html", {"row": row})
 
 
+# NOTE: these routes declare `background_tasks: BackgroundTasks` as a
+# FastAPI param (not a throwaway BackgroundTasks()) and pass it to the
+# API handler. The handler queues event_bus.publish via add_task;
+# FastAPI runs those AFTER the response. A discarded BackgroundTasks()
+# would silently drop the publish, so the Solution-Review SSE stream
+# (11.19) never fires. Caught by the 11.19 live e2e test.
+
+
 @router.post("/v/schedule/{assignment_id}/accept", response_class=HTMLResponse)
 def accept(
     request: Request,
     assignment_id: int,
+    background_tasks: BackgroundTasks,
     person: Person = Depends(get_session_user),
     db: Session = Depends(get_db),
 ):
     try:
-        accept_assignment(assignment_id, request, BackgroundTasks(), person, db)
+        accept_assignment(assignment_id, request, background_tasks, person, db)
     except HTTPException:
         return _gone()
     return _card(request, person, db, assignment_id)
@@ -90,6 +99,7 @@ def accept(
 def decline(
     request: Request,
     assignment_id: int,
+    background_tasks: BackgroundTasks,
     decline_reason: str = Form(...),
     person: Person = Depends(get_session_user),
     db: Session = Depends(get_db),
@@ -99,7 +109,7 @@ def decline(
             assignment_id,
             AssignmentDeclineRequest(decline_reason=decline_reason),
             request,
-            BackgroundTasks(),
+            background_tasks,
             person,
             db,
         )
@@ -112,6 +122,7 @@ def decline(
 def swap(
     request: Request,
     assignment_id: int,
+    background_tasks: BackgroundTasks,
     note: str | None = Form(None),
     person: Person = Depends(get_session_user),
     db: Session = Depends(get_db),
@@ -121,7 +132,7 @@ def swap(
             assignment_id,
             AssignmentSwapRequest(note=note),
             request,
-            BackgroundTasks(),
+            background_tasks,
             person,
             db,
         )

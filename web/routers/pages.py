@@ -403,31 +403,44 @@ def admin_solver(
     )
 
 
+def _solution_owned(db: Session, person: Person, sid: int):
+    """The Solution row iff it belongs to the caller's org, else None."""
+    from api.models import Solution
+
+    return db.query(Solution).filter(Solution.id == sid, Solution.org_id == person.org_id).first()
+
+
+def _solution_events(db: Session, person: Person, sid: int) -> list[dict] | None:
+    """Event-grouped assignees for an owned solution, formatted. None →
+    404 (unknown or other-org). Shared by the full review page and the
+    SSE-driven assignments refetch."""
+    from api.routers.solutions import get_solution_assignments
+
+    if _solution_owned(db, person, sid) is None:
+        return None
+    assignments = get_solution_assignments(sid, db)
+    return [
+        {
+            "event_type": e.event_type or e.event_id,
+            "date_label": e.event_start.strftime("%a %d %b %Y · %H:%M").upper()
+            if e.event_start
+            else "",
+            "assignees": [a.person_name or a.person_id for a in e.assignees],
+        }
+        for e in assignments.events
+    ]
+
+
 def _solution_review(db: Session, person: Person, sid: int) -> dict | None:
     """Solution header + event-grouped assignments + stats for a solution
     in the admin's org. None → 404."""
-    from api.models import Solution
-    from api.routers.solutions import get_solution, get_solution_assignments
-    from api.routers.solutions import get_solution_stats
+    from api.routers.solutions import get_solution, get_solution_stats
 
-    sol = db.query(Solution).filter(Solution.id == sid, Solution.org_id == person.org_id).first()
-    if sol is None:
+    if _solution_owned(db, person, sid) is None:
         return None
     detail = get_solution(sid, db)
-    assignments = get_solution_assignments(sid, db)
     stats = get_solution_stats(sid, person, db)
-
-    events = []
-    for e in assignments.events:
-        events.append(
-            {
-                "event_type": e.event_type or e.event_id,
-                "date_label": e.event_start.strftime("%a %d %b %Y · %H:%M").upper()
-                if e.event_start
-                else "",
-                "assignees": [a.person_name or a.person_id for a in e.assignees],
-            }
-        )
+    events = _solution_events(db, person, sid)
     return {
         "id": detail.id,
         "health_score": round(detail.health_score),
@@ -471,4 +484,70 @@ def admin_solution_review(
         request,
         "admin/solution_review.html",
         {"person": person, "active_tab": "solver", "review": review},
+    )
+
+
+@router.get("/a/solution/{solution_id}/assignments", response_class=HTMLResponse)
+def admin_solution_assignments(
+    request: Request,
+    solution_id: int,
+    person: Person = Depends(get_session_admin),
+    db: Session = Depends(get_db),
+):
+    """HTMX fragment: the event-grouped assignments block, refetched on
+    each SSE event."""
+    from web.app import templates
+
+    events = _solution_events(db, person, solution_id)
+    if events is None:
+        return templates.TemplateResponse(
+            request,
+            "partials/solution_assignments.html",
+            {"events": []},
+            status_code=404,
+        )
+    return templates.TemplateResponse(
+        request,
+        "partials/solution_assignments.html",
+        {"events": events},
+    )
+
+
+@router.get("/a/solution/{solution_id}/stream")
+async def admin_solution_stream(
+    solution_id: int,
+    request: Request,
+    person: Person = Depends(get_session_admin),
+    db: Session = Depends(get_db),
+):
+    """Cookie-authed SSE mirror of GET /api/v1/solutions/{id}/assignments
+    /stream (which is Bearer-only). Same per-process event_bus topic
+    (solution:{id}) the assignment-mutation endpoints publish to."""
+    import json
+
+    from fastapi.responses import StreamingResponse
+
+    from api.services import event_bus
+
+    if _solution_owned(db, person, solution_id) is None:
+        from fastapi import HTTPException, status
+
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Solution not found")
+
+    topic = f"solution:{solution_id}"
+
+    async def _stream():
+        yield ": stream open\n\n"
+        async for event in event_bus.subscribe(topic):
+            if await request.is_disconnected():
+                break
+            yield f"data: {json.dumps(event)}\n\n"
+
+    return StreamingResponse(
+        _stream(),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache, no-transform",
+            "X-Accel-Buffering": "no",
+        },
     )
