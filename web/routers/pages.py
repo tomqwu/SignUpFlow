@@ -65,8 +65,8 @@ def _my_assignment(db: Session, person: Person, aid: int) -> dict | None:
 @router.get("/")
 def root(request: Request):
     # Resolve session lazily so the bare "/" works signed-in or not.
-    from web.deps import _resolve_person
     from api.database import SessionLocal
+    from web.deps import _resolve_person
 
     db = SessionLocal()
     try:
@@ -270,6 +270,40 @@ def admin_dashboard(
             "person": person,
             "active_tab": "dashboard",
             "kpis": _dashboard_kpis(db, person.org_id),
+        },
+    )
+
+
+def _org_settings(db: Session, org_id: str) -> dict:
+    """Current org settings for the form (timezone lives in config)."""
+    from api.routers.organizations import get_organization
+
+    org = get_organization(org_id, db)
+    config = org.config or {}
+    return {
+        "name": org.name,
+        "region": org.region,
+        "timezone": config.get("timezone", ""),
+    }
+
+
+@router.get("/a/settings", response_class=HTMLResponse)
+def admin_settings(
+    request: Request,
+    person: Person = Depends(get_session_admin),
+    db: Session = Depends(get_db),
+):
+    from web.app import templates
+
+    return templates.TemplateResponse(
+        request,
+        "admin/settings.html",
+        {
+            "person": person,
+            "active_tab": None,
+            "org": _org_settings(db, person.org_id),
+            "error": None,
+            "saved": False,
         },
     )
 
