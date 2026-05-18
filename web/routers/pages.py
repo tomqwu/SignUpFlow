@@ -551,3 +551,43 @@ async def admin_solution_stream(
             "X-Accel-Buffering": "no",
         },
     )
+
+
+def _org_solutions(db: Session, org_id: str) -> list[dict]:
+    """Org solutions newest-first, for the compare pickers."""
+    from api.models import Solution
+
+    rows = (
+        db.query(Solution)
+        .filter(Solution.org_id == org_id)
+        .order_by(Solution.created_at.desc())
+        .all()
+    )
+    return [
+        {
+            "id": s.id,
+            "label": f"#{s.id} · "
+            + (s.created_at.strftime("%d %b %Y").upper() if s.created_at else "")
+            + (" · PUBLISHED" if s.is_published else ""),
+        }
+        for s in rows
+    ]
+
+
+@router.get("/a/compare", response_class=HTMLResponse)
+def admin_compare(
+    request: Request,
+    person: Person = Depends(get_session_admin),
+    db: Session = Depends(get_db),
+):
+    from web.app import templates
+
+    return templates.TemplateResponse(
+        request,
+        "admin/compare.html",
+        {
+            "person": person,
+            "active_tab": "solver",
+            "solutions": _org_solutions(db, person.org_id),
+        },
+    )

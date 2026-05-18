@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% block title %}Compare solutions · SignUpFlow{% endblock %}
+{% block body %}
+<div class="nav">
+  <a class="nav-back" href="/a/solver">‹ Solver</a>
+  <span class="nav-title-inline">Compare</span>
+  <span class="nav-action"></span>
+</div>
+<div class="page-title">Compare</div>
+<div class="scroll">
+  {% if solutions|length < 2 %}
+  <div class="empty">Need at least two solutions to compare. Run the solver again.</div>
+  {% else %}
+  <form hx-post="/a/compare"
+        hx-target="#compare-result" hx-swap="outerHTML">
+    <div class="field">
+      <label class="field-label" for="solution_a">Solution A</label>
+      <select id="solution_a" name="solution_a"
+              style="border:0;background:transparent;font-family:inherit;font-size:15px;color:var(--ink-1)">
+        {% for s in solutions %}
+        <option value="{{ s.id }}">{{ s.label }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="field">
+      <label class="field-label" for="solution_b">Solution B</label>
+      <select id="solution_b" name="solution_b"
+              style="border:0;background:transparent;font-family:inherit;font-size:15px;color:var(--ink-1)">
+        {% for s in solutions %}
+        <option value="{{ s.id }}"
+          {% if loop.index == 2 %}selected{% endif %}>{{ s.label }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="spacer-12"></div>
+    <button class="btn btn-primary" type="submit">Compare</button>
+  </form>
+  <div class="spacer-18"></div>
+  <div id="compare-result"></div>
+  {% endif %}
+</div>
+{% set tabs = [
+  ('/a/dashboard', '▣', 'Dashboard', 'dashboard'),
+  ('/a/people', '◔', 'People', 'people'),
+  ('/a/events', '▤', 'Events', 'events'),
+  ('/a/solver', '◈', 'Solver', 'solver'),
+] %}
+{% include "_nav.html" %}
+{% endblock %}

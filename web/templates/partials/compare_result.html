@@ -1,0 +1,28 @@
+{# Diff of two solutions. #compare-result. #}
+<div id="compare-result">
+  {% if error %}
+  <div class="form-error" role="alert">{{ error }}</div>
+  {% elif diff %}
+  <div class="card">
+    <div class="field-label">#{{ diff.a }} → #{{ diff.b }}</div>
+    <div class="spacer-12" style="height:6px"></div>
+    <div class="kpi-grid">
+      <div class="kpi"><div class="kpi-value">{{ diff.added }}</div>
+        <div class="kpi-label">Added</div></div>
+      <div class="kpi"><div class="kpi-value">{{ diff.removed }}</div>
+        <div class="kpi-label">Removed</div></div>
+      <div class="kpi"><div class="kpi-value">{{ diff.unchanged }}</div>
+        <div class="kpi-label">Unchanged</div></div>
+      <div class="kpi accent"><div class="kpi-value">{{ diff.moves }}</div>
+        <div class="kpi-label">Moves</div></div>
+    </div>
+    {% if diff.affected %}
+    <div class="spacer-12"></div>
+    <div class="mono-label" style="margin:0 0 6px">Affected people</div>
+    <div style="display:flex;flex-wrap:wrap;gap:6px">
+      {% for p in diff.affected %}<span class="role-chip">{{ p }}</span>{% endfor %}
+    </div>
+    {% endif %}
+  </div>
+  {% endif %}
+</div>
