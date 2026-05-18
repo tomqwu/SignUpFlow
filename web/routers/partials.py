@@ -28,21 +28,23 @@ from api.routers.availability import (
     delete_timeoff,
     set_rrule,
 )
+from api.routers.calendar import reset_calendar_token
+from api.routers.events import create_event, delete_event
+from api.routers.invitations import create_invitation
+from api.routers.organizations import get_organization, update_organization
+from api.routers.solutions import compare_solutions, publish_solution
+from api.routers.solver import solve_schedule
 from api.schemas.assignment import AssignmentDeclineRequest, AssignmentSwapRequest
 from api.schemas.availability import (
     AvailabilityExceptionCreate,
     AvailabilityRruleUpdate,
     TimeOffCreate,
 )
-from web.deps import get_session_admin, get_session_user
-from api.routers.calendar import reset_calendar_token
-from api.routers.events import create_event, delete_event
-from api.routers.invitations import create_invitation
-from api.routers.solutions import compare_solutions, publish_solution
-from api.routers.solver import solve_schedule
 from api.schemas.event import EventCreate
 from api.schemas.invitation import InvitationCreate
+from api.schemas.organization import OrganizationUpdate
 from api.schemas.solver import SolveRequest
+from web.deps import get_session_admin, get_session_user
 from web.routers.pages import (
     RRULE_PRESETS,
     _events,
@@ -51,7 +53,6 @@ from web.routers.pages import (
     _my_exceptions,
     _my_rrule,
     _my_timeoff,
-    _org_solutions,
     _solution_owned,
 )
 
@@ -334,6 +335,71 @@ def people_invite(
     except HTTPException as exc:
         return _result(False, str(exc.detail), exc.status_code or 400)
     return _result(True, f"Invitation sent to {email}.")
+
+
+# ── Admin: organization settings ─────────────────────────────────────
+
+
+@router.post("/a/settings", response_class=HTMLResponse)
+def settings_save(
+    request: Request,
+    name: str = Form(...),
+    region: str = Form(""),
+    timezone: str = Form(""),
+    person: Person = Depends(get_session_admin),
+    db: Session = Depends(get_db),
+):
+    """Update the admin's own organization. Timezone is merged into the
+    org config dict (other config keys preserved). Reuses the API's
+    update_organization so the same validation applies."""
+    from web.app import templates
+
+    def _render(*, error=None, saved=False, org=None):
+        if org is None:
+            org = {
+                "name": name,
+                "region": region or None,
+                "timezone": timezone or "",
+            }
+        return templates.TemplateResponse(
+            request,
+            "partials/settings_form.html",
+            {"org": org, "error": error, "saved": saved},
+            status_code=400 if error else 200,
+        )
+
+    if not name.strip():
+        return _render(error="Organization name is required.")
+
+    current = get_organization(person.org_id, db)
+    config = dict(current.config or {})
+    tz = timezone.strip()
+    if tz:
+        config["timezone"] = tz
+    else:
+        config.pop("timezone", None)
+
+    try:
+        payload = OrganizationUpdate(
+            name=name.strip(),
+            region=region.strip() or None,
+            config=config,
+        )
+    except ValueError:
+        return _render(error="Invalid settings.")
+    try:
+        update_organization(person.org_id, payload, db)
+    except HTTPException as exc:
+        return _render(error=str(exc.detail), org=None)
+
+    return _render(
+        saved=True,
+        org={
+            "name": name.strip(),
+            "region": region.strip() or None,
+            "timezone": tz,
+        },
+    )
 
 
 # ── Admin: event create / delete ─────────────────────────────────────

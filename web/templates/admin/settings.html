@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block title %}Settings · SignUpFlow{% endblock %}
+{% block body %}
+<div class="nav">
+  <a class="nav-back" href="/a/dashboard">‹ Dashboard</a>
+  <form method="post" action="/auth/logout" style="margin:0">
+    <button class="nav-action" type="submit">Sign out</button>
+  </form>
+</div>
+<div class="page-title">Settings</div>
+<div class="scroll">
+  <div class="mono-label" style="margin-top:8px">Organization</div>
+  {% include "partials/settings_form.html" %}
+</div>
+{% set tabs = [
+  ('/a/dashboard', '▣', 'Dashboard', 'dashboard'),
+  ('/a/people', '◔', 'People', 'people'),
+  ('/a/events', '▤', 'Events', 'events'),
+  ('/a/solver', '◈', 'Solver', 'solver'),
+] %}
+{% include "_nav.html" %}
+{% endblock %}

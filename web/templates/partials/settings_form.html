@@ -1,0 +1,37 @@
+{# Organization settings form. #settings-form so HTMX swaps it after save. #}
+<div id="settings-form">
+  {% if error %}
+  <div class="form-error" role="alert">{{ error }}</div>
+  <div class="spacer-12"></div>
+  {% elif saved %}
+  <div class="form-notice" role="status">Settings saved.</div>
+  <div class="spacer-12"></div>
+  {% endif %}
+
+  <form hx-post="/a/settings"
+        hx-target="#settings-form" hx-swap="outerHTML">
+    <div class="field">
+      <label class="field-label" for="org_name">Organization name</label>
+      <input id="org_name" name="name" type="text" required
+             value="{{ org.name }}" placeholder="Grace Community Church">
+    </div>
+    <div class="field">
+      <label class="field-label" for="org_region">Region</label>
+      <input id="org_region" name="region" type="text"
+             value="{{ org.region or '' }}" placeholder="US-CA">
+      <div class="row-sub" style="margin-top:6px">
+        Region code used for holidays / locale (e.g. US-CA, CA-ON). Optional.
+      </div>
+    </div>
+    <div class="field">
+      <label class="field-label" for="org_timezone">Timezone</label>
+      <input id="org_timezone" name="timezone" type="text"
+             value="{{ org.timezone or '' }}" placeholder="America/Los_Angeles">
+      <div class="row-sub" style="margin-top:6px">
+        IANA name, used as the default for events. Optional.
+      </div>
+    </div>
+    <div class="spacer-12"></div>
+    <button class="btn btn-primary" type="submit">Save settings</button>
+  </form>
+</div>
