@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+{% block title %}Billing · SignUpFlow{% endblock %}
+{% block body %}
+<div class="nav">
+  <a class="nav-back" href="/a/dashboard">‹ Dashboard</a>
+  <form method="post" action="/auth/logout" style="margin:0">
+    <button class="nav-action" type="submit">Sign out</button>
+  </form>
+</div>
+<div class="page-title">Billing</div>
+<div class="scroll">
+  <div class="card">
+    <div class="field-label">Plan</div>
+    <div class="spacer-12" style="height:4px"></div>
+    <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+      <div class="page-title" style="padding:0;font-size:24px;text-transform:uppercase">
+        {{ b.tier }}
+      </div>
+      <span class="status-text {{ 'confirmed' if b.status == 'active' else 'pending' }}">
+        {{ b.status }}
+      </span>
+    </div>
+    {% if b.billing_cycle %}
+    <div class="row-sub" style="margin-top:4px">{{ b.billing_cycle }} billing</div>
+    {% endif %}
+    {% if b.trial_end %}
+    <div class="row-sub" style="margin-top:4px">Trial ends {{ b.trial_end }}</div>
+    {% endif %}
+  </div>
+
+  {% if not b.stripe_ready %}
+  <div class="spacer-12"></div>
+  <div class="form-notice" role="status">
+    Paid-plan management runs through Stripe. Set <code>STRIPE_SECRET_KEY</code>
+    (a <code>sk_test_…</code> key for sandbox) to enable upgrades, payment
+    methods, and the billing portal.
+  </div>
+  {% endif %}
+
+  {% if b.warnings %}
+  <div class="spacer-12"></div>
+  {% for w in b.warnings %}
+  <div class="form-error" role="alert">{{ w }}</div>
+  {% endfor %}
+  {% endif %}
+
+  <div class="mono-label" style="margin-top:18px">Usage</div>
+  {% if not b.usage_rows %}
+  <div class="empty">No usage metrics yet.</div>
+  {% else %}
+  <div class="group">
+    {% for u in b.usage_rows %}
+    <div class="row">
+      <div class="row-main">
+        <div class="row-title">{{ u.name }}</div>
+        <div class="row-sub">{{ u.current }} / {{ u.limit }}</div>
+      </div>
+      <span class="mono-data">{{ u.percentage }}%</span>
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+</div>
+{% set tabs = [
+  ('/a/dashboard', '▣', 'Dashboard', 'dashboard'),
+  ('/a/people', '◔', 'People', 'people'),
+  ('/a/events', '▤', 'Events', 'events'),
+  ('/a/solver', '◈', 'Solver', 'solver'),
+] %}
+{% include "_nav.html" %}
+{% endblock %}
