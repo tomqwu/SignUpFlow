@@ -228,12 +228,47 @@ def volunteer_profile(
     )
 
 
+def _dashboard_kpis(db: Session, org_id: str) -> dict:
+    """Roll the three analytics endpoints into the dashboard tiles.
+    All three return graceful zeros for an empty org."""
+    from api.routers.analytics import (
+        get_burnout_risk,
+        get_schedule_health,
+        get_volunteer_stats,
+    )
+
+    # Pass the Query-defaulted args explicitly: a direct (non-FastAPI)
+    # call doesn't resolve Query(...) sentinels to their defaults.
+    vs = get_volunteer_stats(org_id, db, days=30)
+    sh = get_schedule_health(org_id, db)
+    br = get_burnout_risk(org_id, db, threshold=4)
+    latest = sh.get("latest_solution")
+    return {
+        "active_volunteers": vs["active_volunteers"],
+        "total_volunteers": vs["total_volunteers"],
+        "participation_rate": vs["participation_rate"],
+        "upcoming_events": sh["upcoming_events"],
+        "coverage_rate": sh["coverage_rate"],
+        "health_score": (round(latest["health_score"]) if latest else None),
+        "at_risk_count": br["at_risk_count"],
+        "top_volunteers": vs["top_volunteers"][:5],
+    }
+
+
 @router.get("/a/dashboard", response_class=HTMLResponse)
-def admin_dashboard(request: Request, person: Person = Depends(get_session_admin)):
+def admin_dashboard(
+    request: Request,
+    person: Person = Depends(get_session_admin),
+    db: Session = Depends(get_db),
+):
     from web.app import templates
 
     return templates.TemplateResponse(
         request,
         "admin/dashboard.html",
-        {"person": person, "active_tab": "dashboard"},
+        {
+            "person": person,
+            "active_tab": "dashboard",
+            "kpis": _dashboard_kpis(db, person.org_id),
+        },
     )

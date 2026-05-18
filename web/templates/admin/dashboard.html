@@ -3,19 +3,61 @@
 {% block body %}
 <div class="nav">
   <span class="nav-back"></span>
-  <a class="nav-action" href="/v/profile">Settings</a>
+  <form method="post" action="/auth/logout" style="margin:0">
+    <button class="nav-action" type="submit">Sign out</button>
+  </form>
 </div>
 <div class="page-title">Dashboard</div>
 <div class="scroll">
-  <div class="empty">
-    Signed in as admin <strong>{{ person.name }}</strong>
-    (org <span class="mono-data">{{ person.org_id }}</span>).<br>
-    KPIs, solver, people &amp; events arrive in Sprint 11.2–11.3.
+  <div class="kpi-grid">
+    <div class="kpi">
+      <div class="kpi-value">{{ kpis.active_volunteers }}<span class="unit">/ {{ kpis.total_volunteers }}</span></div>
+      <div class="kpi-label">Active volunteers</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-value">{{ kpis.upcoming_events }}</div>
+      <div class="kpi-label">Upcoming events</div>
+    </div>
+    <div class="kpi accent">
+      <div class="kpi-value">{{ kpis.coverage_rate }}<span class="unit">%</span></div>
+      <div class="kpi-label">Event coverage</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-value">
+        {% if kpis.health_score is not none %}{{ kpis.health_score }}{% else %}—{% endif %}
+      </div>
+      <div class="kpi-label">Latest health score</div>
+    </div>
   </div>
+
+  <div class="spacer-12"></div>
+  <div class="card">
+    <div class="field-label">Burnout watch</div>
+    <div class="spacer-12" style="height:4px"></div>
+    {% if kpis.at_risk_count == 0 %}
+    <div class="row-sub">No volunteers over the assignment threshold. 🎉</div>
+    {% else %}
+    <div class="row-title">{{ kpis.at_risk_count }} volunteer(s) at risk</div>
+    <div class="row-sub">Serving above the monthly threshold — consider rebalancing.</div>
+    {% endif %}
+  </div>
+
+  <div class="mono-label">Most active</div>
+  {% if not kpis.top_volunteers %}
+  <div class="empty">No assignments in the last 30 days yet.</div>
+  {% else %}
+  <div class="group">
+    {% for v in kpis.top_volunteers %}
+    <div class="row">
+      <div class="row-main"><div class="row-title">{{ v.name }}</div></div>
+      <span class="mono-data">{{ v.assignments }}</span>
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
 </div>
 {% set tabs = [
-  ('/a/dashboard', '▣', 'Home', 'dashboard'),
-  ('/v/profile', '◍', 'Profile', 'profile'),
+  ('/a/dashboard', '▣', 'Dashboard', 'dashboard'),
 ] %}
 {% include "_nav.html" %}
 {% endblock %}
