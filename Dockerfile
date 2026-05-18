@@ -29,9 +29,13 @@ COPY pyproject.toml poetry.lock* ./
 
 RUN poetry install --only main --no-root --no-directory
 
+# web/ is imported by api.main (`from web.app import mount_web`) — the
+# HTML app won't start without it.
 COPY api/ ./api/
+COPY web/ ./web/
 COPY alembic/ ./alembic/
 COPY alembic.ini ./
+COPY docker-entrypoint.sh ./
 
 RUN poetry install --only main
 
@@ -60,13 +64,17 @@ COPY --from=builder /usr/local/bin /usr/local/bin
 COPY --from=builder --chown=signupflow:signupflow /app ./
 
 RUN mkdir -p /app/data /app/logs && \
+    chmod +x /app/docker-entrypoint.sh && \
     chown -R signupflow:signupflow /app
 
 USER signupflow
 
 EXPOSE 8000
 
-HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
     CMD curl -f http://localhost:8000/health || exit 1
 
+# Entrypoint runs `alembic upgrade head` before exec'ing the CMD, so a
+# fresh Postgres is migrated on first boot.
+ENTRYPOINT ["/app/docker-entrypoint.sh"]
 CMD ["uvicorn", "api.main:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "4"]
