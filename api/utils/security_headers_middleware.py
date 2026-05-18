@@ -95,7 +95,7 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
         """
         policy_directives = [
             "default-src 'self'",
-            "script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://www.google.com https://www.gstatic.com",  # Allow i18next CDN and reCAPTCHA
+            "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net https://www.google.com https://www.gstatic.com",  # 'unsafe-eval' required by Alpine.js (web UI evaluates x-* directive expressions); also i18next CDN + reCAPTCHA
             "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",  # Allow inline styles and Google Fonts
             "img-src 'self' data: https:",  # Allow images from same origin, data URIs, and HTTPS
             "font-src 'self' data: https://fonts.gstatic.com",  # Allow fonts from same origin, data URIs, and Google Fonts

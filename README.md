@@ -18,6 +18,7 @@
 ## Features
 
 - **Greedy Heuristic Solver** — auto-generate fair schedules with role-based constraints
+- **Responsive web app** — full admin + volunteer workflow in the browser, served by the same FastAPI process ([walkthrough below](#web-app--end-to-end-walkthrough))
 - **CLI + API** — schedule from YAML files or through REST endpoints
 - **Multi-tenant** — full org isolation with JWT auth and RBAC (admin/volunteer)
 - **Invitation system** — token-based volunteer onboarding
@@ -290,6 +291,34 @@ $ curl -X POST http://localhost:8000/api/solver/solve \
 ```
 
 Interactive API docs: http://localhost:8000/docs
+
+---
+
+## Web App — End-to-End Walkthrough
+
+SignUpFlow ships a responsive web app (HTMX + Alpine.js + Jinja2) served by the
+**same FastAPI process** — same origin, no separate build or deploy. The screens
+below trace the entire admin → volunteer loop, captured from a **live browser
+session** driving the real UI (not mockups). Source images live in
+[`docs/screenshots/`](docs/screenshots/).
+
+| Admin sets things up | |
+|---|---|
+| **1 · Create your organization**<br>The first account is the admin.<br><img src="docs/screenshots/01_signup.png" width="270">|**2 · Admin dashboard**<br>Coverage, health, burnout watch.<br><img src="docs/screenshots/02_admin_dashboard.png" width="270">|
+| **3 · Invite a volunteer**<br>Token invite, no email required.<br><img src="docs/screenshots/03_invite_volunteer.png" width="270">|**4 · Volunteer accepts the invite**<br>Sets a password, lands signed in.<br><img src="docs/screenshots/04_accept_invitation.png" width="270">|
+
+| Solve & publish | |
+|---|---|
+| **5 · Create an event**<br>With the roles the solver must fill.<br><img src="docs/screenshots/05_create_event.png" width="270">|**6 · Run the solver**<br>Health 100, 0 hard violations.<br><img src="docs/screenshots/06_run_solver.png" width="270">|
+| **7 · Review the solution**<br>Jamie Park assigned to the service.<br><img src="docs/screenshots/07_review_solution.png" width="270">|**8 · Publish**<br>Volunteers now see these assignments.<br><img src="docs/screenshots/08_publish_solution.png" width="270">|
+
+| Volunteer responds | |
+|---|---|
+| **9 · Volunteer sees the shift**<br>Published schedule, live via SSE.<br><img src="docs/screenshots/09_volunteer_schedule.png" width="270">|**10 · Accept the assignment**<br>Status confirmed end-to-end.<br><img src="docs/screenshots/10_accept_assignment.png" width="270">|
+
+> Captured with Playwright against a server started by `make run`, exercising the
+> real HTMX/Alpine UI. Reproduce locally: `make run`, then sign up at
+> `http://localhost:8000/auth/signup`.
 
 ---
 
