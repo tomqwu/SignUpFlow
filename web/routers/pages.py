@@ -377,3 +377,27 @@ def admin_events(
             "events": _events(db, person.org_id),
         },
     )
+
+
+@router.get("/a/solver", response_class=HTMLResponse)
+def admin_solver(
+    request: Request,
+    person: Person = Depends(get_session_admin),
+    db: Session = Depends(get_db),
+):
+    from datetime import timedelta
+
+    from api.timeutils import utcnow
+    from web.app import templates
+
+    today = utcnow().date()
+    return templates.TemplateResponse(
+        request,
+        "admin/solver.html",
+        {
+            "person": person,
+            "active_tab": "solver",
+            "default_from": today.isoformat(),
+            "default_to": (today + timedelta(days=28)).isoformat(),
+        },
+    )

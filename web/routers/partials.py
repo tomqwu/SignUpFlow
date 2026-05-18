@@ -38,8 +38,10 @@ from web.deps import get_session_admin, get_session_user
 from api.routers.calendar import reset_calendar_token
 from api.routers.events import create_event, delete_event
 from api.routers.invitations import create_invitation
+from api.routers.solver import solve_schedule
 from api.schemas.event import EventCreate
 from api.schemas.invitation import InvitationCreate
+from api.schemas.solver import SolveRequest
 from web.routers.pages import (
     RRULE_PRESETS,
     _events,
@@ -391,3 +393,57 @@ def event_delete(
     except HTTPException:
         pass  # already gone — return a fresh, correct list
     return _events_list(request, person, db)
+
+
+# ── Admin: run solver ────────────────────────────────────────────────
+
+
+@router.post("/a/solver/run", response_class=HTMLResponse)
+def solver_run(
+    request: Request,
+    from_date: str = Form(...),
+    to_date: str = Form(...),
+    mode: str = Form("strict"),
+    change_min: str | None = Form(None),
+    person: Person = Depends(get_session_admin),
+    db: Session = Depends(get_db),
+):
+    """Run the scheduler for the admin's org and render a result summary
+    with a link to review the new solution (11.18)."""
+    from web.app import templates
+
+    def _err(msg: str, code: int = 400):
+        return templates.TemplateResponse(
+            request, "partials/solver_result.html", {"error": msg}, status_code=code
+        )
+
+    mode = mode if mode in ("strict", "relaxed") else "strict"
+    try:
+        req = SolveRequest(
+            org_id=person.org_id,
+            from_date=from_date,
+            to_date=to_date,
+            mode=mode,
+            change_min=(change_min == "true"),
+        )
+    except ValueError:
+        return _err("Enter a valid date range.")
+    try:
+        resp = solve_schedule(req, person, db)
+    except HTTPException as exc:
+        return _err(str(exc.detail), exc.status_code or 400)
+
+    m = resp.metrics
+    return templates.TemplateResponse(
+        request,
+        "partials/solver_result.html",
+        {
+            "r": {
+                "solution_id": resp.solution_id,
+                "assignment_count": resp.assignment_count,
+                "health_score": round(m.health_score),
+                "hard_violations": m.hard_violations,
+                "solve_ms": round(m.solve_ms),
+            }
+        },
+    )
