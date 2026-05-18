@@ -91,7 +91,7 @@
       </div>
       <div class="field">
         <label class="field-label">Type</label>
-        <select name="type"
+        <select name="type" aria-label="Constraint type"
                 style="border:0;background:transparent;font-family:inherit;font-size:15px;color:var(--ink-1)">
           <option value="hard" {% if c.type == 'hard' %}selected{% endif %}>hard</option>
           <option value="soft" {% if c.type == 'soft' %}selected{% endif %}>soft</option>

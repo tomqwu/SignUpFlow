@@ -72,7 +72,7 @@
       <form hx-post="/a/teams/{{ t.id }}/members/add"
             hx-target="#teams-list" hx-swap="outerHTML"
             class="btn-row cols-2">
-        <select name="person_id" required
+        <select name="person_id" required aria-label="Member to add"
                 style="border:0;background:transparent;font-family:inherit;font-size:15px;color:var(--ink-1)">
           {% for c in t.candidates %}
           <option value="{{ c.id }}">{{ c.name }}</option>

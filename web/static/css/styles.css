@@ -194,6 +194,7 @@ a { color: var(--accent); text-decoration: none; }
 .status-text.confirmed { color: var(--success); }
 .status-text.pending   { color: var(--warning); }
 .status-text.declined  { color: var(--danger); }
+.status-text.swap_requested { color: var(--warning); }
 .status-text::before { content: '●'; font-size: 8px; }
 
 /* ─── Avatars ───────────────────────────────────────────────────────── */

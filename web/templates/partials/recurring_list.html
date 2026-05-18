@@ -50,7 +50,7 @@
       <div>
         <div class="field">
           <label class="field-label">Which week</label>
-          <select name="weekday_position"
+          <select name="weekday_position" aria-label="Which week of the month"
                   style="border:0;background:transparent;font-family:inherit;font-size:15px;color:var(--ink-1)">
             {% for p in ['first','second','third','fourth','last'] %}
             <option value="{{ p }}">{{ p }}</option>
@@ -59,7 +59,7 @@
         </div>
         <div class="field">
           <label class="field-label">Weekday</label>
-          <select name="weekday_name"
+          <select name="weekday_name" aria-label="Weekday"
                   style="border:0;background:transparent;font-family:inherit;font-size:15px;color:var(--ink-1)">
             {% for d in ['monday','tuesday','wednesday','thursday','friday','saturday','sunday'] %}
             <option value="{{ d }}">{{ d }}</option>
