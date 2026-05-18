@@ -30,6 +30,24 @@
       <label class="field-label" for="ev_end">End</label>
       <input id="ev_end" name="end_time" type="time" required>
     </div>
+    <div class="field" x-data="{ roles: [{ name: '', count: 1 }] }">
+      <label class="field-label">Roles needed</label>
+      <div class="row-sub" style="margin-bottom:8px">
+        Volunteers the solver assigns per role. Leave blank for none.
+      </div>
+      <template x-for="(r, i) in roles" :key="i">
+        <div class="btn-row cols-2" style="margin-bottom:8px">
+          <input type="text" name="role_name" x-model="r.name"
+                 placeholder="volunteer">
+          <input type="number" name="role_count" x-model="r.count"
+                 min="1" step="1" placeholder="1">
+        </div>
+      </template>
+      <button class="btn btn-secondary" type="button"
+              @click="roles.push({ name: '', count: 1 })">
+        Add another role
+      </button>
+    </div>
     <div class="spacer-12"></div>
     <div class="btn-row cols-2">
       <button class="btn btn-secondary" type="button" @click="creating = false">Cancel</button>
