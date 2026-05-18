@@ -4,22 +4,45 @@ Sprint 6 PR 6.1 turns the dormant StabilityMetrics zero-stub into a real
 signal: how many ``(event_id, person_id, role)`` tuples differ between a
 fresh solve's assignments and the org's currently-published solution, and
 how many distinct people are affected.
+
+Isolation: ``people.id`` is a global primary key, so every row this module
+creates is namespaced with a per-test token (#143 — previously hardcoded
+``p1``/``e1`` in the shared ``test_org`` flaked with an order-dependent
+``UNIQUE constraint failed: people.id`` whenever a prior test skipped the
+autouse teardown wipe).
 """
 
+import uuid
 from datetime import datetime, timedelta
 
 import pytest
 
 from api.core.models import Assignment as CoreAssignment
 from api.models import Assignment as DBAssignment
-from api.models import Event, Person, Solution
+from api.models import Event, Organization, Person, Solution
 from api.timeutils import utcnow
 from api.utils.solver_stability import compute_stability_metrics
 
 
 @pytest.fixture
-def org_id():
-    return "test_org"  # auto-seeded by tests/conftest.py reset
+def token() -> str:
+    """Unique per-test suffix so ids never collide across tests/ordering."""
+    return uuid.uuid4().hex[:12]
+
+
+@pytest.fixture
+def n(token):
+    """Namespacing helper: logical name -> globally-unique id for this test."""
+    return lambda name: f"{name}_{token}"
+
+
+@pytest.fixture
+def org_id(db, n) -> str:
+    """A fresh organization unique to this test."""
+    oid = n("org")
+    db.add(Organization(id=oid, name="Stability Org", region="US", config={}))
+    db.commit()
+    return oid
 
 
 def _seed_event(db, org_id: str, event_id: str) -> Event:
@@ -74,9 +97,9 @@ def _seed_published_solution(
     return sol
 
 
-def test_no_prior_published_returns_zeros(db, org_id):
+def test_no_prior_published_returns_zeros(db, org_id, n):
     """When no solution is published in the org, both metrics are 0."""
-    new_assignments = [CoreAssignment(event_id="e1", assignees=["p1"])]
+    new_assignments = [CoreAssignment(event_id=n("e1"), assignees=[n("p1")])]
 
     metrics = compute_stability_metrics(db, org_id=org_id, new_assignments=new_assignments)
 
@@ -84,17 +107,19 @@ def test_no_prior_published_returns_zeros(db, org_id):
     assert metrics.affected_persons == 0
 
 
-def test_byte_equal_solve_returns_zeros(db, org_id):
+def test_byte_equal_solve_returns_zeros(db, org_id, n):
     """When the new solve matches the published solution exactly, metrics are 0."""
-    _seed_event(db, org_id, "e1")
-    _seed_event(db, org_id, "e2")
-    _seed_person(db, org_id, "p1")
-    _seed_person(db, org_id, "p2")
-    _seed_published_solution(db, org_id, assignments=[("e1", "p1", None), ("e2", "p2", None)])
+    _seed_event(db, org_id, n("e1"))
+    _seed_event(db, org_id, n("e2"))
+    _seed_person(db, org_id, n("p1"))
+    _seed_person(db, org_id, n("p2"))
+    _seed_published_solution(
+        db, org_id, assignments=[(n("e1"), n("p1"), None), (n("e2"), n("p2"), None)]
+    )
 
     new_assignments = [
-        CoreAssignment(event_id="e1", assignees=["p1"]),
-        CoreAssignment(event_id="e2", assignees=["p2"]),
+        CoreAssignment(event_id=n("e1"), assignees=[n("p1")]),
+        CoreAssignment(event_id=n("e2"), assignees=[n("p2")]),
     ]
 
     metrics = compute_stability_metrics(db, org_id=org_id, new_assignments=new_assignments)
@@ -103,17 +128,19 @@ def test_byte_equal_solve_returns_zeros(db, org_id):
     assert metrics.affected_persons == 0
 
 
-def test_one_swap_counts_as_two_moves(db, org_id):
+def test_one_swap_counts_as_two_moves(db, org_id, n):
     """Replacing p1 with p3 on e1 = 2 moves (1 removed + 1 added), 2 affected."""
-    for pid in ("p1", "p2", "p3"):
-        _seed_person(db, org_id, pid)
-    _seed_event(db, org_id, "e1")
-    _seed_event(db, org_id, "e2")
-    _seed_published_solution(db, org_id, assignments=[("e1", "p1", None), ("e2", "p2", None)])
+    for name in ("p1", "p2", "p3"):
+        _seed_person(db, org_id, n(name))
+    _seed_event(db, org_id, n("e1"))
+    _seed_event(db, org_id, n("e2"))
+    _seed_published_solution(
+        db, org_id, assignments=[(n("e1"), n("p1"), None), (n("e2"), n("p2"), None)]
+    )
 
     new_assignments = [
-        CoreAssignment(event_id="e1", assignees=["p3"]),  # changed: p1 → p3
-        CoreAssignment(event_id="e2", assignees=["p2"]),  # unchanged
+        CoreAssignment(event_id=n("e1"), assignees=[n("p3")]),  # changed: p1 → p3
+        CoreAssignment(event_id=n("e2"), assignees=[n("p2")]),  # unchanged
     ]
 
     metrics = compute_stability_metrics(db, org_id=org_id, new_assignments=new_assignments)
@@ -122,17 +149,19 @@ def test_one_swap_counts_as_two_moves(db, org_id):
     assert metrics.affected_persons == 2  # p1 (removed) + p3 (added)
 
 
-def test_completely_different_solve(db, org_id):
+def test_completely_different_solve(db, org_id, n):
     """Disjoint assignment sets produce |a| + |b| moves."""
-    for pid in ("p1", "p2", "p3", "p4"):
-        _seed_person(db, org_id, pid)
-    for eid in ("e1", "e2"):
-        _seed_event(db, org_id, eid)
-    _seed_published_solution(db, org_id, assignments=[("e1", "p1", None), ("e2", "p2", None)])
+    for name in ("p1", "p2", "p3", "p4"):
+        _seed_person(db, org_id, n(name))
+    for name in ("e1", "e2"):
+        _seed_event(db, org_id, n(name))
+    _seed_published_solution(
+        db, org_id, assignments=[(n("e1"), n("p1"), None), (n("e2"), n("p2"), None)]
+    )
 
     new_assignments = [
-        CoreAssignment(event_id="e1", assignees=["p3"]),
-        CoreAssignment(event_id="e2", assignees=["p4"]),
+        CoreAssignment(event_id=n("e1"), assignees=[n("p3")]),
+        CoreAssignment(event_id=n("e2"), assignees=[n("p4")]),
     ]
 
     metrics = compute_stability_metrics(db, org_id=org_id, new_assignments=new_assignments)
@@ -141,13 +170,13 @@ def test_completely_different_solve(db, org_id):
     assert metrics.affected_persons == 4
 
 
-def test_role_differences_in_prior_count_as_moves(db, org_id):
+def test_role_differences_in_prior_count_as_moves(db, org_id, n):
     """Solver writes role=None; if prior used a role string, both rows differ."""
-    _seed_person(db, org_id, "p1")
-    _seed_event(db, org_id, "e1")
-    _seed_published_solution(db, org_id, assignments=[("e1", "p1", "usher")])
+    _seed_person(db, org_id, n("p1"))
+    _seed_event(db, org_id, n("e1"))
+    _seed_published_solution(db, org_id, assignments=[(n("e1"), n("p1"), "usher")])
 
-    new_assignments = [CoreAssignment(event_id="e1", assignees=["p1"])]
+    new_assignments = [CoreAssignment(event_id=n("e1"), assignees=[n("p1")])]
 
     metrics = compute_stability_metrics(db, org_id=org_id, new_assignments=new_assignments)
 
@@ -156,14 +185,16 @@ def test_role_differences_in_prior_count_as_moves(db, org_id):
     assert metrics.affected_persons == 1
 
 
-def test_multi_assignee_event_counted_per_person(db, org_id):
+def test_multi_assignee_event_counted_per_person(db, org_id, n):
     """An Event with multiple assignees expands into one key per person."""
-    for pid in ("p1", "p2"):
-        _seed_person(db, org_id, pid)
-    _seed_event(db, org_id, "e1")
-    _seed_published_solution(db, org_id, assignments=[("e1", "p1", None), ("e1", "p2", None)])
+    for name in ("p1", "p2"):
+        _seed_person(db, org_id, n(name))
+    _seed_event(db, org_id, n("e1"))
+    _seed_published_solution(
+        db, org_id, assignments=[(n("e1"), n("p1"), None), (n("e1"), n("p2"), None)]
+    )
 
-    new_assignments = [CoreAssignment(event_id="e1", assignees=["p1", "p2"])]
+    new_assignments = [CoreAssignment(event_id=n("e1"), assignees=[n("p1"), n("p2")])]
 
     metrics = compute_stability_metrics(db, org_id=org_id, new_assignments=new_assignments)
 
@@ -171,22 +202,21 @@ def test_multi_assignee_event_counted_per_person(db, org_id):
     assert metrics.affected_persons == 0
 
 
-def test_other_org_published_solution_ignored(db, org_id):
+def test_other_org_published_solution_ignored(db, org_id, n):
     """Stability is scoped per-org; another org's published solution is irrelevant."""
-    from api.models import Organization
-
-    other = Organization(id="other_org", name="Other", region="US", config={})
+    other_id = n("other_org")
+    other = Organization(id=other_id, name="Other", region="US", config={})
     db.add(other)
     db.commit()
 
-    _seed_person(db, "other_org", "px")
-    _seed_event(db, "other_org", "ex")
-    _seed_published_solution(db, "other_org", assignments=[("ex", "px", None)])
+    _seed_person(db, other_id, n("px"))
+    _seed_event(db, other_id, n("ex"))
+    _seed_published_solution(db, other_id, assignments=[(n("ex"), n("px"), None)])
 
-    new_assignments = [CoreAssignment(event_id="e1", assignees=["p1"])]
+    new_assignments = [CoreAssignment(event_id=n("e1"), assignees=[n("p1")])]
 
     metrics = compute_stability_metrics(db, org_id=org_id, new_assignments=new_assignments)
 
-    # No published solution for org_id="test_org" — zero baseline.
+    # No published solution for this test's org — zero baseline.
     assert metrics.moves_from_published == 0
     assert metrics.affected_persons == 0
