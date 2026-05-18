@@ -592,6 +592,28 @@
         "title": "CalendarTokenResetResponse",
         "type": "object"
       },
+      "ChangePasswordRequest": {
+        "description": "Authenticated self-service password change.",
+        "properties": {
+          "current_password": {
+            "description": "The user's existing password",
+            "title": "Current Password",
+            "type": "string"
+          },
+          "new_password": {
+            "description": "New password (min 6 characters)",
+            "minLength": 6,
+            "title": "New Password",
+            "type": "string"
+          }
+        },
+        "required": [
+          "current_password",
+          "new_password"
+        ],
+        "title": "ChangePasswordRequest",
+        "type": "object"
+      },
       "ConflictCheckRequest": {
         "description": "Request schema for checking conflicts.",
         "properties": {
@@ -5069,6 +5091,53 @@
         "summary": "List Audit Logs",
         "tags": [
           "audit"
+        ]
+      }
+    },
+    "/api/v1/auth/change-password": {
+      "post": {
+        "description": "Change the authenticated user's password. Verifies the current\npassword, then rotates the hash and stamps password_changed_at so\npreviously-issued access tokens are invalidated (same revocation\nmechanism as password reset). Returns a fresh token pair so the\ncaller stays signed in.",
+        "operationId": "changePassword",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ChangePasswordRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Change Password",
+        "tags": [
+          "auth"
         ]
       }
     },

@@ -1,0 +1,30 @@
+{# Editable profile (self). #profile-form so HTMX swaps it after save. #}
+<div id="profile-form">
+  {% if profile.error %}
+  <div class="form-error" role="alert">{{ profile.error }}</div>
+  <div class="spacer-12"></div>
+  {% elif profile.saved %}
+  <div class="form-notice" role="status">Profile saved.</div>
+  <div class="spacer-12"></div>
+  {% endif %}
+
+  <form hx-post="/v/profile" hx-target="#profile-form" hx-swap="outerHTML">
+    <div class="field">
+      <label class="field-label" for="pf_name">Name</label>
+      <input id="pf_name" name="name" type="text" required
+             value="{{ profile.name }}" placeholder="Your name">
+    </div>
+    <div class="field">
+      <label class="field-label" for="pf_tz">Timezone</label>
+      <input id="pf_tz" name="timezone" type="text"
+             value="{{ profile.timezone or '' }}" placeholder="America/Los_Angeles">
+    </div>
+    <div class="field">
+      <label class="field-label" for="pf_lang">Language</label>
+      <input id="pf_lang" name="language" type="text"
+             value="{{ profile.language or '' }}" placeholder="en">
+    </div>
+    <div class="spacer-12"></div>
+    <button class="btn btn-primary" type="submit">Save profile</button>
+  </form>
+</div>

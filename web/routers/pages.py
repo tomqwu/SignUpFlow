@@ -200,6 +200,17 @@ def volunteer_availability(
     )
 
 
+def _account_ctx(person: Person) -> dict:
+    """Initial profile-form values for the signed-in user."""
+    return {
+        "name": person.name,
+        "timezone": person.timezone,
+        "language": person.language,
+        "saved": False,
+        "error": None,
+    }
+
+
 def _my_calendar(request: Request, db: Session, person: Person) -> dict:
     """Calendar subscription URL for the caller (token generated lazily
     by the API handler)."""
@@ -224,6 +235,8 @@ def volunteer_profile(
             "person": person,
             "active_tab": "profile",
             "calendar": _my_calendar(request, db, person),
+            "profile": _account_ctx(person),
+            "pw": {"error": None, "saved": False},
         },
     )
 
@@ -304,6 +317,8 @@ def admin_settings(
             "org": _org_settings(db, person.org_id),
             "error": None,
             "saved": False,
+            "profile": _account_ctx(person),
+            "pw": {"error": None, "saved": False},
         },
     )
 

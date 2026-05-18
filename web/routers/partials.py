@@ -20,6 +20,7 @@ from api.routers.assignments import (
     decline_assignment,
     request_swap,
 )
+from api.routers.auth import ChangePasswordRequest, change_password
 from api.routers.availability import (
     add_exception,
     add_timeoff,
@@ -32,6 +33,7 @@ from api.routers.calendar import reset_calendar_token
 from api.routers.events import create_event, delete_event
 from api.routers.invitations import create_invitation
 from api.routers.organizations import get_organization, update_organization
+from api.routers.people import update_current_person
 from api.routers.solutions import compare_solutions, publish_solution
 from api.routers.solver import solve_schedule
 from api.schemas.assignment import AssignmentDeclineRequest, AssignmentSwapRequest
@@ -43,6 +45,7 @@ from api.schemas.availability import (
 from api.schemas.event import EventCreate
 from api.schemas.invitation import InvitationCreate
 from api.schemas.organization import OrganizationUpdate
+from api.schemas.person import PersonUpdate
 from api.schemas.solver import SolveRequest
 from web.deps import get_session_admin, get_session_user
 from web.routers.pages import (
@@ -400,6 +403,101 @@ def settings_save(
             "timezone": tz,
         },
     )
+
+
+# ── Account / security (self-service) ────────────────────────────────
+
+
+def _profile_ctx(person: Person, *, saved=False, error=None, name=None) -> dict:
+    return {
+        "name": name if name is not None else person.name,
+        "timezone": person.timezone,
+        "language": person.language,
+        "saved": saved,
+        "error": error,
+    }
+
+
+@router.post("/v/profile", response_class=HTMLResponse)
+async def profile_save(
+    request: Request,
+    name: str = Form(...),
+    timezone: str = Form(""),
+    language: str = Form(""),
+    person: Person = Depends(get_session_user),
+    db: Session = Depends(get_db),
+):
+    """Update the signed-in user's own profile (any role). Reuses the
+    API's PUT /people/me handler."""
+    from web.app import templates
+
+    def _render(ctx):
+        return templates.TemplateResponse(
+            request,
+            "partials/profile_form.html",
+            {"profile": ctx},
+            status_code=400 if ctx["error"] else 200,
+        )
+
+    if not name.strip():
+        return _render(_profile_ctx(person, error="Name is required.", name=""))
+
+    payload = PersonUpdate(
+        name=name.strip(),
+        timezone=timezone.strip() or None,
+        language=language.strip() or None,
+    )
+    try:
+        await update_current_person(payload, person, db)
+    except HTTPException as exc:
+        return _render(_profile_ctx(person, error=str(exc.detail)))
+    return _render(_profile_ctx(person, saved=True))
+
+
+@router.post("/v/account/password", response_class=HTMLResponse)
+def password_change(
+    request: Request,
+    current_password: str = Form(...),
+    new_password: str = Form(...),
+    confirm_password: str = Form(...),
+    person: Person = Depends(get_session_user),
+    db: Session = Depends(get_db),
+):
+    """Change the signed-in user's password. Reuses the API
+    change_password handler, then re-mints the web session cookie so
+    the password-version bump doesn't log the user out mid-session."""
+    from web.app import templates
+    from web.auth import set_session_cookie
+
+    def _err(msg: str):
+        return templates.TemplateResponse(
+            request,
+            "partials/password_form.html",
+            {"pw": {"error": msg, "saved": False}},
+            status_code=400,
+        )
+
+    if new_password != confirm_password:
+        return _err("New password and confirmation don't match.")
+    if len(new_password) < 6:
+        return _err("New password must be at least 6 characters.")
+
+    try:
+        change_password(
+            ChangePasswordRequest(current_password=current_password, new_password=new_password),
+            person,
+            db,
+        )
+    except HTTPException as exc:
+        return _err(str(exc.detail))
+
+    resp = templates.TemplateResponse(
+        request,
+        "partials/password_form.html",
+        {"pw": {"error": None, "saved": True}},
+    )
+    set_session_cookie(resp, person)
+    return resp
 
 
 # ── Admin: event create / delete ─────────────────────────────────────

@@ -11,6 +11,12 @@
 <div class="scroll">
   <div class="mono-label" style="margin-top:8px">Organization</div>
   {% include "partials/settings_form.html" %}
+
+  <div class="mono-label">Your profile</div>
+  {% include "partials/profile_form.html" %}
+
+  <div class="mono-label">Security</div>
+  {% include "partials/password_form.html" %}
 </div>
 {% set tabs = [
   ('/a/dashboard', '▣', 'Dashboard', 'dashboard'),
