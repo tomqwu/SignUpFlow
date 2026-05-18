@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% block title %}Events · SignUpFlow{% endblock %}
+{% block body %}
+<div class="nav">
+  <span class="nav-back"></span>
+  <form method="post" action="/auth/logout" style="margin:0">
+    <button class="nav-action" type="submit">Sign out</button>
+  </form>
+</div>
+<div class="page-title">Events</div>
+<div class="scroll">
+  <div class="mono-label" style="margin-top:8px">Upcoming</div>
+  {% if not events.upcoming %}
+  <div class="empty">No upcoming events.</div>
+  {% else %}
+  <div class="group">
+    {% for e in events.upcoming %}
+    <div class="row">
+      <div class="row-main">
+        <div class="row-title">{{ e.type }}</div>
+        <div class="row-sub">{{ e.date_label }}</div>
+      </div>
+      {% if e.time_label %}<span class="time-chip">{{ e.time_label }}</span>{% endif %}
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <div class="mono-label">Past</div>
+  {% if not events.past %}
+  <div class="empty">No past events.</div>
+  {% else %}
+  <div class="group">
+    {% for e in events.past %}
+    <div class="row">
+      <div class="row-main">
+        <div class="row-title">{{ e.type }}</div>
+        <div class="row-sub">{{ e.date_label }}</div>
+      </div>
+      {% if e.time_label %}<span class="time-chip">{{ e.time_label }}</span>{% endif %}
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+</div>
+{% set tabs = [
+  ('/a/dashboard', '▣', 'Dashboard', 'dashboard'),
+  ('/a/people', '◔', 'People', 'people'),
+  ('/a/events', '▤', 'Events', 'events'),
+] %}
+{% include "_nav.html" %}
+{% endblock %}

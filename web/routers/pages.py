@@ -333,3 +333,47 @@ def admin_people_list(
         "partials/people_list.html",
         {"people": _people(db, person.org_id, q), "q": q or ""},
     )
+
+
+def _events(db: Session, org_id: str) -> dict:
+    """Org events split into upcoming vs past, formatted. Direct query
+    (org-scoped) — simpler than the API list_events Query()/pagination
+    deps via a direct call."""
+    from api.timeutils import utcnow
+
+    now = utcnow()
+    rows = db.query(Event).filter(Event.org_id == org_id).order_by(Event.start_time.asc()).all()
+    upcoming, past = [], []
+    for e in rows:
+        item = {
+            "id": e.id,
+            "type": e.type,
+            "date_label": e.start_time.strftime("%a %d %b %Y").upper() if e.start_time else "",
+            "time_label": (
+                f"{e.start_time.strftime('%H:%M')}–{e.end_time.strftime('%H:%M')}"
+                if e.start_time and e.end_time
+                else ""
+            ),
+        }
+        (upcoming if e.start_time and e.start_time >= now else past).append(item)
+    past.reverse()  # most-recent past first
+    return {"upcoming": upcoming, "past": past}
+
+
+@router.get("/a/events", response_class=HTMLResponse)
+def admin_events(
+    request: Request,
+    person: Person = Depends(get_session_admin),
+    db: Session = Depends(get_db),
+):
+    from web.app import templates
+
+    return templates.TemplateResponse(
+        request,
+        "admin/events.html",
+        {
+            "person": person,
+            "active_tab": "events",
+            "events": _events(db, person.org_id),
+        },
+    )
