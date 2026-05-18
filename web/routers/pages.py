@@ -552,6 +552,44 @@ def admin_teams(
     )
 
 
+def _analytics(db: Session, org_id: str, days: int, threshold: int) -> dict:
+    """Deep analytics — the three API endpoints with explicit args
+    (their Query() defaults don't resolve on a direct call)."""
+    from api.routers.analytics import (
+        get_burnout_risk,
+        get_schedule_health,
+        get_volunteer_stats,
+    )
+
+    vs = get_volunteer_stats(org_id, db, days=days)
+    sh = get_schedule_health(org_id, db)
+    br = get_burnout_risk(org_id, db, threshold=threshold)
+    return {"days": days, "threshold": threshold, "participation": vs, "health": sh, "burnout": br}
+
+
+@router.get("/a/analytics", response_class=HTMLResponse)
+def admin_analytics(
+    request: Request,
+    days: int = 30,
+    threshold: int = 4,
+    person: Person = Depends(get_session_admin),
+    db: Session = Depends(get_db),
+):
+    from web.app import templates
+
+    days = days if 1 <= days <= 365 else 30
+    threshold = threshold if 1 <= threshold <= 50 else 4
+    return templates.TemplateResponse(
+        request,
+        "admin/analytics.html",
+        {
+            "person": person,
+            "active_tab": "dashboard",
+            "a": _analytics(db, person.org_id, days, threshold),
+        },
+    )
+
+
 @router.get("/a/people", response_class=HTMLResponse)
 def admin_people(
     request: Request,

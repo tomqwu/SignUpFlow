@@ -1,0 +1,110 @@
+{% extends "base.html" %}
+{% block title %}Analytics · SignUpFlow{% endblock %}
+{% block body %}
+<div class="nav">
+  <a class="nav-back" href="/a/dashboard">‹ Dashboard</a>
+  <form method="post" action="/auth/logout" style="margin:0">
+    <button class="nav-action" type="submit">Sign out</button>
+  </form>
+</div>
+<div class="page-title">Analytics</div>
+<div class="scroll">
+  <form method="get" action="/a/analytics">
+    <div class="btn-row cols-2">
+      <div class="field" style="margin:0">
+        <label class="field-label" for="an_days">Window (days)</label>
+        <input id="an_days" name="days" type="number" min="1" max="365"
+               value="{{ a.days }}">
+      </div>
+      <div class="field" style="margin:0">
+        <label class="field-label" for="an_thr">Burnout threshold</label>
+        <input id="an_thr" name="threshold" type="number" min="1" max="50"
+               value="{{ a.threshold }}">
+      </div>
+    </div>
+    <div class="spacer-12"></div>
+    <button class="btn btn-secondary" type="submit">Apply filters</button>
+  </form>
+
+  <div class="mono-label" style="margin-top:18px">
+    Participation · last {{ a.participation.period_days }} days
+  </div>
+  <div class="kpi-grid">
+    <div class="kpi">
+      <div class="kpi-value">{{ a.participation.active_volunteers }}<span class="unit">/ {{ a.participation.total_volunteers }}</span></div>
+      <div class="kpi-label">Active volunteers</div>
+    </div>
+    <div class="kpi accent">
+      <div class="kpi-value">{{ a.participation.participation_rate }}<span class="unit">%</span></div>
+      <div class="kpi-label">Participation</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-value">{{ a.participation.total_assignments }}</div>
+      <div class="kpi-label">Assignments</div>
+    </div>
+  </div>
+  <div class="mono-label">Top volunteers</div>
+  {% if not a.participation.top_volunteers %}
+  <div class="empty">No assignments in this window.</div>
+  {% else %}
+  <div class="group">
+    {% for v in a.participation.top_volunteers %}
+    <div class="row">
+      <div class="row-main"><div class="row-title">{{ v.name }}</div></div>
+      <span class="mono-data">{{ v.assignments }}</span>
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <div class="mono-label" style="margin-top:18px">Schedule health</div>
+  <div class="kpi-grid">
+    <div class="kpi">
+      <div class="kpi-value">{{ a.health.upcoming_events }}</div>
+      <div class="kpi-label">Upcoming events</div>
+    </div>
+    <div class="kpi accent">
+      <div class="kpi-value">{{ a.health.coverage_rate }}<span class="unit">%</span></div>
+      <div class="kpi-label">Coverage</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-value">{{ a.health.events_with_assignments }}</div>
+      <div class="kpi-label">Events staffed</div>
+    </div>
+  </div>
+  {% if a.health.latest_solution %}
+  <a class="btn btn-secondary"
+     href="/a/solution/{{ a.health.latest_solution.id }}">
+    Latest solution · health {{ a.health.latest_solution.health_score|round|int }}
+  </a>
+  {% endif %}
+
+  <div class="mono-label" style="margin-top:18px">
+    Burnout risk · ≥ {{ a.burnout.threshold }} in 30 days
+  </div>
+  {% if a.burnout.at_risk_count == 0 %}
+  <div class="card">
+    <div class="row-sub">No volunteers over the threshold. 🎉</div>
+  </div>
+  {% else %}
+  <div class="group">
+    {% for v in a.burnout.at_risk_volunteers %}
+    <div class="row">
+      <div class="row-main">
+        <div class="row-title">{{ v.name }}</div>
+        <div class="row-sub">{{ v.email or '—' }}</div>
+      </div>
+      <span class="mono-data">{{ v.assignments_last_30_days }}</span>
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+</div>
+{% set tabs = [
+  ('/a/dashboard', '▣', 'Dashboard', 'dashboard'),
+  ('/a/people', '◔', 'People', 'people'),
+  ('/a/events', '▤', 'Events', 'events'),
+  ('/a/solver', '◈', 'Solver', 'solver'),
+] %}
+{% include "_nav.html" %}
+{% endblock %}
