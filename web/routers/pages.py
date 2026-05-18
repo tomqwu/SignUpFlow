@@ -654,6 +654,51 @@ def _events(db: Session, org_id: str) -> dict:
     return {"upcoming": upcoming, "past": past}
 
 
+def _swap_requests(db: Session, org_id: str) -> list[dict]:
+    """Assignments the volunteer flagged for swap, org-scoped via the
+    Event join."""
+    rows = (
+        db.query(Assignment, Event, Person)
+        .join(Event, Assignment.event_id == Event.id)
+        .join(Person, Assignment.person_id == Person.id)
+        .filter(Event.org_id == org_id, Assignment.status == "swap_requested")
+        .order_by(Event.start_time.asc())
+        .all()
+    )
+    return [
+        {
+            "assignment_id": a.id,
+            "event_id": a.event_id,
+            "event_type": e.type,
+            "when": e.start_time.strftime("%a %d %b %Y · %H:%M") if e.start_time else "",
+            "person_id": p.id,
+            "person_name": p.name,
+            "role": a.role,
+        }
+        for a, e, p in rows
+    ]
+
+
+@router.get("/a/swaps", response_class=HTMLResponse)
+def admin_swaps(
+    request: Request,
+    person: Person = Depends(get_session_admin),
+    db: Session = Depends(get_db),
+):
+    from web.app import templates
+
+    return templates.TemplateResponse(
+        request,
+        "admin/swaps.html",
+        {
+            "person": person,
+            "active_tab": "events",
+            "swaps": _swap_requests(db, person.org_id),
+            "error": None,
+        },
+    )
+
+
 def _all_assignments(db: Session, org_id: str, person_id: str | None) -> dict:
     """Org-wide assignments (Assignment ⋈ Event ⋈ Person), newest event
     first, optionally filtered to one person. Org-scoped via the Event
