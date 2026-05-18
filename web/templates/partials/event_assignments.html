@@ -1,0 +1,67 @@
+{# Per-event assignee editor. #event-assignments so HTMX swaps it after
+   add / remove. #}
+<div id="event-assignments">
+  {% if error %}
+  <div class="form-error" role="alert">{{ error }}</div>
+  <div class="spacer-12"></div>
+  {% endif %}
+
+  <div class="card">
+    <div class="row-title">{{ data.event.type }}</div>
+    {% if data.event.date_label %}
+    <div class="row-sub">{{ data.event.date_label }}</div>
+    {% endif %}
+  </div>
+
+  <div class="mono-label" style="margin-top:18px">
+    Assignees ({{ data.assignees|length }})
+  </div>
+  {% if not data.assignees %}
+  <div class="empty">No one assigned yet.</div>
+  {% else %}
+  <div class="group">
+    {% for a in data.assignees %}
+    <div class="row">
+      <div class="row-main">
+        <div class="row-title">{{ a.name }}</div>
+        {% if a.role %}
+        <div style="margin-top:4px"><span class="role-chip">{{ a.role }}</span></div>
+        {% endif %}
+      </div>
+      <form hx-post="/a/events/{{ data.event.id }}/assignments/remove"
+            hx-target="#event-assignments" hx-swap="outerHTML"
+            style="margin:0">
+        <input type="hidden" name="person_id" value="{{ a.person_id }}">
+        <button class="btn btn-destructive" style="width:auto;padding:6px 12px"
+                type="submit">Remove</button>
+      </form>
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  {% if data.candidates %}
+  <div class="mono-label" style="margin-top:18px">Add someone</div>
+  <form hx-post="/a/events/{{ data.event.id }}/assignments/add"
+        hx-target="#event-assignments" hx-swap="outerHTML">
+    <div class="field">
+      <label class="field-label" for="ea_person">Person</label>
+      <select id="ea_person" name="person_id" required
+              style="border:0;background:transparent;font-family:inherit;font-size:15px;color:var(--ink-1)">
+        {% for c in data.candidates %}
+        <option value="{{ c.id }}">{{ c.name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="field">
+      <label class="field-label" for="ea_role">Role (optional)</label>
+      <input id="ea_role" name="role" type="text" placeholder="usher">
+    </div>
+    <div class="spacer-12"></div>
+    <button class="btn btn-primary" type="submit">Add to event</button>
+  </form>
+  {% else %}
+  <div class="spacer-12"></div>
+  <div class="row-sub">Everyone in your org is already assigned.</div>
+  {% endif %}
+</div>

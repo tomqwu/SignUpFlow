@@ -634,6 +634,58 @@ def admin_events(
     )
 
 
+def _event_assignments(db: Session, org_id: str, event_id: str) -> dict | None:
+    """Current assignees for an event + people who could still be added.
+    Org-scoped via the Event join (mirrors _my_schedule_rows)."""
+    ev = db.query(Event).filter(Event.org_id == org_id, Event.id == event_id).first()
+    if ev is None:
+        return None
+    rows = (
+        db.query(Assignment, Person)
+        .join(Person, Assignment.person_id == Person.id)
+        .join(Event, Assignment.event_id == Event.id)
+        .filter(Event.org_id == org_id, Assignment.event_id == event_id)
+        .all()
+    )
+    assigned_ids = {p.id for _, p in rows}
+    people = db.query(Person).filter(Person.org_id == org_id).order_by(Person.name.asc()).all()
+    return {
+        "event": {
+            "id": ev.id,
+            "type": ev.type,
+            "date_label": ev.start_time.strftime("%a %d %b %Y") if ev.start_time else "",
+        },
+        "assignees": [
+            {
+                "assignment_id": a.id,
+                "person_id": p.id,
+                "name": p.name,
+                "role": a.role,
+            }
+            for a, p in rows
+        ],
+        "candidates": [{"id": p.id, "name": p.name} for p in people if p.id not in assigned_ids],
+    }
+
+
+@router.get("/a/events/{event_id}/assignments", response_class=HTMLResponse)
+def admin_event_assignments(
+    request: Request,
+    event_id: str,
+    person: Person = Depends(get_session_admin),
+    db: Session = Depends(get_db),
+):
+    from web.app import templates
+
+    data = _event_assignments(db, person.org_id, event_id)
+    return templates.TemplateResponse(
+        request,
+        "admin/event_assignments.html",
+        {"person": person, "active_tab": "events", "data": data, "error": None},
+        status_code=200 if data else 404,
+    )
+
+
 @router.get("/a/solver", response_class=HTMLResponse)
 def admin_solver(
     request: Request,
