@@ -26,9 +26,7 @@ def test_aria_labels_on_bare_selects(client, db):
     tok = _admin(client, db, org="ux_o1", email="ux1@web.test")
 
     # A team must exist (with an addable person) for the member select.
-    client.post(
-        "/a/teams/create", data={"name": "Ushers"}, cookies={SESSION_COOKIE: tok}
-    )
+    client.post("/a/teams/create", data={"name": "Ushers"}, cookies={SESSION_COOKIE: tok})
     teams = client.get("/a/teams", cookies={SESSION_COOKIE: tok})
     assert teams.status_code == 200
     assert 'aria-label="Member to add"' in teams.text
