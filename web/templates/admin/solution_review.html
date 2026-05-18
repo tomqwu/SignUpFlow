@@ -42,6 +42,7 @@
     <div class="spacer-12"></div>
     {% set solution_id = review.id %}
     {% set published = review.is_published %}
+    {% set can_rollback = review.can_rollback %}
     {% set error = None %}
     {% include "partials/publish_state.html" %}
     <div class="spacer-12"></div>

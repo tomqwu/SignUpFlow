@@ -745,9 +745,21 @@ def _solution_review(db: Session, person: Person, sid: int) -> dict | None:
 
     if _solution_owned(db, person, sid) is None:
         return None
+    from api.models import AuditAction, AuditLog
+
     detail = get_solution(sid, db)
     stats = get_solution_stats(sid, person, db)
     events = _solution_events(db, person, sid)
+    ever_published = (
+        db.query(AuditLog)
+        .filter(
+            AuditLog.organization_id == person.org_id,
+            AuditLog.resource_id == str(sid),
+            AuditLog.action.in_([AuditAction.SOLUTION_PUBLISHED, AuditAction.SOLUTION_ROLLED_BACK]),
+        )
+        .count()
+        > 0
+    )
     return {
         "id": detail.id,
         "health_score": round(detail.health_score),
@@ -755,6 +767,7 @@ def _solution_review(db: Session, person: Person, sid: int) -> dict | None:
         "soft_score": round(detail.soft_score, 1),
         "assignment_count": detail.assignment_count,
         "is_published": detail.is_published,
+        "can_rollback": ever_published and not detail.is_published,
         "created_label": detail.created_at.strftime("%a %d %b %Y").upper()
         if detail.created_at
         else "",

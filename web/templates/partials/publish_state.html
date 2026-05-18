@@ -1,4 +1,4 @@
-{# Publish control / state for a solution. #publish-state. #}
+{# Publish / unpublish / rollback control for a solution. #publish-state. #}
 <div id="publish-state">
   {% if error %}
   <div class="form-error" role="alert">{{ error }}</div>
@@ -6,6 +6,13 @@
   <div class="form-notice" role="status">
     Published — volunteers now see these assignments on their schedule.
   </div>
+  <div class="spacer-12"></div>
+  <button class="btn btn-destructive" type="button"
+          hx-post="/a/solution/{{ solution_id }}/unpublish"
+          hx-target="#publish-state" hx-swap="outerHTML"
+          hx-confirm="Unpublish this solution? Volunteers will no longer see these assignments.">
+    Unpublish
+  </button>
   {% else %}
   <button class="btn btn-go" type="button"
           hx-post="/a/solution/{{ solution_id }}/publish"
@@ -13,5 +20,14 @@
           hx-confirm="Publish this solution? Any previously published solution in your org is replaced.">
     Publish this solution
   </button>
+  {% if can_rollback %}
+  <div class="spacer-12"></div>
+  <button class="btn btn-secondary" type="button"
+          hx-post="/a/solution/{{ solution_id }}/rollback"
+          hx-target="#publish-state" hx-swap="outerHTML"
+          hx-confirm="Roll back to this solution? It is re-published and any currently-published solution is replaced.">
+    Roll back to this version
+  </button>
+  {% endif %}
   {% endif %}
 </div>
