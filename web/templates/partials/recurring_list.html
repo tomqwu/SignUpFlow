@@ -1,0 +1,144 @@
+{# Recurring series list + create/delete. #recurring-list. #}
+<div id="recurring-list" x-data="{ creating: false, pattern: 'weekly', endc: 'count' }">
+  {% if error %}
+  <div class="form-error" role="alert">{{ error }}</div>
+  <div class="spacer-12"></div>
+  {% endif %}
+
+  <button class="btn btn-primary" type="button"
+          x-show="!creating" @click="creating = true">New series</button>
+
+  <form x-show="creating" x-cloak
+        hx-post="/a/recurring/create"
+        hx-target="#recurring-list" hx-swap="outerHTML">
+    <div class="field">
+      <label class="field-label" for="rs_title">Title</label>
+      <input id="rs_title" name="title" type="text" required
+             placeholder="Sunday 10am Service">
+    </div>
+    <div class="field">
+      <label class="field-label" for="rs_dur">Duration (minutes)</label>
+      <input id="rs_dur" name="duration" type="number" min="1" value="60" required>
+    </div>
+    <div class="field">
+      <label class="field-label" for="rs_loc">Location</label>
+      <input id="rs_loc" name="location" type="text" placeholder="Optional">
+    </div>
+
+    <div class="field">
+      <label class="field-label" for="rs_pat">Pattern</label>
+      <select id="rs_pat" name="pattern_type" x-model="pattern"
+              style="border:0;background:transparent;font-family:inherit;font-size:15px;color:var(--ink-1)">
+        <option value="weekly">weekly</option>
+        <option value="biweekly">biweekly</option>
+        <option value="monthly">monthly</option>
+        <option value="custom">custom</option>
+      </select>
+    </div>
+
+    <div class="field" x-show="pattern === 'weekly' || pattern === 'biweekly'">
+      <label class="field-label">Days</label>
+      {% for d in ['monday','tuesday','wednesday','thursday','friday','saturday','sunday'] %}
+      <label style="display:flex;align-items:center;gap:10px;padding:4px 0;cursor:pointer">
+        <input type="checkbox" name="selected_days" value="{{ d }}">
+        <span class="row-title" style="font-size:14px;text-transform:capitalize">{{ d }}</span>
+      </label>
+      {% endfor %}
+    </div>
+
+    <template x-if="pattern === 'monthly'">
+      <div>
+        <div class="field">
+          <label class="field-label">Which week</label>
+          <select name="weekday_position"
+                  style="border:0;background:transparent;font-family:inherit;font-size:15px;color:var(--ink-1)">
+            {% for p in ['first','second','third','fourth','last'] %}
+            <option value="{{ p }}">{{ p }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="field">
+          <label class="field-label">Weekday</label>
+          <select name="weekday_name"
+                  style="border:0;background:transparent;font-family:inherit;font-size:15px;color:var(--ink-1)">
+            {% for d in ['monday','tuesday','wednesday','thursday','friday','saturday','sunday'] %}
+            <option value="{{ d }}">{{ d }}</option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+    </template>
+
+    <div class="field" x-show="pattern === 'custom'">
+      <label class="field-label" for="rs_int">Every N weeks</label>
+      <input id="rs_int" name="frequency_interval" type="number" min="1" value="3">
+    </div>
+
+    <div class="field">
+      <label class="field-label" for="rs_sd">Start date</label>
+      <input id="rs_sd" name="start_date" type="date" required>
+    </div>
+    <div class="field">
+      <label class="field-label" for="rs_st">Start time</label>
+      <input id="rs_st" name="start_time" type="time" required>
+    </div>
+
+    <div class="field">
+      <label class="field-label" for="rs_end">Ends</label>
+      <select id="rs_end" name="end_condition_type" x-model="endc"
+              style="border:0;background:transparent;font-family:inherit;font-size:15px;color:var(--ink-1)">
+        <option value="count">after N occurrences</option>
+        <option value="date">on a date</option>
+        <option value="indefinite">never (indefinite)</option>
+      </select>
+    </div>
+    <div class="field" x-show="endc === 'count'">
+      <label class="field-label" for="rs_oc">Occurrences</label>
+      <input id="rs_oc" name="occurrence_count" type="number" min="1" max="200" value="12">
+    </div>
+    <div class="field" x-show="endc === 'date'">
+      <label class="field-label" for="rs_ed">End date</label>
+      <input id="rs_ed" name="end_date" type="date">
+    </div>
+
+    <div class="field">
+      <label class="field-label">Role (optional)</label>
+      <div class="btn-row cols-2">
+        <input type="text" name="role_name" placeholder="volunteer">
+        <input type="number" name="role_count" min="1" placeholder="1">
+      </div>
+    </div>
+
+    <div class="spacer-12"></div>
+    <div class="btn-row cols-2">
+      <button class="btn btn-secondary" type="button" @click="creating = false">Cancel</button>
+      <button class="btn btn-primary" type="submit">Create series</button>
+    </div>
+  </form>
+
+  <div class="mono-label" style="margin-top:18px">Series</div>
+  {% if not series %}
+  <div class="empty">No recurring series yet.</div>
+  {% else %}
+  <div class="group">
+    {% for s in series %}
+    <div class="row">
+      <div class="row-main">
+        <div class="row-title">{{ s.title }}</div>
+        <div style="margin-top:4px;display:flex;gap:6px;flex-wrap:wrap;align-items:center">
+          <span class="role-chip">{{ s.pattern }}</span>
+          {% if s.when %}<span class="row-sub">{{ s.when }}</span>{% endif %}
+        </div>
+        <div class="row-sub" style="margin-top:4px">from {{ s.from }} · {{ s.ends }}</div>
+      </div>
+      <button class="btn btn-destructive" style="width:auto;padding:6px 12px"
+              hx-post="/a/recurring/{{ s.id }}/delete"
+              hx-target="#recurring-list" hx-swap="outerHTML"
+              hx-confirm="Delete series '{{ s.title }}' and all its occurrences?">
+        Delete
+      </button>
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+</div>
