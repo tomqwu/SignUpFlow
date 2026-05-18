@@ -435,6 +435,24 @@ def _email_status() -> dict:
     }
 
 
+def _sms_status() -> dict:
+    """Non-secret SMS-delivery config. Read env directly (never build
+    SMSService here — its __init__ raises if SMS_ENABLED without creds)."""
+    import os
+
+    enabled = os.getenv("SMS_ENABLED", "false").lower() == "true"
+    has_creds = all(
+        os.getenv(k) for k in ("TWILIO_ACCOUNT_SID", "TWILIO_AUTH_TOKEN", "TWILIO_PHONE_NUMBER")
+    )
+    if enabled and has_creds:
+        state = "active"
+    elif enabled:
+        state = "misconfigured"  # enabled but missing Twilio creds
+    else:
+        state = "disabled"
+    return {"enabled": enabled, "has_creds": has_creds, "state": state}
+
+
 @router.get("/a/settings", response_class=HTMLResponse)
 def admin_settings(
     request: Request,
@@ -455,6 +473,7 @@ def admin_settings(
             "profile": _account_ctx(person),
             "pw": {"error": None, "saved": False},
             "email": _email_status(),
+            "sms": _sms_status(),
         },
     )
 

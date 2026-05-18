@@ -40,6 +40,33 @@
     </div>
     {% endif %}
   </div>
+
+  <div class="mono-label">SMS notifications</div>
+  <div class="card">
+    <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+      <div class="row-title">Twilio SMS</div>
+      <span class="status-text {{ 'confirmed' if sms.state == 'active' else 'pending' }}">
+        {{ sms.state }}
+      </span>
+    </div>
+    {% if sms.state == 'active' %}
+    <div class="row-sub" style="margin-top:4px">
+      Assignment notices, reminders &amp; broadcasts can be sent via Twilio.
+    </div>
+    {% elif sms.state == 'misconfigured' %}
+    <div class="row-sub" style="margin-top:4px">
+      <code>SMS_ENABLED=true</code> but Twilio credentials are missing —
+      set <code>TWILIO_ACCOUNT_SID</code>, <code>TWILIO_AUTH_TOKEN</code>,
+      <code>TWILIO_PHONE_NUMBER</code>.
+    </div>
+    {% else %}
+    <div class="row-sub" style="margin-top:4px">
+      SMS endpoints are wired but disabled. For a sandbox, set
+      <code>SMS_ENABLED=true</code> with Twilio test credentials and the
+      magic number <code>+15005550006</code>.
+    </div>
+    {% endif %}
+  </div>
 </div>
 {% set tabs = [
   ('/a/dashboard', '▣', 'Dashboard', 'dashboard'),

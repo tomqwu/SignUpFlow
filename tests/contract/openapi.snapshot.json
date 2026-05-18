@@ -474,6 +474,45 @@
         "title": "AvailablePerson",
         "type": "object"
       },
+      "BroadcastResponse": {
+        "description": "Response from broadcast send.",
+        "properties": {
+          "estimated_cost_cents": {
+            "title": "Estimated Cost Cents",
+            "type": "integer"
+          },
+          "message": {
+            "title": "Message",
+            "type": "string"
+          },
+          "queued_count": {
+            "title": "Queued Count",
+            "type": "integer"
+          },
+          "skipped_count": {
+            "title": "Skipped Count",
+            "type": "integer"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          },
+          "total_recipients": {
+            "title": "Total Recipients",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "status",
+          "total_recipients",
+          "queued_count",
+          "skipped_count",
+          "estimated_cost_cents",
+          "message"
+        ],
+        "title": "BroadcastResponse",
+        "type": "object"
+      },
       "BulkImportItemError": {
         "description": "One row that the bulk importer rejected.",
         "properties": {
@@ -3101,6 +3140,72 @@
         "title": "PersonUpdate",
         "type": "object"
       },
+      "PhoneVerificationRequest": {
+        "description": "Request to verify phone number format and deliverability.",
+        "properties": {
+          "phone_number": {
+            "description": "Phone number in E.164 format (+12345678900)",
+            "title": "Phone Number",
+            "type": "string"
+          }
+        },
+        "required": [
+          "phone_number"
+        ],
+        "title": "PhoneVerificationRequest",
+        "type": "object"
+      },
+      "PhoneVerificationResponse": {
+        "description": "Response from phone verification.",
+        "properties": {
+          "carrier_type": {
+            "title": "Carrier Type",
+            "type": "string"
+          },
+          "country_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Country Code"
+          },
+          "deliverable": {
+            "title": "Deliverable",
+            "type": "boolean"
+          },
+          "error": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error"
+          },
+          "formatted_number": {
+            "title": "Formatted Number",
+            "type": "string"
+          },
+          "valid": {
+            "title": "Valid",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "valid",
+          "carrier_type",
+          "formatted_number",
+          "deliverable"
+        ],
+        "title": "PhoneVerificationResponse",
+        "type": "object"
+      },
       "PreviewRequest": {
         "description": "Request for previewing occurrences without saving.",
         "properties": {
@@ -3756,6 +3861,93 @@
         "title": "ResourceUpdate",
         "type": "object"
       },
+      "SendAssignmentNotificationRequest": {
+        "description": "Request to send assignment notification.",
+        "properties": {
+          "assignment_id": {
+            "title": "Assignment Id",
+            "type": "integer"
+          },
+          "event_id": {
+            "title": "Event Id",
+            "type": "string"
+          },
+          "language": {
+            "default": "en",
+            "description": "Language code (en, es, pt, etc.)",
+            "title": "Language",
+            "type": "string"
+          },
+          "person_id": {
+            "title": "Person Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "assignment_id",
+          "event_id",
+          "person_id"
+        ],
+        "title": "SendAssignmentNotificationRequest",
+        "type": "object"
+      },
+      "SendBroadcastRequest": {
+        "description": "Request to send broadcast message.",
+        "properties": {
+          "is_urgent": {
+            "default": false,
+            "description": "Bypass rate limits if urgent",
+            "title": "Is Urgent",
+            "type": "boolean"
+          },
+          "message_text": {
+            "description": "Message content (max 1600 chars)",
+            "maxLength": 1600,
+            "title": "Message Text",
+            "type": "string"
+          },
+          "recipient_ids": {
+            "description": "List of person IDs (max 200)",
+            "items": {
+              "type": "integer"
+            },
+            "title": "Recipient Ids",
+            "type": "array"
+          }
+        },
+        "required": [
+          "recipient_ids",
+          "message_text"
+        ],
+        "title": "SendBroadcastRequest",
+        "type": "object"
+      },
+      "SendEventReminderRequest": {
+        "description": "Request to send event reminder to all assigned volunteers.",
+        "properties": {
+          "event_id": {
+            "title": "Event Id",
+            "type": "string"
+          },
+          "hours_before": {
+            "default": 24,
+            "description": "Hours before event to send reminder",
+            "title": "Hours Before",
+            "type": "integer"
+          },
+          "language": {
+            "default": "en",
+            "description": "Language code",
+            "title": "Language",
+            "type": "string"
+          }
+        },
+        "required": [
+          "event_id"
+        ],
+        "title": "SendEventReminderRequest",
+        "type": "object"
+      },
       "SignupRequest": {
         "description": "Signup request.",
         "properties": {
@@ -3830,6 +4022,61 @@
           "password"
         ],
         "title": "SignupRequest",
+        "type": "object"
+      },
+      "SmsUsageStatsResponse": {
+        "description": "Response with SMS usage statistics for organization.",
+        "properties": {
+          "budget_limit_cents": {
+            "title": "Budget Limit Cents",
+            "type": "integer"
+          },
+          "budget_used_percentage": {
+            "title": "Budget Used Percentage",
+            "type": "number"
+          },
+          "messages_delivered": {
+            "title": "Messages Delivered",
+            "type": "integer"
+          },
+          "messages_failed": {
+            "title": "Messages Failed",
+            "type": "integer"
+          },
+          "messages_remaining": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Messages Remaining"
+          },
+          "messages_sent": {
+            "title": "Messages Sent",
+            "type": "integer"
+          },
+          "month_year": {
+            "title": "Month Year",
+            "type": "string"
+          },
+          "total_cost_cents": {
+            "title": "Total Cost Cents",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "month_year",
+          "messages_sent",
+          "messages_delivered",
+          "messages_failed",
+          "total_cost_cents",
+          "budget_limit_cents",
+          "budget_used_percentage"
+        ],
+        "title": "SmsUsageStatsResponse",
         "type": "object"
       },
       "SolutionAssignmentAssignee": {
@@ -4535,6 +4782,30 @@
         "title": "TrialRequest",
         "type": "object"
       },
+      "UpdateSmsPreferencesRequest": {
+        "description": "Request to update SMS notification preferences.",
+        "properties": {
+          "language": {
+            "default": "en",
+            "description": "Preferred language for SMS: en, es, pt, zh-CN, zh-TW, fr",
+            "title": "Language",
+            "type": "string"
+          },
+          "notification_types": {
+            "description": "List of notification types: assignment, reminder, change, cancellation",
+            "items": {
+              "type": "string"
+            },
+            "title": "Notification Types",
+            "type": "array"
+          }
+        },
+        "required": [
+          "notification_types"
+        ],
+        "title": "UpdateSmsPreferencesRequest",
+        "type": "object"
+      },
       "UpgradeRequest": {
         "description": "Request schema for upgrading to paid plan.",
         "example": {
@@ -4627,6 +4898,96 @@
         "title": "ValidationError",
         "type": "object"
       },
+      "VerificationCodeRequest": {
+        "description": "Request to generate and send verification code.",
+        "properties": {
+          "person_id": {
+            "title": "Person Id",
+            "type": "integer"
+          },
+          "phone_number": {
+            "description": "Phone number in E.164 format",
+            "title": "Phone Number",
+            "type": "string"
+          }
+        },
+        "required": [
+          "person_id",
+          "phone_number"
+        ],
+        "title": "VerificationCodeRequest",
+        "type": "object"
+      },
+      "VerificationCodeResponse": {
+        "description": "Response from verification code generation.",
+        "properties": {
+          "expires_at": {
+            "title": "Expires At",
+            "type": "string"
+          },
+          "message": {
+            "title": "Message",
+            "type": "string"
+          },
+          "phone_number": {
+            "title": "Phone Number",
+            "type": "string"
+          }
+        },
+        "required": [
+          "message",
+          "expires_at",
+          "phone_number"
+        ],
+        "title": "VerificationCodeResponse",
+        "type": "object"
+      },
+      "VerifyCodeRequest": {
+        "description": "Request to verify SMS code.",
+        "properties": {
+          "code": {
+            "description": "6-digit verification code",
+            "maximum": 999999.0,
+            "minimum": 100000.0,
+            "title": "Code",
+            "type": "integer"
+          },
+          "person_id": {
+            "title": "Person Id",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "person_id",
+          "code"
+        ],
+        "title": "VerifyCodeRequest",
+        "type": "object"
+      },
+      "VerifyCodeResponse": {
+        "description": "Response from code verification.",
+        "properties": {
+          "message": {
+            "title": "Message",
+            "type": "string"
+          },
+          "phone_number": {
+            "title": "Phone Number",
+            "type": "string"
+          },
+          "verified": {
+            "title": "Verified",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "verified",
+          "message",
+          "phone_number"
+        ],
+        "title": "VerifyCodeResponse",
+        "type": "object"
+      },
       "ViolationInfo": {
         "description": "Schema for constraint violation.",
         "properties": {
@@ -4708,6 +5069,428 @@
   },
   "openapi": "3.1.0",
   "paths": {
+    "/api/sms/organizations/{org_id}/sms-usage": {
+      "get": {
+        "description": "Get SMS usage statistics for organization (admin only).\n\nReturns current month usage with budget tracking.",
+        "operationId": "getSmsUsageStats",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "org_id",
+            "required": true,
+            "schema": {
+              "title": "Org Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SmsUsageStatsResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Get Sms Usage Stats",
+        "tags": [
+          "sms"
+        ]
+      }
+    },
+    "/api/sms/people/{person_id}/sms-preferences": {
+      "put": {
+        "description": "Update SMS notification preferences for a user.\n\nUsers can update their own preferences, admins can update any user.",
+        "operationId": "updateSmsPreferences",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "person_id",
+            "required": true,
+            "schema": {
+              "title": "Person Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateSmsPreferencesRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Update Sms Preferences",
+        "tags": [
+          "sms"
+        ]
+      }
+    },
+    "/api/sms/send-assignment-notification": {
+      "post": {
+        "description": "Send assignment notification SMS to volunteer (admin only).\n\nQueues background task for async delivery.",
+        "operationId": "sendAssignmentNotificationApi",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SendAssignmentNotificationRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Send Assignment Notification Api",
+        "tags": [
+          "sms"
+        ]
+      }
+    },
+    "/api/sms/send-broadcast": {
+      "post": {
+        "description": "Send broadcast SMS to multiple volunteers (admin only).\n\nMax 200 recipients per broadcast.\nRespects rate limits, quiet hours, and opt-outs.",
+        "operationId": "sendBroadcastApi",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SendBroadcastRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BroadcastResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Send Broadcast Api",
+        "tags": [
+          "sms"
+        ]
+      }
+    },
+    "/api/sms/send-event-reminder": {
+      "post": {
+        "description": "Send reminder SMS to all assigned volunteers for event (admin only).\n\nQueues background task for async delivery.",
+        "operationId": "sendEventReminderApi",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SendEventReminderRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Send Event Reminder Api",
+        "tags": [
+          "sms"
+        ]
+      }
+    },
+    "/api/sms/send-verification-code": {
+      "post": {
+        "description": "Generate and send 6-digit verification code via SMS.\n\nCode expires in 10 minutes, max 3 verification attempts.",
+        "operationId": "sendVerificationCode",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/VerificationCodeRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VerificationCodeResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Send Verification Code",
+        "tags": [
+          "sms"
+        ]
+      }
+    },
+    "/api/sms/verify-code": {
+      "post": {
+        "description": "Verify SMS verification code and activate phone for notifications.\n\nMarks phone as verified and enables SMS notifications.",
+        "operationId": "verifyCode",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/VerifyCodeRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VerifyCodeResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Verify Code",
+        "tags": [
+          "sms"
+        ]
+      }
+    },
+    "/api/sms/verify-phone": {
+      "post": {
+        "description": "Verify phone number format and deliverability using Twilio Lookup API.\n\nChecks:\n- E.164 format validation\n- Carrier type (mobile vs landline)\n- Deliverability status",
+        "operationId": "verifyPhoneNumber",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PhoneVerificationRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PhoneVerificationResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Verify Phone Number",
+        "tags": [
+          "sms"
+        ]
+      }
+    },
+    "/api/sms/webhook/delivery-status": {
+      "post": {
+        "description": "Handle SMS delivery status updates from Twilio webhook.\n\nUpdates message status (delivered, failed, undelivered).",
+        "operationId": "twilioDeliveryStatusWebhook",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Twilio Delivery Status Webhook",
+        "tags": [
+          "sms"
+        ]
+      }
+    },
+    "/api/sms/webhook/incoming-sms": {
+      "post": {
+        "description": "Handle incoming SMS from Twilio webhook.\n\nProcesses YES/NO/STOP/START/HELP replies from volunteers.",
+        "operationId": "twilioIncomingSmsWebhook",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Twilio Incoming Sms Webhook",
+        "tags": [
+          "sms"
+        ]
+      }
+    },
     "/api/v1": {
       "get": {
         "description": "API information endpoint.",
