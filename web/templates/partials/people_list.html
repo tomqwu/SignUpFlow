@@ -1,0 +1,26 @@
+{# People rows. #people-list so HTMX live-search swaps it. #}
+<div id="people-list">
+  {% if not people %}
+  <div class="empty">
+    {% if q %}No people match "{{ q }}".{% else %}No people yet.{% endif %}
+  </div>
+  {% else %}
+  <div class="group">
+    {% for p in people %}
+    <div class="row">
+      <div class="avatar sm">{{ p.name[:1]|upper }}</div>
+      <div class="row-main">
+        <div class="row-title">{{ p.name }}</div>
+        <div class="row-sub">{{ p.email or '—' }}</div>
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px">
+        <span class="mono-data">{{ p.roles|join(' · ') }}</span>
+        <span class="status-text {{ 'confirmed' if p.status == 'active' else 'pending' }}">
+          {{ p.status }}
+        </span>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+</div>

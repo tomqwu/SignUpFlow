@@ -272,3 +272,64 @@ def admin_dashboard(
             "kpis": _dashboard_kpis(db, person.org_id),
         },
     )
+
+
+def _people(db: Session, org_id: str, q: str | None) -> list[dict]:
+    """People in the admin's org, optional case-insensitive name/email
+    search. Direct query (org-scoped) — simpler than threading the
+    API list_people's Query()/pagination deps through a direct call."""
+    from sqlalchemy import or_
+
+    query = db.query(Person).filter(Person.org_id == org_id)
+    if q:
+        like = f"%{q.strip()}%"
+        query = query.filter(or_(Person.name.ilike(like), Person.email.ilike(like)))
+    rows = query.order_by(Person.name.asc()).all()
+    return [
+        {
+            "id": p.id,
+            "name": p.name,
+            "email": p.email,
+            "roles": [r.upper() for r in (p.roles or ["volunteer"])],
+            "status": (p.status or "active").lower(),
+        }
+        for p in rows
+    ]
+
+
+@router.get("/a/people", response_class=HTMLResponse)
+def admin_people(
+    request: Request,
+    q: str | None = None,
+    person: Person = Depends(get_session_admin),
+    db: Session = Depends(get_db),
+):
+    from web.app import templates
+
+    return templates.TemplateResponse(
+        request,
+        "admin/people.html",
+        {
+            "person": person,
+            "active_tab": "people",
+            "people": _people(db, person.org_id, q),
+            "q": q or "",
+        },
+    )
+
+
+@router.get("/a/people/list", response_class=HTMLResponse)
+def admin_people_list(
+    request: Request,
+    q: str | None = None,
+    person: Person = Depends(get_session_admin),
+    db: Session = Depends(get_db),
+):
+    """HTMX fragment for live search."""
+    from web.app import templates
+
+    return templates.TemplateResponse(
+        request,
+        "partials/people_list.html",
+        {"people": _people(db, person.org_id, q), "q": q or ""},
+    )

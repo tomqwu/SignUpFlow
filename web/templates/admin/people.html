@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block title %}People · SignUpFlow{% endblock %}
+{% block body %}
+<div class="nav">
+  <span class="nav-back"></span>
+  <form method="post" action="/auth/logout" style="margin:0">
+    <button class="nav-action" type="submit">Sign out</button>
+  </form>
+</div>
+<div class="page-title">People</div>
+<div class="scroll">
+  <div class="field">
+    <label class="field-label" for="q">Search</label>
+    <input id="q" name="q" type="search" value="{{ q }}"
+           placeholder="Name or email"
+           hx-get="/a/people/list"
+           hx-trigger="keyup changed delay:300ms, search"
+           hx-target="#people-list" hx-swap="outerHTML">
+  </div>
+  <div class="spacer-12"></div>
+  {% include "partials/people_list.html" %}
+</div>
+{% set tabs = [
+  ('/a/dashboard', '▣', 'Dashboard', 'dashboard'),
+  ('/a/people', '◔', 'People', 'people'),
+] %}
+{% include "_nav.html" %}
+{% endblock %}
