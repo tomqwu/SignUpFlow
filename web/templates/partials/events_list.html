@@ -1,0 +1,83 @@
+{# Events list + create/edit/delete. #events-list so HTMX swaps it
+   after any mutation. #}
+<div id="events-list" x-data="{ creating: false, editing: null }">
+  {% if error %}
+  <div class="form-error" role="alert">{{ error }}</div>
+  <div class="spacer-12"></div>
+  {% endif %}
+
+  <button class="btn btn-primary" type="button"
+          x-show="!creating" @click="creating = true; editing = null">
+    New event
+  </button>
+  <form x-show="creating" x-cloak
+        hx-post="/a/events/create"
+        hx-target="#events-list" hx-swap="outerHTML">
+    <div class="field">
+      <label class="field-label" for="ev_type">Type</label>
+      <input id="ev_type" name="type" type="text" required
+             placeholder="Sunday 10am Service">
+    </div>
+    <div class="field">
+      <label class="field-label" for="ev_date">Date</label>
+      <input id="ev_date" name="event_date" type="date" required>
+    </div>
+    <div class="field">
+      <label class="field-label" for="ev_start">Start</label>
+      <input id="ev_start" name="start_time" type="time" required>
+    </div>
+    <div class="field">
+      <label class="field-label" for="ev_end">End</label>
+      <input id="ev_end" name="end_time" type="time" required>
+    </div>
+    <div class="spacer-12"></div>
+    <div class="btn-row cols-2">
+      <button class="btn btn-secondary" type="button" @click="creating = false">Cancel</button>
+      <button class="btn btn-primary" type="submit">Create event</button>
+    </div>
+  </form>
+
+  <div class="mono-label" style="margin-top:18px">Upcoming</div>
+  {% if not events.upcoming %}
+  <div class="empty">No upcoming events.</div>
+  {% else %}
+  <div class="group">
+    {% for e in events.upcoming %}
+    <div class="row">
+      <div class="row-main">
+        <div class="row-title">{{ e.type }}</div>
+        <div class="row-sub">{{ e.date_label }}{% if e.time_label %} · {{ e.time_label }}{% endif %}</div>
+      </div>
+      <button class="btn btn-destructive" style="width:auto;padding:6px 12px"
+              hx-post="/a/events/{{ e.id }}/delete"
+              hx-target="#events-list" hx-swap="outerHTML"
+              hx-confirm="Delete '{{ e.type }}'? This removes its assignments too.">
+        Delete
+      </button>
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <div class="mono-label">Past</div>
+  {% if not events.past %}
+  <div class="empty">No past events.</div>
+  {% else %}
+  <div class="group">
+    {% for e in events.past %}
+    <div class="row">
+      <div class="row-main">
+        <div class="row-title">{{ e.type }}</div>
+        <div class="row-sub">{{ e.date_label }}{% if e.time_label %} · {{ e.time_label }}{% endif %}</div>
+      </div>
+      <button class="btn btn-destructive" style="width:auto;padding:6px 12px"
+              hx-post="/a/events/{{ e.id }}/delete"
+              hx-target="#events-list" hx-swap="outerHTML"
+              hx-confirm="Delete '{{ e.type }}'?">
+        Delete
+      </button>
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+</div>

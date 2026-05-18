@@ -36,10 +36,13 @@ from api.schemas.availability import (
 )
 from web.deps import get_session_admin, get_session_user
 from api.routers.calendar import reset_calendar_token
+from api.routers.events import create_event, delete_event
 from api.routers.invitations import create_invitation
+from api.schemas.event import EventCreate
 from api.schemas.invitation import InvitationCreate
 from web.routers.pages import (
     RRULE_PRESETS,
+    _events,
     _my_assignment,
     _my_calendar,
     _my_exceptions,
@@ -315,3 +318,76 @@ def people_invite(
     except HTTPException as exc:
         return _result(False, str(exc.detail), exc.status_code or 400)
     return _result(True, f"Invitation sent to {email}.")
+
+
+# ── Admin: event create / delete ─────────────────────────────────────
+
+
+def _events_list(request: Request, person: Person, db: Session, *, error=None):
+    from web.app import templates
+
+    return templates.TemplateResponse(
+        request,
+        "partials/events_list.html",
+        {"events": _events(db, person.org_id), "error": error},
+    )
+
+
+@router.post("/a/events/create", response_class=HTMLResponse)
+def event_create(
+    request: Request,
+    type: str = Form(...),
+    event_date: str = Form(...),
+    start_time: str = Form(...),
+    end_time: str = Form(...),
+    person: Person = Depends(get_session_admin),
+    db: Session = Depends(get_db),
+):
+    """Create an event in the admin's org. Combines the date + two time
+    inputs into start/end datetimes; generates a unique slug id."""
+    import uuid
+    from datetime import datetime
+
+    from web.auth import _slugify
+
+    def _err(msg: str, code: int = 400):
+        return _events_list(request, person, db, error=msg)
+
+    try:
+        start_dt = datetime.fromisoformat(f"{event_date}T{start_time}")
+        end_dt = datetime.fromisoformat(f"{event_date}T{end_time}")
+    except ValueError:
+        return _err("Enter a valid date and times.")
+    if end_dt <= start_dt:
+        return _err("End time must be after start time.")
+
+    event_id = f"{_slugify(type)}-{uuid.uuid4().hex[:8]}"
+    try:
+        payload = EventCreate(
+            id=event_id,
+            org_id=person.org_id,
+            type=type,
+            start_time=start_dt,
+            end_time=end_dt,
+        )
+    except ValueError:
+        return _err("Invalid event details.")
+    try:
+        create_event(payload, person, db)
+    except HTTPException as exc:
+        return _err(str(exc.detail), exc.status_code or 400)
+    return _events_list(request, person, db)
+
+
+@router.post("/a/events/{event_id}/delete", response_class=HTMLResponse)
+def event_delete(
+    request: Request,
+    event_id: str,
+    person: Person = Depends(get_session_admin),
+    db: Session = Depends(get_db),
+):
+    try:
+        delete_event(event_id, person, db)
+    except HTTPException:
+        pass  # already gone — return a fresh, correct list
+    return _events_list(request, person, db)
