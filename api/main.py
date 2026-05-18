@@ -33,6 +33,7 @@ from api.routers import (
     people,
     recurring_events,
     resources,
+    sms,
     solutions,
     solver,
     teams,
@@ -148,6 +149,8 @@ app.include_router(resources.router, prefix="/api/v1")
 app.include_router(holidays.router, prefix="/api/v1")
 app.include_router(notifications.router, prefix="/api/v1")
 app.include_router(billing.router, prefix="/api/v1")
+# sms.router self-prefixes "/api/sms" (not the /api/v1 convention) — mount as-is.
+app.include_router(sms.router)
 # webhooks.router (SendGrid event tracking) is intentionally NOT
 # mounted yet. The handler code lives in api/routers/webhooks.py and is
 # functional, but tenant scoping requires plumbing org_id through
