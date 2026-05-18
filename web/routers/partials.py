@@ -15,7 +15,7 @@ from pydantic import ValidationError
 from sqlalchemy.orm import Session
 
 from api.database import get_db
-from api.models import EmailPreference, Notification, Person
+from api.models import Assignment, EmailPreference, Event, Notification, Person
 from api.routers.assignments import (
     accept_assignment,
     decline_assignment,
@@ -90,6 +90,7 @@ from web.routers.pages import (
     _recurring,
     _solution_owned,
     _solution_review,
+    _swap_requests,
     _teams,
 )
 
@@ -827,6 +828,75 @@ def event_assignment_remove(
     except HTTPException:
         pass  # already gone — return a fresh, correct list
     return _event_assignments_partial(request, person, db, event_id)
+
+
+# ── Admin: swap-request review ───────────────────────────────────────
+
+
+def _swaps_list(request: Request, person: Person, db: Session, *, error=None):
+    from web.app import templates
+
+    return templates.TemplateResponse(
+        request,
+        "partials/swaps_list.html",
+        {"swaps": _swap_requests(db, person.org_id), "error": error},
+        status_code=400 if error else 200,
+    )
+
+
+def _owned_swap(db: Session, person: Person, assignment_id: int):
+    """The swap-requested assignment in the admin's org, or None."""
+    return (
+        db.query(Assignment)
+        .join(Event, Assignment.event_id == Event.id)
+        .filter(
+            Event.org_id == person.org_id,
+            Assignment.id == assignment_id,
+            Assignment.status == "swap_requested",
+        )
+        .first()
+    )
+
+
+@router.post("/a/swaps/{assignment_id}/approve", response_class=HTMLResponse)
+def swap_approve(
+    request: Request,
+    assignment_id: int,
+    background_tasks: BackgroundTasks,
+    person: Person = Depends(get_session_admin),
+    db: Session = Depends(get_db),
+):
+    """Approve the swap = unassign the volunteer (frees the slot). Reuses
+    manage_assignment so the solution-stream publish still fires."""
+    a = _owned_swap(db, person, assignment_id)
+    if a is None:
+        return _swaps_list(request, person, db)
+    try:
+        manage_assignment(
+            a.event_id,
+            AssignmentRequest(person_id=a.person_id, action="unassign"),
+            background_tasks,
+            person,
+            db,
+        )
+    except HTTPException as exc:
+        return _swaps_list(request, person, db, error=str(exc.detail))
+    return _swaps_list(request, person, db)
+
+
+@router.post("/a/swaps/{assignment_id}/deny", response_class=HTMLResponse)
+def swap_deny(
+    request: Request,
+    assignment_id: int,
+    person: Person = Depends(get_session_admin),
+    db: Session = Depends(get_db),
+):
+    """Deny the swap = keep the volunteer on; reset status to confirmed."""
+    a = _owned_swap(db, person, assignment_id)
+    if a is not None:
+        a.status = "confirmed"
+        db.commit()
+    return _swaps_list(request, person, db)
 
 
 # ── Admin: recurring series ──────────────────────────────────────────

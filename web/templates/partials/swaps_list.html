@@ -1,0 +1,37 @@
+{# Pending swap requests. #swaps-list so HTMX swaps it after a decision. #}
+<div id="swaps-list">
+  {% if error %}
+  <div class="form-error" role="alert">{{ error }}</div>
+  <div class="spacer-12"></div>
+  {% endif %}
+
+  {% if not swaps %}
+  <div class="empty">No swap requests. 🎉</div>
+  {% else %}
+  {% for s in swaps %}
+  <div class="card" style="margin-bottom:12px">
+    <div class="row-title">{{ s.event_type }}</div>
+    <div class="row-sub">{{ s.when }}</div>
+    <div style="margin-top:6px;display:flex;gap:6px;flex-wrap:wrap;align-items:center">
+      <span class="role-chip">{{ s.person_name }}</span>
+      {% if s.role %}<span class="role-chip">{{ s.role }}</span>{% endif %}
+      <span class="status-text swap_requested">swap requested</span>
+    </div>
+    <div class="spacer-12"></div>
+    <div class="btn-row cols-2">
+      <button class="btn btn-go" type="button"
+              hx-post="/a/swaps/{{ s.assignment_id }}/approve"
+              hx-target="#swaps-list" hx-swap="outerHTML"
+              hx-confirm="Approve the swap? {{ s.person_name }} is removed from this shift so you can reassign it.">
+        Approve (unassign)
+      </button>
+      <button class="btn btn-secondary" type="button"
+              hx-post="/a/swaps/{{ s.assignment_id }}/deny"
+              hx-target="#swaps-list" hx-swap="outerHTML">
+        Deny (keep)
+      </button>
+    </div>
+  </div>
+  {% endfor %}
+  {% endif %}
+</div>
