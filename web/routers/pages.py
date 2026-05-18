@@ -654,6 +654,60 @@ def _events(db: Session, org_id: str) -> dict:
     return {"upcoming": upcoming, "past": past}
 
 
+def _all_assignments(db: Session, org_id: str, person_id: str | None) -> dict:
+    """Org-wide assignments (Assignment ⋈ Event ⋈ Person), newest event
+    first, optionally filtered to one person. Org-scoped via the Event
+    join (mirrors api get_all_assignments)."""
+    q = (
+        db.query(Assignment, Event, Person)
+        .join(Event, Assignment.event_id == Event.id)
+        .join(Person, Assignment.person_id == Person.id)
+        .filter(Event.org_id == org_id)
+    )
+    if person_id:
+        q = q.filter(Assignment.person_id == person_id)
+    joined = q.order_by(Event.start_time.desc()).all()
+    out = [
+        {
+            "event_type": e.type,
+            "when": e.start_time.strftime("%a %d %b %Y · %H:%M") if e.start_time else "",
+            "person_id": p.id,
+            "person_name": p.name,
+            "role": a.role,
+            "status": (a.status or "pending").lower(),
+            "manual": a.solution_id is None,
+        }
+        for a, e, p in joined
+    ]
+    people = db.query(Person).filter(Person.org_id == org_id).order_by(Person.name.asc()).all()
+    return {
+        "rows": out,
+        "total": len(out),
+        "people": [{"id": p.id, "name": p.name} for p in people],
+        "person_id": person_id or "",
+    }
+
+
+@router.get("/a/assignments", response_class=HTMLResponse)
+def admin_all_assignments(
+    request: Request,
+    person_id: str | None = None,
+    person: Person = Depends(get_session_admin),
+    db: Session = Depends(get_db),
+):
+    from web.app import templates
+
+    return templates.TemplateResponse(
+        request,
+        "admin/assignments.html",
+        {
+            "person": person,
+            "active_tab": "events",
+            "data": _all_assignments(db, person.org_id, person_id),
+        },
+    )
+
+
 def _recurring(db: Session, org_id: str) -> list[dict]:
     """Active recurring series for the org (direct org-scoped query)."""
     rows = (

@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+{% block title %}Assignments · SignUpFlow{% endblock %}
+{% block body %}
+<div class="nav">
+  <a class="nav-back" href="/a/dashboard">‹ Dashboard</a>
+  <form method="post" action="/auth/logout" style="margin:0">
+    <button class="nav-action" type="submit">Sign out</button>
+  </form>
+</div>
+<div class="page-title">Assignments</div>
+<div class="scroll">
+  <form method="get" action="/a/assignments">
+    <div class="field">
+      <label class="field-label" for="al_person">Filter by person</label>
+      <select id="al_person" name="person_id"
+              style="border:0;background:transparent;font-family:inherit;font-size:15px;color:var(--ink-1)">
+        <option value="">All people</option>
+        {% for p in data.people %}
+        <option value="{{ p.id }}"
+          {% if p.id == data.person_id %}selected{% endif %}>{{ p.name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="spacer-12"></div>
+    <button class="btn btn-secondary" type="submit">Apply</button>
+  </form>
+
+  <div class="mono-label" style="margin-top:18px">
+    {{ data.total }} assignment{{ '' if data.total == 1 else 's' }}
+  </div>
+  {% if not data.rows %}
+  <div class="empty">No assignments{% if data.person_id %} for this person{% endif %}.</div>
+  {% else %}
+  <div class="group">
+    {% for r in data.rows %}
+    <div class="row">
+      <div class="row-main">
+        <div class="row-title">{{ r.event_type }}</div>
+        <div class="row-sub">{{ r.when }}</div>
+        <div style="margin-top:6px;display:flex;gap:6px;flex-wrap:wrap;align-items:center">
+          <span class="role-chip">{{ r.person_name }}</span>
+          {% if r.role %}<span class="role-chip">{{ r.role }}</span>{% endif %}
+          <span class="role-chip">{{ 'manual' if r.manual else 'solver' }}</span>
+          <span class="status-text {{ r.status }}">{{ r.status }}</span>
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+</div>
+{% set tabs = [
+  ('/a/dashboard', '▣', 'Dashboard', 'dashboard'),
+  ('/a/people', '◔', 'People', 'people'),
+  ('/a/events', '▤', 'Events', 'events'),
+  ('/a/solver', '◈', 'Solver', 'solver'),
+] %}
+{% include "_nav.html" %}
+{% endblock %}
