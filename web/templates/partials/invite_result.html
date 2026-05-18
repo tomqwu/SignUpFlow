@@ -1,0 +1,8 @@
+{# Invite outcome. Swapped into #invite-result. #}
+<div id="invite-result">
+  {% if ok %}
+  <div class="form-notice" role="status">{{ msg }}</div>
+  {% else %}
+  <div class="form-error" role="alert">{{ msg }}</div>
+  {% endif %}
+</div>

@@ -34,8 +34,10 @@ from api.schemas.availability import (
     AvailabilityRruleUpdate,
     TimeOffCreate,
 )
-from web.deps import get_session_user
+from web.deps import get_session_admin, get_session_user
 from api.routers.calendar import reset_calendar_token
+from api.routers.invitations import create_invitation
+from api.schemas.invitation import InvitationCreate
 from web.routers.pages import (
     RRULE_PRESETS,
     _my_assignment,
@@ -276,3 +278,40 @@ def calendar_reset(
         "partials/calendar_section.html",
         {"calendar": _my_calendar(request, db, person)},
     )
+
+
+# ── Admin: invite person ─────────────────────────────────────────────
+
+
+@router.post("/a/people/invite", response_class=HTMLResponse)
+def people_invite(
+    request: Request,
+    name: str = Form(...),
+    email: str = Form(...),
+    role: str = Form("volunteer"),
+    person: Person = Depends(get_session_admin),
+    db: Session = Depends(get_db),
+):
+    """Create an invitation in the admin's org. Returns a small result
+    partial (success banner or inline error) swapped into #invite-result.
+    The invitee only appears on /a/people once they accept."""
+    from web.app import templates
+
+    def _result(ok: bool, msg: str, code: int = 200):
+        return templates.TemplateResponse(
+            request,
+            "partials/invite_result.html",
+            {"ok": ok, "msg": msg},
+            status_code=code,
+        )
+
+    role = role if role in ("volunteer", "admin") else "volunteer"
+    try:
+        payload = InvitationCreate(name=name, email=email, roles=[role])
+    except ValueError:
+        return _result(False, "Enter a valid name and email.", 400)
+    try:
+        create_invitation(payload, BackgroundTasks(), org_id=person.org_id, inviter=person, db=db)
+    except HTTPException as exc:
+        return _result(False, str(exc.detail), exc.status_code or 400)
+    return _result(True, f"Invitation sent to {email}.")

@@ -8,7 +8,46 @@
   </form>
 </div>
 <div class="page-title">People</div>
-<div class="scroll">
+<div class="scroll" x-data="{ inviting: false }">
+  <button class="btn btn-primary" type="button"
+          x-show="!inviting" @click="inviting = true">
+    Invite person
+  </button>
+
+  <div x-show="inviting" x-cloak>
+    <div id="invite-result"></div>
+    <form hx-post="/a/people/invite"
+          hx-target="#invite-result" hx-swap="outerHTML"
+          @htmx:after-request="if ($event.detail.successful) $event.target.reset()">
+      <div class="field">
+        <label class="field-label" for="inv_name">Name</label>
+        <input id="inv_name" name="name" type="text" required
+               placeholder="Jamie Park">
+      </div>
+      <div class="field">
+        <label class="field-label" for="inv_email">Email</label>
+        <input id="inv_email" name="email" type="email" required
+               placeholder="jamie@church.org">
+      </div>
+      <div class="field">
+        <label class="field-label" for="inv_role">Role</label>
+        <select id="inv_role" name="role"
+                style="border:0;background:transparent;font-family:inherit;font-size:15px;color:var(--ink-1)">
+          <option value="volunteer">Volunteer</option>
+          <option value="admin">Admin</option>
+        </select>
+      </div>
+      <div class="spacer-12"></div>
+      <div class="btn-row cols-2">
+        <button class="btn btn-secondary" type="button"
+                @click="inviting = false">Done</button>
+        <button class="btn btn-primary" type="submit">Send invite</button>
+      </div>
+    </form>
+  </div>
+
+  <div class="spacer-18"></div>
+
   <div class="field">
     <label class="field-label" for="q">Search</label>
     <input id="q" name="q" type="search" value="{{ q }}"
