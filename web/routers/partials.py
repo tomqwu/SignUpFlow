@@ -87,6 +87,7 @@ from web.routers.pages import (
     _my_exceptions,
     _my_rrule,
     _my_timeoff,
+    _open_shifts,
     _recurring,
     _solution_owned,
     _solution_review,
@@ -181,6 +182,67 @@ def swap(
     except HTTPException:
         return _gone()
     return _card(request, person, db, assignment_id)
+
+
+# ── Volunteer: self-serve open shifts ────────────────────────────────
+
+
+def _open_list(request: Request, person: Person, db: Session, *, error=None):
+    from web.app import templates
+
+    return templates.TemplateResponse(
+        request,
+        "partials/open_list.html",
+        {"open": _open_shifts(db, person), "error": error},
+        status_code=400 if error else 200,
+    )
+
+
+@router.post("/v/open/{event_id}/claim", response_class=HTMLResponse)
+def open_claim(
+    request: Request,
+    event_id: str,
+    role: str = Form(...),
+    person: Person = Depends(get_session_user),
+    db: Session = Depends(get_db),
+):
+    """Volunteer self-claims an open role. Re-validated server-side
+    (org, future, role exists, capacity, no double-claim) so it's
+    race-safe; org-scoped direct write (no admin API reuse)."""
+    from datetime import datetime
+
+    ev = (
+        db.query(Event)
+        .filter(Event.org_id == person.org_id, Event.id == event_id)
+        .first()
+    )
+    if ev is None or (ev.start_time and ev.start_time < datetime.utcnow()):
+        return _open_list(request, person, db, error="That event is no longer open.")
+    rc = (ev.extra_data or {}).get("role_counts") or {}
+    if role not in rc:
+        return _open_list(request, person, db, error="That role isn't open.")
+    rows = (
+        db.query(Assignment)
+        .join(Event, Assignment.event_id == Event.id)
+        .filter(Event.org_id == person.org_id, Assignment.event_id == event_id)
+        .all()
+    )
+    if any(a.person_id == person.id for a in rows):
+        return _open_list(request, person, db, error="You're already on this event.")
+    if sum(1 for a in rows if (a.role or "") == role) >= rc[role]:
+        return _open_list(request, person, db, error="That role just filled up.")
+
+    db.add(
+        Assignment(
+            event_id=event_id,
+            person_id=person.id,
+            role=role,
+            solution_id=None,
+            status="confirmed",
+        )
+    )
+    db.commit()
+    return _open_list(request, person, db)
 
 
 # ── Availability: time-off ───────────────────────────────────────────

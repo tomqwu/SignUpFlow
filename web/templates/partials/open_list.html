@@ -1,0 +1,35 @@
+{# Open (unfilled) shifts the volunteer can self-claim. #open-list. #}
+<div id="open-list">
+  {% if error %}
+  <div class="form-error" role="alert">{{ error }}</div>
+  <div class="spacer-12"></div>
+  {% endif %}
+
+  {% if not open %}
+  <div class="empty">No open shifts right now. 🎉</div>
+  {% else %}
+  {% for ev in open %}
+  <div class="card" style="margin-bottom:12px">
+    <div class="row-title">{{ ev.event_type }}</div>
+    <div class="row-sub">{{ ev.when }}</div>
+    <div class="spacer-12"></div>
+    {% for r in ev.roles %}
+    <div class="row">
+      <div class="row-main">
+        <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
+          <span class="role-chip">{{ r.role }}</span>
+          <span class="row-sub">{{ r.remaining }} of {{ r.needed }} open</span>
+        </div>
+      </div>
+      <form hx-post="/v/open/{{ ev.event_id }}/claim"
+            hx-target="#open-list" hx-swap="outerHTML" style="margin:0">
+        <input type="hidden" name="role" value="{{ r.role }}">
+        <button class="btn btn-go" style="width:auto;padding:6px 14px"
+                type="submit">Claim</button>
+      </form>
+    </div>
+    {% endfor %}
+  </div>
+  {% endfor %}
+  {% endif %}
+</div>
