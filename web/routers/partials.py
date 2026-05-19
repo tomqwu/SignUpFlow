@@ -1497,10 +1497,56 @@ def _emit_publish_notifications(db: Session, person: Person, sid: int) -> None:
         db.rollback()
 
 
-def _publish_state(request: Request, person: Person, db: Session, sid: int, *, error=None):
+def _emit_reminder_notifications(db: Session, person: Person, sid: int) -> int:
+    """Create a `reminder` inbox Notification for each distinct assignee
+    in the (published) solution, honoring per-person EmailPreference —
+    recipients who removed `reminder` from enabled_types are skipped.
+    Org-scoped on purpose (strict tenancy guard); DB-only, no email
+    dependency. Returns how many notifications were created."""
+    rows = (
+        db.query(Assignment.person_id, Assignment.event_id)
+        .join(Event, Assignment.event_id == Event.id)
+        .filter(Event.org_id == person.org_id, Assignment.solution_id == sid)
+        .all()
+    )
+    first_event: dict[str, str] = {}
+    for pid, eid in rows:
+        first_event.setdefault(pid, eid)
+    if not first_event:
+        return 0
+    prefs = {
+        p.person_id: (p.enabled_types or [])
+        for p in db.query(EmailPreference)
+        .filter(EmailPreference.org_id == person.org_id)
+        .all()
+    }
+    created = 0
+    for pid, eid in first_event.items():
+        if pid in prefs and "reminder" not in prefs[pid]:
+            continue
+        db.add(
+            Notification(
+                org_id=person.org_id,
+                recipient_id=pid,
+                type="reminder",
+                status="pending",
+                event_id=eid,
+                template_data={"solution_id": sid},
+            )
+        )
+        created += 1
+    if created:
+        db.commit()
+    return created
+
+
+def _publish_state(
+    request: Request, person: Person, db: Session, sid: int, *, error=None, notified=None
+):
     """Re-render #publish-state from the solution's current state
     (is_published + rollback eligibility), always carrying solution_id
-    so the swapped fragment's buttons keep working."""
+    so the swapped fragment's buttons keep working. `notified` is the
+    count from a just-run notify action (None = not just notified)."""
     from web.app import templates
 
     review = _solution_review(db, person, sid)
@@ -1517,6 +1563,7 @@ def _publish_state(request: Request, person: Person, db: Session, sid: int, *, e
             "published": review["is_published"],
             "can_rollback": review["can_rollback"],
             "error": error,
+            "notified": notified,
         },
         status_code=400 if error else 200,
     )
@@ -1541,6 +1588,33 @@ def solution_publish(
         return _publish_state(request, person, db, solution_id, error=str(exc.detail))
     _emit_publish_notifications(db, person, solution_id)
     return _publish_state(request, person, db, solution_id)
+
+
+@router.post("/a/solution/{solution_id}/notify", response_class=HTMLResponse)
+def solution_notify(
+    request: Request,
+    solution_id: int,
+    person: Person = Depends(get_session_admin),
+    db: Session = Depends(get_db),
+):
+    """Send a reminder to everyone on the published solution (inbox +
+    sandbox email where enabled), honoring each person's preferences."""
+    if _solution_owned(db, person, solution_id) is None:
+        return HTMLResponse(
+            '<div id="publish-state" class="empty">Solution not found.</div>',
+            status_code=404,
+        )
+    review = _solution_review(db, person, solution_id)
+    if review is None or not review["is_published"]:
+        return _publish_state(
+            request,
+            person,
+            db,
+            solution_id,
+            error="Publish the solution before notifying assignees.",
+        )
+    count = _emit_reminder_notifications(db, person, solution_id)
+    return _publish_state(request, person, db, solution_id, notified=count)
 
 
 @router.post("/a/solution/{solution_id}/unpublish", response_class=HTMLResponse)
