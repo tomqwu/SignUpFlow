@@ -1222,12 +1222,27 @@ def _event_assignments(db: Session, org_id: str, event_id: str) -> dict | None:
     )
     assigned_ids = {p.id for _, p in rows}
     people = db.query(Person).filter(Person.org_id == org_id).order_by(Person.name.asc()).all()
+    rc = (ev.extra_data or {}).get("role_counts") or {}
+    filled_by_role: dict[str, int] = {}
+    for a, _ in rows:
+        filled_by_role[a.role or ""] = filled_by_role.get(a.role or "", 0) + 1
+    coverage = [
+        {
+            "role": r,
+            "needed": n,
+            "filled": filled_by_role.get(r, 0),
+            "gap": max(0, n - filled_by_role.get(r, 0)),
+        }
+        for r, n in rc.items()
+    ]
     return {
         "event": {
             "id": ev.id,
             "type": ev.type,
             "date_label": ev.start_time.strftime("%a %d %b %Y") if ev.start_time else "",
         },
+        "coverage": coverage,
+        "fully_staffed": bool(coverage) and all(c["gap"] == 0 for c in coverage),
         "assignees": [
             {
                 "assignment_id": a.id,
