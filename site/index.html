@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SignUpFlow — volunteer scheduling that schedules itself</title>
+  <meta name="description" content="SignUpFlow is a headless volunteer scheduling and sign-up platform with a constraint-based solver, self-serve shifts, swaps, availability, and calendar sync. REST API + CLI.">
+  <meta property="og:title" content="SignUpFlow — volunteer scheduling that schedules itself">
+  <meta property="og:description" content="Auto-generate fair rosters for churches, sports leagues, and non-profits. Constraint solver, self-serve shifts, swaps, calendar sync. API + CLI.">
+  <meta property="og:type" content="website">
+  <link rel="stylesheet" href="styles.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='22' fill='%230F766E'/><text x='50' y='68' font-size='58' font-family='Arial' font-weight='bold' fill='white' text-anchor='middle'>S</text></svg>">
+</head>
+<body>
+  <header>
+    <div class="wrap bar">
+      <a class="logo" href="#top"><span class="mark">S</span> SignUpFlow</a>
+      <nav class="links">
+        <a href="#features">Features</a>
+        <a href="#plans">Plans</a>
+        <a href="https://github.com/tomqwu/SignUpFlow">GitHub</a>
+        <a class="btn btn-primary btn-sm" href="https://github.com/tomqwu/SignUpFlow">Get started</a>
+      </nav>
+    </div>
+  </header>
+
+  <main id="top">
+    <section class="hero">
+      <div class="wrap">
+        <span class="eyebrow">Open-source · API-first</span>
+        <h1>Volunteer scheduling that schedules itself.</h1>
+        <p class="lede">
+          SignUpFlow auto-generates fair rosters for churches, sports leagues,
+          and non-profits — a constraint-based solver does the hard part while
+          volunteers self-serve open shifts and cover each other's swaps.
+        </p>
+        <div class="cta-row">
+          <a class="btn btn-primary" href="https://github.com/tomqwu/SignUpFlow">View on GitHub</a>
+          <a class="btn btn-ghost" href="#features">See what it does</a>
+        </div>
+      </div>
+    </section>
+
+    <section id="features">
+      <div class="wrap">
+        <div class="section-head">
+          <h2>Everything a roster needs, end to end</h2>
+          <p>From the first invite to a published, calendar-synced schedule —
+             with the scheduling itself automated.</p>
+        </div>
+        <div class="grid">
+          <div class="card">
+            <div class="ico">⚙︎</div>
+            <h3>Auto-scheduling solver</h3>
+            <p>A greedy heuristic solver with constraint-based optimization
+               builds fair schedules across roles and people automatically.</p>
+          </div>
+          <div class="card">
+            <div class="ico">◷</div>
+            <h3>Availability &amp; time-off</h3>
+            <p>Volunteers set time-off and recurring (RRULE) unavailability;
+               the solver respects every block.</p>
+          </div>
+          <div class="card">
+            <div class="ico">↻</div>
+            <h3>Self-serve &amp; swaps</h3>
+            <p>Volunteers claim open shifts and cover each other's swap
+               requests without an admin in the loop.</p>
+          </div>
+          <div class="card">
+            <div class="ico">⛁</div>
+            <h3>Teams, roles &amp; tenancy</h3>
+            <p>Role-based access (admin / volunteer) and strict per-org
+               isolation so every organization stays separate.</p>
+          </div>
+          <div class="card">
+            <div class="ico">∑</div>
+            <h3>Constraints DSL</h3>
+            <p>Express scheduling rules — spacing, eligibility, caps — in a
+               compact constraint language the solver evaluates.</p>
+          </div>
+          <div class="card">
+            <div class="ico">⧉</div>
+            <h3>Calendar sync &amp; analytics</h3>
+            <p>Each volunteer gets an ICS subscription of published shifts,
+               plus volunteer and event analytics.</p>
+          </div>
+          <div class="card">
+            <div class="ico">{ }</div>
+            <h3>API-first &amp; CLI</h3>
+            <p>Headless by design: a full REST API plus a YAML-in / JSON-out
+               CLI for scripted, reproducible scheduling.</p>
+          </div>
+          <div class="card">
+            <div class="ico">✉</div>
+            <h3>Invitations &amp; inbox</h3>
+            <p>Token-based invites onboard people in one tap; an in-app inbox
+               keeps assignees notified.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="plans">
+      <div class="wrap">
+        <div class="section-head">
+          <h2>Plans that scale with your program</h2>
+          <p>Limits mirror the platform's enforced quotas. Pick a tier by the
+             size of your volunteer base.</p>
+        </div>
+        <div class="tier-grid">
+          <div class="tier">
+            <div class="name">Free</div>
+            <div class="blurb">Get started — small teams &amp; trials.</div>
+            <ul>
+              <li><span>Volunteers</span><span>10</span></li>
+              <li><span>Events / month</span><span>50</span></li>
+              <li><span>Storage</span><span>100 MB</span></li>
+              <li><span>API calls / day</span><span>1,000</span></li>
+            </ul>
+            <a class="btn btn-ghost btn-sm" href="https://github.com/tomqwu/SignUpFlow" style="margin-top:18px">Start free</a>
+          </div>
+          <div class="tier">
+            <div class="name">Starter</div>
+            <div class="blurb">Growing volunteer programs.</div>
+            <ul>
+              <li><span>Volunteers</span><span>50</span></li>
+              <li><span>Events / month</span><span>200</span></li>
+              <li><span>Storage</span><span>1,000 MB</span></li>
+              <li><span>API calls / day</span><span>10,000</span></li>
+            </ul>
+            <a class="btn btn-ghost btn-sm" href="https://github.com/tomqwu/SignUpFlow" style="margin-top:18px">Choose Starter</a>
+          </div>
+          <div class="tier featured">
+            <div class="name">Pro</div>
+            <div class="blurb">Established organizations.</div>
+            <ul>
+              <li><span>Volunteers</span><span>200</span></li>
+              <li><span>Events / month</span><span>1,000</span></li>
+              <li><span>Storage</span><span>10,000 MB</span></li>
+              <li><span>API calls / day</span><span>50,000</span></li>
+            </ul>
+            <a class="btn btn-primary btn-sm" href="https://github.com/tomqwu/SignUpFlow" style="margin-top:18px">Choose Pro</a>
+          </div>
+          <div class="tier">
+            <div class="name">Enterprise</div>
+            <div class="blurb">Large / multi-ministry. Custom terms.</div>
+            <ul>
+              <li><span>Volunteers</span><span>Unlimited</span></li>
+              <li><span>Events / month</span><span>Unlimited</span></li>
+              <li><span>Storage</span><span>Unlimited</span></li>
+              <li><span>API calls / day</span><span>Unlimited</span></li>
+            </ul>
+            <a class="btn btn-ghost btn-sm" href="https://github.com/tomqwu/SignUpFlow" style="margin-top:18px">Contact us</a>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section style="text-align:center">
+      <div class="wrap">
+        <div class="section-head" style="margin-bottom:28px">
+          <h2>Run it yourself</h2>
+          <p>SignUpFlow is open source. Clone the repo, run the API and CLI,
+             and own your scheduling stack end to end.</p>
+        </div>
+        <a class="btn btn-primary" href="https://github.com/tomqwu/SignUpFlow">Get started on GitHub</a>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <div class="wrap foot">
+      <div>© <span id="yr">2026</span> SignUpFlow</div>
+      <div>
+        <a href="https://github.com/tomqwu/SignUpFlow">GitHub</a> ·
+        <a href="#features">Features</a> ·
+        <a href="#plans">Plans</a>
+      </div>
+    </div>
+  </footer>
+  <script>document.getElementById('yr').textContent=new Date().getFullYear();</script>
+</body>
+</html>
