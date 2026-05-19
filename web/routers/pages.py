@@ -157,6 +157,10 @@ def _open_shifts(db: Session, person: Person) -> list[dict]:
             continue  # already on this event — don't offer it
         filled: dict[str, int] = {}
         for a in rows:
+            # A declined assignment frees its slot — it must not count
+            # as filled, so the role re-opens for self-serve (B8).
+            if (a.status or "").lower() == "declined":
+                continue
             filled[a.role or ""] = filled.get(a.role or "", 0) + 1
         roles = [
             {"role": r, "needed": n, "remaining": n - filled.get(r, 0)}
