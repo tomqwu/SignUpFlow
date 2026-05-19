@@ -501,8 +501,131 @@ def admin_dashboard(
             "person": person,
             "active_tab": "dashboard",
             "kpis": _dashboard_kpis(db, person.org_id),
+            "ob": _onboarding_state(db, person),
         },
     )
+
+
+ONBOARDING_TOTAL = 4
+
+
+def _onboarding_state(db: Session, person: Person) -> dict:
+    """Derive the 4-step first-run checklist from real org data and
+    persist the count to onboarding_progress. Steps are independent
+    (a checklist, not a gated wizard) so progress survives any order."""
+    from api.models import Invitation, OnboardingProgress, Solution
+
+    org_id = person.org_id
+    people_n = db.query(Person).filter(Person.org_id == org_id).count()
+    invites_n = db.query(Invitation).filter(Invitation.org_id == org_id).count()
+    events_n = db.query(Event).filter(Event.org_id == org_id).count()
+    sols_n = db.query(Solution).filter(Solution.org_id == org_id).count()
+    pub_n = (
+        db.query(Solution)
+        .filter(Solution.org_id == org_id, Solution.is_published.is_(True))
+        .count()
+    )
+
+    steps = [
+        {
+            "key": "invite",
+            "title": "Invite a teammate",
+            "desc": "Add the people you schedule.",
+            "href": "/a/people",
+            "cta": "Invite people",
+            "done": invites_n > 0 or people_n > 1,
+        },
+        {
+            "key": "event",
+            "title": "Create an event",
+            "desc": "Add something that needs volunteers.",
+            "href": "/a/events",
+            "cta": "Create event",
+            "done": events_n > 0,
+        },
+        {
+            "key": "solve",
+            "title": "Generate a schedule",
+            "desc": "Let the solver build a fair roster.",
+            "href": "/a/solver",
+            "cta": "Run solver",
+            "done": sols_n > 0,
+        },
+        {
+            "key": "publish",
+            "title": "Publish it",
+            "desc": "Share the schedule with volunteers.",
+            "href": "/a/solver",
+            "cta": "Publish",
+            "done": pub_n > 0,
+        },
+    ]
+    done_n = sum(1 for s in steps if s["done"])
+
+    row = (
+        db.query(OnboardingProgress)
+        .filter(
+            OnboardingProgress.person_id == person.id,
+            OnboardingProgress.org_id == org_id,
+        )
+        .first()
+    )
+    if row is None:
+        row = OnboardingProgress(person_id=person.id, org_id=org_id)
+        db.add(row)
+    if row.wizard_step_completed != done_n:
+        row.wizard_step_completed = done_n
+    db.commit()
+
+    return {
+        "steps": steps,
+        "done": done_n,
+        "total": ONBOARDING_TOTAL,
+        "complete": done_n >= ONBOARDING_TOTAL,
+        "skipped": bool(row.onboarding_skipped),
+    }
+
+
+@router.get("/a/onboarding", response_class=HTMLResponse)
+def admin_onboarding(
+    request: Request,
+    person: Person = Depends(get_session_admin),
+    db: Session = Depends(get_db),
+):
+    from web.app import templates
+
+    return templates.TemplateResponse(
+        request,
+        "admin/onboarding.html",
+        {
+            "person": person,
+            "active_tab": "dashboard",
+            "ob": _onboarding_state(db, person),
+        },
+    )
+
+
+@router.post("/a/onboarding/skip")
+def admin_onboarding_skip(
+    person: Person = Depends(get_session_admin),
+    db: Session = Depends(get_db),
+):
+    from api.models import OnboardingProgress
+
+    row = (
+        db.query(OnboardingProgress)
+        .filter(
+            OnboardingProgress.person_id == person.id,
+            OnboardingProgress.org_id == person.org_id,
+        )
+        .first()
+    )
+    if row is None:
+        row = OnboardingProgress(person_id=person.id, org_id=person.org_id)
+        db.add(row)
+    row.onboarding_skipped = True
+    db.commit()
+    return RedirectResponse(url="/a/dashboard", status_code=303)
 
 
 def _org_settings(db: Session, org_id: str) -> dict:

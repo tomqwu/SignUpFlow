@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+{% block title %}Get started · SignUpFlow{% endblock %}
+{% block body %}
+<div class="nav">
+  <a class="nav-back" href="/a/dashboard">‹ Dashboard</a>
+  <form method="post" action="/auth/logout" style="margin:0">
+    <button class="nav-action" type="submit">Sign out</button>
+  </form>
+</div>
+<div class="page-title">Get started</div>
+<div class="scroll" id="onboarding-wizard">
+  <div class="card">
+    <div class="row-title" id="onboarding-progress">{{ ob.done }} of {{ ob.total }} done</div>
+    <div class="row-sub">
+      {% if ob.complete %}
+      Your organization is set up and a schedule is live.
+      {% else %}
+      A few steps to a published schedule. Do them in any order.
+      {% endif %}
+    </div>
+  </div>
+
+  {% if ob.complete %}
+  <div class="spacer-12"></div>
+  <div class="card" id="onboarding-complete" style="border-color:var(--accent)">
+    <div class="row-title">You're all set 🎉</div>
+    <div class="row-sub">Volunteers can now see their published shifts.</div>
+    <div class="spacer-12"></div>
+    <a class="btn btn-primary" href="/a/dashboard">Go to dashboard</a>
+  </div>
+  {% else %}
+
+  <div class="group">
+    {% for s in ob.steps %}
+    <div class="row ob-step" data-key="{{ s.key }}" data-done="{{ 'yes' if s.done else 'no' }}">
+      <div class="row-main">
+        <div class="row-title">
+          <span class="ob-mark">{% if s.done %}✓{% else %}○{% endif %}</span>
+          {{ s.title }}
+        </div>
+        <div class="row-sub">{{ s.desc }}</div>
+      </div>
+      {% if not s.done %}
+      <a class="btn btn-secondary" href="{{ s.href }}">{{ s.cta }}</a>
+      {% endif %}
+    </div>
+    {% endfor %}
+  </div>
+
+  <div class="spacer-12"></div>
+  <form method="post" action="/a/onboarding/skip" style="margin:0">
+    <button class="btn btn-secondary" type="submit">Skip for now</button>
+  </form>
+  {% endif %}
+</div>
+{% set tabs = [
+  ('/a/dashboard', '▣', 'Dashboard', 'dashboard'),
+  ('/a/people', '◔', 'People', 'people'),
+  ('/a/events', '▤', 'Events', 'events'),
+  ('/a/solver', '◈', 'Solver', 'solver'),
+] %}
+{% include "_nav.html" %}
+{% endblock %}
