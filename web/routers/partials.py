@@ -230,7 +230,14 @@ def open_claim(
     )
     if any(a.person_id == person.id for a in rows):
         return _open_list(request, person, db, error="You're already on this event.")
-    if sum(1 for a in rows if (a.role or "") == role) >= rc[role]:
+    if (
+        sum(
+            1
+            for a in rows
+            if (a.role or "") == role and (a.status or "").lower() != "declined"
+        )
+        >= rc[role]
+    ):
         return _open_list(request, person, db, error="That role just filled up.")
 
     db.add(
