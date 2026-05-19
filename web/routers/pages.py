@@ -72,6 +72,46 @@ def _my_assignment(db: Session, person: Person, aid: int) -> dict | None:
     return _row_dict(*row) if row else None
 
 
+def _pricing_tiers() -> list[dict]:
+    """Pricing rows from the canonical UsageService.PLAN_LIMITS so the
+    public page can never drift from what the app actually enforces."""
+    from api.services.usage_service import UsageService
+
+    order = ["free", "starter", "pro", "enterprise"]
+    blurb = {
+        "free": "Get started — small teams & trials.",
+        "starter": "Growing volunteer programs.",
+        "pro": "Established organizations.",
+        "enterprise": "Large / multi-ministry. Custom terms.",
+    }
+
+    def fmt(v):
+        return "Unlimited" if v is None else f"{v:,}"
+
+    rows = []
+    for tier in order:
+        lim = UsageService.PLAN_LIMITS[tier]
+        rows.append(
+            {
+                "tier": tier,
+                "blurb": blurb[tier],
+                "volunteers": fmt(lim["volunteers"]),
+                "events": fmt(lim["events_per_month"]),
+                "storage_mb": fmt(lim["storage_mb"]),
+                "api_per_day": fmt(lim["api_calls_per_day"]),
+            }
+        )
+    return rows
+
+
+@router.get("/pricing", response_class=HTMLResponse)
+def pricing(request: Request):
+    """Public pricing page — no auth (mirrors /auth/login)."""
+    from web.app import templates
+
+    return templates.TemplateResponse(request, "pricing.html", {"tiers": _pricing_tiers()})
+
+
 @router.get("/")
 def root(request: Request):
     # Resolve session lazily so the bare "/" works signed-in or not.
