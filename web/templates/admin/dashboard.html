@@ -9,6 +9,14 @@
 </div>
 <div class="page-title">Dashboard</div>
 <div class="scroll">
+  {% if ob and not ob.skipped and not ob.complete %}
+  <a class="card" href="/a/onboarding" id="onboarding-banner"
+     style="display:block;border-color:var(--accent)">
+    <div class="row-title">Finish setting up — {{ ob.done }}/{{ ob.total }}</div>
+    <div class="row-sub">Invite people, create an event, build &amp; publish a schedule.</div>
+  </a>
+  <div class="spacer-12"></div>
+  {% endif %}
   <div class="kpi-grid">
     <div class="kpi">
       <div class="kpi-value">{{ kpis.active_volunteers }}<span class="unit">/ {{ kpis.total_volunteers }}</span></div>
