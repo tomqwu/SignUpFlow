@@ -18,7 +18,8 @@
 ## Features
 
 - **Greedy Heuristic Solver** — auto-generate fair schedules with role-based constraints
-- **Responsive web app** — full admin + volunteer workflow in the browser, served by the same FastAPI process ([walkthrough below](#web-app--end-to-end-walkthrough))
+- **Responsive web app** — full admin + volunteer workflow in the browser, served by the same FastAPI process ([walkthrough below](#web-app--end-to-end-walkthrough)) — the primary surface
+- **Flutter mobile app** (`mobile/`) — volunteer + admin app, CI-gated (analyze + test); see `mobile/README.md` for status
 - **CLI + API** — schedule from YAML files or through REST endpoints
 - **Multi-tenant** — full org isolation with JWT auth and RBAC (admin/volunteer)
 - **Invitation system** — token-based volunteer onboarding
