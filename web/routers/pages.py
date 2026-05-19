@@ -850,6 +850,65 @@ def admin_billing(
     )
 
 
+def _claimable_swaps(db: Session, person: Person) -> list[dict]:
+    """Swap-requested assignments another volunteer can cover: same org,
+    future, not the caller's own request, and not an event the caller is
+    already on. Org-scoped via the Event join."""
+    from datetime import datetime
+
+    now = datetime.utcnow()
+    rows = (
+        db.query(Assignment, Event, Person)
+        .join(Event, Assignment.event_id == Event.id)
+        .join(Person, Assignment.person_id == Person.id)
+        .filter(
+            Event.org_id == person.org_id,
+            Assignment.status == "swap_requested",
+            Assignment.person_id != person.id,
+            Event.start_time >= now,
+        )
+        .order_by(Event.start_time.asc())
+        .all()
+    )
+    mine = {
+        a.event_id
+        for a in db.query(Assignment)
+        .join(Event, Assignment.event_id == Event.id)
+        .filter(Event.org_id == person.org_id, Assignment.person_id == person.id)
+        .all()
+    }
+    return [
+        {
+            "assignment_id": a.id,
+            "event_type": e.type,
+            "when": e.start_time.strftime("%a %d %b %Y · %H:%M") if e.start_time else "",
+            "role": a.role,
+            "requested_by": p.name,
+        }
+        for a, e, p in rows
+        if e.id not in mine
+    ]
+
+
+@router.get("/v/swaps", response_class=HTMLResponse)
+def volunteer_swaps_open(
+    request: Request,
+    person: Person = Depends(get_session_user),
+    db: Session = Depends(get_db),
+):
+    from web.app import templates
+
+    return templates.TemplateResponse(
+        request,
+        "volunteer/swaps_open.html",
+        {
+            "person": person,
+            "active_tab": "schedule",
+            "swaps": _claimable_swaps(db, person),
+        },
+    )
+
+
 def _swap_requests(db: Session, org_id: str) -> list[dict]:
     """Assignments the volunteer flagged for swap, org-scoped via the
     Event join."""
