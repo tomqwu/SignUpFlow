@@ -2,6 +2,7 @@
 
 from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
 from pydantic import BaseModel
+from sqlalchemy import or_
 from sqlalchemy.orm import Session
 
 from api.database import get_db
@@ -10,7 +11,7 @@ from api.dependencies import (
     get_current_admin_user,
     get_current_user,
 )
-from api.models import Assignment, AuditAction, Event, Organization, Person, Resource
+from api.models import Assignment, AuditAction, Event, Organization, Person, Resource, Solution
 from api.utils.audit_logger import log_audit_event
 from api.utils.calendar_utils import (
     generate_https_feed_url,
@@ -407,8 +408,19 @@ def calendar_feed(token: str, db: Session = Depends(get_db)):
             detail="Invalid calendar token",
         )
 
-    # Get all assignments for this person
-    assignments = db.query(Assignment).filter(Assignment.person_id == person.id).all()
+    # Only published assignments belong on a subscribed calendar: those
+    # tied to a published solution, plus direct (manual / self-serve /
+    # swap) assignments that have no solution. Draft solver output stays
+    # out of the volunteer's calendar until it is published.
+    assignments = (
+        db.query(Assignment)
+        .outerjoin(Solution, Assignment.solution_id == Solution.id)
+        .filter(
+            Assignment.person_id == person.id,
+            or_(Assignment.solution_id.is_(None), Solution.is_published.is_(True)),
+        )
+        .all()
+    )
 
     # Load event and resource data for each assignment
     assignment_data = []
