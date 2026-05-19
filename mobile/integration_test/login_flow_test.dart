@@ -21,8 +21,8 @@ import 'package:signupflow_mobile/auth/login_repository.dart';
 import 'package:signupflow_mobile/auth/secure_token_storage.dart';
 
 class _FakeLoginRepo implements LoginRepository {
-  _FakeLoginRepo({this.role = AuthRole.volunteer});
-  AuthRole role;
+  _FakeLoginRepo();
+  AuthRole role = AuthRole.volunteer;
 
   @override
   Future<AuthState> signIn(String email, String password) async {

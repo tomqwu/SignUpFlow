@@ -1,0 +1,42 @@
+# Flutter mobile app CI — additive coverage for mobile/.
+#
+# Independent of the main "Lint, type-check, and test" workflow: this
+# gates the Flutter app without blocking backend/web PRs. Runs only when
+# mobile/ (or this workflow) changes.
+name: Mobile CI
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "mobile/**"
+      - ".github/workflows/mobile-ci.yml"
+  pull_request:
+    paths:
+      - "mobile/**"
+      - ".github/workflows/mobile-ci.yml"
+
+jobs:
+  flutter:
+    name: Flutter analyze + test
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: mobile
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+
+      - name: Resolve dependencies
+        run: flutter pub get
+
+      - name: Analyze
+        # Info-level lints (e.g. Riverpod `.stream` deprecation) don't
+        # fail the build; warnings/errors do.
+        run: flutter analyze --no-fatal-infos
+
+      - name: Test
+        run: flutter test
