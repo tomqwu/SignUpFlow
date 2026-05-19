@@ -84,6 +84,11 @@ jobs:
       - name: OpenAPI contract snapshot
         run: poetry run pytest tests/contract/ -v --tb=short
 
+      - name: Web tests
+        # In-process FastAPI TestClient (no browser) — the cookie/HTMX
+        # web app suite grown across the full-feature marathon.
+        run: poetry run pytest tests/web/ -v --tb=short
+
       - name: Integration tests
         # Sprint 4 PR 4.6a brought back the api_server fixture and a smoke
         # test. PR 4.6b is reviving the previously-failing files; until then
