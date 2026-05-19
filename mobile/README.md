@@ -1,25 +1,41 @@
-> ## ⏸️ Sprint 11+: mobile feature work is paused
+# SignUpFlow — Flutter mobile app
+
+> ## ▶️ Un-parked — but read the codegen note
 >
-> The product is moving to a responsive **web app** (`/web`, HTMX +
-> FastAPI on the same backend). New screens and features land there.
-> This Flutter app stays in the repo, its CI lane keeps running, and
-> bug fixes are still welcome — but no new feature work until the web
-> app reaches parity. See the Sprint 11 plan.
+> The responsive **web app** (`/web`, HTMX + FastAPI, same backend) is
+> the primary, now full-featured surface (auth, volunteer & admin
+> workflows, billing/email/SMS status, analytics, notifications). This
+> Flutter app is **active again**: it has a CI lane (analyze + test on
+> GitHub Actions — `.github/workflows/mobile-ci.yml`) and feature/bug
+> work is welcome.
+>
+> **Known gap (tracked in #191):** the generated API client in
+> `mobile/api_client/` predates endpoints added during the full-feature
+> work — `POST /api/v1/auth/change-password`, the billing router, and
+> `/api/sms/*`. Regenerate it before building features that use those:
+>
+> ```
+> make mobile-codegen   # needs a JDK 17 (openapi-generator-cli)
+> ```
+>
+> The OpenAPI snapshot (`tests/contract/openapi.snapshot.json`) is
+> already current, so codegen is a clean mechanical step.
 
-# signupflow_mobile
+## Stack
 
-A new Flutter project.
+Flutter + Dart, Riverpod (state), GoRouter (nav), secure storage for the
+session token. Talks to the FastAPI backend via the generated
+`signupflow_api` Dart client (path dependency at `mobile/api_client/`).
 
-## Getting Started
+## Develop
 
-This project is a starting point for a Flutter application.
+```bash
+flutter pub get
+flutter analyze --no-fatal-infos   # CI gate (info-level lints non-fatal)
+flutter test
+```
 
-A few resources to get you started if this is your first Flutter project:
+After backend API changes, refresh the client with `make mobile-codegen`
+(from the repo root) and re-run the contract snapshot tests first.
 
-- [Learn Flutter](https://docs.flutter.dev/get-started/learn-flutter)
-- [Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Flutter learning resources](https://docs.flutter.dev/reference/learning-resources)
-
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+For Flutter basics see the [online documentation](https://docs.flutter.dev/).
