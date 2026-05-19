@@ -99,3 +99,37 @@ jobs:
         env:
           DATABASE_URL: postgresql+psycopg2://signupflow:signupflow@localhost:5432/signupflow_ci
         run: poetry run alembic upgrade head
+
+  e2e:
+    name: End-to-end (Playwright)
+    runs-on: ubuntu-latest
+    # Blocking lane: real uvicorn + headless Chromium drive the full web
+    # workflows. Deterministic (throwaway SQLite per run, no external
+    # network, sandbox env). The merge protocol won't merge if this is red.
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install Poetry
+        uses: snok/install-poetry@v1
+        with:
+          version: "1.8.3"
+          virtualenvs-create: true
+          virtualenvs-in-project: true
+
+      - name: Install dependencies
+        run: poetry install --no-interaction --no-ansi
+
+      - name: Install Playwright + Chromium
+        # playwright is e2e-only; installed here (not in poetry.lock) so
+        # the main dependency graph stays lean.
+        run: |
+          poetry run pip install "playwright==1.60.0"
+          poetry run playwright install --with-deps chromium
+
+      - name: Run e2e suite
+        run: poetry run pytest tests/e2e/ -v --tb=short
