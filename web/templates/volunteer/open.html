@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block title %}Open shifts · SignUpFlow{% endblock %}
+{% block body %}
+<div class="nav">
+  <a class="nav-back" href="/v/schedule">‹ Schedule</a>
+  <form method="post" action="/auth/logout" style="margin:0">
+    <button class="nav-action" type="submit">Sign out</button>
+  </form>
+</div>
+<div class="page-title">Open shifts</div>
+<div class="scroll">
+  {% include "partials/open_list.html" %}
+</div>
+{% set tabs = [
+  ('/v/schedule', '▦', 'Schedule', 'schedule'),
+  ('/v/availability', '◷', 'Availability', 'availability'),
+  ('/v/profile', '◍', 'Profile', 'profile'),
+] %}
+{% include "_nav.html" %}
+{% endblock %}

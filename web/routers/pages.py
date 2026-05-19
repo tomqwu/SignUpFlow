@@ -129,6 +129,69 @@ def root(request: Request):
     return RedirectResponse(url=landing, status_code=303)
 
 
+def _open_shifts(db: Session, person: Person) -> list[dict]:
+    """Future events in the volunteer's org with unfilled role capacity
+    (extra_data.role_counts vs assignments), excluding events they're
+    already on. Org-scoped via the Event join."""
+    from datetime import datetime
+
+    now = datetime.utcnow()
+    events = (
+        db.query(Event)
+        .filter(Event.org_id == person.org_id, Event.start_time >= now)
+        .order_by(Event.start_time.asc())
+        .all()
+    )
+    out = []
+    for e in events:
+        rc = (e.extra_data or {}).get("role_counts") or {}
+        if not rc:
+            continue
+        rows = (
+            db.query(Assignment)
+            .join(Event, Assignment.event_id == Event.id)
+            .filter(Event.org_id == person.org_id, Assignment.event_id == e.id)
+            .all()
+        )
+        if any(a.person_id == person.id for a in rows):
+            continue  # already on this event — don't offer it
+        filled: dict[str, int] = {}
+        for a in rows:
+            filled[a.role or ""] = filled.get(a.role or "", 0) + 1
+        roles = [
+            {"role": r, "needed": n, "remaining": n - filled.get(r, 0)}
+            for r, n in rc.items()
+            if n - filled.get(r, 0) > 0
+        ]
+        if roles:
+            out.append(
+                {
+                    "event_id": e.id,
+                    "event_type": e.type,
+                    "when": e.start_time.strftime("%a %d %b %Y · %H:%M")
+                    if e.start_time
+                    else "",
+                    "roles": roles,
+                }
+            )
+    return out
+
+
+@router.get("/v/open", response_class=HTMLResponse)
+def volunteer_open_shifts(
+    request: Request,
+    person: Person = Depends(get_session_user),
+    db: Session = Depends(get_db),
+):
+    from web.app import templates
+
+    return templates.TemplateResponse(
+        request,
+        "volunteer/open.html",
+        {"person": person, "active_tab": "schedule", "open": _open_shifts(db, person)},
+    )
+
+
 @router.get("/v/schedule", response_class=HTMLResponse)
 def volunteer_schedule(
     request: Request,
