@@ -77,6 +77,7 @@ from web.deps import get_session_admin, get_session_user
 from web.routers.pages import (
     NOTIF_TYPES,
     RRULE_PRESETS,
+    _claimable_swaps,
     _constraints,
     _email_prefs,
     _event_assignments,
@@ -243,6 +244,75 @@ def open_claim(
     )
     db.commit()
     return _open_list(request, person, db)
+
+
+# ── Volunteer: swap-claim marketplace ────────────────────────────────
+
+
+def _swaps_open_list(request: Request, person: Person, db: Session, *, error=None):
+    from web.app import templates
+
+    return templates.TemplateResponse(
+        request,
+        "partials/swaps_open_list.html",
+        {"swaps": _claimable_swaps(db, person), "error": error},
+        status_code=400 if error else 200,
+    )
+
+
+@router.post("/v/swaps/{assignment_id}/claim", response_class=HTMLResponse)
+def swap_claim(
+    request: Request,
+    assignment_id: int,
+    person: Person = Depends(get_session_user),
+    db: Session = Depends(get_db),
+):
+    """Cover a teammate's swap: transfer the assignment to the claimer.
+    Re-validated server-side (org, still swap_requested, not own, future,
+    claimer not already on the event) — org-scoped direct write."""
+    from datetime import datetime
+
+    a = (
+        db.query(Assignment)
+        .join(Event, Assignment.event_id == Event.id)
+        .filter(
+            Event.org_id == person.org_id,
+            Assignment.id == assignment_id,
+            Assignment.status == "swap_requested",
+        )
+        .first()
+    )
+    if a is None:
+        return _swaps_open_list(
+            request, person, db, error="That swap is no longer available."
+        )
+    if a.person_id == person.id:
+        return _swaps_open_list(
+            request, person, db, error="That's your own swap request."
+        )
+    ev = db.query(Event).filter(Event.id == a.event_id).first()
+    if ev is None or (ev.start_time and ev.start_time < datetime.utcnow()):
+        return _swaps_open_list(request, person, db, error="That event has passed.")
+    already = (
+        db.query(Assignment)
+        .join(Event, Assignment.event_id == Event.id)
+        .filter(
+            Event.org_id == person.org_id,
+            Assignment.event_id == a.event_id,
+            Assignment.person_id == person.id,
+        )
+        .first()
+    )
+    if already is not None:
+        return _swaps_open_list(
+            request, person, db, error="You're already on that event."
+        )
+
+    a.person_id = person.id
+    a.status = "confirmed"
+    a.decline_reason = None
+    db.commit()
+    return _swaps_open_list(request, person, db)
 
 
 # ── Availability: time-off ───────────────────────────────────────────

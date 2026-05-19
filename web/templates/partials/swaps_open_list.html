@@ -1,0 +1,27 @@
+{# Swap requests another volunteer can cover. #swaps-open-list. #}
+<div id="swaps-open-list">
+  {% if error %}
+  <div class="form-error" role="alert">{{ error }}</div>
+  <div class="spacer-12"></div>
+  {% endif %}
+
+  {% if not swaps %}
+  <div class="empty">No swap requests to cover right now.</div>
+  {% else %}
+  {% for s in swaps %}
+  <div class="card" style="margin-bottom:12px">
+    <div class="row-title">{{ s.event_type }}</div>
+    <div class="row-sub">{{ s.when }}</div>
+    <div style="margin-top:6px;display:flex;gap:6px;align-items:center;flex-wrap:wrap">
+      {% if s.role %}<span class="role-chip">{{ s.role }}</span>{% endif %}
+      <span class="row-sub">requested by {{ s.requested_by }}</span>
+    </div>
+    <div class="spacer-12"></div>
+    <form hx-post="/v/swaps/{{ s.assignment_id }}/claim"
+          hx-target="#swaps-open-list" hx-swap="outerHTML" style="margin:0">
+      <button class="btn btn-go" type="submit">Cover this shift</button>
+    </form>
+  </div>
+  {% endfor %}
+  {% endif %}
+</div>
