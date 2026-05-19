@@ -10,7 +10,6 @@
 // and operator-side smoke against a real device can pick the same
 // failures up via `flutter test integration_test/deep_link_test.dart`.
 
-import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
