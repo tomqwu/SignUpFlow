@@ -6,7 +6,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from sqlalchemy.orm import Session
 
 from api.database import get_db
-from api.dependencies import get_current_admin_user, verify_org_member
+from api.dependencies import get_current_admin_user, get_current_user, verify_org_member
 from api.models import AuditAction, Organization, Person
 from api.schemas.common import PaginationParams, get_pagination_params
 from api.schemas.organization import (
@@ -62,10 +62,11 @@ def list_organizations(
     ),
     q: str | None = Query(None, description="Case-insensitive search on organization name"),
     pagination: PaginationParams = Depends(get_pagination_params),
+    current_user: Person = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    """List all organizations. Excludes cancelled by default."""
-    query = db.query(Organization)
+    """List organizations the caller belongs to. Excludes cancelled by default."""
+    query = db.query(Organization).filter(Organization.id == current_user.org_id)
     if not include_cancelled:
         query = query.filter(Organization.cancelled_at.is_(None))
 
@@ -83,8 +84,13 @@ def list_organizations(
 
 
 @router.get("/{org_id}", response_model=OrganizationResponse)
-def get_organization(org_id: str, db: Session = Depends(get_db)):
+def get_organization(
+    org_id: str,
+    current_user: Person = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
     """Get organization by ID."""
+    verify_org_member(current_user, org_id)
     org = db.query(Organization).filter(Organization.id == org_id).first()
     if not org:
         raise HTTPException(
@@ -95,8 +101,14 @@ def get_organization(org_id: str, db: Session = Depends(get_db)):
 
 
 @router.put("/{org_id}", response_model=OrganizationResponse)
-def update_organization(org_id: str, org_data: OrganizationUpdate, db: Session = Depends(get_db)):
-    """Update organization."""
+def update_organization(
+    org_id: str,
+    org_data: OrganizationUpdate,
+    current_admin: Person = Depends(get_current_admin_user),
+    db: Session = Depends(get_db),
+):
+    """Update organization (admin only)."""
+    verify_org_member(current_admin, org_id)
     org = db.query(Organization).filter(Organization.id == org_id).first()
     if not org:
         raise HTTPException(
@@ -118,8 +130,13 @@ def update_organization(org_id: str, org_data: OrganizationUpdate, db: Session =
 
 
 @router.delete("/{org_id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_organization(org_id: str, db: Session = Depends(get_db)):
-    """Delete organization and all related data."""
+def delete_organization(
+    org_id: str,
+    current_admin: Person = Depends(get_current_admin_user),
+    db: Session = Depends(get_db),
+):
+    """Delete organization and all related data (admin only)."""
+    verify_org_member(current_admin, org_id)
     org = db.query(Organization).filter(Organization.id == org_id).first()
     if not org:
         raise HTTPException(

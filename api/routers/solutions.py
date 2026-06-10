@@ -16,7 +16,7 @@ from api.core.models import (
     Person as PersonModel,
 )
 from api.database import get_db
-from api.dependencies import get_current_admin_user, verify_org_member
+from api.dependencies import get_current_admin_user, get_current_user, verify_org_member
 from api.models import Assignment, AuditAction, AuditLog, Event, Organization, Person, Solution
 from api.schemas.common import PaginationParams, get_pagination_params
 from api.schemas.solver import (
@@ -45,13 +45,16 @@ router = APIRouter(prefix="/solutions", tags=["solutions"])
 def list_solutions(
     org_id: str | None = Query(None, description="Filter by organization ID"),
     pagination: PaginationParams = Depends(get_pagination_params),
+    current_user: Person = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
     """List solutions with optional filters."""
-    query = db.query(Solution)
-
     if org_id:
-        query = query.filter(Solution.org_id == org_id)
+        verify_org_member(current_user, org_id)
+    else:
+        org_id = current_user.org_id
+
+    query = db.query(Solution).filter(Solution.org_id == org_id)
 
     query = query.order_by(Solution.created_at.desc())
     solutions = query.offset(pagination.offset).limit(pagination.limit).all()
@@ -74,7 +77,11 @@ def list_solutions(
 
 
 @router.get("/{solution_id}", response_model=SolutionResponse)
-def get_solution(solution_id: int, db: Session = Depends(get_db)):
+def get_solution(
+    solution_id: int,
+    current_user: Person = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
     """Get solution by ID."""
     solution = db.query(Solution).filter(Solution.id == solution_id).first()
     if not solution:
@@ -82,6 +89,7 @@ def get_solution(solution_id: int, db: Session = Depends(get_db)):
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Solution {solution_id} not found",
         )
+    verify_org_member(current_user, solution.org_id)
 
     assignment_count = db.query(Assignment).filter(Assignment.solution_id == solution.id).count()
     response = SolutionResponse.model_validate(solution)

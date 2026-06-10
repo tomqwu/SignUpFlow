@@ -180,6 +180,7 @@ class TestConflictDetection:
 
         resp = client.post(
             "/api/v1/conflicts/check",
+            headers=hdrs,
             json={
                 "person_id": vol["person_id"],
                 "event_id": event["id"],
@@ -209,6 +210,7 @@ class TestConflictDetection:
         # Check conflicts — should detect already_assigned
         resp = client.post(
             "/api/v1/conflicts/check",
+            headers=hdrs,
             json={
                 "person_id": vol["person_id"],
                 "event_id": event["id"],
@@ -233,6 +235,7 @@ class TestConflictDetection:
         # Check conflicts — should detect time_off
         resp = client.post(
             "/api/v1/conflicts/check",
+            headers=hdrs,
             json={
                 "person_id": vol["person_id"],
                 "event_id": event["id"],
@@ -266,6 +269,7 @@ class TestConflictDetection:
         # Check conflicts for event B — should detect double_booked
         resp = client.post(
             "/api/v1/conflicts/check",
+            headers=hdrs,
             json={
                 "person_id": vol["person_id"],
                 "event_id": evt_b["id"],
@@ -285,6 +289,7 @@ class TestConflictDetection:
 
         resp = client.post(
             "/api/v1/conflicts/check",
+            headers=hdrs,
             json={
                 "person_id": "ghost-person",
                 "event_id": event["id"],
@@ -298,6 +303,7 @@ class TestConflictDetection:
 
         resp = client.post(
             "/api/v1/conflicts/check",
+            headers=hdrs,
             json={
                 "person_id": vol["person_id"],
                 "event_id": "ghost-event",

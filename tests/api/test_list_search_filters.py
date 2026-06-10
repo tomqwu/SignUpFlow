@@ -263,17 +263,25 @@ class TestTeamsSearch:
 @pytest.mark.no_mock_auth
 class TestOrganizationsSearch:
     def test_q_matches_name(self, client, db):
-        seed_org(client, "lf-orgs-alpha", name="Alpha Church")
-        seed_org(client, "lf-orgs-beta", name="Beta League")
-        resp = client.get("/api/v1/organizations/?q=alpha")
+        org_id = "lf-orgs-alpha-q"
+        seed_org(client, org_id, name="Alpha Church")
+        seed_user(
+            client, org_id, email="admin-oq@lf.org", name="Admin", password="AdminPass1!"
+        )
+        hdrs = auth_headers(client, email="admin-oq@lf.org", password="AdminPass1!")
+        resp = client.get("/api/v1/organizations/?q=alpha", headers=hdrs)
         assert resp.status_code == 200
         names = [o["name"] for o in resp.json()["items"]]
         assert "Alpha Church" in names
-        assert "Beta League" not in names
 
     def test_q_no_match_returns_empty(self, client, db):
-        seed_org(client, "lf-orgs-zzz", name="Zeta Org")
-        resp = client.get("/api/v1/organizations/?q=nomatchhere")
+        org_id = "lf-orgs-zzz-q"
+        seed_org(client, org_id, name="Zeta Org")
+        seed_user(
+            client, org_id, email="admin-oz@lf.org", name="Admin", password="AdminPass1!"
+        )
+        hdrs = auth_headers(client, email="admin-oz@lf.org", password="AdminPass1!")
+        resp = client.get("/api/v1/organizations/?q=nomatchhere", headers=hdrs)
         assert resp.status_code == 200
         assert resp.json()["items"] == []
         assert resp.json()["total"] == 0

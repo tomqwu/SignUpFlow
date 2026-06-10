@@ -68,7 +68,7 @@ def get_subscription(
         }
 
     return {
-        "subscription": SubscriptionResponse.from_orm(subscription),
+        "subscription": SubscriptionResponse.model_validate(subscription),
         "usage": usage_summary,
         "next_invoice": next_invoice,
     }
@@ -188,7 +188,7 @@ def handle_checkout_success(
 
     return {
         "success": True,
-        "subscription": SubscriptionResponse.from_orm(subscription),
+        "subscription": SubscriptionResponse.model_validate(subscription),
         "usage": usage_summary,
         "message": "Subscription updated successfully",
     }
@@ -253,7 +253,7 @@ def start_trial(
 
     return {
         "success": True,
-        "subscription": SubscriptionResponse.from_orm(result["subscription"]),
+        "subscription": SubscriptionResponse.model_validate(result["subscription"]),
         "usage": usage_summary,
         "trial_end_date": result["trial_end_date"].isoformat(),
         "message": result["message"],
@@ -325,7 +325,7 @@ def downgrade_subscription(
 
     return {
         "success": True,
-        "subscription": SubscriptionResponse.from_orm(result["subscription"]),
+        "subscription": SubscriptionResponse.model_validate(result["subscription"]),
         "usage": usage_summary,
         "pending_downgrade": result["pending_downgrade"],
         "message": result["message"],
@@ -403,7 +403,7 @@ def cancel_downgrade(
 
     return {
         "success": True,
-        "subscription": SubscriptionResponse.from_orm(subscription),
+        "subscription": SubscriptionResponse.model_validate(subscription),
         "usage": usage_summary,
         "message": "Downgrade cancelled successfully",
     }
@@ -471,7 +471,7 @@ def cancel_subscription(
 
     return {
         "success": True,
-        "subscription": SubscriptionResponse.from_orm(result["subscription"]),
+        "subscription": SubscriptionResponse.model_validate(result["subscription"]),
         "usage": usage_summary,
         "period_end": result["period_end"].isoformat() if result["period_end"] else None,
         "data_retention_until": result["data_retention_until"].isoformat()
@@ -531,7 +531,7 @@ def reactivate_subscription(
 
     return {
         "success": True,
-        "subscription": SubscriptionResponse.from_orm(result["subscription"]),
+        "subscription": SubscriptionResponse.model_validate(result["subscription"]),
         "usage": usage_summary,
         "message": result["message"],
     }

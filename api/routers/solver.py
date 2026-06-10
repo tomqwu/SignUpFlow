@@ -13,6 +13,7 @@ logger = logging.getLogger("rostio")
 from api.core.models import (
     Availability as AvailabilityModel,
 )
+from api.core.models import ConstraintAction, ConstraintBinding
 from api.core.models import (
     Event as EventModel,
 )
@@ -118,7 +119,7 @@ def solve_schedule(
         )
         .all()
     )
-    (db.query(DBConstraint).filter(DBConstraint.org_id == solve_request.org_id).all())
+    constraints_db = db.query(DBConstraint).filter(DBConstraint.org_id == solve_request.org_id).all()
     holidays_db = (
         db.query(Holiday)
         .filter(
@@ -182,11 +183,33 @@ def solve_schedule(
             )
         )
 
-    # For now, we'll pass an empty constraints list since the API stores constraints
-    # differently than the solver expects (ConstraintBinding vs simple params).
-    # In production, you would convert DB constraints to proper ConstraintBinding format
-    # with scope, applies_to, when, and then fields.
+    # Convert DB constraints to solver ConstraintBinding format
     constraints = []
+    for c in constraints_db:
+        action_kwargs = {}
+        # Map predicate string to ConstraintAction field
+        if c.predicate == "enforce_min_gap_hours":
+            action_kwargs["enforce_min_gap_hours"] = (c.params or {}).get("hours", 24)
+        elif c.predicate == "enforce_cap":
+            action_kwargs["enforce_cap"] = c.params or {}
+        elif c.predicate == "forbid_if":
+            action_kwargs["forbid_if"] = (c.params or {}).get("condition", "")
+        elif c.predicate == "penalize_if":
+            action_kwargs["penalize_if"] = c.params or {}
+        else:
+            # Unknown predicate type — pass params as penalize_if fallback
+            action_kwargs["penalize_if"] = c.params or {}
+
+        constraints.append(ConstraintBinding(
+            key=c.key,
+            scope="event",  # default scope
+            applies_to=(c.params or {}).get("applies_to", []),
+            params=c.params or {},
+            when=None,
+            then=ConstraintAction(**action_kwargs),
+            severity=c.type,  # "hard" or "soft"
+            weight=c.weight,
+        ))
 
     holidays = [
         HolidayModel(date=h.date, label=h.label, is_long_weekend=h.is_long_weekend)

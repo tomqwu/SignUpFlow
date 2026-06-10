@@ -1,8 +1,5 @@
-"""Unit tests for EmailService — DISABLED (email features removed)."""
-import pytest
+"""Unit tests for EmailService.
 
-pytestmark = pytest.mark.skip(reason="Email features disabled — focusing on core scheduling logic")
-"""
 Tests the email sending functionality with mocked SMTP/SendGrid.
 
 Coverage target: >90% for api/services/email_service.py
@@ -42,6 +39,7 @@ class TestEmailService:
             "os.environ",
             {
                 "EMAIL_ENABLED": "true",
+                "TESTING": "false",
                 "MAILTRAP_SMTP_USER": "test",
                 "MAILTRAP_SMTP_PASSWORD": "test",
             },
@@ -77,6 +75,7 @@ class TestEmailService:
             "os.environ",
             {
                 "EMAIL_ENABLED": "true",
+                "TESTING": "false",
                 "MAILTRAP_SMTP_USER": "test",
                 "MAILTRAP_SMTP_PASSWORD": "test",
             },
@@ -109,6 +108,7 @@ class TestEmailService:
             "os.environ",
             {
                 "EMAIL_ENABLED": "true",
+                "TESTING": "false",
                 "MAILTRAP_SMTP_USER": "test",
                 "MAILTRAP_SMTP_PASSWORD": "test",
             },
@@ -134,24 +134,25 @@ class TestEmailService:
             "os.environ",
             {
                 "EMAIL_ENABLED": "true",
+                "TESTING": "false",
                 "MAILTRAP_SMTP_USER": "test",
                 "MAILTRAP_SMTP_PASSWORD": "test",
             },
         ):
             service = EmailService()
 
-        # Speed up retries
-        service.retry_delay = 0
+            # Speed up retries
+            service.retry_delay = 0
 
-        recipient_email = "volunteer@example.com"
+            recipient_email = "volunteer@example.com"
 
-        # Mock SMTP to raise exception
-        mock_smtp.side_effect = Exception("SMTP connection failed")
+            # Mock SMTP to raise exception
+            mock_smtp.side_effect = Exception("SMTP connection failed")
 
-        # Act
-        result = service.send_email(
-            to_email=recipient_email, subject="Test", html_content="<p>Test</p>"
-        )
+            # Act
+            result = service.send_email(
+                to_email=recipient_email, subject="Test", html_content="<p>Test</p>"
+            )
 
         # Assert - should return None on failure
         assert result is None
@@ -166,22 +167,23 @@ class TestEmailService:
             "os.environ",
             {
                 "EMAIL_ENABLED": "true",
+                "TESTING": "false",
                 "MAILTRAP_SMTP_USER": "test",
                 "MAILTRAP_SMTP_PASSWORD": "test",
             },
         ):
             service = EmailService()
 
-        recipient_email = "test@example.com"
-        html_content = "<h1>Test Email</h1><p>This is a test.</p>"
+            recipient_email = "test@example.com"
+            html_content = "<h1>Test Email</h1><p>This is a test.</p>"
 
-        mock_server = Mock()
-        mock_smtp.return_value.__enter__.return_value = mock_server
+            mock_server = Mock()
+            mock_smtp.return_value.__enter__.return_value = mock_server
 
-        # Act
-        result = service.send_email(
-            to_email=recipient_email, subject="Test Email", html_content=html_content
-        )
+            # Act
+            result = service.send_email(
+                to_email=recipient_email, subject="Test Email", html_content=html_content
+            )
 
         # Assert
         assert result is not None

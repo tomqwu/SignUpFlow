@@ -1,9 +1,3 @@
-import pytest
-
-pytestmark = pytest.mark.skip(
-    reason="Email/SMS features disabled — focusing on core scheduling logic"
-)
-
 import os
 import unittest
 from unittest.mock import MagicMock, patch
@@ -44,6 +38,7 @@ class TestWorkflowSafety(unittest.TestCase):
             os.environ,
             {
                 "EMAIL_ENABLED": "true",
+                "TESTING": "false",
                 "MAILTRAP_SMTP_USER": "test",
                 "MAILTRAP_SMTP_PASSWORD": "test",
             },
@@ -54,8 +49,11 @@ class TestWorkflowSafety(unittest.TestCase):
             # We don't actually call it here because it would try to connect,
             # but we verified the 'enabled' flag logic.
 
+    @patch("api.services.sms_service.CostTracker")
+    @patch("api.services.sms_service.QuietHours")
+    @patch("api.services.sms_service.SmsRateLimiter")
     @patch("api.services.sms_service.Client")
-    def test_sms_service_safety(self, mock_twilio):
+    def test_sms_service_safety(self, mock_twilio, mock_rate_limiter, mock_quiet_hours, mock_cost_tracker):
         """Verify SMSService does not send if SMS_ENABLED=false"""
         # 1. Test with SMS_ENABLED=false
         with patch.dict(os.environ, {"SMS_ENABLED": "false"}):

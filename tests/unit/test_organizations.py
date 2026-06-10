@@ -68,19 +68,20 @@ class TestOrganizationRead:
         assert response.status_code == 404
 
     def test_list_orgs(self, client):
-        """Test listing all organizations."""
-        # Create a few orgs
+        """Test listing organizations returns only the caller's org (multi-tenancy)."""
+        # Create additional orgs (these belong to different tenants)
         for i in range(5, 8):
             client.post(
                 f"{API_BASE}/organizations/",
                 json={"id": f"test_org_{i:03d}", "name": f"List Test Org {i}"},
             )
-        # List them
+        # List should return only the mock user's org (test_org)
         response = client.get(f"{API_BASE}/organizations/")
         assert response.status_code == 200
         data = response.json()
         assert "items" in data
-        assert len(data["items"]) >= 3
+        assert len(data["items"]) == 1
+        assert data["items"][0]["id"] == "test_org"
 
 
 class TestOrganizationUpdate:

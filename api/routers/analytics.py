@@ -7,6 +7,7 @@ from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from api.database import get_db
+from api.dependencies import get_current_user, verify_org_member
 from api.models import Assignment, Event, Person, Solution
 
 router = APIRouter(prefix="/analytics", tags=["analytics"])
@@ -15,10 +16,12 @@ router = APIRouter(prefix="/analytics", tags=["analytics"])
 @router.get("/{org_id}/volunteer-stats")
 def get_volunteer_stats(
     org_id: str,
+    current_user: Person = Depends(get_current_user),
     db: Session = Depends(get_db),
     days: int = Query(30, description="Number of days to analyze"),
 ):
     """Get volunteer participation statistics."""
+    verify_org_member(current_user, org_id)
 
     since_date = datetime.now() - timedelta(days=days)
 
@@ -70,9 +73,11 @@ def get_volunteer_stats(
 @router.get("/{org_id}/schedule-health")
 def get_schedule_health(
     org_id: str,
+    current_user: Person = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
     """Get schedule health metrics."""
+    verify_org_member(current_user, org_id)
 
     # Upcoming events
     upcoming_events = (
@@ -118,10 +123,12 @@ def get_schedule_health(
 @router.get("/{org_id}/burnout-risk")
 def get_burnout_risk(
     org_id: str,
+    current_user: Person = Depends(get_current_user),
     db: Session = Depends(get_db),
     threshold: int = Query(4, description="Assignments per month threshold"),
 ):
     """Identify volunteers at risk of burnout (serving too frequently)."""
+    verify_org_member(current_user, org_id)
 
     one_month_ago = datetime.now() - timedelta(days=30)
 

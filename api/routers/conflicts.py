@@ -6,7 +6,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
 from api.database import get_db
-from api.dependencies import get_current_admin_user, verify_org_member
+from api.dependencies import get_current_admin_user, get_current_user, verify_org_member
 from api.models import (
     Assignment,
     Availability,
@@ -32,6 +32,7 @@ def check_time_overlap(start1: datetime, end1: datetime, start2: datetime, end2:
 @router.post("/check", response_model=ConflictCheckResponse)
 def check_conflicts(
     request: ConflictCheckRequest,
+    current_user: Person = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
     """Check for scheduling conflicts before assigning a person to an event.
@@ -50,6 +51,7 @@ def check_conflicts(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Person '{request.person_id}' not found",
         )
+    verify_org_member(current_user, person.org_id)
 
     # Verify event exists
     event = db.query(Event).filter(Event.id == request.event_id).first()

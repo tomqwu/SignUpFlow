@@ -1,9 +1,4 @@
 import pytest
-
-pytestmark = pytest.mark.skip(
-    reason="Usage/billing features disabled — focusing on core scheduling logic"
-)
-
 from unittest.mock import MagicMock
 
 from api.services.usage_service import UsageService

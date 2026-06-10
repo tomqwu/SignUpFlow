@@ -1,9 +1,4 @@
-"""Unit tests for NotificationService — DISABLED (notification features removed)."""
-import pytest
-
-pytestmark = pytest.mark.skip(
-    reason="Notification features disabled — focusing on core scheduling logic"
-)
+"""Unit tests for NotificationService."""
 
 from unittest.mock import Mock, patch
 

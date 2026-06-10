@@ -80,28 +80,41 @@ def mock_authentication(request):
     app.dependency_overrides[get_current_user] = override_get_user
 
     import api.dependencies
+    import api.routers.analytics
+    import api.routers.calendar
+    import api.routers.conflicts
     import api.routers.events
+    import api.routers.organizations
     import api.routers.people
+    import api.routers.solutions
     import api.routers.teams
 
     original_verify = api.dependencies.verify_org_member
     api.dependencies.verify_org_member = override_verify_org_member
-    api.routers.people.verify_org_member = override_verify_org_member
-    if hasattr(api.routers.events, "verify_org_member"):
-        api.routers.events.verify_org_member = override_verify_org_member
-    if hasattr(api.routers.teams, "verify_org_member"):
-        api.routers.teams.verify_org_member = override_verify_org_member
+
+    # Patch verify_org_member on every router module that imports it
+    _verify_modules = [
+        api.routers.people,
+        api.routers.events,
+        api.routers.teams,
+        api.routers.analytics,
+        api.routers.calendar,
+        api.routers.conflicts,
+        api.routers.organizations,
+        api.routers.solutions,
+    ]
+    for mod in _verify_modules:
+        if hasattr(mod, "verify_org_member"):
+            mod.verify_org_member = override_verify_org_member
 
     yield
 
     app.dependency_overrides.pop(get_current_admin_user, None)
     app.dependency_overrides.pop(get_current_user, None)
     api.dependencies.verify_org_member = original_verify
-    api.routers.people.verify_org_member = original_verify
-    if hasattr(api.routers.events, "verify_org_member"):
-        api.routers.events.verify_org_member = original_verify
-    if hasattr(api.routers.teams, "verify_org_member"):
-        api.routers.teams.verify_org_member = original_verify
+    for mod in _verify_modules:
+        if hasattr(mod, "verify_org_member"):
+            mod.verify_org_member = original_verify
 
 
 @pytest.fixture(scope="session", autouse=True)

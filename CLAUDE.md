@@ -18,16 +18,14 @@ When rules overlap, follow the more specific and safer one. Precedence:
 
 ## Project
 
-SignUpFlow is a headless volunteer scheduling and sign-up management API + CLI (churches, sports leagues, non-profits). It uses a greedy heuristic solver with constraint-based optimization to auto-generate fair schedules.
+SignUpFlow is a volunteer scheduling and sign-up management platform (churches, sports leagues, non-profits). It uses a greedy heuristic solver with constraint-based optimization to auto-generate fair schedules.
 
 - **Backend:** FastAPI + SQLAlchemy 2.0 + Pydantic 2.x (Python 3.11+)
+- **Web:** Jinja2 + HTMX server-rendered app (`web/`) — the primary user surface
 - **CLI:** YAML workspace in, JSON solution out (`api.cli.main`)
+- **Mobile:** Flutter app (`mobile/`) — volunteer + admin, with own CI lane
 - **Database:** SQLite (dev: `roster.db`), PostgreSQL (prod via Docker)
-- **Auth:** JWT (HS256, 24h expiry) + bcrypt password hashing
-
-### Disabled Features
-
-Billing (Stripe), email (SendGrid), SMS (Twilio), and notification routers are **not registered** in `api/main.py`. Their service files and models remain in the codebase but are inactive. Tests for these features are skipped via `pytestmark`.
+- **Auth:** JWT (HS256, 24h expiry) + bcrypt password hashing; cookie sessions for web
 
 ## Commands
 
@@ -50,26 +48,31 @@ make migrate              # Run Alembic migrations
 
 ## Architecture
 
-### Active API Routers (registered in `api/main.py`)
+### Active API Routers (23 registered in `api/main.py`)
 
 ```
-/api/v1/auth           — signup, login, refresh, email check
-/api/v1/organizations  — CRUD for organizations
-/api/v1/people         — CRUD for people, /me profile
-/api/v1/teams          — CRUD for teams + membership
-/api/v1/events         — CRUD for events + assignments
-/api/v1/constraints    — CRUD for scheduling constraints (DSL-based)
-/api/v1/solver         — POST /solve to generate schedules
-/api/v1/solutions      — list/view/stats, compare, publish/unpublish/rollback
-/api/v1/availability   — time-off / blocked dates
-/api/v1/conflicts      — conflict checking between person+event
-/api/v1/invitations    — create/verify/accept invitation tokens
-/api/v1/calendar       — ICS export of personal schedules
-/api/v1/analytics      — volunteer stats, event stats
-/api/v1/password-reset — request/confirm password reset
-/api/v1/notifications  — list / read / unread-count, email preferences (mobile Inbox)
-
-Bare `/api` is a 308 redirect to `/api/v1` for one release.
+/api/v1/auth              — signup, login, refresh, email check
+/api/v1/organizations     — CRUD + cancel/restore
+/api/v1/people            — CRUD, /me profile, bulk import
+/api/v1/teams             — CRUD + membership
+/api/v1/events            — CRUD + assignments
+/api/v1/constraints       — CRUD for scheduling constraints (DSL-based)
+/api/v1/solver            — POST /solve to generate schedules
+/api/v1/solutions         — list/view/stats, compare, publish/unpublish/rollback
+/api/v1/availability      — time-off / blocked dates / rrule
+/api/v1/conflicts         — conflict checking
+/api/v1/invitations       — create/verify/accept invitation tokens
+/api/v1/calendar          — ICS export + webcal subscription
+/api/v1/analytics         — volunteer stats, event stats
+/api/v1/password-reset    — request/confirm
+/api/v1/notifications     — inbox, email preferences
+/api/v1/billing           — Stripe subscriptions, usage, payment methods
+/api/v1/assignments       — swap requests
+/api/v1/recurring-events  — series generation + exceptions
+/api/v1/resources         — venues/rooms
+/api/v1/holidays          — holiday + long-weekend tracking
+/api/v1/audit             — audit log queries
+/api/sms                  — SMS preferences, broadcasting
 ```
 
 ### Key Files
@@ -87,16 +90,18 @@ api/core/constraints/    # Constraint DSL: eval.py (evaluator), predicates.py (b
 api/schemas/             # Pydantic request/response models per domain
 ```
 
-### Tests
+### Tests (~996 test functions across 147 files)
 
 ```
-tests/conftest.py              # Fixtures: auto-mocks auth for unit, real auth for integration
-tests/unit/                    # Fast, mocked auth
-tests/api/                     # Real HTTP + JWT against in-memory DB
-tests/cli/                     # Subprocess CLI: YAML in, JSON out
-tests/integration/             # Real DB tests
-tests/comprehensive_test_suite.py  # Full API workflow tests
-tests/setup_test_data.py       # Seed data for test DB
+tests/unit/                    # ~377 tests, fast, mocked auth
+tests/api/                     # ~306 tests, real JWT + in-memory DB (TestClient)
+tests/web/                     # ~217 tests, cookie session + HTMX partials
+tests/cli/                     # 16 tests, subprocess YAML→JSON
+tests/integration/             # ~33 tests, real uvicorn server
+tests/e2e/                     # ~29 tests, Playwright browser automation
+tests/contract/                # OpenAPI snapshot verification
+tests/security/                # Auth + tenancy isolation
+tests/performance/             # Load tests (marked @pytest.mark.slow)
 ```
 
 ## Key Patterns

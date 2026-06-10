@@ -105,12 +105,12 @@ class TestListExcludesCancelled:
         assert "list-cancelled" not in ids
 
     def test_include_cancelled_returns_them(self, client, db):
-        seed_org(client, "incl-active")
         seed_org(client, "incl-cancelled")
-        active_hdrs = _admin_for(client, "incl-active", "incl-active")
         cancelled_hdrs = _admin_for(client, "incl-cancelled", "incl-cancelled")
         client.post("/api/v1/organizations/incl-cancelled/cancel", headers=cancelled_hdrs)
 
-        resp = client.get("/api/v1/organizations/?include_cancelled=true", headers=active_hdrs)
+        resp = client.get(
+            "/api/v1/organizations/?include_cancelled=true", headers=cancelled_hdrs
+        )
         ids = [item["id"] for item in resp.json()["items"]]
         assert "incl-cancelled" in ids
