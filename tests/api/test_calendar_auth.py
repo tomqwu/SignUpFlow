@@ -5,6 +5,10 @@ Previously `/calendar/subscribe` and `/calendar/reset-token` accepted any
 authenticated user who is either the owner or an admin in the same org. A
 new admin-only `/calendar/{person_id}/admin-reset` endpoint forces a token
 reset on a different user. Both reset paths are audited.
+
+Follow-up: `/calendar/export?person_id=...` was also fully unauthenticated
+and leaked anyone's personal schedule as ICS. It now requires the same
+"self or admin in same org" rule as `/subscribe` and `/reset-token`.
 """
 
 import pytest
@@ -209,3 +213,90 @@ class TestAdminReset:
 
         resp = client.post(f"/api/v1/calendar/{b_id}/admin-reset", headers=a_hdrs)
         assert resp.status_code == 403
+
+
+@pytest.mark.no_mock_auth
+class TestExportAuth:
+    """Auth on `/calendar/export?person_id=...` — previously unauthenticated
+    PII leak: any caller could download anyone's schedule as ICS.
+
+    Reaching the "no assignments" 404 in the allowed cases proves auth passed
+    and code entered the body — we don't have to seed an assignment here.
+    """
+
+    def test_no_auth_rejected(self, client, db):
+        org_id = "cal-export-noauth"
+        seed_org(client, org_id)
+        admin_hdrs = _admin_for(client, org_id, "exp-noauth")
+        my_id = _person_id_for_email(client, admin_hdrs, "admin-exp-noauth@o.org")
+
+        resp = client.get(f"/api/v1/calendar/export?person_id={my_id}")
+        assert resp.status_code in (401, 403)
+
+    def test_volunteer_cannot_export_other(self, client, db):
+        org_id = "cal-export-vol"
+        seed_org(client, org_id)
+        _admin_for(client, org_id, "exp-vol-admin")
+        seed_user(
+            client,
+            org_id,
+            email="exp-v1@o.org",
+            name="ExpV1",
+            password="ExpV1Pass1!",
+            roles=["volunteer"],
+        )
+        seed_user(
+            client,
+            org_id,
+            email="exp-v2@o.org",
+            name="ExpV2",
+            password="ExpV2Pass1!",
+            roles=["volunteer"],
+        )
+        v1_hdrs = auth_headers(client, email="exp-v1@o.org", password="ExpV1Pass1!")
+        v2_hdrs = auth_headers(client, email="exp-v2@o.org", password="ExpV2Pass1!")
+        v2_id = _person_id_for_email(client, v2_hdrs, "exp-v2@o.org")
+
+        resp = client.get(f"/api/v1/calendar/export?person_id={v2_id}", headers=v1_hdrs)
+        assert resp.status_code == 403
+
+    def test_cross_org_admin_blocked(self, client, db):
+        seed_org(client, "cal-exp-a")
+        seed_org(client, "cal-exp-b")
+        a_hdrs = _admin_for(client, "cal-exp-a", "exp-x-a")
+        b_hdrs = _admin_for(client, "cal-exp-b", "exp-x-b")
+        b_id = _person_id_for_email(client, b_hdrs, "admin-exp-x-b@o.org")
+
+        resp = client.get(f"/api/v1/calendar/export?person_id={b_id}", headers=a_hdrs)
+        assert resp.status_code == 403
+
+    def test_self_reaches_body(self, client, db):
+        """No assignments yet → 404, but the 404 message proves we cleared auth."""
+        org_id = "cal-export-self"
+        seed_org(client, org_id)
+        hdrs = _admin_for(client, org_id, "exp-self")
+        my_id = _person_id_for_email(client, hdrs, "admin-exp-self@o.org")
+
+        resp = client.get(f"/api/v1/calendar/export?person_id={my_id}", headers=hdrs)
+        assert resp.status_code == 404, resp.text
+        assert "No assignments found" in resp.json()["detail"]
+
+    def test_admin_same_org_reaches_body(self, client, db):
+        """Admin pulling another user's schedule clears auth."""
+        org_id = "cal-export-admin-other"
+        seed_org(client, org_id)
+        admin_hdrs = _admin_for(client, org_id, "exp-admin-other-a")
+        seed_user(
+            client,
+            org_id,
+            email="exp-other@o.org",
+            name="ExpOther",
+            password="ExpOtherPass1!",
+            roles=["volunteer"],
+        )
+        other_hdrs = auth_headers(client, email="exp-other@o.org", password="ExpOtherPass1!")
+        other_id = _person_id_for_email(client, other_hdrs, "exp-other@o.org")
+
+        resp = client.get(f"/api/v1/calendar/export?person_id={other_id}", headers=admin_hdrs)
+        assert resp.status_code == 404, resp.text
+        assert "No assignments found" in resp.json()["detail"]

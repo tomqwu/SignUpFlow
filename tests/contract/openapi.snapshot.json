@@ -7769,7 +7769,7 @@
     },
     "/api/v1/calendar/export": {
       "get": {
-        "description": "Export personal schedule as ICS file.\n\nThis endpoint downloads an ICS file with all assigned events for a person.",
+        "description": "Export personal schedule as ICS file.\n\nThis endpoint downloads an ICS file with all assigned events for a person.\nCaller must be the target person or an admin in the same organization.",
         "operationId": "exportPersonalSchedule",
         "parameters": [
           {
@@ -7802,6 +7802,11 @@
             "description": "Validation Error"
           }
         },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
         "summary": "Export Personal Schedule",
         "tags": [
           "calendar"
