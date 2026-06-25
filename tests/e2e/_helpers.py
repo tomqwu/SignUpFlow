@@ -6,10 +6,28 @@ from __future__ import annotations
 
 import sqlite3
 import uuid
+from datetime import date, timedelta
 
 
 def rid() -> str:
     return uuid.uuid4().hex[:8]
+
+
+def next_sunday_iso() -> str:
+    """Return the ISO date of a Sunday at least 7 days from today.
+
+    The open-shift, swap, and decline-reopen flows seed a "Sunday 10am
+    Service" event and expect it to appear on `/v/open` (which filters
+    out past events). Hard-coded dates rot the suite as time passes —
+    this keeps the seed event safely in the future on every run.
+    """
+    today = date.today()
+    # weekday(): Monday=0 ... Sunday=6. Days until next Sunday after at
+    # least a 7-day cushion.
+    days_until_sunday = (6 - today.weekday()) % 7
+    if days_until_sunday < 7:
+        days_until_sunday += 7
+    return (today + timedelta(days=days_until_sunday)).isoformat()
 
 
 def signup_admin(
