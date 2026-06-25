@@ -302,10 +302,14 @@ class TestOrganizationExport:
         )
 
     def test_org_export_as_admin(self, client):
-        """Test organization export as admin."""
-        response = client.get(
-            f"{API_BASE}/calendar/org/export?org_id=org_export_test&person_id=admin_person_1"
-        )
+        """Test organization export as admin.
+
+        Auth is the mocked admin (org = `test_org`). The seeded events
+        under `org_export_test` are reachable only because the unit-tier
+        `verify_org_member` override is a no-op. The same-org check is
+        exercised by `tests/api/test_calendar_auth.py::TestOrgExportAuth`.
+        """
+        response = client.get(f"{API_BASE}/calendar/org/export?org_id=org_export_test")
 
         assert response.status_code == 200
         assert "text/calendar" in response.headers["content-type"]
@@ -314,20 +318,9 @@ class TestOrganizationExport:
         assert "BEGIN:VCALENDAR" in content
         assert "Team Meeting" in content
 
-    def test_org_export_as_volunteer_denied(self, client):
-        """Test organization export as volunteer is denied."""
-        response = client.get(
-            f"{API_BASE}/calendar/org/export?org_id=org_export_test&person_id=volunteer_person_1"
-        )
-
-        assert response.status_code == 403
-        assert "Admin privileges required" in response.json()["detail"]
-
     def test_org_export_nonexistent_org(self, client):
         """Test organization export for non-existent org."""
-        response = client.get(
-            f"{API_BASE}/calendar/org/export?org_id=nonexistent_org&person_id=admin_person_1"
-        )
+        response = client.get(f"{API_BASE}/calendar/org/export?org_id=nonexistent_org")
 
         assert response.status_code == 404
         assert "not found" in response.json()["detail"]
@@ -337,19 +330,7 @@ class TestOrganizationExport:
         # Create new org with no events
         client.post(f"{API_BASE}/organizations/", json={"id": "empty_org", "name": "Empty Org"})
 
-        client.post(
-            f"{API_BASE}/people/",
-            json={
-                "id": "empty_org_admin",
-                "org_id": "empty_org",
-                "name": "Empty Admin",
-                "roles": ["admin"],
-            },
-        )
-
-        response = client.get(
-            f"{API_BASE}/calendar/org/export?org_id=empty_org&person_id=empty_org_admin"
-        )
+        response = client.get(f"{API_BASE}/calendar/org/export?org_id=empty_org")
 
         assert response.status_code == 404
         assert "No events found" in response.json()["detail"]

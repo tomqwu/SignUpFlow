@@ -10,6 +10,7 @@ from api.dependencies import (
     check_admin_permission,
     get_current_admin_user,
     get_current_user,
+    verify_org_member,
 )
 from api.models import Assignment, AuditAction, Event, Organization, Person, Resource, Solution
 from api.utils.audit_logger import log_audit_event
@@ -299,14 +300,16 @@ def admin_reset_calendar_token(
 @router.get("/org/export")
 def export_organization_events(
     org_id: str,
-    person_id: str,  # For auth - must be admin
     include_assignments: bool = True,
+    current_admin: Person = Depends(get_current_admin_user),
     db: Session = Depends(get_db),
 ):
     """
     Export all organization events as ICS file (admin only).
 
-    This endpoint is for administrators to export all events in the organization.
+    Caller must be authenticated and an admin in `org_id`. The legacy
+    `person_id` query param used as an auth proxy has been removed — the
+    caller is now identified solely by their JWT.
     """
     # Verify organization exists
     org = db.query(Organization).filter(Organization.id == org_id).first()
@@ -316,20 +319,7 @@ def export_organization_events(
             detail=f"Organization '{org_id}' not found",
         )
 
-    # Verify person exists and is admin
-    person = db.query(Person).filter(Person.id == person_id).first()
-    if not person or person.org_id != org_id:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Access denied. Admin privileges required.",
-        )
-
-    # Check if person is admin
-    if not person.roles or "admin" not in person.roles:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Access denied. Admin privileges required.",
-        )
+    verify_org_member(current_admin, org_id)
 
     # Get all events for this organization
     events = db.query(Event).filter(Event.org_id == org_id).all()

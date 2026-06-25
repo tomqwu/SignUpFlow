@@ -80,6 +80,7 @@ def mock_authentication(request):
     app.dependency_overrides[get_current_user] = override_get_user
 
     import api.dependencies
+    import api.routers.calendar
     import api.routers.events
     import api.routers.people
     import api.routers.teams
@@ -91,6 +92,8 @@ def mock_authentication(request):
         api.routers.events.verify_org_member = override_verify_org_member
     if hasattr(api.routers.teams, "verify_org_member"):
         api.routers.teams.verify_org_member = override_verify_org_member
+    if hasattr(api.routers.calendar, "verify_org_member"):
+        api.routers.calendar.verify_org_member = override_verify_org_member
 
     yield
 
@@ -102,6 +105,8 @@ def mock_authentication(request):
         api.routers.events.verify_org_member = original_verify
     if hasattr(api.routers.teams, "verify_org_member"):
         api.routers.teams.verify_org_member = original_verify
+    if hasattr(api.routers.calendar, "verify_org_member"):
+        api.routers.calendar.verify_org_member = original_verify
 
 
 @pytest.fixture(scope="session", autouse=True)

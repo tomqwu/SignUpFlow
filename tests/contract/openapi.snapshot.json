@@ -7856,7 +7856,7 @@
     },
     "/api/v1/calendar/org/export": {
       "get": {
-        "description": "Export all organization events as ICS file (admin only).\n\nThis endpoint is for administrators to export all events in the organization.",
+        "description": "Export all organization events as ICS file (admin only).\n\nCaller must be authenticated and an admin in `org_id`. The legacy\n`person_id` query param used as an auth proxy has been removed \u2014 the\ncaller is now identified solely by their JWT.",
         "operationId": "exportOrganizationEvents",
         "parameters": [
           {
@@ -7865,15 +7865,6 @@
             "required": true,
             "schema": {
               "title": "Org Id",
-              "type": "string"
-            }
-          },
-          {
-            "in": "query",
-            "name": "person_id",
-            "required": true,
-            "schema": {
-              "title": "Person Id",
               "type": "string"
             }
           },
@@ -7908,6 +7899,11 @@
             "description": "Validation Error"
           }
         },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
         "summary": "Export Organization Events",
         "tags": [
           "calendar"
