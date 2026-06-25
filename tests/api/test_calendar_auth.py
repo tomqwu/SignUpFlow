@@ -300,3 +300,80 @@ class TestExportAuth:
         resp = client.get(f"/api/v1/calendar/export?person_id={other_id}", headers=admin_hdrs)
         assert resp.status_code == 404, resp.text
         assert "No assignments found" in resp.json()["detail"]
+
+
+@pytest.mark.no_mock_auth
+class TestOrgExportAuth:
+    """`/calendar/org/export` previously accepted a spoofable `person_id`
+    query param as the auth proxy: anyone who could guess an admin's id could
+    download the entire org's events. Auth is now JWT-only via
+    `Depends(get_current_admin_user)` + same-org check."""
+
+    def test_no_auth_rejected(self, client, db):
+        org_id = "cal-oe-noauth"
+        seed_org(client, org_id)
+
+        resp = client.get(f"/api/v1/calendar/org/export?org_id={org_id}")
+        assert resp.status_code in (401, 403)
+
+    def test_volunteer_in_same_org_rejected(self, client, db):
+        org_id = "cal-oe-vol"
+        seed_org(client, org_id)
+        _admin_for(client, org_id, "oe-vol-admin")
+        seed_user(
+            client,
+            org_id,
+            email="oev@o.org",
+            name="OEV",
+            password="OEVPass1!",
+            roles=["volunteer"],
+        )
+        v_hdrs = auth_headers(client, email="oev@o.org", password="OEVPass1!")
+
+        resp = client.get(f"/api/v1/calendar/org/export?org_id={org_id}", headers=v_hdrs)
+        assert resp.status_code == 403
+
+    def test_admin_cross_org_rejected(self, client, db):
+        seed_org(client, "cal-oe-cr-a")
+        seed_org(client, "cal-oe-cr-b")
+        a_hdrs = _admin_for(client, "cal-oe-cr-a", "oe-cr-a")
+        _admin_for(client, "cal-oe-cr-b", "oe-cr-b")
+
+        # Admin of org A asks to export org B's events.
+        resp = client.get("/api/v1/calendar/org/export?org_id=cal-oe-cr-b", headers=a_hdrs)
+        assert resp.status_code == 403
+
+    def test_admin_same_org_no_events_returns_404(self, client, db):
+        org_id = "cal-oe-empty"
+        seed_org(client, org_id)
+        a_hdrs = _admin_for(client, org_id, "oe-empty")
+
+        resp = client.get(f"/api/v1/calendar/org/export?org_id={org_id}", headers=a_hdrs)
+        # Same-org admin gets through auth; the empty-events 404 from the
+        # existing body logic is the next gate.
+        assert resp.status_code == 404
+        assert "No events" in resp.json()["detail"]
+
+    def test_spoofable_person_id_param_no_longer_grants_access(self, client, db):
+        """A volunteer cannot escalate by passing an admin's `person_id` in
+        the query string — the legacy spoof vector is gone."""
+        org_id = "cal-oe-spoof"
+        seed_org(client, org_id)
+        admin_hdrs = _admin_for(client, org_id, "oe-spoof-a")
+        admin_id = _person_id_for_email(client, admin_hdrs, "admin-oe-spoof-a@o.org")
+        seed_user(
+            client,
+            org_id,
+            email="oes@o.org",
+            name="OES",
+            password="OESPass1!",
+            roles=["volunteer"],
+        )
+        v_hdrs = auth_headers(client, email="oes@o.org", password="OESPass1!")
+
+        # Volunteer attempts to pass the admin's id as the legacy auth proxy.
+        resp = client.get(
+            f"/api/v1/calendar/org/export?org_id={org_id}&person_id={admin_id}",
+            headers=v_hdrs,
+        )
+        assert resp.status_code == 403
