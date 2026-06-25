@@ -66,6 +66,7 @@ def get_base_url(request: Request) -> str:
 @router.get("/export")
 def export_personal_schedule(
     person_id: str,
+    current_user: Person = Depends(get_current_user),
     db: Session = Depends(get_db),
     request: Request = None,
 ):
@@ -73,6 +74,7 @@ def export_personal_schedule(
     Export personal schedule as ICS file.
 
     This endpoint downloads an ICS file with all assigned events for a person.
+    Caller must be the target person or an admin in the same organization.
     """
     # Verify person exists
     person = db.query(Person).filter(Person.id == person_id).first()
@@ -81,6 +83,7 @@ def export_personal_schedule(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Person '{person_id}' not found",
         )
+    _ensure_self_or_same_org_admin(current_user, person)
 
     # Get all assignments for this person
     assignments = db.query(Assignment).filter(Assignment.person_id == person_id).all()
