@@ -4,7 +4,14 @@ from __future__ import annotations
 
 import pytest
 
-from tests.e2e._helpers import accept_invitation, invite_token, no_js_errors, rid, signup_admin
+from tests.e2e._helpers import (
+    accept_invitation,
+    invite_token,
+    next_sunday_iso,
+    no_js_errors,
+    rid,
+    signup_admin,
+)
 
 pytestmark = pytest.mark.e2e
 
@@ -36,7 +43,7 @@ def test_cover_a_swap_end_to_end(live_server, new_context, page, db_path):
     page.click("button:has-text('New event')")
     page.wait_for_selector("#ev_type", state="visible")
     page.fill("#ev_type", "Sunday 10am Service")
-    page.fill("#ev_date", "2026-06-07")
+    page.fill("#ev_date", next_sunday_iso())
     page.fill("#ev_start", "10:00")
     page.fill("#ev_end", "11:30")
     page.fill("input[name=role_name]", "volunteer")
