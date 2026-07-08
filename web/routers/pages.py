@@ -172,9 +172,7 @@ def _open_shifts(db: Session, person: Person) -> list[dict]:
                 {
                     "event_id": e.id,
                     "event_type": e.type,
-                    "when": e.start_time.strftime("%a %d %b %Y · %H:%M")
-                    if e.start_time
-                    else "",
+                    "when": e.start_time.strftime("%a %d %b %Y · %H:%M") if e.start_time else "",
                     "roles": roles,
                 }
             )
@@ -463,20 +461,26 @@ def volunteer_profile(
     )
 
 
-def _dashboard_kpis(db: Session, org_id: str) -> dict:
+def _dashboard_kpis(db: Session, person: Person) -> dict:
     """Roll the three analytics endpoints into the dashboard tiles.
-    All three return graceful zeros for an empty org."""
+    All three return graceful zeros for an empty org.
+
+    Direct in-process call: the API endpoints require an admin Person
+    (Sprint 4 PR 4.5d). Pass the caller's session admin so
+    `verify_org_member` still runs.
+    """
     from api.routers.analytics import (
         get_burnout_risk,
         get_schedule_health,
         get_volunteer_stats,
     )
 
+    org_id = person.org_id
     # Pass the Query-defaulted args explicitly: a direct (non-FastAPI)
     # call doesn't resolve Query(...) sentinels to their defaults.
-    vs = get_volunteer_stats(org_id, db, days=30)
-    sh = get_schedule_health(org_id, db)
-    br = get_burnout_risk(org_id, db, threshold=4)
+    vs = get_volunteer_stats(org_id, days=30, current_admin=person, db=db)
+    sh = get_schedule_health(org_id, current_admin=person, db=db)
+    br = get_burnout_risk(org_id, threshold=4, current_admin=person, db=db)
     latest = sh.get("latest_solution")
     return {
         "active_volunteers": vs["active_volunteers"],
@@ -504,7 +508,7 @@ def admin_dashboard(
         {
             "person": person,
             "active_tab": "dashboard",
-            "kpis": _dashboard_kpis(db, person.org_id),
+            "kpis": _dashboard_kpis(db, person),
             "ob": _onboarding_state(db, person),
         },
     )
@@ -823,18 +827,25 @@ def admin_teams(
     )
 
 
-def _analytics(db: Session, org_id: str, days: int, threshold: int) -> dict:
+def _analytics(db: Session, person: Person, days: int, threshold: int) -> dict:
     """Deep analytics — the three API endpoints with explicit args
-    (their Query() defaults don't resolve on a direct call)."""
+    (their Query() defaults don't resolve on a direct call).
+
+    Direct in-process call: the API endpoints require an admin Person
+    (Sprint 4 PR 4.5d), and the caller here (`admin_analytics`) already
+    holds one via `get_session_admin`. Pass it as `current_admin` so the
+    endpoints' `verify_org_member` still runs.
+    """
     from api.routers.analytics import (
         get_burnout_risk,
         get_schedule_health,
         get_volunteer_stats,
     )
 
-    vs = get_volunteer_stats(org_id, db, days=days)
-    sh = get_schedule_health(org_id, db)
-    br = get_burnout_risk(org_id, db, threshold=threshold)
+    org_id = person.org_id
+    vs = get_volunteer_stats(org_id, days=days, current_admin=person, db=db)
+    sh = get_schedule_health(org_id, current_admin=person, db=db)
+    br = get_burnout_risk(org_id, threshold=threshold, current_admin=person, db=db)
     return {"days": days, "threshold": threshold, "participation": vs, "health": sh, "burnout": br}
 
 
@@ -856,7 +867,7 @@ def admin_analytics(
         {
             "person": person,
             "active_tab": "dashboard",
-            "a": _analytics(db, person.org_id, days, threshold),
+            "a": _analytics(db, person, days, threshold),
         },
     )
 

@@ -5513,7 +5513,7 @@
     },
     "/api/v1/analytics/{org_id}/burnout-risk": {
       "get": {
-        "description": "Identify volunteers at risk of burnout (serving too frequently).",
+        "description": "Identify volunteers at risk of burnout (serving too frequently).\n\nAdmin-only within `org_id`. This endpoint returns other volunteers'\nnames and emails, so peer volunteers can never read it.",
         "operationId": "getBurnoutRisk",
         "parameters": [
           {
@@ -5558,6 +5558,11 @@
             "description": "Validation Error"
           }
         },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
         "summary": "Get Burnout Risk",
         "tags": [
           "analytics"
@@ -5566,7 +5571,7 @@
     },
     "/api/v1/analytics/{org_id}/schedule-health": {
       "get": {
-        "description": "Get schedule health metrics.",
+        "description": "Get schedule health metrics.\n\nAdmin-only within `org_id`.",
         "operationId": "getScheduleHealth",
         "parameters": [
           {
@@ -5599,6 +5604,11 @@
             "description": "Validation Error"
           }
         },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
         "summary": "Get Schedule Health",
         "tags": [
           "analytics"
@@ -5607,7 +5617,7 @@
     },
     "/api/v1/analytics/{org_id}/volunteer-stats": {
       "get": {
-        "description": "Get volunteer participation statistics.",
+        "description": "Get volunteer participation statistics.\n\nAdmin-only within `org_id`. The caller must be an authenticated admin\nwhose own org matches the requested one.",
         "operationId": "getVolunteerStats",
         "parameters": [
           {
@@ -5652,6 +5662,11 @@
             "description": "Validation Error"
           }
         },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
         "summary": "Get Volunteer Stats",
         "tags": [
           "analytics"
