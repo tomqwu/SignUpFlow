@@ -30,6 +30,23 @@ def next_sunday_iso() -> str:
     return (today + timedelta(days=days_until_sunday)).isoformat()
 
 
+def solver_window_around(seed_iso: str) -> tuple[str, str]:
+    """Return (from_date, to_date) ISO strings that safely bracket a seed
+    event date for `/a/solver`.
+
+    Flows that seed an event with `next_sunday_iso()` then run the solver
+    over a window must pick from/to dates that comfortably contain the
+    seed. Fixed literal windows (e.g. from=2026-05-19, to=2026-06-30)
+    rot as time passes and drop the seed event outside the window. This
+    helper returns a 3-week-before / 3-week-after bracket around the
+    seed, mirroring the pattern the sweep replaces.
+    """
+    seed = date.fromisoformat(seed_iso)
+    from_date = (seed - timedelta(days=21)).isoformat()
+    to_date = (seed + timedelta(days=21)).isoformat()
+    return from_date, to_date
+
+
 def signup_admin(
     page, base_url, *, org="Hope Chapel", name="Admin Dana", email=None, password="HopePass123!"
 ):
