@@ -7,9 +7,20 @@ from __future__ import annotations
 
 import pytest
 
-from tests.e2e._helpers import accept_invitation, invite_token, no_js_errors, rid, signup_admin
+from tests.e2e._helpers import (
+    accept_invitation,
+    invite_token,
+    next_sunday_iso,
+    no_js_errors,
+    rid,
+    signup_admin,
+    solver_window_around,
+)
 
 pytestmark = pytest.mark.e2e
+
+EV_DATE = next_sunday_iso()
+FROM_DATE, TO_DATE = solver_window_around(EV_DATE)
 
 
 def _new_event(page, base, etype):
@@ -17,7 +28,7 @@ def _new_event(page, base, etype):
     page.click("button:has-text('New event')")
     page.wait_for_selector("#ev_type", state="visible")
     page.fill("#ev_type", etype)
-    page.fill("#ev_date", "2026-06-07")
+    page.fill("#ev_date", EV_DATE)
     page.fill("#ev_start", "10:00")
     page.fill("#ev_end", "11:30")
     page.fill("input[name=role_name]", "volunteer")
@@ -28,8 +39,8 @@ def _new_event(page, base, etype):
 
 def _solve_and_publish(page, base):
     page.goto(f"{base}/a/solver")
-    page.fill("#from_date", "2026-05-19")
-    page.fill("#to_date", "2026-06-30")
+    page.fill("#from_date", FROM_DATE)
+    page.fill("#to_date", TO_DATE)
     page.click("button:has-text('Run solver')")
     page.wait_for_selector("#solver-result:has-text('Review solution')")
     page.click("a:has-text('Review solution')")
