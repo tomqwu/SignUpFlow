@@ -14,7 +14,7 @@ jobs:
   review:
     name: codex-pr-review-gate
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 10
     permissions:
       contents: read
       pull-requests: write
@@ -30,6 +30,7 @@ jobs:
           github-token: ${{ github.token }}
           script: |
             let failure = 'Ollama review configuration is invalid.';
+            let requestSignal;
             try {
               const key = process.env.OLLAMA_API_KEY?.trim();
               if (!key) {
@@ -79,11 +80,12 @@ jobs:
                 'Keep summary under 3000 characters, each detail under 3000, and findings under 50.'
               ].join('\n');
               failure = 'Ollama network request failed or timed out before a response. Check endpoint connectivity; review is blocked.';
+              requestSignal = AbortSignal.timeout(480000);
               const response = await fetch(endpoint.href, {
-                method: 'POST', redirect: 'error', signal: AbortSignal.timeout(120000),
+                method: 'POST', redirect: 'error', signal: requestSignal,
                 headers: {Authorization: `Bearer ${key}`, 'Content-Type': 'application/json'},
                 // Cloud does not support format/schema enforcement; validate returned JSON ourselves.
-                body: JSON.stringify({model, stream: false, messages: [
+                body: JSON.stringify({model, stream: true, messages: [
                   {role: 'system', content: prompt}, {role: 'user', content: input}]})
               });
               if (!response.ok) {
@@ -102,12 +104,38 @@ jobs:
                 failure = `Ollama returned HTTP ${response.status}. ${hint} Review is blocked.`;
                 throw new Error();
               }
+              core.info(`Ollama returned HTTP ${response.status}; reading the review stream.`);
               failure = 'Ollama returned an incomplete or invalid review. No approval was recorded.';
-              const data = await response.json();
-              if (data.error || data.done !== true || data.done_reason !== 'stop' ||
-                  data.message?.role !== 'assistant' || data.message?.tool_calls?.length ||
-                  typeof data.message?.content !== 'string' || data.message.content.length > 30000) throw new Error();
-              const report = JSON.parse(data.message.content);
+              const decoder = new TextDecoder('utf-8', {fatal: true});
+              let pending = '', content = '', receivedBytes = 0, done = false;
+              const consume = line => {
+                if (!line.trim()) return;
+                if (done) throw new Error();
+                const part = JSON.parse(line);
+                if (!part || part.error || typeof part.done !== 'boolean' ||
+                    part.message?.role !== 'assistant' || part.message?.tool_calls?.length ||
+                    (part.message.content !== undefined && typeof part.message.content !== 'string')) throw new Error();
+                // Ignore reasoning text; only final-answer content can become a review report.
+                content += part.message.content || '';
+                if (content.length > 30000) throw new Error();
+                if (part.done) {
+                  if (part.done_reason !== 'stop') throw new Error();
+                  done = true;
+                }
+              };
+              for await (const bytes of response.body) {
+                receivedBytes += bytes.byteLength;
+                if (receivedBytes > 2000000) throw new Error();
+                pending += decoder.decode(bytes, {stream: true});
+                let newline;
+                while ((newline = pending.indexOf('\n')) >= 0) {
+                  consume(pending.slice(0, newline));
+                  pending = pending.slice(newline + 1);
+                }
+              }
+              consume(pending + decoder.decode());
+              if (!done || !content) throw new Error();
+              const report = JSON.parse(content);
               const text = value => typeof value === 'string' && value.trim() && value.length <= 3000;
               const paths = new Set(files.map(file => file.filename));
               if (!report || !['SAFE TO MERGE', 'NEEDS FIX', 'NEEDS DISCUSSION'].includes(report.verdict) ||
@@ -132,5 +160,6 @@ jobs:
               if (report.verdict !== 'SAFE TO MERGE') core.setFailed(`AI review: ${report.verdict}`);
             } catch {
               // Never print provider error bodies, headers, credentials, or private transport errors.
+              if (requestSignal?.aborted) failure = 'Ollama review exceeded the 480-second deadline. Review is blocked; no approval was recorded.';
               core.setFailed(failure);
             }

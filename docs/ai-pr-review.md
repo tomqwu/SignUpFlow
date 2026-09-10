@@ -37,7 +37,14 @@ the [model library](https://ollama.com/library/glm-5.3-flash) uses the separate
 - Post validated feedback as inert JSON text, not a GitHub approval. P0/P1 findings fail even if the model claims a safe verdict.
 - Fail on missing credentials, provider errors, timeouts, incomplete output, malformed reports, stale commits, or unsuccessful feedback publication. Never silently skip review or convert an error to success.
 
-Limit requests to 400,000 UTF-8 bytes of PR metadata/patches and 120 seconds.
+Limit requests to 400,000 UTF-8 bytes of PR metadata/patches and 480 seconds.
+Read Ollama's newline-delimited JSON stream within a 10-minute job limit.
+Bound the response stream to 2,000,000 bytes and final-answer content to 30,000
+characters. Discard reasoning text without logging it; require a complete stream
+ending in `done: true` with `done_reason: stop` before validating the report.
+Streaming allows long reasoning-model responses without waiting for a single
+buffered response under the former two-minute deadline. Keep the requested
+model and its default reasoning behavior; do not substitute a model to pass review.
 Fail on missing patches (including binary-only changes), patch line-count
 mismatches, and incomplete GitHub file listings. Split oversized PRs or obtain
 independent review through the repository's approved process; do not bypass a
@@ -56,6 +63,8 @@ Check the API key for 401, account/model access for 403, endpoint/model configur
 for 404, and quota/rate limits for 429. Server errors suggest checking the provider
 service. These are troubleshooting hints, not a diagnosis of the provider's cause.
 Network/timeout failures before a response do not report an HTTP status.
+Log the HTTP status when response headers arrive. Report expiration of the
+480-second request deadline separately from HTTP authentication failures.
 Never log provider response bodies, status text, headers, or transport exception
 messages. Correct the configuration or provider issue and rerun the failed job;
 do not bypass the review gate.

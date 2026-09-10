@@ -17,7 +17,10 @@ def run_review(**case):
 const fs = require('node:fs');
 const input = JSON.parse(fs.readFileSync(0, 'utf8'));
 const c = input.case;
-const calls = {requests: [], comments: [], failures: [], outputs: {}};
+const calls = {requests: [], comments: [], failures: [], outputs: {}, info: [], timeouts: []};
+const AbortSignal = {timeout: ms => {
+  calls.timeouts.push(ms); return {aborted: Boolean(c.timeout_error)};
+}};
 process.env.OLLAMA_API_KEY = c.missing_key ? '' : 'test-only-key';
 process.env.OLLAMA_ENDPOINT = c.endpoint || 'https://ollama.com/api/chat';
 process.env.OLLAMA_MODEL = c.model || 'glm-5.3-flash';
@@ -36,11 +39,23 @@ const github = {rest:{pulls:{
 paginate: async () => c.files || [{filename:'api/example.py', additions:1, deletions:1,
   patch:'@@ -1 +1 @@\n-old\n+new'}]};
 const core = {setFailed: msg => calls.failures.push(msg),
+  info: msg => calls.info.push(msg),
   setOutput:(key,value)=>calls.outputs[key]=value};
 const fetch = async (url, options) => {
   calls.requests.push({url, ...options, body:JSON.parse(options.body)});
   if (c.network_error) throw new Error('private backend error test-only-key');
+  if (c.timeout_error) throw new Error('private timeout test-only-key');
+  const response = c.response || {done:true, done_reason:'stop', message:{
+    role:'assistant', content: c.content || JSON.stringify({
+      verdict:'SAFE TO MERGE', summary:'No blocking findings.', findings:[]})}};
+  const wire = Buffer.from(c.wire ?? (c.packets || [response]).map(JSON.stringify).join('\n'));
   return {ok: c.http_ok !== false, status: c.status || (c.http_ok === false ? 401 : 200),
+    body: (async function* () {
+      if (c.body_error) throw new Error('private stream error test-only-key');
+      for (let offset = 0; offset < wire.length; offset += (c.chunk_size || wire.length)) {
+        yield wire.subarray(offset, offset + (c.chunk_size || wire.length));
+      }
+    })(),
     statusText: 'private provider error test-only-key',
     text: async () => {throw new Error('Never read provider error bodies test-only-key');},
     json: async () => c.response || {done:true, done_reason:'stop', message:{
@@ -49,7 +64,8 @@ const fetch = async (url, options) => {
 };
 const AsyncFunction = Object.getPrototypeOf(async function(){}).constructor;
 (async()=>{
-  try {await new AsyncFunction('github','context','core','fetch',input.script)(github,context,core,fetch);}
+  try {await new AsyncFunction('github','context','core','fetch','AbortSignal',input.script)(
+    github,context,core,fetch,AbortSignal);}
   catch(e) {calls.failures.push(String(e));}
   process.stdout.write(JSON.stringify(calls));
 })();
@@ -72,11 +88,68 @@ def test_cloud_review_uses_requested_model_and_posts_head_bound_feedback():
     assert request["url"] == "https://ollama.com/api/chat"
     assert request["headers"]["Authorization"] == "Bearer test-only-key"
     assert request["body"]["model"] == "glm-5.3-flash"
-    assert request["body"]["stream"] is False
+    assert request["body"]["stream"] is True
+    assert result["timeouts"] == [480000]
     assert "format" not in request["body"]  # Ollama Cloud does not support structured outputs.
     assert request["redirect"] == "error"
     assert "abc" in result["comments"][0]["body"]
     assert "test-only-key" not in result["comments"][0]["body"]
+
+
+def test_stream_reassembles_split_utf8_and_discards_thinking():
+    report = json.dumps(
+        {"verdict": "SAFE TO MERGE", "summary": "Reviewed \u2713", "findings": []},
+        ensure_ascii=False,
+    )
+    packets = [
+        {"done": False, "message": {"role": "assistant", "thinking": "private test-only-key"}},
+        {"done": False, "message": {"role": "assistant", "content": report[:20]}},
+        {
+            "done": True,
+            "done_reason": "stop",
+            "message": {"role": "assistant", "content": report[20:]},
+        },
+    ]
+    result = run_review(
+        wire="\n".join(json.dumps(p, ensure_ascii=False) for p in packets), chunk_size=1
+    )
+    assert result["failures"] == []
+    assert "Reviewed" in result["comments"][0]["body"]
+    assert "private" not in json.dumps(result["comments"] + result["info"])
+    assert "HTTP 200" in result["info"][0]
+
+
+@pytest.mark.parametrize(
+    "case",
+    [
+        {"body_error": True},
+        {"wire": "not JSON"},
+        {"wire": " " * 2000001},
+        {"wire": '{"error":"private test-only-key"}'},
+        {"packets": []},
+        {"packets": [{"done": False, "message": {"role": "assistant", "content": "{}"}}]},
+        {
+            "packets": [
+                {"done": True, "done_reason": "stop", "message": {"role": "assistant"}},
+                {"done": False, "message": {"role": "assistant", "content": "{}"}},
+            ]
+        },
+        {"packets": [{"done": False, "message": {"role": "assistant", "content": "x" * 30001}}]},
+    ],
+)
+def test_invalid_or_incomplete_stream_never_approves(case):
+    result = run_review(**case)
+    assert result["failures"]
+    assert result["comments"] == []
+    assert "test-only-key" not in json.dumps(result["failures"] + result["info"])
+
+
+def test_timeout_is_reported_separately_from_authentication_failure():
+    result = run_review(timeout_error=True)
+    assert "480-second" in result["failures"][0]
+    assert "HTTP 401" not in result["failures"][0]
+    assert "test-only-key" not in result["failures"][0]
+    assert result["comments"] == []
 
 
 @pytest.mark.parametrize(
