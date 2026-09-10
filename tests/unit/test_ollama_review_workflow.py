@@ -40,7 +40,9 @@ const core = {setFailed: msg => calls.failures.push(msg),
 const fetch = async (url, options) => {
   calls.requests.push({url, ...options, body:JSON.parse(options.body)});
   if (c.network_error) throw new Error('private backend error test-only-key');
-  return {ok: c.http_ok !== false, status: c.http_ok === false ? 401 : 200,
+  return {ok: c.http_ok !== false, status: c.status || (c.http_ok === false ? 401 : 200),
+    statusText: 'private provider error test-only-key',
+    text: async () => {throw new Error('Never read provider error bodies test-only-key');},
     json: async () => c.response || {done:true, done_reason:'stop', message:{
       role:'assistant', content: c.content || JSON.stringify({
         verdict:'SAFE TO MERGE', summary:'No blocking findings.', findings:[]})}}};
@@ -108,6 +110,42 @@ def test_review_fails_closed_without_approval(case):
     assert result["failures"]
     assert result["comments"] == []
     assert "test-only-key" not in json.dumps(result["failures"])
+
+
+@pytest.mark.parametrize(
+    ("status", "hint"),
+    [
+        (400, "request configuration"),
+        (401, "API key"),
+        (403, "account access"),
+        (404, "endpoint and model"),
+        (413, "smaller PR"),
+        (429, "quota or rate limit"),
+        (500, "provider service"),
+        (503, "provider service"),
+        (418, "provider configuration"),
+    ],
+)
+def test_http_failures_report_only_status_and_static_guidance(status, hint):
+    result = run_review(http_ok=False, status=status)
+    assert len(result["failures"]) == 1
+    failure = result["failures"][0]
+    assert f"HTTP {status}" in failure
+    assert hint in failure
+    assert "test-only-key" not in failure
+    assert "private" not in failure
+    assert result["comments"] == []
+
+
+def test_network_failures_do_not_claim_an_http_status_or_leak_transport_errors():
+    result = run_review(network_error=True)
+    assert len(result["failures"]) == 1
+    failure = result["failures"][0]
+    assert "network" in failure
+    assert "HTTP" not in failure
+    assert "test-only-key" not in failure
+    assert "private" not in failure
+    assert result["comments"] == []
 
 
 @pytest.mark.parametrize("verdict", ["NEEDS FIX", "NEEDS DISCUSSION"])

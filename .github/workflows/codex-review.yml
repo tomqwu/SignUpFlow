@@ -78,7 +78,7 @@ jobs:
                 'P0/P1 findings must produce NEEDS FIX. P2/P3 findings are nonblocking.',
                 'Keep summary under 3000 characters, each detail under 3000, and findings under 50.'
               ].join('\n');
-              failure = 'Ollama request failed or timed out. Check the API key, endpoint, model and quota; review is blocked.';
+              failure = 'Ollama network request failed or timed out before a response. Check endpoint connectivity; review is blocked.';
               const response = await fetch(endpoint.href, {
                 method: 'POST', redirect: 'error', signal: AbortSignal.timeout(120000),
                 headers: {Authorization: `Bearer ${key}`, 'Content-Type': 'application/json'},
@@ -86,7 +86,22 @@ jobs:
                 body: JSON.stringify({model, stream: false, messages: [
                   {role: 'system', content: prompt}, {role: 'user', content: input}]})
               });
-              if (!response.ok) throw new Error();
+              if (!response.ok) {
+                // Log only the numeric status and fixed guidance, never provider-controlled text.
+                const hints = {
+                  400: 'Check request configuration and model support.',
+                  401: 'Check the OLLAMA_API_KEY secret contains a valid Ollama API key.',
+                  403: 'Check Ollama account access and model permissions.',
+                  404: 'Check the configured endpoint and model name.',
+                  413: 'Split the diff into a smaller PR.',
+                  429: 'Check Ollama quota or rate limit before retrying.'
+                };
+                const hint = hints[response.status] || (response.status >= 500
+                  ? 'Check the Ollama provider service before retrying.'
+                  : 'Check Ollama provider configuration before retrying.');
+                failure = `Ollama returned HTTP ${response.status}. ${hint} Review is blocked.`;
+                throw new Error();
+              }
               failure = 'Ollama returned an incomplete or invalid review. No approval was recorded.';
               const data = await response.json();
               if (data.error || data.done !== true || data.done_reason !== 'stop' ||

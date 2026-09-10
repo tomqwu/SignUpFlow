@@ -49,6 +49,17 @@ An LLM verdict is fallible and does not prove production readiness. Keep CI,
 human review where required, and GitHub mergeability as separate requirements.
 Reviewer agents must never merge. Builder agents must not bypass protection.
 
+## Request Diagnostics
+
+Failed HTTP requests report the numeric status with fixed troubleshooting guidance.
+Check the API key for 401, account/model access for 403, endpoint/model configuration
+for 404, and quota/rate limits for 429. Server errors suggest checking the provider
+service. These are troubleshooting hints, not a diagnosis of the provider's cause.
+Network/timeout failures before a response do not report an HTTP status.
+Never log provider response bodies, status text, headers, or transport exception
+messages. Correct the configuration or provider issue and rerun the failed job;
+do not bypass the review gate.
+
 ## Rollout And Validation
 
 1. Add the workflow conversion in a PR and configure the Ollama secret separately.
