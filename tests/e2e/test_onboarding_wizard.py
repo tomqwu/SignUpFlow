@@ -27,6 +27,25 @@ def _progress(page, base, text):
     page.wait_for_selector(f"#onboarding-progress:has-text('{text}')")
 
 
+def _assert_responsive_step_layout(page):
+    first_step = page.locator(".ob-step").first
+    content = first_step.locator(".row-main")
+    action = first_step.locator(".btn")
+
+    content_box = content.bounding_box()
+    action_box = action.bounding_box()
+    assert content_box is not None and action_box is not None
+    assert content_box["width"] >= 160
+    assert action_box["x"] >= content_box["x"] + content_box["width"]
+
+    page.set_viewport_size({"width": 360, "height": 800})
+    content_box = content.bounding_box()
+    action_box = action.bounding_box()
+    assert content_box is not None and action_box is not None
+    assert action_box["y"] >= content_box["y"] + content_box["height"]
+    assert action_box["width"] >= content_box["width"] - 1
+
+
 def test_fresh_admin_completes_wizard(live_server, new_context, page, db_path):
     base = live_server
     vol_email = f"vol+{rid()}@hope.e2e"
@@ -35,6 +54,8 @@ def test_fresh_admin_completes_wizard(live_server, new_context, page, db_path):
 
     # Fresh org — nothing done yet.
     _progress(page, base, "0 of 4 done")
+    _assert_responsive_step_layout(page)
+    page.set_viewport_size({"width": 430, "height": 932})
 
     # 1) Invite a teammate.
     page.goto(f"{base}/a/people")

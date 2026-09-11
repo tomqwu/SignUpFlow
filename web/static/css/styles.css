@@ -164,6 +164,21 @@ a { color: var(--accent); text-decoration: none; }
 }
 .group .row:last-child { border-bottom: 0; }
 
+/* Onboarding rows pair flexible copy with a compact action. The global button
+   width is useful for forms, but would otherwise collapse the copy column. */
+.ob-step > .btn {
+  width: auto;
+  flex: 0 0 auto;
+  white-space: nowrap;
+}
+@media (max-width: 380px) {
+  .ob-step {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .ob-step > .btn { width: 100%; }
+}
+
 /* ─── Chips ─────────────────────────────────────────────────────────── */
 .time-chip {
   display: inline-block;
