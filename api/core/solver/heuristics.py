@@ -33,7 +33,7 @@ class GreedyHeuristicSolver(SolverAdapter):
         self.change_min_enabled: bool = False
         self.change_min_weight: int = 100
         # Loose match (event_id, person_id) — see specs/020-solver-quality-changemin.
-        # Solver writes Assignment.role=NULL so a role-strict match would never hit.
+        # Match legacy published assignments too, which may have no saved role.
         self._prior_published_keys: set[tuple[str, str]] = set()
 
     def build_model(self, context: SolveContext) -> None:
@@ -175,7 +175,7 @@ class GreedyHeuristicSolver(SolverAdapter):
         # Assign people to roles. Re-binds the name declared above; the
         # no-required-roles branch always returns before reaching here.
         assignees = []
-        people_map = {p.id: p for p in self.context.people}
+        assigned_roles: dict[str, str] = {}
 
         for req_role in required_roles:
             candidates = [p for p in self.context.people if req_role.role in p.roles]
@@ -185,6 +185,11 @@ class GreedyHeuristicSolver(SolverAdapter):
             for person in candidates:
                 if person.id in assignees:
                     continue  # Already assigned to this event
+                if any(
+                    event.start < prior.end and event.end > prior.start
+                    for prior in person_events.get(person.id, [])
+                ):
+                    continue
 
                 # Skip if person is on vacation/time-off covering the event date.
                 # Vacation periods are inclusive on both ends.
@@ -234,10 +239,11 @@ class GreedyHeuristicSolver(SolverAdapter):
             scored.sort(key=lambda x: x[0])
             for i in range(min(req_role.count, len(scored))):
                 assignees.append(scored[i][1].id)
+                assigned_roles[scored[i][1].id] = req_role.role
 
         # Check if we met role requirements
         for req_role in required_roles:
-            count = sum(1 for pid in assignees if req_role.role in people_map[pid].roles)
+            count = sum(1 for role in assigned_roles.values() if role == req_role.role)
             if count < req_role.count:
                 violations.hard.append(
                     Violation(
@@ -251,6 +257,7 @@ class GreedyHeuristicSolver(SolverAdapter):
         return Assignment(
             event_id=event.id,
             assignees=assignees,
+            assigned_roles=assigned_roles,
             resource_id=event.resource_id,
             team_ids=event.team_ids,
         )

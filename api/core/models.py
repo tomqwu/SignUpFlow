@@ -163,6 +163,7 @@ class Assignment(BaseModel):
 
     event_id: str
     assignees: list[str]
+    assigned_roles: dict[str, str] = Field(default_factory=dict)
     resource_id: str | None = None
     team_ids: list[str] = Field(default_factory=list)
 

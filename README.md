@@ -370,6 +370,10 @@ Billing (Stripe), email (SendGrid), SMS (Twilio), and notification routers are n
 
 ## Testing
 
+Use the [church and basketball operational playbooks](docs/playbooks/README.md)
+for six-week acceptance scenarios, reproducible API/browser tests, and explicit
+manual release checks.
+
 ### Test Pyramid: 413 tests
 
 ```bash

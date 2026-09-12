@@ -317,6 +317,7 @@ def solve_schedule(
                 solution_id=db_solution.id,
                 event_id=assignment.event_id,
                 person_id=person_id,
+                role=assignment.assigned_roles.get(person_id),
             )
             db.add(db_assignment)
             db.flush()  # Flush to get assignment ID

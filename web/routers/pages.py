@@ -20,6 +20,7 @@ from api.models import (
     Team,
     TeamMember,
 )
+from api.services.assignment_visibility import member_visible_assignment
 from web.deps import get_session_admin, get_session_user
 
 router = APIRouter(tags=["web-pages"])
@@ -50,6 +51,7 @@ def _my_schedule_rows(db: Session, person: Person) -> list[dict]:
         .filter(
             Assignment.person_id == person.id,
             Event.org_id == person.org_id,
+            member_visible_assignment(person.org_id),
         )
         .order_by(Event.start_time.asc())
         .all()
@@ -66,6 +68,7 @@ def _my_assignment(db: Session, person: Person, aid: int) -> dict | None:
             Assignment.id == aid,
             Assignment.person_id == person.id,
             Event.org_id == person.org_id,
+            member_visible_assignment(person.org_id),
         )
         .first()
     )
