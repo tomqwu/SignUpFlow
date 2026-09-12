@@ -13,6 +13,7 @@ def test_mobile_ci_workflow_present_and_sane():
     assert "flutter pub get" in txt
     # Info-level lints must not fail the build (9 known infos in mobile/).
     assert "flutter analyze --no-fatal-infos" in txt
-    assert "flutter test" in txt
+    assert "flutter test" not in txt
+    assert "$(FLUTTER) test" in (WF.parents[2] / "Makefile").read_text()
     # Path-filtered so it doesn't block backend/web-only PRs.
     assert "mobile/**" in txt

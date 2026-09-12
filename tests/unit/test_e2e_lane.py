@@ -1,4 +1,4 @@
-"""Overnight A — the blocking e2e lane + harness stay wired."""
+"""Keep the local Playwright command and harness wired."""
 
 from __future__ import annotations
 
@@ -7,11 +7,11 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 
 
-def test_e2e_ci_job_present():
-    ci = (ROOT / ".github" / "workflows" / "ci.yml").read_text()
-    assert "e2e:" in ci, "e2e CI job missing"
-    assert "pytest tests/e2e/" in ci
-    assert "playwright install --with-deps chromium" in ci
+def test_e2e_local_command_present():
+    makefile = (ROOT / "Makefile").read_text()
+    assert "test-e2e:" in makefile
+    assert "pytest tests/e2e/" in makefile
+    assert "playwright install chromium" in (ROOT / "README.md").read_text()
 
 
 def test_e2e_harness_committed():

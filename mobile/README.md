@@ -5,8 +5,9 @@
 > The responsive **web app** (`/web`, HTMX + FastAPI, same backend) is
 > the primary, now full-featured surface (auth, volunteer & admin
 > workflows, billing/email/SMS status, analytics, notifications). This
-> Flutter app is **active again**: it has a CI lane (analyze + test on
-> GitHub Actions — `.github/workflows/mobile-ci.yml`) and feature/bug
+> Flutter app is **active again**: it has a static-analysis CI lane on
+> GitHub Actions (`.github/workflows/mobile-ci.yml`); tests run locally
+> with `make test-mobile` from the repository root, and feature/bug
 > work is welcome.
 >
 > **Known gap (tracked in #191):** the generated API client in
