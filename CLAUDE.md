@@ -122,7 +122,7 @@ Pytest markers: `@pytest.mark.unit`, `@pytest.mark.integration`, `@pytest.mark.s
 
 1. **Run tests after every code change.** After any edit to code or tests, run `make test-unit` (or `make test-unit-fast` during iteration). The change is not "done" until local tests pass. Run `make test-all` before pushing a PR.
 2. **Run tests locally, then wait for CI.** Run `make test-all` for every PR and `make test-mobile` for mobile changes. Record local results for the pushed revision. Actions runs static checks, PostgreSQL migration validation, and AI review, not tests. Green CI is not test evidence.
-3. **Merge only when CI and Ollama AI review pass and GitHub reports mergeable** (see next section).
+3. **Merge only when CI and Ollama AI review pass, successful local test results are recorded with the pushed head SHA, and GitHub reports mergeable** (see next section).
 
 ## AI PR Review
 
