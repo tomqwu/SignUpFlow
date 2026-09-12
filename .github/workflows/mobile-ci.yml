@@ -1,7 +1,7 @@
-# Flutter mobile app CI — additive coverage for mobile/.
+# Flutter static analysis. Run tests locally with make test-mobile.
 #
-# Independent of the main "Lint, type-check, and test" workflow: this
-# gates the Flutter app without blocking backend/web PRs. Runs only when
+# Independent of the main "Lint and type-check" workflow: this
+# checks Flutter static analysis without blocking backend/web PRs. Runs only when
 # mobile/ (or this workflow) changes.
 name: Mobile CI
 
@@ -18,7 +18,7 @@ on:
 
 jobs:
   flutter:
-    name: Flutter analyze + test
+    name: Flutter analyze
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -37,6 +37,3 @@ jobs:
         # Info-level lints (e.g. Riverpod `.stream` deprecation) don't
         # fail the build; warnings/errors do.
         run: flutter analyze --no-fatal-infos
-
-      - name: Test
-        run: flutter test

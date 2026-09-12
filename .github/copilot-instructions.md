@@ -48,7 +48,8 @@ make setup          # Poetry install + migrate + seed
 make run            # uvicorn --reload on :8000
 make test-unit      # Fast unit tests
 make test-unit-fast # Skip bcrypt slow tests
-make test-all       # Unit + api + cli + integration
+make test-all       # All Python tiers, including web + contract + Playwright
+make test-mobile    # Flutter tests (requires Flutter SDK)
 make migrate        # Alembic upgrade head
 ```
 
@@ -58,8 +59,8 @@ make migrate        # Alembic upgrade head
 ## PR rules
 
 1. Run tests after every code change. After any edit to code or tests, run `make test-unit` (or `make test-unit-fast` during iteration). The change is not "done" until local tests pass. Run `make test-all` before pushing a PR.
-2. Commit and let CI run. After local tests pass, commit and push. Do not declare a change shippable based on local results alone — wait for CI on the branch.
-3. Merge only when CI is green. A PR may merge only after CI passes. If CI is red, fix the cause before merging. Do not bypass, force-merge, or skip required checks.
+2. Run `make test-all` locally and `make test-mobile` for mobile changes. Record results for the pushed revision in the PR. Commit, push, and wait for hosted static checks, migration validation, and AI review. Actions does not execute tests; green CI is not test evidence.
+3. Merge only when hosted CI passes and the PR records successful local test results with the pushed head SHA. Fix failures before merging. Do not bypass, force-merge, or skip required checks; green hosted CI alone is insufficient.
 4. Require successful Ollama AI review for the current PR head/base. Use `glm-5.3-flash` by default; see `docs/ai-pr-review.md`. Missing or skipped review is not approval.
 5. Builder agents may merge only when GitHub reports mergeable and all required checks/reviews pass. Reviewer agents must not merge.
 

@@ -35,7 +35,8 @@ Billing (Stripe), email (SendGrid), SMS (Twilio), and notification routers are *
 make setup                # First-time: install deps, run migrations, seed data
 make run                  # Dev server on :8000 (uvicorn --reload)
 make test                 # Backend comprehensive tests
-make test-all             # Full suite: unit + api + cli + integration
+make test-all             # All Python tiers, including web + contract + Playwright
+make test-mobile          # Flutter tests (requires Flutter SDK)
 make test-unit            # Python unit tests only
 make test-unit-fast       # Unit tests excluding slow bcrypt tests (~7s)
 
@@ -120,8 +121,8 @@ Pytest markers: `@pytest.mark.unit`, `@pytest.mark.integration`, `@pytest.mark.s
 ## PR rules
 
 1. **Run tests after every code change.** After any edit to code or tests, run `make test-unit` (or `make test-unit-fast` during iteration). The change is not "done" until local tests pass. Run `make test-all` before pushing a PR.
-2. **Commit and let CI run.** After local tests pass, commit and push. Do not declare a change shippable based on local results alone — wait for CI on the branch.
-3. **Merge only when CI and Ollama AI review pass and GitHub reports mergeable** (see next section).
+2. **Run tests locally, then wait for CI.** Run `make test-all` for every PR and `make test-mobile` for mobile changes. Record local results for the pushed revision. Actions runs static checks, PostgreSQL migration validation, and AI review, not tests. Green CI is not test evidence.
+3. **Merge only when CI and Ollama AI review pass, successful local test results are recorded with the pushed head SHA, and GitHub reports mergeable** (see next section).
 
 ## AI PR Review
 

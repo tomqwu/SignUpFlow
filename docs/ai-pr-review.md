@@ -85,3 +85,31 @@ Run `poetry run pytest tests/unit/test_ollama_review_workflow.py` with Node.js
 GitHub/Ollama calls, including failure cases; no live AI key or inference is used.
 Run `make test-unit-fast` while iterating and `make test-all` before pushing.
 Verify live provider access and GitHub checks separately before claiming setup complete.
+## Local Test Policy (2026-09-12)
+
+The repository owner explicitly requested: "Yes remove CI tests from action,
+local can run all the tests." This is an intentional change in assurance, not
+an attempt to represent static checks as test evidence. Run `make test-all`
+locally for each PR, and `make test-mobile` for mobile changes; attach results
+for the pushed source revision. GitHub does not independently attest those runs.
+
+The owner subsequently authorized updating the reviewer policy to permit this
+local-only model. The workflow supplies that policy in the reviewer system
+prompt, outside untrusted PR content. Absence of hosted tests alone is not a
+blocking finding. Missing or weakened coverage, broken local commands, code
+defects, security issues, and deceptive evidence remain reviewable. The existing
+P0/P1 failure enforcement, stale-head checks, and fail-closed error handling are
+unchanged. No returned verdict is overridden or converted into approval.
+Record the exact pushed head SHA alongside local results before merging.
+
+Current hosted checks are `Lint and type-check`, `Flutter analyze` (mobile paths),
+and `codex-pr-review-gate`. The backend job includes a blocking
+`poetry run mypy api/utils api/core api/schemas` step with no error suppression,
+and a separate advisory `poetry run mypy api` step for legacy debt. It also
+validates PostgreSQL migrations. None of these steps executes test suites.
+
+Retired check names are `Lint, type-check, and test`, `End-to-end (Playwright)`,
+and `Flutter analyze + test`. The pre-change main protection API returned 404
+and the rulesets API returned an empty array; no protection settings were changed.
+Use current names for any later administrative gate setup. Historical run reports
+retain the old names as evidence, not current configuration instructions.

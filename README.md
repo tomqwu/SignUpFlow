@@ -19,7 +19,7 @@
 
 - **Greedy Heuristic Solver** — auto-generate fair schedules with role-based constraints
 - **Responsive web app** — full admin + volunteer workflow in the browser, served by the same FastAPI process ([walkthrough below](#web-app--end-to-end-walkthrough)) — the primary surface
-- **Flutter mobile app** (`mobile/`) — volunteer + admin app, CI-gated (analyze + test); see `mobile/README.md` for status
+- **Flutter mobile app** (`mobile/`) — volunteer + admin app, hosted static analysis and local tests; see `mobile/README.md` for status
 - **CLI + API** — schedule from YAML files or through REST endpoints
 - **Multi-tenant** — full org isolation with JWT auth and RBAC (admin/volunteer)
 - **Invitation system** — token-based volunteer onboarding
@@ -418,11 +418,26 @@ make run                  # Dev server on :8000
 make test                 # Backend comprehensive tests
 make test-unit            # Python unit tests only
 make test-unit-fast       # Skip slow bcrypt tests (~7s)
-make test-all             # Full suite: unit + api + cli + integration
+make test-all             # All Python tiers, including web + contract + Playwright
+make test-mobile          # Flutter tests (requires Flutter SDK)
 make migrate              # Run Alembic migrations
 ```
 
 Single test: `poetry run pytest tests/unit/test_events.py::test_create_event -v`
+
+Tests run locally, not in GitHub Actions. Before the first full run, install
+the browser dependency with `poetry run pip install "playwright==1.60.0"` and
+`poetry run playwright install chromium` (Linux may also require browser system
+dependencies). Reinstall Playwright after synchronizing dependencies if it was
+removed; it is outside the Poetry lockfile. `make test-all` runs each tier in a
+separate process, including both church and basketball playbooks.
+Run `make test-mobile` for mobile changes;
+set `FLUTTER=/path/to/flutter` if the SDK is not on your PATH.
+
+Record local test results for the pushed revision in the PR. The CI badge reports
+hosted formatting, lint/type checks and PostgreSQL migration validation, not test
+results. Ollama AI review remains a separate merge prerequisite. GitHub does not
+independently verify that local tests ran.
 
 ---
 

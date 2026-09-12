@@ -40,8 +40,9 @@ on a Sunday at least two weeks ahead, avoiding expired-date tests.
 
 The plugin is registered in `tests/conftest.py`. Every test requesting the
 `playbook_spec` fixture runs once per discovered definition with a stable ID and
-the `playbook` marker. Existing API and browser CI lanes automatically run all
-bundled definitions; no workflow-file edits or separate CI job are needed.
+the `playbook` marker. Local `make test-all` automatically runs all bundled
+definitions in both API and browser tiers. GitHub Actions does not run tests;
+include local results for the pushed revision in each PR.
 
 ```bash
 # Select one domain; the browser tier still runs both viewport sizes.
@@ -59,7 +60,7 @@ poetry run pytest tests/e2e/test_domain_playbooks.py --playbook-dir tests/playbo
 poetry run pytest tests/api -m playbook --playbook church --playbook basketball
 ```
 
-Run API and browser tiers in separate pytest processes, as CI does. Their event
+Run API and browser tiers in separate pytest processes, as `make test-all` does. Their event
 loop fixtures are different. `--playbook` filters playbook parameters only; use
 `-m playbook` or the explicit files to avoid running unrelated tests.
 

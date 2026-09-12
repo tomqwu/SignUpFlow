@@ -1,19 +1,14 @@
-"""Marathon P3.22 — CI must run the web test suite (regression guard).
-
-The cookie/HTMX web app grew ~190 tests across the marathon; they must
-stay gated by CI, not just locally.
-"""
+"""Keep web coverage available locally after removing hosted test execution."""
 
 from __future__ import annotations
 
 from pathlib import Path
 
-CI = Path(__file__).resolve().parents[2] / ".github" / "workflows" / "ci.yml"
+ROOT = Path(__file__).resolve().parents[2]
 
 
-def test_ci_runs_web_suite():
-    txt = CI.read_text()
-    assert "pytest tests/web/" in txt, "CI no longer runs the web test suite"
-    # Sanity: the other lanes are still present too.
+def test_local_commands_include_web_suite():
+    txt = (ROOT / "Makefile").read_text()
+    assert "pytest tests/web/" in txt
     for lane in ("tests/unit/", "tests/api/", "tests/contract/"):
         assert f"pytest {lane}" in txt

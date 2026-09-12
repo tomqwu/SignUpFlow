@@ -2,6 +2,9 @@
 
 export SKIP_TEST_DB_FIXTURES ?= false
 
+.PHONY: test-web test-contract test-e2e test-mobile
+FLUTTER ?= flutter
+
 TEST_SERVER_HOST ?= 0.0.0.0
 TEST_SERVER_PORT ?= 8000
 TEST_APP_URL ?= http://localhost:$(TEST_SERVER_PORT)
@@ -214,6 +217,24 @@ test-all: ensure-test-env
 	@echo "   INTEGRATION TESTS"
 	@echo "================================"
 	@poetry run pytest tests/integration/ -v --tb=short
+	@echo "WEB TESTS"
+	@poetry run pytest tests/web/ -v --tb=short
+	@echo "CONTRACT TESTS"
+	@poetry run pytest tests/contract/ -v --tb=short
+	@echo "PLAYWRIGHT E2E TESTS"
+	@poetry run pytest tests/e2e/ -v --tb=short
+
+test-web: check-poetry
+	@poetry run pytest tests/web/ -v --tb=short
+
+test-contract: check-poetry
+	@poetry run pytest tests/contract/ -v --tb=short
+
+test-e2e: check-poetry
+	@poetry run pytest tests/e2e/ -v --tb=short
+
+test-mobile:
+	@cd mobile && $(FLUTTER) pub get && $(FLUTTER) test
 
 test-coverage: check-poetry
 	@echo "📊 Generating test coverage reports..."
@@ -489,7 +510,11 @@ help:
 	@echo "  make test             - Run backend tests"
 	@echo "  make test-backend     - Run backend Python tests only"
 	@echo "  make test-integration - Run integration tests only"
-	@echo "  make test-all         - Run ALL tests (unit + api + cli + integration)"
+	@echo "  make test-all         - Run all Python tiers, including web/contract/Playwright"
+	@echo "  make test-mobile      - Run Flutter tests locally (requires Flutter SDK)"
+	@echo "  make test-e2e         - Run Playwright browser tests locally"
+	@echo "  make test-web         - Run in-process web tests locally"
+	@echo "  make test-contract    - Run OpenAPI contract tests locally"
 	@echo "  make test-coverage    - Run tests with coverage reports"
 	@echo "  make test-unit        - Run unit tests only"
 	@echo "  make test-unit-fast   - Run fast unit tests (skip slow password tests)"

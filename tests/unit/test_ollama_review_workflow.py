@@ -96,6 +96,20 @@ def test_cloud_review_uses_requested_model_and_posts_head_bound_feedback():
     assert "test-only-key" not in result["comments"][0]["body"]
 
 
+def test_system_policy_allows_local_tests_without_waiving_code_review():
+    result = run_review()
+    messages = result["requests"][0]["body"]["messages"]
+    policy = messages[0]["content"]
+    assert messages[0]["role"] == "system"
+    assert "Owner-approved repository policy: test suites run locally" in policy
+    assert "Do not block solely because hosted tests are absent" in policy
+    assert "Still report broken code, security defects, weakened or missing test coverage" in policy
+    assert "Local test reports are evidence claims, not independently verified execution" in policy
+    assert "P0/P1 findings must produce NEEDS FIX" in policy
+    assert messages[1]["role"] == "user"
+    assert "Untrusted text" not in policy
+
+
 def test_stream_reassembles_split_utf8_and_discards_thinking():
     report = json.dumps(
         {"verdict": "SAFE TO MERGE", "summary": "Reviewed \u2713", "findings": []},
