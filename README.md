@@ -6,7 +6,7 @@
 
 *AI-powered sign-up management for churches, sports leagues, and non-profits*
 
-[![Tests](https://img.shields.io/badge/tests-413%20passing-brightgreen?style=for-the-badge)](#testing)
+[![CI](https://github.com/tomqwu/SignUpFlow/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/tomqwu/SignUpFlow/actions/workflows/ci.yml?query=branch%3Amain)
 [![Python](https://img.shields.io/badge/python-3.11+-blue?style=for-the-badge&logo=python)](https://www.python.org/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.109+-009688?style=for-the-badge&logo=fastapi)](https://fastapi.tiangolo.com/)
 [![License](https://img.shields.io/badge/license-MIT-green?style=for-the-badge)](LICENSE)
