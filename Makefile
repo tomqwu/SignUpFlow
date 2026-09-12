@@ -513,6 +513,8 @@ help:
 	@echo "  make test-all         - Run all Python tiers, including web/contract/Playwright"
 	@echo "  make test-mobile      - Run Flutter tests locally (requires Flutter SDK)"
 	@echo "  make test-e2e         - Run Playwright browser tests locally"
+	@echo "  make test-web         - Run in-process web tests locally"
+	@echo "  make test-contract    - Run OpenAPI contract tests locally"
 	@echo "  make test-coverage    - Run tests with coverage reports"
 	@echo "  make test-unit        - Run unit tests only"
 	@echo "  make test-unit-fast   - Run fast unit tests (skip slow password tests)"

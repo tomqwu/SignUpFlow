@@ -84,8 +84,11 @@ final solutionDetailProvider =
   final apiClient = ref.watch(signupflowApiProvider);
   final futures = await Future.wait([
     apiClient.getSolutionsApi().getSolution(solutionId: id),
-    apiClient.getSolutionsApi().getSolutionStats(solutionId: id).then(
-          (r) => r,
+    apiClient
+        .getSolutionsApi()
+        .getSolutionStats(solutionId: id)
+        .then<api.SolutionStatsResponse?>(
+          (r) => r.data,
           onError: (Object _) => null,
         ),
   ]);
@@ -93,6 +96,6 @@ final solutionDetailProvider =
   if (sol == null) {
     throw StateError('Empty /solutions/$id response');
   }
-  final stats = (futures[1] as dynamic)?.data as api.SolutionStatsResponse?;
+  final stats = futures[1] as api.SolutionStatsResponse?;
   return SolutionDetailData(solution: sol, stats: stats);
 });

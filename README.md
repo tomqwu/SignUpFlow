@@ -428,8 +428,10 @@ Single test: `poetry run pytest tests/unit/test_events.py::test_create_event -v`
 Tests run locally, not in GitHub Actions. Before the first full run, install
 the browser dependency with `poetry run pip install "playwright==1.60.0"` and
 `poetry run playwright install chromium` (Linux may also require browser system
-dependencies). `make test-all` runs each tier in a separate process, including
-both church and basketball playbooks. Run `make test-mobile` for mobile changes;
+dependencies). Reinstall Playwright after synchronizing dependencies if it was
+removed; it is outside the Poetry lockfile. `make test-all` runs each tier in a
+separate process, including both church and basketball playbooks.
+Run `make test-mobile` for mobile changes;
 set `FLUTTER=/path/to/flutter` if the SDK is not on your PATH.
 
 Record local test results for the pushed revision in the PR. The CI badge reports

@@ -1,7 +1,7 @@
 # Flutter static analysis. Run tests locally with make test-mobile.
 #
 # Independent of the main "Lint and type-check" workflow: this
-# gates the Flutter app without blocking backend/web PRs. Runs only when
+# checks Flutter static analysis without blocking backend/web PRs. Runs only when
 # mobile/ (or this workflow) changes.
 name: Mobile CI
 
