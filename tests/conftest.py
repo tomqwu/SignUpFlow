@@ -4,6 +4,8 @@ import os
 import tempfile
 import uuid
 
+pytest_plugins = ["tests.playbooks.plugin"]
+
 from sqlalchemy import create_engine, text
 from sqlalchemy.orm import Session, sessionmaker
 

@@ -1,6 +1,10 @@
 {
+  "id": "church",
+  "version": 1,
+  "workflow": "six_week_roster",
   "name": "Grace Community Church - acceptance sandbox",
   "event": "Sunday worship",
   "roles": {"worship_leader": 1, "musician": 2, "sound": 1, "usher": 2, "children_leader": 1},
-  "weeks": ["baseline", "absence", "overlapping_service", "shortage", "replacement", "reschedule"]
+  "secondary_event": "rehearsal",
+  "critical_role": "worship_leader"
 }

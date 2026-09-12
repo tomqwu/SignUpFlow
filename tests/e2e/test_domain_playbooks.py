@@ -11,7 +11,7 @@ import pytest
 from playwright.sync_api import expect
 
 from tests.e2e._helpers import no_js_errors
-from tests.playbook_support import Playbook
+from tests.playbooks.runtime import Playbook
 
 pytestmark = pytest.mark.e2e
 
@@ -28,13 +28,13 @@ def _fits(page):
     assert page.evaluate("document.documentElement.scrollWidth <= window.innerWidth")
 
 
-@pytest.mark.parametrize("domain", ["church", "basketball"])
 @pytest.mark.parametrize("width", [360, 1440])
-def test_domain_browser_workflow(live_server, page, new_context, tmp_path, domain, width):
+def test_domain_browser_workflow(live_server, page, new_context, tmp_path, playbook_spec, width):
     base = live_server
+    domain = playbook_spec.id
     page.set_viewport_size({"width": width, "height": 900})
     with httpx.Client(base_url=base, timeout=30) as client:
-        p = Playbook(client, domain)
+        p = Playbook(client, playbook_spec)
         for week in range(1, 6):
             p.event(week)
         _login(page, base, p.email, p.password, "/a/dashboard")

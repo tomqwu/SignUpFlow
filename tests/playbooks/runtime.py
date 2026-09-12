@@ -1,15 +1,9 @@
 """Executable domain fixtures shared by API acceptance and real-browser tests."""
 
-import json
 from datetime import UTC, date, datetime, time, timedelta
-from pathlib import Path
 from uuid import uuid4
 
-
-def load_playbook(domain):
-    return json.loads(
-        (Path(__file__).resolve().parents[1] / "docs/playbooks" / f"{domain}.json").read_text()
-    )
+from tests.playbooks.registry import PlaybookSpec
 
 
 class Playbook:
@@ -17,10 +11,10 @@ class Playbook:
 
     password = "PlaybookTest123!"
 
-    def __init__(self, client, domain):
+    def __init__(self, client, definition: PlaybookSpec):
         self.client = client
-        self.spec = load_playbook(domain)
-        self.org = f"{domain}-{uuid4().hex[:10]}"
+        self.spec = definition.model_dump()
+        self.org = f"{definition.id}-{uuid4().hex[:10]}"
         self.people = {}
         self.events = {}
         self.blocked = set()

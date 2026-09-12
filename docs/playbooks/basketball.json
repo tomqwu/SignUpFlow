@@ -1,6 +1,10 @@
 {
+  "id": "basketball",
+  "version": 1,
+  "workflow": "six_week_roster",
   "name": "Riverside Basketball - acceptance sandbox",
   "event": "Basketball game",
   "roles": {"point_guard": 1, "shooting_guard": 1, "small_forward": 1, "power_forward": 1, "center": 1, "coach": 1, "scorekeeper": 1},
-  "weeks": ["baseline", "absence", "overlapping_game", "shortage", "replacement", "reschedule"]
+  "secondary_event": "practice",
+  "critical_role": "point_guard"
 }

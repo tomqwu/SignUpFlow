@@ -63,3 +63,30 @@ This is local acceptance evidence, not a production-readiness declaration or
 GitHub merge approval. See [remaining release blockers](README.md#known-boundaries-and-release-blockers).
 Do not count manual operational drills, external delivery, PostgreSQL, DST,
 venue scheduling or full tenant isolation as verified by these runs.
+
+## Pytest plugin integration
+
+Follow-up validation starting from `cccc6f7` uses the same local environment.
+The root pytest plugin discovers validated JSON definitions, provides isolated
+`playbook_spec` fixtures, marks generated cases, and supports repeatable
+`--playbook` and `--playbook-dir` options. Both existing acceptance runners now
+consume the fixture instead of maintaining a hard-coded domain list.
+
+- Plugin regression tests: 21 passed, including malformed definitions, duplicate
+  IDs, invalid selections, fixture isolation, and real pytest collection.
+- API acceptance with the external food-bank example: 3 passed.
+- Browser acceptance with that example: 6 passed across 360px and 1440px.
+- Complete browser suite: 33 passed.
+- Complete web and contract suites: 226 passed.
+- `make test-all`: 420 unit tests passed, 21 skipped; 444 API, 16 CLI, and
+  325 integration tests passed. Across backend, web, contract and browser suites:
+  1,464 passed, 21 skipped. The opt-in example runs above are additional evidence,
+  not included again in this total.
+- Black and Ruff: passed. Strict mypy scope: 61 files passed. Full API mypy
+  remains at the existing 835 errors in 40 files.
+
+The food-bank definition deliberately puts its critical role after another role
+to verify that the reusable workflow does not assume a church-specific role or
+dictionary order. It is opt-in example data, not an additional bundled domain.
+Existing CI API/browser lanes discover bundled definitions automatically.
+Version 1 supports `six_week_roster` only; this is not an arbitrary workflow engine.

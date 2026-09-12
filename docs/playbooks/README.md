@@ -32,9 +32,62 @@ The existing `test_onboarding_wizard.py` separately covers signup and invitation
 acceptance through the browser.
 
 `church.json` and `basketball.json` are the executable role/headcount fixtures.
-`tests/playbook_support.py` reads them in both test tiers. Each run creates new
+`tests/playbooks/` validates and discovers them for both test tiers. Each run creates new
 organizations and invitations with fictional `.example` addresses. Dates start
 on a Sunday at least two weeks ahead, avoiding expired-date tests.
+
+## Plug into pytest
+
+The plugin is registered in `tests/conftest.py`. Every test requesting the
+`playbook_spec` fixture runs once per discovered definition with a stable ID and
+the `playbook` marker. Existing API and browser CI lanes automatically run all
+bundled definitions; no workflow-file edits or separate CI job are needed.
+
+```bash
+# Select one domain; the browser tier still runs both viewport sizes.
+poetry run pytest tests/api/test_domain_playbooks.py --playbook church
+poetry run pytest tests/e2e/test_domain_playbooks.py --playbook basketball
+
+# Inspect the exact parameterized cases without creating any test data.
+poetry run pytest tests/api/test_domain_playbooks.py --collect-only -q
+
+# Load an external directory and run the example through each tier.
+poetry run pytest tests/api/test_domain_playbooks.py --playbook-dir tests/playbooks/examples --playbook food-bank
+poetry run pytest tests/e2e/test_domain_playbooks.py --playbook-dir tests/playbooks/examples --playbook food-bank
+
+# Filter to playbook tests within one tier; options are repeatable.
+poetry run pytest tests/api -m playbook --playbook church --playbook basketball
+```
+
+Run API and browser tiers in separate pytest processes, as CI does. Their event
+loop fixtures are different. `--playbook` filters playbook parameters only; use
+`-m playbook` or the explicit files to avoid running unrelated tests.
+
+To add a domain permanently, add one JSON file to `docs/playbooks/` using
+[the food-bank example](../../tests/playbooks/examples/food-bank.json) as a template.
+To load it temporarily, pass its directory with `--playbook-dir`. External
+directories augment the bundled definitions and cannot override duplicate IDs.
+Unknown selections, missing/empty directories, invalid JSON, unsupported versions,
+unsupported workflows, extra fields, and invalid role counts fail collection.
+
+Version 1 requires `id`, `version: 1`, `workflow: six_week_roster`, `name`,
+`event`, `secondary_event`, `roles`, and `critical_role`. IDs use lowercase letters,
+digits, underscores or hyphens; role codes use lowercase letters, digits or
+underscores. Both start with a letter. Role counts are positive integers, not
+booleans or numeric strings. The critical role must require exactly one person,
+matching the absence/shortage/replacement drill. Definitions contain no passwords,
+API keys, executable code or production endpoint settings.
+
+The runtime creates fresh organizations and a deep-copied definition per test.
+`tests/playbooks/workflows.py::run_six_week_roster` is reusable with the test
+client; `tests/playbooks/runtime.py::Playbook` exposes the lower-level actions and
+coverage oracle. A new pytest test can request `playbook_spec` to reuse discovery
+and selection without duplicating the list of domains.
+
+This is a domain-definition plugin for the six-week lifecycle, not an arbitrary
+workflow language. Adding a different lifecycle requires implementing and testing
+that workflow before accepting its identifier in `PlaybookSpec`. Do not accept
+unknown workflow IDs or silently skip unsupported scenarios.
 
 ## Coverage map
 
