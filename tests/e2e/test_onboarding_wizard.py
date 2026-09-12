@@ -28,6 +28,9 @@ def _progress(page, text):
 
 def _open_onboarding_from_dashboard(page, text):
     page.wait_for_url("**/a/dashboard")
+    page.wait_for_load_state("domcontentloaded")
+    assert page.locator("#onboarding-banner").count(), page.locator("body").inner_text()
+    assert text in page.locator("#onboarding-banner").inner_text()
     page.wait_for_selector(f"#onboarding-banner:has-text('{text}')")
     page.click("#onboarding-banner")
     page.wait_for_url("**/a/onboarding")
@@ -101,15 +104,14 @@ def test_fresh_admin_completes_wizard(live_server, new_context, page, db_path):
     page.wait_for_selector("#events-list:has-text('Sunday 10am Service')")
     _return_to_onboarding(page, "2/4")
 
-    # 3) Generate a schedule, 4) review and publish it — one uninterrupted
-    # sequence (the solver page only holds the result until you navigate
-    # away, so the review link must be clicked without leaving).
+    # Resume publishing through onboarding after leaving the solver result.
     _follow_step(page, "solve", "/a/solver")
     page.fill("#from_date", from_date)
     page.fill("#to_date", to_date)
     page.click("button:has-text('Run solver')")
     page.wait_for_selector("#solver-result:has-text('Review solution')")
-    page.click("a:has-text('Review solution')")
+    _return_to_onboarding(page, "3/4")
+    page.locator('.ob-step[data-key="publish"] .btn').click()
     page.wait_for_url("**/a/solution/**")
     page.wait_for_selector("#publish-state")
     page.click("button:has-text('Publish this solution')")

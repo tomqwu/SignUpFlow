@@ -483,6 +483,7 @@ def calendar_reset(
 @router.post("/a/people/invite", response_class=HTMLResponse)
 def people_invite(
     request: Request,
+    background_tasks: BackgroundTasks,
     name: str = Form(...),
     email: str = Form(...),
     role: str = Form("volunteer"),
@@ -508,7 +509,7 @@ def people_invite(
     except ValueError:
         return _result(False, "Enter a valid name and email.", 400)
     try:
-        create_invitation(payload, BackgroundTasks(), org_id=person.org_id, inviter=person, db=db)
+        create_invitation(payload, background_tasks, org_id=person.org_id, inviter=person, db=db)
     except HTTPException as exc:
         return _result(False, str(exc.detail), exc.status_code or 400)
     return _result(True, f"Invitation sent to {email}.")

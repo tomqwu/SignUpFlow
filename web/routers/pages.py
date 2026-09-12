@@ -527,7 +527,12 @@ def _onboarding_state(db: Session, person: Person) -> dict:
     people_n = db.query(Person).filter(Person.org_id == org_id).count()
     invites_n = db.query(Invitation).filter(Invitation.org_id == org_id).count()
     events_n = db.query(Event).filter(Event.org_id == org_id).count()
-    sols_n = db.query(Solution).filter(Solution.org_id == org_id).count()
+    latest_solution = (
+        db.query(Solution)
+        .filter(Solution.org_id == org_id)
+        .order_by(Solution.created_at.desc(), Solution.id.desc())
+        .first()
+    )
     pub_n = (
         db.query(Solution)
         .filter(Solution.org_id == org_id, Solution.is_published.is_(True))
@@ -557,13 +562,13 @@ def _onboarding_state(db: Session, person: Person) -> dict:
             "desc": "Let the solver build a fair roster.",
             "href": "/a/solver",
             "cta": "Run solver",
-            "done": sols_n > 0,
+            "done": latest_solution is not None,
         },
         {
             "key": "publish",
             "title": "Publish it",
             "desc": "Share the schedule with volunteers.",
-            "href": "/a/solver",
+            "href": f"/a/solution/{latest_solution.id}" if latest_solution else "/a/solver",
             "cta": "Publish",
             "done": pub_n > 0,
         },

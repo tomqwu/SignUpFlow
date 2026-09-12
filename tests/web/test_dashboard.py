@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from datetime import datetime
 
-from api.models import Assignment, Event
+from api.models import Assignment, Event, Solution
 from tests.web.conftest import seed_person
 from web.deps import SESSION_COOKIE
 
@@ -40,7 +40,18 @@ def test_dashboard_reflects_data(client, db):
             end_time=datetime(2099, 6, 7, 11, 30),
         )
     )
-    db.add(Assignment(event_id="d_ev", person_id=vol.id, role="usher", status="confirmed"))
+    solution = Solution(org_id="d_org2", hard_violations=0, soft_score=1, health_score=90)
+    db.add(solution)
+    db.flush()
+    db.add(
+        Assignment(
+            event_id="d_ev",
+            person_id=vol.id,
+            solution_id=solution.id,
+            role="usher",
+            status="confirmed",
+        )
+    )
     db.commit()
 
     resp = client.get("/a/dashboard", cookies={SESSION_COOKIE: token})
