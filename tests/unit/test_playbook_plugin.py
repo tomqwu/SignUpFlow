@@ -95,7 +95,6 @@ def _collect(*options):
             "-q",
             "--color=no",
             "tests/api/test_domain_playbooks.py",
-            "tests/e2e/test_domain_playbooks.py",
             *options,
         ],
         cwd=ROOT,
@@ -108,15 +107,15 @@ def _collect(*options):
 def test_pytest_selects_one_bundled_playbook():
     result = _collect("--playbook", "basketball", "--playbook", "basketball")
     assert result.returncode == 0, result.stdout + result.stderr
-    assert "3 tests collected" in result.stdout
+    assert "1 test collected" in result.stdout
     assert "church" not in result.stdout
 
 
-def test_external_definition_plugs_into_both_tiers(tmp_path):
+def test_external_definition_plugs_into_runner(tmp_path):
     (tmp_path / "community.json").write_text(json.dumps(_definition()))
     result = _collect("--playbook-dir", str(tmp_path), "--playbook", "community")
     assert result.returncode == 0, result.stdout + result.stderr
-    assert "3 tests collected" in result.stdout
+    assert "1 test collected" in result.stdout
     assert "community" in result.stdout
 
 

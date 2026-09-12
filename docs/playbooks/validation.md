@@ -90,3 +90,10 @@ to verify that the reusable workflow does not assume a church-specific role or
 dictionary order. It is opt-in example data, not an additional bundled domain.
 Existing CI API/browser lanes discover bundled definitions automatically.
 Version 1 supports `six_week_roster` only; this is not an arbitrary workflow engine.
+
+The first hosted run at `f9657df` exposed a test-tier dependency mistake: three
+plugin unit tests collected the browser module, but the backend CI environment
+does not install Playwright. Restrict unit-level collection probes to the API
+runner. Keep real browser execution in the existing Playwright lane and the
+separate external-definition browser run above; do not install browser packages
+into the backend lane or skip the plugin tests to hide the failure.
