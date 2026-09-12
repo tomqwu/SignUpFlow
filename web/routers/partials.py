@@ -483,6 +483,7 @@ def calendar_reset(
 @router.post("/a/people/invite", response_class=HTMLResponse)
 def people_invite(
     request: Request,
+    background_tasks: BackgroundTasks,
     name: str = Form(...),
     email: str = Form(...),
     role: str = Form("volunteer"),
@@ -508,7 +509,7 @@ def people_invite(
     except ValueError:
         return _result(False, "Enter a valid name and email.", 400)
     try:
-        create_invitation(payload, BackgroundTasks(), org_id=person.org_id, inviter=person, db=db)
+        create_invitation(payload, background_tasks, org_id=person.org_id, inviter=person, db=db)
     except HTTPException as exc:
         return _result(False, str(exc.detail), exc.status_code or 400)
     return _result(True, f"Invitation sent to {email}.")
@@ -615,7 +616,7 @@ def settings_save(
     if not name.strip():
         return _render(error="Organization name is required.")
 
-    current = get_organization(person.org_id, db)
+    current = get_organization(person.org_id, db, current_user=person)
     config = dict(current.config or {})
     tz = timezone.strip()
     if tz:
@@ -632,7 +633,7 @@ def settings_save(
     except ValueError:
         return _render(error="Invalid settings.")
     try:
-        update_organization(person.org_id, payload, db)
+        update_organization(person.org_id, payload, db, current_admin=person)
     except HTTPException as exc:
         return _render(error=str(exc.detail), org=None)
 

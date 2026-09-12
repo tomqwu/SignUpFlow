@@ -75,6 +75,8 @@ def test_recurring_series_create_and_delete(live_server, page):
     page.fill("#rs_st", "10:00")
     page.click("button:has-text('Create series')")
     page.wait_for_selector("#recurring-list:has-text('Weekly Worship')")
+    # Wait for HTMX to attach the newly rendered Delete handler before clicking.
+    page.wait_for_selector("#recurring-list:not(.htmx-settling):not(.htmx-swapping)")
 
     page.click("#recurring-list button:has-text('Delete')")
     page.wait_for_selector("#recurring-list:has-text('Weekly Worship')", state="detached")

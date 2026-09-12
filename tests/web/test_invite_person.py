@@ -2,7 +2,10 @@
 
 from __future__ import annotations
 
+from unittest.mock import MagicMock
+
 from api.models import Invitation
+from api.routers import invitations
 from tests.web.conftest import seed_person
 from web.deps import SESSION_COOKIE
 
@@ -95,3 +98,31 @@ def test_invite_requires_auth(client):
         data={"name": "X", "email": "x@example.com", "role": "volunteer"},
     )
     assert resp.status_code == 303
+
+
+def test_browser_invite_executes_email_task(client, db, monkeypatch):
+    token = _admin(client, db)
+    monkeypatch.setenv("FRONTEND_URL", "https://signup.example/")
+    send = MagicMock(return_value=True)
+    monkeypatch.setattr(invitations.email_service, "send_email", send)
+    response = client.post(
+        "/a/people/invite",
+        data={"name": "Jamie", "email": "delivery@example.com", "role": "volunteer"},
+        cookies={SESSION_COOKIE: token},
+    )
+    assert response.status_code == 200
+    send.assert_called_once()
+    invitation = (
+        db.query(Invitation)
+        .filter(Invitation.org_id == "i_org", Invitation.email == "delivery@example.com")
+        .one()
+    )
+    path = f"/auth/invitation/{invitation.token}"
+    _, _, html_body, plain_body = send.call_args.args
+    assert f"https://signup.example{path}" in html_body
+    assert f"https://signup.example{path}" in plain_body
+    client.cookies.clear()
+    assert client.get(path).status_code == 200
+    accepted = client.post(path, data={"password": "InvitePass123!"})
+    assert accepted.status_code == 303
+    assert accepted.headers["location"] == "/v/schedule"

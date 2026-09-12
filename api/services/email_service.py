@@ -880,9 +880,7 @@ class EmailService:
             org_name: Organization name (also user-supplied, escaped).
             invitation_token: Invitation token for the accept link.
             app_url: Base **frontend** URL used to build the web fallback
-                (``{app_url}/invitation?token=...`` — matches the mobile
-                go_router path so the same handler renders on both web
-                and mobile). The mobile deep link uses the hard-coded
+                (``{app_url}/auth/invitation/{token}``). The mobile deep link uses the hard-coded
                 ``signupflow://`` scheme and is independent of this arg.
 
         Returns:
@@ -897,9 +895,7 @@ class EmailService:
         # any old host-form URL still in flight keeps working on warm
         # start.
         deep_link = f"signupflow:///invitation?token={invitation_token}"
-        # Web fallback. Path matches mobile/lib/routing/router.dart's
-        # /invitation route so the same URL works in both targets.
-        web_url = f"{app_url}/invitation?token={invitation_token}"
+        web_url = f"{app_url.rstrip('/')}/auth/invitation/{invitation_token}"
 
         # Escape admin-supplied strings before HTML interpolation. Same
         # threat model as the password-reset name escape in #78 P1 —
@@ -1028,8 +1024,8 @@ class EmailService:
             name: Recipient's display name (Person.name)
             reset_token: Reset token from request_password_reset
             app_url: Base **frontend** URL used to build the web fallback
-                link (``{app_url}/reset-password?token=...``). Must point
-                at a host that serves a ``GET /reset-password`` page; in
+                link (``{app_url}/auth/reset/{token}``). Must point
+                at a host that serves the SignUpFlow web app; in
                 this codebase the caller passes ``FRONTEND_URL`` (with
                 ``APP_URL`` as a last-ditch fallback). The mobile deep
                 link uses the hard-coded ``signupflow://`` scheme and is
@@ -1050,7 +1046,7 @@ class EmailService:
         # Custom-scheme deep link → opens the mobile app at /reset-password.
         deep_link = f"signupflow:///reset-password?token={reset_token}"
         # Web fallback for desktop / no-app users.
-        web_url = f"{app_url}/reset-password?token={reset_token}"
+        web_url = f"{app_url.rstrip('/')}/auth/reset/{reset_token}"
 
         # Escape the recipient name before HTML interpolation. Person.name is
         # user-supplied (signup form / admin-created) and not constrained to

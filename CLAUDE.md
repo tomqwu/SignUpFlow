@@ -105,6 +105,8 @@ tests/setup_test_data.py       # Seed data for test DB
 
 **Multi-tenancy:** Every query MUST filter by `org_id`. Use `verify_org_member(person, org_id)` from `api/dependencies.py` to enforce org isolation.
 
+**Organizations:** Keep `POST /api/v1/organizations/` public only for creating an empty onboarding organization. Require membership for organization reads/listing and same-tenant admin access for update/delete/cancel/restore. Commit each lifecycle mutation and its audit record together. Public signup membership hardening remains tracked in #255.
+
 **RBAC:** Two roles: `volunteer` (view own data, manage availability) and `admin` (full CRUD, solver, invitations). Roles stored as JSON array on Person model.
 
 **Test auth mocking:** Unit tests auto-mock authentication via `conftest.py` (returns a test admin user). Integration tests use real auth. Mark tests with `@pytest.mark.no_mock_auth` to opt out of mocking.
@@ -119,68 +121,29 @@ Pytest markers: `@pytest.mark.unit`, `@pytest.mark.integration`, `@pytest.mark.s
 
 1. **Run tests after every code change.** After any edit to code or tests, run `make test-unit` (or `make test-unit-fast` during iteration). The change is not "done" until local tests pass. Run `make test-all` before pushing a PR.
 2. **Commit and let CI run.** After local tests pass, commit and push. Do not declare a change shippable based on local results alone — wait for CI on the branch.
-3. **Merge only when CI is green and Codex local review reports no blocking issues** (see next section).
+3. **Merge only when CI and Ollama AI review pass and GitHub reports mergeable** (see next section).
 
-## PR Workflow With Codex Review
+## AI PR Review
 
-PR review is run automatically by `openai/codex-action` in CI
-(`.github/workflows/codex-review.yml`). On every PR push, the action
-checks out the merge ref, runs Codex against the diff, and posts the
-verdict as a PR comment.
+Run AI review through `.github/workflows/codex-review.yml` using Ollama Cloud,
+not `openai/codex-action`. Default to `glm-5.3-flash` at
+`https://ollama.com/api/chat`; configure `OLLAMA_API_KEY` as a GitHub Actions
+secret. Override the model or full chat endpoint with repository variables
+`OLLAMA_MODEL` and `OLLAMA_ENDPOINT`. See [setup and limits](docs/ai-pr-review.md).
 
-Prereq: the `OPENAI_API_KEY` repo secret must be set. Without it the
-precondition job emits a warning and skips review; the rest of CI
-still runs.
+Require a successful `codex-pr-review-gate` result for the current PR head/base.
+Treat missing credentials, missing/binary/truncated patches, stale commits,
+provider errors, malformed responses, and blocking findings as failed review.
+Do not self-approve or treat a skipped review as approval.
 
-If you need to re-run a review (e.g., after fixing a finding), just
-push another commit — the workflow's concurrency group cancels the
-prior run and starts a fresh review on the new head.
+Builder agents may merge only after CI and AI review pass, GitHub reports the
+PR mergeable, and all required reviews/comments/conflicts are resolved.
+Reviewer agents must not merge. Keep a blocked PR open and fix or report the
+blocker; do not bypass checks or close the PR as a substitute for merging.
 
-For local iteration before pushing, the legacy
-`openai/codex-plugin-cc` plugin still works:
-
-```
-git fetch origin main
-/codex:review --base origin/main
-```
-
-Use it when you want a verdict without opening a PR, or when CI is
-unavailable. For routine PR review, lean on the CI action — it runs
-without anyone having to remember.
-
-Do not self-approve by posting `LGTM` markers.
-Do not require or wait for the old GitHub `codex-pr-review-gate` check.
-
-A PR may merge only when:
-1. CI is green.
-2. GitHub says the PR is mergeable.
-3. Codex local review reports no blocking issues.
-4. There are no unresolved review comments or merge conflicts.
-
-If Codex review reports blockers:
-1. Keep the PR open.
-2. Fix the issues.
-3. Run relevant local checks.
-4. Push a follow-up commit.
-5. Run Codex review again.
-
-If the PR has merge conflicts:
-1. Update the branch against the latest base branch.
-2. Resolve conflicts carefully.
-3. Run relevant local checks.
-4. Push the resolution.
-5. Run Codex review again.
-
-If CI passes and Codex review passes:
-- Merge the PR using the repository's normal merge method.
-- Do not manually close the PR as the success path.
-
-If GitHub blocks the merge:
-- Report the exact blocker.
-- Leave the PR open.
-
-Only close without merging if the work is abandoned, duplicated, or superseded,
-and leave a PR comment explaining why.
+Do not enable a required check in GitHub protection until its workflow has
+landed on the default branch and the check has appeared on a PR. Branch
+protection/ruleset configuration remains a separate administrative step.
 
 ## Common Gotchas
 

@@ -119,7 +119,12 @@ def get_schedule_health(
         "latest_solution": {
             "id": latest_solution.id,
             "health_score": latest_solution.health_score,
-            "assignment_count": latest_solution.assignment_count,
+            "assignment_count": (
+                db.query(Assignment)
+                .join(Solution, Assignment.solution_id == Solution.id)
+                .filter(Solution.org_id == org_id, Solution.id == latest_solution.id)
+                .count()
+            ),
             "created_at": latest_solution.created_at.isoformat(),
         }
         if latest_solution

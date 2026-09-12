@@ -40,6 +40,7 @@ def test_fresh_admin_sees_zero_progress(client, db):
     r = client.get("/a/onboarding", cookies={SESSION_COOKIE: tok})
     assert r.status_code == 200
     assert "0 of 4 done" in r.text
+    assert "/web/static/css/styles.css?v=20260911" in r.text
     row = (
         db.query(OnboardingProgress)
         .filter(
@@ -58,6 +59,37 @@ def test_partial_progress_and_dashboard_banner(client, db):
     assert "1 of 4 done" in r.text
     d = client.get("/a/dashboard", cookies={SESSION_COOKIE: tok})
     assert 'id="onboarding-banner"' in d.text and "1/4" in d.text
+
+
+def test_publish_resumes_latest_own_solution(client, db):
+    tok = _admin(client, db)
+    seed_person(db, person_id="foreign", org_id="foreign_org", email="f@ob.test")
+    solutions = [
+        Solution(
+            org_id=org,
+            hard_violations=0,
+            soft_score=1,
+            health_score=90,
+            created_at=datetime(2026, 1, day),
+        )
+        for org, day in [("ob_o", 1), ("ob_o", 2), ("foreign_org", 3)]
+    ]
+    db.add_all(solutions)
+    db.commit()
+    response = client.get("/a/onboarding", cookies={SESSION_COOKIE: tok})
+    assert f'href="/a/solution/{solutions[1].id}"' in response.text
+    assert f'href="/a/solution/{solutions[0].id}"' not in response.text
+    assert f'href="/a/solution/{solutions[2].id}"' not in response.text
+
+
+def test_publish_without_own_solution_opens_solver(client, db):
+    tok = _admin(client, db)
+    seed_person(db, person_id="foreign", org_id="foreign_org", email="f@ob.test")
+    db.add(Solution(org_id="foreign_org", hard_violations=0, soft_score=1, health_score=90))
+    db.commit()
+    response = client.get("/a/onboarding", cookies={SESSION_COOKIE: tok})
+    assert 'href="/a/solution/' not in response.text
+    assert "0 of 4 done" in response.text
 
 
 def test_full_progress_marks_complete(client, db):

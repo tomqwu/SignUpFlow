@@ -1,0 +1,10 @@
+{
+  "id": "food-bank",
+  "version": 1,
+  "workflow": "six_week_roster",
+  "name": "Food Bank acceptance sandbox",
+  "event": "Packing shift",
+  "secondary_event": "Preparation",
+  "critical_role": "coordinator",
+  "roles": {"packer": 2, "coordinator": 1}
+}

@@ -203,6 +203,7 @@ def get_solution_assignments(solution_id: int, db: Session = Depends(get_db)):
         entry.assignees.append(
             SolutionAssignmentAssignee(
                 person_id=assignment.person_id,
+                role=assignment.role,
                 person_name=person.name if person else None,
                 assignment_id=assignment.id,
                 assigned_at=assignment.assigned_at,

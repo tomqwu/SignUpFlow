@@ -11,6 +11,8 @@ Admins keep their existing entry points in api/routers/events.py
  `GET /events/assignments/all` for org-wide listing).
 """
 
+from typing import cast
+
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Request, status
 from sqlalchemy.orm import Session
 
@@ -24,6 +26,7 @@ from api.schemas.assignment import (
 )
 from api.schemas.common import ListResponse, PaginationParams, get_pagination_params
 from api.services import event_bus
+from api.services.assignment_visibility import member_visible_assignment
 from api.utils.audit_logger import log_audit_event
 
 router = APIRouter(prefix="/assignments", tags=["assignments"])
@@ -31,7 +34,16 @@ router = APIRouter(prefix="/assignments", tags=["assignments"])
 
 def _load_own_assignment(assignment_id: int, current_user: Person, db: Session) -> Assignment:
     """Load an assignment that belongs to the caller; 404 if missing, 403 if not theirs."""
-    assignment = db.query(Assignment).filter(Assignment.id == assignment_id).first()
+    assignment = (
+        db.query(Assignment)
+        .join(Event, Assignment.event_id == Event.id)
+        .filter(
+            Assignment.id == assignment_id,
+            Event.org_id == current_user.org_id,
+            member_visible_assignment(cast(str, current_user.org_id)),
+        )
+        .first()
+    )
     if not assignment:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Assignment not found")
     if assignment.person_id != current_user.id:
@@ -178,6 +190,7 @@ def list_my_assignments(
         .filter(
             Assignment.person_id == current_user.id,
             Event.org_id == current_user.org_id,
+            member_visible_assignment(cast(str, current_user.org_id)),
         )
     )
     total = base.count()

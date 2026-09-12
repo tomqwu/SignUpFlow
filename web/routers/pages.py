@@ -20,6 +20,7 @@ from api.models import (
     Team,
     TeamMember,
 )
+from api.services.assignment_visibility import member_visible_assignment
 from web.deps import get_session_admin, get_session_user
 
 router = APIRouter(tags=["web-pages"])
@@ -50,6 +51,7 @@ def _my_schedule_rows(db: Session, person: Person) -> list[dict]:
         .filter(
             Assignment.person_id == person.id,
             Event.org_id == person.org_id,
+            member_visible_assignment(person.org_id),
         )
         .order_by(Event.start_time.asc())
         .all()
@@ -66,6 +68,7 @@ def _my_assignment(db: Session, person: Person, aid: int) -> dict | None:
             Assignment.id == aid,
             Assignment.person_id == person.id,
             Event.org_id == person.org_id,
+            member_visible_assignment(person.org_id),
         )
         .first()
     )
@@ -527,7 +530,12 @@ def _onboarding_state(db: Session, person: Person) -> dict:
     people_n = db.query(Person).filter(Person.org_id == org_id).count()
     invites_n = db.query(Invitation).filter(Invitation.org_id == org_id).count()
     events_n = db.query(Event).filter(Event.org_id == org_id).count()
-    sols_n = db.query(Solution).filter(Solution.org_id == org_id).count()
+    latest_solution = (
+        db.query(Solution)
+        .filter(Solution.org_id == org_id)
+        .order_by(Solution.created_at.desc(), Solution.id.desc())
+        .first()
+    )
     pub_n = (
         db.query(Solution)
         .filter(Solution.org_id == org_id, Solution.is_published.is_(True))
@@ -557,13 +565,13 @@ def _onboarding_state(db: Session, person: Person) -> dict:
             "desc": "Let the solver build a fair roster.",
             "href": "/a/solver",
             "cta": "Run solver",
-            "done": sols_n > 0,
+            "done": latest_solution is not None,
         },
         {
             "key": "publish",
             "title": "Publish it",
             "desc": "Share the schedule with volunteers.",
-            "href": "/a/solver",
+            "href": f"/a/solution/{latest_solution.id}" if latest_solution else "/a/solver",
             "cta": "Publish",
             "done": pub_n > 0,
         },
@@ -636,11 +644,11 @@ def admin_onboarding_skip(
     return RedirectResponse(url="/a/dashboard", status_code=303)
 
 
-def _org_settings(db: Session, org_id: str) -> dict:
+def _org_settings(db: Session, person: Person) -> dict:
     """Current org settings for the form (timezone lives in config)."""
     from api.routers.organizations import get_organization
 
-    org = get_organization(org_id, db)
+    org = get_organization(person.org_id, db, current_user=person)
     config = org.config or {}
     return {
         "name": org.name,
@@ -701,7 +709,7 @@ def admin_settings(
         {
             "person": person,
             "active_tab": None,
-            "org": _org_settings(db, person.org_id),
+            "org": _org_settings(db, person),
             "error": None,
             "saved": False,
             "profile": _account_ctx(person),

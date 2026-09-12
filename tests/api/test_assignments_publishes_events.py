@@ -71,6 +71,7 @@ def _seed(
                 hard_violations=0,
                 soft_score=0.0,
                 health_score=1.0,
+                is_published=True,
             )
         )
     assignment = Assignment(

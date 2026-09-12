@@ -150,6 +150,7 @@ class SolutionAssignmentAssignee(BaseModel):
     """One assignee inside a per-event assignment group."""
 
     person_id: str
+    role: str | None = None
     person_name: str | None = None
     assignment_id: int
     assigned_at: datetime | None = None
