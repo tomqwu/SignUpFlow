@@ -164,7 +164,7 @@ poetry run python scripts/email_smoke.py --to your-personal-inbox@example.com
 | Symptom | Cause | Fix |
 |---|---|---|
 | Script prints `email service disabled — set EMAIL_ENABLED=true` and exits 0 | `EMAIL_ENABLED=false` in `.env` (or unset — default is now `false` per #78) | Set `EMAIL_ENABLED=true`. The no-op log lives at `api/services/email_service.py:191-193`. |
-| Script refuses with `won't run under TESTING=true` and exits 1 | `TESTING=true` in your shell or `.env` | Unset `TESTING`. The smoke is for live envs only; CI uses mocked email. |
+| Script refuses with `won't run under TESTING=true` and exits 1 | `TESTING=true` in your shell or `.env` | Unset `TESTING` only for an authorized live-provider smoke. Local tests use mocked/disabled delivery; Actions does not run tests. |
 | `backend: sendgrid` + 401 in the exception | API key invalid, expired, or revoked | Regenerate the key (Path B step 1). The 401 surfaces from `sendgrid.SendGridAPIClient.send` and is logged at `email_service.py:295`. |
 | `backend: sendgrid` + 403 in the exception | `EMAIL_FROM` is not an authenticated SendGrid sender | Either authenticate the domain (Path B step 2) or change `EMAIL_FROM` to a verified address. |
 | `backend: smtp` + auth error | Mailtrap user/password wrong, or you used a non-sandbox host without a paid plan | Re-paste from Mailtrap dashboard; confirm `MAILTRAP_SMTP_HOST=sandbox.smtp.mailtrap.io`. |

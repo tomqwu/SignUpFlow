@@ -364,7 +364,10 @@ POST /api/solver/solve         →  api/routers/solver.py (HTTP + DB)
 
 ### Disabled Features
 
-Billing (Stripe), email (SendGrid), SMS (Twilio), and notification routers are not active. Their code remains but is not registered in `api/main.py`.
+Billing and notification routers are registered under `/api/v1`; SMS is mounted
+at its own `/api/sms` prefix. Email delivery is service-backed. Registration does
+not prove provider configuration or production readiness; keep external delivery
+disabled during local tests and follow the documented release checks.
 
 ---
 
@@ -374,33 +377,22 @@ Use the [church and basketball operational playbooks](docs/playbooks/README.md)
 for six-week acceptance scenarios, reproducible API/browser tests, and explicit
 manual release checks.
 
-### Test Pyramid: 413 tests
+### Test Coverage
 
 ```bash
-make test-unit                        # Unit tests (338 tests, ~4min)
-poetry run pytest tests/api/ -v       # API integration (59 tests, ~90s)
-poetry run pytest tests/cli/ -v       # CLI E2E (16 tests, ~11s)
+make test-all                        # All seven Python tiers, including Playwright
+make test-mobile                     # Flutter unit/widget tests
 ```
 
-| Layer | Suite | Tests | What it tests | Speed |
-|-------|-------|-------|---------------|-------|
-| **Unit** | `tests/unit/` | 338 | Individual functions, mocked auth, endpoint coverage | ~4min |
-| **API** | `tests/api/` | 59 | Full HTTP workflows with real JWT + in-memory DB | ~90s |
-| **CLI E2E** | `tests/cli/` | 16 | Subprocess CLI: YAML in, JSON out, real solver | ~11s |
+See the [current testing and merge guide](docs/TESTING.md) for all tiers,
+dependencies, local evidence requirements, and the meaning of hosted CI status.
+Counts and runtimes belong to dated validation reports, not static overview tables.
 
 ### API Test Coverage
 
-| Area | Tests | What's covered |
-|------|-------|----------------|
-| Event CRUD | 12 | Create, read, update, delete, list, RBAC enforcement |
-| Conflict detection | 6 | Already assigned, time-off overlap, double-booking, 404s |
-| Availability | 4 | Add/list/delete time-off periods |
-| Profile + Teams | 2 | Update own profile, add/remove team members |
-| Scheduling workflow | 4 | Full solver lifecycle, manual assign/unassign |
-| Church scenario | 8 | Ministry teams, multi-role members, invitation flow |
-| Sports scenario | 8 | Dual-sport players, tournament, injury time-off |
-| Org lifecycle | 9 | First-user admin, RBAC, duplicate email |
-| Multi-tenant | 7 | Cross-org isolation for people/teams/events/solver |
+API tests exercise event management, conflicts, availability, profiles, teams,
+scheduling, organization lifecycle, and authorization. Coverage is not a claim
+of complete tenant isolation; see the [remaining playbook boundaries](docs/playbooks/README.md#known-boundaries-and-release-blockers).
 
 ### Scenario Tests
 

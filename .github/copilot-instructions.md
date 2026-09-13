@@ -6,7 +6,7 @@ The universal baseline is in `AGENTS.md`. This file restates the parts that matt
 
 ## Repository purpose
 
-SignUpFlow is a headless volunteer scheduling and sign-up management API + CLI. FastAPI + SQLAlchemy 2.0 + Pydantic 2.x backend on Python 3.11+, with a YAML-in/JSON-out CLI. Stripe billing, SendGrid email, Twilio SMS, and notification routers exist but are **disabled** — do not suggest re-enabling them without an explicit task.
+SignUpFlow is a volunteer scheduling API, CLI, and web app using FastAPI, SQLAlchemy 2.0, and Pydantic 2.x on Python 3.11+. Billing and notification routers are registered under `/api/v1`; SMS is mounted at `/api/sms`; email is service-backed. Do not enable external provider delivery without an explicit task. See `docs/TESTING.md` for current validation scope.
 
 ## House style
 
@@ -73,6 +73,9 @@ make migrate        # Alembic upgrade head
 
 ## PR and commit format
 
+Before declaring done, reconcile affected docs and agent instructions, label
+historical guidance, verify changed links, and report merged/unmerged state.
+
 Commit titles: imperative mood plain English (matching recent history). No mandatory Conventional Commit prefix.
 
 Body and PR descriptions:
@@ -97,7 +100,7 @@ PR titles under 70 characters. Detail goes in the body.
 
 - If the request is ambiguous, ask a clarifying question or offer 2-3 differentiated options.
 - If the change touches the solver, constraint DSL, or auth, link the relevant section in `CLAUDE.md`.
-- If the change would re-enable a disabled feature (billing, email, SMS, notifications), confirm with the user before suggesting code.
+- If the change enables external provider delivery or mounts a currently unregistered router, confirm the requested scope first.
 
 ## Anti-patterns
 

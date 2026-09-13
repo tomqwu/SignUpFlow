@@ -31,7 +31,8 @@
 ### 4. Verify the Feature
 - [ ] Run the new test — it should PASS
 - [ ] Run `make test-unit` — no regressions
-- [ ] Run `make test-all` if the change crosses layers
+- [ ] Run `make test-all` before every PR; it includes all seven Python tiers
+- [ ] Run `make test-mobile` for mobile changes
 
 ### 5. Before Submitting
 - [ ] All tests pass
@@ -49,6 +50,10 @@
 | API | `tests/api/` | Full HTTP workflows with real JWT + in-memory DB |
 | CLI | `tests/cli/` | Subprocess CLI: YAML in, JSON out, real solver |
 | Integration | `tests/integration/` | Real DB + real auth |
+| Web | `tests/web/` | Cookie and HTMX routes |
+| Contract | `tests/contract/` | OpenAPI snapshot |
+| Browser | `tests/e2e/` | Live application with Playwright |
+| Mobile | `mobile/test/` | Flutter unit/widget tests, separate command |
 | Comprehensive | `tests/comprehensive_test_suite.py` | Cross-router workflows |
 
 Every public API endpoint or CLI subcommand MUST have:
@@ -124,6 +129,12 @@ make test-all
 
 ## Commits & PRs
 
-- Use Conventional Commits (`feat:`, `fix:`, `docs:`, `refactor:`, `test:`)
+- Use imperative plain-English commit titles; no mandatory Conventional Commit prefix
 - Keep each commit scoped to a single concern
 - PRs include: a short summary, list of tests run, and any migration / config steps
+- Record local results against the pushed head SHA. Require hosted checks, successful
+  current-head/base AI review, and GitHub mergeability before merging.
+- Actions runs static checks, migration validation, and AI review, not tests.
+- Follow [the current testing guide](docs/TESTING.md), including browser prerequisites.
+- Reconcile affected code, tests, documentation, and agent instructions before
+  declaring done. Label retained historical guidance; report unverified scope.

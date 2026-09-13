@@ -1,5 +1,10 @@
 # Test Strategy for Rostio
 
+> Historical reference. Reclassified on 2026-09-13; the original observations,
+> counts, timing estimates, commands, and CI proposals below are retained as
+> historical context, not current policy or live test status. Use the
+> [current testing and merge guide](TESTING.md) and the repository README instead.
+
 ## Problem Analysis: Why We Missed Broken Features
 
 ### Root Cause Analysis

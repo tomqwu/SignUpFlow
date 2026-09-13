@@ -15,7 +15,7 @@ SignUpFlow is a headless volunteer scheduling and sign-up management API + CLI f
 - Database: SQLite (dev), PostgreSQL (prod)
 - Auth: JWT (HS256, 24h expiry) + bcrypt
 
-Billing (Stripe), email (SendGrid), SMS (Twilio), and notification routers exist in the codebase but are **not registered** in `api/main.py`. Tests for those features are skipped via `pytestmark`.
+Billing and notification routers are registered under `/api/v1`; SMS is mounted at `/api/sms`. Email delivery is service-backed. Keep provider delivery disabled during local tests; registration does not establish production readiness. See `docs/TESTING.md` for current validation scope.
 
 ## Operating loop
 
@@ -24,7 +24,8 @@ Billing (Stripe), email (SendGrid), SMS (Twilio), and notification routers exist
 3. For non-trivial changes, propose a short patch plan first.
 4. Make small, reviewable edits.
 5. Run the validation commands below before declaring done.
-6. Summarize changed files and validation performed.
+6. Reconcile affected current docs and agent instructions; label retained historical guidance and verify changed links. Search for stale commands, counts, check names, and feature-state claims before declaring done.
+7. Summarize changed files, validation, merged/unmerged state, and any unverified scope.
 
 ## House style
 

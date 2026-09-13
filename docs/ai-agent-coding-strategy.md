@@ -45,13 +45,19 @@ For a feature change:
 5. Run `make test-unit-fast` during iteration, `make test-all` before commit.
 6. If a route was added, register it in `api/main.py` and update the router list in `CLAUDE.md`.
 7. If a model field changed, generate an Alembic migration.
+8. Follow [current testing and merge policy](TESTING.md): record final local results
+   with the pushed head SHA, wait for hosted checks and AI review, verify GitHub
+   mergeability, and complete the normal merge workflow.
+9. Reconcile all affected current documentation and instructions. Label historical
+   material and disclose any unverified scope before saying done.
 
 ## Implementation checklist
 
 - [ ] Every DB query filters by `org_id`. Cross-tenant leaks are a P0 bug.
 - [ ] Routes use `Depends(get_current_user)` or `Depends(get_current_admin_user)`.
 - [ ] Tests cover the happy path AND at least one negative-path assertion.
-- [ ] Disabled features (billing/email/SMS/notifications) remain disabled unless the task says otherwise.
+- [ ] External provider delivery remains disabled in local tests. Router registration
+  is checked against `api/main.py`, not inferred from old feature-status notes.
 - [ ] Each new or edited agent rule is imperative and verifiable.
 - [ ] Each external source is recorded in `docs/source-repos.md` and `docs/research-log.md`.
 

@@ -27,7 +27,7 @@ SignUpFlow is a headless volunteer scheduling and sign-up management API + CLI (
 
 ### Disabled Features
 
-Billing (Stripe), email (SendGrid), SMS (Twilio), and notification routers are **not registered** in `api/main.py`. Their service files and models remain in the codebase but are inactive. Tests for these features are skipped via `pytestmark`.
+Billing and notification routers are registered under `/api/v1`; SMS is mounted at `/api/sms`. Email delivery is service-backed. Keep provider delivery disabled during local tests; registration does not establish production readiness. See `docs/TESTING.md` for current validation scope.
 
 ## Commands
 
