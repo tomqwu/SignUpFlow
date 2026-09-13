@@ -36,6 +36,7 @@ POISONED_ENVIRONMENT = {
     "RECAPTCHA_SECRET_KEY": "recaptcha-live-secret-key",
     "SENTRY_DSN": "https://secret@example.invalid/1",
     "DATABASE_URL": "postgresql://customer.invalid/live",
+    "ENVIRONMENT": "production",
     "EMAIL_ENABLED": "true",
     "SMS_ENABLED": "true",
     "BILLING_ENABLED": "true",
@@ -49,6 +50,7 @@ def test_test_process_environment_removes_live_integrations():
     )
 
     assert environment["DATABASE_URL"] == "sqlite:////tmp/owned-signupflow-test.db"
+    assert environment["ENVIRONMENT"] == "development"
     assert environment["TESTING"] == "true"
     for name in ("EMAIL_ENABLED", "SMS_ENABLED", "BILLING_ENABLED"):
         assert environment[name] == "false"
@@ -58,6 +60,7 @@ def test_test_process_environment_removes_live_integrations():
             "LANG",
             "DATABASE_URL",
             "EMAIL_ENABLED",
+            "ENVIRONMENT",
             "SMS_ENABLED",
             "BILLING_ENABLED",
         }:
@@ -84,6 +87,7 @@ def test_live_server_environment_preserves_runtime_basics_only():
             "LANG",
             "DATABASE_URL",
             "EMAIL_ENABLED",
+            "ENVIRONMENT",
             "SMS_ENABLED",
             "BILLING_ENABLED",
         }:

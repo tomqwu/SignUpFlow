@@ -1,11 +1,12 @@
 """Validate and discover definitions before any scenario creates test data."""
 
 from pathlib import Path
-from typing import Annotated, Literal
+from typing import Annotated, Literal, Self
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 BUILTIN_DIRECTORY = Path(__file__).resolve().parents[2] / "docs" / "playbooks"
+PLAYBOOK_METADATA_FILENAMES = {"coverage.json"}
 Identifier = Annotated[str, Field(pattern=r"^[a-z][a-z0-9_-]*$")]
 Role = Annotated[str, Field(pattern=r"^[a-z][a-z0-9_]*$")]
 Label = Annotated[str, Field(min_length=1, max_length=120, pattern=r"\S")]
@@ -27,7 +28,7 @@ class PlaybookSpec(BaseModel):
     roles: dict[Role, Headcount] = Field(min_length=1)
 
     @model_validator(mode="after")
-    def validate_critical_role(self):
+    def validate_critical_role(self) -> Self:
         # The absence/replacement drill removes both reserves, then adds one person.
         if self.roles.get(self.critical_role) != 1:
             raise ValueError("critical_role must name a role with exactly one required slot")
@@ -39,7 +40,11 @@ def discover_playbooks(directories: list[Path]) -> list[PlaybookSpec]:
     for directory in dict.fromkeys(path.resolve() for path in directories):
         if not directory.is_dir():
             raise ValueError(f"Playbook directory does not exist: {directory}")
-        paths = sorted(directory.glob("*.json"))
+        paths = sorted(
+            path
+            for path in directory.glob("*.json")
+            if path.name not in PLAYBOOK_METADATA_FILENAMES
+        )
         if not paths:
             raise ValueError(f"No playbook definitions in {directory}")
         for path in paths:
