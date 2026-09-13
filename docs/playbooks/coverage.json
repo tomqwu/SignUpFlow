@@ -18,8 +18,12 @@
       "operation": "Invite members and assign every scheduling qualification",
       "expected": "Invitations are single-use and qualifications do not grant administrator access",
       "tiers": ["api", "e2e"],
-      "status": "partial",
-      "evidence": ["tests/playbooks/runtime.py", "tests/e2e/test_auth_flows.py"]
+      "status": "automated",
+      "evidence": [
+        "tests/web/test_invite_person.py",
+        "tests/web/test_people.py",
+        "tests/e2e/test_domain_playbooks.py"
+      ]
     },
     {
       "id": "BO-03",

@@ -35,8 +35,9 @@ and proves that they cannot fill both slots in the same event.
 
 1. Create the organization and administrator account. Check the onboarding page
    on a phone: the text and each action must remain readable and separate.
-2. Invite all fourteen members with `volunteer` plus their scheduling role.
-   Accept each invitation. Verify names and role strings before solving.
+2. Invite all fourteen members with `volunteer` account access plus their scheduling
+   qualification. Accept each invitation. Verify names and qualification strings in
+   People before solving. The browser playbook executes this setup at 360px and 1440px.
 3. Independently confirm each person's suitability for their ministry. A role
    label is not evidence of training, background screening or safeguarding approval.
 4. Create six Sunday worship events, 10:00-12:00, one per week. Each needs one

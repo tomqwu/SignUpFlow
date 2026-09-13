@@ -24,6 +24,88 @@ def test_people_lists_org_members(client, db):
     assert "padmin@web.test" in resp.text  # admin themselves listed
 
 
+def test_people_page_exposes_scheduling_qualification_controls(client, db):
+    token = _admin(client, db, org="p_roles", email="roles-admin@web.test")
+    seed_person(
+        db,
+        person_id="p_qualified",
+        org_id="p_roles",
+        email="qualified@web.test",
+        roles=["volunteer", "usher"],
+    )
+
+    response = client.get("/a/people", cookies={SESSION_COOKIE: token})
+
+    assert response.status_code == 200
+    assert 'action="/a/people/p_qualified/qualifications"' in response.text
+    assert 'value="usher"' in response.text
+
+
+def test_admin_updates_qualifications_without_changing_access(client, db):
+    token = _admin(client, db, org="p_update", email="update-admin@web.test")
+    member = seed_person(
+        db,
+        person_id="p_update_member",
+        org_id="p_update",
+        email="update-member@web.test",
+        roles=["volunteer", "usher"],
+    )
+
+    response = client.post(
+        "/a/people/p_update_member/qualifications",
+        data={"qualifications": "sound; children_leader"},
+        cookies={SESSION_COOKIE: token},
+    )
+
+    assert response.status_code == 200
+    db.refresh(member)
+    assert member.roles == ["volunteer", "sound", "children_leader"]
+    assert "Qualifications saved" in response.text
+
+
+def test_qualification_update_rejects_admin_alias_and_preserves_roles(client, db):
+    token = _admin(client, db, org="p_reject", email="reject-admin@web.test")
+    member = seed_person(
+        db,
+        person_id="p_reject_member",
+        org_id="p_reject",
+        email="reject-member@web.test",
+        roles=["volunteer", "usher"],
+    )
+
+    response = client.post(
+        "/a/people/p_reject_member/qualifications",
+        data={"qualifications": "usher, ADMIN"},
+        cookies={SESSION_COOKIE: token},
+    )
+
+    assert response.status_code == 400
+    db.refresh(member)
+    assert member.roles == ["volunteer", "usher"]
+    assert "reserved" in response.text.lower()
+
+
+def test_qualification_update_cannot_target_another_organization(client, db):
+    token = _admin(client, db, org="p_owner", email="owner-admin@web.test")
+    outsider = seed_person(
+        db,
+        person_id="p_outside_member",
+        org_id="p_outside",
+        email="outside-member@web.test",
+        roles=["volunteer", "coach"],
+    )
+
+    response = client.post(
+        "/a/people/p_outside_member/qualifications",
+        data={"qualifications": "scorekeeper"},
+        cookies={SESSION_COOKIE: token},
+    )
+
+    assert response.status_code == 404
+    db.refresh(outsider)
+    assert outsider.roles == ["volunteer", "coach"]
+
+
 def test_people_search_filters(client, db):
     token = _admin(client, db, org="p_org2", email="padmin2@web.test")
     seed_person(

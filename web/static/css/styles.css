@@ -164,6 +164,36 @@ a { color: var(--accent); text-decoration: none; }
 }
 .group .row:last-child { border-bottom: 0; }
 
+.person-meta {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+  min-width: 0;
+  max-width: 48%;
+}
+.person-meta .row-sub {
+  overflow-wrap: anywhere;
+  text-align: right;
+}
+.qualification-form { align-items: flex-end; }
+.qualification-form .field {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+}
+.qualification-form > .btn {
+  flex: 0 0 auto;
+  width: auto;
+}
+@media (max-width: 480px) {
+  .qualification-form {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .qualification-form > .btn { width: 100%; }
+}
+
 /* Onboarding rows pair flexible copy with a compact action. The global button
    width is useful for forms, but would otherwise collapse the copy column. */
 .ob-step > .btn {

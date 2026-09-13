@@ -11,7 +11,7 @@ class Playbook:
 
     password = "PlaybookTest123!"
 
-    def __init__(self, client, definition: PlaybookSpec):
+    def __init__(self, client, definition: PlaybookSpec, *, seed_people: bool = True):
         self.client = client
         self.spec = definition.model_dump()
         self.org = f"{definition.id}-{uuid4().hex[:10]}"
@@ -40,9 +40,10 @@ class Playbook:
             },
         )
         self.headers = {"Authorization": f"Bearer {admin['token']}"}
-        for role, count in self.spec["roles"].items():
-            for index in range(count * 2):
-                self.invite(f"{role} {index + 1}", [role])
+        if seed_people:
+            for role, count in self.spec["roles"].items():
+                for index in range(count * 2):
+                    self.invite(f"{role} {index + 1}", [role])
 
     def request(self, method, path, status=200, data=None, headers=None):
         response = self.client.request(

@@ -8,8 +8,8 @@ from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
 from sqlalchemy.orm import Session
 
-from api.database import get_db
 from api.core.features import billing_enabled
+from api.database import get_db
 from api.models import (
     Assignment,
     Constraint,
@@ -21,6 +21,7 @@ from api.models import (
     Team,
     TeamMember,
 )
+from api.roles import PERMISSION_ROLES
 from api.services.assignment_visibility import member_visible_assignment
 from web.deps import get_session_admin, get_session_user
 
@@ -734,16 +735,23 @@ def _people(db: Session, org_id: str, q: str | None) -> list[dict]:
         like = f"%{q.strip()}%"
         query = query.filter(or_(Person.name.ilike(like), Person.email.ilike(like)))
     rows = query.order_by(Person.name.asc()).all()
-    return [
-        {
-            "id": p.id,
-            "name": p.name,
-            "email": p.email,
-            "roles": [r.upper() for r in (p.roles or ["volunteer"])],
-            "status": (p.status or "active").lower(),
-        }
-        for p in rows
-    ]
+    people = []
+    for member in rows:
+        roles = member.roles or ["volunteer"]
+        access = "admin" if "admin" in roles else "volunteer"
+        qualifications = [role for role in roles if role not in PERMISSION_ROLES]
+        people.append(
+            {
+                "id": member.id,
+                "name": member.name,
+                "email": member.email,
+                "access": access.upper(),
+                "qualifications": qualifications,
+                "qualification_text": ", ".join(qualifications),
+                "status": (member.status or "active").lower(),
+            }
+        )
+    return people
 
 
 def _teams(db: Session, org_id: str) -> list[dict]:
@@ -900,6 +908,8 @@ def admin_people(
             "active_tab": "people",
             "people": _people(db, person.org_id, q),
             "q": q or "",
+            "notice": None,
+            "error": None,
         },
     )
 
@@ -917,7 +927,12 @@ def admin_people_list(
     return templates.TemplateResponse(
         request,
         "partials/people_list.html",
-        {"people": _people(db, person.org_id, q), "q": q or ""},
+        {
+            "people": _people(db, person.org_id, q),
+            "q": q or "",
+            "notice": None,
+            "error": None,
+        },
     )
 
 

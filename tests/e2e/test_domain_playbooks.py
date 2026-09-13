@@ -1,7 +1,7 @@
 """Domain browser acceptance: role forms, six weeks, publication and member response.
 
-Only bulk people and five repeated weeks are seeded by API. The first event,
-solve, review, publish and acceptance use the real browser with isolated actors.
+Five repeated weeks are seeded by API. Member qualification, invitation acceptance,
+the first event, solve, review, publish and response use real browser interactions.
 """
 
 from datetime import timedelta
@@ -10,7 +10,7 @@ import httpx
 import pytest
 from playwright.sync_api import expect
 
-from tests.e2e._helpers import no_js_errors
+from tests.e2e._helpers import invite_token, no_js_errors
 from tests.playbooks.runtime import Playbook
 
 pytestmark = pytest.mark.e2e
@@ -28,19 +28,77 @@ def _fits(page):
     assert page.evaluate("document.documentElement.scrollWidth <= window.innerWidth")
 
 
+def _onboard_qualified_members(page, new_context, base, db_path, playbook, width):
+    page.goto(f"{base}/a/people")
+    page.get_by_role("button", name="Invite person").click()
+    invitee = new_context().new_page()
+    invitee.set_viewport_size({"width": width, "height": 900})
+    for role, count in playbook.spec["roles"].items():
+        for index in range(count * 2):
+            name = f"{role} {index + 1}"
+            email = f"person{len(playbook.people)}@{playbook.org}.example"
+            page.fill("#inv_name", name)
+            page.fill("#inv_email", email)
+            page.select_option("#inv_role", "volunteer")
+            page.fill("#inv_qualifications", role)
+            page.get_by_role("button", name="Send invite").click()
+            expect(page.locator("#invite-result")).to_contain_text(f"Invitation sent to {email}")
+
+            token = invite_token(db_path, email)
+            assert token is not None
+            invitee.context.clear_cookies()
+            invitee.goto(f"{base}/auth/invitation/{token}")
+            invitee.fill("#password", playbook.password)
+            invitee.get_by_role("button", name="Accept & continue").click()
+            invitee.wait_for_url("**/v/schedule")
+            people = playbook.request("GET", f"/people/?org_id={playbook.org}&q={email}")["items"]
+            assert len(people) == 1
+            member = people[0]
+            assert member["roles"] == ["volunteer", role]
+            playbook.people[member["id"]] = {
+                "name": name,
+                "roles": [role],
+                "email": email,
+            }
+    page.reload()
+    first_id, first_member = next(iter(playbook.people.items()))
+    qualifications_form = page.locator(f'form[action="/a/people/{first_id}/qualifications"]')
+    qualifications_form.locator('input[name="qualifications"]').fill(first_member["roles"][0])
+    qualifications_form.get_by_role("button", name="Save").click()
+    expect(page.locator("#people-list")).to_contain_text(
+        f"Qualifications saved for {first_member['name']}"
+    )
+    assert page.get_by_text("ADMIN", exact=True).count() == 1
+    if width <= 480:
+        assert (
+            qualifications_form.evaluate("element => getComputedStyle(element).flexDirection")
+            == "column"
+        )
+        qualification_box = qualifications_form.locator(
+            'input[name="qualifications"]'
+        ).bounding_box()
+        assert qualification_box is not None and qualification_box["width"] >= 250
+    _fits(page)
+
+
 @pytest.mark.parametrize("width", [360, 1440])
-def test_domain_browser_workflow(live_server, page, new_context, tmp_path, playbook_spec, width):
+def test_domain_browser_workflow(
+    live_server, page, new_context, tmp_path, db_path, playbook_spec, width
+):
     base = live_server
     domain = playbook_spec.id
     page.set_viewport_size({"width": width, "height": 900})
     with httpx.Client(base_url=base, timeout=30) as client:
-        p = Playbook(client, playbook_spec)
+        p = Playbook(client, playbook_spec, seed_people=False)
         for week in range(1, 6):
             p.event(week)
         _login(page, base, p.email, p.password, "/a/dashboard")
         page.goto(f"{base}/a/onboarding")
         _fits(page)
         page.screenshot(path=str(tmp_path / f"{domain}-{width}-onboarding.png"), full_page=True)
+
+        _onboard_qualified_members(page, new_context, base, db_path, p, width)
+        page.screenshot(path=str(tmp_path / f"{domain}-{width}-qualified.png"), full_page=True)
 
         title = f"{p.spec['event']} W1 main"
         page.goto(f"{base}/a/events")

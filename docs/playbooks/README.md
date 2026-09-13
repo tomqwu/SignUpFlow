@@ -26,12 +26,13 @@ make test-all
 The API tier uses real JWT identities and an isolated in-memory SQLite database.
 The browser tier starts the real application against a temporary SQLite database.
 The default business profile has billing and paid SMS disabled; neither playbook
-creates a subscription or contacts an external provider.
-It uses API setup for the bulk roster and five repeated weeks, then browser login,
-multi-role event creation, solve, review, publish, and member acceptance. It is not
-a claim that every setup step is achievable through the current browser forms.
-The existing `test_onboarding_wizard.py` separately covers signup and invitation
-acceptance through the browser.
+creates a subscription or contacts an external provider. In each browser variant,
+the administrator invites all fourteen members with their scheduling qualification,
+each member accepts through the invitation page, and the administrator verifies the
+qualification editor. Five repeated weeks are then created by API before the browser
+creates the remaining event, solves, reviews, publishes, and records member response.
+Organization bootstrap and the five repeated events remain API setup in this test;
+their normal-UI coverage is tracked separately.
 
 `church.json` and `basketball.json` are the executable role/headcount fixtures.
 `tests/playbooks/` validates and discovers them for both test tiers. Each run creates new

@@ -16,6 +16,7 @@ from sqlalchemy.orm import Session
 
 from api.database import get_db
 from api.models import Assignment, EmailPreference, Event, Notification, Person
+from api.roles import build_roles, parse_qualifications, replace_qualifications
 from api.routers.assignments import (
     accept_assignment,
     decline_assignment,
@@ -89,6 +90,7 @@ from web.routers.pages import (
     _my_rrule,
     _my_timeoff,
     _open_shifts,
+    _people,
     _recurring,
     _solution_owned,
     _solution_review,
@@ -487,6 +489,7 @@ def people_invite(
     name: str = Form(...),
     email: str = Form(...),
     role: str = Form("volunteer"),
+    qualifications: str = Form(""),
     person: Person = Depends(get_session_admin),
     db: Session = Depends(get_db),
 ):
@@ -503,16 +506,54 @@ def people_invite(
             status_code=code,
         )
 
-    role = role if role in ("volunteer", "admin") else "volunteer"
     try:
-        payload = InvitationCreate(name=name, email=email, roles=[role])
-    except ValueError:
-        return _result(False, "Enter a valid name and email.", 400)
+        roles = build_roles(role, parse_qualifications(qualifications))
+        payload = InvitationCreate(name=name, email=email, roles=roles)
+    except ValueError as exc:
+        message = str(exc) if qualifications else "Enter a valid name and email."
+        return _result(False, message, 400)
     try:
         create_invitation(payload, background_tasks, org_id=person.org_id, inviter=person, db=db)
     except HTTPException as exc:
         return _result(False, str(exc.detail), exc.status_code or 400)
     return _result(True, f"Invitation sent to {email}.")
+
+
+@router.post("/a/people/{person_id}/qualifications", response_class=HTMLResponse)
+def people_qualifications(
+    request: Request,
+    person_id: str,
+    qualifications: str = Form(""),
+    q: str = Form(""),
+    person: Person = Depends(get_session_admin),
+    db: Session = Depends(get_db),
+):
+    """Replace one same-tenant member's scheduling qualifications."""
+    from web.app import templates
+
+    def _render(*, notice: str | None = None, error: str | None = None, code: int = 200):
+        return templates.TemplateResponse(
+            request,
+            "partials/people_list.html",
+            {
+                "people": _people(db, person.org_id, q),
+                "q": q,
+                "notice": notice,
+                "error": error,
+            },
+            status_code=code,
+        )
+
+    member = db.query(Person).filter(Person.org_id == person.org_id, Person.id == person_id).first()
+    if member is None:
+        return _render(error="Person not found.", code=404)
+    try:
+        parsed = parse_qualifications(qualifications)
+        member.roles = replace_qualifications(member.roles or [], parsed)
+    except ValueError as exc:
+        return _render(error=str(exc), code=400)
+    db.commit()
+    return _render(notice=f"Qualifications saved for {member.name}.")
 
 
 @router.post("/a/people/import", response_class=HTMLResponse)
