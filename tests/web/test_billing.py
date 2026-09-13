@@ -2,9 +2,18 @@
 
 from __future__ import annotations
 
+import pytest
+
+from api.core.config import settings
 from api.models import Subscription
 from tests.web.conftest import seed_person
 from web.deps import SESSION_COOKIE
+
+
+@pytest.fixture(autouse=True)
+def _enable_billing(monkeypatch):
+    """Exercise the deferred page only through explicit opt-in."""
+    monkeypatch.setattr(settings, "BILLING_ENABLED", True)
 
 
 def _admin(client, db, *, org, email):

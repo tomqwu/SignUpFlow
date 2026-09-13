@@ -1,5 +1,8 @@
 """FastAPI application entry point."""
 
+# Tests and owned subprocesses opt out so a developer .env cannot restore
+# provider credentials that the local safety boundary deliberately removed.
+import os
 import traceback
 from contextlib import asynccontextmanager
 
@@ -9,8 +12,8 @@ from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
-# Load environment variables from .env file
-load_dotenv()
+if os.getenv("SIGNUPFLOW_LOAD_DOTENV", "true").lower() == "true":
+    load_dotenv()
 
 from api.database import init_db
 from api.logging_config import logger

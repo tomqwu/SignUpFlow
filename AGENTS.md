@@ -15,7 +15,7 @@ SignUpFlow is a headless volunteer scheduling and sign-up management API + CLI f
 - Database: SQLite (dev), PostgreSQL (prod)
 - Auth: JWT (HS256, 24h expiry) + bcrypt
 
-Billing and notification routers are registered under `/api/v1`; SMS is mounted at `/api/sms`. Email delivery is service-backed. Keep provider delivery disabled during local tests; registration does not establish production readiness. See `docs/TESTING.md` for current validation scope.
+Notification routes are registered under `/api/v1`. Billing and SMS code is registered but feature-gated off by default with `BILLING_ENABLED=false` and `SMS_ENABLED=false`; core scheduling must not require either paid integration. See `docs/TESTING.md` for current validation scope.
 
 ## Operating loop
 
@@ -155,7 +155,7 @@ When rules overlap, follow the more specific and safer one. Precedence:
 - Fixing code without investigating root cause first.
 - Replacing a whole document when an append-and-refine edit would do.
 - Marketing language in instruction files.
-- Re-enabling disabled feature routers (billing/email/SMS/notifications) without an explicit task to do so.
+- Re-enabling deferred billing, paid SMS, or external delivery without an explicit task to do so.
 - Hard-coding values from memory (env var names, route paths, schema fields). Read them from the canonical source.
 
 ## File-by-file scope notes

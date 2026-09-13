@@ -363,10 +363,10 @@ POST /api/solver/solve         →  api/routers/solver.py (HTTP + DB)
 
 ### Provider-backed Features
 
-Billing and notification routers are registered under `/api/v1`; SMS is mounted
-at its own `/api/sms` prefix. Email delivery is service-backed. Registration does
-not prove provider configuration or production readiness; keep external delivery
-disabled during local tests and follow the documented release checks.
+Notification routes are registered under `/api/v1`. Billing routes remain in the
+codebase under `/api/v1`, and SMS routes under `/api/sms`, but both return 404 by
+default behind `BILLING_ENABLED=false` and `SMS_ENABLED=false`. Paid billing and
+SMS are deferred; the complete scheduling workflow does not require them.
 
 ---
 
@@ -397,16 +397,20 @@ of complete tenant isolation; see the [remaining playbook boundaries](docs/playb
 
 Both API and CLI suites include real-world scenario tests:
 
-**Church ministry** — Pastor manages worship team, Sunday school teachers, youth group. Multi-role members (Sarah plays keyboard AND teaches). 4 weeks of scheduling, fairness distribution, manual adjustments, invitation workflow.
+**Church ministry** — A coordinator runs a six-week worship and ministry roster
+with multi-role volunteers, absences, simultaneous services, shortages,
+replacement, regeneration, publication, acceptance, and swaps.
 
-**Sports club** — Coach manages cricket + basketball rosters. Dual-sport players (Priya bowls AND plays point guard). Regular week, tournament week with 5 events, injury time-off, date range filtering.
+**Basketball team** — A coach runs a six-week game and practice roster with
+multi-position players, injuries, simultaneous events, shortages, replacement,
+regeneration, publication, acceptance, and swaps.
 
 ### Commands
 
 ```bash
 make setup                # First-time setup
 make run                  # Dev server on :8000
-make test                 # Backend comprehensive tests
+make test                 # Complete local Python suite (same as make test-all)
 make test-unit            # Python unit tests only
 make test-unit-fast       # Skip slow bcrypt tests (~7s)
 make test-all             # All Python tiers, including web + contract + Playwright
@@ -416,12 +420,11 @@ make migrate              # Run Alembic migrations
 
 Single test: `poetry run pytest tests/unit/test_events.py::test_create_event -v`
 
-Tests run locally, not in GitHub Actions. Before the first full run, install
-the browser dependency with `poetry run pip install "playwright==1.60.0"` and
+Tests run locally, not in GitHub Actions. `poetry install` installs the locked
+Playwright Python dependency; before the first browser run, install Chromium with
 `poetry run playwright install chromium` (Linux may also require browser system
-dependencies). Reinstall Playwright after synchronizing dependencies if it was
-removed; it is outside the Poetry lockfile. `make test-all` runs each tier in a
-separate process, including both church and basketball playbooks.
+dependencies). `make test-all` runs each tier in a separate process, including
+both church and basketball playbooks.
 Run `make test-mobile` for mobile changes;
 set `FLUTTER=/path/to/flutter` if the SDK is not on your PATH.
 

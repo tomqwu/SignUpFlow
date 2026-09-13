@@ -4,11 +4,12 @@ end-to-end. Real screens land in 11.1+ (see plan)."""
 
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends, Request
+from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
 from sqlalchemy.orm import Session
 
 from api.database import get_db
+from api.core.features import billing_enabled
 from api.models import (
     Assignment,
     Constraint,
@@ -110,6 +111,8 @@ def _pricing_tiers() -> list[dict]:
 @router.get("/pricing", response_class=HTMLResponse)
 def pricing(request: Request):
     """Public pricing page — no auth (mirrors /auth/login)."""
+    if not billing_enabled():
+        raise HTTPException(status_code=404, detail="Billing is not enabled")
     from web.app import templates
 
     return templates.TemplateResponse(request, "pricing.html", {"tiers": _pricing_tiers()})
@@ -987,6 +990,8 @@ def admin_billing(
     person: Person = Depends(get_session_admin),
     db: Session = Depends(get_db),
 ):
+    if not billing_enabled():
+        raise HTTPException(status_code=404, detail="Billing is not enabled")
     from web.app import templates
 
     return templates.TemplateResponse(

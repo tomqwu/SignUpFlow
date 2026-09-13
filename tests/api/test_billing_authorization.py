@@ -4,11 +4,19 @@ from unittest.mock import MagicMock
 
 import pytest
 
+from api.core.config import settings
 from api.models import BillingHistory, Organization, Person, Subscription
 from api.security import create_access_token
 from api.services.stripe_service import StripeService
 
 pytestmark = pytest.mark.no_mock_auth
+
+
+@pytest.fixture(autouse=True)
+def _enable_billing(monkeypatch):
+    """Exercise the deferred implementation only through explicit opt-in."""
+    monkeypatch.setattr(settings, "BILLING_ENABLED", True)
+
 
 OPERATIONS = [
     ("POST", "/subscription/upgrade", {"plan_tier": "starter", "billing_cycle": "monthly"}),

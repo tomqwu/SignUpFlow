@@ -14,6 +14,7 @@ from typing import Any
 
 from celery.schedules import crontab
 
+from api.core.features import billing_enabled, disabled_billing_task_result
 from api.database import SessionLocal
 from api.services.billing_service import BillingService
 
@@ -48,6 +49,8 @@ def check_expired_trials(self) -> dict[str, Any]:
             "message": str
         }
     """
+    if not billing_enabled():
+        return disabled_billing_task_result()
     logger.info("Starting daily trial expiration check...")
     db = SessionLocal()
 
@@ -86,6 +89,8 @@ def send_trial_expiration_warning(self, org_id: str, days_remaining: int) -> dic
     Returns:
         dict: Email sending result
     """
+    if not billing_enabled():
+        return disabled_billing_task_result()
     logger.info(
         f"Sending trial expiration warning to org {org_id} ({days_remaining} days remaining)"
     )
@@ -126,6 +131,8 @@ def check_usage_limits(self) -> dict[str, Any]:
     Returns:
         dict: Summary of organizations warned
     """
+    if not billing_enabled():
+        return disabled_billing_task_result()
     logger.info("Starting daily usage limit check...")
     db = SessionLocal()
 
@@ -205,6 +212,8 @@ def apply_pending_downgrades(self) -> dict[str, Any]:
             "message": str
         }
     """
+    if not billing_enabled():
+        return disabled_billing_task_result()
     logger.info("Starting daily pending downgrades check...")
     db = SessionLocal()
 
@@ -254,6 +263,8 @@ def process_cancelled_subscriptions(self) -> dict[str, Any]:
             "message": str
         }
     """
+    if not billing_enabled():
+        return disabled_billing_task_result()
     logger.info("Starting daily cancelled subscriptions check...")
     db = SessionLocal()
 
@@ -365,6 +376,8 @@ def mark_organizations_for_deletion(self) -> dict[str, Any]:
             "message": str
         }
     """
+    if not billing_enabled():
+        return disabled_billing_task_result()
     logger.info("Starting daily organization deletion check...")
     db = SessionLocal()
 

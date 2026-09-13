@@ -19,6 +19,8 @@ from pathlib import Path
 
 import pytest
 
+from tests.test_environment import build_test_environment
+
 pytestmark = pytest.mark.e2e
 
 
@@ -26,6 +28,14 @@ def _free_port() -> int:
     with socket.socket() as s:
         s.bind(("127.0.0.1", 0))
         return s.getsockname()[1]
+
+
+def read_server_log(path: Path) -> str:
+    """Return a bounded diagnostic tail from the owned test server."""
+    try:
+        return path.read_text(errors="replace")[-4000:]
+    except OSError as exc:
+        return f"Could not read test server log: {exc}"
 
 
 @pytest.fixture(scope="session")
@@ -42,59 +52,54 @@ def live_server(db_path):
 
     port = _free_port()
     dsn = f"sqlite:///{db_path}"
-    # Inherit the real environment (HOME/LANG/venv vars CI needs) and only
-    # override what makes the run deterministic + sandboxed.
-    env = {
-        **os.environ,
-        "SIGNUPFLOW_DB": dsn,
-        "DATABASE_URL": dsn,
-        "SECRET_KEY": "e2e-overnight-secret-key-min-32-chars-long-xx",
-        "ENVIRONMENT": "development",
-        "EMAIL_ENABLED": "false",
-        "SMS_ENABLED": "false",
-    }
-    # The pytest process (root conftest) sets these, which would force the
-    # live server onto an in-memory DB the test can't seed/read. They must
-    # be ABSENT (not empty) for the server to use the real db_path file.
-    for _k in ("TESTING", "TESTING_FORCE_MEMORY", "PYTEST_CURRENT_TEST"):
-        env.pop(_k, None)
-    proc = subprocess.Popen(
-        [
-            sys.executable,
-            "-m",
-            "uvicorn",
-            "api.main:app",
-            "--host",
-            "127.0.0.1",
-            "--port",
-            str(port),
-        ],
-        cwd=str(Path(__file__).resolve().parents[2]),
-        env=env,
-        stdout=subprocess.DEVNULL,
-        stderr=subprocess.STDOUT,
+    env = build_test_environment(
+        os.environ,
+        database_url=dsn,
+        secret_key="e2e-overnight-secret-key-min-32-chars-long-xx",
     )
-    base = f"http://127.0.0.1:{port}"
-    deadline = time.time() + 60
-    try:
-        while time.time() < deadline:
-            if proc.poll() is not None:
-                raise RuntimeError("uvicorn exited before becoming ready")
-            try:
-                with urllib.request.urlopen(f"{base}/health", timeout=2) as r:
-                    if r.status == 200:
-                        break
-            except Exception:
-                time.sleep(0.5)
-        else:
-            raise RuntimeError("live server did not become healthy in 60s")
-        yield base
-    finally:
-        proc.terminate()
+    log_path = Path(db_path).with_name("server.log")
+    with log_path.open("w", encoding="utf-8") as server_log:
+        proc = subprocess.Popen(
+            [
+                sys.executable,
+                "-m",
+                "uvicorn",
+                "api.main:app",
+                "--host",
+                "127.0.0.1",
+                "--port",
+                str(port),
+            ],
+            cwd=str(Path(__file__).resolve().parents[2]),
+            env=env,
+            stdout=server_log,
+            stderr=subprocess.STDOUT,
+        )
+        base = f"http://127.0.0.1:{port}"
+        deadline = time.time() + 60
         try:
-            proc.wait(timeout=10)
-        except subprocess.TimeoutExpired:
-            proc.kill()
+            while time.time() < deadline:
+                if proc.poll() is not None:
+                    raise RuntimeError(
+                        "uvicorn exited before becoming ready\n" + read_server_log(log_path)
+                    )
+                try:
+                    with urllib.request.urlopen(f"{base}/health", timeout=2) as response:
+                        if response.status == 200:
+                            break
+                except Exception:
+                    time.sleep(0.5)
+            else:
+                raise RuntimeError(
+                    "live server did not become healthy in 60s\n" + read_server_log(log_path)
+                )
+            yield base
+        finally:
+            proc.terminate()
+            try:
+                proc.wait(timeout=10)
+            except subprocess.TimeoutExpired:
+                proc.kill()
 
 
 @pytest.fixture(scope="session")
@@ -116,12 +121,24 @@ def new_context(_browser):
 
     def _make():
         ctx = _browser.new_context(viewport={"width": 430, "height": 932}, device_scale_factor=2)
+        ctx.signupflow_javascript_errors = []
+
+        def track_page(pg):
+            pg.on("pageerror", lambda error: ctx.signupflow_javascript_errors.append(str(error)))
+
+        ctx.on("page", track_page)
         made.append(ctx)
         return ctx
 
     yield _make
-    for c in made:
-        c.close()
+    for context in made:
+        assert_no_javascript_errors(context)
+        context.close()
+
+
+def assert_no_javascript_errors(context) -> None:
+    """Fail every browser context on uncaught JavaScript errors."""
+    assert not context.signupflow_javascript_errors, context.signupflow_javascript_errors
 
 
 @pytest.fixture

@@ -27,7 +27,7 @@ SignUpFlow is a headless volunteer scheduling and sign-up management API + CLI (
 
 ### Provider-backed Features
 
-Billing and notification routers are registered under `/api/v1`; SMS is mounted at `/api/sms`. Email delivery is service-backed. Keep provider delivery disabled during local tests; registration does not establish production readiness. See `docs/TESTING.md` for current validation scope.
+Notification routes are registered under `/api/v1`. Billing and SMS code is registered but feature-gated off by default with `BILLING_ENABLED=false` and `SMS_ENABLED=false`; core scheduling must not require either paid integration. See `docs/TESTING.md` for current validation scope.
 
 ## Commands
 

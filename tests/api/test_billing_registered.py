@@ -2,8 +2,17 @@
 
 from __future__ import annotations
 
+import pytest
+
+from api.core.config import settings
 from api.models import Subscription
 from tests.api.conftest import auth_headers, seed_org, seed_user
+
+
+@pytest.fixture(autouse=True)
+def _enable_billing(monkeypatch):
+    """Exercise the deferred implementation only through explicit opt-in."""
+    monkeypatch.setattr(settings, "BILLING_ENABLED", True)
 
 
 def test_billing_subscription_endpoint_mounted(client, db):

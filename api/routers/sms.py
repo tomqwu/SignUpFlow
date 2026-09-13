@@ -14,6 +14,7 @@ from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Request
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
+from api.core.features import require_sms_enabled
 from api.database import get_db
 from api.dependencies import get_current_admin_user, get_current_user
 from api.models import Assignment, Event, Person, SmsPreference
@@ -25,7 +26,11 @@ from api.tasks.sms_tasks import (
 )
 from api.timeutils import utcnow
 
-router = APIRouter(prefix="/api/sms", tags=["sms"])
+router = APIRouter(
+    prefix="/api/sms",
+    tags=["sms"],
+    dependencies=[Depends(require_sms_enabled)],
+)
 
 
 # ============================================================================
