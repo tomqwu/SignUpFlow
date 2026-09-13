@@ -16,6 +16,9 @@ navigation, and router-state claims in active developer entry points.
 Commands and hosted check behavior were compared with the Makefile and workflow
 files, and router claims with `api/main.py`. Removed the README's fixed 413-test
 total, obsolete tier counts/timings, and false unregistered-router statements.
+Playwright is now locked, `make test` aliases the seven-tier suite, and maintained
+guides describe billing/paid SMS as default-off deferred integrations rather than
+active setup requirements.
 Aligned contributor commit/merge rules with the agent baseline. The owner's latest
 clarification supersedes the previous Ollama review setup: code review runs
 locally, no CI checks remain, and Ollama must not review PRs. The later clarification

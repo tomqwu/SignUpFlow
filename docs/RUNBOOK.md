@@ -42,12 +42,13 @@ to run migrations by hand: `docker compose exec api alembic upgrade head`.
 | `DATABASE_URL` | Postgres DSN | compose sets `postgresql://…@db:5432/…` |
 | `ENVIRONMENT` | `production` enables HSTS + the SECRET_KEY guard | |
 | `EMAIL_ENABLED` + `MAILTRAP_SMTP_USER`/`_PASSWORD` | Transactional email (sandbox: Mailtrap) | or `SENDGRID_API_KEY` for prod |
-| `SMS_ENABLED` + `TWILIO_ACCOUNT_SID`/`_AUTH_TOKEN`/`_PHONE_NUMBER` | SMS | sandbox: Twilio magic number `+15005550006` |
-| `STRIPE_SECRET_KEY` (`sk_test_…` for sandbox) | Billing | absent → billing UI shows setup notice, no crash |
+| `SMS_ENABLED` + `TWILIO_ACCOUNT_SID`/`_AUTH_TOKEN`/`_PHONE_NUMBER` | Deferred paid SMS | default `false`; enable only for an authorized sandbox validation |
+| `BILLING_ENABLED` + `STRIPE_SECRET_KEY` | Deferred billing | default `false`; enable only for an authorized Stripe sandbox validation |
 | `SENTRY_DSN` | Error reporting | absent → disabled (logged at startup) |
 
-Email/SMS/billing are **feature-gated**: absent credentials disable the
-feature with an in-app notice — they never block startup.
+Email delivery is credential-gated. Billing and SMS are feature-gated off by
+default: their direct routes return 404 and their navigation is hidden. They
+never block startup or the core scheduling workflow.
 
 ## Backups
 

@@ -47,16 +47,16 @@ def test_password_change(live_server, page):
     no_js_errors(page)
 
 
-def test_billing_and_public_pricing(live_server, page):
+def test_commercial_surfaces_are_disabled(live_server, page):
     base = live_server
     signup_admin(page, base)
-    page.goto(f"{base}/a/billing")
-    page.wait_for_selector(".page-title:has-text('Billing')")
+    page.goto(f"{base}/a/dashboard")
+    assert page.locator('a[href="/a/billing"]').count() == 0
 
-    page.goto(f"{base}/pricing")
-    page.wait_for_selector("text=Pricing")
-    page.wait_for_selector("text=pro")
-    page.wait_for_selector("text=enterprise")
+    billing = page.goto(f"{base}/a/billing")
+    assert billing is not None and billing.status == 404
+    pricing = page.goto(f"{base}/pricing")
+    assert pricing is not None and pricing.status == 404
     no_js_errors(page)
 
 

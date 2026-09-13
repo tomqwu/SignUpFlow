@@ -4,15 +4,18 @@ Configuration settings for SignUpFlow application.
 Loads settings from environment variables with validation.
 """
 
+import os
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+_DOTENV_FILE = ".env" if os.getenv("SIGNUPFLOW_LOAD_DOTENV", "true").lower() == "true" else None
 
 
 class Settings(BaseSettings):
     """Application settings loaded from environment variables."""
 
     model_config = SettingsConfigDict(
-        env_file=".env",
+        env_file=_DOTENV_FILE,
         case_sensitive=True,
         extra="ignore",
     )
@@ -64,7 +67,7 @@ class Settings(BaseSettings):
     # Stripe Billing
     STRIPE_SECRET_KEY: str | None = None
     STRIPE_WEBHOOK_SECRET: str | None = None
-    BILLING_ENABLED: bool = True
+    BILLING_ENABLED: bool = False
 
     # Celery Task Queue
     CELERY_BROKER_URL: str = "redis://localhost:6379/0"

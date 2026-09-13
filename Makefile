@@ -49,18 +49,14 @@ DOCKER_TARGETS := up down build rebuild logs logs-api logs-db logs-redis shell d
 
 $(DOCKER_TARGETS): check-docker
 
-ensure-test-deps: check-poetry
-	@POETRY_ENV=$$(poetry env info --path 2>/dev/null || true); \
-	if [ -z "$$POETRY_ENV" ] || [ "$${FORCE_POETRY_INSTALL:-0}" = "1" ]; then \
-		echo "📦 Installing Python dependencies via Poetry..."; \
-		poetry install; \
-	else \
-		echo "✅ Poetry dependencies already installed (env: $$POETRY_ENV)"; \
-	fi
+ensure-test-deps: check-python
+	@poetry check --lock
+	@poetry install --no-interaction
+	@poetry run python -c "import playwright, pytest"
 
 prepare-test-data: ensure-test-deps
 	@echo "🧪 Preparing baseline test data..."
-	@poetry run python -m tests.setup_test_data || echo "⚠️  setup_test_data fallback: continuing without direct DB seed"
+	@poetry run python -m tests.setup_test_data
 
 ensure-test-env: prepare-test-data
 
@@ -97,14 +93,14 @@ check-poetry:
 		exit 1; \
 	}
 
-check-python:
-	@PY_VERSION=$$(python3 --version 2>&1 | sed 's/Python //'); \
+check-python: check-poetry
+	@PY_VERSION=$$(poetry run python --version 2>&1 | sed 's/Python //'); \
 	PY_MAJOR=$$(echo $$PY_VERSION | cut -d. -f1); \
 	PY_MINOR=$$(echo $$PY_VERSION | cut -d. -f2); \
-	if [ "$$PY_MAJOR" -lt 3 ] || ([ "$$PY_MAJOR" -eq 3 ] && [ "$$PY_MINOR" -lt 10 ]); then \
-		echo "⚠️  Python 3.10+ required (you have: Python $$PY_VERSION)"; \
-		echo "   Some features will not work with Python 3.9 or earlier"; \
+	if [ "$$PY_MAJOR" -ne 3 ] || [ "$$PY_MINOR" -lt 11 ] || [ "$$PY_MINOR" -gt 13 ]; then \
+		echo "❌ Python 3.11 through 3.13 required (you have: Python $$PY_VERSION)"; \
 		echo "   Install with: brew install python@3.11"; \
+		exit 1; \
 	else \
 		echo "✅ Python version OK: Python $$PY_VERSION"; \
 	fi
@@ -182,11 +178,9 @@ migrate: check-poetry
 	@echo "✅ Migrations complete"
 
 # Run all backend tests
-test: test-backend
+test: test-all
 
-test-backend: check-poetry
-	@echo "🧪 Running backend tests..."
-	@poetry run pytest tests/comprehensive_test_suite.py -v --tb=short
+test-backend: test-all
 
 test-integration: check-poetry
 	@echo "🧪 Running integration tests..."
@@ -287,10 +281,6 @@ test-unit-fast: check-poetry
 test-with-timing: check-poetry
 	@echo "⏱️  Running tests with timing information..."
 	@poetry run pytest tests/unit/ --durations=20 -v --tb=short
-
-test-contract: check-poetry
-	@echo "📜 Running OpenAPI contract snapshot tests..."
-	@poetry run pytest tests/contract/ -v --tb=short
 
 update-openapi-snapshot: check-poetry
 	@echo "🔄 Refreshing OpenAPI contract snapshot..."

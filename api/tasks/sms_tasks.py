@@ -13,6 +13,7 @@ from typing import Any
 
 from celery import Celery
 
+from api.core.features import disabled_sms_task_result, sms_enabled
 from api.database import SessionLocal
 from api.models import Assignment, Event, Person
 from api.services.sms_service import SMSService
@@ -63,6 +64,8 @@ def send_assignment_notification(
     Retries:
         Up to 3 times with exponential backoff
     """
+    if not sms_enabled():
+        return disabled_sms_task_result()
     db = SessionLocal()
     sms_service = SMSService()
 
@@ -139,6 +142,8 @@ def send_event_reminder(
     Retries:
         Up to 3 times with exponential backoff
     """
+    if not sms_enabled():
+        return disabled_sms_task_result()
     db = SessionLocal()
     sms_service = SMSService()
 
@@ -244,6 +249,8 @@ def send_schedule_change_notification(
     Retries:
         Up to 3 times with exponential backoff
     """
+    if not sms_enabled():
+        return disabled_sms_task_result()
     db = SessionLocal()
     sms_service = SMSService()
 
@@ -323,6 +330,8 @@ def send_broadcast_message(
     Returns:
         Dictionary with broadcast results
     """
+    if not sms_enabled():
+        return disabled_sms_task_result()
     db = SessionLocal()
     sms_service = SMSService()
 

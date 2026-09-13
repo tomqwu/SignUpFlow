@@ -31,6 +31,11 @@ evidence with a local mock. Do not deploy or enable providers from a roadmap alo
 
 ## Progress Reconciliation
 
+- #281: `make test` now aliases the complete seven-tier suite, Playwright is
+  locked, provider credentials are stripped from test processes, and browser
+  contexts fail on JavaScript errors. Broader legacy/manifest work remains open.
+- #288: billing and paid SMS now default off behind shared API/web feature gates;
+  the scheduling flow and both domain playbooks run without provider credentials.
 - #253: organization authorization and audit fixes merged in PR #272; retain
   remaining PostgreSQL cascade/release evidence, not the old unmerged-PR blocker.
 - #263: assignment roles now persist; saved constraints remain ignored by the

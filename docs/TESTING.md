@@ -8,27 +8,30 @@ counts, timing estimates, and hosted-test proposals in older reports.
 
 ```bash
 poetry install
-poetry run pip install "playwright==1.60.0"
 poetry run playwright install chromium
 ```
 
 On Linux, install browser system dependencies with
-`poetry run playwright install --with-deps chromium`. Playwright is currently
-outside the Poetry lockfile; reinstall it after a dependency sync that removes
-it. Install Flutter separately for mobile work; never silently skip a missing SDK.
+`poetry run playwright install --with-deps chromium`. Playwright is a locked
+development dependency. Install Flutter separately for mobile work; never
+silently skip a missing SDK.
 
 ## Test Commands
 
 ```bash
 make test-unit-fast     # Iteration only; excludes slow-marked tests
 make test-unit          # Complete Python unit tier
+make test               # Alias for the complete seven-tier local suite
 make test-all           # All seven Python tiers below, in separate processes
 make test-mobile        # Flutter unit/widget tests; requires Flutter SDK
 ```
 
 Set `FLUTTER=/absolute/path/to/flutter` when the SDK is not on PATH.
-Disable external delivery for local acceptance runs with
-`EMAIL_ENABLED=false SMS_ENABLED=false make test-all`.
+The test harness strips provider credentials, disables email/SMS/billing, ignores
+the developer `.env`, and gives each invocation a disposable database. Keep the
+flags explicit for focused manual runs:
+`EMAIL_ENABLED=false SMS_ENABLED=false BILLING_ENABLED=false make test-all`.
+Default Python tests also reject non-loopback socket connections before transport.
 
 | Tier | Location | Purpose |
 | --- | --- | --- |
@@ -44,8 +47,17 @@ Use `make test-web`, `make test-contract`, or `make test-e2e` for focused runs.
 Do not combine API and browser tiers in one pytest process: their event-loop
 fixtures differ. `make test-all` keeps them separate and stops on failure.
 It does not include Flutter tests or device-dependent mobile integration tests;
-follow [mobile smoke checks](../mobile/SMOKE.md) for the latter. Legacy
-`make test` runs `tests/comprehensive_test_suite.py`, not the seven-tier suite.
+follow [mobile smoke checks](../mobile/SMOKE.md) for the latter. `make test` and
+`make test-all` are the same supported complete Python entry point.
+
+Three historical files are intentionally outside that entry point:
+`tests/security/test_authentication.py` duplicates current unit/API auth coverage
+and still uses shared-database/obsolete HTTPX patterns;
+`tests/test_test_data_setup.py` imports the removed comprehensive suite; and
+`tests/performance/test_load.py` mutates a hard-coded running service. Do not run
+them against a developer or customer environment. Rehabilitate a valuable case
+into an owned tier before adding it; load and PostgreSQL tests remain explicit
+isolated targets.
 
 The [playbook guide](playbooks/README.md) describes automatic discovery, selectors,
 and external definitions. Church and basketball run in API and browser tiers;

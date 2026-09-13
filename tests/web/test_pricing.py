@@ -2,6 +2,16 @@
 
 from __future__ import annotations
 
+import pytest
+
+from api.core.config import settings
+
+
+@pytest.fixture(autouse=True)
+def _enable_billing(monkeypatch):
+    """Exercise the deferred page only through explicit opt-in."""
+    monkeypatch.setattr(settings, "BILLING_ENABLED", True)
+
 
 def test_pricing_is_public_and_lists_tiers(client):
     # No auth required — mirrors /auth/login.

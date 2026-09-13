@@ -11,9 +11,12 @@ from fastapi.responses import RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
+from api.core.features import billing_enabled
+
 _WEB_DIR = Path(__file__).resolve().parent
 
 templates = Jinja2Templates(directory=str(_WEB_DIR / "templates"))
+templates.env.globals["billing_enabled"] = billing_enabled
 
 # Combined web router (auth + pages). Imported lazily inside functions
 # elsewhere to avoid circular imports with `templates`.

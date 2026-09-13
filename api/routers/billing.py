@@ -5,6 +5,7 @@ from typing import Any
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session, joinedload
 
+from api.core.features import require_billing_enabled
 from api.database import get_db
 from api.dependencies import get_current_admin_user, verify_org_member
 from api.models import Person
@@ -19,7 +20,7 @@ from api.services.billing_service import BillingService
 from api.services.stripe_service import StripeService
 from api.services.usage_service import UsageService
 
-router = APIRouter(tags=["billing"])
+router = APIRouter(tags=["billing"], dependencies=[Depends(require_billing_enabled)])
 
 
 @router.get("/billing/subscription")

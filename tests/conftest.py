@@ -1,8 +1,14 @@
 """Pytest configuration and fixtures for SignUpFlow tests."""
 
 import os
+import socket
 import tempfile
 import uuid
+
+from tests.test_environment import (
+    require_loopback_test_connection,
+    sanitize_test_process_environment,
+)
 
 pytest_plugins = ["tests.playbooks.plugin"]
 
@@ -17,8 +23,7 @@ from sqlalchemy.orm import Session, sessionmaker
 if "SIGNUPFLOW_TEST_DATABASE_URL" not in os.environ:
     test_directory = tempfile.mkdtemp(prefix="signupflow-tests-")
     os.environ["SIGNUPFLOW_TEST_DATABASE_URL"] = f"sqlite:///{test_directory}/signupflow_test.db"
-os.environ["DATABASE_URL"] = os.environ["SIGNUPFLOW_TEST_DATABASE_URL"]
-os.environ["TESTING"] = "true"
+sanitize_test_process_environment(os.environ["SIGNUPFLOW_TEST_DATABASE_URL"])
 
 import pytest
 from fastapi.testclient import TestClient
@@ -37,6 +42,18 @@ def pytest_configure(config):
     os.environ["TESTING"] = "true"
     for marker in ["unit", "integration", "api", "cli", "slow", "no_mock_auth"]:
         config.addinivalue_line("markers", f"{marker}: {marker} tests")
+
+
+@pytest.fixture(autouse=True)
+def block_external_network(monkeypatch):
+    """Allow only loopback and local socket connections in supported test tiers."""
+    original_connect = socket.socket.connect
+
+    def guarded_connect(sock, address):
+        require_loopback_test_connection(address)
+        return original_connect(sock, address)
+
+    monkeypatch.setattr(socket.socket, "connect", guarded_connect)
 
 
 @pytest.fixture(autouse=True)

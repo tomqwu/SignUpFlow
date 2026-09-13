@@ -15,16 +15,18 @@ the fixtures against a customer organization. Email and SMS must remain disabled
 From the repository root, after installing the development dependencies:
 
 ```bash
-EMAIL_ENABLED=false SMS_ENABLED=false poetry run pytest tests/api/test_domain_playbooks.py -v
+EMAIL_ENABLED=false SMS_ENABLED=false BILLING_ENABLED=false poetry run pytest tests/api/test_domain_playbooks.py -v
 poetry run pytest tests/unit/test_solver_role_slots.py -v
 poetry run playwright install chromium
-EMAIL_ENABLED=false SMS_ENABLED=false poetry run pytest tests/e2e/test_domain_playbooks.py -v
+EMAIL_ENABLED=false SMS_ENABLED=false BILLING_ENABLED=false poetry run pytest tests/e2e/test_domain_playbooks.py -v
 make test-unit-fast
 make test-all
 ```
 
 The API tier uses real JWT identities and an isolated in-memory SQLite database.
 The browser tier starts the real application against a temporary SQLite database.
+The default business profile has billing and paid SMS disabled; neither playbook
+creates a subscription or contacts an external provider.
 It uses API setup for the bulk roster and five repeated weeks, then browser login,
 multi-role event creation, solve, review, publish, and member acceptance. It is not
 a claim that every setup step is achievable through the current browser forms.

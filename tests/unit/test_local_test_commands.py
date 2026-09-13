@@ -34,6 +34,32 @@ def test_local_all_runs_each_python_tier_in_a_separate_process():
         assert sum(f"pytest tests/{tier}/ " in command for command in commands) == 1
 
 
+def test_make_test_uses_the_supported_complete_local_suite():
+    result = subprocess.run(
+        ["make", "-n", "test"], cwd=ROOT, text=True, capture_output=True, check=True
+    )
+
+    assert "tests/comprehensive_test_suite.py" not in result.stdout
+    for tier in ("unit", "api", "cli", "integration", "web", "contract", "e2e"):
+        assert f"pytest tests/{tier}/ " in result.stdout
+
+
+def test_playwright_is_a_locked_development_dependency():
+    project = (ROOT / "pyproject.toml").read_text()
+    lock = (ROOT / "poetry.lock").read_text()
+
+    assert 'playwright = "' in project
+    assert 'name = "playwright"' in lock
+
+
+def test_python_preflight_matches_the_project_range():
+    makefile = (ROOT / "Makefile").read_text()
+
+    assert "poetry run python --version" in makefile
+    assert "Python 3.11 through 3.13 required" in makefile
+    assert '"$$PY_MINOR" -gt 13' in makefile
+
+
 def test_local_mobile_target_runs_flutter_tests():
     result = subprocess.run(
         ["make", "-n", "test-mobile"], cwd=ROOT, text=True, capture_output=True, check=True
