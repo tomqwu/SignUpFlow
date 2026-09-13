@@ -184,7 +184,8 @@ DATABASE_URL = f"postgresql://{config['database']['user']}:{config['database']['
 - `session_ttl_hours: 1` - Shorter TTL for tests
 - External services: `enabled: false` (isolated tests)
 
-**Use Case:** `make test-docker`, CI/CD pipelines
+**Use Case:** local disposable test environments, including `make test-docker`.
+GitHub Actions does not execute test suites; follow [current test policy](TESTING.md).
 
 ### Production Profile (`config/env.prod.yaml`)
 

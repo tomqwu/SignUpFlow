@@ -15,7 +15,7 @@ SignUpFlow is a headless volunteer scheduling and sign-up management API + CLI f
 - Database: SQLite (dev), PostgreSQL (prod)
 - Auth: JWT (HS256, 24h expiry) + bcrypt
 
-Billing (Stripe), email (SendGrid), SMS (Twilio), and notification routers exist in the codebase but are **not registered** in `api/main.py`. Tests for those features are skipped via `pytestmark`.
+Billing and notification routers are registered under `/api/v1`; SMS is mounted at `/api/sms`. Email delivery is service-backed. Keep provider delivery disabled during local tests; registration does not establish production readiness. See `docs/TESTING.md` for current validation scope.
 
 ## Operating loop
 
@@ -24,7 +24,8 @@ Billing (Stripe), email (SendGrid), SMS (Twilio), and notification routers exist
 3. For non-trivial changes, propose a short patch plan first.
 4. Make small, reviewable edits.
 5. Run the validation commands below before declaring done.
-6. Summarize changed files and validation performed.
+6. Reconcile affected current docs and agent instructions; label retained historical guidance and verify changed links. Search for stale commands, counts, check names, and feature-state claims before declaring done.
+7. Summarize changed files, validation, merged/unmerged state, and any unverified scope.
 
 ## House style
 
@@ -82,9 +83,9 @@ Before declaring a change done:
 ## PR rules
 
 1. Run tests after every code change. After any edit to code or tests, run `make test-unit` (or `make test-unit-fast` during iteration). The change is not "done" until local tests pass. Run `make test-all` before pushing a PR.
-2. Run `make test-all` locally (unit, API, CLI, integration, web, contract, Playwright); run `make test-mobile` for mobile changes. Record results for the pushed revision in the PR. Commit, push, and wait for hosted static checks, migration validation, and AI review. GitHub Actions does not execute tests; green CI is not test evidence.
+2. Run `make test-all` locally (unit, API, CLI, integration, web, contract, Playwright); run `make test-mobile` for mobile changes. Record results for the pushed revision in the PR. Commit, push, and wait for hosted static checks and migration validation. Complete local code review before merging. GitHub Actions does not execute tests; green CI is not test evidence.
 3. Merge only when hosted CI passes and the PR records successful local test results with the pushed head SHA. Fix failures before merging. Do not bypass, force-merge, or skip required checks; green hosted CI alone is insufficient.
-4. Require successful Ollama AI review for the current PR head/base. Use `glm-5.3-flash` by default; see `docs/ai-pr-review.md`. Missing or skipped review is not approval.
+4. Require local code review for the current PR head/base and record findings and their resolution in the PR; see `docs/ai-pr-review.md`. Do not configure hosted AI review or use Ollama for code review. Missing review is not approval.
 5. Builder agents may merge only when GitHub reports mergeable and all required checks/reviews pass. Reviewer agents must not merge.
 
 ## Testing rules

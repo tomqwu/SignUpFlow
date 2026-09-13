@@ -1,5 +1,10 @@
 # Testing Framework - Systematic Action Plan
 
+> Historical reference. Reclassified on 2026-09-13; the original observations,
+> counts, timing estimates, commands, and CI proposals below are retained as
+> historical context, not current policy or live test status. Use the
+> [current testing and merge guide](TESTING.md) and the repository README instead.
+
 **Status**: ✅ COMPLETED
 **Created**: 2025-10-22
 **Completed**: 2025-10-22

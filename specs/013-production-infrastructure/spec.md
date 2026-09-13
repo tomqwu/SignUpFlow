@@ -1,5 +1,11 @@
 # Feature Specification: Production Infrastructure Deployment
 
+> Policy supersession (2026-09-13): hosted test execution and CI test-coverage
+> gates described in this specification are historical proposals, superseded by
+> the [current local-testing policy](../../docs/TESTING.md). Other feature requirements remain
+> specifications, not proof of implementation or deployment. Do not copy old
+> testing/deployment workflow examples into Actions as current instructions.
+
 **Feature Branch**: `013-production-infrastructure`
 **Created**: 2025-10-22
 **Status**: Draft

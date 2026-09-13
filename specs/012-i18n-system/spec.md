@@ -1,5 +1,11 @@
 # Feature Specification: Internationalization (i18n) System
 
+> Policy supersession (2026-09-13): hosted test execution and CI test-coverage
+> gates described in this specification are historical proposals, superseded by
+> the [current local-testing policy](../../docs/TESTING.md). Other feature requirements remain
+> specifications, not proof of implementation or deployment. Do not copy old
+> testing/deployment workflow examples into Actions as current instructions.
+
 **Feature Branch**: `012-i18n-system`
 **Created**: 2025-10-22
 **Status**: Retroactive Documentation (System Already Implemented)

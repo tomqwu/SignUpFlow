@@ -1,5 +1,11 @@
 # Implementation Plan: Email Notification System
 
+> Policy supersession (2026-09-13): hosted test execution and CI test-coverage
+> gates described in this specification are historical proposals, superseded by
+> the [current local-testing policy](../../docs/TESTING.md). Other feature requirements remain
+> specifications, not proof of implementation or deployment. Do not copy old
+> testing/deployment workflow examples into Actions as current instructions.
+
 **Branch**: `001-email-notifications` | **Date**: 2025-10-21 | **Spec**: [spec.md](./spec.md)
 **Input**: Feature specification from `/specs/001-email-notifications/spec.md`
 
@@ -124,4 +130,3 @@ docs/
 ## Complexity Tracking
 
 *No violations to justify - all constitution gates pass.*
-

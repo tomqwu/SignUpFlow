@@ -25,9 +25,9 @@ SignUpFlow is a headless volunteer scheduling and sign-up management API + CLI (
 - **Database:** SQLite (dev: `roster.db`), PostgreSQL (prod via Docker)
 - **Auth:** JWT (HS256, 24h expiry) + bcrypt password hashing
 
-### Disabled Features
+### Provider-backed Features
 
-Billing (Stripe), email (SendGrid), SMS (Twilio), and notification routers are **not registered** in `api/main.py`. Their service files and models remain in the codebase but are inactive. Tests for these features are skipped via `pytestmark`.
+Billing and notification routers are registered under `/api/v1`; SMS is mounted at `/api/sms`. Email delivery is service-backed. Keep provider delivery disabled during local tests; registration does not establish production readiness. See `docs/TESTING.md` for current validation scope.
 
 ## Commands
 
@@ -121,30 +121,21 @@ Pytest markers: `@pytest.mark.unit`, `@pytest.mark.integration`, `@pytest.mark.s
 ## PR rules
 
 1. **Run tests after every code change.** After any edit to code or tests, run `make test-unit` (or `make test-unit-fast` during iteration). The change is not "done" until local tests pass. Run `make test-all` before pushing a PR.
-2. **Run tests locally, then wait for CI.** Run `make test-all` for every PR and `make test-mobile` for mobile changes. Record local results for the pushed revision. Actions runs static checks, PostgreSQL migration validation, and AI review, not tests. Green CI is not test evidence.
-3. **Merge only when CI and Ollama AI review pass, successful local test results are recorded with the pushed head SHA, and GitHub reports mergeable** (see next section).
+2. **Run tests locally, then wait for CI.** Run `make test-all` for every PR and `make test-mobile` for mobile changes. Record local results for the pushed revision. Actions runs static checks and PostgreSQL migration validation, not tests or code review. Green CI is not test evidence.
+3. **Merge only when hosted static checks pass, local code review is completed, successful local test results are recorded with the pushed head SHA, and GitHub reports mergeable** (see next section).
 
-## AI PR Review
+## Local Code Review
 
-Run AI review through `.github/workflows/codex-review.yml` using Ollama Cloud,
-not `openai/codex-action`. Default to `glm-5.3-flash` at
-`https://ollama.com/api/chat`; configure `OLLAMA_API_KEY` as a GitHub Actions
-secret. Override the model or full chat endpoint with repository variables
-`OLLAMA_MODEL` and `OLLAMA_ENDPOINT`. See [setup and limits](docs/ai-pr-review.md).
+Complete local code review for the current PR head/base before merging. Record
+reviewed SHAs, findings, fixes, and any remaining limitations in the PR. Follow
+[the local review checklist](docs/ai-pr-review.md). Missing review is not approval.
 
-Require a successful `codex-pr-review-gate` result for the current PR head/base.
-Treat missing credentials, missing/binary/truncated patches, stale commits,
-provider errors, malformed responses, and blocking findings as failed review.
-Do not self-approve or treat a skipped review as approval.
+Tests and code review run locally. Do not run code review in GitHub Actions,
+send PR patches to Ollama, or substitute another hosted review provider.
 
-Builder agents may merge only after CI and AI review pass, GitHub reports the
-PR mergeable, and all required reviews/comments/conflicts are resolved.
-Reviewer agents must not merge. Keep a blocked PR open and fix or report the
-blocker; do not bypass checks or close the PR as a substitute for merging.
-
-Do not enable a required check in GitHub protection until its workflow has
-landed on the default branch and the check has appeared on a PR. Branch
-protection/ruleset configuration remains a separate administrative step.
+Builder agents may merge only after local tests and review are recorded, hosted
+static checks pass, GitHub reports mergeable, and required reviews and blocking
+comments are resolved. Reviewer agents must not merge. Do not bypass checks.
 
 ## Common Gotchas
 

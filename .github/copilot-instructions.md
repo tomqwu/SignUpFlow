@@ -6,7 +6,7 @@ The universal baseline is in `AGENTS.md`. This file restates the parts that matt
 
 ## Repository purpose
 
-SignUpFlow is a headless volunteer scheduling and sign-up management API + CLI. FastAPI + SQLAlchemy 2.0 + Pydantic 2.x backend on Python 3.11+, with a YAML-in/JSON-out CLI. Stripe billing, SendGrid email, Twilio SMS, and notification routers exist but are **disabled** — do not suggest re-enabling them without an explicit task.
+SignUpFlow is a volunteer scheduling API, CLI, and web app using FastAPI, SQLAlchemy 2.0, and Pydantic 2.x on Python 3.11+. Billing and notification routers are registered under `/api/v1`; SMS is mounted at `/api/sms`; email is service-backed. Do not enable external provider delivery without an explicit task. See `docs/TESTING.md` for current validation scope.
 
 ## House style
 
@@ -59,9 +59,9 @@ make migrate        # Alembic upgrade head
 ## PR rules
 
 1. Run tests after every code change. After any edit to code or tests, run `make test-unit` (or `make test-unit-fast` during iteration). The change is not "done" until local tests pass. Run `make test-all` before pushing a PR.
-2. Run `make test-all` locally and `make test-mobile` for mobile changes. Record results for the pushed revision in the PR. Commit, push, and wait for hosted static checks, migration validation, and AI review. Actions does not execute tests; green CI is not test evidence.
+2. Run `make test-all` locally and `make test-mobile` for mobile changes. Record results for the pushed revision in the PR. Commit, push, and wait for hosted static checks and migration validation. Complete local code review before merging. Actions does not execute tests; green CI is not test evidence.
 3. Merge only when hosted CI passes and the PR records successful local test results with the pushed head SHA. Fix failures before merging. Do not bypass, force-merge, or skip required checks; green hosted CI alone is insufficient.
-4. Require successful Ollama AI review for the current PR head/base. Use `glm-5.3-flash` by default; see `docs/ai-pr-review.md`. Missing or skipped review is not approval.
+4. Require local code review for the current PR head/base and record findings and their resolution in the PR; see `docs/ai-pr-review.md`. Do not configure hosted AI review or use Ollama for code review. Missing review is not approval.
 5. Builder agents may merge only when GitHub reports mergeable and all required checks/reviews pass. Reviewer agents must not merge.
 
 ## Testing rules
@@ -72,6 +72,9 @@ make migrate        # Alembic upgrade head
 - Add negative-path assertions (unauthorized, missing org_id, malformed input).
 
 ## PR and commit format
+
+Before declaring done, reconcile affected docs and agent instructions, label
+historical guidance, verify changed links, and report merged/unmerged state.
 
 Commit titles: imperative mood plain English (matching recent history). No mandatory Conventional Commit prefix.
 
@@ -97,7 +100,7 @@ PR titles under 70 characters. Detail goes in the body.
 
 - If the request is ambiguous, ask a clarifying question or offer 2-3 differentiated options.
 - If the change touches the solver, constraint DSL, or auth, link the relevant section in `CLAUDE.md`.
-- If the change would re-enable a disabled feature (billing, email, SMS, notifications), confirm with the user before suggesting code.
+- If the change enables external provider delivery or mounts a currently unregistered router, confirm the requested scope first.
 
 ## Anti-patterns
 

@@ -1,5 +1,9 @@
 # Codex review — alternative GenAI provider fallback
 
+> Historical reference only. The owner clarified on 2026-09-13 that code review
+> and tests run locally. Do not configure these providers or GitHub secrets for
+> code review. Follow [the current local review policy](../ai-pr-review.md).
+
 `openai/codex-action@v1` (wired in PR 10.7) requires `OPENAI_API_KEY`.
 This document records the investigation into alternative providers
 (Zhipu BigModel GLM, Ollama Cloud) that could serve as a fallback when
