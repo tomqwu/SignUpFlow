@@ -1,6 +1,6 @@
 # Documentation Reconciliation
 
-Audit date: 2026-09-13. Scope: the local-only test/hosted-CI change, test commands
+Audit date: 2026-09-13. Scope: local-only tests and code review, hosted static CI, test commands
 and counts, merge instructions, related specification proposals, documentation
 navigation, and router-state claims in active developer entry points.
 
@@ -10,13 +10,15 @@ navigation, and router-state claims in active developer entry points.
 - [Repository overview](../README.md) and [contributor workflow](../CONTRIBUTING.md).
 - [Agent baseline](../AGENTS.md), [Claude guidance](../CLAUDE.md), and
   [Copilot guidance](../.github/copilot-instructions.md).
-- [AI review](ai-pr-review.md), [playbooks](playbooks/README.md), and
+- [Local code review](ai-pr-review.md), [playbooks](playbooks/README.md), and
   [mobile testing](../mobile/README.md).
 
 Commands and hosted check behavior were compared with the Makefile and workflow
 files, and router claims with `api/main.py`. Removed the README's fixed 413-test
 total, obsolete tier counts/timings, and false unregistered-router statements.
-Aligned contributor commit/merge rules with the agent baseline.
+Aligned contributor commit/merge rules with the agent baseline. The owner's latest
+clarification supersedes the previous Ollama review setup: code review runs
+locally, no hosted AI review check remains, and Ollama must not review PRs.
 
 ## Historical Material
 

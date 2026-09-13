@@ -54,17 +54,17 @@ production database/concurrency acceptance are not implied by a green local run.
 
 ## Hosted Checks
 
-GitHub Actions does not execute test suites. It runs:
+GitHub Actions does not execute test suites or code review. It runs:
 
 - `Lint and type-check`: Black, Ruff, blocking scoped mypy, advisory whole-API
   mypy, and PostgreSQL migration smoke validation in `ci.yml`.
 - `Flutter analyze`: static analysis for mobile-path changes in `mobile-ci.yml`.
-- `codex-pr-review-gate`: independent Ollama review for PRs in `codex-review.yml`.
 
 The README CI badge reports hosted workflow status, not passing test counts.
 Local results are procedural evidence, not independently attested by GitHub.
-The reviewer accepts local-only execution but still flags incorrect code,
-security defects, missing/weakened coverage, broken commands, and deceptive claims.
+Perform [local code review](ai-pr-review.md) for incorrect code, security defects,
+missing/weakened coverage, broken commands, and deceptive claims. Do not send
+PR patches to Ollama or add a hosted AI check.
 
 ## Before Merge
 
@@ -72,7 +72,8 @@ security defects, missing/weakened coverage, broken commands, and deceptive clai
 2. Record commands, pass/skip/failure counts, date, and the pushed head SHA in the PR.
    If tests ran immediately before committing, confirm the committed tree is identical.
 3. Record initial failures and reruns. Do not hide flakes or treat skipped tests as passed.
-4. Require passing hosted checks, current-head/base AI review, no unresolved blocking
+4. Require passing hosted static checks, recorded current-head/base local code review,
+   no unresolved blocking
    review items, and GitHub mergeability. Do not bypass failed checks.
 5. Merge using the repository's normal method, verify the merge, and update local main.
 

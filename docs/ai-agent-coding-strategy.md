@@ -46,7 +46,7 @@ For a feature change:
 6. If a route was added, register it in `api/main.py` and update the router list in `CLAUDE.md`.
 7. If a model field changed, generate an Alembic migration.
 8. Follow [current testing and merge policy](TESTING.md): record final local results
-   with the pushed head SHA, wait for hosted checks and AI review, verify GitHub
+   with the pushed head SHA, complete local code review and wait for hosted static checks, verify GitHub
    mergeability, and complete the normal merge workflow.
 9. Reconcile all affected current documentation and instructions. Label historical
    material and disclose any unverified scope before saying done.

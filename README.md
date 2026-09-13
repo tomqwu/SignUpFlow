@@ -362,7 +362,7 @@ POST /api/solver/solve         →  api/routers/solver.py (HTTP + DB)
 /api/password-reset — request/confirm password reset
 ```
 
-### Disabled Features
+### Provider-backed Features
 
 Billing and notification routers are registered under `/api/v1`; SMS is mounted
 at its own `/api/sms` prefix. Email delivery is service-backed. Registration does
@@ -428,8 +428,9 @@ set `FLUTTER=/path/to/flutter` if the SDK is not on your PATH.
 
 Record local test results for the pushed revision in the PR. The CI badge reports
 hosted formatting, lint/type checks and PostgreSQL migration validation, not test
-results. Ollama AI review remains a separate merge prerequisite. GitHub does not
-independently verify that local tests ran.
+results. Complete local code review and record its head/base SHAs and findings
+before merging. GitHub does not independently verify local tests or review.
+There is no hosted AI review check; Ollama is not a code-review provider.
 
 ---
 
