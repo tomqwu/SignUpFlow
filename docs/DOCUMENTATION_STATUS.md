@@ -22,6 +22,10 @@ active setup requirements.
 The maintained playbook guides now link a validated machine-readable coverage
 manifest; its partial and blocked rows prevent baseline tests from being described
 as complete role-by-role business acceptance.
+The Church and Basketball guides now match the browser runner: all fourteen members
+are invited and accepted through the normal UI with scheduling qualifications kept
+separate from account access. Organization bootstrap and repeated-event setup remain
+explicit API prerequisites rather than hidden browser-coverage claims.
 Aligned contributor commit/merge rules with the agent baseline. The owner's latest
 clarification supersedes the previous Ollama review setup: code review runs
 locally, no CI checks remain, and Ollama must not review PRs. The later clarification

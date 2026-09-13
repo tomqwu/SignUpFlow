@@ -31,8 +31,9 @@ lineup, not league registration, age eligibility or medical clearance.
 
 ## Initial setup
 
-1. Create the team organization and manager account. Invite fourteen people and
-   accept the invitations. Verify each scheduling qualification explicitly.
+1. Create the team organization and manager account. Invite fourteen people with
+   `volunteer` access, accept the invitations, and verify each scheduling qualification
+   in People. The browser playbook executes this setup at 360px and 1440px.
 2. Arrange venues and opponent/game details outside the solver. Use event titles
    and organizational records consistently; the fixture has no opponent or league engine.
 3. Create six Sunday games, 10:00-12:00, with one of each player position, one
