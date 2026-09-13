@@ -8,6 +8,8 @@ give members a schedule they can see and acknowledge.
 
 Use Grace Community Church as a fictional sandbox. Run the shared commands in
 [the acceptance guide](README.md). Executable headcounts live in [church.json](church.json).
+Machine-readable actor and CH/BO traceability lives in [coverage.json](coverage.json);
+its partial or blocked rows are remaining work, not passed scenarios.
 
 ## People and responsibilities
 

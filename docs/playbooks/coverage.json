@@ -1,0 +1,177 @@
+{
+  "version": 1,
+  "shared_scenarios": [
+    {
+      "id": "BO-01",
+      "actor": "administrator",
+      "precondition": "Fresh fictional organization with billing and paid SMS disabled",
+      "operation": "Create the organization, administrator, fourteen members, and a qualified replacement",
+      "expected": "No subscription, provider credential, or foreign organization access is required",
+      "tiers": ["api", "e2e"],
+      "status": "partial",
+      "evidence": ["tests/playbooks/runtime.py", "tests/e2e/test_domain_playbooks.py"]
+    },
+    {
+      "id": "BO-02",
+      "actor": "administrator",
+      "precondition": "Administrator is authenticated in an owned organization",
+      "operation": "Invite members and assign every scheduling qualification",
+      "expected": "Invitations are single-use and qualifications do not grant administrator access",
+      "tiers": ["api", "e2e"],
+      "status": "partial",
+      "evidence": ["tests/playbooks/runtime.py", "tests/e2e/test_auth_flows.py"]
+    },
+    {
+      "id": "BO-03",
+      "actor": "member",
+      "precondition": "Member has a scheduling qualification and an active session",
+      "operation": "Record one-time or recurring unavailability",
+      "expected": "The solver excludes the member and another member cannot edit the record",
+      "tiers": ["api", "e2e"],
+      "status": "partial",
+      "evidence": ["tests/playbooks/workflows.py", "tests/e2e/test_availability_solver.py"]
+    },
+    {
+      "id": "BO-04",
+      "actor": "administrator",
+      "precondition": "Fourteen qualified members and twelve primary or secondary events exist",
+      "operation": "Generate and review the complete six-week roster",
+      "expected": "Every event has seven distinct qualified people with no overlaps or hard violations",
+      "tiers": ["unit", "api", "e2e"],
+      "status": "partial",
+      "evidence": ["tests/playbooks/workflows.py", "tests/e2e/test_domain_playbooks.py"]
+    },
+    {
+      "id": "BO-05",
+      "actor": "member",
+      "precondition": "A complete roster is published",
+      "operation": "Explicitly accept, decline, or request a swap while the administrator follows up",
+      "expected": "Unanswered and explicit responses remain distinguishable in every view",
+      "tiers": ["integration", "e2e"],
+      "status": "partial",
+      "evidence": ["tests/integration/test_assignments.py", "tests/e2e/test_decline_reopen.py"]
+    },
+    {
+      "id": "BO-06",
+      "actor": "reserve",
+      "precondition": "A published qualified member requests replacement",
+      "operation": "Cover exactly one eligible open or swap assignment",
+      "expected": "One qualified reserve wins and the original assignment transfers without duplication",
+      "tiers": ["integration", "e2e"],
+      "status": "partial",
+      "evidence": ["tests/e2e/test_domain_playbooks.py", "tests/e2e/test_swap_marketplace.py"]
+    },
+    {
+      "id": "BO-07",
+      "actor": "administrator",
+      "precondition": "A future published roster contains a session that must change",
+      "operation": "Move or cancel only the intended occurrence and regenerate the horizon",
+      "expected": "Unrelated future commitments remain and affected members must respond to changed work",
+      "tiers": ["api", "e2e"],
+      "status": "partial",
+      "evidence": ["tests/playbooks/workflows.py", "tests/e2e/test_analytics_recurring_swapreview.py"]
+    },
+    {
+      "id": "BO-08",
+      "actor": "administrator",
+      "precondition": "Week one is complete and five future weeks remain",
+      "operation": "Add week seven and restore a rolling six-week horizon",
+      "expected": "Completed history and unrelated future commitments remain unchanged",
+      "tiers": ["manual"],
+      "status": "blocked",
+      "evidence": ["GitHub issue #289 FLOW-3"]
+    },
+    {
+      "id": "BO-09",
+      "actor": "administrator",
+      "precondition": "An owned local mail sink is configured and paid delivery is disabled",
+      "operation": "Send invitations, reset links, schedule changes, and reminders",
+      "expected": "Captured content is usable and failed or disabled delivery is never labeled delivered",
+      "tiers": ["manual"],
+      "status": "blocked",
+      "evidence": ["GitHub issue #266 local committed-notification slice"]
+    },
+    {
+      "id": "BO-10",
+      "actor": "member",
+      "precondition": "The member has current published assignments",
+      "operation": "Subscribe to or download the personal calendar across a schedule change",
+      "expected": "Current entries appear once with no foreign assignments and a non-UTC case is correct",
+      "tiers": ["unit", "e2e"],
+      "status": "partial",
+      "evidence": ["tests/unit/test_calendar.py", "tests/e2e/test_calendar_subscription.py"]
+    },
+    {
+      "id": "BO-11",
+      "actor": "member",
+      "precondition": "The member has a valid account and captured recovery channel",
+      "operation": "Log out and in, change password, and recover through a reset link",
+      "expected": "Expired, replayed, or stale credentials fail without losing the account",
+      "tiers": ["unit", "integration", "e2e"],
+      "status": "partial",
+      "evidence": ["tests/e2e/test_auth_flows.py", "tests/integration/test_password_reset.py"]
+    },
+    {
+      "id": "BO-12",
+      "actor": "member",
+      "precondition": "Church and Basketball organizations coexist with separate identities",
+      "operation": "Perform member and administrator operations in both organizations",
+      "expected": "Every read and mutation remains tenant-scoped and volunteers cannot administer",
+      "tiers": ["api", "integration", "e2e"],
+      "status": "partial",
+      "evidence": ["tests/api/test_multi_tenant.py", "tests/playbooks/workflows.py"]
+    }
+  ],
+  "domains": {
+    "church": {
+      "scenario_prefix": "CH",
+      "actors": [
+        {"id": "administrator", "label": "Church scheduling administrator", "access": "admin", "qualification": null, "actions": ["invite", "qualify", "schedule", "publish", "follow_up"]},
+        {"id": "member", "label": "Church member", "access": "volunteer", "qualification": null, "actions": ["review", "respond", "availability", "calendar"]},
+        {"id": "worship_coordinator", "label": "Worship coordinator", "access": "volunteer", "qualification": "worship_leader", "actions": ["review", "respond", "request_cover"]},
+        {"id": "musician", "label": "Musician", "access": "volunteer", "qualification": "musician", "actions": ["review", "respond", "request_cover"]},
+        {"id": "sound_operator", "label": "Sound operator", "access": "volunteer", "qualification": "sound", "actions": ["review", "respond", "request_cover"]},
+        {"id": "usher", "label": "Welcome and usher member", "access": "volunteer", "qualification": "usher", "actions": ["review", "respond", "request_cover"]},
+        {"id": "children_leader", "label": "Children's ministry leader", "access": "volunteer", "qualification": "children_leader", "actions": ["review", "respond", "availability"]},
+        {"id": "reserve", "label": "Qualified church reserve", "access": "volunteer", "qualification": "worship_leader", "actions": ["review_open_work", "cover"]},
+        {"id": "human_approver", "label": "Ministry approver", "access": "human", "qualification": null, "actions": ["verify_suitability", "approve_change"]}
+      ],
+      "scenarios": [
+        {"id": "CH-01", "actor": "administrator", "precondition": "Fourteen qualified members and twelve events exist", "operation": "Solve and publish the baseline six-week roster", "expected": "All seven role slots are distinct, qualified, non-overlapping, and fairly distributed", "tiers": ["api"], "status": "automated", "evidence": ["tests/playbooks/workflows.py"]},
+        {"id": "CH-02", "actor": "worship_coordinator", "precondition": "One worship leader is unavailable in week two", "operation": "Regenerate the six-week roster", "expected": "The other qualified worship leader covers the affected service", "tiers": ["api"], "status": "automated", "evidence": ["tests/playbooks/workflows.py"]},
+        {"id": "CH-03", "actor": "administrator", "precondition": "A second service overlaps the week-three service", "operation": "Solve both simultaneous events", "expected": "Fourteen distinct assignments cover both events without double-booking", "tiers": ["unit", "api"], "status": "automated", "evidence": ["tests/unit/test_solver_role_slots.py", "tests/playbooks/workflows.py"]},
+        {"id": "CH-04", "actor": "administrator", "precondition": "Both worship leaders are unavailable in week four", "operation": "Generate and attempt to review the incomplete draft", "expected": "The worship-leader shortage is explicit and the draft cannot replace the live roster", "tiers": ["api"], "status": "partial", "evidence": ["tests/playbooks/workflows.py"]},
+        {"id": "CH-05", "actor": "administrator", "precondition": "Week four has a worship-leader shortage", "operation": "Invite a qualified replacement and regenerate", "expected": "The replacement repairs every affected event without substituting another role", "tiers": ["api"], "status": "automated", "evidence": ["tests/playbooks/workflows.py"]},
+        {"id": "CH-06", "actor": "administrator", "precondition": "The week-six service time changes", "operation": "Move the event, regenerate, and publish", "expected": "The new time is live and stale assignments are hidden and rejected", "tiers": ["api"], "status": "automated", "evidence": ["tests/playbooks/workflows.py"]},
+        {"id": "CH-07", "actor": "member", "precondition": "An assigned member has a draft and then published shift", "operation": "Open the schedule and explicitly accept", "expected": "The draft is hidden and the published assignment becomes confirmed only after acceptance", "tiers": ["e2e"], "status": "automated", "evidence": ["tests/e2e/test_domain_playbooks.py"]},
+        {"id": "CH-08", "actor": "reserve", "precondition": "A member requests a swap for a published role", "operation": "A reserve with the same qualification covers the shift", "expected": "The reserve gains one assignment and the original member loses it without a role gap", "tiers": ["e2e"], "status": "automated", "evidence": ["tests/e2e/test_domain_playbooks.py"]}
+      ]
+    },
+    "basketball": {
+      "scenario_prefix": "BB",
+      "actors": [
+        {"id": "administrator", "label": "Basketball team manager", "access": "admin", "qualification": null, "actions": ["invite", "qualify", "schedule", "publish", "follow_up"]},
+        {"id": "member", "label": "Basketball member", "access": "volunteer", "qualification": null, "actions": ["review", "respond", "availability", "calendar"]},
+        {"id": "point_guard", "label": "Point guard", "access": "volunteer", "qualification": "point_guard", "actions": ["review", "respond", "request_cover"]},
+        {"id": "shooting_guard", "label": "Shooting guard", "access": "volunteer", "qualification": "shooting_guard", "actions": ["review", "respond", "request_cover"]},
+        {"id": "small_forward", "label": "Small forward", "access": "volunteer", "qualification": "small_forward", "actions": ["review", "respond", "request_cover"]},
+        {"id": "power_forward", "label": "Power forward", "access": "volunteer", "qualification": "power_forward", "actions": ["review", "respond", "request_cover"]},
+        {"id": "center", "label": "Center", "access": "volunteer", "qualification": "center", "actions": ["review", "respond", "request_cover"]},
+        {"id": "coach", "label": "Coach", "access": "volunteer", "qualification": "coach", "actions": ["review", "respond", "request_cover"]},
+        {"id": "scorekeeper", "label": "Scorekeeper", "access": "volunteer", "qualification": "scorekeeper", "actions": ["review", "respond", "request_cover"]},
+        {"id": "reserve", "label": "Qualified basketball reserve", "access": "volunteer", "qualification": "point_guard", "actions": ["review_open_work", "cover"]},
+        {"id": "human_approver", "label": "Coach and manager human check", "access": "human", "qualification": null, "actions": ["verify_attendance", "verify_clearance", "approve_change"]}
+      ],
+      "scenarios": [
+        {"id": "BB-01", "actor": "administrator", "precondition": "Fourteen qualified members and twelve events exist", "operation": "Solve and publish the baseline six-week roster", "expected": "All five positions, coach, and scorekeeper are distinct, qualified, and fairly distributed", "tiers": ["api"], "status": "automated", "evidence": ["tests/playbooks/workflows.py"]},
+        {"id": "BB-02", "actor": "point_guard", "precondition": "One point guard is unavailable in week two", "operation": "Regenerate the six-week roster", "expected": "The other qualified point guard covers the affected game", "tiers": ["api"], "status": "automated", "evidence": ["tests/playbooks/workflows.py"]},
+        {"id": "BB-03", "actor": "administrator", "precondition": "A second game overlaps the week-three game", "operation": "Solve both simultaneous events", "expected": "Fourteen distinct assignments cover both events without double-booking", "tiers": ["unit", "api"], "status": "automated", "evidence": ["tests/unit/test_solver_role_slots.py", "tests/playbooks/workflows.py"]},
+        {"id": "BB-04", "actor": "administrator", "precondition": "Both point guards are unavailable in week four", "operation": "Generate and attempt to review the incomplete draft", "expected": "The point-guard shortage is explicit and the draft cannot replace the live roster", "tiers": ["api"], "status": "partial", "evidence": ["tests/playbooks/workflows.py"]},
+        {"id": "BB-05", "actor": "administrator", "precondition": "Week four has a point-guard shortage", "operation": "Invite a qualified replacement and regenerate", "expected": "The replacement repairs every affected event without substituting another position", "tiers": ["api"], "status": "automated", "evidence": ["tests/playbooks/workflows.py"]},
+        {"id": "BB-06", "actor": "administrator", "precondition": "The week-six game time changes", "operation": "Move the event, regenerate, and publish", "expected": "The new time is live and stale assignments are hidden and rejected", "tiers": ["api"], "status": "automated", "evidence": ["tests/playbooks/workflows.py"]},
+        {"id": "BB-07", "actor": "member", "precondition": "An assigned member has a draft and then published shift", "operation": "Open the schedule and explicitly accept", "expected": "The draft is hidden and the published assignment becomes confirmed only after acceptance", "tiers": ["e2e"], "status": "automated", "evidence": ["tests/e2e/test_domain_playbooks.py"]},
+        {"id": "BB-08", "actor": "reserve", "precondition": "A player or staff member requests a swap for a published role", "operation": "A reserve with the same qualification covers the shift", "expected": "The reserve gains one assignment and the original member loses it without a role gap", "tiers": ["e2e"], "status": "automated", "evidence": ["tests/e2e/test_domain_playbooks.py"]}
+      ]
+    }
+  }
+}

@@ -36,6 +36,9 @@ evidence with a local mock. Do not deploy or enable providers from a roadmap alo
   contexts fail on JavaScript errors. Broader legacy/manifest work remains open.
 - #288: billing and paid SMS now default off behind shared API/web feature gates;
   the scheduling flow and both domain playbooks run without provider credentials.
+- #279/#289 FLOW-1: the machine-readable playbook coverage manifest now binds
+  BO-01..12, CH-01..08, BB-01..08, every scheduling qualification, evidence tier,
+  and partial/blocked status; pytest rejects omitted bundled roles or scenarios.
 - #253: organization authorization and audit fixes merged in PR #272; retain
   remaining PostgreSQL cascade/release evidence, not the old unmerged-PR blocker.
 - #263: assignment roles now persist; saved constraints remain ignored by the

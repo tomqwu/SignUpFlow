@@ -405,6 +405,11 @@ replacement, regeneration, publication, acceptance, and swaps.
 multi-position players, injuries, simultaneous events, shortages, replacement,
 regeneration, publication, acceptance, and swaps.
 
+The [machine-readable coverage manifest](docs/playbooks/coverage.json) binds the
+shared BO journeys, every Church/Basketball qualification, stable scenario IDs,
+execution tiers, and remaining partial/blocked work. Pytest validates it before
+playbook collection so a missing required role or scenario cannot silently pass.
+
 ### Commands
 
 ```bash

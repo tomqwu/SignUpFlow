@@ -38,6 +38,13 @@ acceptance through the browser.
 organizations and invitations with fictional `.example` addresses. Dates start
 on a Sunday at least two weeks ahead, avoiding expired-date tests.
 
+[`coverage.json`](coverage.json) is the machine-readable business-flow manifest.
+It records BO-01 through BO-12, CH-01 through CH-08, BB-01 through BB-08,
+operational actors, preconditions, operations, expected results, execution tiers,
+evidence paths, and honest coverage status. Pytest validates it before collecting
+playbook cases. Removing a bundled domain, required scenario, administrator,
+human boundary, or scheduling qualification fails collection.
+
 ## Plug into pytest
 
 The plugin is registered in `tests/conftest.py`. Every test requesting the
@@ -72,6 +79,7 @@ To load it temporarily, pass its directory with `--playbook-dir`. External
 directories augment the bundled definitions and cannot override duplicate IDs.
 Unknown selections, missing/empty directories, invalid JSON, unsupported versions,
 unsupported workflows, extra fields, and invalid role counts fail collection.
+The reserved `coverage.json` metadata file is not treated as an executable domain.
 
 Version 1 requires `id`, `version: 1`, `workflow: six_week_roster`, `name`,
 `event`, `secondary_event`, `roles`, and `critical_role`. IDs use lowercase letters,
@@ -86,6 +94,13 @@ The runtime creates fresh organizations and a deep-copied definition per test.
 client; `tests/playbooks/runtime.py::Playbook` exposes the lower-level actions and
 coverage oracle. A new pytest test can request `playbook_spec` to reuse discovery
 and selection without duplicating the list of domains.
+
+Coverage statuses have precise meanings: `automated` has executable local test
+evidence; `partial` has useful automated evidence but not the complete manifest
+oracle; `manual` is an accepted human operation; `blocked` names missing product
+behavior or evidence and includes the manual tier so it cannot look automated.
+The manifest currently marks week-seven rollover and owned-mail delivery blocked,
+and keeps incomplete all-role/browser journeys partial.
 
 This is a domain-definition plugin for the six-week lifecycle, not an arbitrary
 workflow language. Adding a different lifecycle requires implementing and testing

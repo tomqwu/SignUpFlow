@@ -79,6 +79,7 @@ def sanitize_test_process_environment(
             "BILLING_ENABLED": "false",
             "DATABASE_URL": database_url,
             "EMAIL_ENABLED": "false",
+            "ENVIRONMENT": "development",
             "SIGNUPFLOW_LOAD_DOTENV": "false",
             "SIGNUPFLOW_TEST_DATABASE_URL": database_url,
             "SMS_ENABLED": "false",

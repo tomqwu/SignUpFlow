@@ -1,15 +1,22 @@
 """Pytest integration: automatic discovery, selection, fixtures and test IDs."""
 
 from pathlib import Path
+from typing import cast
 
 import pytest
 
+from tests.playbooks.coverage import (
+    COVERAGE_MANIFEST_PATH,
+    CoverageManifest,
+    load_coverage_manifest,
+)
 from tests.playbooks.registry import BUILTIN_DIRECTORY, PlaybookSpec, discover_playbooks
 
 _SPECS = pytest.StashKey[list[PlaybookSpec]]()
+_COVERAGE = pytest.StashKey[CoverageManifest]()
 
 
-def pytest_addoption(parser):
+def pytest_addoption(parser: pytest.Parser) -> None:
     group = parser.getgroup("playbooks")
     group.addoption(
         "--playbook",
@@ -27,10 +34,12 @@ def pytest_addoption(parser):
     )
 
 
-def pytest_configure(config):
+def pytest_configure(config: pytest.Config) -> None:
     config.addinivalue_line("markers", "playbook: data-driven operational acceptance workflow")
     directories = [BUILTIN_DIRECTORY, *(Path(p) for p in config.getoption("--playbook-dir"))]
     try:
+        bundled_specs = discover_playbooks([BUILTIN_DIRECTORY])
+        config.stash[_COVERAGE] = load_coverage_manifest(COVERAGE_MANIFEST_PATH, bundled_specs)
         specs = discover_playbooks(directories)
     except ValueError as exc:
         raise pytest.UsageError(str(exc)) from exc
@@ -41,7 +50,7 @@ def pytest_configure(config):
     config.stash[_SPECS] = [spec for spec in specs if not selected or spec.id in selected]
 
 
-def pytest_generate_tests(metafunc):
+def pytest_generate_tests(metafunc: pytest.Metafunc) -> None:
     if "playbook_spec" in metafunc.fixturenames:
         metafunc.parametrize(
             "playbook_spec",
@@ -54,6 +63,7 @@ def pytest_generate_tests(metafunc):
 
 
 @pytest.fixture
-def playbook_spec(request) -> PlaybookSpec:
+def playbook_spec(request: pytest.FixtureRequest) -> PlaybookSpec:
     """Fresh definition per test; scenario runners must not share mutable state."""
-    return request.param.model_copy(deep=True)
+    spec = cast(PlaybookSpec, request.param)
+    return spec.model_copy(deep=True)

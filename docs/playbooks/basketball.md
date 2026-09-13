@@ -8,6 +8,8 @@ publish/respond workflow. This is roster scheduling, not live game management.
 
 Use Riverside Basketball as a fictional single-team sandbox. See
 [the acceptance guide](README.md) and executable [basketball.json](basketball.json).
+Machine-readable actor and BB/BO traceability lives in [coverage.json](coverage.json);
+its partial or blocked rows are remaining work, not passed scenarios.
 
 ## People and responsibilities
 
