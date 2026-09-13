@@ -1,5 +1,9 @@
 # Rostio SaaS Launch Roadmap
 
+> Superseded by [the current production roadmap](ROADMAP.md) and GitHub issue
+> #252. No CI checks; all review and validation run locally. Do not execute the
+> old tasks or use the old estimates below as a current delivery plan.
+
 > Historical reference. Reclassified on 2026-09-13; the original observations,
 > counts, timing estimates, commands, and CI proposals below are retained as
 > historical context, not current policy or live test status. Use the

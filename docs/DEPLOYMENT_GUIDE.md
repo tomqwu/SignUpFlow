@@ -487,10 +487,10 @@ journalctl -u signupflow -f
 ### GitHub Actions
 
 Current policy: run test suites locally and record results for the pushed revision;
-Actions runs static checks and PostgreSQL migration validation only; tests and code review run locally.
+No CI checks: static analysis, migration validation, tests and code review all run locally.
 See [testing and merge policy](TESTING.md). The deployment workflow below is an
 unimplemented historical proposal, not a checked-in workflow or an instruction to
-restore hosted tests. Deployment still requires separate release approval.
+restore any hosted validation. Deployment still requires separate release approval.
 
 ```yaml
 # .github/workflows/deploy.yml

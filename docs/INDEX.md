@@ -2,11 +2,13 @@
 
 ## Current Entry Points
 
+- [Production roadmap](ROADMAP.md): no CI checks; all validation runs locally.
+
 Reconciled 2026-09-13 for testing, CI, and merge policy:
 
 - [Repository README](../README.md): application entry point and commands.
 - [Testing and merge policy](TESTING.md): current local test tiers, prerequisites,
-  hosted checks, and commit-bound evidence. Use this instead of old test reports.
+  local checks, and commit-bound evidence. Use this instead of old test reports.
 - [Contributor workflow](../CONTRIBUTING.md) and [agent rules](../AGENTS.md).
 - [Local code review policy](ai-pr-review.md): local review evidence and merge rules.
 - [Operational playbooks](playbooks/README.md): church and basketball workflows.

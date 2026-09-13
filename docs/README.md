@@ -1,5 +1,11 @@
 # SignUpFlow Documentation Index
 
+> This is a historical catalog with unavailable links, not the current index.
+> Start with [the maintained index](INDEX.md), [production roadmap](ROADMAP.md),
+> [local testing](TESTING.md), and [local code review](ai-pr-review.md).
+> No CI checks: all review and validation run locally. Older instructions below
+> do not override that policy or establish production readiness.
+
 **Last Updated:** 2025-10-22
 
 This directory contains all project documentation organized by category.

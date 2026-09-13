@@ -31,6 +31,13 @@ When not in a Ralph loop:
 
 ## Core Principles
 
+### Current Validation Policy (2026-09-13)
+No CI checks. Run all code review, static analysis, migrations, tests, security
+scans and artifact validation locally. Record evidence for the pushed revision;
+never recreate hosted checks or require CI statuses. Follow `docs/ROADMAP.md`
+and `docs/TESTING.md` over historical specification proposals. Reviewer agents
+must not merge; builders require complete local evidence and GitHub mergeability.
+
 ### I. Native First
 Prefer native Poetry + SQLite setup over Docker for local development.
 
