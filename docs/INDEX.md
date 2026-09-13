@@ -86,21 +86,21 @@ Comprehensive testing documentation.
 ### E2E Testing (Primary)
 | Document | Description | Status |
 |----------|-------------|--------|
-| E2E_TEST_COVERAGE_ANALYSIS.md (historical file unavailable) | Coverage analysis and gaps | ✅ Current |
-| E2E_GUI_TEST_COVERAGE_REPORT.md (historical file unavailable) | GUI-specific coverage | ✅ Current |
-| E2E_TEST_GAP_ANALYSIS.md (historical file unavailable) | Identified testing gaps | ✅ Current |
-| E2E_TESTING.md (historical file unavailable) | E2E testing guide | ✅ Current |
-| E2E_TESTING_CHECKLIST.md (historical file unavailable) | Testing checklist | ✅ Current |
+| E2E_TEST_COVERAGE_ANALYSIS.md (historical file unavailable) | Coverage analysis and gaps | Historical snapshot |
+| E2E_GUI_TEST_COVERAGE_REPORT.md (historical file unavailable) | GUI-specific coverage | Historical snapshot |
+| E2E_TEST_GAP_ANALYSIS.md (historical file unavailable) | Identified testing gaps | Historical snapshot |
+| E2E_TESTING.md (historical file unavailable) | E2E testing guide | Historical snapshot |
+| E2E_TESTING_CHECKLIST.md (historical file unavailable) | Testing checklist | Historical snapshot |
 
 ### Test Strategy & Results
 | Document | Description | Notes |
 |----------|-------------|-------|
 | [TEST_SUMMARY.md](TEST_SUMMARY.md) | Latest test results summary | ⚠️ See also TEST_STATUS.md |
-| TEST_STATUS.md (historical file unavailable) | Current test suite status | ✅ Most current |
+| TEST_STATUS.md (historical file unavailable) | Current test suite status | Historical snapshot |
 | [TEST_STRATEGY.md](TEST_STRATEGY.md) | Overall testing strategy | Canonical reference |
 | TESTING_STRATEGY.md (historical file unavailable) | Testing best practices | ⚠️ Duplicate of TEST_STRATEGY.md |
-| [TEST_PERFORMANCE.md](TEST_PERFORMANCE.md) | Test performance optimization | ✅ Current |
-| [COMPREHENSIVE_TEST_SUITE.md](COMPREHENSIVE_TEST_SUITE.md) | Complete test suite overview | ✅ Current |
+| [TEST_PERFORMANCE.md](TEST_PERFORMANCE.md) | Test performance optimization | Historical snapshot |
+| [COMPREHENSIVE_TEST_SUITE.md](COMPREHENSIVE_TEST_SUITE.md) | Complete test suite overview | Historical snapshot |
 
 **Note**: TEST_SUMMARY.md and TEST_STATUS.md should be consolidated.
 
@@ -112,9 +112,9 @@ Production deployment and infrastructure documentation.
 
 | Document | Description | Status |
 |----------|-------------|--------|
-| [DEPLOYMENT_GUIDE.md](DEPLOYMENT_GUIDE.md) | Complete deployment guide | ✅ Use this |
+| [DEPLOYMENT_GUIDE.md](DEPLOYMENT_GUIDE.md) | Complete deployment guide | Historical snapshot |
 | DEPLOYMENT.md (historical file unavailable) | Alternative deployment guide | ⚠️ Consider archiving |
-| [DOCKER_DEVELOPMENT.md](DOCKER_DEVELOPMENT.md) | Docker setup (dev & prod) | ✅ Current |
+| [DOCKER_DEVELOPMENT.md](DOCKER_DEVELOPMENT.md) | Docker setup (dev & prod) | Historical snapshot |
 | [RATE_LIMITING.md](RATE_LIMITING.md) | Rate limiting implementation | ✅ Security feature |
 
 **Recommendation**: Consolidate DEPLOYMENT.md into DEPLOYMENT_GUIDE.md
@@ -128,16 +128,16 @@ Feature-specific implementation documentation.
 ### Core Features
 | Document | Description | Status |
 |----------|-------------|--------|
-| ADMIN_CONSOLE_IMPLEMENTATION_REPORT.md (historical file unavailable) | Admin console implementation | ✅ Complete |
+| ADMIN_CONSOLE_IMPLEMENTATION_REPORT.md (historical file unavailable) | Admin console implementation | Historical snapshot |
 | ADMIN_TABS_STRUCTURE.md (historical file unavailable) | Admin panel structure | ✅ Reference |
-| [EVENT_ROLES_FEATURE.md](EVENT_ROLES_FEATURE.md) | Event roles implementation | ✅ Complete |
-| ONBOARDING_SYSTEM_COMPLETE.md (historical file unavailable) | User onboarding flow | ✅ Complete |
+| [EVENT_ROLES_FEATURE.md](EVENT_ROLES_FEATURE.md) | Event roles implementation | Historical snapshot |
+| ONBOARDING_SYSTEM_COMPLETE.md (historical file unavailable) | User onboarding flow | Historical snapshot |
 
 ### Advanced Features
 | Document | Description | Status |
 |----------|-------------|--------|
 | FEATURE_019_SMS_IMPLEMENTATION_PROGRESS.md (historical file unavailable) | SMS notifications feature | 🚧 In progress |
-| RECAPTCHA.md (historical file unavailable) | reCAPTCHA integration | ✅ Complete |
+| RECAPTCHA.md (historical file unavailable) | reCAPTCHA integration | Historical snapshot |
 | RECAPTCHA_TEST_RESULTS.md (historical file unavailable) | reCAPTCHA testing | ✅ Tested |
 | MAILTRAP_API_TESTING.md (historical file unavailable) | Email testing with Mailtrap | ✅ Setup |
 | LOCAL_EMAIL_SETUP.md (historical file unavailable) | Local email development | ✅ Dev setup |
@@ -150,11 +150,11 @@ Security implementation and audits.
 
 | Document | Description | Status |
 |----------|-------------|--------|
-| [SECURITY.md](SECURITY.md) | Complete security documentation | ✅ Primary reference |
-| SECURITY_ANALYSIS.md (historical file unavailable) | Security audit results | ✅ Current |
-| [SECURITY_MIGRATION.md](SECURITY_MIGRATION.md) | JWT migration guide | ✅ Complete |
-| [RBAC_IMPLEMENTATION_COMPLETE.md](RBAC_IMPLEMENTATION_COMPLETE.md) | Role-based access control | ✅ Complete |
-| [RBAC_AUDIT.md](RBAC_AUDIT.md) | RBAC security audit | ✅ Verified |
+| [SECURITY.md](SECURITY.md) | Complete security documentation | Historical snapshot |
+| SECURITY_ANALYSIS.md (historical file unavailable) | Security audit results | Historical snapshot |
+| [SECURITY_MIGRATION.md](SECURITY_MIGRATION.md) | JWT migration guide | Historical snapshot |
+| [RBAC_IMPLEMENTATION_COMPLETE.md](RBAC_IMPLEMENTATION_COMPLETE.md) | Role-based access control | Historical snapshot |
+| [RBAC_AUDIT.md](RBAC_AUDIT.md) | RBAC security audit | Historical snapshot |
 
 ---
 
@@ -167,7 +167,7 @@ SaaS readiness and billing implementation.
 | BILLING_SETUP.md (historical file unavailable) | Stripe billing setup | ✅ Technical guide |
 | BILLING_USER_GUIDE.md (historical file unavailable) | User-facing billing docs | ✅ User guide |
 | [SAAS_DESIGN.md](SAAS_DESIGN.md) | SaaS architecture | ✅ Design doc |
-| SAAS_READINESS_SUMMARY.md (historical file unavailable) | SaaS readiness status | ✅ Current |
+| SAAS_READINESS_SUMMARY.md (historical file unavailable) | SaaS readiness status | Historical snapshot |
 | SAAS_READINESS_GAP_ANALYSIS.md (historical file unavailable) | Detailed gap analysis | ✅ Comprehensive |
 
 ---
@@ -178,9 +178,9 @@ i18n implementation and status.
 
 | Document | Description | Status |
 |----------|-------------|--------|
-| I18N_QUICK_START.md (historical file unavailable) | Quick i18n guide | ✅ Primary reference |
+| I18N_QUICK_START.md (historical file unavailable) | Quick i18n guide | Historical snapshot |
 | I18N_ANALYSIS.md (historical file unavailable) | i18n implementation analysis | ✅ Technical details |
-| I18N_IMPLEMENTATION_STATUS.md (historical file unavailable) | Current i18n status | ✅ Current |
+| I18N_IMPLEMENTATION_STATUS.md (historical file unavailable) | Current i18n status | Historical snapshot |
 
 ---
 
@@ -193,8 +193,8 @@ Code quality and refactoring documentation.
 | [TECHNICAL_DEBT.md](archive/TECHNICAL_DEBT.md) | Technical debt tracking | 📦 Archived 2026-05-14 (snapshot from 2025-10-15; recreate when needed) |
 | [REFACTORING.md](REFACTORING.md) | Refactoring plans | ✅ Reference |
 | REFACTORING_SUMMARY.md (historical file unavailable) | Completed refactorings | ✅ Historical |
-| [DEBUG_REFACTORING.md](DEBUG_REFACTORING.md) | Debug-related refactoring | ✅ Complete |
-| SELF_HEALING_REPORT.md (historical file unavailable) | Self-healing system report | ✅ Complete |
+| [DEBUG_REFACTORING.md](DEBUG_REFACTORING.md) | Debug-related refactoring | Historical snapshot |
+| SELF_HEALING_REPORT.md (historical file unavailable) | Self-healing system report | Historical snapshot |
 
 ---
 
@@ -213,15 +213,15 @@ Current status and future planning.
 ### Roadmaps & Planning
 | Document | Description | Status |
 |----------|-------------|--------|
-| [LAUNCH_ROADMAP.md](LAUNCH_ROADMAP.md) | Product launch roadmap | ✅ Current |
+| [LAUNCH_ROADMAP.md](LAUNCH_ROADMAP.md) | Product launch roadmap | Historical snapshot |
 | FEATURE_ROADMAP_ANALYSIS.md (historical file unavailable) | Feature prioritization | ✅ Planning doc |
-| [TESTING_ACTION_PLAN.md](TESTING_ACTION_PLAN.md) | Testing improvement plan | ✅ Active |
+| [TESTING_ACTION_PLAN.md](TESTING_ACTION_PLAN.md) | Testing improvement plan | Historical snapshot |
 
 ### Gap Analysis
 | Document | Description | Status |
 |----------|-------------|--------|
-| GAPS_ANALYSIS.md (historical file unavailable) | Feature gaps identified | ✅ Current |
-| GAP_ANALYSIS_SUMMARY_2025-10-17.md (historical file unavailable) | Detailed gap analysis | ✅ Most recent |
+| GAPS_ANALYSIS.md (historical file unavailable) | Feature gaps identified | Historical snapshot |
+| GAP_ANALYSIS_SUMMARY_2025-10-17.md (historical file unavailable) | Detailed gap analysis | Historical snapshot |
 | E2E_TEST_GAP_ANALYSIS.md (historical file unavailable) | E2E testing gaps | ✅ Testing focus |
 
 ---
