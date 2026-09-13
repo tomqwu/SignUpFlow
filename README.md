@@ -6,7 +6,6 @@
 
 *AI-powered sign-up management for churches, sports leagues, and non-profits*
 
-[![CI](https://github.com/tomqwu/SignUpFlow/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/tomqwu/SignUpFlow/actions/workflows/ci.yml?query=branch%3Amain)
 [![Python](https://img.shields.io/badge/python-3.11+-blue?style=for-the-badge&logo=python)](https://www.python.org/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.109+-009688?style=for-the-badge&logo=fastapi)](https://fastapi.tiangolo.com/)
 [![License](https://img.shields.io/badge/license-MIT-green?style=for-the-badge)](LICENSE)
@@ -19,7 +18,7 @@
 
 - **Greedy Heuristic Solver** — auto-generate fair schedules with role-based constraints
 - **Responsive web app** — full admin + volunteer workflow in the browser, served by the same FastAPI process ([walkthrough below](#web-app--end-to-end-walkthrough)) — the primary surface
-- **Flutter mobile app** (`mobile/`) — volunteer + admin app, hosted static analysis and local tests; see `mobile/README.md` for status
+- **Flutter mobile app** (`mobile/`) — volunteer + admin app, local analysis and tests; see `mobile/README.md` for status
 - **CLI + API** — schedule from YAML files or through REST endpoints
 - **Multi-tenant** — full org isolation with JWT auth and RBAC (admin/volunteer)
 - **Invitation system** — token-based volunteer onboarding
@@ -385,7 +384,7 @@ make test-mobile                     # Flutter unit/widget tests
 ```
 
 See the [current testing and merge guide](docs/TESTING.md) for all tiers,
-dependencies, local evidence requirements, and the meaning of hosted CI status.
+dependencies and local review/validation evidence requirements.
 Counts and runtimes belong to dated validation reports, not static overview tables.
 
 ### API Test Coverage
@@ -426,11 +425,11 @@ separate process, including both church and basketball playbooks.
 Run `make test-mobile` for mobile changes;
 set `FLUTTER=/path/to/flutter` if the SDK is not on your PATH.
 
-Record local test results for the pushed revision in the PR. The CI badge reports
-hosted formatting, lint/type checks and PostgreSQL migration validation, not test
-results. Complete local code review and record its head/base SHAs and findings
-before merging. GitHub does not independently verify local tests or review.
-There is no hosted AI review check; Ollama is not a code-review provider.
+No CI checks: formatting, lint, type checks, migrations, code review, unit tests,
+and E2E tests all run locally. Record commands, results and reviewed head/base
+SHAs in the PR before merging. GitHub does not independently attest local runs;
+never fabricate a successful status check. Ollama is not a code-review provider.
+See the [current production roadmap](docs/ROADMAP.md).
 
 ---
 

@@ -5,10 +5,9 @@
 > The responsive **web app** (`/web`, HTMX + FastAPI, same backend) is
 > the primary, now full-featured surface (auth, volunteer & admin
 > workflows, billing/email/SMS status, analytics, notifications). This
-> Flutter app is **active again**: it has a static-analysis CI lane on
-> GitHub Actions (`.github/workflows/mobile-ci.yml`); tests run locally
-> with `make test-mobile` from the repository root, and feature/bug
-> work is welcome.
+> Flutter app is **active again**. Analysis, tests, codegen and native build
+> validation run locally; no CI checks. Run `make test-mobile` from the
+> repository root. Feature/bug work is welcome.
 >
 > **Known gap (tracked in #191):** the generated API client in
 > `mobile/api_client/` predates endpoints added during the full-feature
@@ -32,7 +31,7 @@ session token. Talks to the FastAPI backend via the generated
 
 ```bash
 flutter pub get
-flutter analyze --no-fatal-infos   # CI gate (info-level lints non-fatal)
+flutter analyze --no-fatal-infos   # Local analysis (info-level lints non-fatal)
 flutter test
 ```
 

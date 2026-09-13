@@ -121,8 +121,8 @@ Pytest markers: `@pytest.mark.unit`, `@pytest.mark.integration`, `@pytest.mark.s
 ## PR rules
 
 1. **Run tests after every code change.** After any edit to code or tests, run `make test-unit` (or `make test-unit-fast` during iteration). The change is not "done" until local tests pass. Run `make test-all` before pushing a PR.
-2. **Run tests locally, then wait for CI.** Run `make test-all` for every PR and `make test-mobile` for mobile changes. Record local results for the pushed revision. Actions runs static checks and PostgreSQL migration validation, not tests or code review. Green CI is not test evidence.
-3. **Merge only when hosted static checks pass, local code review is completed, successful local test results are recorded with the pushed head SHA, and GitHub reports mergeable** (see next section).
+2. **No CI checks.** Run formatting, lint, type checks, migration validation, all tests and local code review locally. Run `make test-all` for every PR and `make test-mobile` for mobile changes. Record commands, results, limitations and the pushed head SHA.
+3. **Merge only when local validation passes, local code review is completed, successful local test results are recorded with the pushed head SHA, and GitHub reports mergeable** (see next section).
 
 ## Local Code Review
 
@@ -130,11 +130,11 @@ Complete local code review for the current PR head/base before merging. Record
 reviewed SHAs, findings, fixes, and any remaining limitations in the PR. Follow
 [the local review checklist](docs/ai-pr-review.md). Missing review is not approval.
 
-Tests and code review run locally. Do not run code review in GitHub Actions,
+All validation runs locally. Do not run CI checks in GitHub Actions,
 send PR patches to Ollama, or substitute another hosted review provider.
 
-Builder agents may merge only after local tests and review are recorded, hosted
-static checks pass, GitHub reports mergeable, and required reviews and blocking
+Builder agents may merge only after successful local validation and review are
+recorded, GitHub reports mergeable, and required reviews and blocking
 comments are resolved. Reviewer agents must not merge. Do not bypass checks.
 
 ## Common Gotchas

@@ -52,19 +52,37 @@ and external definitions. Church and basketball run in API and browser tiers;
 browser cases use phone and desktop widths. Manual drills, live delivery, and
 production database/concurrency acceptance are not implied by a green local run.
 
-## Hosted Checks
+## Local Validation Only
 
-GitHub Actions does not execute test suites or code review. It runs:
+No CI checks. Run code review, formatting, lint, type checks, migration
+validation, unit tests, E2E tests, dependency scans, artifact checks and mobile
+validation locally. Do not recreate hosted validation workflows or publish
+synthetic success statuses. The Pages workflow only publishes the static site;
+it is not a validation or merge gate.
 
-- `Lint and type-check`: Black, Ruff, blocking scoped mypy, advisory whole-API
-  mypy, and PostgreSQL migration smoke validation in `ci.yml`.
-- `Flutter analyze`: static analysis for mobile-path changes in `mobile-ci.yml`.
+```bash
+poetry run black --check api tests
+poetry run ruff check api tests
+poetry run mypy --no-incremental api/utils api/core api/schemas
+poetry run mypy api
+make test-all
+```
 
-The README CI badge reports hosted workflow status, not passing test counts.
+Use a clean environment installed from the lockfile, not another worktree's
+virtualenv, when diagnosing type-check discrepancies. Record legacy full-API
+typing failures separately; do not suppress errors to claim success. Require
+changed modules to pass their applicable checks.
+
+For migration/release work, set DATABASE_URL to a disposable local PostgreSQL
+database, then run `poetry run alembic upgrade head` and
+`poetry run alembic check`. Never target customer data. PostgreSQL business,
+concurrency and upgrade-from-existing-data coverage remains tracked in
+[#260](https://github.com/tomqwu/SignUpFlow/issues/260); migration success alone
+does not establish it. Run Flutter analysis and tests locally for mobile work.
+
+Follow [local code review](ai-pr-review.md) and [the roadmap](ROADMAP.md).
 Local results are procedural evidence, not independently attested by GitHub.
-Perform [local code review](ai-pr-review.md) for incorrect code, security defects,
-missing/weakened coverage, broken commands, and deceptive claims. Do not send
-PR patches to Ollama or add a hosted AI check.
+No hosted check, including a static check, is a merge prerequisite.
 
 ## Before Merge
 
@@ -72,9 +90,9 @@ PR patches to Ollama or add a hosted AI check.
 2. Record commands, pass/skip/failure counts, date, and the pushed head SHA in the PR.
    If tests ran immediately before committing, confirm the committed tree is identical.
 3. Record initial failures and reruns. Do not hide flakes or treat skipped tests as passed.
-4. Require passing hosted static checks, recorded current-head/base local code review,
-   no unresolved blocking
-   review items, and GitHub mergeability. Do not bypass failed checks.
+4. Require recorded successful local validation and current-head/base local code
+   review, no unresolved blocking review items, and GitHub mergeability.
+   Do not bypass protection or invent CI checks to satisfy stale settings.
 5. Merge using the repository's normal method, verify the merge, and update local main.
 
 Counts and durations are run-specific. Obtain current evidence by executing the

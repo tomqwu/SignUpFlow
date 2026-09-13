@@ -385,6 +385,13 @@ Implement the selected spec/task completely:
 
 ## Phase 3: Validate
 
+No CI checks. Follow `docs/ROADMAP.md` and `docs/TESTING.md` over historical
+specification proposals. Run code review, formatting, lint, type checks,
+migrations and all applicable tests locally. Record commands, results,
+limitations and reviewed head/base SHAs in the PR; never add hosted checks or
+fabricate success statuses. Reviewer agents must not merge. Builders require
+complete local evidence and GitHub mergeability before the normal PR merge.
+
 Run the project's test suite and verify:
 - All tests pass
 - No lint errors

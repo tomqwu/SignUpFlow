@@ -132,9 +132,9 @@ make test-all
 - Use imperative plain-English commit titles; no mandatory Conventional Commit prefix
 - Keep each commit scoped to a single concern
 - PRs include: a short summary, list of tests run, and any migration / config steps
-- Record local results against the pushed head SHA. Require hosted checks, successful
+- Record local results against the pushed head SHA. Require successful local validation,
   current-head/base local code review, and GitHub mergeability before merging.
-- Actions runs static checks and migration validation, not tests or code review.
+- No CI checks. Run all analysis, migrations, tests and code review locally.
 - Follow [the current testing guide](docs/TESTING.md), including browser prerequisites.
 - Reconcile affected code, tests, documentation, and agent instructions before
   declaring done. Label retained historical guidance; report unverified scope.

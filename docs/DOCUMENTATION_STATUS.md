@@ -1,6 +1,6 @@
 # Documentation Reconciliation
 
-Audit date: 2026-09-13. Scope: local-only tests and code review, hosted static CI, test commands
+Audit date: 2026-09-13. Scope: local-only review and all validation, with no CI checks, test commands
 and counts, merge instructions, related specification proposals, documentation
 navigation, and router-state claims in active developer entry points.
 
@@ -18,7 +18,9 @@ files, and router claims with `api/main.py`. Removed the README's fixed 413-test
 total, obsolete tier counts/timings, and false unregistered-router statements.
 Aligned contributor commit/merge rules with the agent baseline. The owner's latest
 clarification supersedes the previous Ollama review setup: code review runs
-locally, no hosted AI review check remains, and Ollama must not review PRs.
+locally, no CI checks remain, and Ollama must not review PRs. The later clarification
+also retires hosted static analysis and migration checks. The production roadmap
+and open issues follow [the current roadmap policy](ROADMAP.md).
 
 ## Historical Material
 

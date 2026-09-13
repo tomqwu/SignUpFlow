@@ -1,34 +1,27 @@
-"""Keep hosted static checks separate from the complete local test suite."""
+"""Keep complete validation available locally without hosted CI."""
 
 import subprocess
 from pathlib import Path
 
 import pytest
-import yaml
 
 ROOT = Path(__file__).resolve().parents[2]
 pytestmark = pytest.mark.unit
 
 
-def test_hosted_ci_has_static_checks_without_test_execution():
-    workflow = yaml.safe_load((ROOT / ".github/workflows/ci.yml").read_text())
-    assert set(workflow["jobs"]) == {"ci"}
-    job = workflow["jobs"]["ci"]
-    assert job["name"] == "Lint and type-check"
-    commands = "\n".join(step.get("run", "") for step in job["steps"])
+def test_static_validation_commands_are_documented_locally():
+    commands = (ROOT / "docs/TESTING.md").read_text()
+    assert "No CI checks" in commands
     for command in ("black --check api tests", "ruff check api tests", "mypy api"):
         assert command in commands
-    assert "pytest" not in commands
-    assert "playwright" not in commands
-    # Keep the production database migration smoke check, not pytest execution.
     assert "alembic upgrade head" in commands
 
 
-def test_mobile_ci_analyzes_without_running_tests():
-    workflow = yaml.safe_load((ROOT / ".github/workflows/mobile-ci.yml").read_text())
-    commands = "\n".join(step.get("run", "") for step in workflow["jobs"]["flutter"]["steps"])
+def test_mobile_validation_commands_are_documented_locally():
+    commands = (ROOT / "mobile/README.md").read_text()
     assert "flutter analyze" in commands
-    assert "flutter test" not in commands
+    assert "flutter test" in commands
+    assert "no CI checks" in commands
 
 
 def test_local_all_runs_each_python_tier_in_a_separate_process():
