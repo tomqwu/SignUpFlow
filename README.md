@@ -405,6 +405,12 @@ The browser playbooks invite and accept all fourteen domain members through the 
 UI, preserving `admin`/`volunteer` account access separately from custom scheduling
 qualifications such as `worship_leader`, `center`, and `scorekeeper`.
 
+Saved REST scheduling rules support hard assignment caps, hard minimum rest gaps,
+and a weighted soft cooldown preference. They execute in API solves instead of
+being stored as inert text. See the
+[validated constraint contract](docs/SCHEDULING_CONSTRAINTS.md) for request shapes,
+CLI equivalents, built-in overlap/availability behavior, and unsupported policy.
+
 ### Commands
 
 ```bash

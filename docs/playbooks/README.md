@@ -139,8 +139,10 @@ overflow assertion alone is not a comprehensive visual/accessibility audit.
   remaining horizon, not one isolated week, or future published shifts disappear.
 - Publication currently allows incomplete rosters. The playbooks require an admin
   to resolve shortages first; the application does not enforce that policy yet.
-- Persisted custom constraints are not loaded by the API solver. Do not promise
-  maximum weekly load, rest/travel gaps, family grouping, or skill certification.
+- Persisted assignment caps, minimum rest gaps, and cooldown preferences execute
+  in API solves under the validated contract in
+  [SCHEDULING_CONSTRAINTS.md](../SCHEDULING_CONSTRAINTS.md). Do not promise venue
+  travel gaps, family grouping, team eligibility, or skill certification.
 - Team membership is not a proven eligibility boundary for role-based solving.
   These fixtures use one scheduling organization and explicit role qualifications.
 - Scheduling qualifications are stored beside, but are not, permission records.

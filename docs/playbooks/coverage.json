@@ -38,7 +38,7 @@
       "expected": "The solver excludes the member and another member cannot edit the record",
       "tiers": ["api", "e2e"],
       "status": "partial",
-      "evidence": ["tests/playbooks/workflows.py", "tests/e2e/test_availability_solver.py"]
+      "evidence": ["tests/playbooks/workflows.py", "tests/e2e/test_availability_solver.py", "tests/api/test_availability_rrule.py", "tests/api/test_saved_constraint_enforcement.py"]
     },
     {
       "id": "BO-04",
@@ -48,7 +48,7 @@
       "expected": "Every event has seven distinct qualified people with no overlaps or hard violations",
       "tiers": ["unit", "api", "e2e"],
       "status": "partial",
-      "evidence": ["tests/playbooks/workflows.py", "tests/e2e/test_domain_playbooks.py"]
+      "evidence": ["tests/playbooks/workflows.py", "tests/e2e/test_domain_playbooks.py", "tests/unit/test_persisted_constraints.py", "tests/api/test_saved_constraint_enforcement.py"]
     },
     {
       "id": "BO-05",

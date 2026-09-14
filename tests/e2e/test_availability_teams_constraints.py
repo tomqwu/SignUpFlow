@@ -74,9 +74,9 @@ def test_constraint_create(live_server, page):
     page.wait_for_selector("#constraints-list")
     page.click("button:has-text('New constraint')")
     page.fill("#c_key", "min_gap")
-    page.select_option("#c_type", "soft")
-    page.fill("#c_weight", "10")
-    page.fill("#c_pred", "min_gap_hours_satisfied(person_id, 12)")
+    page.select_option("#c_type", "hard")
+    page.select_option("#c_pred", "min_gap_hours")
+    page.fill("#c_params", '{"min_hours": 12}')
     page.click("button:has-text('Create constraint')")
     page.wait_for_selector("#constraints-list:has-text('min_gap')")
 

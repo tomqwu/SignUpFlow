@@ -37,9 +37,9 @@ def test_constraint_create_with_params(client, db):
         "/a/constraints/create",
         data={
             "key": "min_gap",
-            "type": "soft",
-            "weight": "10",
-            "predicate": "min_gap_hours_satisfied(person_id, 12)",
+            "type": "hard",
+            "weight": "",
+            "predicate": "min_gap_hours",
             "params": '{"min_hours": 12}',
         },
         cookies={SESSION_COOKIE: tok},
@@ -47,14 +47,20 @@ def test_constraint_create_with_params(client, db):
     assert r.status_code == 200
     assert "min_gap" in r.text
     c = db.query(Constraint).filter(Constraint.org_id == "c_o2").first()
-    assert c.type == "soft"
-    assert c.weight == 10
+    assert c.type == "hard"
+    assert c.weight is None
     assert c.params == {"min_hours": 12}
 
 
 def test_constraint_create_validation(client, db):
     tok = _admin(client, db, org="c_o3", email="c3@web.test")
-    base = {"key": "k", "type": "hard", "weight": "", "predicate": "p", "params": ""}
+    base = {
+        "key": "k",
+        "type": "hard",
+        "weight": "",
+        "predicate": "min_gap_hours",
+        "params": '{"min_hours": 12}',
+    }
 
     assert (
         client.post(
@@ -91,7 +97,13 @@ def test_constraint_update_and_delete(client, db):
     tok = _admin(client, db, org="c_o4", email="c4@web.test")
     client.post(
         "/a/constraints/create",
-        data={"key": "k1", "type": "hard", "weight": "", "predicate": "p", "params": ""},
+        data={
+            "key": "k1",
+            "type": "hard",
+            "weight": "",
+            "predicate": "min_gap_hours",
+            "params": '{"min_hours": 12}',
+        },
         cookies={SESSION_COOKIE: tok},
     )
     cid = _cid(db, "c_o4")
@@ -101,8 +113,8 @@ def test_constraint_update_and_delete(client, db):
         data={
             "type": "soft",
             "weight": "5",
-            "predicate": "has_role(usher)",
-            "params": "",
+            "predicate": "cooldown",
+            "params": '{"cooldown_days": 7}',
         },
         cookies={SESSION_COOKIE: tok},
     )
@@ -110,7 +122,7 @@ def test_constraint_update_and_delete(client, db):
     c = db.query(Constraint).filter(Constraint.id == cid).first()
     db.refresh(c)
     assert c.type == "soft" and c.weight == 5
-    assert c.predicate == "has_role(usher)"
+    assert c.predicate == "cooldown"
 
     d = client.post(f"/a/constraints/{cid}/delete", cookies={SESSION_COOKIE: tok})
     assert d.status_code == 200

@@ -52,8 +52,9 @@ evidence with a local mock. Do not deploy or enable providers from a roadmap alo
   two-tenant event/conflict/availability/solution regressions, and pre-serialization
   person/team export filtering. Local full-suite and PR evidence are required
   before treating this source milestone as merged.
-- #263: assignment roles now persist; saved constraints remain ignored by the
-  API solver. Track remaining constraint/eligibility acceptance separately.
+- #263: assignment roles persist in API and CLI output; saved assignment caps,
+  minimum gaps, and cooldown preferences now validate and execute in API solves.
+  Broader team/league eligibility policy remains separate product scope.
 - #260: per-run SQLite database isolation exists. PostgreSQL business/concurrency
   and migration parity remain unverified release work; run that validation locally.
 - #259: repurpose the obsolete AI/CI gate ticket as local validation and evidence

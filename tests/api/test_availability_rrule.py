@@ -67,6 +67,28 @@ class TestAvailabilityRrule:
         resp = client.get(f"/api/v1/availability/{person_id}/rrule", headers=headers)
         assert resp.json() == {"rrule": "FREQ=WEEKLY;BYDAY=FR"}
 
+    def test_put_rejects_malformed_rrule_without_replacing_existing(self, client):
+        org_id = "rr-invalid"
+        seed_org(client, org_id)
+        person_id, headers = _person_for(client, org_id, "invalid")
+        first = client.put(
+            f"/api/v1/availability/{person_id}/rrule",
+            json={"rrule": "FREQ=WEEKLY;BYDAY=MO"},
+            headers=headers,
+        )
+        assert first.status_code == 200
+
+        rejected = client.put(
+            f"/api/v1/availability/{person_id}/rrule",
+            json={"rrule": "FREQ=NOT-A-FREQUENCY"},
+            headers=headers,
+        )
+        assert rejected.status_code == 422
+        assert "Invalid RRULE" in rejected.text
+
+        current = client.get(f"/api/v1/availability/{person_id}/rrule", headers=headers)
+        assert current.json() == {"rrule": "FREQ=WEEKLY;BYDAY=MO"}
+
     def test_delete_clears_rrule(self, client):
         org_id = "rr-clear"
         seed_org(client, org_id)

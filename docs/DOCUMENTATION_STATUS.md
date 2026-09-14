@@ -35,6 +35,11 @@ mounted operation to an executable policy and records scheduling tenant/export
 semantics. This package changes API authorization and generated contracts, not
 the web layout; the README walkthrough screenshots therefore remain applicable
 and were not recaptured as new visual evidence.
+The maintained [scheduling constraint contract](SCHEDULING_CONSTRAINTS.md) now
+lists the three executable REST rule mappings, their CLI equivalents, validation
+failures, built-in invariants, and unsupported policy. The constraints editor now
+offers only those rule names; it is not part of the README screenshot walkthrough,
+so the existing walkthrough image set remains applicable.
 Aligned contributor commit/merge rules with the agent baseline. The owner's latest
 clarification supersedes the previous Ollama review setup: code review runs
 locally, no CI checks remain, and Ollama must not review PRs. The later clarification

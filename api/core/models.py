@@ -197,6 +197,7 @@ class Violation(BaseModel):
     severity: str
     message: str
     entities: list[str] = Field(default_factory=list)
+    penalty: float = 0.0
 
 
 class Violations(BaseModel):
