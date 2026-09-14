@@ -20,9 +20,9 @@ from tests.e2e._helpers import invite_token, no_js_errors, signup_admin
 from tests.playbooks.registry import BUILTIN_DIRECTORY, discover_playbooks
 from tests.playbooks.runtime import Playbook
 from tests.playbooks.screenshots import (
-    CAPTURE_DATE,
     CAPTURE_DIRECTORY_ENV,
     CAPTURE_NOW,
+    CAPTURE_START_DATE,
     capture_screenshot,
 )
 
@@ -54,7 +54,7 @@ def _playbook(client, definition, width, scenario, **kwargs):
             client,
             definition,
             instance_id=f"capture-{definition.id}-{width}-{scenario}",
-            start_date=date.fromisoformat(CAPTURE_DATE),
+            start_date=date.fromisoformat(CAPTURE_START_DATE),
             **kwargs,
         )
     return Playbook(client, definition, **kwargs)
