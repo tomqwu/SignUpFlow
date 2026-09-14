@@ -171,7 +171,12 @@ def solve(workspace: str, output: str, from_date, to_date, mode: str, json_outpu
         "assignment_count": len(solution.assignments),
         "fairness_stdev": solution.metrics.fairness.stdev,
         "assignments": [
-            {"event_id": a.event_id, "assignees": a.assignees} for a in solution.assignments
+            {
+                "event_id": a.event_id,
+                "assignees": a.assignees,
+                "assigned_roles": a.assigned_roles,
+            }
+            for a in solution.assignments
         ],
         "violations": [
             {"key": v.constraint_key, "message": v.message, "entities": v.entities}

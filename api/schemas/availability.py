@@ -1,8 +1,9 @@
 """Availability schemas."""
 
-from datetime import date
+from datetime import date, datetime
 
-from pydantic import BaseModel, ConfigDict, Field
+from dateutil import rrule
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 
 class AvailabilityCreate(BaseModel):
@@ -70,3 +71,13 @@ class AvailabilityRruleUpdate(BaseModel):
     """Schema for setting the rrule string."""
 
     rrule: str = Field(..., min_length=1, description="iCalendar RRULE expression")
+
+    @field_validator("rrule")
+    @classmethod
+    def validate_rrule(cls, value: str) -> str:
+        normalized = value.strip()
+        try:
+            rrule.rrulestr(normalized, dtstart=datetime(2000, 1, 1))
+        except (TypeError, ValueError) as exc:
+            raise ValueError(f"Invalid RRULE: {exc}") from exc
+        return normalized

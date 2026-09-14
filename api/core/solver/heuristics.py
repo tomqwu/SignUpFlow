@@ -5,10 +5,11 @@ from collections import defaultdict
 from datetime import datetime
 from typing import Any
 
-from api.core.constraints.dsl import EvalContext
+from api.core.constraints.dsl import ConstraintResult, EvalContext
 from api.core.constraints.eval import evaluate_constraint
 from api.core.models import (
     Assignment,
+    ConstraintBinding,
     Event,
     FairnessMetrics,
     Metrics,
@@ -141,7 +142,7 @@ class GreedyHeuristicSolver(SolverAdapter):
         )
 
         for constraint in hard_constraints:
-            if constraint.scope == "event" and event.type in constraint.applies_to:
+            if constraint.scope == "event" and self._applies_to(constraint.applies_to, event.type):
                 result = evaluate_constraint(constraint, ctx)
                 if not result.satisfied:
                     violations.hard.append(
@@ -181,7 +182,9 @@ class GreedyHeuristicSolver(SolverAdapter):
             candidates = [p for p in self.context.people if req_role.role in p.roles]
 
             # Score candidates
-            scored: list[tuple[float, Person]] = []
+            scored: list[
+                tuple[float, str, Person, list[tuple[ConstraintBinding, ConstraintResult]]]
+            ] = []
             for person in candidates:
                 if person.id in assignees:
                     continue  # Already assigned to this event
@@ -208,7 +211,9 @@ class GreedyHeuristicSolver(SolverAdapter):
                 ctx.person = person
                 hard_ok = True
                 for constraint in hard_constraints:
-                    if constraint.scope == "person" and event.type in constraint.applies_to:
+                    if constraint.scope == "person" and self._applies_to(
+                        constraint.applies_to, event.type
+                    ):
                         result = evaluate_constraint(constraint, ctx)
                         if not result.satisfied:
                             hard_ok = False
@@ -219,10 +224,15 @@ class GreedyHeuristicSolver(SolverAdapter):
 
                 # Score soft constraints
                 penalty = 0.0
+                soft_results: list[tuple[ConstraintBinding, ConstraintResult]] = []
                 for constraint in soft_constraints:
-                    if constraint.scope == "person" and event.type in constraint.applies_to:
+                    if constraint.scope == "person" and self._applies_to(
+                        constraint.applies_to, event.type
+                    ):
                         result = evaluate_constraint(constraint, ctx)
                         penalty += result.penalty
+                        if not result.satisfied:
+                            soft_results.append((constraint, result))
 
                 # Add fairness: prefer people with fewer assignments
                 assignment_count = len(person_events.get(person.id, []))
@@ -233,13 +243,24 @@ class GreedyHeuristicSolver(SolverAdapter):
                 if self.change_min_enabled and (event.id, person.id) in self._prior_published_keys:
                     penalty -= self.change_min_weight
 
-                scored.append((penalty, person))
+                scored.append((penalty, person.id, person, soft_results))
 
             # Pick best candidates
-            scored.sort(key=lambda x: x[0])
+            scored.sort(key=lambda item: (item[0], item[1]))
             for i in range(min(req_role.count, len(scored))):
-                assignees.append(scored[i][1].id)
-                assigned_roles[scored[i][1].id] = req_role.role
+                selected = scored[i][2]
+                assignees.append(selected.id)
+                assigned_roles[selected.id] = req_role.role
+                for constraint, result in scored[i][3]:
+                    violations.soft.append(
+                        Violation(
+                            constraint_key=constraint.key,
+                            severity="soft",
+                            message=result.reason,
+                            entities=[event.id, selected.id],
+                            penalty=result.penalty,
+                        )
+                    )
 
         # Check if we met role requirements
         for req_role in required_roles:
@@ -261,6 +282,10 @@ class GreedyHeuristicSolver(SolverAdapter):
             resource_id=event.resource_id,
             team_ids=event.team_ids,
         )
+
+    @staticmethod
+    def _applies_to(applies_to: list[str], event_type: str) -> bool:
+        return "*" in applies_to or event_type in applies_to
 
     def _compute_metrics(
         self,
@@ -288,7 +313,7 @@ class GreedyHeuristicSolver(SolverAdapter):
         fairness = FairnessMetrics(stdev=stdev, per_person_counts=per_person_counts)
 
         # Soft score
-        soft_score = sum(v.penalty if hasattr(v, "penalty") else 0.0 for v in violations.soft)
+        soft_score = sum(v.penalty for v in violations.soft)
 
         # Health score: 100 if no hard violations, scaled down by soft
         hard_violations = len(violations.hard)

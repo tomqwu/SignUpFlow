@@ -6,6 +6,7 @@ from datetime import datetime
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
+from api.core.constraints.persisted import PersistedConstraintError, map_database_constraints
 from api.database import get_db
 from api.dependencies import get_current_admin_user, verify_org_member
 
@@ -118,7 +119,9 @@ def solve_schedule(
         )
         .all()
     )
-    (db.query(DBConstraint).filter(DBConstraint.org_id == solve_request.org_id).all())
+    constraints_db = (
+        db.query(DBConstraint).filter(DBConstraint.org_id == solve_request.org_id).all()
+    )
     holidays_db = (
         db.query(Holiday)
         .filter(
@@ -182,11 +185,13 @@ def solve_schedule(
             )
         )
 
-    # For now, we'll pass an empty constraints list since the API stores constraints
-    # differently than the solver expects (ConstraintBinding vs simple params).
-    # In production, you would convert DB constraints to proper ConstraintBinding format
-    # with scope, applies_to, when, and then fields.
-    constraints = []
+    try:
+        constraints = map_database_constraints(constraints_db)
+    except PersistedConstraintError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=str(exc),
+        ) from exc
 
     holidays = [
         HolidayModel(date=h.date, label=h.label, is_long_weekend=h.is_long_weekend)
@@ -232,19 +237,20 @@ def solve_schedule(
                 .all()
             ]
             # Expand rrule to concrete blocked dates within [from_date, to_date].
-            # Malformed rrule strings are logged and treated as no-op so a single
-            # bad rule doesn't break the entire solve.
+            # New writes validate this value. Historical malformed rows fail the
+            # solve explicitly instead of silently dropping an availability rule.
             if a.rrule:
                 try:
                     for occ in parse_rrule(a.rrule, from_dt, to_dt):
                         exception_dates.append(occ.date())
-                except Exception as exc:  # noqa: BLE001 — solver must not crash on bad input
-                    logger.warning(
-                        "Skipping malformed rrule for person=%s availability=%s: %s",
-                        a.person_id,
-                        a.id,
-                        exc,
-                    )
+                except (TypeError, ValueError) as exc:
+                    raise HTTPException(
+                        status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                        detail=(
+                            f"Availability {a.id} for person {a.person_id!r} has an invalid "
+                            f"RRULE: {exc}"
+                        ),
+                    ) from exc
 
             availability.append(
                 AvailabilityModel(

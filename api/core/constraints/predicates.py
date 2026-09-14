@@ -64,7 +64,22 @@ def min_gap_hours_satisfied(ctx: EvalContext, person_id: str, min_hours: int) ->
     if not ctx.person_assignments or person_id not in ctx.person_assignments:
         return True
 
-    events = sorted(ctx.person_assignments[person_id], key=lambda e: e.start)
+    events = list(ctx.person_assignments[person_id])
+    if ctx.event is not None:
+        for event in events:
+            if event.id == ctx.event.id:
+                continue
+            if event.end <= ctx.event.start:
+                gap = (ctx.event.start - event.end).total_seconds() / 3600
+            elif ctx.event.end <= event.start:
+                gap = (event.start - ctx.event.end).total_seconds() / 3600
+            else:
+                return False
+            if gap < min_hours:
+                return False
+        return True
+
+    events = sorted(events, key=lambda e: e.start)
     for i in range(len(events) - 1):
         gap = (events[i + 1].start - events[i].end).total_seconds() / 3600
         if gap < min_hours:

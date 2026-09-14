@@ -117,6 +117,8 @@ class TestChurchCLI:
 
         # Every event should have assignments
         event_ids = {a["event_id"] for a in solution["assignments"]}
+        assert all(a["assigned_roles"] for a in solution["assignments"])
+        assert all(set(a["assigned_roles"]) == set(a["assignees"]) for a in solution["assignments"])
         for week in range(4):
             assert f"worship-wk{week}" in event_ids
 

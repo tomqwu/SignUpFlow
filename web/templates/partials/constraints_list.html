@@ -33,12 +33,15 @@
     </div>
     <div class="field">
       <label class="field-label" for="c_pred">Predicate</label>
-      <input id="c_pred" name="predicate" type="text" required
-             placeholder="min_gap_hours_satisfied(person_id, 12)">
+      <select id="c_pred" name="predicate" required
+              style="border:0;background:transparent;font-family:inherit;font-size:15px;color:var(--ink-1)">
+        <option value="max_assignments">Maximum assignments</option>
+        <option value="min_gap_hours">Minimum rest gap</option>
+        <option value="cooldown">Recent-service preference</option>
+      </select>
       <div class="row-sub" style="margin-top:6px">
-        DSL expression (e.g. <code>has_role(role)</code>,
-        <code>is_day_of_week(day)</code>,
-        <code>count_assignments_in_period(person_id, start, end)</code>).
+        Hard rules support <code>max_assignments</code> and <code>min_gap_hours</code>;
+        <code>cooldown</code> is soft and requires a positive weight.
       </div>
     </div>
     <div class="field">
@@ -104,7 +107,12 @@
       </div>
       <div class="field">
         <label class="field-label">Predicate</label>
-        <input name="predicate" type="text" required value="{{ c.predicate }}">
+        <select name="predicate" required aria-label="Constraint predicate"
+                style="border:0;background:transparent;font-family:inherit;font-size:15px;color:var(--ink-1)">
+          <option value="max_assignments" {% if c.predicate == 'max_assignments' %}selected{% endif %}>Maximum assignments</option>
+          <option value="min_gap_hours" {% if c.predicate == 'min_gap_hours' %}selected{% endif %}>Minimum rest gap</option>
+          <option value="cooldown" {% if c.predicate == 'cooldown' %}selected{% endif %}>Recent-service preference</option>
+        </select>
       </div>
       <div class="field">
         <label class="field-label">Params (JSON)</label>

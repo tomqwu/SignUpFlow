@@ -83,11 +83,19 @@ def _create_constraint(
     *,
     key: str | None = None,
     ctype: str = "hard",
-    weight: int = 1,
-    predicate: str = "no_conflict",
+    weight: int | None = None,
+    predicate: str | None = None,
     params: dict | None = None,
 ) -> dict:
     """Helper: POST /constraints/ and return the response body."""
+    if predicate is None:
+        predicate = "cooldown" if ctype == "soft" else "max_assignments"
+    if params is None:
+        params = (
+            {"cooldown_days": 7} if predicate == "cooldown" else {"period": "P1M", "max_count": 4}
+        )
+    if ctype == "soft" and weight is None:
+        weight = 10
     resp = client.post(
         f"{api_base}/constraints/",
         json={
@@ -96,7 +104,7 @@ def _create_constraint(
             "type": ctype,
             "weight": weight,
             "predicate": predicate,
-            "params": params or {},
+            "params": params,
         },
     )
     assert resp.status_code == 201, resp.text
@@ -111,7 +119,7 @@ class TestCreateConstraint:
         c = _create_constraint(data["admin_client"], data["api_base"], data["org_id"])
         assert c["org_id"] == data["org_id"]
         assert c["type"] == "hard"
-        assert c["weight"] == 1
+        assert c["weight"] is None
         assert isinstance(c["id"], int)
 
     def test_create_requires_admin(self, constraints_org):
@@ -240,12 +248,17 @@ class TestUpdateConstraint:
 
         resp = data["admin_client"].put(
             f"{data['api_base']}/constraints/{c['id']}",
-            json={"weight": 42, "predicate": "no_double_book"},
+            json={
+                "type": "soft",
+                "weight": 42,
+                "predicate": "cooldown",
+                "params": {"cooldown_days": 14},
+            },
         )
         assert resp.status_code == 200
         body = resp.json()
         assert body["weight"] == 42
-        assert body["predicate"] == "no_double_book"
+        assert body["predicate"] == "cooldown"
 
     def test_update_invalid_type_rejected(self, constraints_org):
         data = constraints_org

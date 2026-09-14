@@ -3,6 +3,7 @@
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
+from api.core.constraints.persisted import PersistedConstraintError, map_persisted_constraint
 from api.database import get_db
 from api.dependencies import get_current_admin_user, get_current_user, verify_org_member
 from api.models import Constraint, Organization, Person
@@ -15,6 +16,23 @@ from api.schemas.constraint import (
 )
 
 router = APIRouter(prefix="/constraints", tags=["constraints"])
+
+
+def _validate_constraint(
+    *, key: str, constraint_type: str, weight: int | None, predicate: str, params: dict | None
+) -> None:
+    try:
+        map_persisted_constraint(
+            key=key,
+            severity=constraint_type,
+            weight=weight,
+            predicate=predicate,
+            params=params,
+        )
+    except PersistedConstraintError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(exc)
+        ) from exc
 
 
 @router.post("/", response_model=ConstraintResponse, status_code=status.HTTP_201_CREATED)
@@ -41,6 +59,14 @@ def create_constraint(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Constraint type must be 'hard' or 'soft'",
         )
+
+    _validate_constraint(
+        key=constraint_data.key,
+        constraint_type=constraint_data.type,
+        weight=constraint_data.weight,
+        predicate=constraint_data.predicate,
+        params=constraint_data.params,
+    )
 
     # Create constraint
     constraint = Constraint(
@@ -117,6 +143,17 @@ def update_constraint(
         )
     verify_org_member(current_admin, constraint.org_id)
 
+    proposed_type = constraint_data.type if constraint_data.type is not None else constraint.type
+    proposed_weight = (
+        constraint_data.weight if constraint_data.weight is not None else constraint.weight
+    )
+    proposed_predicate = (
+        constraint_data.predicate if constraint_data.predicate is not None else constraint.predicate
+    )
+    proposed_params = (
+        constraint_data.params if constraint_data.params is not None else constraint.params
+    )
+
     # Update fields
     if constraint_data.type is not None:
         if constraint_data.type not in ["hard", "soft"]:
@@ -124,6 +161,15 @@ def update_constraint(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Constraint type must be 'hard' or 'soft'",
             )
+    _validate_constraint(
+        key=constraint.key,
+        constraint_type=proposed_type,
+        weight=proposed_weight,
+        predicate=proposed_predicate,
+        params=proposed_params,
+    )
+
+    if constraint_data.type is not None:
         constraint.type = constraint_data.type
     if constraint_data.weight is not None:
         constraint.weight = constraint_data.weight
