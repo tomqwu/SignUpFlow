@@ -99,6 +99,11 @@ evidence with a local mock. Do not deploy or enable providers from a roadmap alo
   including DST transitions, while a moved assignment retains one stable UID. Church
   and Basketball publish, move, refresh, and cancel the calendar entry at 360px and
   1440px. External calendar-client polling behavior remains device/provider acceptance.
+- #255/#261/#262/#289 BO-11: Church and Basketball administrators and volunteers
+  now run logout/login, self-service password change, copied-session revocation, and
+  real captured reset-link recovery at 360px and 1440px. Old passwords, replayed links,
+  expired tokens, and short API reset passwords fail without consuming a usable token.
+  External mailbox/provider delivery and distributed abuse controls remain later work.
 - #260: per-run SQLite database isolation exists. PostgreSQL business/concurrency
   parity is now proven for allocation claims only. Full migration and broader
   business parity remain unverified release work; run that validation locally.

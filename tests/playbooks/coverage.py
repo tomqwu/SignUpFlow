@@ -25,7 +25,7 @@ class ScenarioCoverage(BaseModel):
     model_config = ConfigDict(extra="forbid", frozen=True, strict=True)
 
     id: ScenarioId
-    actor: Identifier
+    actor: Identifier | list[Identifier]
     precondition: Detail
     operation: Detail
     expected: Detail
@@ -35,12 +35,23 @@ class ScenarioCoverage(BaseModel):
 
     @model_validator(mode="after")
     def validate_status_tiers(self) -> Self:
+        if isinstance(self.actor, list) and (
+            not self.actor or len(self.actor) != len(set(self.actor))
+        ):
+            raise ValueError("scenario actors must be non-empty and unique")
         executable = {"unit", "api", "integration", "web", "e2e"}
         if self.status in {"automated", "partial"} and not executable.intersection(self.tiers):
             raise ValueError("automated or partial scenarios require an executable tier")
         if self.status in {"manual", "blocked"} and "manual" not in self.tiers:
             raise ValueError("manual or blocked scenarios require the manual tier")
         return self
+
+    @property
+    def actor_ids(self) -> tuple[str, ...]:
+        """Normalize single- and multi-actor rows for manifest validation."""
+        if isinstance(self.actor, list):
+            return tuple(self.actor)
+        return (self.actor,)
 
 
 class ActorCoverage(BaseModel):
@@ -75,7 +86,10 @@ class DomainCoverage(BaseModel):
         expected = {f"{self.scenario_prefix}-{index:02d}" for index in range(1, 9)}
         if set(scenario_ids) != expected:
             raise ValueError(f"domain scenario IDs must be exactly {sorted(expected)}")
-        if {scenario.actor for scenario in self.scenarios} - set(actor_ids):
+        scenario_actor_ids = {
+            actor_id for scenario in self.scenarios for actor_id in scenario.actor_ids
+        }
+        if scenario_actor_ids - set(actor_ids):
             raise ValueError("domain scenarios must reference declared actors")
         return self
 
@@ -102,7 +116,9 @@ class CoverageManifest(BaseModel):
         by_id = {spec.id: spec for spec in specs}
         if set(self.domains) != set(by_id):
             raise ValueError("coverage domains must match bundled playbook IDs")
-        shared_actor_ids = {scenario.actor for scenario in self.shared_scenarios}
+        shared_actor_ids = {
+            actor_id for scenario in self.shared_scenarios for actor_id in scenario.actor_ids
+        }
         for domain_id, domain in self.domains.items():
             spec = by_id[domain_id]
             qualifications = {

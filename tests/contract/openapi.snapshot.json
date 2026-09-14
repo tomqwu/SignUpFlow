@@ -2892,6 +2892,7 @@
         "description": "Confirm password reset with token.",
         "properties": {
           "new_password": {
+            "minLength": 6,
             "title": "New Password",
             "type": "string"
           },

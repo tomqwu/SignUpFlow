@@ -106,6 +106,19 @@ def test_manifest_rejects_a_missing_role_actor():
         CoverageManifest.model_validate(data).validate_against(specs.values())
 
 
+def test_shared_scenario_supports_multiple_declared_actors():
+    manifest, specs = _bundled_manifest()
+    bo11 = next(scenario for scenario in manifest.shared_scenarios if scenario.id == "BO-11")
+
+    assert bo11.actor_ids == ("administrator", "member")
+
+    data = manifest.model_dump(mode="json")
+    bo11_data = next(row for row in data["shared_scenarios"] if row["id"] == "BO-11")
+    bo11_data["actor"].append("unregistered_actor")
+    with pytest.raises(ValueError, match="declare every shared-scenario actor"):
+        CoverageManifest.model_validate(data).validate_against(specs.values())
+
+
 def test_manifest_rejects_a_missing_domain_scenario():
     manifest, specs = _bundled_manifest()
     data = manifest.model_dump(mode="json")

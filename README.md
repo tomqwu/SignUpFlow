@@ -446,12 +446,14 @@ commitment remain; fixture seeding is not counted as a browser action.
 
 The local-mail journey runs for Church and Basketball at both browser widths with
 all paid providers disabled. It writes real RFC 822 messages to an owned temporary
-directory, accepts the invitation through its captured link, resets the member's
-password through the captured single-use link, and delivers assignment, schedule-change,
-and reminder messages from the published roster. The same run reconciles the member
-inbox, rejects the old password and replayed reset token, and opens every notification
-HTTP link against the owned local server. This is local business-flow evidence, not
-proof of external inbox placement or provider reliability.
+directory, accepts the invitation through its captured link, and drives both the
+administrator and volunteer through logout/login, self-service password change, and
+captured single-use reset links. Copied pre-change and pre-reset browser sessions, old
+passwords, replayed links, and expired API tokens fail safely. The same run delivers
+assignment, schedule-change, and reminder messages from the published roster, reconciles
+the member inbox, and opens every notification HTTP link against the owned local server.
+This is local business-flow evidence, not proof of external inbox placement or provider
+reliability.
 
 The personal-calendar journey also runs for both domains at 360px and 1440px. Draft
 work is absent, publication creates one entry, a schedule move updates the same UID in

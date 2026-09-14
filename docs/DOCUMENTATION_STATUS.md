@@ -73,6 +73,13 @@ and `America/Toronto` output crosses DST correctly. The browser case runs both d
 at phone and desktop widths and saves a current profile/calendar screenshot in pytest's
 owned temporary directory. This changes generated ICS rather than the walkthrough UI,
 so the existing committed README screenshots remain applicable.
+The maintained account-recovery contract now matches BO-11. Both access levels in both
+domains run logout/login, password change, copied-session invalidation, captured-link
+reset, old-password rejection, and replay rejection at phone and desktop widths. API
+regressions cover expiry and reject short reset passwords before consuming the token.
+The browser run saves administrator/member recovery screens in pytest's temporary
+directory. Existing committed walkthrough screenshots remain applicable because this
+package changes validation and acceptance coverage, not page layout.
 The maintained [API authorization matrix](API_AUTHORIZATION.md) now binds every
 mounted operation to an executable policy and records scheduling tenant/export
 semantics. This package changes API authorization and generated contracts, not
