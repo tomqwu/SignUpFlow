@@ -86,9 +86,9 @@
       "precondition": "Week one is complete and five future weeks remain",
       "operation": "Add week seven and restore a rolling six-week horizon",
       "expected": "Completed history and unrelated future commitments remain unchanged",
-      "tiers": ["api"],
+      "tiers": ["api", "e2e"],
       "status": "automated",
-      "evidence": ["tests/api/test_solution_publication_safety.py"]
+      "evidence": ["tests/api/test_solution_publication_safety.py", "tests/e2e/test_domain_playbooks.py"]
     },
     {
       "id": "BO-09",

@@ -155,12 +155,13 @@ class Playbook:
     def assignments(self, solution_id):
         return self.request("GET", f"/solutions/{solution_id}/assignments")["events"]
 
-    def assert_complete(self, solution_id):
+    def assert_complete(self, solution_id, event_ids=None):
         """Independent oracle: exact slots, eligibility, absence and time conflicts."""
         from collections import Counter, defaultdict
 
         entries = self.assignments(solution_id)
-        assert {entry["event_id"] for entry in entries} == set(self.events)
+        expected_event_ids = set(self.events) if event_ids is None else set(event_ids)
+        assert {entry["event_id"] for entry in entries} == expected_event_ids
         calendars = defaultdict(list)
         for entry in entries:
             event = self.events[entry["event_id"]]

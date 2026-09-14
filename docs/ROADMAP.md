@@ -81,7 +81,10 @@ evidence with a local mock. Do not deploy or enable providers from a roadmap alo
   horizon under the shared organization lock. Incomplete, stale, legacy, or
   narrower candidates leave the prior roster active; audit and local notification
   intent commit with the roster switch. Church/Basketball shortage repair and the
-  cancellation/week-seven rollover contract have local API evidence.
+  cancellation/week-seven rollover contract have local API evidence. BO-08 also
+  runs the week-seven add, shifted solve/review, and publish operations in both
+  domain browsers at phone and desktop widths while independently preserving
+  completed history and every original future event.
 - #260: per-run SQLite database isolation exists. PostgreSQL business/concurrency
   parity is now proven for allocation claims only. Full migration and broader
   business parity remain unverified release work; run that validation locally.

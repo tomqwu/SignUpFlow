@@ -87,6 +87,12 @@ cancels a second, and proves the third is unchanged before deleting the remainin
 The published-roster journey also proves that changing an accepted game time returns the
 player commitment to unanswered until the player accepts the new revision.
 
+BO-08 starts with a published Basketball fixture after both week-one sessions have
+completed. At 360px and 1440px, the manager adds the week-seven game and practice,
+solves and publishes weeks two through seven through the browser, and verifies all 84
+qualified slots. The prior week remains visible as event history and every original future
+game/practice remains in the new horizon.
+
 ## Additional operational drills
 
 Record these separately as manual/extended acceptance:

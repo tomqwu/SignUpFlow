@@ -1,13 +1,13 @@
 """Domain browser acceptance: setup, availability, scheduling, change, and response.
 
 The primary browser journey creates the organization, members, and full twelve-event
-six-week plan through the UI before solving and publishing it. The per-role availability
-test API-seeds its setup, then exercises every availability action through isolated
-browser sessions.
+six-week plan through the UI before solving and publishing it. Focused availability and
+rolling-horizon tests API-seed their preconditions, then exercise each claimed operation
+through isolated browser sessions.
 """
 
 from collections import Counter
-from datetime import UTC, datetime, timedelta
+from datetime import UTC, date, datetime, timedelta
 
 import httpx
 import pytest
@@ -36,6 +36,19 @@ def _utc_datetime(value):
     if parsed.tzinfo is None:
         return parsed.replace(tzinfo=UTC)
     return parsed.astimezone(UTC)
+
+
+def _solve_and_publish_in_browser(page, base, start_date, end_date):
+    page.goto(f"{base}/a/solver")
+    page.fill("#from_date", start_date.isoformat())
+    page.fill("#to_date", end_date.isoformat())
+    page.get_by_role("button", name="Run solver").click()
+    page.locator("#solver-result").get_by_role("link", name="Review solution").click()
+    page.wait_for_url("**/a/solution/**")
+    solution_id = int(page.url.rstrip("/").rsplit("/", 1)[1])
+    page.get_by_role("button", name="Publish this solution").click()
+    expect(page.locator("#publish-state")).to_contain_text("Unpublish")
+    return solution_id
 
 
 def _onboard_qualified_members(page, new_context, base, db_path, playbook, width):
@@ -484,4 +497,83 @@ def test_domain_browser_workflow(
         expect(page.locator("#onboarding-progress")).to_have_text("4 of 4 done")
         _fits(page)
         assert not errors
+        no_js_errors(page)
+
+
+@pytest.mark.parametrize("width", [360, 1440])
+def test_domain_browser_rolls_published_horizon_to_week_seven(
+    live_server, page, tmp_path, playbook_spec, width
+):
+    base = live_server
+    page.set_viewport_size({"width": width, "height": 900})
+    with httpx.Client(base_url=base, timeout=30) as client:
+        playbook = Playbook(client, playbook_spec)
+        # The fixture is three days into its operating week: both week-one
+        # sessions are completed while weeks two through six remain future.
+        playbook.start = date.today() - timedelta(days=3)
+        for week in range(6):
+            playbook.event(week, "main", 10)
+            playbook.event(week, playbook.spec["secondary_event"], 18, day_offset=1)
+
+        prior = playbook.solve()
+        prior_id = prior["solution_id"]
+        playbook.assert_complete(prior_id)
+        playbook.request("POST", f"/solutions/{prior_id}/publish")
+        original_ids = set(playbook.events)
+        completed_ids = {
+            event_id
+            for event_id, event in playbook.events.items()
+            if datetime.fromisoformat(event["end_time"]).date() < date.today()
+        }
+        assert len(completed_ids) == 2
+
+        _login(page, base, playbook.email, playbook.password, "/a/dashboard")
+        page.goto(f"{base}/a/events")
+        past = page.locator("#events-list .group").last
+        for event_id in completed_ids:
+            expect(past).to_contain_text(playbook.events[event_id]["type"])
+
+        _create_event_in_browser(page, base, playbook, 6, "main", 10, 0)
+        _create_event_in_browser(
+            page,
+            base,
+            playbook,
+            6,
+            playbook.spec["secondary_event"],
+            18,
+            1,
+        )
+        rolling_start = playbook.start + timedelta(weeks=1)
+        rolling_end = rolling_start + timedelta(weeks=6)
+        candidate_id = _solve_and_publish_in_browser(page, base, rolling_start, rolling_end)
+
+        expected_ids = set(playbook.events) - completed_ids
+        assert len(expected_ids) == 12
+        playbook.assert_complete(candidate_id, expected_ids)
+        solutions = playbook.request("GET", f"/solutions/?org_id={playbook.org}")["items"]
+        assert [row["id"] for row in solutions if row["is_published"]] == [candidate_id]
+        assert next(row for row in solutions if row["id"] == prior_id)["is_published"] is False
+
+        current_ids = {
+            event["id"]
+            for event in playbook.request("GET", f"/events/?org_id={playbook.org}")["items"]
+        }
+        assert current_ids == set(playbook.events)
+        assert original_ids <= current_ids
+        page.goto(f"{base}/a/events")
+        for event_id in completed_ids:
+            expect(page.locator("#events-list")).to_contain_text(playbook.events[event_id]["type"])
+        if width <= 480:
+            completed_row = page.locator(f'.event-row[data-event-id="{next(iter(completed_ids))}"]')
+            row_box = completed_row.bounding_box()
+            title_box = completed_row.locator(".row-main").bounding_box()
+            actions_box = completed_row.locator(".event-actions").bounding_box()
+            assert row_box is not None and title_box is not None and actions_box is not None
+            assert title_box["width"] >= row_box["width"] - 30
+            assert actions_box["width"] >= row_box["width"] - 30
+        _fits(page)
+        page.screenshot(
+            path=str(tmp_path / f"{playbook_spec.id}-{width}-week-seven-rollover.png"),
+            full_page=True,
+        )
         no_js_errors(page)
