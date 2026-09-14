@@ -93,7 +93,7 @@ def _onboard_qualified_members(page, new_context, base, db_path, playbook, width
     invitee.set_viewport_size({"width": width, "height": 900})
 
     def invite_member(role, name):
-        email = f"person{len(playbook.people)}@{playbook.org}.example"
+        email = f"person{len(playbook.people)}@{playbook.email_scope}.example"
         page.fill("#inv_name", name)
         page.fill("#inv_email", email)
         page.select_option("#inv_role", "volunteer")
@@ -1014,6 +1014,8 @@ def test_domain_browser_workflow(
         capture_screenshot(page, tmp_path, domain, width, "onboarding")
 
         _onboard_qualified_members(page, new_context, base, db_path, p, width)
+        page.goto(f"{base}/a/people")
+        page.evaluate("window.scrollTo(0, 0)")
         capture_screenshot(page, tmp_path, domain, width, "qualified")
 
         for week in range(6):

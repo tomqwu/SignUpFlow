@@ -24,6 +24,7 @@ class Playbook:
         self.client = client
         self.spec = definition.model_dump()
         self.org = instance_id or f"{definition.id}-{uuid4().hex[:10]}"
+        self.email_scope = self.org
         self.people = {}
         self.events = {}
         self.blocked = set()
@@ -87,7 +88,7 @@ class Playbook:
         return response.json() if response.content else None
 
     def invite(self, name, roles):
-        email = f"person{len(self.people)}@{self.org}.example"
+        email = f"person{len(self.people)}@{self.email_scope}.example"
         invitation = self.request(
             "POST",
             f"/invitations?org_id={self.org}",
