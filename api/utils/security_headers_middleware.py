@@ -72,8 +72,9 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
         # X-Content-Type-Options - Prevent MIME sniffing
         response.headers["X-Content-Type-Options"] = "nosniff"
 
-        # Referrer-Policy - Control referrer information leakage
-        response.headers["Referrer-Policy"] = "no-referrer"
+        # Preserve an auditable Origin for same-origin form posts without
+        # sending referrer details to other origins.
+        response.headers["Referrer-Policy"] = "same-origin"
 
         # Permissions-Policy - Disable unnecessary browser features
         response.headers["Permissions-Policy"] = "geolocation=(), microphone=(), camera=()"

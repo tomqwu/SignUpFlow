@@ -119,6 +119,13 @@ evidence with a local mock. Do not deploy or enable providers from a roadmap alo
   bootstrap, invitation, inactive/cancelled membership, claim, and publication races,
   and records server version, source SHA, and JUnit counts. Managed infrastructure,
   backup/restore, and complete release migration/cascade parity remain under #253/#268.
+- #261: every unsafe browser request under `/auth/`, `/a/`, and `/v/` now requires an
+  exact allowed origin plus a signed double-submit token. Forms and HTMX share the same
+  middleware, rejected requests cannot mutate state, and browser authentication routes
+  use the existing per-operation rate limits. Forwarded client addresses affect limits
+  and audit logs only from configured proxy peers; loopback has no production bypass.
+  Distributed limiter storage, multi-worker quotas and outage behavior, and deployed
+  proxy/TLS acceptance remain later work in the same issue.
 - #259: repurpose the obsolete AI/CI gate ticket as local validation and evidence
   hygiene. No workflow, secret, provider or required status is needed for review.
 - #191: the Dart client is regenerated from the current OpenAPI snapshot and

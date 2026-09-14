@@ -24,6 +24,7 @@
 - **CLI + API** — schedule from YAML files or through REST endpoints
 - **Multi-tenant** — full org isolation with JWT auth and RBAC (admin/volunteer)
 - **Invitation system** — token-based volunteer onboarding
+- **Browser request integrity** — signed CSRF tokens and exact-origin checks protect form and HTMX writes
 - **Truthful responses** — unanswered, accepted, declined, and replacement-needed work stay distinct from roster allocation
 - **Availability tracking** — volunteers block dates, time-off with reasons
 - **Calendar export** — ICS files and webcal subscriptions
@@ -243,6 +244,9 @@ permission evidence. Unit validation rejects new web surfaces until that invento
 is updated. Browser recovery tests also cover actionable HTMX validation, preserved
 form input after a network failure, rapid duplicate submission, expired sessions,
 long labels at phone width and zoom, keyboard access, and authoritative SSE refresh.
+Browser request-integrity tests inventory every unsafe rendered route, reject missing or
+forged tokens and foreign origins without mutation, verify configured proxy boundaries,
+and exercise a real same-origin profile save in Chromium.
 
 ### API Test Coverage
 

@@ -101,6 +101,14 @@ boundaries at phone and desktop widths. The browser run saves new tenant-directo
 every-role screenshots in pytest's temporary directory. The committed walkthrough images
 remain current because the package changes authentication and acceptance coverage, not
 the rendered pages or their layout.
+The maintained browser-security contract now inventories every unsafe rendered route and
+requires an exact origin plus a signed double-submit token for forms and HTMX requests.
+Browser authentication routes carry the existing local rate-limit dependencies, and both
+rate limits and audit records ignore forwarded addresses from untrusted peers. A real
+Chromium case covers rejection without mutation and same-origin success. The package adds
+only hidden request metadata and does not alter the rendered walkthrough, so the committed
+Church and Basketball screenshots remain current. Distributed quotas and deployed
+proxy/TLS behavior remain unresolved release evidence under #261.
 The maintained [scheduling constraint contract](SCHEDULING_CONSTRAINTS.md) now
 lists the three executable REST rule mappings, their CLI equivalents, validation
 failures, built-in invariants, and unsupported policy. The constraints editor now

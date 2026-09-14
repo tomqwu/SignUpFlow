@@ -45,6 +45,22 @@ the administrator surface, invite, publish, inspect a foreign person, or mutate 
 availability. This is application-level local evidence; it does not certify deployment,
 provider, or database-infrastructure isolation.
 
+## Browser Request Integrity
+
+Every unsafe browser request under `/auth/`, `/a/`, or `/v/` must carry both an exact
+same-origin `Origin` header and a valid signed double-submit CSRF token. Standard forms
+receive a hidden `csrf_token` field; HTMX requests send `X-CSRF-Token`. The middleware
+derives the expected origin from `FRONTEND_URL`, then `APP_URL`, and only falls back to
+the request origin for local development. Missing origins, foreign origins, missing or
+mismatched tokens, and forged unsigned tokens return `403` before route code can write.
+
+The CSRF cookie is `SameSite=Lax`, but SameSite is defense in depth rather than the
+authorization decision. It is marked `Secure` in production. Bearer-token API routes
+under `/api/` retain their existing authentication contract and are outside this browser
+middleware. `tests/web/test_request_integrity.py` inventories unsafe browser routes and
+tests no-write failures; `tests/e2e/test_request_integrity.py` verifies form injection,
+same-origin HTMX success, and a rejected foreign-origin write in Chromium.
+
 ## Scheduling Surface
 
 | Route family | Reads | Writes | Tenant and ownership rule | Regression evidence |

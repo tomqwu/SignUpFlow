@@ -11,6 +11,7 @@ from fastapi import Request
 from sqlalchemy.orm import Session
 
 from api.models import AuditAction, AuditLog
+from api.utils.rate_limit_middleware import get_client_ip
 
 
 def log_audit_event(
@@ -100,13 +101,7 @@ def log_audit_from_request(
     Returns:
         Created AuditLog instance
     """
-    # Extract IP address (handle proxy headers)
-    ip_address = request.client.host if request.client else None
-    if "x-forwarded-for" in request.headers:
-        # Use first IP in X-Forwarded-For (client IP)
-        ip_address = request.headers["x-forwarded-for"].split(",")[0].strip()
-    elif "x-real-ip" in request.headers:
-        ip_address = request.headers["x-real-ip"]
+    ip_address = get_client_ip(request) if request.client else None
 
     # Extract user agent
     user_agent = request.headers.get("user-agent")

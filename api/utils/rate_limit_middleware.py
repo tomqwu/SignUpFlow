@@ -4,6 +4,7 @@ FastAPI dependencies for rate limiting.
 
 import os
 from collections.abc import Callable
+from ipaddress import ip_address, ip_network
 
 from fastapi import HTTPException, Request, status
 
@@ -14,14 +15,33 @@ def get_client_ip(request: Request) -> str:
     """
     Extract client IP address from request.
 
-    Checks X-Forwarded-For header first (for proxies/load balancers),
-    then falls back to direct client IP.
+    Forwarded addresses are considered only when the direct peer belongs to a
+    network listed in TRUSTED_PROXY_IPS. Invalid proxy configuration or an
+    invalid chain fails closed to the direct peer.
     """
-    forwarded = request.headers.get("X-Forwarded-For")
-    if forwarded:
-        # X-Forwarded-For can contain multiple IPs, get the first one
-        return forwarded.split(",")[0].strip()
-    return request.client.host if request.client else "unknown"
+    direct_host = request.client.host if request.client else "unknown"
+    configured = [item.strip() for item in os.getenv("TRUSTED_PROXY_IPS", "").split(",")]
+    configured = [item for item in configured if item]
+    if not configured:
+        return direct_host
+
+    try:
+        trusted_networks = tuple(ip_network(item, strict=False) for item in configured)
+        direct_address = ip_address(direct_host)
+    except ValueError:
+        return direct_host
+    if not any(direct_address in network for network in trusted_networks):
+        return direct_host
+
+    forwarded = request.headers.get("x-forwarded-for") or request.headers.get("X-Forwarded-For", "")
+    try:
+        chain = [ip_address(item.strip()) for item in forwarded.split(",") if item.strip()]
+    except ValueError:
+        return direct_host
+    for address in reversed(chain):
+        if not any(address in network for network in trusted_networks):
+            return str(address)
+    return direct_host
 
 
 def rate_limit(limit_type: str) -> Callable[[Request], bool]:
@@ -47,8 +67,13 @@ def rate_limit(limit_type: str) -> Callable[[Request], bool]:
 
         client_ip = get_client_ip(request)
 
-        # Disable rate limiting for localhost/development
-        if client_ip in ("127.0.0.1", "localhost", "::1"):
+        # Keep local iteration frictionless, but never grant a production
+        # bypass merely because a reverse proxy connects over loopback.
+        if os.getenv("ENVIRONMENT", "development").lower() != "production" and client_ip in (
+            "127.0.0.1",
+            "localhost",
+            "::1",
+        ):
             return True
 
         key = f"{limit_type}:{client_ip}"
@@ -65,4 +90,5 @@ def rate_limit(limit_type: str) -> Callable[[Request], bool]:
 
         return True
 
+    check_rate_limit.rate_limit_type = limit_type  # type: ignore[attr-defined]
     return check_rate_limit

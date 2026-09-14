@@ -4,6 +4,9 @@ cookie/redirect handshake is assertable. Root conftest's autouse
 mock_authentication is suppressed (web auth is cookie-based, exercised
 for real)."""
 
+import os
+from urllib.parse import urlsplit
+
 import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
@@ -14,6 +17,40 @@ from api.database import get_db
 from api.main import app
 from api.models import Base, Organization, Person
 from api.security import hash_password
+from web.request_integrity import (
+    CSRF_COOKIE,
+    CSRF_HEADER,
+    is_protected_browser_path,
+    issue_csrf_token,
+)
+
+
+class RequestIntegrityTestClient(TestClient):
+    """Supply the browser-origin and CSRF context on positive-path writes."""
+
+    def request(self, method, url, **kwargs):
+        headers = dict(kwargs.pop("headers", {}) or {})
+        supplied_cookies = kwargs.pop("cookies", None)
+        if supplied_cookies:
+            merged_cookies = dict(self.cookies.items())
+            merged_cookies.update(supplied_cookies)
+            headers.setdefault(
+                "Cookie",
+                "; ".join(f"{key}={value}" for key, value in merged_cookies.items()),
+            )
+
+        path = urlsplit(str(url)).path
+        if method.upper() in {"POST", "PUT", "PATCH", "DELETE"} and is_protected_browser_path(path):
+            csrf_token = self.cookies.get(CSRF_COOKIE)
+            if not csrf_token:
+                csrf_token = issue_csrf_token()
+                self.cookies.set(CSRF_COOKIE, csrf_token)
+            configured_origin = os.getenv("FRONTEND_URL") or os.getenv("APP_URL")
+            headers.setdefault("Origin", configured_origin or "http://testserver")
+            headers.setdefault(CSRF_HEADER, csrf_token)
+        if headers:
+            kwargs["headers"] = headers
+        return super().request(method, url, **kwargs)
 
 
 @pytest.fixture(autouse=True)
@@ -62,7 +99,7 @@ def db():
 @pytest.fixture(scope="function")
 def client():
     # follow_redirects=False so we can assert the 303 + Set-Cookie.
-    with TestClient(app, follow_redirects=False) as c:
+    with RequestIntegrityTestClient(app, follow_redirects=False) as c:
         yield c
 
 
