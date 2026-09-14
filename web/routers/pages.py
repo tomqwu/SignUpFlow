@@ -4,6 +4,8 @@ end-to-end. Real screens land in 11.1+ (see plan)."""
 
 from __future__ import annotations
 
+from typing import cast
+
 from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
 from sqlalchemy.orm import Session
@@ -22,7 +24,9 @@ from api.models import (
     TeamMember,
 )
 from api.roles import PERMISSION_ROLES
+from api.services.allocation_service import member_can_take_role
 from api.services.assignment_visibility import member_visible_assignment
+from api.timeutils import utcnow
 from web.deps import get_session_admin, get_session_user
 
 router = APIRouter(tags=["web-pages"])
@@ -156,9 +160,7 @@ def _open_shifts(db: Session, person: Person) -> list[dict]:
     """Future events in the volunteer's org with unfilled role capacity
     (extra_data.role_counts vs assignments), excluding events they're
     already on. Org-scoped via the Event join."""
-    from datetime import datetime
-
-    now = datetime.utcnow()
+    now = utcnow()
     events = (
         db.query(Event)
         .filter(Event.org_id == person.org_id, Event.start_time >= now)
@@ -173,7 +175,11 @@ def _open_shifts(db: Session, person: Person) -> list[dict]:
         rows = (
             db.query(Assignment)
             .join(Event, Assignment.event_id == Event.id)
-            .filter(Event.org_id == person.org_id, Assignment.event_id == e.id)
+            .filter(
+                Event.org_id == person.org_id,
+                Assignment.event_id == e.id,
+                member_visible_assignment(cast(str, person.org_id)),
+            )
             .all()
         )
         if any(a.person_id == person.id for a in rows):
@@ -188,7 +194,7 @@ def _open_shifts(db: Session, person: Person) -> list[dict]:
         roles = [
             {"role": r, "needed": n, "remaining": n - filled.get(r, 0)}
             for r, n in rc.items()
-            if n - filled.get(r, 0) > 0
+            if n - filled.get(r, 0) > 0 and member_can_take_role(db, person=person, event=e, role=r)
         ]
         if roles:
             out.append(
@@ -1053,9 +1059,7 @@ def _claimable_swaps(db: Session, person: Person) -> list[dict]:
     """Swap-requested assignments another volunteer can cover: same org,
     future, not the caller's own request, and not an event the caller is
     already on. Org-scoped via the Event join."""
-    from datetime import datetime
-
-    now = datetime.utcnow()
+    now = utcnow()
     rows = (
         db.query(Assignment, Event, Person)
         .join(Event, Assignment.event_id == Event.id)
@@ -1065,6 +1069,7 @@ def _claimable_swaps(db: Session, person: Person) -> list[dict]:
             Assignment.status == "swap_requested",
             Assignment.person_id != person.id,
             Event.start_time >= now,
+            member_visible_assignment(cast(str, person.org_id)),
         )
         .order_by(Event.start_time.asc())
         .all()
@@ -1073,7 +1078,11 @@ def _claimable_swaps(db: Session, person: Person) -> list[dict]:
         a.event_id
         for a in db.query(Assignment)
         .join(Event, Assignment.event_id == Event.id)
-        .filter(Event.org_id == person.org_id, Assignment.person_id == person.id)
+        .filter(
+            Event.org_id == person.org_id,
+            Assignment.person_id == person.id,
+            member_visible_assignment(cast(str, person.org_id)),
+        )
         .all()
     }
     return [
@@ -1085,7 +1094,7 @@ def _claimable_swaps(db: Session, person: Person) -> list[dict]:
             "requested_by": p.name,
         }
         for a, e, p in rows
-        if e.id not in mine
+        if e.id not in mine and member_can_take_role(db, person=person, event=e, role=a.role or "")
     ]
 
 

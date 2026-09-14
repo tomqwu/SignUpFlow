@@ -127,6 +127,9 @@ unknown workflow IDs or silently skip unsupported scenarios.
 | Notification read does not fabricate a response | Web regression |
 | Unchanged republish carries acknowledgement; material event change resets it | API response-truth regression |
 | Qualified reserve covers a swap without losing role coverage | Browser journey, both domains |
+| Competing qualified claims produce one winner without overfill | SQLite and PostgreSQL integration race tests |
+| Ineligible, unavailable, overlapping, or stale claims preserve the roster | Web and integration regressions |
+| Unpublished solution history neither appears nor consumes live capacity | Web and integration regressions |
 | Draft/replaced assignments cannot be accepted, declined or swapped | API journey and web publication regression |
 | Multi-role form preserves exact names/counts | Browser journey, both domains |
 | Phone and desktop page width | Browser journey at 360 and 1440 pixels |
@@ -160,7 +163,7 @@ overflow assertion alone is not a comprehensive visual/accessibility audit.
   with null roles need regeneration; no existing data is silently rewritten.
 - The role-less team fallback, venue collision checks, DST/timezone transitions,
   recurrence exception handling, real notification delivery, and PostgreSQL
-  concurrency require separate acceptance before production use.
+  parity beyond allocation claims require separate acceptance before production use.
 - Basketball playing minutes, substitutions during play, scores, standings and
   league eligibility are outside this scheduling application.
 

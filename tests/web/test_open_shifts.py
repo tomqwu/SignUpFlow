@@ -4,13 +4,19 @@ from __future__ import annotations
 
 from datetime import datetime, timedelta
 
-from api.models import Assignment, Event
+from api.models import Assignment, Event, Solution
 from tests.web.conftest import seed_person
 from web.deps import SESSION_COOKIE
 
 
-def _vol(client, db, *, org, email, pid):
-    seed_person(db, person_id=pid, org_id=org, email=email, roles=["volunteer"])
+def _vol(client, db, *, org, email, pid, roles=None):
+    seed_person(
+        db,
+        person_id=pid,
+        org_id=org,
+        email=email,
+        roles=roles or ["volunteer"],
+    )
     r = client.post("/auth/login", data={"email": email, "password": "WebPass123!"})
     return r.cookies[SESSION_COOKIE]
 
@@ -63,7 +69,14 @@ def test_lists_and_claims_open_role(client, db):
 
 
 def test_capacity_and_double_claim_blocked(client, db):
-    tok = _vol(client, db, org="os_o2", email="v2@os.test", pid="os_v2")
+    tok = _vol(
+        client,
+        db,
+        org="os_o2",
+        email="v2@os.test",
+        pid="os_v2",
+        roles=["volunteer", "usher"],
+    )
     seed_person(db, person_id="os_other", org_id="os_o2", email="o@os.test", roles=["volunteer"])
     _event(db, "os_o2", "os_ev2", role_counts={"usher": 1})
     # Fill the only slot with someone else.
@@ -71,7 +84,7 @@ def test_capacity_and_double_claim_blocked(client, db):
     db.commit()
 
     r = client.post("/v/open/os_ev2/claim", data={"role": "usher"}, cookies={SESSION_COOKIE: tok})
-    assert r.status_code == 400
+    assert r.status_code == 409
     assert "filled up" in r.text.lower()
     assert (
         db.query(Assignment)
@@ -79,6 +92,72 @@ def test_capacity_and_double_claim_blocked(client, db):
         .first()
         is None
     )
+
+
+def test_unqualified_role_is_hidden_and_direct_claim_is_rejected(client, db):
+    tok = _vol(client, db, org="os_o5", email="v5@os.test", pid="os_v5")
+    _event(db, "os_o5", "os_ev5", role_counts={"usher": 1})
+
+    page = client.get("/v/open", cookies={SESSION_COOKIE: tok})
+    assert page.status_code == 200
+    assert "Sunday Service" not in page.text
+
+    blocked = client.post(
+        "/v/open/os_ev5/claim",
+        data={"role": "usher"},
+        cookies={SESSION_COOKIE: tok},
+    )
+    assert blocked.status_code == 409
+    assert "not qualified" in blocked.text.lower()
+    assert (
+        db.query(Assignment)
+        .filter(Assignment.event_id == "os_ev5", Assignment.person_id == "os_v5")
+        .first()
+        is None
+    )
+
+
+def test_unpublished_draft_assignment_does_not_hide_open_capacity(client, db):
+    tok = _vol(
+        client,
+        db,
+        org="os_o6",
+        email="v6@os.test",
+        pid="os_v6",
+        roles=["volunteer", "usher"],
+    )
+    seed_person(
+        db,
+        person_id="os_draft",
+        org_id="os_o6",
+        email="draft@os.test",
+        roles=["volunteer", "usher"],
+    )
+    _event(db, "os_o6", "os_ev6", role_counts={"usher": 1})
+    solution = Solution(
+        org_id="os_o6",
+        hard_violations=0,
+        soft_score=0.0,
+        health_score=100.0,
+        is_published=False,
+    )
+    db.add(solution)
+    db.flush()
+    db.add(
+        Assignment(
+            event_id="os_ev6",
+            person_id="os_draft",
+            role="usher",
+            solution_id=solution.id,
+        )
+    )
+    db.commit()
+
+    page = client.get("/v/open", cookies={SESSION_COOKIE: tok})
+
+    assert page.status_code == 200
+    assert "Sunday Service" in page.text
+    assert "1 of 1 open" in page.text
 
 
 def test_past_event_not_open(client, db):
@@ -100,7 +179,7 @@ def test_past_event_not_open(client, db):
     blocked = client.post(
         "/v/open/os_past/claim", data={"role": "volunteer"}, cookies={SESSION_COOKIE: tok}
     )
-    assert blocked.status_code == 400
+    assert blocked.status_code == 409
 
 
 def test_schedule_links_to_open(client, db):

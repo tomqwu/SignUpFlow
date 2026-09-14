@@ -60,8 +60,14 @@ evidence with a local mock. Do not deploy or enable providers from a roadmap alo
   revision-aware and atomic with audit, unchanged publication carries proven
   responses, material changes reset them, and coordinator/member browser states
   run through both domain playbooks at 360px and 1440px.
+- #264: open-shift claims, swap covers/denials, and coordinator roster edits now
+  share one organization-scoped transaction boundary. Synchronized independent
+  connections prove one winner for capacity, overlap, and swap races on SQLite
+  and an owned local PostgreSQL 16 database; qualification, availability,
+  idempotency, audit rollback, and unpublished history are covered locally.
 - #260: per-run SQLite database isolation exists. PostgreSQL business/concurrency
-  and migration parity remain unverified release work; run that validation locally.
+  parity is now proven for allocation claims only. Full migration and broader
+  business parity remain unverified release work; run that validation locally.
 - #259: repurpose the obsolete AI/CI gate ticket as local validation and evidence
   hygiene. No workflow, secret, provider or required status is needed for review.
 - #191: the Dart client is regenerated from the current OpenAPI snapshot and

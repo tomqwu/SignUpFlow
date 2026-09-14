@@ -537,7 +537,7 @@ class EventsApi {
   }
 
   /// Manage Assignment
-  /// Assign or unassign a person to/from an event (admin only).
+  /// Assign or unassign a person through the serialized allocation boundary.
   ///
   /// Parameters:
   /// * [eventId]

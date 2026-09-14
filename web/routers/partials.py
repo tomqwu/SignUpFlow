@@ -9,13 +9,15 @@ the assignment card partial so HTMX swaps the fresh status in place.
 
 from __future__ import annotations
 
+from typing import cast
+
 from fastapi import APIRouter, BackgroundTasks, Depends, Form, HTTPException, Query, Request
 from fastapi.responses import HTMLResponse
 from pydantic import ValidationError
 from sqlalchemy.orm import Session
 
 from api.database import get_db
-from api.models import Assignment, AuditAction, EmailPreference, Event, Notification, Person
+from api.models import Assignment, EmailPreference, Event, Notification, Person
 from api.roles import build_roles, parse_qualifications, replace_qualifications
 from api.routers.assignments import (
     accept_assignment,
@@ -73,9 +75,13 @@ from api.schemas.organization import OrganizationUpdate
 from api.schemas.person import PersonUpdate
 from api.schemas.solver import SolveRequest
 from api.schemas.team import TeamCreate, TeamMemberAdd, TeamMemberRemove, TeamUpdate
-from api.services.assignment_response import record_assignment_response, reset_assignment_response
+from api.services.allocation_service import (
+    AllocationConflictError,
+    claim_open_shift,
+    cover_swap,
+    deny_swap_request,
+)
 from api.timeutils import utcnow
-from api.utils.audit_logger import log_audit_event
 from web.deps import get_session_admin, get_session_user
 from web.routers.pages import (
     NOTIF_TYPES,
@@ -222,14 +228,21 @@ def swap(
 # ── Volunteer: self-serve open shifts ────────────────────────────────
 
 
-def _open_list(request: Request, person: Person, db: Session, *, error=None):
+def _open_list(
+    request: Request,
+    person: Person,
+    db: Session,
+    *,
+    error=None,
+    status_code: int = 400,
+):
     from web.app import templates
 
     return templates.TemplateResponse(
         request,
         "partials/open_list.html",
         {"open": _open_shifts(db, person), "error": error},
-        status_code=400 if error else 200,
+        status_code=status_code if error else 200,
     )
 
 
@@ -241,60 +254,20 @@ def open_claim(
     person: Person = Depends(get_session_user),
     db: Session = Depends(get_db),
 ):
-    """Volunteer self-claims an open role. Re-validated server-side
-    (org, future, role exists, capacity, no double-claim) so it's
-    race-safe; org-scoped direct write (no admin API reuse)."""
-    from datetime import datetime
-
-    ev = db.query(Event).filter(Event.org_id == person.org_id, Event.id == event_id).first()
-    if ev is None or (ev.start_time and ev.start_time < datetime.utcnow()):
-        return _open_list(request, person, db, error="That event is no longer open.")
-    rc = (ev.extra_data or {}).get("role_counts") or {}
-    if role not in rc:
-        return _open_list(request, person, db, error="That role isn't open.")
-    rows = (
-        db.query(Assignment)
-        .join(Event, Assignment.event_id == Event.id)
-        .filter(Event.org_id == person.org_id, Assignment.event_id == event_id)
-        .all()
-    )
-    if any(a.person_id == person.id for a in rows):
-        return _open_list(request, person, db, error="You're already on this event.")
-    if (
-        sum(1 for a in rows if (a.role or "") == role and (a.status or "").lower() != "declined")
-        >= rc[role]
-    ):
-        return _open_list(request, person, db, error="That role just filled up.")
-
-    assignment = Assignment(
-        event_id=event_id,
-        person_id=person.id,
-        role=role,
-        solution_id=None,
-        commitment_revision=1,
-    )
-    record_assignment_response(
-        assignment,
-        actor_person_id=person.id,
-        response_status="accepted",
-        workflow_status="confirmed",
-        expected_revision=1,
-    )
+    """Claim one open role through the serialized allocation boundary."""
     try:
-        db.add(assignment)
-        db.flush()
-        log_audit_event(
+        claim_open_shift(
             db,
-            action=AuditAction.ASSIGNMENT_ACCEPTED,
-            user_id=person.id,
-            user_email=person.email,
-            organization_id=person.org_id,
-            resource_type="assignment",
-            resource_id=str(assignment.id),
-            details={"source": "open_shift_claim", "commitment_revision": 1},
-            commit=False,
+            org_id=cast(str, person.org_id),
+            event_id=event_id,
+            person_id=cast(str, person.id),
+            role=role,
+            actor_email=cast(str, person.email),
         )
         db.commit()
+    except AllocationConflictError as exc:
+        db.rollback()
+        return _open_list(request, person, db, error=exc.message, status_code=409)
     except Exception:
         db.rollback()
         raise
@@ -304,14 +277,21 @@ def open_claim(
 # ── Volunteer: swap-claim marketplace ────────────────────────────────
 
 
-def _swaps_open_list(request: Request, person: Person, db: Session, *, error=None):
+def _swaps_open_list(
+    request: Request,
+    person: Person,
+    db: Session,
+    *,
+    error=None,
+    status_code: int = 400,
+):
     from web.app import templates
 
     return templates.TemplateResponse(
         request,
         "partials/swaps_open_list.html",
         {"swaps": _claimable_swaps(db, person), "error": error},
-        status_code=400 if error else 200,
+        status_code=status_code if error else 200,
     )
 
 
@@ -322,68 +302,19 @@ def swap_claim(
     person: Person = Depends(get_session_user),
     db: Session = Depends(get_db),
 ):
-    """Cover a teammate's swap: transfer the assignment to the claimer.
-    Re-validated server-side (org, still swap_requested, not own, future,
-    claimer not already on the event) — org-scoped direct write."""
-    from datetime import datetime
-
-    a = (
-        db.query(Assignment)
-        .join(Event, Assignment.event_id == Event.id)
-        .filter(
-            Event.org_id == person.org_id,
-            Assignment.id == assignment_id,
-            Assignment.status == "swap_requested",
-        )
-        .first()
-    )
-    if a is None:
-        return _swaps_open_list(request, person, db, error="That swap is no longer available.")
-    if a.person_id == person.id:
-        return _swaps_open_list(request, person, db, error="That's your own swap request.")
-    ev = db.query(Event).filter(Event.id == a.event_id).first()
-    if ev is None or (ev.start_time and ev.start_time < datetime.utcnow()):
-        return _swaps_open_list(request, person, db, error="That event has passed.")
-    already = (
-        db.query(Assignment)
-        .join(Event, Assignment.event_id == Event.id)
-        .filter(
-            Event.org_id == person.org_id,
-            Assignment.event_id == a.event_id,
-            Assignment.person_id == person.id,
-        )
-        .first()
-    )
-    if already is not None:
-        return _swaps_open_list(request, person, db, error="You're already on that event.")
-
-    prior_person_id = a.person_id
-    a.person_id = person.id
-    reset_assignment_response(a)
-    record_assignment_response(
-        a,
-        actor_person_id=person.id,
-        response_status="accepted",
-        workflow_status="confirmed",
-        expected_revision=a.commitment_revision,
-    )
+    """Cover one swap through the serialized allocation boundary."""
     try:
-        log_audit_event(
+        cover_swap(
             db,
-            action=AuditAction.ASSIGNMENT_ACCEPTED,
-            user_id=person.id,
-            user_email=person.email,
-            organization_id=person.org_id,
-            resource_type="assignment",
-            resource_id=str(a.id),
-            details={
-                "source": "swap_claim",
-                "prior_person_id": prior_person_id,
-                "commitment_revision": a.commitment_revision,
-            },
-            commit=False,
+            org_id=cast(str, person.org_id),
+            assignment_id=assignment_id,
+            person_id=cast(str, person.id),
+            actor_email=cast(str, person.email),
         )
         db.commit()
+    except AllocationConflictError as exc:
+        db.rollback()
+        return _swaps_open_list(request, person, db, error=exc.message, status_code=409)
     except Exception:
         db.rollback()
         raise
@@ -1206,10 +1137,16 @@ def swap_deny(
     db: Session = Depends(get_db),
 ):
     """Deny the swap while requiring the member to answer again."""
-    a = _owned_swap(db, person, assignment_id)
-    if a is not None:
-        reset_assignment_response(a)
+    try:
+        deny_swap_request(
+            db,
+            org_id=cast(str, person.org_id),
+            assignment_id=assignment_id,
+        )
         db.commit()
+    except Exception:
+        db.rollback()
+        raise
     return _swaps_list(request, person, db)
 
 

@@ -12,6 +12,7 @@ from tests.e2e._helpers import (
     invite_token,
     next_sunday_iso,
     no_js_errors,
+    qualify_only_member,
     rid,
     signup_admin,
     solver_window_around,
@@ -23,7 +24,7 @@ EV_DATE = next_sunday_iso()
 FROM_DATE, TO_DATE = solver_window_around(EV_DATE)
 
 
-def _new_event(page, base, etype):
+def _new_event(page, base, etype, role="volunteer"):
     page.goto(f"{base}/a/events")
     page.click("button:has-text('New event')")
     page.wait_for_selector("#ev_type", state="visible")
@@ -31,7 +32,7 @@ def _new_event(page, base, etype):
     page.fill("#ev_date", EV_DATE)
     page.fill("#ev_start", "10:00")
     page.fill("#ev_end", "11:30")
-    page.fill("input[name=role_name]", "volunteer")
+    page.fill("input[name=role_name]", role)
     page.fill("input[name=role_count]", "1")
     page.click("button:has-text('Create event')")
     page.wait_for_selector(f"#events-list:has-text('{etype}')")
@@ -86,10 +87,12 @@ def test_recurring_series_create_and_delete(live_server, page):
 def test_all_assignments_view(live_server, page):
     base = live_server
     signup_admin(page, base)
-    _new_event(page, base, "Midweek Prayer")
+    qualify_only_member(page, base, "greeter")
+    _new_event(page, base, "Midweek Prayer", role="greeter")
     page.click("a:has-text('Manage')")
     page.wait_for_selector("#event-assignments")
     page.select_option("#ea_person", label="Admin Dana")
+    page.fill("#ea_role", "greeter")
     page.click("button:has-text('Add to event')")
     page.wait_for_selector("#event-assignments:has-text('Admin Dana')")
 

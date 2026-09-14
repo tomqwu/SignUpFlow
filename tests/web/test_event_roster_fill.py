@@ -43,7 +43,13 @@ def test_roster_shows_gap(client, db):
 def test_fill_gap_closes_coverage(client, db):
     tok = _admin(client, db, org="rf_o2", email="rf2@web.test")
     _event(db, "rf_o2", role_counts={"usher": 1})
-    seed_person(db, person_id="rf_v", org_id="rf_o2", email="v@rf.test", roles=["volunteer"])
+    seed_person(
+        db,
+        person_id="rf_v",
+        org_id="rf_o2",
+        email="v@rf.test",
+        roles=["volunteer", "usher"],
+    )
     r = client.post(
         "/a/events/rev1/assignments/add",
         data={"person_id": "rf_v", "role": "usher"},
@@ -66,3 +72,24 @@ def test_no_role_counts_hides_coverage(client, db):
     r = client.get("/a/events/rev1/assignments", cookies={SESSION_COOKIE: tok})
     assert r.status_code == 200
     assert 'id="role-coverage"' not in r.text
+
+
+def test_fill_gap_rejects_unqualified_member_without_mutation(client, db):
+    tok = _admin(client, db, org="rf_o4", email="rf4@web.test")
+    _event(db, "rf_o4", role_counts={"usher": 1})
+    seed_person(db, person_id="rf_v4", org_id="rf_o4", email="v4@rf.test", roles=["volunteer"])
+
+    response = client.post(
+        "/a/events/rev1/assignments/add",
+        data={"person_id": "rf_v4", "role": "usher"},
+        cookies={SESSION_COOKIE: tok},
+    )
+
+    assert response.status_code == 400
+    assert "not qualified" in response.text.lower()
+    assert (
+        db.query(Assignment)
+        .filter(Assignment.event_id == "rev1", Assignment.person_id == "rf_v4")
+        .first()
+        is None
+    )

@@ -67,8 +67,8 @@
       "operation": "Cover exactly one eligible open or swap assignment",
       "expected": "One qualified reserve wins and the original assignment transfers without duplication",
       "tiers": ["integration", "e2e"],
-      "status": "partial",
-      "evidence": ["tests/e2e/test_domain_playbooks.py", "tests/e2e/test_swap_marketplace.py"]
+      "status": "automated",
+      "evidence": ["tests/integration/test_assignment_claim_concurrency.py", "tests/web/test_open_shifts.py", "tests/web/test_swap_marketplace.py", "tests/e2e/test_domain_playbooks.py", "tests/e2e/test_swap_marketplace.py"]
     },
     {
       "id": "BO-07",

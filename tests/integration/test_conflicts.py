@@ -14,6 +14,8 @@ from datetime import UTC, date, datetime, timedelta
 import httpx
 import pytest
 
+from api.database import SessionLocal
+from api.models import Assignment
 from tests.integration._identity import bootstrap_admin, invite_member
 
 
@@ -109,6 +111,20 @@ def _assign(client, api_base, event_id: str, person_id: str, role: str | None = 
     )
     assert resp.status_code == 200, resp.text
     return resp.json()
+
+
+def _seed_legacy_assignment(event_id: str, person_id: str) -> None:
+    """Insert historical bad data that protected assignment writes now reject."""
+    with SessionLocal() as db:
+        db.add(
+            Assignment(
+                event_id=event_id,
+                person_id=person_id,
+                status="pending",
+                response_status="pending",
+            )
+        )
+        db.commit()
 
 
 def _add_timeoff(client, api_base: str, person_id: str, start: date, end: date) -> None:
@@ -260,7 +276,7 @@ class TestListConflicts:
         event_a = _create_event(data["admin_client"], data["api_base"], data["org_id"], days=35)
         event_b = _create_event(data["admin_client"], data["api_base"], data["org_id"], days=35)
         _assign(data["admin_client"], data["api_base"], event_a["id"], data["vol_id"])
-        _assign(data["admin_client"], data["api_base"], event_b["id"], data["vol_id"])
+        _seed_legacy_assignment(event_b["id"], data["vol_id"])
 
         resp = data["admin_client"].get(
             f"{data['api_base']}/conflicts/",

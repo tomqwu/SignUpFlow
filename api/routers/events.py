@@ -1,6 +1,7 @@
 """Events router."""
 
 from datetime import datetime
+from typing import cast
 
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query, status
 from pydantic import BaseModel
@@ -21,6 +22,11 @@ from api.models import (
 from api.schemas.common import PaginationParams, get_pagination_params
 from api.schemas.event import EventCreate, EventList, EventResponse, EventUpdate
 from api.services import event_bus
+from api.services.allocation_service import (
+    AllocationConflictError,
+    assign_person_to_event,
+    unassign_person_from_event,
+)
 from api.services.assignment_response import reset_event_assignment_responses
 from api.timeutils import utcnow
 from api.utils.event_helpers import (
@@ -425,7 +431,7 @@ def manage_assignment(
     current_admin: Person = Depends(get_current_admin_user),
     db: Session = Depends(get_db),
 ):
-    """Assign or unassign a person to/from an event (admin only)."""
+    """Assign or unassign a person through the serialized allocation boundary."""
     event = (
         db.query(Event).filter(Event.id == event_id, Event.org_id == current_admin.org_id).first()
     )
@@ -449,32 +455,27 @@ def manage_assignment(
     verify_org_member(current_admin, person.org_id)
 
     if request.action == "assign":
-        # Check if already assigned
-        existing = (
-            db.query(Assignment)
-            .filter(Assignment.event_id == event_id, Assignment.person_id == request.person_id)
-            .first()
-        )
-
-        if existing:
-            raise error_response(
-                "events.assign.already_assigned",
-                status_code=status.HTTP_400_BAD_REQUEST,
-                person=person.name,
+        try:
+            assignment = assign_person_to_event(
+                db,
+                org_id=cast(str, event.org_id),
+                event_id=event_id,
+                person_id=request.person_id,
+                role=request.role,
             )
-
-        # Create new assignment (solution_id is None for manual assignments).
-        # No event_bus publish here: solution_id is None so there's no
-        # Solution Review stream to notify.
-        assignment = Assignment(
-            event_id=event_id,
-            person_id=request.person_id,
-            role=request.role,  # Event-specific role
-            solution_id=None,
-        )
-        db.add(assignment)
-        db.commit()
-        db.refresh(assignment)  # Refresh to get assignment ID
+            db.commit()
+            db.refresh(assignment)
+        except AllocationConflictError as exc:
+            db.rollback()
+            code = (
+                status.HTTP_404_NOT_FOUND
+                if exc.code in {"event_unavailable", "person_unavailable", "organization_missing"}
+                else status.HTTP_409_CONFLICT
+            )
+            raise HTTPException(status_code=code, detail=exc.message) from exc
+        except Exception:
+            db.rollback()
+            raise
 
         return success_response(
             "events.assign.success",
@@ -483,25 +484,31 @@ def manage_assignment(
         )
 
     elif request.action == "unassign":
-        # Find and delete assignment
-        assignment = (
-            db.query(Assignment)
-            .filter(Assignment.event_id == event_id, Assignment.person_id == request.person_id)
-            .first()
-        )
-
-        if not assignment:
-            raise error_response(
-                "events.assign.not_assigned",
-                status_code=status.HTTP_404_NOT_FOUND,
-                person=person.name,
+        try:
+            deleted_assignment_id, deleted_solution_id = unassign_person_from_event(
+                db,
+                org_id=cast(str, event.org_id),
+                event_id=event_id,
+                person_id=request.person_id,
             )
-
-        # Capture before delete — SQLAlchemy clears attributes post-delete.
-        deleted_solution_id = assignment.solution_id
-        deleted_assignment_id = assignment.id
-        db.delete(assignment)
-        db.commit()
+            db.commit()
+        except AllocationConflictError as exc:
+            db.rollback()
+            code = (
+                status.HTTP_404_NOT_FOUND
+                if exc.code
+                in {
+                    "event_unavailable",
+                    "person_unavailable",
+                    "organization_missing",
+                    "not_assigned",
+                }
+                else status.HTTP_409_CONFLICT
+            )
+            raise HTTPException(status_code=code, detail=exc.message) from exc
+        except Exception:
+            db.rollback()
+            raise
         if deleted_solution_id is not None:
             background_tasks.add_task(
                 event_bus.publish,
