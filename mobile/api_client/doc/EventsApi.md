@@ -296,7 +296,7 @@ No authorization required
 
 Manage Assignment
 
-Assign or unassign a person to/from an event (admin only).
+Assign or unassign a person through the serialized allocation boundary.
 
 ### Example
 ```dart
@@ -423,4 +423,3 @@ No authorization required
  - **Accept**: application/json
 
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
-
