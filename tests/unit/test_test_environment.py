@@ -95,6 +95,17 @@ def test_live_server_environment_preserves_runtime_basics_only():
             assert name not in safe
 
 
+def test_live_server_environment_allows_only_an_explicit_test_clock():
+    safe = build_test_environment(
+        {"SIGNUPFLOW_TEST_NOW": "2030-01-09T12:00:00+00:00"},
+        database_url="sqlite:////tmp/owned-clock-e2e.db",
+        secret_key="owned-clock-secret-key-minimum-32-characters",
+    )
+
+    assert safe["SIGNUPFLOW_ALLOW_TEST_CLOCK"] == "true"
+    assert safe["SIGNUPFLOW_TEST_NOW"] == "2030-01-09T12:00:00+00:00"
+
+
 def test_mail_capture_requires_explicit_owned_path():
     safe = build_test_environment(
         POISONED_ENVIRONMENT,

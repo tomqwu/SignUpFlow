@@ -18,15 +18,17 @@ class Playbook:
         *,
         seed_people: bool = True,
         bootstrap_admin: bool = True,
+        instance_id: str | None = None,
+        start_date: date | None = None,
     ):
         self.client = client
         self.spec = definition.model_dump()
-        self.org = f"{definition.id}-{uuid4().hex[:10]}"
+        self.org = instance_id or f"{definition.id}-{uuid4().hex[:10]}"
         self.people = {}
         self.events = {}
         self.blocked = set()
         today = date.today()
-        self.start = today + timedelta(days=(6 - today.weekday()) % 7 + 14)
+        self.start = start_date or today + timedelta(days=(6 - today.weekday()) % 7 + 14)
         self.email = f"admin@{self.org}.example"
         self.headers = {}
         if seed_people and not bootstrap_admin:
