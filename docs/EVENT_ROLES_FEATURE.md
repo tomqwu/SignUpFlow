@@ -1,5 +1,8 @@
 # Event-Specific Roles Feature
 
+> Historical implementation record. Current schema changes run only through
+> Alembic. The ad hoc migration command retained below is retired and refuses.
+
 **Implemented:** 2025-10-06
 **Status:** ✅ Complete - All tests passing (179/179)
 
@@ -110,7 +113,7 @@ CREATE TABLE assignments (
 
 ```bash
 # Run migration
-poetry run python scripts/migrate_add_role_to_assignments.py
+poetry run alembic upgrade head
 
 # What it does:
 1. Adds 'role' column to assignments table (TEXT, nullable)
@@ -427,7 +430,7 @@ make test
 git pull origin main
 
 # 2. Run database migration
-poetry run python scripts/migrate_add_role_to_assignments.py
+poetry run alembic upgrade head
 
 # 3. Restart server
 make kill-servers
@@ -462,7 +465,7 @@ No action needed - role field included in schema from start.
 - [tests/unit/test_event_roles.py](../tests/unit/test_event_roles.py) - Comprehensive role tests
 
 ### Migration
-- [scripts/migrate_add_role_to_assignments.py](../scripts/migrate_add_role_to_assignments.py) - Database migration
+- [scripts/migrate_add_role_to_assignments.py](../scripts/migrate_add_role_to_assignments.py) - Retired migration entry point
 
 ---
 

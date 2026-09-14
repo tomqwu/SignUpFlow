@@ -219,8 +219,9 @@ make up
 # Stop all services (keeps data)
 make down
 
-# Stop and remove volumes (deletes database data)
-make clean-docker
+# Destructive volume deletion has no repository helper.
+# Use make down here; recovery/reset work remains tracked in #268.
+make down
 
 # Rebuild images and restart
 make rebuild
@@ -310,11 +311,8 @@ make down && make up
 # Stop services (keeps volumes/data)
 make down
 
-# Stop and remove volumes (deletes data)
-make clean-docker
-
-# Remove everything including images
-make clean-docker-all
+# Volume/image deletion is intentionally not wrapped by a Make target.
+# Perform a separately authorized, project-scoped operator action when required.
 ```
 
 ---
@@ -772,7 +770,7 @@ Create `.vscode/launch.json`:
 | **Billing Testing** | ✅ Easy (Redis) | ⚠️ Manual setup |
 | **Production Parity** | ✅ High | ⚠️ Low (SQLite) |
 | **Disk Space** | ~1GB | ~500MB |
-| **Clean Uninstall** | ✅ `make clean-docker-all` | ⚠️ Manual cleanup |
+| **Clean Uninstall** | Manual, explicitly scoped | Manual, explicitly scoped |
 | **Team Consistency** | ✅ Perfect | ⚠️ Varies |
 
 ### Recommendation
@@ -839,7 +837,8 @@ A: ~1GB RAM total. API: ~300MB, PostgreSQL: ~500MB, Redis: ~200MB.
 A: Yes! Docker Desktop for Mac supports Apple Silicon. Images are built for ARM64.
 
 **Q: How do I reset the database?**
-A: `make clean-docker` removes all volumes and data. Then `make up` starts fresh.
+A: There is no broad cleanup helper. Stop the owned project with `make down` and
+follow the separately authorized recovery/reset procedure tracked in #268.
 
 **Q: Can I use both Docker and local development?**
 A: Yes! Run Docker services (`make up`) but stop the API container, then run API locally (`make run`). Connect via `localhost:5433` (PostgreSQL) and `localhost:6380` (Redis).

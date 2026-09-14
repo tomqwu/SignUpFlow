@@ -1,5 +1,9 @@
 # Rostio SaaS Enhancement - Implementation Complete ✅
 
+> Historical implementation record. Commands and paths below are retained as
+> evidence of prior work, not as current operating instructions. Use README,
+> `docs/TESTING.md`, `docs/TOOLS.md`, and Alembic for current workflows.
+
 ## Executive Summary
 
 Successfully implemented a comprehensive SaaS enhancement for Rostio based on 2025 best practices, including enhanced RBAC with user invitations, ICS calendar export, and a reorganized admin console with tabbed navigation.

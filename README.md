@@ -394,6 +394,8 @@ make validate-screenshots            # Reject missing, altered, or stale capture
 
 See the [current testing and merge guide](docs/TESTING.md) for all tiers,
 dependencies and local review/validation evidence requirements.
+See the [tool safety ledger](docs/TOOLS.md) before running maintenance,
+migration, provider, database-inspection, Docker cleanup, or legacy helper commands.
 `make test-all` validates [the declared suite inventory](tests/local_validation_manifest.json)
 and writes a SHA-bound JSON report plus per-tier JUnit and console logs under
 `test-artifacts/local-validation/`. The report names all opt-in scopes that were not run.
