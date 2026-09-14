@@ -29,6 +29,8 @@ class PlaybookSpec(BaseModel):
     late_cover_roles: list[Role] = Field(default_factory=list)
     qualification_review_role: Role | None = None
     extended_absence_role: Role | None = None
+    additional_event_role: Role | None = None
+    postponed_event_role: Role | None = None
 
     @model_validator(mode="after")
     def validate_critical_role(self) -> Self:
@@ -39,7 +41,12 @@ class PlaybookSpec(BaseModel):
             raise ValueError("late_cover_roles must be unique")
         if set(self.late_cover_roles) - set(self.roles):
             raise ValueError("late_cover_roles must reference declared roles")
-        for field_name in ("qualification_review_role", "extended_absence_role"):
+        for field_name in (
+            "qualification_review_role",
+            "extended_absence_role",
+            "additional_event_role",
+            "postponed_event_role",
+        ):
             role = getattr(self, field_name)
             if role is not None and role not in self.roles:
                 raise ValueError(f"{field_name} must reference a declared role")

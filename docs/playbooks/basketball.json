@@ -8,5 +8,6 @@
   "secondary_event": "practice",
   "critical_role": "point_guard",
   "late_cover_roles": ["coach", "scorekeeper"],
-  "extended_absence_role": "point_guard"
+  "extended_absence_role": "point_guard",
+  "postponed_event_role": "point_guard"
 }

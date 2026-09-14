@@ -38,6 +38,8 @@ def test_discover_new_definition(tmp_path):
     assert specs[0].late_cover_roles == []
     assert specs[0].qualification_review_role is None
     assert specs[0].extended_absence_role is None
+    assert specs[0].additional_event_role is None
+    assert specs[0].postponed_event_role is None
 
 
 def test_bundled_definitions_declare_domain_late_cover_roles():
@@ -52,8 +54,12 @@ def test_bundled_definitions_declare_eligibility_and_availability_extensions():
 
     assert specs["church"].qualification_review_role == "children_leader"
     assert specs["church"].extended_absence_role is None
+    assert specs["church"].additional_event_role == "usher"
+    assert specs["church"].postponed_event_role is None
     assert specs["basketball"].qualification_review_role is None
     assert specs["basketball"].extended_absence_role == "point_guard"
+    assert specs["basketball"].additional_event_role is None
+    assert specs["basketball"].postponed_event_role == "point_guard"
 
 
 @pytest.mark.parametrize(
@@ -69,6 +75,8 @@ def test_bundled_definitions_declare_eligibility_and_availability_extensions():
         {"late_cover_roles": ["leader", "leader"]},
         {"qualification_review_role": "missing"},
         {"extended_absence_role": "missing"},
+        {"additional_event_role": "missing"},
+        {"postponed_event_role": "missing"},
         {"roles": {"leader": 2}},
         {"version": 2},
         {"workflow": "unknown"},

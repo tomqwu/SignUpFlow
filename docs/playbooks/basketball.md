@@ -136,19 +136,25 @@ cannot see the shift, while a newly invited exact-role available reserve covers 
 the browser. The original staff member loses exactly that assignment and all five player
 positions plus the other staff slot remain unchanged.
 
+BB-D03 uses the `postponed_event_role` declared by the Basketball fixture. Starting from an
+accepted three-week point-guard roster, the manager postpones one game by a day and an hour
+through the event form. The change resets the affected response and creates a schedule-update
+notice. At 360px and 1440px, change-minimized solving preserves all three players and the
+comparison reports zero added, zero removed, and three unchanged commitments. Republishing
+and notifying requires a fresh acceptance and moves the existing logical calendar entry
+under the same UID, even when publication creates a new assignment row. Venue and opponent
+coordination remain human checkpoints outside SignUpFlow.
+
 ## Additional operational drills
 
 Record these remaining items separately as manual/extended acceptance:
 
-1. A venue cancels a game. Coordinate the postponement, inspect calendar exports,
-   communicate the change and obtain responses. Automated court collision and external
-   provider delivery are not established by this exercise.
-2. Two teams share players in one organization. Test team eligibility explicitly
+1. Two teams share players in one organization. Test team eligibility explicitly
    before use; current role-based solving is not proven to restrict by team roster.
-3. A tournament needs travel/rest gaps. The supported saved minimum-gap rule runs
+2. A tournament needs travel/rest gaps. The supported saved minimum-gap rule runs
    in API solves, but venue travel and tournament policy remain manual; a configured
    generic gap is not proof that those domain rules are satisfied.
-4. A member imports the feed into a specific calendar app. Check that client's refresh
+3. A member imports the feed into a specific calendar app. Check that client's refresh
    interval and device rendering; local ICS generation tests do not certify third-party
    polling behavior.
 

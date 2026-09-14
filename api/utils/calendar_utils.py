@@ -7,6 +7,7 @@ This module handles:
 - Building webcal:// subscription URLs
 """
 
+import hashlib
 from datetime import UTC, datetime
 from typing import Any, cast
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
@@ -34,6 +35,17 @@ def _localized_datetime(value: datetime | str | None, zone: ZoneInfo) -> datetim
     if value.tzinfo is None:
         value = value.replace(tzinfo=UTC)
     return value.astimezone(zone)
+
+
+def _assignment_uid(assignment: dict[str, Any]) -> str:
+    """Keep one calendar identity across publication-version row changes."""
+    event_id = assignment.get("event", {}).get("id")
+    person_id = assignment.get("person", {}).get("id")
+    if event_id is None or person_id is None:
+        return f"rostio-assignment-{assignment.get('id')}@rostio.app"
+    identity = "\x1f".join((str(event_id), str(person_id), str(assignment.get("role") or "")))
+    digest = hashlib.sha256(identity.encode("utf-8")).hexdigest()[:32]
+    return f"rostio-shift-{digest}@rostio.app"
 
 
 def generate_ics_from_assignments(
@@ -66,7 +78,7 @@ def generate_ics_from_assignments(
 
         # Required fields
         event_data = assignment.get("event", {})
-        event.add("uid", f"rostio-assignment-{assignment.get('id')}@rostio.app")
+        event.add("uid", _assignment_uid(assignment))
         event.add("dtstamp", utcnow().replace(tzinfo=ZoneInfo("UTC")))
 
         # Event times
