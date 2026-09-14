@@ -120,4 +120,3 @@ class _$VerificationCodeRequestSerializer implements PrimitiveSerializer<Verific
     return result.build();
   }
 }
-

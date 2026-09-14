@@ -189,4 +189,3 @@ class _$PhoneVerificationResponseSerializer implements PrimitiveSerializer<Phone
     return result.build();
   }
 }
-

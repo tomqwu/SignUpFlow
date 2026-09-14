@@ -135,4 +135,3 @@ class _$VerifyCodeResponseSerializer implements PrimitiveSerializer<VerifyCodeRe
     return result.build();
   }
 }
-

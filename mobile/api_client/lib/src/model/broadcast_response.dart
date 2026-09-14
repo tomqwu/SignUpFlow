@@ -183,4 +183,3 @@ class _$BroadcastResponseSerializer implements PrimitiveSerializer<BroadcastResp
     return result.build();
   }
 }
-

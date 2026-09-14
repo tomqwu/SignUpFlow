@@ -125,4 +125,3 @@ class _$UpdateSmsPreferencesRequestSerializer implements PrimitiveSerializer<Upd
     return result.build();
   }
 }
-

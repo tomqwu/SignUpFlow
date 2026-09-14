@@ -104,4 +104,3 @@ class _$PhoneVerificationRequestSerializer implements PrimitiveSerializer<PhoneV
     return result.build();
   }
 }
-

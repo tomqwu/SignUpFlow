@@ -143,4 +143,3 @@ class _$SendEventReminderRequestSerializer implements PrimitiveSerializer<SendEv
     return result.build();
   }
 }
-

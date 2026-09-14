@@ -176,4 +176,3 @@ class _$UpgradeRequestSerializer implements PrimitiveSerializer<UpgradeRequest> 
     return result.build();
   }
 }
-

@@ -140,4 +140,3 @@ class _$DowngradeRequestSerializer implements PrimitiveSerializer<DowngradeReque
     return result.build();
   }
 }
-

@@ -12,5 +12,3 @@ Name | Type | Description | Notes
 **notificationTypes** | **BuiltList&lt;String&gt;** | List of notification types: assignment, reminder, change, cancellation |
 
 [[Back to Model list]](../README.md#documentation-for-models) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to README]](../README.md)
-
-

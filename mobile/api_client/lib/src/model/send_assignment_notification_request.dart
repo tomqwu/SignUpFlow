@@ -155,4 +155,3 @@ class _$SendAssignmentNotificationRequestSerializer implements PrimitiveSerializ
     return result.build();
   }
 }
-

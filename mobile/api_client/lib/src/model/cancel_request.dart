@@ -162,4 +162,3 @@ class _$CancelRequestSerializer implements PrimitiveSerializer<CancelRequest> {
     return result.build();
   }
 }
-

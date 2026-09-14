@@ -142,4 +142,3 @@ class _$SendBroadcastRequestSerializer implements PrimitiveSerializer<SendBroadc
     return result.build();
   }
 }
-

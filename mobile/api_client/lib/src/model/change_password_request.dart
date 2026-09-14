@@ -121,4 +121,3 @@ class _$ChangePasswordRequestSerializer implements PrimitiveSerializer<ChangePas
     return result.build();
   }
 }
-

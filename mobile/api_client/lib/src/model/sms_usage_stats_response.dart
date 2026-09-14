@@ -218,4 +218,3 @@ class _$SmsUsageStatsResponseSerializer implements PrimitiveSerializer<SmsUsageS
     return result.build();
   }
 }
-

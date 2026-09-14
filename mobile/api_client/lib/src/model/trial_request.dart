@@ -161,4 +161,3 @@ class _$TrialRequestSerializer implements PrimitiveSerializer<TrialRequest> {
     return result.build();
   }
 }
-
