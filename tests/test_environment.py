@@ -111,6 +111,9 @@ def build_test_environment(
             "SMS_ENABLED": "false",
         }
     )
+    if source.get("SIGNUPFLOW_TEST_NOW"):
+        environment["SIGNUPFLOW_ALLOW_TEST_CLOCK"] = "true"
+        environment["SIGNUPFLOW_TEST_NOW"] = source["SIGNUPFLOW_TEST_NOW"]
     if email_capture_dir:
         environment["LOCAL_EMAIL_CAPTURE_DIR"] = email_capture_dir
     if frontend_url:

@@ -105,6 +105,13 @@ Both run at phone and desktop widths and save administrator/member schedule-chan
 screenshots in pytest's temporary directory. They reuse the maintained event, comparison,
 solution, inbox, schedule, and calendar surfaces, so the committed walkthrough images
 remain applicable. Ministry approval and venue/opponent coordination remain human work.
+The screenshot evidence package supersedes all earlier statements that the May walkthrough
+images remained current. `make capture-screenshots` now reproduces 44 asserted Church and
+Basketball states at phone and desktop widths from a fixed local clock and synthetic data.
+The manifest binds each image to its captured source commit, browser, fixture, actor,
+scenario, caption, viewport, image hash, and relevant UI hashes; local unit validation
+rejects missing or stale evidence. The former ten README images are explicitly retired
+under `docs/screenshots/legacy/`, and README now shows both complete operating scenarios.
 Aligned contributor commit/merge rules with the agent baseline. The owner's latest
 clarification supersedes the previous Ollama review setup: code review runs
 locally, no CI checks remain, and Ollama must not review PRs. The later clarification

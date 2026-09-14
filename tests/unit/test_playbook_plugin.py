@@ -109,6 +109,22 @@ def test_unbootstrapped_runtime_cannot_seed_members():
         Playbook(object(), definition, seed_people=True, bootstrap_admin=False)
 
 
+def test_explicit_instance_keeps_stable_email_scope_after_authentication():
+    definition = PlaybookSpec.model_validate(_definition())
+    runtime = Playbook(
+        object(),
+        definition,
+        seed_people=False,
+        bootstrap_admin=False,
+        instance_id="capture-community-360-browser-workflow",
+    )
+
+    runtime.org = "generated-organization-id"
+
+    assert runtime.email == "admin@capture-community-360-browser-workflow.example"
+    assert runtime.email_scope == "capture-community-360-browser-workflow"
+
+
 @pytest.mark.parametrize("missing", [False, True])
 def test_missing_or_empty_directory_fails(tmp_path, missing):
     path = tmp_path / "missing" if missing else tmp_path

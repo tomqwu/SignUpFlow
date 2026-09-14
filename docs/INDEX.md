@@ -17,6 +17,8 @@ Reconciled 2026-09-13 for testing, CI, and merge policy:
 - [Scheduling constraints](SCHEDULING_CONSTRAINTS.md): supported saved-rule mapping,
   validation, CLI equivalence, and built-in invariants.
 - [Operational playbooks](playbooks/README.md): church and basketball workflows.
+- [Screenshot evidence](screenshots/README.md): reproducible Church/Basketball phone and
+  desktop capture, provenance manifest, validation, and retired legacy assets.
 - [Local email capture](LOCAL_EMAIL_CAPTURE.md): credential-free invitation,
   recovery, and roster-notification acceptance.
 - [Password reset contract](features/password-reset.md): current routes, token and

@@ -8,6 +8,7 @@ publish → unpublish → rollback state machine.
 from __future__ import annotations
 
 import pytest
+from playwright.sync_api import expect
 
 from tests.e2e._helpers import (
     accept_invitation,
@@ -96,8 +97,13 @@ def test_manual_assign_and_remove(live_server, page):
     page.click("button:has-text('Add to event')")
     page.wait_for_selector("#event-assignments:has-text('Admin Dana')")
 
-    page.click("button:has-text('Remove')")
-    page.wait_for_selector("#event-assignments:has-text('No one assigned yet')")
+    with page.expect_response(
+        lambda response: response.request.method == "POST"
+        and response.url.endswith("/assignments/remove")
+    ) as response_info:
+        page.locator("#event-assignments button", has_text="Remove").click()
+    assert response_info.value.ok
+    expect(page.locator("#event-assignments")).to_contain_text("No one assigned yet")
 
     no_js_errors(page)
 

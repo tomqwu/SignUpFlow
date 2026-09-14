@@ -9,6 +9,7 @@ through isolated browser sessions.
 import re
 from collections import Counter
 from datetime import UTC, date, datetime, timedelta
+from os import getenv
 
 import httpx
 import pytest
@@ -18,6 +19,12 @@ from playwright.sync_api import expect
 from tests.e2e._helpers import invite_token, no_js_errors, signup_admin
 from tests.playbooks.registry import BUILTIN_DIRECTORY, discover_playbooks
 from tests.playbooks.runtime import Playbook
+from tests.playbooks.screenshots import (
+    CAPTURE_DIRECTORY_ENV,
+    CAPTURE_NOW,
+    CAPTURE_START_DATE,
+    capture_screenshot,
+)
 
 pytestmark = pytest.mark.e2e
 
@@ -39,6 +46,24 @@ def _utc_datetime(value):
     if parsed.tzinfo is None:
         return parsed.replace(tzinfo=UTC)
     return parsed.astimezone(UTC)
+
+
+def _playbook(client, definition, width, scenario, **kwargs):
+    if getenv(CAPTURE_DIRECTORY_ENV):
+        return Playbook(
+            client,
+            definition,
+            instance_id=f"capture-{definition.id}-{width}-{scenario}",
+            start_date=date.fromisoformat(CAPTURE_START_DATE),
+            **kwargs,
+        )
+    return Playbook(client, definition, **kwargs)
+
+
+def _scenario_today():
+    if getenv(CAPTURE_DIRECTORY_ENV):
+        return datetime.fromisoformat(CAPTURE_NOW).date()
+    return date.today()
 
 
 def _solve_in_browser(page, base, start_date, end_date, *, change_min=False):
@@ -68,7 +93,7 @@ def _onboard_qualified_members(page, new_context, base, db_path, playbook, width
     invitee.set_viewport_size({"width": width, "height": 900})
 
     def invite_member(role, name):
-        email = f"person{len(playbook.people)}@{playbook.org}.example"
+        email = f"person{len(playbook.people)}@{playbook.email_scope}.example"
         page.fill("#inv_name", name)
         page.fill("#inv_email", email)
         page.select_option("#inv_role", "volunteer")
@@ -316,7 +341,7 @@ def test_domain_late_withdrawals_require_exact_available_cover(
     base = live_server
     page.set_viewport_size({"width": width, "height": 900})
     with httpx.Client(base_url=base, timeout=30) as client:
-        playbook = Playbook(client, playbook_spec)
+        playbook = _playbook(client, playbook_spec, width, "late-cover")
         event_ids = [
             playbook.event(index, f"{role}-late-cover")
             for index, role in enumerate(playbook_spec.late_cover_roles)
@@ -386,6 +411,14 @@ def test_domain_late_withdrawals_require_exact_available_cover(
                 path=str(tmp_path / f"{playbook_spec.id}-{width}-{role}-late-gap.png"),
                 full_page=True,
             )
+            if role == playbook_spec.late_cover_roles[0]:
+                capture_screenshot(
+                    page,
+                    tmp_path,
+                    playbook_spec.id,
+                    width,
+                    "replacement-needed",
+                )
 
             wrong_page.goto(f"{base}/v/swaps")
             expect(wrong_page.locator("#swaps-open-list")).not_to_contain_text(title)
@@ -413,6 +446,18 @@ def test_domain_late_withdrawals_require_exact_available_cover(
             expect(cover_page.locator("#swaps-open-list")).not_to_contain_text(title)
             cover_page.goto(f"{base}/v/schedule")
             expect(cover_page.get_by_role("link", name=title, exact=False)).to_have_count(1)
+            cover_page.get_by_role("link", name=title, exact=False).click()
+            expect(cover_page.locator("#assignment-card .status-text.accepted")).to_contain_text(
+                "Accepted"
+            )
+            if role == playbook_spec.late_cover_roles[0]:
+                capture_screenshot(
+                    cover_page,
+                    tmp_path,
+                    playbook_spec.id,
+                    width,
+                    "replacement-covered",
+                )
 
             after = next(
                 entry
@@ -564,7 +609,7 @@ def test_domain_requirement_and_postponement_changes(
     base = live_server
     page.set_viewport_size({"width": width, "height": 900})
     with httpx.Client(base_url=base, timeout=30) as client:
-        playbook = Playbook(client, playbook_spec)
+        playbook = _playbook(client, playbook_spec, width, "schedule-change")
         role = playbook_spec.additional_event_role or playbook_spec.postponed_event_role
         assert role is not None
         event_ids = [playbook.event(week, "change", roles={role: 1}) for week in range(3)]
@@ -592,6 +637,7 @@ def test_domain_requirement_and_postponement_changes(
         member.get_by_role("link", name=target_title, exact=False).click()
         member.get_by_role("button", name="Accept", exact=True).click()
         expect(member.locator("#assignment-card .status-text.accepted")).to_contain_text("Accepted")
+        changed_member = member
 
         if playbook_spec.additional_event_role is not None:
             added = _create_event_in_browser(
@@ -659,6 +705,7 @@ def test_domain_requirement_and_postponement_changes(
             )
             _fits(added_member)
             no_js_errors(added_member)
+            changed_member = added_member
         else:
             feed_url = _calendar_feed_url(member, base)
             published_event = _calendar_event(member, feed_url, target_title)
@@ -740,13 +787,13 @@ def test_domain_requirement_and_postponement_changes(
             ) == times
         _fits(page)
         _fits(member)
-        page.screenshot(
-            path=str(tmp_path / f"{playbook_spec.id}-{width}-schedule-change-admin.png"),
-            full_page=True,
-        )
-        member.screenshot(
-            path=str(tmp_path / f"{playbook_spec.id}-{width}-schedule-change-member.png"),
-            full_page=True,
+        capture_screenshot(page, tmp_path, playbook_spec.id, width, "schedule-change-admin")
+        capture_screenshot(
+            changed_member,
+            tmp_path,
+            playbook_spec.id,
+            width,
+            "schedule-change-member",
         )
         no_js_errors(member)
         no_js_errors(page)
@@ -940,7 +987,14 @@ def test_domain_browser_workflow(
     domain = playbook_spec.id
     page.set_viewport_size({"width": width, "height": 900})
     with httpx.Client(base_url=base, timeout=30) as client:
-        p = Playbook(client, playbook_spec, seed_people=False, bootstrap_admin=False)
+        p = _playbook(
+            client,
+            playbook_spec,
+            width,
+            "browser-workflow",
+            seed_people=False,
+            bootstrap_admin=False,
+        )
         signup_admin(
             page,
             base,
@@ -953,14 +1007,16 @@ def test_domain_browser_workflow(
         expect(page.get_by_role("link", name="Billing", exact=True)).to_have_count(0)
         organizations = p.request("GET", "/organizations/")["items"]
         assert [organization["id"] for organization in organizations] == [p.org]
-        page.screenshot(path=str(tmp_path / f"{domain}-{width}-dashboard.png"), full_page=True)
+        capture_screenshot(page, tmp_path, domain, width, "dashboard")
         page.goto(f"{base}/a/onboarding")
         expect(page.locator("#onboarding-progress")).to_have_text("0 of 4 done")
         _fits(page)
-        page.screenshot(path=str(tmp_path / f"{domain}-{width}-onboarding.png"), full_page=True)
+        capture_screenshot(page, tmp_path, domain, width, "onboarding")
 
         _onboard_qualified_members(page, new_context, base, db_path, p, width)
-        page.screenshot(path=str(tmp_path / f"{domain}-{width}-qualified.png"), full_page=True)
+        page.goto(f"{base}/a/people")
+        page.evaluate("window.scrollTo(0, 0)")
+        capture_screenshot(page, tmp_path, domain, width, "qualified")
 
         for week in range(6):
             _create_event_in_browser(page, base, p, week, "main", 10, 0)
@@ -1004,10 +1060,7 @@ def test_domain_browser_workflow(
             ]
             assert max(loads) - min(loads) <= 1
         _fits(page)
-        page.screenshot(
-            path=str(tmp_path / f"{domain}-{width}-six-week-solution.png"),
-            full_page=True,
-        )
+        capture_screenshot(page, tmp_path, domain, width, "six-week-solution")
 
         # The draft is invisible to its assignee until the administrator publishes.
         first = next(e for e in p.assignments(solution_id) if e["event_id"] == created["id"])
@@ -1021,7 +1074,7 @@ def test_domain_browser_workflow(
         page.get_by_role("button", name="Publish this solution").click()
         expect(page.locator("#publish-state")).to_contain_text("Unpublish")
         member.reload()
-        member.screenshot(path=str(tmp_path / f"{domain}-{width}-unanswered.png"), full_page=True)
+        capture_screenshot(member, tmp_path, domain, width, "unanswered")
         member.get_by_role("link", name=title, exact=False).click()
         expect(member.locator("#assignment-card .status-text.pending")).to_contain_text(
             "Unanswered"
@@ -1054,7 +1107,7 @@ def test_domain_browser_workflow(
         )
         member.get_by_role("button", name="Accept", exact=True).click()
         expect(member.locator("#assignment-card .status-text.accepted")).to_contain_text("Accepted")
-        member.screenshot(path=str(tmp_path / f"{domain}-{width}-accepted.png"), full_page=True)
+        capture_screenshot(member, tmp_path, domain, width, "accepted")
         member.context.clear_cookies()
         _login(member, base, person["email"], p.password, "/v/schedule")
         member.get_by_role("link", name=title, exact=False).click()
@@ -1109,10 +1162,11 @@ def test_domain_browser_rolls_published_horizon_to_week_seven(
     base = live_server
     page.set_viewport_size({"width": width, "height": 900})
     with httpx.Client(base_url=base, timeout=30) as client:
-        playbook = Playbook(client, playbook_spec)
+        playbook = _playbook(client, playbook_spec, width, "week-seven")
         # The fixture is three days into its operating week: both week-one
         # sessions are completed while weeks two through six remain future.
-        playbook.start = date.today() - timedelta(days=3)
+        today = _scenario_today()
+        playbook.start = today - timedelta(days=3)
         for week in range(6):
             playbook.event(week, "main", 10)
             playbook.event(week, playbook.spec["secondary_event"], 18, day_offset=1)
@@ -1125,7 +1179,7 @@ def test_domain_browser_rolls_published_horizon_to_week_seven(
         completed_ids = {
             event_id
             for event_id, event in playbook.events.items()
-            if datetime.fromisoformat(event["end_time"]).date() < date.today()
+            if datetime.fromisoformat(event["end_time"]).date() < today
         }
         assert len(completed_ids) == 2
 
@@ -1174,8 +1228,5 @@ def test_domain_browser_rolls_published_horizon_to_week_seven(
             assert title_box["width"] >= row_box["width"] - 30
             assert actions_box["width"] >= row_box["width"] - 30
         _fits(page)
-        page.screenshot(
-            path=str(tmp_path / f"{playbook_spec.id}-{width}-week-seven-rollover.png"),
-            full_page=True,
-        )
+        capture_screenshot(page, tmp_path, playbook_spec.id, width, "week-seven-rollover")
         no_js_errors(page)

@@ -283,31 +283,48 @@ Interactive API docs: http://localhost:8000/docs
 
 ---
 
-## Web App — End-to-End Walkthrough
+## Web App - Church and Basketball Workflows
 
 SignUpFlow ships a responsive web app (HTMX + Alpine.js + Jinja2) served by the
-**same FastAPI process** — same origin, no separate build or deploy. The screens
-below trace the entire admin → volunteer loop, captured from a **live browser
-session** driving the real UI (not mockups). Source images live in
-[`docs/screenshots/`](docs/screenshots/).
+**same FastAPI process** - same origin, no separate build or deploy. These are
+real Playwright captures from the fixture-driven Church and Basketball workflows,
+not mockups. The complete 44-image phone/desktop set and provenance are in the
+[screenshot guide](docs/screenshots/README.md) and
+[manifest](docs/screenshots/current/manifest.json).
 
-| Admin sets things up | |
-|---|---|
-| **1 · Create your organization**<br>The first account is the admin.<br><img src="docs/screenshots/01_signup.png" width="270">|**2 · Admin dashboard**<br>Coverage, health, burnout watch.<br><img src="docs/screenshots/02_admin_dashboard.png" width="270">|
-| **3 · Invite a volunteer**<br>Token invite, no email required.<br><img src="docs/screenshots/03_invite_volunteer.png" width="270">|**4 · Volunteer accepts the invite**<br>Sets a password, lands signed in.<br><img src="docs/screenshots/04_accept_invitation.png" width="270">|
+### Church Week-to-Week Operations
 
-| Solve & publish | |
-|---|---|
-| **5 · Create an event**<br>With the roles the solver must fill.<br><img src="docs/screenshots/05_create_event.png" width="270">|**6 · Run the solver**<br>Health 100, 0 hard violations.<br><img src="docs/screenshots/06_run_solver.png" width="270">|
-| **7 · Review the solution**<br>Jamie Park assigned to the service.<br><img src="docs/screenshots/07_review_solution.png" width="270">|**8 · Publish**<br>Volunteers now see these assignments.<br><img src="docs/screenshots/08_publish_solution.png" width="270">|
+The Church administrator onboards qualified members, reviews a complete six-week
+service/rehearsal roster, follows up on unanswered work, exposes a real qualified-cover
+gap, publishes a holiday service with minimized changes, and rolls the horizon forward.
 
-| Volunteer responds | |
-|---|---|
-| **9 · Volunteer sees the shift**<br>Newly published work remains unanswered.<br><img src="docs/screenshots/09_volunteer_schedule.png" width="270">|**10 · Accept the assignment**<br>Acceptance records the member and commitment revision.<br><img src="docs/screenshots/10_accept_assignment.png" width="270">|
+| Administrator operations | Member and reserve operations |
+| --- | --- |
+| ![Church administrator dashboard](docs/screenshots/current/church/1440/dashboard.png) | ![Church setup checklist](docs/screenshots/current/church/360/onboarding.png) |
+| ![Church qualified member directory](docs/screenshots/current/church/1440/qualified.png) | ![Church member unanswered schedule](docs/screenshots/current/church/360/unanswered.png) |
+| ![Church six-week solution](docs/screenshots/current/church/1440/six-week-solution.png) | ![Church member accepted commitment](docs/screenshots/current/church/360/accepted.png) |
+| ![Church qualified replacement needed](docs/screenshots/current/church/1440/replacement-needed.png) | ![Church reserve covered assignment](docs/screenshots/current/church/360/replacement-covered.png) |
+| ![Church holiday service published](docs/screenshots/current/church/1440/schedule-change-admin.png) | ![Church member holiday commitment](docs/screenshots/current/church/360/schedule-change-member.png) |
+| ![Church week-seven rollover](docs/screenshots/current/church/1440/week-seven-rollover.png) | |
 
-> Captured with Playwright against a server started by `make run`, exercising the
-> real HTMX/Alpine UI. Reproduce locally: `make run`, then sign up at
-> `http://localhost:8000/auth/signup`.
+### Basketball Week-to-Week Operations
+
+The Basketball manager runs the same operating cycle for games and practices, while
+players and staff retain role-specific responses and cover. A postponed game resets the
+affected response, preserves staffing, and moves the same logical calendar entry.
+
+| Manager operations | Player, staff, and reserve operations |
+| --- | --- |
+| ![Basketball manager dashboard](docs/screenshots/current/basketball/1440/dashboard.png) | ![Basketball setup checklist](docs/screenshots/current/basketball/360/onboarding.png) |
+| ![Basketball qualified member directory](docs/screenshots/current/basketball/1440/qualified.png) | ![Basketball player unanswered schedule](docs/screenshots/current/basketball/360/unanswered.png) |
+| ![Basketball six-week solution](docs/screenshots/current/basketball/1440/six-week-solution.png) | ![Basketball player accepted commitment](docs/screenshots/current/basketball/360/accepted.png) |
+| ![Basketball qualified replacement needed](docs/screenshots/current/basketball/1440/replacement-needed.png) | ![Basketball reserve covered assignment](docs/screenshots/current/basketball/360/replacement-covered.png) |
+| ![Basketball postponed game published](docs/screenshots/current/basketball/1440/schedule-change-admin.png) | ![Basketball player postponed commitment](docs/screenshots/current/basketball/360/schedule-change-member.png) |
+| ![Basketball week-seven rollover](docs/screenshots/current/basketball/1440/week-seven-rollover.png) | |
+
+Reproduce the evidence locally with `make capture-screenshots`, inspect every resulting
+image, then run `make validate-screenshots`. The capture uses synthetic `.example` data,
+a fixed January 9, 2030 clock, Chromium, an owned temporary database, and no providers.
 
 ---
 
@@ -370,6 +387,8 @@ manual release checks.
 ```bash
 make test-all                        # All seven Python tiers, including Playwright
 make test-mobile                     # Flutter unit/widget tests
+make capture-screenshots             # Regenerate asserted Church/Basketball UI evidence
+make validate-screenshots            # Reject missing, altered, or stale captures
 ```
 
 See the [current testing and merge guide](docs/TESTING.md) for all tiers,
@@ -508,6 +527,8 @@ make test-unit            # Python unit tests only
 make test-unit-fast       # Skip slow bcrypt tests (~7s)
 make test-all             # All Python tiers, including web + contract + Playwright
 make test-mobile          # Flutter tests (requires Flutter SDK)
+make capture-screenshots  # Recreate public Church/Basketball screenshots locally
+make validate-screenshots # Verify image, fixture, UI-source, and caption metadata
 make migrate              # Run Alembic migrations
 ```
 

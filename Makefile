@@ -2,7 +2,7 @@
 
 export SKIP_TEST_DB_FIXTURES ?= false
 
-.PHONY: test-web test-contract test-e2e test-mobile
+.PHONY: test-web test-contract test-e2e test-mobile capture-screenshots validate-screenshots
 FLUTTER ?= flutter
 
 TEST_SERVER_HOST ?= 0.0.0.0
@@ -15,7 +15,7 @@ TEST_API_BASE ?= $(TEST_APP_URL)/api
 TEST_DB_PATH := $(shell mktemp -d /tmp/signupflow-tests.XXXXXX)/signupflow_test.db
 TEST_DB_PATH_STRIPPED := $(patsubst /%,%,$(TEST_DB_PATH))
 TEST_DB_URL := sqlite:////$(TEST_DB_PATH_STRIPPED)
-ifneq ($(filter test% pre-commit prepare-test-data ensure-test-env,$(MAKECMDGOALS)),)
+ifneq ($(filter test% pre-commit prepare-test-data ensure-test-env capture-screenshots validate-screenshots,$(MAKECMDGOALS)),)
 export SIGNUPFLOW_TEST_DATABASE_URL := $(TEST_DB_URL)
 export DATABASE_URL := $(TEST_DB_URL)
 endif
@@ -226,6 +226,12 @@ test-contract: check-poetry
 
 test-e2e: check-poetry
 	@poetry run pytest tests/e2e/ -v --tb=short
+
+capture-screenshots: ensure-test-env
+	@poetry run python scripts/capture_playbook_screenshots.py --source-ref "$${SCREENSHOT_SOURCE_REF:-$$(git rev-parse HEAD)}"
+
+validate-screenshots: check-poetry
+	@poetry run python scripts/capture_playbook_screenshots.py --source-ref "$$(git rev-parse HEAD)" --validate-only
 
 test-mobile:
 	@cd mobile && $(FLUTTER) pub get && $(FLUTTER) test
