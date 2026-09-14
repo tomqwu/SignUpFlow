@@ -11,7 +11,14 @@ class Playbook:
 
     password = "PlaybookTest123!"
 
-    def __init__(self, client, definition: PlaybookSpec, *, seed_people: bool = True):
+    def __init__(
+        self,
+        client,
+        definition: PlaybookSpec,
+        *,
+        seed_people: bool = True,
+        bootstrap_admin: bool = True,
+    ):
         self.client = client
         self.spec = definition.model_dump()
         self.org = f"{definition.id}-{uuid4().hex[:10]}"
@@ -22,6 +29,16 @@ class Playbook:
         self.start = today + timedelta(days=(6 - today.weekday()) % 7 + 14)
         self.email = f"admin@{self.org}.example"
         self.headers = {}
+        if seed_people and not bootstrap_admin:
+            raise ValueError("Cannot seed people before the playbook administrator exists")
+        if bootstrap_admin:
+            self.bootstrap_admin()
+        if seed_people:
+            for role, count in self.spec["roles"].items():
+                for index in range(count * 2):
+                    self.invite(f"{role} {index + 1}", [role])
+
+    def bootstrap_admin(self):
         admin = self.request(
             "POST",
             "/auth/signup",
@@ -36,10 +53,16 @@ class Playbook:
             },
         )
         self.headers = {"Authorization": f"Bearer {admin['token']}"}
-        if seed_people:
-            for role, count in self.spec["roles"].items():
-                for index in range(count * 2):
-                    self.invite(f"{role} {index + 1}", [role])
+
+    def authenticate_admin(self):
+        auth = self.request(
+            "POST",
+            "/auth/login",
+            data={"email": self.email, "password": self.password},
+            headers={},
+        )
+        self.org = auth["org_id"]
+        self.headers = {"Authorization": f"Bearer {auth['token']}"}
 
     def request(self, method, path, status=200, data=None, headers=None):
         response = self.client.request(

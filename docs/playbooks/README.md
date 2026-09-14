@@ -27,12 +27,12 @@ The API tier uses real JWT identities and an isolated in-memory SQLite database.
 The browser tier starts the real application against a temporary SQLite database.
 The default business profile has billing and paid SMS disabled; neither playbook
 creates a subscription or contacts an external provider. In each browser variant,
-the administrator invites all fourteen members with their scheduling qualification,
-each member accepts through the invitation page, and the administrator verifies the
-qualification editor. Five repeated weeks are then created by API before the browser
-creates the remaining event, solves, reviews, publishes, and records member response.
-Organization bootstrap is atomic and the five repeated events remain API setup in
-this browser test; normal browser signup has separate web coverage.
+the administrator creates the organization through the signup form, verifies the
+fresh onboarding state, invites fourteen baseline members plus a qualified replacement,
+and verifies the qualification editor after every member accepts. Five repeated weeks
+are then created by API before the browser creates the remaining event, solves, reviews,
+publishes, and records member response. The repeated-event setup remains explicitly
+API-seeded until its separate browser slice is complete.
 
 `church.json` and `basketball.json` are the executable role/headcount fixtures.
 `tests/playbooks/` validates and discovers them for both test tiers. Each run creates new

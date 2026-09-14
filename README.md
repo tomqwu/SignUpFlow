@@ -417,9 +417,10 @@ shared BO journeys, every Church/Basketball qualification, stable scenario IDs,
 execution tiers, and remaining partial/blocked work. Pytest validates it before
 playbook collection so a missing required role or scenario cannot silently pass.
 
-The browser playbooks invite and accept all fourteen domain members through the normal
-UI, preserving `admin`/`volunteer` account access separately from custom scheduling
-qualifications such as `worship_leader`, `center`, and `scorekeeper`.
+The browser playbooks create each organization and first admin through normal signup,
+then invite and accept fourteen baseline members plus a qualified replacement through
+the UI. They preserve `admin`/`volunteer` account access separately from custom
+scheduling qualifications such as `worship_leader`, `center`, and `scorekeeper`.
 
 Saved REST scheduling rules support hard assignment caps, hard minimum rest gaps,
 and a weighted soft cooldown preference. They execute in API solves instead of

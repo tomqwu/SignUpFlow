@@ -1,7 +1,8 @@
-"""Domain browser acceptance: role forms, six weeks, publication and member response.
+"""Domain browser acceptance: signup, roles, six weeks, publication and response.
 
 Five repeated weeks are seeded by API. Member qualification, invitation acceptance,
-the first event, solve, review, publish and response use real browser interactions.
+organization bootstrap, the first event, solve, review, publish and response use real
+browser interactions.
 """
 
 from datetime import datetime, timedelta
@@ -10,7 +11,7 @@ import httpx
 import pytest
 from playwright.sync_api import expect
 
-from tests.e2e._helpers import invite_token, no_js_errors
+from tests.e2e._helpers import invite_token, no_js_errors, signup_admin
 from tests.playbooks.runtime import Playbook
 
 pytestmark = pytest.mark.e2e
@@ -33,33 +34,40 @@ def _onboard_qualified_members(page, new_context, base, db_path, playbook, width
     page.get_by_role("button", name="Invite person").click()
     invitee = new_context().new_page()
     invitee.set_viewport_size({"width": width, "height": 900})
+
+    def invite_member(role, name):
+        email = f"person{len(playbook.people)}@{playbook.org}.example"
+        page.fill("#inv_name", name)
+        page.fill("#inv_email", email)
+        page.select_option("#inv_role", "volunteer")
+        page.fill("#inv_qualifications", role)
+        page.get_by_role("button", name="Send invite").click()
+        expect(page.locator("#invite-result")).to_contain_text(f"Invitation sent to {email}")
+
+        token = invite_token(db_path, email)
+        assert token is not None
+        invitee.context.clear_cookies()
+        invitee.goto(f"{base}/auth/invitation/{token}")
+        invitee.fill("#password", playbook.password)
+        invitee.get_by_role("button", name="Accept & continue").click()
+        invitee.wait_for_url("**/v/schedule")
+        people = playbook.request("GET", f"/people/?org_id={playbook.org}&q={email}")["items"]
+        assert len(people) == 1
+        member = people[0]
+        assert member["roles"] == ["volunteer", role]
+        playbook.people[member["id"]] = {
+            "name": name,
+            "roles": [role],
+            "email": email,
+        }
+
     for role, count in playbook.spec["roles"].items():
         for index in range(count * 2):
-            name = f"{role} {index + 1}"
-            email = f"person{len(playbook.people)}@{playbook.org}.example"
-            page.fill("#inv_name", name)
-            page.fill("#inv_email", email)
-            page.select_option("#inv_role", "volunteer")
-            page.fill("#inv_qualifications", role)
-            page.get_by_role("button", name="Send invite").click()
-            expect(page.locator("#invite-result")).to_contain_text(f"Invitation sent to {email}")
+            invite_member(role, f"{role} {index + 1}")
 
-            token = invite_token(db_path, email)
-            assert token is not None
-            invitee.context.clear_cookies()
-            invitee.goto(f"{base}/auth/invitation/{token}")
-            invitee.fill("#password", playbook.password)
-            invitee.get_by_role("button", name="Accept & continue").click()
-            invitee.wait_for_url("**/v/schedule")
-            people = playbook.request("GET", f"/people/?org_id={playbook.org}&q={email}")["items"]
-            assert len(people) == 1
-            member = people[0]
-            assert member["roles"] == ["volunteer", role]
-            playbook.people[member["id"]] = {
-                "name": name,
-                "roles": [role],
-                "email": email,
-            }
+    critical_role = playbook.spec["critical_role"]
+    invite_member(critical_role, f"{critical_role} replacement")
+    assert len(playbook.people) == 15
     page.reload()
     first_id, first_member = next(iter(playbook.people.items()))
     qualifications_form = page.locator(f'form[action="/a/people/{first_id}/qualifications"]')
@@ -89,18 +97,30 @@ def test_domain_browser_workflow(
     domain = playbook_spec.id
     page.set_viewport_size({"width": width, "height": 900})
     with httpx.Client(base_url=base, timeout=30) as client:
-        p = Playbook(client, playbook_spec, seed_people=False)
-        for week in range(1, 6):
-            p.event(week)
-        _login(page, base, p.email, p.password, "/a/dashboard")
+        p = Playbook(client, playbook_spec, seed_people=False, bootstrap_admin=False)
+        signup_admin(
+            page,
+            base,
+            org=p.spec["name"],
+            name="Scheduling administrator",
+            email=p.email,
+            password=p.password,
+        )
+        p.authenticate_admin()
+        expect(page.get_by_role("link", name="Billing", exact=True)).to_have_count(0)
+        organizations = p.request("GET", "/organizations/")["items"]
+        assert [organization["id"] for organization in organizations] == [p.org]
         page.screenshot(path=str(tmp_path / f"{domain}-{width}-dashboard.png"), full_page=True)
         page.goto(f"{base}/a/onboarding")
+        expect(page.locator("#onboarding-progress")).to_have_text("0 of 4 done")
         _fits(page)
         page.screenshot(path=str(tmp_path / f"{domain}-{width}-onboarding.png"), full_page=True)
 
         _onboard_qualified_members(page, new_context, base, db_path, p, width)
         page.screenshot(path=str(tmp_path / f"{domain}-{width}-qualified.png"), full_page=True)
 
+        for week in range(1, 6):
+            p.event(week)
         title = f"{p.spec['event']} W1 main"
         page.goto(f"{base}/a/events")
         page.get_by_role("button", name="New event", exact=True).click()

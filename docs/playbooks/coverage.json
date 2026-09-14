@@ -8,7 +8,7 @@
       "operation": "Create the organization, administrator, fourteen members, and a qualified replacement",
       "expected": "No subscription, provider credential, or foreign organization access is required",
       "tiers": ["api", "e2e"],
-      "status": "partial",
+      "status": "automated",
       "evidence": [
         "tests/playbooks/runtime.py",
         "tests/api/test_auth_bootstrap.py",
