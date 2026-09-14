@@ -41,3 +41,12 @@ def test_aria_labels_on_bare_selects(client, db):
     # Create-form select is always present and label-bound; the edit
     # select (per card) carries the new aria-label.
     assert 'id="c_type"' in cons.text
+
+
+def test_base_installs_htmx_failure_recovery_contract(client):
+    response = client.get("/auth/signup")
+
+    assert response.status_code == 200
+    assert '"code":"[45]..","swap":true,"error":true' in response.text
+    assert 'id="request-status"' in response.text
+    assert 'src="/web/static/js/recovery.js' in response.text

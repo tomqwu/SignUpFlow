@@ -7,7 +7,7 @@ from __future__ import annotations
 from pathlib import Path
 
 from fastapi import APIRouter, FastAPI, Request
-from fastapi.responses import RedirectResponse
+from fastapi.responses import RedirectResponse, Response
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
@@ -21,9 +21,9 @@ templates.env.globals["billing_enabled"] = billing_enabled
 # Combined web router (auth + pages). Imported lazily inside functions
 # elsewhere to avoid circular imports with `templates`.
 from web import auth as _auth  # noqa: E402
+from web.deps import _RedirectToLogin  # noqa: E402
 from web.routers import pages as _pages  # noqa: E402
 from web.routers import partials as _partials  # noqa: E402
-from web.deps import _RedirectToLogin  # noqa: E402
 
 router = APIRouter()
 router.include_router(_auth.router)
@@ -44,5 +44,7 @@ def mount_web(app: FastAPI) -> None:
     app.include_router(router, include_in_schema=False)
 
     @app.exception_handler(_RedirectToLogin)
-    async def _redirect_to_login(request: Request, exc: _RedirectToLogin):
+    async def _redirect_to_login(request: Request, exc: _RedirectToLogin) -> Response:
+        if request.headers.get("HX-Request", "").lower() == "true":
+            return Response(status_code=401, headers={"HX-Redirect": "/auth/login"})
         return RedirectResponse(url="/auth/login", status_code=303)

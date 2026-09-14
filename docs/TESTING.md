@@ -76,6 +76,17 @@ denied administrative, peer-mutation, foreign-person, and publication operations
 and web regressions also require every access/session token to carry the account tenant
 and reject missing, mismatched, or inactive membership claims.
 
+The [web journey matrix](web-journey-matrix.json) is the maintained inventory for all
+server-rendered routes and templates. `tests/unit/test_web_journey_matrix.py` compares it
+with the live router and template tree and resolves every named test function. Each case
+must retain happy-path, error, and permission evidence or an explicit accepted limitation.
+`tests/e2e/test_web_recovery.py` verifies the shared browser contract: `4xx` HTMX error
+fragments render, safe form values survive failure, network retry succeeds, rapid repeated
+submission sends one request, expired sessions navigate to login, long labels remain
+separate and keyboard reachable at phone width and zoom, and an SSE reconnect refetches
+authoritative solution state. These are local Chromium results; they do not establish
+cross-browser, assistive-technology, or production-network acceptance.
+
 ## Local Validation Only
 
 No CI checks. Run code review, formatting, lint, type checks, migration
