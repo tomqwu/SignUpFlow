@@ -348,14 +348,23 @@ def validate_manifest(
         image_path = repo_root / entry.path
         state_name = image_path.stem
         key = (entry.domain, entry.viewport["width"], state_name)
+        if key in actual:
+            raise ValueError(f"Duplicate screenshot entry: {key}")
         actual.add(key)
         state = CAPTURE_STATES.get(state_name)
         if state is None:
             raise ValueError(f"Unknown screenshot state in manifest: {state_name}")
+        expected_path = (
+            manifest_path.parent / entry.domain / str(entry.viewport["width"]) / f"{state_name}.png"
+        )
+        if image_path != expected_path:
+            raise ValueError(f"Screenshot path mismatch for {entry.path}")
         if entry.scenario != state.value("scenario", entry.domain):
             raise ValueError(f"Scenario mismatch for {entry.path}")
         if entry.actor != state.actor or entry.caption != state.value("caption", entry.domain):
             raise ValueError(f"Actor or caption mismatch for {entry.path}")
+        if entry.asserted_state != state.asserted_state:
+            raise ValueError(f"Asserted state mismatch for {entry.path}")
         if not image_path.is_file() or _sha256(image_path) != entry.image_sha256:
             raise ValueError(f"Missing or altered screenshot: {entry.path}")
         image_width, image_height = _png_dimensions(image_path)
@@ -365,9 +374,14 @@ def validate_manifest(
             or entry.pixel_size != {"width": image_width, "height": image_height}
         ):
             raise ValueError(f"Viewport mismatch for {entry.path}")
-        fixture_path = repo_root / entry.fixture_path
+        expected_fixture_path = Path("docs/playbooks") / f"{entry.domain}.json"
+        if Path(entry.fixture_path) != expected_fixture_path:
+            raise ValueError(f"Fixture path mismatch for {entry.path}")
+        fixture_path = repo_root / expected_fixture_path
         if not fixture_path.is_file() or _sha256(fixture_path) != entry.fixture_sha256:
             raise ValueError(f"Fixture drift for {entry.path}")
+        if set(entry.source_files) != set(state.source_files):
+            raise ValueError(f"UI source set mismatch for {entry.path}")
         for source_path, expected_hash in entry.source_files.items():
             path = repo_root / source_path
             if not path.is_file() or _sha256(path) != expected_hash:

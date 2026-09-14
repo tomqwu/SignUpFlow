@@ -37,13 +37,16 @@ def _manifest(tmp_path: Path) -> tuple[Path, Path, dict]:
     repo = tmp_path / "repo"
     image = repo / "docs/screenshots/current/church/360/dashboard.png"
     fixture = repo / "docs/playbooks/church.json"
-    source = repo / "web/templates/base.html"
     _png(image)
     fixture.parent.mkdir(parents=True)
     fixture.write_text("{}")
-    source.parent.mkdir(parents=True)
-    source.write_text("base")
     state = CAPTURE_STATES["dashboard"]
+    sources = {}
+    for source_name in state.source_files:
+        source = repo / source_name
+        source.parent.mkdir(parents=True, exist_ok=True)
+        source.write_text(source_name)
+        sources[source_name] = sha256(source.read_bytes()).hexdigest()
     data = {
         "schema_version": 1,
         "source_ref": "a" * 40,
@@ -64,9 +67,7 @@ def _manifest(tmp_path: Path) -> tuple[Path, Path, dict]:
                 "image_sha256": sha256(image.read_bytes()).hexdigest(),
                 "fixture_path": fixture.relative_to(repo).as_posix(),
                 "fixture_sha256": sha256(fixture.read_bytes()).hexdigest(),
-                "source_files": {
-                    source.relative_to(repo).as_posix(): sha256(source.read_bytes()).hexdigest()
-                },
+                "source_files": sources,
             }
         ],
     }
@@ -84,7 +85,7 @@ def test_manifest_rejects_missing_image(tmp_path):
 
 def test_manifest_rejects_ui_source_drift(tmp_path):
     repo, manifest, _ = _manifest(tmp_path)
-    (repo / "web/templates/base.html").write_text("changed")
+    (repo / CAPTURE_STATES["dashboard"].source_files[0]).write_text("changed")
     with pytest.raises(ValueError, match="UI source drift"):
         validate_manifest(manifest, repo, expected_keys={("church", 360, "dashboard")})
 
@@ -94,6 +95,42 @@ def test_manifest_rejects_wrong_scenario(tmp_path):
     data["entries"][0]["scenario"] = "BB-D03"
     manifest.write_text(json.dumps(data))
     with pytest.raises(ValueError, match="Scenario mismatch"):
+        validate_manifest(manifest, repo, expected_keys={("church", 360, "dashboard")})
+
+
+def test_manifest_rejects_duplicate_entry(tmp_path):
+    repo, manifest, data = _manifest(tmp_path)
+    data["entries"].append(data["entries"][0].copy())
+    manifest.write_text(json.dumps(data))
+    with pytest.raises(ValueError, match="Duplicate screenshot entry"):
+        validate_manifest(manifest, repo, expected_keys={("church", 360, "dashboard")})
+
+
+def test_manifest_rejects_semantically_wrong_path(tmp_path):
+    repo, manifest, data = _manifest(tmp_path)
+    original = repo / data["entries"][0]["path"]
+    wrong = repo / "docs/screenshots/current/wrong/360/dashboard.png"
+    wrong.parent.mkdir(parents=True)
+    original.rename(wrong)
+    data["entries"][0]["path"] = wrong.relative_to(repo).as_posix()
+    manifest.write_text(json.dumps(data))
+    with pytest.raises(ValueError, match="Screenshot path mismatch"):
+        validate_manifest(manifest, repo, expected_keys={("church", 360, "dashboard")})
+
+
+def test_manifest_rejects_wrong_asserted_state(tmp_path):
+    repo, manifest, data = _manifest(tmp_path)
+    data["entries"][0]["asserted_state"] = "An unverified claim"
+    manifest.write_text(json.dumps(data))
+    with pytest.raises(ValueError, match="Asserted state mismatch"):
+        validate_manifest(manifest, repo, expected_keys={("church", 360, "dashboard")})
+
+
+def test_manifest_requires_complete_ui_source_set(tmp_path):
+    repo, manifest, data = _manifest(tmp_path)
+    data["entries"][0]["source_files"] = {}
+    manifest.write_text(json.dumps(data))
+    with pytest.raises(ValueError, match="UI source set mismatch"):
         validate_manifest(manifest, repo, expected_keys={("church", 360, "dashboard")})
 
 
