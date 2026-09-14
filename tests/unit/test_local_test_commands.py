@@ -18,7 +18,7 @@ def test_static_validation_commands_are_documented_locally():
         "mypy api",
     ):
         assert command in commands
-    assert "alembic upgrade head" in commands
+    assert "make test-postgres" in commands
 
 
 def test_mobile_validation_commands_are_documented_locally():
@@ -85,3 +85,11 @@ def test_local_mobile_target_runs_flutter_tests():
         ["make", "-n", "test-mobile"], cwd=ROOT, text=True, capture_output=True, check=True
     )
     assert "flutter test" in result.stdout
+
+
+def test_local_postgres_target_runs_the_owned_validator():
+    result = subprocess.run(
+        ["make", "-n", "test-postgres"], cwd=ROOT, text=True, capture_output=True, check=True
+    )
+
+    assert "scripts/run_postgres_validation.py" in result.stdout

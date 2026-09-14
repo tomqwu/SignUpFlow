@@ -63,7 +63,8 @@
     {
       "id": "postgresql",
       "label": "Disposable PostgreSQL acceptance",
-      "paths": [],
+      "paths": ["tests/postgres"],
+      "required_files": ["tests/postgres/test_postgres_acceptance.py"],
       "command": ["make", "test-postgres"],
       "default_status": "not_run",
       "reason": "Requires an explicitly provisioned disposable PostgreSQL database."

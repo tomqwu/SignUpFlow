@@ -1,4 +1,4 @@
-.PHONY: run dev stop restart setup install migrate test test-backend test-integration test-all test-coverage test-unit test-unit-fast test-unit-file test-with-timing clean clean-all pre-commit help check-poetry check-python check-deps install-poetry install-deps up down build logs shell db-shell redis-shell test-docker migrate-docker restart-api ps clean-docker check-docker ensure-test-deps prepare-test-data ensure-test-env
+.PHONY: run dev stop restart setup install migrate test test-backend test-integration test-all test-postgres test-coverage test-unit test-unit-fast test-unit-file test-with-timing clean clean-all pre-commit help check-poetry check-python check-deps install-poetry install-deps up down build logs shell db-shell redis-shell test-docker migrate-docker restart-api ps clean-docker check-docker ensure-test-deps prepare-test-data ensure-test-env
 
 export SKIP_TEST_DB_FIXTURES ?= false
 
@@ -189,6 +189,10 @@ test-all: ensure-test-env
 	@echo "🔄 Rebuilding fresh SQLite test database..."
 	@poetry run python -m tests.setup_test_data >/dev/null
 	@poetry run python scripts/run_local_validation.py
+
+test-postgres: check-poetry check-docker
+	@echo "🧪 Running owned PostgreSQL acceptance..."
+	@poetry run python scripts/run_postgres_validation.py
 
 test-web: check-poetry
 	@poetry run pytest tests/web/ -v --tb=short
@@ -464,6 +468,7 @@ help:
 	@echo "  make test-backend     - Run backend Python tests only"
 	@echo "  make test-integration - Run integration tests only"
 	@echo "  make test-all         - Run all Python tiers, including web/contract/Playwright"
+	@echo "  make test-postgres    - Run owned PostgreSQL migration/business/race acceptance"
 	@echo "  make test-performance - Run load tests against an explicit owned loopback server"
 	@echo "  make test-mobile      - Run Flutter tests locally (requires Flutter SDK)"
 	@echo "  make test-e2e         - Run Playwright browser tests locally"

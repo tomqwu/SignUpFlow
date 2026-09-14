@@ -76,6 +76,6 @@ poetry run pytest tests/e2e/test_domain_playbooks.py -q
 poetry run pytest tests/integration/test_assignment_claim_concurrency.py tests/integration/test_solution_scope_migration.py -q
 ```
 
-For the concurrency tier, repeat the command against a disposable PostgreSQL 16
-database using `SIGNUPFLOW_CONCURRENCY_DATABASE_URL`. Run `make test-all` and
+Run `make test-postgres` for owned PostgreSQL 16 publication concurrency and
+migration acceptance; do not supply a shared database URL. Run `make test-all` and
 `make test-mobile` before merge. GitHub Actions does not run or attest these tests.

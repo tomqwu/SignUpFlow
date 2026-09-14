@@ -32,6 +32,7 @@
 - [ ] Run the new test — it should PASS
 - [ ] Run `make test-unit` — no regressions
 - [ ] Run `make test-all` before every PR; it includes all seven Python tiers
+- [ ] Run `make test-postgres` for database or migration changes
 - [ ] Run `make test-mobile` for mobile changes
 
 ### 5. Before Submitting
@@ -123,6 +124,9 @@ poetry run pytest tests/unit/test_events.py::test_create_event -v
 
 # Whole pyramid
 make test-all
+
+# Owned PostgreSQL acceptance for database/migration changes
+make test-postgres
 ```
 
 ---

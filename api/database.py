@@ -5,7 +5,7 @@ from collections.abc import Generator
 from pathlib import Path
 
 from sqlalchemy import create_engine, text
-from sqlalchemy.engine import make_url
+from sqlalchemy.engine import Engine, make_url
 from sqlalchemy.orm import Session, sessionmaker
 
 from api.core.config import settings
@@ -74,8 +74,26 @@ def _prepare_sqlite_file(sqlite_path: Path, db_url: str) -> None:
         )
 
 
+def _verify_migration_head(bind: Engine) -> None:
+    """Require non-SQLite databases to be migrated before application startup."""
+    from alembic.config import Config
+    from alembic.runtime.migration import MigrationContext
+    from alembic.script import ScriptDirectory
+
+    config = Config(str(Path(__file__).resolve().parents[1] / "alembic.ini"))
+    expected_heads = set(ScriptDirectory.from_config(config).get_heads())
+    with bind.connect() as connection:
+        current_heads = set(MigrationContext.configure(connection).get_current_heads())
+    if current_heads != expected_heads:
+        raise RuntimeError(
+            "Database migrations are not current: "
+            f"expected {sorted(expected_heads)}, found {sorted(current_heads)}. "
+            "Run `alembic upgrade head` before starting the application."
+        )
+
+
 def init_db() -> None:
-    """Initialize database tables."""
+    """Initialize local SQLite or verify a migration-managed database."""
     import logging
     import sys
 
@@ -87,6 +105,10 @@ def init_db() -> None:
             )
 
     logging.getLogger("rostio").fatal(f"DEBUG: init_db tables: {list(Base.metadata.tables.keys())}")
+
+    if not DATABASE_URL.startswith("sqlite"):
+        _verify_migration_head(engine)
+        return
 
     sqlite_path = _resolve_sqlite_path(DATABASE_URL)
     if sqlite_path:
