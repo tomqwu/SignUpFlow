@@ -19,6 +19,12 @@ from starlette.requests import Request
 from starlette.responses import Response
 from starlette.types import ASGIApp
 
+from api.core.runtime_config import (
+    is_production_environment,
+    read_boolean_setting,
+    security_hsts_max_age,
+)
+
 
 class SecurityHeadersMiddleware(BaseHTTPMiddleware):
     """
@@ -35,18 +41,20 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
         super().__init__(app)
 
         # Environment-based configuration
-        self.is_production = os.getenv("ENVIRONMENT", "development") == "production"
-        self.hsts_enabled = (
-            os.getenv("SECURITY_HSTS_ENABLED", str(self.is_production)).lower() == "true"
+        self.is_production = is_production_environment()
+        self.hsts_enabled = read_boolean_setting(
+            "SECURITY_HSTS_ENABLED",
+            default=self.is_production,
         )
 
-        # Parse HSTS max-age with fallback for invalid values
+        # Development preserves the historical fallback. Production validation
+        # rejects malformed values before the application accepts requests.
         try:
-            self.hsts_max_age = int(os.getenv("SECURITY_HSTS_MAX_AGE", "31536000"))  # 1 year
+            self.hsts_max_age = security_hsts_max_age()
         except ValueError:
-            self.hsts_max_age = 31536000  # Default fallback
+            self.hsts_max_age = 31536000
 
-        self.csp_enabled = os.getenv("SECURITY_CSP_ENABLED", "true").lower() == "true"
+        self.csp_enabled = read_boolean_setting("SECURITY_CSP_ENABLED", default=True)
         self.frame_options = os.getenv("SECURITY_FRAME_OPTIONS", "DENY")
 
     async def dispatch(

@@ -3,6 +3,8 @@
 ## Current Entry Points
 
 - [Production roadmap](ROADMAP.md): no CI checks; all validation runs locally.
+- [Production configuration](PRODUCTION_CONFIGURATION.md): effective environment
+  readers, fail-closed startup rules, and current container limitations.
 
 Reconciled 2026-09-13 for testing, CI, and merge policy:
 

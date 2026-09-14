@@ -7,7 +7,7 @@ from pathlib import Path
 
 # Determine if debug mode is enabled
 DEBUG = os.getenv("DEBUG", "false").lower() in ("true", "1", "yes")
-ENV = os.getenv("ENVIRONMENT", "production").lower()
+ENV = os.getenv("ENVIRONMENT", "development").strip().lower()
 
 # Auto-enable debug in development/staging environments
 if ENV in ("development", "dev", "staging", "local"):

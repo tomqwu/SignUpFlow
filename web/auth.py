@@ -8,7 +8,6 @@ redirect the browser to the role-appropriate landing page.
 
 from __future__ import annotations
 
-import os
 import re
 import uuid
 
@@ -17,6 +16,7 @@ from fastapi.responses import HTMLResponse, RedirectResponse
 from pydantic import ValidationError
 from sqlalchemy.orm import Session
 
+from api.core.runtime_config import is_production_environment
 from api.database import get_db
 from api.models import Person
 from api.routers.auth import SignupRequest
@@ -29,7 +29,7 @@ from api.routers.password_reset import (
     reset_password,
 )
 from api.schemas.invitation import InvitationAccept
-from api.security import create_access_token, verify_password
+from api.security import ACCESS_TOKEN_EXPIRE_MINUTES, create_access_token, verify_password
 from api.timeutils import utcnow
 from api.utils.rate_limit_middleware import rate_limit
 from web.deps import SESSION_COOKIE, get_optional_session_user
@@ -38,8 +38,7 @@ router = APIRouter(tags=["web-auth"])
 
 # Secure flag off in dev/test (http://localhost) so the cookie is stored;
 # on in production. ENVIRONMENT=production is set by the app at boot.
-_COOKIE_SECURE = os.getenv("ENVIRONMENT", "development") == "production"
-_COOKIE_MAX_AGE = 60 * 60 * 24  # 24h, matches access-token lifetime intent
+_COOKIE_MAX_AGE = ACCESS_TOKEN_EXPIRE_MINUTES * 60
 
 
 def _pwd_iat_for(person: Person) -> float:
@@ -60,7 +59,7 @@ def _set_cookie(response, token: str) -> None:
         value=token,
         max_age=_COOKIE_MAX_AGE,
         httponly=True,
-        secure=_COOKIE_SECURE,
+        secure=is_production_environment(),
         samesite="lax",
         path="/",
     )

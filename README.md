@@ -36,6 +36,10 @@
 SignUpFlow is an open-source application you run yourself. No hosted service,
 paid plan, or production deployment is included. Billing and paid SMS stay disabled
 by default and are not required for the Church or Basketball workflows.
+Production-like startup is fail-closed for signing keys, database/origin settings,
+test bypasses, and enabled-provider coherence; see the
+[configuration contract](docs/PRODUCTION_CONFIGURATION.md). This is a configuration
+guard, not deployment or provider acceptance.
 
 ```bash
 git clone https://github.com/tomqwu/SignUpFlow.git

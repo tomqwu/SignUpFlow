@@ -14,6 +14,7 @@ from fastapi.responses import HTMLResponse, Response
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.types import ASGIApp
 
+from api.core.runtime_config import is_production_environment
 from api.security import SECRET_KEY
 
 CSRF_COOKIE = "signupflow_csrf"
@@ -59,7 +60,7 @@ def configured_browser_origin(request: Request) -> str:
     configured = os.getenv("FRONTEND_URL") or os.getenv("APP_URL")
     if configured:
         return _normalize_origin(configured)
-    if os.getenv("ENVIRONMENT", "development").lower() == "production":
+    if is_production_environment():
         return ""
     return _normalize_origin(str(request.base_url))
 
@@ -117,7 +118,7 @@ def _set_csrf_cookie(response: Response, token: str) -> None:
         value=token,
         max_age=CSRF_MAX_AGE,
         httponly=False,
-        secure=os.getenv("ENVIRONMENT", "development").lower() == "production",
+        secure=is_production_environment(),
         samesite="lax",
         path="/",
     )

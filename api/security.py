@@ -8,7 +8,11 @@ from fastapi import HTTPException, status
 from jose import JWTError, jwt
 from passlib.context import CryptContext
 
+from api.core import runtime_config
 from api.timeutils import utcnow
+
+_DEFAULT_SECRET_KEY = runtime_config.DEFAULT_SECRET_KEY
+secret_key_issues = runtime_config.secret_key_issues
 
 # passlib<1.7.5 expects bcrypt.__about__.__version__; newer bcrypt dropped it.
 if not hasattr(bcrypt, "__about__"):
@@ -19,21 +23,8 @@ if not hasattr(bcrypt, "__about__"):
     bcrypt.__about__ = _BcryptAbout()
 
 # JWT Configuration
-_DEFAULT_SECRET_KEY = "your-secret-key-change-in-production-use-env-var"
 SECRET_KEY = os.getenv("SECRET_KEY", _DEFAULT_SECRET_KEY)
 ALGORITHM = "HS256"
-
-
-def secret_key_issues(secret_key: str) -> list[str]:
-    """Return human-readable problems with the JWT signing key (empty =
-    OK). Pure — callable from a startup guard or a unit test. A guessable
-    HS256 key lets anyone forge tokens, so this is a launch blocker."""
-    issues: list[str] = []
-    if secret_key == _DEFAULT_SECRET_KEY:
-        issues.append("SECRET_KEY is the built-in default — set a unique value")
-    if len(secret_key) < 32:
-        issues.append(f"SECRET_KEY is too short ({len(secret_key)} chars; need >= 32)")
-    return issues
 
 
 # Read from env via direct os.getenv (not Settings) so the smoke runbook's
@@ -41,7 +32,7 @@ def secret_key_issues(secret_key: str) -> list[str]:
 # Default 24h matches the prior hardcoded value. Fractional hours via
 # float lets the mobile refresh-interceptor smoke set e.g. 0.05 (3 min)
 # to deterministically force a 401 during a smoke walk.
-ACCESS_TOKEN_EXPIRE_MINUTES = int(float(os.getenv("ACCESS_TOKEN_EXPIRE_HOURS", "24")) * 60)
+ACCESS_TOKEN_EXPIRE_MINUTES = runtime_config.access_token_expire_minutes()
 REFRESH_TOKEN_EXPIRE_DAYS = 30  # Refresh token lifetime (rotated on every refresh)
 
 # Token type marker — distinguishes access from refresh in the `type` claim.

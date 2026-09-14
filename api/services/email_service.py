@@ -74,7 +74,7 @@ class EmailService:
         - EMAIL_FROM (default: noreply@signupflow.io)
         - EMAIL_FROM_NAME (default: SignUpFlow)
         - SENDGRID_API_KEY (for production)
-        - EMAIL_ENABLED (default: true)
+        - EMAIL_ENABLED (default: false)
 
         Args:
             smtp_host: SMTP server hostname (overrides env var)

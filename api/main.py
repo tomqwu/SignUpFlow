@@ -15,6 +15,7 @@ from fastapi.responses import JSONResponse
 if os.getenv("SIGNUPFLOW_LOAD_DOTENV", "true").lower() == "true":
     load_dotenv()
 
+from api.core.runtime_config import validate_production_environment
 from api.database import init_db
 from api.logging_config import logger
 from api.routers import (
@@ -47,22 +48,13 @@ from api.routers import (
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Handle application startup and shutdown."""
+    validate_production_environment()
     init_db()
-
-    # Launch-readiness guard: never run production on a guessable JWT key.
-    import os as _os
-
-    from api.security import SECRET_KEY, secret_key_issues
-
-    _issues = secret_key_issues(SECRET_KEY)
-    if _issues and _os.getenv("ENVIRONMENT", "development").lower() == "production":
-        for _msg in _issues:
-            logger.critical("SECURITY: %s", _msg)
 
     # Observability summary — error reporting is config-gated (no hard
     # dependency): a DSN turns it on, its absence is a normal dev/sandbox
     # state, not an error.
-    _err_reporting = "enabled" if _os.getenv("SENTRY_DSN") else "disabled (no SENTRY_DSN)"
+    _err_reporting = "enabled" if os.getenv("SENTRY_DSN") else "disabled (no SENTRY_DSN)"
     logger.info(
         "observability: error_reporting=%s liveness=/health readiness=/ready",
         _err_reporting,

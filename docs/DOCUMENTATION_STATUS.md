@@ -109,6 +109,13 @@ Chromium case covers rejection without mutation and same-origin success. The pac
 only hidden request metadata and does not alter the rendered walkthrough, so the committed
 Church and Basketball screenshots remain current. Distributed quotas and deployed
 proxy/TLS behavior remain unresolved release evidence under #261.
+The maintained production-configuration contract now maps effective environment readers,
+defaults, fail-closed rules, provider gates, and current container limits. Production
+rejects unsafe settings before database initialization, and the Compose/reference
+profiles no longer default paid providers or unsupported multiworker behavior on. The
+operations runbook now labels backup, restore, rollback, TLS/proxy, and deployment work
+as unresolved instead of presenting untested commands as accepted. Clean subprocess
+tests use only synthetic values and do not activate a provider or deployment.
 The maintained [scheduling constraint contract](SCHEDULING_CONSTRAINTS.md) now
 lists the three executable REST rule mappings, their CLI equivalents, validation
 failures, built-in invariants, and unsupported policy. The constraints editor now
