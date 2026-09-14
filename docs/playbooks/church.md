@@ -130,17 +130,23 @@ with time off cannot see the shift, while a newly invited exact-role available r
 it through the browser. The original member loses exactly that assignment and every other
 role remains unchanged.
 
+CH-D02 uses the `qualification_review_role` declared by the Church fixture. After an
+external ministry decision, the administrator removes `children_leader` through People.
+The app reopens only that person's future published work, shows the exact role gap at
+360px and 1440px, and preserves completed assignment history. An unpublished candidate
+retains its audit trail but fails publication because the member is no longer qualified.
+The app records the scheduling decision; the ministry approver still owns suitability and
+safeguarding approval outside SignUpFlow.
+
 ## Additional operational drills
 
 Record these remaining items separately as manual/extended acceptance:
 
-1. A children's leader becomes ineligible. Remove that qualification, regenerate
-   every affected future event, and obtain ministry approval before republishing.
-2. A holiday changes service times or headcounts. Change only the intended events;
+1. A holiday changes service times or headcounts. Change only the intended events;
    verify recurrence exceptions and avoid changing already completed services.
-3. A member never responds. Contact them through an approved channel and arrange
+2. A member never responds. Contact them through an approved channel and arrange
    confirmed cover; do not treat an assignment's default status as delivery evidence.
-4. The venue is unavailable. Arrange a venue/time manually; the current playbook
+3. The venue is unavailable. Arrange a venue/time manually; the current playbook
    does not establish automated room conflict prevention.
 ## Release sign-off
 

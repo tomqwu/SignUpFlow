@@ -123,6 +123,13 @@ publish, read a Church person, or change a Basketball peer's availability. Acces
 credentials also fail when their tenant claim is missing or mismatched or the membership is
 inactive.
 
+BB-D01 uses the `extended_absence_role` declared by the Basketball fixture. A point guard
+records one multiweek absence through the member page; the solver excludes that player
+only inside the date range. Removing the record is the deliberate availability update that
+makes the player schedulable again, demonstrated at 360px and 1440px. SignUpFlow stores no
+diagnosis and infers no medical or league clearance; the coach and manager own the separate
+return decision.
+
 BB-D02 runs separate coach and scorekeeper withdrawals at 360px and 1440px. The manager
 sees each role-specific gap. A wrong-role reserve and a same-role reserve with time off
 cannot see the shift, while a newly invited exact-role available reserve covers it through
@@ -141,9 +148,7 @@ Record these remaining items separately as manual/extended acceptance:
 3. A tournament needs travel/rest gaps. The supported saved minimum-gap rule runs
    in API solves, but venue travel and tournament policy remain manual; a configured
    generic gap is not proof that those domain rules are satisfied.
-4. An injury affects several weeks. Record the correct date range, regenerate
-   the entire future horizon and follow the organization's separate return policy.
-5. A member imports the feed into a specific calendar app. Check that client's refresh
+4. A member imports the feed into a specific calendar app. Check that client's refresh
    interval and device rendering; local ICS generation tests do not certify third-party
    polling behavior.
 

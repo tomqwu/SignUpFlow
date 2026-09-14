@@ -60,6 +60,7 @@ def test_notify_published_schedule_reaches_inbox(live_server, new_context, page,
     page.wait_for_selector("#publish-state")
     page.click("button:has-text('Publish this solution')")
     page.wait_for_selector("#publish-state:has-text('Unpublish')")
+    page.wait_for_selector("#publish-state:not(.htmx-added)")
 
     # Explicit bulk reminder.
     page.click("button:has-text('Notify assignees')")

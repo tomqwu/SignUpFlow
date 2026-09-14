@@ -6,7 +6,7 @@ from datetime import timedelta
 
 import pytest
 
-from api.models import Assignment, Constraint, Event, Notification, Person, Solution
+from api.models import Assignment, Constraint, Event, Notification, Organization, Person, Solution
 from api.services.assignment_response import record_assignment_response
 from api.services.publication_service import capture_solution_scope
 from api.timeutils import utcnow
@@ -393,6 +393,94 @@ def test_changed_qualification_keeps_prior_roster_active(client, db):
     db.refresh(candidate)
     assert prior.is_published is True
     assert candidate.is_published is False
+
+
+@pytest.mark.no_mock_auth
+def test_removing_qualification_reopens_only_future_live_work(client, db):
+    org_id, headers, _ = _setup_org(client, db, "qualification-removal")
+    member = _member(
+        db,
+        org_id=org_id,
+        person_id="qualification-removal-member",
+        roles=["volunteer", "children_leader"],
+    )
+    past = _event(
+        db,
+        org_id=org_id,
+        event_id="qualification-removal-past",
+        day=-7,
+        roles={"children_leader": 1},
+    )
+    future = _event(
+        db,
+        org_id=org_id,
+        event_id="qualification-removal-future",
+        day=7,
+        roles={"children_leader": 1},
+    )
+    live = _solution(
+        db,
+        org_id=org_id,
+        events=[past, future],
+        assignments=[
+            (past, member, "children_leader"),
+            (future, member, "children_leader"),
+        ],
+        published=True,
+    )
+    candidate = _solution(
+        db,
+        org_id=org_id,
+        events=[future],
+        assignments=[(future, member, "children_leader")],
+    )
+    manual = Assignment(
+        event_id=future.id,
+        person_id=member.id,
+        role="children_leader",
+    )
+    foreign_org = Organization(id="qualification-removal-foreign", name="Foreign")
+    foreign_event = Event(
+        id="qualification-removal-foreign-event",
+        org_id=foreign_org.id,
+        type="Foreign service",
+        start_time=utcnow() + timedelta(days=7),
+        end_time=utcnow() + timedelta(days=7, hours=2),
+        extra_data={"role_counts": {"children_leader": 1}},
+    )
+    foreign_assignment = Assignment(
+        event_id=foreign_event.id,
+        person_id=member.id,
+        role="children_leader",
+    )
+    db.add_all([manual, foreign_org, foreign_event, foreign_assignment])
+    db.commit()
+    manual_id = manual.id
+    foreign_assignment_id = foreign_assignment.id
+
+    response = client.put(
+        f"/api/v1/people/{member.id}",
+        json={"roles": ["volunteer"]},
+        headers=headers,
+    )
+
+    assert response.status_code == 200
+    assert response.json()["roles"] == ["volunteer"]
+    live_assignments = db.query(Assignment).filter(Assignment.solution_id == live.id).all()
+    assert [(row.event_id, row.role) for row in live_assignments] == [(past.id, "children_leader")]
+    assert (
+        db.query(Assignment).filter(Assignment.solution_id == candidate.id).one().event_id
+        == future.id
+    )
+    assert db.query(Assignment).filter(Assignment.id == manual_id).first() is None
+    assert (
+        db.query(Assignment).filter(Assignment.id == foreign_assignment_id).one().event_id
+        == foreign_event.id
+    )
+
+    rejected = client.post(f"/api/v1/solutions/{candidate.id}/publish", headers=headers)
+    assert rejected.status_code == 409
+    assert "no longer qualified" in rejected.json()["detail"].lower()
 
 
 @pytest.mark.no_mock_auth

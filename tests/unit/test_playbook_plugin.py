@@ -36,6 +36,8 @@ def test_discover_new_definition(tmp_path):
     assert [spec.id for spec in specs] == ["community"]
     assert specs[0].secondary_event == "Preparation"
     assert specs[0].late_cover_roles == []
+    assert specs[0].qualification_review_role is None
+    assert specs[0].extended_absence_role is None
 
 
 def test_bundled_definitions_declare_domain_late_cover_roles():
@@ -43,6 +45,15 @@ def test_bundled_definitions_declare_domain_late_cover_roles():
 
     assert specs["church"].late_cover_roles == ["sound", "children_leader"]
     assert specs["basketball"].late_cover_roles == ["coach", "scorekeeper"]
+
+
+def test_bundled_definitions_declare_eligibility_and_availability_extensions():
+    specs = {spec.id: spec for spec in discover_playbooks([ROOT / "docs" / "playbooks"])}
+
+    assert specs["church"].qualification_review_role == "children_leader"
+    assert specs["church"].extended_absence_role is None
+    assert specs["basketball"].qualification_review_role is None
+    assert specs["basketball"].extended_absence_role == "point_guard"
 
 
 @pytest.mark.parametrize(
@@ -56,6 +67,8 @@ def test_bundled_definitions_declare_domain_late_cover_roles():
         {"critical_role": "missing"},
         {"late_cover_roles": ["missing"]},
         {"late_cover_roles": ["leader", "leader"]},
+        {"qualification_review_role": "missing"},
+        {"extended_absence_role": "missing"},
         {"roles": {"leader": 2}},
         {"version": 2},
         {"workflow": "unknown"},

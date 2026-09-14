@@ -2,6 +2,10 @@
 
 from __future__ import annotations
 
+from datetime import timedelta
+
+from api.models import Assignment, Event, Solution
+from api.timeutils import utcnow
 from tests.web.conftest import seed_person
 from web.deps import SESSION_COOKIE
 
@@ -61,6 +65,75 @@ def test_admin_updates_qualifications_without_changing_access(client, db):
     db.refresh(member)
     assert member.roles == ["volunteer", "sound", "children_leader"]
     assert "Qualifications saved" in response.text
+
+
+def test_admin_qualification_removal_reopens_future_live_assignment(client, db):
+    token = _admin(client, db, org="p_revoke", email="revoke-admin@web.test")
+    member = seed_person(
+        db,
+        person_id="p_revoke_member",
+        org_id="p_revoke",
+        email="revoke-member@web.test",
+        roles=["volunteer", "children_leader"],
+    )
+    now = utcnow()
+    past = Event(
+        id="p_revoke_past",
+        org_id="p_revoke",
+        type="Completed service",
+        start_time=now - timedelta(days=7),
+        end_time=now - timedelta(days=7, hours=-2),
+        extra_data={"role_counts": {"children_leader": 1}},
+    )
+    future = Event(
+        id="p_revoke_future",
+        org_id="p_revoke",
+        type="Future service",
+        start_time=now + timedelta(days=7),
+        end_time=now + timedelta(days=7, hours=2),
+        extra_data={"role_counts": {"children_leader": 1}},
+    )
+    published = Solution(
+        org_id="p_revoke",
+        hard_violations=0,
+        soft_score=1,
+        health_score=100,
+        metrics={},
+        is_published=True,
+        published_at=now,
+    )
+    db.add_all([past, future, published])
+    db.flush()
+    db.add_all(
+        [
+            Assignment(
+                solution_id=published.id,
+                event_id=past.id,
+                person_id=member.id,
+                role="children_leader",
+            ),
+            Assignment(
+                solution_id=published.id,
+                event_id=future.id,
+                person_id=member.id,
+                role="children_leader",
+            ),
+        ]
+    )
+    db.commit()
+
+    response = client.post(
+        f"/a/people/{member.id}/qualifications",
+        data={"qualifications": ""},
+        cookies={SESSION_COOKIE: token},
+    )
+
+    assert response.status_code == 200
+    db.refresh(member)
+    assert member.roles == ["volunteer"]
+    remaining = db.query(Assignment).filter(Assignment.solution_id == published.id).all()
+    assert [(row.event_id, row.role) for row in remaining] == [(past.id, "children_leader")]
+    assert "1 future assignment reopened" in response.text
 
 
 def test_qualification_update_rejects_admin_alias_and_preserves_roles(client, db):

@@ -7,5 +7,6 @@
   "roles": {"point_guard": 1, "shooting_guard": 1, "small_forward": 1, "power_forward": 1, "center": 1, "coach": 1, "scorekeeper": 1},
   "secondary_event": "practice",
   "critical_role": "point_guard",
-  "late_cover_roles": ["coach", "scorekeeper"]
+  "late_cover_roles": ["coach", "scorekeeper"],
+  "extended_absence_role": "point_guard"
 }
