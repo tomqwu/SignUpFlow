@@ -18,6 +18,8 @@ Reconciled 2026-09-13 for testing, CI, and merge policy:
 - [Operational playbooks](playbooks/README.md): church and basketball workflows.
 - [Local email capture](LOCAL_EMAIL_CAPTURE.md): credential-free invitation,
   recovery, and roster-notification acceptance.
+- [Password reset contract](features/password-reset.md): current routes, token and
+  session semantics, local evidence, and external-provider boundaries.
 - [Assignment responses](ASSIGNMENT_RESPONSES.md): member response truth, revisions, migration, and coordinator follow-up.
 - [Allocation transactions](ALLOCATION_TRANSACTIONS.md): serialized claims,
   roster edits, live-capacity semantics, rollback, and local PostgreSQL proof.

@@ -110,6 +110,13 @@ service updates the same UID and local time; cancelling it removes the entry on 
 The authenticated download and public token feed share the same published, non-declined,
 tenant-scoped assignment policy. A separate unit case crosses the spring DST boundary.
 
+BO-11 drives both the Church administrator and worship-leader member through logout/login,
+self-service password change, and the actual link from locally captured reset email at both
+browser widths. Their refreshed session stays usable, while copied pre-change/pre-reset
+sessions, old passwords, replayed reset links, expired tokens, and short API reset passwords
+fail without losing the account. Recovery screenshots are saved in pytest's temporary
+directory; external mailbox delivery and distributed abuse controls remain separate work.
+
 ## Additional operational drills
 
 Record these separately as manual/extended acceptance, not as passed by CH-01-08:

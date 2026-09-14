@@ -1,336 +1,115 @@
-# Password Reset Feature - BDD Scenarios
+# Password Reset Contract
 
-## Current Web Delivery Contract
+## Supported Routes
 
-Run the SignUpFlow web app at `FRONTEND_URL` (or `APP_URL` when unset); use the
-public HTTPS origin in production. `POST /auth/forgot` attaches its email task
-to the HTML response. Reset emails contain `/auth/reset/{token}` browser links
-and retain the `signupflow:///reset-password?token=...` mobile deep link.
-The API endpoints are `POST /api/v1/auth/forgot-password` and
-`POST /api/v1/auth/reset-password`; older scenario endpoint names below are historical.
+| Surface | Route | Purpose |
+| --- | --- | --- |
+| Web | `GET /auth/forgot` | Render the recovery request form |
+| Web | `POST /auth/forgot` | Issue recovery and attach the delivery task to the response |
+| Web | `GET /auth/reset/{token}` | Render the reset form from the captured email link |
+| Web | `POST /auth/reset/{token}` | Validate and consume the token, then return to login |
+| API | `POST /api/v1/auth/forgot-password` | Issue recovery with a generic public response |
+| API | `POST /api/v1/auth/reset-password` | Validate and consume a token with a new password |
 
-Keep `DEBUG_RETURN_RESET_TOKEN` off in production. Return the same generic
-message for known and unknown accounts. Log failed sends without including
-email addresses or reset tokens; request a fresh link to retry delivery, which
-invalidates the previous token. Background tasks are best-effort, not a durable
-queue. Track durable delivery and staging-provider verification in #266 and #262.
+The web link uses `FRONTEND_URL`, falling back to `APP_URL` and then
+`http://localhost:8000`. Messages also retain the
+`signupflow:///reset-password?token=...` mobile deep link.
 
-Run `poetry run pytest tests/web/test_password_reset.py tests/api/test_password_reset_email.py`
-to verify captured email links, one-time use, token rotation, and send failures
-without external email delivery.
+## Request Contract
 
-## Feature Overview
-Users can reset their password if they forget it by receiving a secure reset link via email. The reset token expires after 1 hour for security.
+Submit a valid email address. Known login accounts and unknown or roster-only people
+receive the same public message:
 
----
-
-## Scenario 1: User Requests Password Reset
-
-**Given**: A user has an existing account with email "user@test.com"
-**When**: User clicks "Forgot Password" on login screen
-**And**: User enters their email address
-**And**: User clicks "Send Reset Link"
-**Then**: A password reset email is sent to the user
-**And**: The email contains a unique reset token
-**And**: The token expires after 1 hour
-**And**: User sees confirmation message "Check your email for reset instructions"
-
-**API Endpoint**: `POST /api/auth/password-reset/request`
-**Request**:
 ```json
 {
-  "email": "user@test.com"
+  "message": "If the email exists, recovery instructions were processed"
 }
 ```
 
-**Response** (200 OK):
-```json
-{
-  "message": "Password reset email sent if account exists",
-  "email_sent": true
-}
-```
+Roster-only people have no `password_hash`; recovery must not turn those rows into login
+accounts. A known login account receives one new token and one best-effort background
+delivery attempt. A newer request marks every earlier unused token for that person used.
 
-**Security Note**: Always return success message even if email doesn't exist (prevents email enumeration attacks).
+Keep `DEBUG_RETURN_RESET_TOKEN` disabled outside isolated debugging. Committed browser
+acceptance follows the actual captured message and never treats debug output or a direct
+database token lookup as delivered email.
 
----
+## Token Contract
 
-## Scenario 2: User Resets Password with Valid Token
+- Generate bearer tokens with `secrets.token_urlsafe(32)`.
+- Store only the SHA-256 digest in `password_reset_tokens.token_hash`.
+- Bind each row to `person_id`; expire it one hour after issuance.
+- Accept only a row whose digest matches, `used_at` is null, and `expires_at` is in the
+  future.
+- Claim the row with one conditional update so replay or concurrent redemption has one
+  winner.
+- Do not claim an invalid or expired token.
+- Do not automatically delete expired rows; expiry is enforced during redemption.
 
-**Given**: User has received a password reset email with a valid token
-**When**: User clicks the reset link in the email
-**And**: User is redirected to password reset page with token in URL
-**And**: User enters new password "NewSecure123!"
-**And**: User confirms new password "NewSecure123!"
-**And**: User clicks "Reset Password"
-**Then**: Password is updated in the database
-**And**: Reset token is invalidated (can't be reused)
-**And**: User sees success message "Password reset successful"
-**And**: User is redirected to login page
-**And**: User can log in with new password
+## Password And Session Contract
 
-**API Endpoint**: `POST /api/auth/password-reset/confirm`
-**Request**:
-```json
-{
-  "token": "abc123xyz456secure",
-  "new_password": "NewSecure123!"
-}
-```
+`new_password` must contain at least six characters on both web and API routes. Validate
+that policy before claiming the token, so a rejected password leaves the valid link usable.
 
-**Response** (200 OK):
-```json
-{
-  "message": "Password reset successful",
-  "success": true
-}
-```
+A successful reset hashes the new password, stamps `Person.password_changed_at`, and
+commits the password and token claim together. The old password then fails. Access tokens
+and browser cookies carrying an older `pwd_iat` fail authentication; refresh tokens also
+fail the password-version check. A successful self-service password change returns fresh
+API tokens or reissues the browser cookie so the active session can continue while copied
+pre-change sessions become invalid.
 
----
+Tokens created before the `pwd_iat` claim existed remain backward-compatible until their
+normal JWT expiry. Removing that compatibility is security-hardening work under #261, not
+something the current tests silently claim.
 
-## Scenario 3: User Tries Invalid Reset Token
+## Delivery Modes
 
-**Given**: User has a password reset link
-**When**: User tries to use an invalid or non-existent token
-**Then**: API returns 400 Bad Request
-**And**: User sees error message "Invalid or expired reset link"
-**And**: User is shown option to request a new reset link
+Automated acceptance uses `LOCAL_EMAIL_CAPTURE_DIR`, which writes RFC 822 messages to an
+owned temporary directory and makes no external connection. The browser test parses the
+generated message, follows its HTTP link, and completes recovery on the same local server.
 
-**API Endpoint**: `POST /api/auth/password-reset/confirm`
-**Request**:
-```json
-{
-  "token": "invalid_token_12345",
-  "new_password": "NewPassword123!"
-}
-```
+External SMTP/SendGrid delivery, sender reputation, inbox placement, and mailbox latency
+require separately authorized provider acceptance. Background tasks are best effort and
+do not survive process loss; durable delivery and retry belong to #266.
 
-**Response** (400 Bad Request):
-```json
-{
-  "detail": "Invalid or expired reset token"
-}
-```
+Delivery failure is logged without exposing the token or recipient. The caller still sees
+the generic response, and a fresh request can create a new usable link while invalidating
+the failed request's token. Do not label disabled delivery as sent.
 
----
+## Rate-Limit Boundary
 
-## Scenario 4: User Tries Expired Reset Token
+The API routes declare `password_reset` and `password_reset_confirm` rate-limit
+dependencies. The current limiter is process-local, trusts the existing client-IP helper,
+and is bypassed for tests and loopback. The web handlers call the route functions directly,
+so those FastAPI route dependencies do not cover web submissions. Distributed quotas,
+trusted-proxy handling, and equivalent browser abuse controls remain open in #261; this
+document does not present them as production-ready.
 
-**Given**: User requested password reset more than 1 hour ago
-**And**: User has not yet reset their password
-**When**: User clicks the old reset link
-**Then**: API returns 400 Bad Request
-**And**: User sees error message "This reset link has expired"
-**And**: User is prompted to request a new reset link
+## Executable Evidence
 
-**Expiration Logic**:
-- Reset tokens expire after 1 hour (3600 seconds)
-- Expired tokens are automatically cleaned up from database
+Run the focused contract:
 
----
-
-## Scenario 5: User Tries Weak Password
-
-**Given**: User is on password reset page with valid token
-**When**: User enters a weak password "123"
-**And**: User clicks "Reset Password"
-**Then**: API returns 422 Unprocessable Entity
-**And**: User sees error message "Password must be at least 8 characters"
-**And**: User remains on reset page to try again
-
-**Password Requirements**:
-- Minimum 8 characters
-- No maximum length (reasonable limit: 128 chars)
-- No complexity requirements (modern best practice per NIST)
-
-**API Response** (422):
-```json
-{
-  "detail": [
-    {
-      "loc": ["body", "new_password"],
-      "msg": "Password must be at least 8 characters",
-      "type": "value_error"
-    }
-  ]
-}
-```
-
----
-
-## Scenario 6: User Requests Multiple Resets
-
-**Given**: User has already requested a password reset
-**When**: User requests another reset before using the first token
-**Then**: Previous token is invalidated
-**And**: New token is generated and sent
-**And**: Only the most recent token works
-
-**Security Benefit**: Prevents token accumulation, ensures user always has fresh token.
-
----
-
-## Scenario 7: User Successfully Logs In After Reset
-
-**Given**: User has successfully reset their password to "NewPassword123!"
-**When**: User navigates to login page
-**And**: User enters email "user@test.com"
-**And**: User enters password "NewPassword123!"
-**And**: User clicks "Login"
-**Then**: User is authenticated successfully
-**And**: User is redirected to main application
-**And**: Old password no longer works
-
----
-
-## Scenario 8: Non-existent Email Request (Security)
-
-**Given**: An attacker tries to enumerate valid emails
-**When**: Attacker requests password reset for "nonexistent@test.com"
-**Then**: API returns same success message as valid emails
-**And**: No email is actually sent
-**And**: Response time is consistent (prevents timing attacks)
-
-**Security Note**: This prevents email enumeration attacks where attackers try to discover valid email addresses in the system.
-
----
-
-## Email Template
-
-**Subject**: Reset Your Rostio Password
-
-**Body**:
-```
-Hi [Name],
-
-You requested to reset your password for your Rostio account.
-
-Click the link below to reset your password:
-[Reset Password Button] → https://rostio.app/reset-password?token=abc123xyz456
-
-This link expires in 1 hour for security reasons.
-
-If you didn't request this, you can safely ignore this email.
-
-Best regards,
-The Rostio Team
-```
-
----
-
-## Database Schema
-
-**Password Reset Tokens Table**:
-```python
-class PasswordResetToken(Base):
-    __tablename__ = "password_reset_tokens"
-
-    id: str  # Primary key (UUID)
-    person_id: str  # Foreign key to Person
-    token: str  # Unique reset token (hashed)
-    created_at: datetime  # Timestamp of creation
-    expires_at: datetime  # Timestamp of expiration (created_at + 1 hour)
-    used: bool  # Whether token has been used
-```
-
-**Indexes**:
-- Unique index on `token` for fast lookup
-- Index on `person_id` for cleanup queries
-- Index on `expires_at` for cleanup queries
-
----
-
-## Security Considerations
-
-1. **Token Generation**: Use `secrets.token_urlsafe(32)` for cryptographically secure tokens
-2. **Token Storage**: Hash tokens before storing in database (like passwords)
-3. **Rate Limiting**: Limit password reset requests to prevent spam
-   - Max 3 requests per hour per IP
-   - Max 3 requests per hour per email
-4. **Email Enumeration Prevention**: Always return success message
-5. **Token Expiration**: Strict 1-hour expiration
-6. **One-time Use**: Tokens invalidated after successful reset
-7. **HTTPS Required**: Reset links must use HTTPS in production
-8. **No Password in URL**: Password only submitted via POST body, never in URL
-
----
-
-## Rate Limiting Configuration
-
-**Environment Variables**:
 ```bash
-# Password Reset Rate Limit (per IP)
-RATE_LIMIT_PASSWORD_RESET_MAX=3
-RATE_LIMIT_PASSWORD_RESET_WINDOW=3600  # 1 hour
-
-# Password Reset Confirm Rate Limit (per IP)
-RATE_LIMIT_PASSWORD_RESET_CONFIRM_MAX=5
-RATE_LIMIT_PASSWORD_RESET_CONFIRM_WINDOW=300  # 5 minutes
+poetry run pytest tests/api/test_password_reset_email.py tests/api/test_password_reset.py -q
+poetry run pytest tests/web/test_password_reset.py tests/web/test_account.py -q
+poetry run pytest tests/integration/test_password_reset.py -q
+poetry run pytest tests/e2e/test_local_mail_playbooks.py --playbook church --playbook basketball -q
 ```
 
----
+The pluggable browser journey runs Church and Basketball at 360px and 1440px. For both
+administrator and volunteer access it covers logout/login, self-service password change,
+continued use of the refreshed session, copied-session rejection, captured reset email,
+old-password rejection, replay rejection, and final login. It saves administrator and
+member recovery screenshots in pytest's temporary directory.
 
-## API Endpoints Summary
+API regressions separately cover known/unknown response shape, roster-only exclusion,
+hashed persistence, new-token invalidation, one-time/concurrent claim behavior, expiration,
+short-password rejection before claim, escaped display names, and delivery failure.
 
-| Endpoint | Method | Rate Limit | Description |
-|----------|--------|------------|-------------|
-| `/api/auth/password-reset/request` | POST | 3/hour | Request password reset email |
-| `/api/auth/password-reset/confirm` | POST | 5/5min | Confirm reset with token and new password |
-| `/api/auth/password-reset/verify` | GET | 10/min | Verify token is valid (for UI) |
+## Remaining Acceptance
 
----
-
-## Testing Requirements
-
-### Unit Tests
-- Token generation and hashing
-- Token expiration logic
-- Password validation
-- Email enumeration prevention
-- Token invalidation after use
-
-### Integration Tests
-- Complete password reset flow (request → email → confirm)
-- Token cleanup for expired tokens
-- Multiple reset requests invalidate previous tokens
-- Old password no longer works after reset
-
-### E2E Tests
-- User completes full password reset workflow via GUI
-- User cannot reuse expired token
-- User cannot reuse already-used token
-- User successfully logs in with new password
-- Invalid token shows appropriate error message
-
----
-
-## Implementation Priority
-
-1. Database migration for `password_reset_tokens` table
-2. Token generation and validation utilities
-3. API endpoint: `POST /api/auth/password-reset/request`
-4. API endpoint: `POST /api/auth/password-reset/confirm`
-5. API endpoint: `GET /api/auth/password-reset/verify` (optional, for UI validation)
-6. Email template for password reset
-7. Frontend: "Forgot Password" link on login screen
-8. Frontend: Password reset request page
-9. Frontend: Password reset confirmation page (with token from URL)
-10. Rate limiting for password reset endpoints
-11. Cleanup job for expired tokens (background task)
-12. Unit tests (TDD approach)
-13. Integration tests
-14. E2E tests
-
----
-
-## Success Criteria
-
-- User can request password reset via email
-- User receives reset email within 1 minute
-- User can reset password with valid token
-- Old password no longer works after reset
-- Expired tokens are rejected with clear error message
-- Invalid tokens are rejected with clear error message
-- System prevents email enumeration attacks
-- Rate limiting prevents abuse
-- All tests passing (unit + integration + E2E)
+- Validate an approved external mailbox/provider only in the later release slice.
+- Add durable multi-worker delivery/retry under #266.
+- Complete shared-worker abuse limits, trusted-proxy policy, and browser request protection
+  under #261.
+- Validate mobile deep-link handling on an installed client under #191.

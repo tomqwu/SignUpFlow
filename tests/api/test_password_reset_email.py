@@ -522,6 +522,46 @@ class TestResetPasswordIsAtomic:
         )
         assert row_after.used_at is None
 
+    def test_short_password_is_rejected_without_consuming_token(self, db, monkeypatch):
+        """Validate the password before the one-time token is claimed."""
+        from api.models import PasswordResetToken
+        from api.routers.password_reset import _hash_reset_token
+
+        monkeypatch.setenv("DEBUG_RETURN_RESET_TOKEN", "true")
+        _seed_reset_user(db)
+        monkeypatch.setattr(
+            password_reset_router.email_service,
+            "send_password_reset_email",
+            MagicMock(return_value=True),
+        )
+
+        client = TestClient(app)
+        forgot = client.post(
+            "/api/v1/auth/forgot-password",
+            json={"email": "reset-email@example.com"},
+        )
+        token = forgot.json()["token"]
+
+        rejected = client.post(
+            "/api/v1/auth/reset-password",
+            json={"token": token, "new_password": "short"},
+        )
+        assert rejected.status_code == 422, rejected.text
+
+        db.expire_all()
+        row = (
+            db.query(PasswordResetToken)
+            .filter(PasswordResetToken.token_hash == _hash_reset_token(token))
+            .one()
+        )
+        assert row.used_at is None
+
+        accepted = client.post(
+            "/api/v1/auth/reset-password",
+            json={"token": token, "new_password": "ValidReset123!"},
+        )
+        assert accepted.status_code == 200, accepted.text
+
 
 class TestSendPasswordResetEmailEscapesUserContent:
     """Regression for Codex review on PR #78 — Person.name flows directly

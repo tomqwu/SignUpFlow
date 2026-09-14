@@ -163,6 +163,9 @@ unknown workflow IDs or silently skip unsupported scenarios.
 | Qualified reserve covers a swap without losing role coverage | Browser journey, both domains |
 | Invitation, recovery, assignment, change, and reminder content reaches owned mail | Local-capture browser journey, both domains and widths |
 | Captured action links work and reset links reject replay | Local-capture browser journey and integration recovery regressions |
+| Admin and member logout/login and password changes keep only the refreshed session | Local-capture browser journey, both domains and widths |
+| Captured resets revoke copied sessions and old credentials | Local-capture browser journey, both access levels, domains, and widths |
+| Expired or weak reset attempts preserve account and token state | API regressions |
 | Disabled delivery is labeled disabled, never sent | Unit and web regressions |
 | Personal download and subscription expose the same current assignments | API regression |
 | Published calendar entry moves under one UID and disappears after cancellation | Browser journey, both domains and widths |
@@ -184,10 +187,11 @@ completed event records, and every original future event. This boundary avoids c
 fixture construction as the rollover operation under test.
 
 Browser runs save onboarding, complete six-week solution, unanswered-schedule,
-accepted-assignment, occurrence-scope, calendar-current, local-mail admin status, and member-inbox
-screenshots in pytest's temporary test directory, plus dashboard and qualification
-captures. Inspect them as well as assertion results. A horizontal overflow assertion
-alone is not a comprehensive visual/accessibility audit.
+accepted-assignment, occurrence-scope, calendar-current, administrator/member account
+recovery, local-mail admin status, and member-inbox screenshots in pytest's temporary
+test directory, plus dashboard and qualification captures. Inspect them as well as
+assertion results. A horizontal overflow assertion alone is not a comprehensive
+visual/accessibility audit.
 
 ## Known boundaries and release blockers
 

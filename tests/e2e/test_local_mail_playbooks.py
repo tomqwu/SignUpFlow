@@ -95,6 +95,89 @@ def _login(page, base: str, email: str, password: str) -> None:
     page.get_by_role("button", name="Sign in").click()
 
 
+def _page_with_copied_session(source_page, new_context):
+    context = new_context()
+    context.add_cookies(source_page.context.cookies())
+    return context.new_page()
+
+
+def _exercise_account_recovery(
+    active_page,
+    new_context,
+    capture_dir: Path,
+    *,
+    base: str,
+    email: str,
+    initial_password: str,
+    changed_password: str,
+    recovered_password: str,
+    account_path: str,
+    protected_path: str,
+    landing_pattern: str,
+    recovery_screenshot: Path,
+) -> None:
+    """Exercise logout/login, password change, reset, and stale-session rejection."""
+    stale_after_change = _page_with_copied_session(active_page, new_context)
+
+    active_page.goto(f"{base}{account_path}")
+    active_page.fill("#pw_current", initial_password)
+    active_page.fill("#pw_new", changed_password)
+    active_page.fill("#pw_confirm", changed_password)
+    active_page.get_by_role("button", name="Change password").click()
+    expect(active_page.locator("#password-form")).to_contain_text("Password changed")
+
+    active_page.goto(f"{base}{protected_path}")
+    expect(active_page).to_have_url(f"{base}{protected_path}")
+    stale_after_change.goto(f"{base}{protected_path}")
+    stale_after_change.wait_for_url("**/auth/login")
+
+    active_page.goto(f"{base}{account_path}")
+    active_page.get_by_role("button", name="Sign out", exact=True).click()
+    active_page.wait_for_url("**/auth/login")
+    _login(active_page, base, email, initial_password)
+    expect(active_page.get_by_role("alert")).to_contain_text("Invalid email or password")
+    _login(active_page, base, email, changed_password)
+    active_page.wait_for_url(landing_pattern)
+
+    stale_after_reset = _page_with_copied_session(active_page, new_context)
+    active_page.goto(f"{base}{account_path}")
+    active_page.get_by_role("button", name="Sign out", exact=True).click()
+    active_page.wait_for_url("**/auth/login")
+    active_page.goto(f"{base}/auth/forgot")
+    active_page.fill("#email", email)
+    active_page.get_by_role("button", name="Send reset link").click()
+    expect(active_page.get_by_role("status")).to_contain_text(
+        "recovery instructions were processed"
+    )
+
+    reset = _wait_for_message(
+        capture_dir,
+        recipient=email,
+        subject_prefix="Reset your SignUpFlow password",
+    )
+    reset_link = _action_link(reset, "/auth/reset/")
+    assert reset_link.startswith(base)
+    active_page.goto(reset_link)
+    active_page.fill("#password", recovered_password)
+    active_page.get_by_role("button", name="Update password").click()
+    active_page.wait_for_url("**/auth/login?reset=1")
+    active_page.screenshot(path=str(recovery_screenshot), full_page=True)
+
+    stale_after_reset.goto(f"{base}{protected_path}")
+    stale_after_reset.wait_for_url("**/auth/login")
+    _login(active_page, base, email, changed_password)
+    expect(active_page.get_by_role("alert")).to_contain_text("Invalid email or password")
+
+    replay = new_context().new_page()
+    replay.goto(reset_link)
+    replay.fill("#password", "ReplayMustFail123!")
+    replay.get_by_role("button", name="Update password").click()
+    expect(replay.get_by_role("alert")).to_contain_text("Invalid or expired reset token")
+
+    _login(active_page, base, email, recovered_password)
+    active_page.wait_for_url(landing_pattern)
+
+
 @pytest.mark.parametrize("width", [360, 1440])
 def test_domain_recovery_and_notification_mail_flow(
     mail_live_server,
@@ -153,37 +236,34 @@ def test_domain_recovery_and_notification_mail_flow(
     member.get_by_role("button", name="Accept & continue").click()
     member.wait_for_url("**/v/schedule")
 
-    member.goto(f"{base}/v/profile")
-    member.get_by_role("button", name="Sign out").click()
-    member.wait_for_url("**/auth/login")
-    member.goto(f"{base}/auth/forgot")
-    member.fill("#email", member_email)
-    member.get_by_role("button", name="Send reset link").click()
-    expect(member.get_by_role("status")).to_contain_text("recovery instructions were processed")
-
-    reset = _wait_for_message(
+    _exercise_account_recovery(
+        page,
+        new_context,
         mail_capture_dir,
-        recipient=member_email,
-        subject_prefix="Reset your SignUpFlow password",
+        base=base,
+        email=admin_email,
+        initial_password=old_password,
+        changed_password="AdminChanged123!",
+        recovered_password="AdminRecovered123!",
+        account_path="/a/settings",
+        protected_path="/a/dashboard",
+        landing_pattern="**/a/dashboard",
+        recovery_screenshot=tmp_path / f"{playbook_spec.id}-{width}-admin-account-recovered.png",
     )
-    reset_link = _action_link(reset, "/auth/reset/")
-    assert reset_link.startswith(base)
-    member.goto(reset_link)
-    member.fill("#password", new_password)
-    member.get_by_role("button", name="Update password").click()
-    member.wait_for_url("**/auth/login?reset=1")
-
-    old_login = new_context().new_page()
-    _login(old_login, base, member_email, old_password)
-    expect(old_login.get_by_role("alert")).to_contain_text("Invalid email or password")
-    replay = new_context().new_page()
-    replay.goto(reset_link)
-    replay.fill("#password", "ReplayMustFail123!")
-    replay.get_by_role("button", name="Update password").click()
-    expect(replay.get_by_role("alert")).to_contain_text("Invalid or expired reset token")
-
-    _login(member, base, member_email, new_password)
-    member.wait_for_url("**/v/schedule")
+    _exercise_account_recovery(
+        member,
+        new_context,
+        mail_capture_dir,
+        base=base,
+        email=member_email,
+        initial_password=old_password,
+        changed_password="MemberChanged123!",
+        recovered_password=new_password,
+        account_path="/v/profile",
+        protected_path="/v/schedule",
+        landing_pattern="**/v/schedule",
+        recovery_screenshot=tmp_path / f"{playbook_spec.id}-{width}-member-account-recovered.png",
+    )
 
     event_date = _next_sunday()
     page.goto(f"{base}/a/events")

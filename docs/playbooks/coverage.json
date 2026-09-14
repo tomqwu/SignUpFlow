@@ -112,13 +112,13 @@
     },
     {
       "id": "BO-11",
-      "actor": "member",
+      "actor": ["administrator", "member"],
       "precondition": "The member has a valid account and captured recovery channel",
-      "operation": "Log out and in, change password, and recover through a reset link",
+      "operation": "Administrator and member log out and in, change password, and recover through a reset link",
       "expected": "Expired, replayed, or stale credentials fail without losing the account",
-      "tiers": ["unit", "integration", "e2e"],
+      "tiers": ["api", "web", "integration", "e2e"],
       "status": "automated",
-      "evidence": ["tests/e2e/test_auth_flows.py", "tests/e2e/test_local_mail_playbooks.py", "tests/integration/test_password_reset.py"]
+      "evidence": ["tests/e2e/test_local_mail_playbooks.py", "tests/api/test_password_reset_email.py", "tests/web/test_account.py", "tests/integration/test_password_reset.py"]
     },
     {
       "id": "BO-12",

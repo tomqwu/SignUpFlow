@@ -6,7 +6,7 @@ import secrets
 from datetime import timedelta
 
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Request, status
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, Field
 from sqlalchemy.orm import Session
 
 from api.database import get_db
@@ -49,7 +49,7 @@ class PasswordResetConfirm(BaseModel):
     """Confirm password reset with token."""
 
     token: str
-    new_password: str
+    new_password: str = Field(..., min_length=6)
 
 
 def _send_reset_email_quiet(to_email: str, name: str, reset_token: str, app_url: str) -> None:
