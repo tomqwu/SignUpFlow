@@ -38,6 +38,11 @@ replacement horizon. A completed past event or an explicitly deleted event does
 not have to appear in a rolling replacement. Add week seven, solve all remaining
 future events together, review, and then publish.
 
+For a recurring series, the Events page labels move and cancel actions as applying to
+one occurrence; editing one marks it as an exception and leaves sibling occurrences
+unchanged. The Recurring page labels deletion as applying to the entire series. After
+either scope of change, regenerate the full remaining horizon before publication.
+
 ## Responses and notifications
 
 A materially unchanged assignment carries forward only a current recorded member

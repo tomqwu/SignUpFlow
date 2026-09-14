@@ -431,6 +431,12 @@ Every Church and Basketball qualification also runs the member availability page
 rejects peer edits without mutation, and verifies exclusion across twelve API-seeded
 events while retaining a complete qualified roster.
 
+The browser playbooks also distinguish recurrence scope at both widths. An administrator
+moves one occurrence, cancels a different occurrence, verifies that the remaining event
+is unchanged, and uses a separately labeled action to delete the entire series. Moving an
+already accepted published event resets that commitment to unanswered, so the assigned
+member must review and accept the changed time again.
+
 Saved REST scheduling rules support hard assignment caps, hard minimum rest gaps,
 and a weighted soft cooldown preference. They execute in API solves instead of
 being stored as inert text. See the

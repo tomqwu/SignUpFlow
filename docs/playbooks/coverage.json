@@ -76,9 +76,9 @@
       "precondition": "A future published roster contains a session that must change",
       "operation": "Move or cancel only the intended occurrence and regenerate the horizon",
       "expected": "Unrelated future commitments remain and affected members must respond to changed work",
-      "tiers": ["api", "e2e"],
-      "status": "partial",
-      "evidence": ["tests/playbooks/workflows.py", "tests/e2e/test_analytics_recurring_swapreview.py"]
+      "tiers": ["api", "web", "e2e"],
+      "status": "automated",
+      "evidence": ["tests/playbooks/workflows.py", "tests/web/test_event_crud.py", "tests/api/test_assignment_response_truth.py", "tests/e2e/test_domain_playbooks.py"]
     },
     {
       "id": "BO-08",

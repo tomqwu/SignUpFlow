@@ -72,4 +72,6 @@ make test-mobile
 
 The browser playbook runs both Church and Basketball at 360px and 1440px. It
 checks unanswered, accepted, replacement-needed, and qualified-cover states in
-member and coordinator views.
+member and coordinator views. It then changes an accepted event through the admin
+browser, verifies that the member returns to unanswered, and records a new acceptance
+for the incremented commitment revision.

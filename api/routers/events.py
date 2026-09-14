@@ -273,6 +273,8 @@ def update_event(
 
     if material_change:
         reset_event_assignment_responses(db, event.id, event.org_id)
+        if event.series_id is not None:
+            setattr(event, "is_exception", True)
 
     db.commit()
     db.refresh(event)

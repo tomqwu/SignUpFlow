@@ -24,8 +24,9 @@ manifest; its partial and blocked rows prevent baseline tests from being describ
 as complete role-by-role business acceptance.
 The Church and Basketball guides now match the browser runner: all fourteen members
 are invited and accepted through the normal UI with scheduling qualifications kept
-separate from account access. Organization bootstrap and repeated-event setup remain
-explicit API prerequisites rather than hidden browser-coverage claims.
+separate from account access. Organization bootstrap and all twelve baseline events run
+through normal browser forms; only the role-by-role availability drill uses API-seeded
+members and events, and the guide labels that boundary explicitly.
 The maintained API, mobile, agent, and roadmap entry points now describe atomic
 organization/first-admin bootstrap, invitation-only membership for existing
 organizations, one permission role plus scheduling qualifications, and the
@@ -36,6 +37,10 @@ coordinator/member surfaces with the Church and Basketball browser playbooks. Th
 affected dashboard, unanswered schedule, and accepted-detail README screenshots
 were recaptured from the 360px Church browser case; the other walkthrough screens
 were unaffected by this package.
+The event and recurrence guides now distinguish one-occurrence move/cancel from
+whole-series deletion. Browser evidence covers both domains at 360px and 1440px and
+proves that a changed accepted commitment returns to unanswered. Advanced recurrence
+rule editing, re-materialization, timezone, and DST behavior remain separate gaps.
 The maintained allocation transaction contract now documents the shared lock,
 eligibility, live-capacity, idempotency, rollback, and disposable PostgreSQL test
 boundaries for open shifts, swap coverage/denial, and coordinator roster edits.

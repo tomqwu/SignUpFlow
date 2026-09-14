@@ -61,20 +61,61 @@
   {% else %}
   <div class="group">
     {% for e in events.upcoming %}
-    <div class="row">
+    <div class="row event-row" data-event-id="{{ e.id }}">
       <div class="row-main">
         <div class="row-title">{{ e.type }}</div>
         <div class="row-sub">{{ e.date_label }}{% if e.time_label %} · {{ e.time_label }}{% endif %}</div>
+        {% if e.series_id %}<div class="row-sub">Recurring occurrence</div>{% endif %}
       </div>
-      <a class="btn btn-secondary" style="width:auto;padding:6px 12px"
-         href="/a/events/{{ e.id }}/assignments">Manage</a>
-      <button class="btn btn-destructive" style="width:auto;padding:6px 12px"
-              hx-post="/a/events/{{ e.id }}/delete"
-              hx-target="#events-list" hx-swap="outerHTML"
-              hx-confirm="Delete '{{ e.type }}'? This removes its assignments too.">
-        Delete
-      </button>
+      <div class="event-actions">
+        <a class="btn btn-secondary" href="/a/events/{{ e.id }}/assignments">Manage</a>
+        <button class="btn btn-secondary" type="button"
+                @click="editing = 'upcoming-{{ loop.index }}'; creating = false">
+          Edit {% if e.series_id %}occurrence{% else %}event{% endif %}
+        </button>
+        <button class="btn btn-destructive" type="button"
+                hx-post="/a/events/{{ e.id }}/delete"
+                hx-target="#events-list" hx-swap="outerHTML"
+                hx-confirm="{% if e.series_id %}Cancel only this occurrence{% else %}Delete event{% endif %} '{{ e.type }}'? This removes its assignments too.">
+          {% if e.series_id %}Cancel occurrence{% else %}Delete event{% endif %}
+        </button>
+      </div>
     </div>
+    <form class="event-edit-form" data-event-id="{{ e.id }}"
+          x-show="editing === 'upcoming-{{ loop.index }}'" x-cloak
+          hx-post="/a/events/{{ e.id }}/update"
+          hx-target="#events-list" hx-swap="outerHTML">
+      {% if e.series_id %}
+      <div class="form-notice">This change applies to this occurrence only.</div>
+      <div class="spacer-12"></div>
+      {% endif %}
+      <div class="field">
+        <label class="field-label" for="ev_edit_type_{{ loop.index }}">Type</label>
+        <input id="ev_edit_type_{{ loop.index }}" name="type" type="text"
+               value="{{ e.type }}" required>
+      </div>
+      <div class="field">
+        <label class="field-label" for="ev_edit_date_{{ loop.index }}">Date</label>
+        <input id="ev_edit_date_{{ loop.index }}" name="event_date" type="date"
+               value="{{ e.event_date }}" required>
+      </div>
+      <div class="field">
+        <label class="field-label" for="ev_edit_start_{{ loop.index }}">Start</label>
+        <input id="ev_edit_start_{{ loop.index }}" name="start_time" type="time"
+               value="{{ e.start_value }}" required>
+      </div>
+      <div class="field">
+        <label class="field-label" for="ev_edit_end_{{ loop.index }}">End</label>
+        <input id="ev_edit_end_{{ loop.index }}" name="end_time" type="time"
+               value="{{ e.end_value }}" required>
+      </div>
+      <div class="spacer-12"></div>
+      <div class="btn-row cols-2">
+        <button class="btn btn-secondary" type="button" @click="editing = null">Cancel</button>
+        <button class="btn btn-primary" type="submit">Save change</button>
+      </div>
+      <div class="spacer-12"></div>
+    </form>
     {% endfor %}
   </div>
   {% endif %}
@@ -96,7 +137,7 @@
               hx-post="/a/events/{{ e.id }}/delete"
               hx-target="#events-list" hx-swap="outerHTML"
               hx-confirm="Delete '{{ e.type }}'?">
-        Delete
+        Delete event
       </button>
     </div>
     {% endfor %}

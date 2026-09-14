@@ -43,6 +43,12 @@ Another same-organization volunteer receives `403` when attempting either edit, 
 the test compares both records before and after to prove that the denial did not mutate
 the target member. Those setup calls are not claimed as browser event/onboarding steps.
 
+The BO-07 browser variants create a three-occurrence weekly series through the admin
+UI, move only the first occurrence, cancel only the second, and verify that the third
+is unchanged. They then use the separately labeled whole-series deletion. The primary
+published-roster journey also moves an accepted event through the browser and verifies
+that the member sees it as unanswered until accepting the new commitment revision.
+
 `church.json` and `basketball.json` are the executable role/headcount fixtures.
 `tests/playbooks/` validates and discovers them for both test tiers. Each run creates new
 organizations and invitations with fictional `.example` addresses. Dates start
@@ -135,12 +141,14 @@ unknown workflow IDs or silently skip unsupported scenarios.
 | Repaired publication replaces old publication | API journey |
 | Narrower replacement cannot remove a future published event | API safety regression |
 | Explicit cancellation and week-seven rollover preserve the remaining horizon | API safety regression |
+| One-occurrence move/cancel leaves sibling occurrences unchanged | Web regression and browser journey, both domains and widths |
+| Whole-series deletion is distinct from occurrence cancellation | Web regression and browser journey, both domains and widths |
 | Changed event snapshot or member qualification blocks stale publication | API safety regressions |
 | Volunteer, anonymous user, foreign admin cannot publish | API journey |
 | Draft invisible; newly published shift unanswered; member can accept | Browser journey, both domains |
 | Coordinator filters unanswered, accepted, and replacement-needed work | Browser journey, both domains, 360 and 1440 pixels |
 | Notification read does not fabricate a response | Web regression |
-| Unchanged republish carries acknowledgement; material event change resets it | API response-truth regression |
+| Unchanged republish carries acknowledgement; browser event change resets it | API, web, and browser response regressions |
 | Qualified reserve covers a swap without losing role coverage | Browser journey, both domains |
 | Competing qualified claims produce one winner without overfill | SQLite and PostgreSQL integration race tests |
 | Ineligible, unavailable, overlapping, or stale claims preserve the roster | Web and integration regressions |
@@ -150,10 +158,11 @@ unknown workflow IDs or silently skip unsupported scenarios.
 | Phone and desktop page width | Browser journey at 360 and 1440 pixels |
 | Adjacent events remain legal | Unit regression |
 
-Browser runs save onboarding, complete six-week solution, unanswered-schedule, and
-accepted-assignment screenshots in pytest's temporary test directory, plus dashboard
-and qualification captures. Inspect them as well as assertion results. A horizontal
-overflow assertion alone is not a comprehensive visual/accessibility audit.
+Browser runs save onboarding, complete six-week solution, unanswered-schedule,
+accepted-assignment, and occurrence-scope screenshots in pytest's temporary test
+directory, plus dashboard and qualification captures. Inspect them as well as assertion
+results. A horizontal overflow assertion alone is not a comprehensive
+visual/accessibility audit.
 
 ## Known boundaries and release blockers
 
@@ -179,8 +188,9 @@ overflow assertion alone is not a comprehensive visual/accessibility audit.
 - Role-based solver assignments now retain their selected role. Old solutions
   with null roles need regeneration; no existing data is silently rewritten.
 - The role-less team fallback, venue collision checks, DST/timezone transitions,
-  recurrence exception handling, real notification delivery, and PostgreSQL
-  parity beyond allocation claims require separate acceptance before production use.
+  advanced recurrence-rule edits and re-materialization, real notification delivery,
+  and PostgreSQL parity beyond allocation claims require separate acceptance before
+  production use. Single-occurrence move/cancel and whole-series deletion are covered.
 - Basketball playing minutes, substitutions during play, scores, standings and
   league eligibility are outside this scheduling application.
 

@@ -2,9 +2,9 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timedelta
+from datetime import date, datetime, timedelta
 
-from api.models import Event
+from api.models import Assignment, Event, RecurringSeries
 from api.timeutils import utcnow
 from tests.web.conftest import seed_person
 from web.deps import SESSION_COOKIE
@@ -153,6 +153,175 @@ def test_delete_event(client, db):
     assert db.query(Event).filter(Event.id == "ec_del").first() is None
 
 
+def test_update_event_resets_an_accepted_response(client, db):
+    token = _admin(client, db, org="ec_move", email="ecmove@web.test")
+    event = Event(
+        id="ec_move_event",
+        org_id="ec_move",
+        type="Sunday Service",
+        start_time=datetime(2099, 6, 7, 10, 0),
+        end_time=datetime(2099, 6, 7, 11, 30),
+    )
+    assignment = Assignment(
+        event_id=event.id,
+        person_id="ec_admin",
+        role="usher",
+        status="confirmed",
+        response_status="accepted",
+        commitment_revision=1,
+        response_revision=1,
+        responded_by_person_id="ec_admin",
+        responded_at=utcnow(),
+    )
+    db.add_all([event, assignment])
+    db.commit()
+
+    response = client.post(
+        f"/a/events/{event.id}/update",
+        data={
+            "type": "Sunday Service",
+            "event_date": "2099-06-07",
+            "start_time": "10:30",
+            "end_time": "12:00",
+        },
+        cookies={SESSION_COOKIE: token},
+    )
+
+    assert response.status_code == 200
+    db.refresh(event)
+    db.refresh(assignment)
+    assert event.start_time == datetime(2099, 6, 7, 10, 30)
+    assert event.end_time == datetime(2099, 6, 7, 12, 0)
+    assert assignment.status == "pending"
+    assert assignment.response_status == "pending"
+    assert assignment.commitment_revision == 2
+    assert assignment.response_revision is None
+
+
+def test_recurring_event_update_is_scoped_to_one_occurrence(client, db):
+    token = _admin(client, db, org="ec_series", email="ecseries@web.test")
+    series = RecurringSeries(
+        id="ec_series_id",
+        org_id="ec_series",
+        created_by="ec_series_adm",
+        title="Weekly Service",
+        duration=90,
+        pattern_type="weekly",
+        selected_days=["sunday"],
+        start_date=date(2099, 6, 7),
+        end_condition_type="count",
+        occurrence_count=2,
+    )
+    first = Event(
+        id="ec_series_first",
+        org_id="ec_series",
+        type="Weekly Service",
+        start_time=datetime(2099, 6, 7, 10, 0),
+        end_time=datetime(2099, 6, 7, 11, 30),
+        series_id=series.id,
+        occurrence_sequence=1,
+    )
+    second = Event(
+        id="ec_series_second",
+        org_id="ec_series",
+        type="Weekly Service",
+        start_time=datetime(2099, 6, 14, 10, 0),
+        end_time=datetime(2099, 6, 14, 11, 30),
+        series_id=series.id,
+        occurrence_sequence=2,
+    )
+    db.add_all([series, first, second])
+    db.commit()
+
+    events_page = client.get("/a/events", cookies={SESSION_COOKIE: token})
+    recurring_page = client.get("/a/recurring", cookies={SESSION_COOKIE: token})
+    assert "Edit occurrence" in events_page.text
+    assert "Cancel occurrence" in events_page.text
+    assert "This change applies to this occurrence only." in events_page.text
+    assert "Delete entire series" in recurring_page.text
+
+    response = client.post(
+        f"/a/events/{first.id}/update",
+        data={
+            "type": "Weekly Service",
+            "event_date": "2099-06-07",
+            "start_time": "10:30",
+            "end_time": "12:00",
+        },
+        cookies={SESSION_COOKIE: token},
+    )
+
+    assert response.status_code == 200
+    db.refresh(first)
+    db.refresh(second)
+    assert first.start_time == datetime(2099, 6, 7, 10, 30)
+    assert first.is_exception is True
+    assert second.start_time == datetime(2099, 6, 14, 10, 0)
+    assert second.is_exception is False
+
+
+def test_invalid_event_update_preserves_existing_values(client, db):
+    token = _admin(client, db, org="ec_invalid", email="ecinvalid@web.test")
+    event = Event(
+        id="ec_invalid_event",
+        org_id="ec_invalid",
+        type="Practice",
+        start_time=datetime(2099, 6, 7, 10, 0),
+        end_time=datetime(2099, 6, 7, 11, 30),
+    )
+    db.add(event)
+    db.commit()
+
+    response = client.post(
+        f"/a/events/{event.id}/update",
+        data={
+            "type": "Changed Practice",
+            "event_date": "2099-06-07",
+            "start_time": "12:00",
+            "end_time": "11:00",
+        },
+        cookies={SESSION_COOKIE: token},
+    )
+
+    assert response.status_code == 200
+    assert "End time must be after start time" in response.text
+    db.refresh(event)
+    assert event.type == "Practice"
+    assert event.start_time == datetime(2099, 6, 7, 10, 0)
+    assert event.end_time == datetime(2099, 6, 7, 11, 30)
+
+
+def test_event_update_cannot_cross_organizations(client, db):
+    token = _admin(client, db, org="ec_intruder", email="ecintruder@web.test")
+    event = Event(
+        id="ec_private_event",
+        org_id="ec_private",
+        type="Private Practice",
+        start_time=datetime(2099, 6, 7, 10, 0),
+        end_time=datetime(2099, 6, 7, 11, 30),
+    )
+    db.add(event)
+    db.commit()
+
+    response = client.post(
+        f"/a/events/{event.id}/update",
+        data={
+            "type": "Changed by another org",
+            "event_date": "2099-06-07",
+            "start_time": "12:00",
+            "end_time": "13:00",
+        },
+        cookies={SESSION_COOKIE: token},
+    )
+
+    assert response.status_code == 200
+    assert "Event not found" in response.text
+    db.refresh(event)
+    assert event.type == "Private Practice"
+    assert event.start_time == datetime(2099, 6, 7, 10, 0)
+    assert event.end_time == datetime(2099, 6, 7, 11, 30)
+
+
 def test_event_crud_requires_admin(client, db):
     seed_person(db, person_id="ec_vol", email="ecvol@web.test", roles=["volunteer"])
     login = client.post(
@@ -171,12 +340,37 @@ def test_event_crud_requires_admin(client, db):
         cookies={SESSION_COOKIE: token},
     )
     assert r.status_code == 303
+    assert (
+        client.post(
+            "/a/events/x/update",
+            data={
+                "type": "X",
+                "event_date": "2099-01-01",
+                "start_time": "10:00",
+                "end_time": "11:00",
+            },
+            cookies={SESSION_COOKIE: token},
+        ).status_code
+        == 303
+    )
 
 
 def test_event_crud_requires_auth(client):
     assert (
         client.post(
             "/a/events/create",
+            data={
+                "type": "X",
+                "event_date": "2099-01-01",
+                "start_time": "10:00",
+                "end_time": "11:00",
+            },
+        ).status_code
+        == 303
+    )
+    assert (
+        client.post(
+            "/a/events/x/update",
             data={
                 "type": "X",
                 "event_date": "2099-01-01",
