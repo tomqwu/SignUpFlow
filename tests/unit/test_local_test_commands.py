@@ -12,7 +12,11 @@ pytestmark = pytest.mark.unit
 def test_static_validation_commands_are_documented_locally():
     commands = (ROOT / "docs/TESTING.md").read_text()
     assert "No CI checks" in commands
-    for command in ("black --check api tests", "ruff check api tests", "mypy api"):
+    for command in (
+        "black --check api web tests scripts/run_local_validation.py",
+        "ruff check api web tests scripts/run_local_validation.py",
+        "mypy api",
+    ):
         assert command in commands
     assert "alembic upgrade head" in commands
 
@@ -28,12 +32,11 @@ def test_local_all_runs_each_python_tier_in_a_separate_process():
     result = subprocess.run(
         ["make", "-n", "test-all"], cwd=ROOT, text=True, capture_output=True, check=True
     )
-    commands = [line for line in result.stdout.splitlines() if "poetry run pytest " in line]
-    assert len(commands) == 7
+    assert "scripts/run_local_validation.py" in result.stdout
+    manifest = (ROOT / "tests/local_validation_manifest.json").read_text()
     for tier in ("unit", "api", "cli", "integration", "web", "contract", "e2e"):
-        assert sum(f"pytest tests/{tier}/ " in command for command in commands) == 1
-    api_command = next(command for command in commands if "pytest tests/api/ " in command)
-    assert "tests/security/" in api_command
+        assert f'"id": "{tier}"' in manifest
+    assert '"tests/security"' in manifest
 
 
 def test_make_test_uses_the_supported_complete_local_suite():
@@ -42,9 +45,23 @@ def test_make_test_uses_the_supported_complete_local_suite():
     )
 
     assert "tests/comprehensive_test_suite.py" not in result.stdout
-    for tier in ("unit", "api", "cli", "integration", "web", "contract", "e2e"):
-        assert f"pytest tests/{tier}/ " in result.stdout
-    assert "pytest tests/api/ tests/security/" in result.stdout
+    assert "scripts/run_local_validation.py" in result.stdout
+
+
+def test_current_contributor_and_agent_guides_do_not_name_removed_test_files():
+    for path in (ROOT / "CONTRIBUTING.md", ROOT / "CLAUDE.md"):
+        assert "tests/comprehensive_test_suite.py" not in path.read_text()
+
+
+@pytest.mark.parametrize("target", ["test-docker-comprehensive", "test-docker-all"])
+def test_retired_docker_full_suite_targets_fail_with_current_guidance(target):
+    result = subprocess.run(
+        ["make", "-s", target], cwd=ROOT, text=True, capture_output=True, check=False
+    )
+
+    assert result.returncode != 0
+    assert "run 'make test-all' locally" in result.stdout
+    assert "tests/comprehensive_test_suite.py" not in result.stdout + result.stderr
 
 
 def test_playwright_is_a_locked_development_dependency():

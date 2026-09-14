@@ -2,6 +2,7 @@
 
 import os
 import subprocess
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
 from api import database
@@ -30,8 +31,8 @@ def test_database_has_no_global_test_override():
 
 def test_independent_make_runs_use_different_databases():
     recipe = 'test-print-db:\n\t@printf "%s" "$(TEST_DB_URL)"\n'
-    urls = []
-    for _ in range(2):
+
+    def get_database_url(_: int) -> str:
         result = subprocess.run(
             ["make", "-s", "-f", "Makefile", "-f", "-", "test-print-db"],
             cwd=ROOT,
@@ -40,7 +41,11 @@ def test_independent_make_runs_use_different_databases():
             capture_output=True,
             check=True,
         )
-        urls.append(result.stdout)
+        return result.stdout
+
+    with ThreadPoolExecutor(max_workers=2) as executor:
+        urls = list(executor.map(get_database_url, range(2)))
+
     assert urls[0] != urls[1]
     assert all(url.startswith("sqlite:////tmp/signupflow-tests.") for url in urls)
 

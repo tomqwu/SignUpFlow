@@ -1732,9 +1732,7 @@ def solution_notify(
             solution_id,
             error="Publish the solution before notifying assignees.",
         )
-    count, delivery_mode = _emit_reminder_notifications(
-        db, person, solution_id, background_tasks
-    )
+    count, delivery_mode = _emit_reminder_notifications(db, person, solution_id, background_tasks)
     return _publish_state(
         request,
         person,

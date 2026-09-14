@@ -1,0 +1,97 @@
+{
+  "schema_version": 1,
+  "default_tiers": [
+    {
+      "id": "unit",
+      "label": "Unit tests",
+      "paths": ["tests/unit"],
+      "required_files": ["tests/unit/test_playbook_coverage.py"],
+      "command": ["poetry", "run", "pytest", "tests/unit/", "-v", "--tb=short"]
+    },
+    {
+      "id": "api",
+      "label": "API and security tests",
+      "paths": ["tests/api", "tests/security"],
+      "required_files": ["tests/api/test_domain_playbooks.py", "tests/security/test_authentication.py"],
+      "command": ["poetry", "run", "pytest", "tests/api/", "tests/security/", "-v", "--tb=short"]
+    },
+    {
+      "id": "cli",
+      "label": "CLI tests",
+      "paths": ["tests/cli"],
+      "required_files": ["tests/cli/test_church_cli.py", "tests/cli/test_sports_cli.py"],
+      "command": ["poetry", "run", "pytest", "tests/cli/", "-v", "--tb=short"]
+    },
+    {
+      "id": "integration",
+      "label": "Integration tests",
+      "paths": ["tests/integration"],
+      "required_files": ["tests/integration/test_tenancy_guard.py"],
+      "command": ["poetry", "run", "pytest", "tests/integration/", "-v", "--tb=short"]
+    },
+    {
+      "id": "web",
+      "label": "Web tests",
+      "paths": ["tests/web"],
+      "required_files": ["tests/web/test_login_flow.py"],
+      "command": ["poetry", "run", "pytest", "tests/web/", "-v", "--tb=short"]
+    },
+    {
+      "id": "contract",
+      "label": "Contract tests",
+      "paths": ["tests/contract"],
+      "required_files": ["tests/contract/test_openapi_snapshot.py"],
+      "command": ["poetry", "run", "pytest", "tests/contract/", "-v", "--tb=short"]
+    },
+    {
+      "id": "e2e",
+      "label": "Playwright browser tests",
+      "paths": ["tests/e2e"],
+      "required_files": ["tests/e2e/test_domain_playbooks.py", "tests/e2e/test_web_recovery.py"],
+      "command": ["poetry", "run", "pytest", "tests/e2e/", "-v", "--tb=short"]
+    }
+  ],
+  "opt_in_tiers": [
+    {
+      "id": "performance",
+      "label": "Owned-target load tests",
+      "paths": ["tests/performance"],
+      "command": ["make", "test-performance"],
+      "default_status": "not_run",
+      "reason": "Requires an explicitly owned loopback test server and separate performance acceptance."
+    },
+    {
+      "id": "postgresql",
+      "label": "Disposable PostgreSQL acceptance",
+      "paths": [],
+      "command": ["make", "test-postgres"],
+      "default_status": "not_run",
+      "reason": "Requires an explicitly provisioned disposable PostgreSQL database."
+    },
+    {
+      "id": "mobile",
+      "label": "Flutter tests",
+      "paths": [],
+      "command": ["make", "test-mobile"],
+      "default_status": "not_run",
+      "reason": "Required only for mobile changes and requires a separately installed Flutter SDK."
+    },
+    {
+      "id": "providers",
+      "label": "External provider acceptance",
+      "paths": [],
+      "command": [],
+      "default_status": "not_run",
+      "reason": "Requires explicit owner authorization and disposable provider accounts; never runs by default."
+    },
+    {
+      "id": "artifact",
+      "label": "Release artifact acceptance",
+      "paths": [],
+      "command": [],
+      "default_status": "not_run",
+      "reason": "Runs only in an explicitly authorized release package with artifact and operator evidence."
+    }
+  ],
+  "support_files": ["tests/test_environment.py"]
+}

@@ -96,7 +96,7 @@ tests/unit/                    # Fast, mocked auth
 tests/api/, tests/security/    # Real HTTP + JWT against isolated test DB
 tests/cli/                     # Subprocess CLI: YAML in, JSON out
 tests/integration/             # Real DB tests
-tests/comprehensive_test_suite.py  # Full API workflow tests
+tests/local_validation_manifest.json  # Default and explicit opt-in test inventory
 tests/setup_test_data.py       # Seed data for test DB
 ```
 
@@ -121,7 +121,7 @@ Pytest markers: `@pytest.mark.unit`, `@pytest.mark.integration`, `@pytest.mark.s
 ## PR rules
 
 1. **Run tests after every code change.** After any edit to code or tests, run `make test-unit` (or `make test-unit-fast` during iteration). The change is not "done" until local tests pass. Run `make test-all` before pushing a PR.
-2. **No CI checks.** Run formatting, lint, type checks, migration validation, all tests and local code review locally. Run `make test-all` for every PR and `make test-mobile` for mobile changes. Record commands, results, limitations and the pushed head SHA.
+2. **No CI checks.** Run formatting, lint, type checks, migration validation, all tests and local code review locally. Run `make test-all` for every PR and `make test-mobile` for mobile changes. Record the local report path, commands, results, limitations and the pushed head SHA.
 3. **Merge only when local validation passes, local code review is completed, successful local test results are recorded with the pushed head SHA, and GitHub reports mergeable** (see next section).
 
 ## Local Code Review

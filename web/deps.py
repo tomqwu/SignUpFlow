@@ -22,7 +22,7 @@ from api.security import verify_token
 SESSION_COOKIE = "signupflow_session"
 
 
-class _RedirectToLogin(Exception):
+class _RedirectToLoginError(Exception):
     """Raised when an unauthenticated browser hits a protected page.
 
     Caught by the web app's exception handler and turned into a 303 to
@@ -68,7 +68,7 @@ def get_session_user(request: Request, db: Session = Depends(get_db)) -> Person:
     (303) when absent or invalid."""
     person = _resolve_person(request, db)
     if person is None:
-        raise _RedirectToLogin()
+        raise _RedirectToLoginError()
     return person
 
 
@@ -79,7 +79,7 @@ def get_session_admin(
     volunteer landing rather than shown a raw 403."""
     roles = cast(list[str] | None, person.roles) or []
     if "admin" not in roles:
-        raise _RedirectToLogin()
+        raise _RedirectToLoginError()
     return person
 
 
