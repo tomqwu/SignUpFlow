@@ -394,6 +394,12 @@ make validate-screenshots            # Reject missing, altered, or stale capture
 See the [current testing and merge guide](docs/TESTING.md) for all tiers,
 dependencies and local review/validation evidence requirements.
 Counts and runtimes belong to dated validation reports, not static overview tables.
+The [web journey matrix](docs/web-journey-matrix.json) inventories every rendered
+route and template and binds each workflow family to named happy-path, error, and
+permission evidence. Unit validation rejects new web surfaces until that inventory
+is updated. Browser recovery tests also cover actionable HTMX validation, preserved
+form input after a network failure, rapid duplicate submission, expired sessions,
+long labels at phone width and zoom, keyboard access, and authoritative SSE refresh.
 
 ### API Test Coverage
 

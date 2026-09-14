@@ -112,6 +112,14 @@ The manifest binds each image to its captured source commit, browser, fixture, a
 scenario, caption, viewport, image hash, and relevant UI hashes; local unit validation
 rejects missing or stale evidence. The former ten README images are explicitly retired
 under `docs/screenshots/legacy/`, and README now shows both complete operating scenarios.
+The maintained README, testing guide, and documentation index now link the machine-checked
+web journey matrix. It covers every current HTML/HTMX route and Jinja template with named
+happy, error, and permission evidence or an explicit product limitation. Shared browser
+recovery now renders validation fragments, preserves user input across transport failure,
+prevents rapid duplicate submission, navigates expired HTMX sessions, and refetches
+solution state after SSE reconnect. Phone-width long-label, zoom, keyboard, JavaScript-error,
+and changed-database recovery cases run in local Chromium; cross-browser and production
+network claims remain outside this evidence.
 Aligned contributor commit/merge rules with the agent baseline. The owner's latest
 clarification supersedes the previous Ollama review setup: code review runs
 locally, no CI checks remain, and Ollama must not review PRs. The later clarification

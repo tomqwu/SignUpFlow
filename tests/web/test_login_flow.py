@@ -28,6 +28,18 @@ def test_protected_page_redirects_when_anonymous(client):
     assert resp.headers["location"] == "/auth/login"
 
 
+def test_expired_htmx_session_redirects_the_whole_browser(client):
+    response = client.post(
+        "/a/people/import",
+        data={"csv_text": "Jamie,jamie@example.com,volunteer"},
+        headers={"HX-Request": "true"},
+    )
+
+    assert response.status_code == 401
+    assert response.headers["HX-Redirect"] == "/auth/login"
+    assert response.text == ""
+
+
 def test_login_bad_credentials_returns_401_with_error(client, db):
     seed_person(db)
     resp = client.post(

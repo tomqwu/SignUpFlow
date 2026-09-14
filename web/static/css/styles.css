@@ -104,6 +104,21 @@ a { color: var(--accent); text-decoration: none; }
 
 .scroll { padding: 4px 16px 110px; flex: 1; }
 
+.request-status {
+  position: sticky;
+  top: 8px;
+  z-index: 20;
+  margin: 8px 16px;
+  padding: 10px 12px;
+  border: 1px solid var(--danger);
+  border-radius: var(--r-card);
+  background: var(--bg-card);
+  color: var(--danger);
+  font-size: 13px;
+  font-weight: 600;
+}
+.request-status[hidden] { display: none; }
+
 /* ─── Mono labels & data ───────────────────────────────────────────── */
 .mono-label {
   font-family: var(--font-mono);
@@ -146,8 +161,9 @@ a { color: var(--accent); text-decoration: none; }
   letter-spacing: -0.01em;
   color: var(--ink-1);
   margin-bottom: 3px;
+  overflow-wrap: anywhere;
 }
-.row .row-sub { font-size: 13px; color: var(--ink-2); }
+.row .row-sub { font-size: 13px; color: var(--ink-2); overflow-wrap: anywhere; }
 .row .chev { color: var(--ink-3); font-size: 18px; margin-left: 4px; }
 
 .group {

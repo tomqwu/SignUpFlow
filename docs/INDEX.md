@@ -19,6 +19,8 @@ Reconciled 2026-09-13 for testing, CI, and merge policy:
 - [Operational playbooks](playbooks/README.md): church and basketball workflows.
 - [Screenshot evidence](screenshots/README.md): reproducible Church/Basketball phone and
   desktop capture, provenance manifest, validation, and retired legacy assets.
+- [Web journey matrix](web-journey-matrix.json): machine-checked ownership and named
+  happy, error, and permission evidence for every HTML route and template.
 - [Local email capture](LOCAL_EMAIL_CAPTURE.md): credential-free invitation,
   recovery, and roster-notification acceptance.
 - [Password reset contract](features/password-reset.md): current routes, token and

@@ -67,6 +67,7 @@
            sse-connect="/a/solution/{{ review.id }}/stream">
         <div hx-get="/a/solution/{{ review.id }}/assignments"
              hx-trigger="sse:message"
+             data-sse-refresh
              hx-target="#solution-assignments"
              hx-swap="outerHTML">
           {% set events = review.events %}
