@@ -84,7 +84,7 @@ Before declaring a change done:
 ## PR rules
 
 1. Run tests after every code change. After any edit to code or tests, run `make test-unit` (or `make test-unit-fast` during iteration). The change is not "done" until local tests pass. Run `make test-all` before pushing a PR.
-2. No CI checks. Run all validation locally: formatting, lint, type checks, migrations, unit/API/CLI/integration/web/contract/Playwright tests, and local code review. Run `make test-all` for every PR and `make test-mobile` for mobile changes. Record commands, outcomes, limitations and the pushed head SHA in the PR.
+2. No CI checks. Run all validation locally: formatting, lint, type checks, migrations, unit/API/CLI/integration/web/contract/Playwright tests, and local code review. Run `make test-all` for every PR and `make test-mobile` for mobile changes. Record the local report path, commands, outcomes, limitations and the pushed head SHA in the PR.
 3. Merge only after successful local validation and review are recorded for the pushed head/base and GitHub reports mergeable. Resolve blocking findings first. Do not fabricate status checks, bypass protections, or treat missing evidence as success.
 4. Require local code review for the current PR head/base and record findings and their resolution in the PR; see `docs/ai-pr-review.md`. Do not configure hosted checks or use Ollama for code review. Missing review is not approval.
 5. Builder agents may merge only when GitHub reports mergeable, local evidence is complete, and any required reviews are satisfied. Do not add required CI checks. Reviewer agents must not merge.

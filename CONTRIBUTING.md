@@ -54,7 +54,7 @@
 | Contract | `tests/contract/` | OpenAPI snapshot |
 | Browser | `tests/e2e/` | Live application with Playwright |
 | Mobile | `mobile/test/` | Flutter unit/widget tests, separate command |
-| Comprehensive | `tests/comprehensive_test_suite.py` | Cross-router workflows |
+| Local manifest | `tests/local_validation_manifest.json` | Complete default and opt-in inventory |
 
 Every public API endpoint or CLI subcommand MUST have:
 

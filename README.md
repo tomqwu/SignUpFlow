@@ -386,6 +386,7 @@ manual release checks.
 
 ```bash
 make test-all                        # All seven Python tiers, including Playwright
+make test-performance               # Opt-in; requires an owned loopback test server
 make test-mobile                     # Flutter unit/widget tests
 make capture-screenshots             # Regenerate asserted Church/Basketball UI evidence
 make validate-screenshots            # Reject missing, altered, or stale captures
@@ -393,6 +394,9 @@ make validate-screenshots            # Reject missing, altered, or stale capture
 
 See the [current testing and merge guide](docs/TESTING.md) for all tiers,
 dependencies and local review/validation evidence requirements.
+`make test-all` validates [the declared suite inventory](tests/local_validation_manifest.json)
+and writes a SHA-bound JSON report plus per-tier JUnit and console logs under
+`test-artifacts/local-validation/`. The report names all opt-in scopes that were not run.
 Counts and runtimes belong to dated validation reports, not static overview tables.
 The [web journey matrix](docs/web-journey-matrix.json) inventories every rendered
 route and template and binds each workflow family to named happy-path, error, and

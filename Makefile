@@ -2,7 +2,7 @@
 
 export SKIP_TEST_DB_FIXTURES ?= false
 
-.PHONY: test-web test-contract test-e2e test-mobile capture-screenshots validate-screenshots
+.PHONY: test-web test-contract test-e2e test-mobile test-performance capture-screenshots validate-screenshots
 FLUTTER ?= flutter
 
 TEST_SERVER_HOST ?= 0.0.0.0
@@ -44,7 +44,7 @@ check-docker:
 DOCKER_TARGETS := up down build rebuild logs logs-api logs-db logs-redis shell db-shell redis-shell \
 	test-docker test-docker-quick test-docker-summary test-docker-file \
 	test-docker-unit test-docker-unit-fast test-docker-integration \
-	test-docker-comprehensive test-docker-all test-docker-coverage \
+	test-docker-coverage \
 	migrate-docker restart-api ps clean-docker clean-docker-all
 
 $(DOCKER_TARGETS): check-docker
@@ -191,32 +191,7 @@ test-all: ensure-test-env
 	@rm -f $(TEST_DB_PATH) $(TEST_DB_PATH)-shm $(TEST_DB_PATH)-wal
 	@echo "🔄 Rebuilding fresh SQLite test database..."
 	@poetry run python -m tests.setup_test_data >/dev/null
-	@echo ""
-	@echo "================================"
-	@echo "   UNIT TESTS"
-	@echo "================================"
-	@poetry run pytest tests/unit/ -v --tb=short
-	@echo ""
-	@echo "================================"
-	@echo "   API TESTS"
-	@echo "================================"
-	@poetry run pytest tests/api/ tests/security/ -v --tb=short
-	@echo ""
-	@echo "================================"
-	@echo "   CLI TESTS"
-	@echo "================================"
-	@poetry run pytest tests/cli/ -v --tb=short
-	@echo ""
-	@echo "================================"
-	@echo "   INTEGRATION TESTS"
-	@echo "================================"
-	@poetry run pytest tests/integration/ -v --tb=short
-	@echo "WEB TESTS"
-	@poetry run pytest tests/web/ -v --tb=short
-	@echo "CONTRACT TESTS"
-	@poetry run pytest tests/contract/ -v --tb=short
-	@echo "PLAYWRIGHT E2E TESTS"
-	@poetry run pytest tests/e2e/ -v --tb=short
+	@poetry run python scripts/run_local_validation.py
 
 test-web: check-poetry
 	@poetry run pytest tests/web/ -v --tb=short
@@ -235,6 +210,9 @@ validate-screenshots: check-poetry
 
 test-mobile:
 	@cd mobile && $(FLUTTER) pub get && $(FLUTTER) test
+
+test-performance: ensure-test-env
+	@poetry run pytest tests/performance/ -v --tb=short
 
 test-coverage: check-poetry
 	@echo "📊 Generating test coverage reports..."
@@ -424,23 +402,12 @@ test-docker-integration:
 	@$(DOCKER_COMPOSE) -f docker-compose.dev.yml exec -T api pytest tests/integration/ -v --tb=short
 
 test-docker-comprehensive:
-	@echo "🚀 Running comprehensive test suite in Docker..."
-	@$(DOCKER_COMPOSE) -f docker-compose.dev.yml exec -T api pytest tests/comprehensive_test_suite.py -v --tb=short
+	@echo "Docker comprehensive validation is retired; run 'make test-all' locally."
+	@exit 2
 
 test-docker-all:
-	@echo "🎯 Running ALL tests in Docker container..."
-	@echo ""
-	@echo "================================"
-	@echo "   UNIT TESTS (Docker)"
-	@echo "================================"
-	@$(DOCKER_COMPOSE) -f docker-compose.dev.yml exec -T api pytest tests/unit/ -v --tb=short
-	@echo ""
-	@echo "================================"
-	@echo "   INTEGRATION TESTS (Docker)"
-	@echo "================================"
-	@$(DOCKER_COMPOSE) -f docker-compose.dev.yml exec -T api pytest tests/integration/ -v --tb=short
-	@echo ""
-	@echo "✅ All Docker tests complete!"
+	@echo "Docker full validation is retired; run 'make test-all' locally."
+	@exit 2
 
 test-docker-coverage:
 	@echo "📊 Running tests with coverage in Docker..."
@@ -513,6 +480,7 @@ help:
 	@echo "  make test-backend     - Run backend Python tests only"
 	@echo "  make test-integration - Run integration tests only"
 	@echo "  make test-all         - Run all Python tiers, including web/contract/Playwright"
+	@echo "  make test-performance - Run load tests against an explicit owned loopback server"
 	@echo "  make test-mobile      - Run Flutter tests locally (requires Flutter SDK)"
 	@echo "  make test-e2e         - Run Playwright browser tests locally"
 	@echo "  make test-web         - Run in-process web tests locally"

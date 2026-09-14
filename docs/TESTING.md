@@ -23,6 +23,7 @@ make test-unit-fast     # Iteration only; excludes slow-marked tests
 make test-unit          # Complete Python unit tier
 make test               # Alias for the complete seven-tier local suite
 make test-all           # All seven Python tiers below, in separate processes
+make test-performance   # Opt-in, owned loopback target only
 make test-mobile        # Flutter unit/widget tests; requires Flutter SDK
 ```
 
@@ -45,6 +46,16 @@ Default Python tests also reject non-loopback socket connections before transpor
 | Contract | `tests/contract/` | OpenAPI snapshot compatibility |
 | Browser | `tests/e2e/` | Playwright with a disposable live application |
 
+[`tests/local_validation_manifest.json`](../tests/local_validation_manifest.json) is the
+executable inventory for these default tiers and the opt-in performance, PostgreSQL,
+mobile, provider, and artifact scopes. The validator rejects a new runnable Python test
+that is not classified, overlapping ownership, missing security coverage, missing Church
+or Basketball playbook coverage, and empty default-tier collection. Each `make test-all`
+invocation writes `report.json`, per-tier JUnit XML, and complete tier logs to a unique
+directory under `test-artifacts/local-validation/`. The report records tool versions,
+the source SHA, whether tracked files were clean, counts, failures, skips, and every
+explicitly unrun scope.
+
 Use `make test-web`, `make test-contract`, or `make test-e2e` for focused runs.
 Do not combine API and browser tiers in one pytest process: their event-loop
 fixtures differ. `make test-all` keeps them separate and stops on failure.
@@ -52,12 +63,12 @@ It does not include Flutter tests or device-dependent mobile integration tests;
 follow [mobile smoke checks](../mobile/SMOKE.md) for the latter. `make test` and
 `make test-all` are the same supported complete Python entry point.
 
-Two historical files are intentionally outside that entry point:
-`tests/test_test_data_setup.py` imports the removed comprehensive suite; and
-`tests/performance/test_load.py` mutates a hard-coded running service. Do not run
-them against a developer or customer environment. Rehabilitate a valuable case
-into an owned tier before adding it; load and PostgreSQL tests remain explicit
-isolated targets.
+The obsolete `tests/test_test_data_setup.py` file was retired because it imported the
+removed comprehensive suite and included assertions that could not fail. The maintained
+`tests/performance/test_load.py` suite is opt-in: set
+`SIGNUPFLOW_PERFORMANCE_BASE_URL` to the `/api/v1` URL of an explicitly owned loopback
+test server before running `make test-performance`. Missing, malformed, or non-loopback
+targets fail before the first HTTP request. PostgreSQL remains a separate isolated target.
 
 The [playbook guide](playbooks/README.md) describes automatic discovery, selectors,
 and external definitions. Church and basketball run in API and browser tiers;
@@ -96,8 +107,8 @@ synthetic success statuses. The Pages workflow only publishes the static site;
 it is not a validation or merge gate.
 
 ```bash
-poetry run black --check api tests
-poetry run ruff check api tests
+poetry run black --check api web tests scripts/run_local_validation.py
+poetry run ruff check api web tests scripts/run_local_validation.py
 poetry run mypy --no-incremental api/utils api/core api/schemas
 poetry run mypy api
 make test-all
@@ -122,7 +133,7 @@ No hosted check, including a static check, is a merge prerequisite.
 ## Before Merge
 
 1. Run `make test-all` on the final source; run `make test-mobile` for mobile changes.
-2. Record commands, pass/skip/failure counts, date, and the pushed head SHA in the PR.
+2. Record the report path, commands, pass/skip/failure counts, date, and pushed head SHA in the PR.
    If tests ran immediately before committing, confirm the committed tree is identical.
 3. Record initial failures and reruns. Do not hide flakes or treat skipped tests as passed.
 4. Require recorded successful local validation and current-head/base local code

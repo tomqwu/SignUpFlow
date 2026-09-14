@@ -21,7 +21,7 @@ templates.env.globals["billing_enabled"] = billing_enabled
 # Combined web router (auth + pages). Imported lazily inside functions
 # elsewhere to avoid circular imports with `templates`.
 from web import auth as _auth  # noqa: E402
-from web.deps import _RedirectToLogin  # noqa: E402
+from web.deps import _RedirectToLoginError  # noqa: E402
 from web.routers import pages as _pages  # noqa: E402
 from web.routers import partials as _partials  # noqa: E402
 
@@ -43,8 +43,8 @@ def mount_web(app: FastAPI) -> None:
     # contract snapshot test (tests/contract/openapi.snapshot.json).
     app.include_router(router, include_in_schema=False)
 
-    @app.exception_handler(_RedirectToLogin)
-    async def _redirect_to_login(request: Request, exc: _RedirectToLogin) -> Response:
+    @app.exception_handler(_RedirectToLoginError)
+    async def _redirect_to_login(request: Request, exc: _RedirectToLoginError) -> Response:
         if request.headers.get("HX-Request", "").lower() == "true":
             return Response(status_code=401, headers={"HX-Redirect": "/auth/login"})
         return RedirectResponse(url="/auth/login", status_code=303)

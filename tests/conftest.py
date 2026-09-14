@@ -256,13 +256,9 @@ def db(setup_test_database):
 
 
 @pytest.fixture(scope="function", autouse=True)
-def reset_database_between_tests(request, setup_test_database):
+def reset_database_between_tests(setup_test_database):
     """Wipe the DB between tests and re-seed the baseline rows."""
     if SKIP_DB_FIXTURES:
-        yield
-        return
-
-    if "comprehensive_test_suite.py" in str(request.path):
         yield
         return
 

@@ -10,6 +10,7 @@ Tests application performance under various load conditions:
 - API throughput
 """
 
+import os
 import statistics
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
@@ -18,7 +19,26 @@ from datetime import datetime, timedelta
 import pytest
 import requests
 
-API_BASE_URL = "http://localhost:8000/api/v1"
+from tests.test_environment import require_loopback_test_connection
+
+API_BASE_URL = os.environ.get("SIGNUPFLOW_PERFORMANCE_BASE_URL", "")
+
+
+@pytest.fixture(scope="session", autouse=True)
+def require_owned_performance_target():
+    """Require an explicit owned loopback target before this mutating suite starts."""
+    if not API_BASE_URL:
+        pytest.exit(
+            "Set SIGNUPFLOW_PERFORMANCE_BASE_URL to an owned loopback test server.",
+            returncode=2,
+        )
+    from urllib.parse import urlparse
+
+    parsed = urlparse(API_BASE_URL)
+    if parsed.scheme not in {"http", "https"} or not parsed.hostname:
+        pytest.exit("SIGNUPFLOW_PERFORMANCE_BASE_URL must be an HTTP(S) URL.", returncode=2)
+    default_port = 443 if parsed.scheme == "https" else 80
+    require_loopback_test_connection((parsed.hostname, parsed.port or default_port))
 
 
 def _bootstrap_admin(org_id: str, org_name: str, email: str, name: str) -> dict[str, str]:

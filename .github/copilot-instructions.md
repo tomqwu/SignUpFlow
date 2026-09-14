@@ -60,7 +60,7 @@ make migrate        # Alembic upgrade head
 ## PR rules
 
 1. Run tests after every code change. After any edit to code or tests, run `make test-unit` (or `make test-unit-fast` during iteration). The change is not "done" until local tests pass. Run `make test-all` before pushing a PR.
-2. No CI checks. Run formatting, lint, type checks, migration validation, all tests and local code review locally. Run `make test-all` for every PR and `make test-mobile` for mobile changes; record commands, outcomes, limitations and the pushed head SHA.
+2. No CI checks. Run formatting, lint, type checks, migration validation, all tests and local code review locally. Run `make test-all` for every PR and `make test-mobile` for mobile changes; record the local report path, commands, outcomes, limitations and the pushed head SHA.
 3. Merge only after successful local validation and review are recorded for the pushed head/base and GitHub reports mergeable. Resolve blocking findings; never fabricate checks, bypass protections, or treat missing evidence as success.
 4. Require local code review for the current PR head/base and record findings and their resolution in the PR; see `docs/ai-pr-review.md`. Do not configure hosted checks or use Ollama for code review. Missing review is not approval.
 5. Builder agents may merge only when GitHub reports mergeable, local evidence is complete, and any required reviews are satisfied. Do not add required CI checks. Reviewer agents must not merge.
