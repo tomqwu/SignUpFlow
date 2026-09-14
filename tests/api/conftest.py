@@ -241,6 +241,7 @@ def seed_team(
 
 def add_timeoff(
     client: TestClient,
+    headers: dict,
     person_id: str,
     start_date: str,
     end_date: str,
@@ -254,6 +255,7 @@ def add_timeoff(
             "end_date": end_date,
             "reason": reason,
         },
+        headers=headers,
     )
     assert resp.status_code == 201, f"add_timeoff failed: {resp.status_code} {resp.text}"
     return resp.json()

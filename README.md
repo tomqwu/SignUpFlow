@@ -378,8 +378,11 @@ Counts and runtimes belong to dated validation reports, not static overview tabl
 ### API Test Coverage
 
 API tests exercise event management, conflicts, availability, profiles, teams,
-scheduling, organization lifecycle, and authorization. Coverage is not a claim
-of complete tenant isolation; see the [remaining playbook boundaries](docs/playbooks/README.md#known-boundaries-and-release-blockers).
+scheduling, organization lifecycle, and authorization. The
+[executable API authorization matrix](docs/API_AUTHORIZATION.md) records every
+mounted operation and the real-JWT tenant regressions for scheduling routes.
+Production acceptance still requires the remaining
+[playbook boundaries](docs/playbooks/README.md#known-boundaries-and-release-blockers).
 
 ### Scenario Tests
 

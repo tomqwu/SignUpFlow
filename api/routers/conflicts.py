@@ -32,6 +32,7 @@ def check_time_overlap(start1: datetime, end1: datetime, start2: datetime, end2:
 @router.post("/check", response_model=ConflictCheckResponse)
 def check_conflicts(
     request: ConflictCheckRequest,
+    current_admin: Person = Depends(get_current_admin_user),
     db: Session = Depends(get_db),
 ):
     """Check for scheduling conflicts before assigning a person to an event.
@@ -44,19 +45,27 @@ def check_conflicts(
     conflicts: list[ConflictType] = []
 
     # Verify person exists
-    person = db.query(Person).filter(Person.id == request.person_id).first()
+    person = (
+        db.query(Person)
+        .filter(Person.id == request.person_id, Person.org_id == current_admin.org_id)
+        .first()
+    )
     if not person:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Person '{request.person_id}' not found",
+            detail="Person not found",
         )
 
     # Verify event exists
-    event = db.query(Event).filter(Event.id == request.event_id).first()
+    event = (
+        db.query(Event)
+        .filter(Event.id == request.event_id, Event.org_id == current_admin.org_id)
+        .first()
+    )
     if not event:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Event '{request.event_id}' not found",
+            detail="Event not found",
         )
 
     # Check 1: Already assigned to this event?
@@ -104,13 +113,25 @@ def check_conflicts(
                 )
 
     # Check 3: Double-booked (assigned to another overlapping event)
-    other_assignments = db.query(Assignment).filter(Assignment.person_id == request.person_id).all()
+    other_assignments = (
+        db.query(Assignment)
+        .join(Event, Event.id == Assignment.event_id)
+        .filter(
+            Assignment.person_id == request.person_id,
+            Event.org_id == current_admin.org_id,
+        )
+        .all()
+    )
 
     for assignment in other_assignments:
         if assignment.event_id == request.event_id:
             continue  # Skip the event we're checking (already handled above)
 
-        other_event = db.query(Event).filter(Event.id == assignment.event_id).first()
+        other_event = (
+            db.query(Event)
+            .filter(Event.id == assignment.event_id, Event.org_id == current_admin.org_id)
+            .first()
+        )
         if other_event and check_time_overlap(
             event.start_time, event.end_time, other_event.start_time, other_event.end_time
         ):
@@ -148,14 +169,22 @@ def _person_conflicts(person: Person, db: Session) -> list[ConflictType]:
     """
     rows: list[ConflictType] = []
 
-    assignments = db.query(Assignment).filter(Assignment.person_id == person.id).all()
+    assignments = (
+        db.query(Assignment)
+        .join(Event, Event.id == Assignment.event_id)
+        .filter(Assignment.person_id == person.id, Event.org_id == person.org_id)
+        .all()
+    )
     if not assignments:
         return rows
 
     # Pre-load events keyed by id
     event_ids = [a.event_id for a in assignments]
     events_by_id: dict[str, Event] = {
-        e.id: e for e in db.query(Event).filter(Event.id.in_(event_ids)).all()
+        e.id: e
+        for e in db.query(Event)
+        .filter(Event.id.in_(event_ids), Event.org_id == person.org_id)
+        .all()
     }
 
     # Time-off overlaps

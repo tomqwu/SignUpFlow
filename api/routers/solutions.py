@@ -1,6 +1,9 @@
 """Solutions router - view and export generated solutions."""
 
 import json
+import math
+from copy import deepcopy
+from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response, status
 from fastapi.responses import StreamingResponse
@@ -17,7 +20,17 @@ from api.core.models import (
 )
 from api.database import get_db
 from api.dependencies import get_current_admin_user, verify_org_member
-from api.models import Assignment, AuditAction, AuditLog, Event, Organization, Person, Solution
+from api.models import (
+    Assignment,
+    AuditAction,
+    AuditLog,
+    Event,
+    Organization,
+    Person,
+    Solution,
+    Team,
+    TeamMember,
+)
 from api.schemas.common import PaginationParams, get_pagination_params
 from api.schemas.solver import (
     AssignmentChange,
@@ -41,17 +54,85 @@ from api.utils.pdf_export import generate_schedule_pdf
 router = APIRouter(prefix="/solutions", tags=["solutions"])
 
 
+def _get_admin_solution(solution_id: int, admin: Person, db: Session) -> Solution:
+    solution = (
+        db.query(Solution)
+        .filter(Solution.id == solution_id, Solution.org_id == admin.org_id)
+        .first()
+    )
+    if solution is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Solution not found")
+    return solution
+
+
+def _solution_assignment_count(solution: Solution, db: Session) -> int:
+    return (
+        db.query(Assignment)
+        .join(Event, Event.id == Assignment.event_id)
+        .join(Person, Person.id == Assignment.person_id)
+        .filter(
+            Assignment.solution_id == solution.id,
+            Event.org_id == solution.org_id,
+            Person.org_id == solution.org_id,
+        )
+        .count()
+    )
+
+
+def _scoped_fairness(
+    metrics: dict[str, Any], allowed_person_ids: set[str]
+) -> tuple[dict[str, int], float]:
+    fairness = metrics.get("fairness", {})
+    raw_counts = fairness.get("per_person_counts", {}) if isinstance(fairness, dict) else {}
+    scoped_counts = {
+        str(person_id): int(count)
+        for person_id, count in raw_counts.items()
+        if str(person_id) in allowed_person_ids
+    }
+    if len(scoped_counts) == len(raw_counts):
+        return scoped_counts, float(fairness.get("stdev", 0.0))
+    values = list(scoped_counts.values())
+    if not values:
+        return scoped_counts, 0.0
+    mean = sum(values) / len(values)
+    variance = sum((count - mean) ** 2 for count in values) / len(values)
+    return scoped_counts, math.sqrt(variance)
+
+
+def _solution_metrics_for_tenant(solution: Solution, db: Session) -> dict[str, Any]:
+    metrics: dict[str, Any] = (
+        deepcopy(solution.metrics) if isinstance(solution.metrics, dict) else {}
+    )
+    fairness = metrics.get("fairness")
+    if not isinstance(fairness, dict):
+        return metrics
+    allowed_person_ids = {
+        row[0] for row in db.query(Person.id).filter(Person.org_id == solution.org_id).all()
+    }
+    counts, stdev = _scoped_fairness(metrics, allowed_person_ids)
+    fairness["per_person_counts"] = counts
+    fairness["stdev"] = stdev
+    return metrics
+
+
+def _solution_response(solution: Solution, db: Session) -> SolutionResponse:
+    response = SolutionResponse.model_validate(solution)
+    response.metrics = _solution_metrics_for_tenant(solution, db)
+    response.assignment_count = _solution_assignment_count(solution, db)
+    return response
+
+
 @router.get("/", response_model=SolutionList)
 def list_solutions(
     org_id: str | None = Query(None, description="Filter by organization ID"),
     pagination: PaginationParams = Depends(get_pagination_params),
+    current_admin: Person = Depends(get_current_admin_user),
     db: Session = Depends(get_db),
 ):
-    """List solutions with optional filters."""
-    query = db.query(Solution)
-
-    if org_id:
-        query = query.filter(Solution.org_id == org_id)
+    """List solutions inside the authenticated admin's tenant."""
+    effective_org_id = org_id or current_admin.org_id
+    verify_org_member(current_admin, effective_org_id)
+    query = db.query(Solution).filter(Solution.org_id == effective_org_id)
 
     query = query.order_by(Solution.created_at.desc())
     solutions = query.offset(pagination.offset).limit(pagination.limit).all()
@@ -60,10 +141,7 @@ def list_solutions(
     # Add assignment counts
     solution_responses = []
     for sol in solutions:
-        assignment_count = db.query(Assignment).filter(Assignment.solution_id == sol.id).count()
-        response = SolutionResponse.model_validate(sol)
-        response.assignment_count = assignment_count
-        solution_responses.append(response)
+        solution_responses.append(_solution_response(sol, db))
 
     return {
         "items": solution_responses,
@@ -74,19 +152,15 @@ def list_solutions(
 
 
 @router.get("/{solution_id}", response_model=SolutionResponse)
-def get_solution(solution_id: int, db: Session = Depends(get_db)):
-    """Get solution by ID."""
-    solution = db.query(Solution).filter(Solution.id == solution_id).first()
-    if not solution:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Solution {solution_id} not found",
-        )
+def get_solution(
+    solution_id: int,
+    current_admin: Person = Depends(get_current_admin_user),
+    db: Session = Depends(get_db),
+):
+    """Get a solution inside the authenticated admin's tenant."""
+    solution = _get_admin_solution(solution_id, current_admin, db)
 
-    assignment_count = db.query(Assignment).filter(Assignment.solution_id == solution.id).count()
-    response = SolutionResponse.model_validate(solution)
-    response.assignment_count = assignment_count
-    return response
+    return _solution_response(solution, db)
 
 
 @router.get(
@@ -162,28 +236,27 @@ async def stream_solution_assignments(
 
 
 @router.get("/{solution_id}/assignments", response_model=SolutionAssignmentsResponse)
-def get_solution_assignments(solution_id: int, db: Session = Depends(get_db)):
+def get_solution_assignments(
+    solution_id: int,
+    current_admin: Person = Depends(get_current_admin_user),
+    db: Session = Depends(get_db),
+):
     """Get all assignments for a solution, grouped by event.
 
     Mobile Solution Review renders an event-grouped list, so we group server-side
     rather than forcing the client to do O(n²) regrouping every render.
     """
-    solution = db.query(Solution).filter(Solution.id == solution_id).first()
-    if not solution:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Solution {solution_id} not found",
-        )
+    solution = _get_admin_solution(solution_id, current_admin, db)
 
     # Tenancy-guard requires an org_id filter on any cross-table SELECT;
     # all three tables carry org_id and a single solution belongs to one org.
     rows = (
         db.query(Assignment, Event, Person)
-        .outerjoin(Event, Event.id == Assignment.event_id)
-        .outerjoin(Person, Person.id == Assignment.person_id)
+        .join(Event, Event.id == Assignment.event_id)
+        .join(Person, Person.id == Assignment.person_id)
         .filter(Assignment.solution_id == solution_id)
-        .filter((Event.org_id == solution.org_id) | (Event.org_id.is_(None)))
-        .filter((Person.org_id == solution.org_id) | (Person.org_id.is_(None)))
+        .filter(Event.org_id == solution.org_id)
+        .filter(Person.org_id == solution.org_id)
         .order_by(Event.start_time.asc().nullslast(), Event.id.asc())
         .all()
     )
@@ -219,7 +292,8 @@ def get_solution_assignments(solution_id: int, db: Session = Depends(get_db)):
 
 @router.post("/", response_model=SolutionResponse, status_code=status.HTTP_201_CREATED)
 def create_manual_solution(
-    solution_data: dict,
+    solution_data: dict[str, Any],
+    current_admin: Person = Depends(get_current_admin_user),
     db: Session = Depends(get_db),
 ):
     """
@@ -230,6 +304,8 @@ def create_manual_solution(
     org_id = solution_data.get("org_id")
     if not org_id:
         raise HTTPException(status_code=400, detail="org_id is required")
+
+    verify_org_member(current_admin, org_id)
 
     org = db.query(Organization).filter(Organization.id == org_id).first()
     if not org:
@@ -249,27 +325,70 @@ def create_manual_solution(
     db.commit()
     db.refresh(new_solution)
 
-    response = SolutionResponse.model_validate(new_solution)
-    response.assignment_count = 0
-    return response
+    return _solution_response(new_solution, db)
 
 
 @router.post("/{solution_id}/export")
 def export_solution(
     solution_id: int,
     export_format: ExportFormat,
+    current_admin: Person = Depends(get_current_admin_user),
     db: Session = Depends(get_db),
 ):
-    """Export solution in various formats (CSV, ICS, JSON)."""
-    solution = db.query(Solution).filter(Solution.id == solution_id).first()
-    if not solution:
+    """Export a tenant-scoped solution in JSON, CSV, or PDF."""
+    solution = _get_admin_solution(solution_id, current_admin, db)
+
+    if export_format.format not in {"json", "csv", "ics", "pdf"}:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Solution {solution_id} not found",
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Unknown format: {export_format.format}. Must be json, csv, ics, or pdf",
         )
 
-    # Load assignments
-    assignments_db = db.query(Assignment).filter(Assignment.solution_id == solution_id).all()
+    if export_format.scope == "org":
+        allowed_person_ids = {
+            row[0] for row in db.query(Person.id).filter(Person.org_id == solution.org_id).all()
+        }
+    elif export_format.scope.startswith("person:"):
+        person_id = export_format.scope.split(":", 1)[1]
+        person = (
+            db.query(Person)
+            .filter(Person.id == person_id, Person.org_id == solution.org_id)
+            .first()
+        )
+        if person is None:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Person not found")
+        allowed_person_ids = {person.id}
+    elif export_format.scope.startswith("team:"):
+        team_id = export_format.scope.split(":", 1)[1]
+        team = db.query(Team).filter(Team.id == team_id, Team.org_id == solution.org_id).first()
+        if team is None:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Team not found")
+        allowed_person_ids = {
+            row[0]
+            for row in db.query(TeamMember.person_id)
+            .join(Person, Person.id == TeamMember.person_id)
+            .filter(TeamMember.team_id == team.id, Person.org_id == solution.org_id)
+            .all()
+        }
+    else:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid scope. Must be org, person:{id}, or team:{id}",
+        )
+
+    # Scope child rows before constructing any serializer input.
+    assignments_db = (
+        db.query(Assignment)
+        .join(Event, Event.id == Assignment.event_id)
+        .join(Person, Person.id == Assignment.person_id)
+        .filter(
+            Assignment.solution_id == solution_id,
+            Event.org_id == solution.org_id,
+            Person.org_id == solution.org_id,
+            Assignment.person_id.in_(allowed_person_ids),
+        )
+        .all()
+    )
     if not assignments_db:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -277,16 +396,21 @@ def export_solution(
         )
 
     # Group assignments by event
-    event_assignments = {}
+    event_assignments: dict[str, list[Assignment]] = {}
     for a in assignments_db:
-        if a.event_id not in event_assignments:
-            event_assignments[a.event_id] = []
-        event_assignments[a.event_id].append(a.person_id)
+        event_assignments.setdefault(a.event_id, []).append(a)
 
     # Load events and people
     event_ids = list(event_assignments.keys())
-    events_db = db.query(Event).filter(Event.id.in_(event_ids)).all()
-    people_db = db.query(Person).filter(Person.org_id == solution.org_id).all()
+    events_db = (
+        db.query(Event).filter(Event.id.in_(event_ids), Event.org_id == solution.org_id).all()
+    )
+    used_person_ids = {row.person_id for rows in event_assignments.values() for row in rows}
+    people_db = (
+        db.query(Person)
+        .filter(Person.org_id == solution.org_id, Person.id.in_(used_person_ids))
+        .all()
+    )
 
     # Convert to core models
     events = [
@@ -308,9 +432,16 @@ def export_solution(
     ]
 
     assignments = [
-        AssignmentModel(event_id=event_id, assignees=person_ids)
-        for event_id, person_ids in event_assignments.items()
+        AssignmentModel(
+            event_id=event_id,
+            assignees=[row.person_id for row in rows],
+            assigned_roles={row.person_id: row.role for row in rows if row.role is not None},
+        )
+        for event_id, rows in event_assignments.items()
     ]
+
+    metrics_data: dict[str, Any] = solution.metrics if isinstance(solution.metrics, dict) else {}
+    scoped_counts, scoped_stdev = _scoped_fairness(metrics_data, allowed_person_ids)
 
     # Create a minimal solution object for export
     from datetime import date
@@ -341,29 +472,13 @@ def export_solution(
             health_score=solution.health_score,
             solve_ms=solution.solve_ms,
             fairness=FairnessMetrics(
-                stdev=(
-                    solution.metrics.get("fairness", {}).get("stdev", 0.0)
-                    if solution.metrics
-                    else 0.0
-                ),
-                per_person_counts=(
-                    solution.metrics.get("fairness", {}).get("per_person_counts", {})
-                    if solution.metrics
-                    else {}
-                ),
+                stdev=scoped_stdev,
+                per_person_counts=scoped_counts,
             ),
             stability=StabilityMetrics(moves_from_published=0, affected_persons=0),
         ),
         violations=Violations(hard=[], soft=[]),
     )
-
-    # Apply scope filtering if needed
-    if export_format.scope.startswith("person:"):
-        person_id = export_format.scope.split(":", 1)[1]
-        assignments = [a for a in assignments if person_id in a.assignees]
-    elif export_format.scope.startswith("team:"):
-        # Would need team member lookup
-        pass
 
     # Generate export
     if export_format.format == "json":
@@ -462,12 +577,6 @@ def export_solution(
             headers={"Content-Disposition": f"attachment; filename=schedule_{solution_id}.pdf"},
         )
 
-    else:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Unknown format: {export_format.format}. Must be json, csv, ics, or pdf",
-        )
-
 
 @router.post("/{solution_id}/publish", response_model=SolutionResponse)
 def publish_solution(
@@ -477,13 +586,7 @@ def publish_solution(
     db: Session = Depends(get_db),
 ):
     """Publish a solution (admin only). Unpublishes any prior published in the same org."""
-    solution = db.query(Solution).filter(Solution.id == solution_id).first()
-    if not solution:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Solution {solution_id} not found",
-        )
-    verify_org_member(current_admin, solution.org_id)
+    solution = _get_admin_solution(solution_id, current_admin, db)
 
     # Unpublish any prior in the same org.
     prior = (
@@ -518,10 +621,7 @@ def publish_solution(
         user_agent=http_request.headers.get("user-agent"),
     )
 
-    assignment_count = db.query(Assignment).filter(Assignment.solution_id == solution.id).count()
-    response = SolutionResponse.model_validate(solution)
-    response.assignment_count = assignment_count
-    return response
+    return _solution_response(solution, db)
 
 
 @router.post("/{solution_id}/unpublish", response_model=SolutionResponse)
@@ -532,13 +632,7 @@ def unpublish_solution(
     db: Session = Depends(get_db),
 ):
     """Unpublish a solution (admin only)."""
-    solution = db.query(Solution).filter(Solution.id == solution_id).first()
-    if not solution:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Solution {solution_id} not found",
-        )
-    verify_org_member(current_admin, solution.org_id)
+    solution = _get_admin_solution(solution_id, current_admin, db)
 
     solution.is_published = False
     solution.published_at = None
@@ -557,10 +651,7 @@ def unpublish_solution(
         user_agent=http_request.headers.get("user-agent"),
     )
 
-    assignment_count = db.query(Assignment).filter(Assignment.solution_id == solution.id).count()
-    response = SolutionResponse.model_validate(solution)
-    response.assignment_count = assignment_count
-    return response
+    return _solution_response(solution, db)
 
 
 @router.get("/{solution_a_id}/compare/{solution_b_id}", response_model=SolutionDiffResponse)
@@ -571,23 +662,31 @@ def compare_solutions(
     db: Session = Depends(get_db),
 ):
     """Diff two solutions (admin only). Both must belong to the same org as the caller."""
-    sol_a = db.query(Solution).filter(Solution.id == solution_a_id).first()
-    if not sol_a:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Solution {solution_a_id} not found",
-        )
-    sol_b = db.query(Solution).filter(Solution.id == solution_b_id).first()
-    if not sol_b:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Solution {solution_b_id} not found",
-        )
-    verify_org_member(current_admin, sol_a.org_id)
-    verify_org_member(current_admin, sol_b.org_id)
+    sol_a = _get_admin_solution(solution_a_id, current_admin, db)
+    sol_b = _get_admin_solution(solution_b_id, current_admin, db)
 
-    a_rows = db.query(Assignment).filter(Assignment.solution_id == sol_a.id).all()
-    b_rows = db.query(Assignment).filter(Assignment.solution_id == sol_b.id).all()
+    a_rows = (
+        db.query(Assignment)
+        .join(Event, Event.id == Assignment.event_id)
+        .join(Person, Person.id == Assignment.person_id)
+        .filter(
+            Assignment.solution_id == sol_a.id,
+            Event.org_id == sol_a.org_id,
+            Person.org_id == sol_a.org_id,
+        )
+        .all()
+    )
+    b_rows = (
+        db.query(Assignment)
+        .join(Event, Event.id == Assignment.event_id)
+        .join(Person, Person.id == Assignment.person_id)
+        .filter(
+            Assignment.solution_id == sol_b.id,
+            Event.org_id == sol_b.org_id,
+            Person.org_id == sol_b.org_id,
+        )
+        .all()
+    )
 
     a_keys = {(r.event_id, r.person_id, r.role) for r in a_rows}
     b_keys = {(r.event_id, r.person_id, r.role) for r in b_rows}
@@ -622,13 +721,7 @@ def rollback_solution(
     the same org. The target must have been published at some point before
     (i.e. an audit row recording its publish/rollback exists); otherwise 400.
     """
-    solution = db.query(Solution).filter(Solution.id == solution_id).first()
-    if not solution:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Solution {solution_id} not found",
-        )
-    verify_org_member(current_admin, solution.org_id)
+    solution = _get_admin_solution(solution_id, current_admin, db)
 
     # Eligibility: existing publish_solution nulls published_at on the prior
     # when it replaces, so published_at is unreliable. Use the audit trail.
@@ -636,6 +729,7 @@ def rollback_solution(
         db.query(AuditLog)
         .filter(
             AuditLog.action.in_([AuditAction.SOLUTION_PUBLISHED, AuditAction.SOLUTION_ROLLED_BACK]),
+            AuditLog.organization_id == solution.org_id,
             AuditLog.resource_id == str(solution.id),
         )
         .count()
@@ -679,10 +773,7 @@ def rollback_solution(
         user_agent=http_request.headers.get("user-agent"),
     )
 
-    assignment_count = db.query(Assignment).filter(Assignment.solution_id == solution.id).count()
-    response = SolutionResponse.model_validate(solution)
-    response.assignment_count = assignment_count
-    return response
+    return _solution_response(solution, db)
 
 
 @router.get("/{solution_id}/stats", response_model=SolutionStatsResponse)
@@ -692,15 +783,9 @@ def get_solution_stats(
     db: Session = Depends(get_db),
 ):
     """Stats endpoint (admin only): fairness histogram + stability + workload distribution."""
-    solution = db.query(Solution).filter(Solution.id == solution_id).first()
-    if not solution:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Solution {solution_id} not found",
-        )
-    verify_org_member(current_admin, solution.org_id)
+    solution = _get_admin_solution(solution_id, current_admin, db)
 
-    metrics = solution.metrics or {}
+    metrics = _solution_metrics_for_tenant(solution, db)
     fairness_raw = metrics.get("fairness", {})
     stability_raw = metrics.get("stability", {})
 
@@ -753,14 +838,13 @@ def get_solution_stats(
 
 
 @router.delete("/{solution_id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_solution(solution_id: int, db: Session = Depends(get_db)):
+def delete_solution(
+    solution_id: int,
+    current_admin: Person = Depends(get_current_admin_user),
+    db: Session = Depends(get_db),
+):
     """Delete solution and all assignments."""
-    solution = db.query(Solution).filter(Solution.id == solution_id).first()
-    if not solution:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Solution {solution_id} not found",
-        )
+    solution = _get_admin_solution(solution_id, current_admin, db)
 
     db.delete(solution)
     db.commit()

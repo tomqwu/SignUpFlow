@@ -43,18 +43,29 @@ def is_person_blocked_on_date(db: Session, person_id: str, target_date: date) ->
     return blocked is not None
 
 
-def get_assigned_person_ids(db: Session, event_id: str) -> set[str]:
+def get_assigned_person_ids(db: Session, event_id: str, org_id: str) -> set[str]:
     """
     Get set of person IDs assigned to an event.
 
     Args:
         db: Database session
         event_id: Event ID to check
+        org_id: Organization that must own both the event and person
 
     Returns:
         Set of person IDs currently assigned to this event
     """
-    assignments = db.query(Assignment).filter(Assignment.event_id == event_id).all()
+    assignments = (
+        db.query(Assignment)
+        .join(Event, Event.id == Assignment.event_id)
+        .join(Person, Person.id == Assignment.person_id)
+        .filter(
+            Assignment.event_id == event_id,
+            Event.org_id == org_id,
+            Person.org_id == org_id,
+        )
+        .all()
+    )
 
     return {str(assignment.person_id) for assignment in assignments}
 
@@ -143,7 +154,9 @@ def validate_time_range(start_time: datetime, end_time: datetime) -> tuple[bool,
     return True, None
 
 
-def get_blocked_assigned_people(db: Session, event_id: str, event_date: date) -> list[str]:
+def get_blocked_assigned_people(
+    db: Session, event_id: str, event_date: date, org_id: str
+) -> list[str]:
     """
     Get names of people assigned to event who are blocked on the event date.
 
@@ -151,17 +164,26 @@ def get_blocked_assigned_people(db: Session, event_id: str, event_date: date) ->
         db: Database session
         event_id: Event ID to check
         event_date: Date of the event
+        org_id: Organization that must own both the event and person
 
     Returns:
         List of person names who are both assigned and blocked
     """
-    assignments = db.query(Assignment).filter(Assignment.event_id == event_id).all()
+    rows = (
+        db.query(Assignment, Person)
+        .join(Event, Event.id == Assignment.event_id)
+        .join(Person, Person.id == Assignment.person_id)
+        .filter(
+            Assignment.event_id == event_id,
+            Event.org_id == org_id,
+            Person.org_id == org_id,
+        )
+        .all()
+    )
 
     blocked_names: list[str] = []
-    for assignment in assignments:
+    for assignment, person in rows:
         if is_person_blocked_on_date(db, str(assignment.person_id), event_date):
-            person = db.query(Person).filter(Person.id == assignment.person_id).first()
-            if person:
-                blocked_names.append(str(person.name))
+            blocked_names.append(str(person.name))
 
     return blocked_names

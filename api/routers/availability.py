@@ -4,6 +4,11 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from api.database import get_db
+from api.dependencies import (
+    get_current_user,
+    get_person_in_actor_org,
+    verify_self_or_admin,
+)
 from api.models import (
     Availability,
     AvailabilityException,
@@ -21,16 +26,21 @@ from api.schemas.availability import (
 router = APIRouter(prefix="/availability", tags=["availability"])
 
 
+def _authorize_person(person_id: str, current_user: Person, db: Session) -> Person:
+    person = get_person_in_actor_org(person_id, current_user, db)
+    verify_self_or_admin(current_user, person)
+    return person
+
+
 @router.post("/", status_code=status.HTTP_201_CREATED)
-def create_availability(person_id: str, db: Session = Depends(get_db)):
+def create_availability(
+    person_id: str,
+    current_user: Person = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
     """Create availability record for a person."""
     # Verify person exists
-    person = db.query(Person).filter(Person.id == person_id).first()
-    if not person:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Person '{person_id}' not found",
-        )
+    _authorize_person(person_id, current_user, db)
 
     # Check if availability already exists
     existing = db.query(Availability).filter(Availability.person_id == person_id).first()
@@ -51,8 +61,14 @@ def create_availability(person_id: str, db: Session = Depends(get_db)):
 
 
 @router.get("/{person_id}/timeoff")
-def get_timeoff(person_id: str, db: Session = Depends(get_db)):
+def get_timeoff(
+    person_id: str,
+    current_user: Person = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
     """Get all time-off periods for a person."""
+    _authorize_person(person_id, current_user, db)
+
     # Get or create availability
     availability = db.query(Availability).filter(Availability.person_id == person_id).first()
 
@@ -82,21 +98,17 @@ def get_timeoff(person_id: str, db: Session = Depends(get_db)):
 def add_timeoff(
     person_id: str,
     timeoff_data: TimeOffCreate,
+    current_user: Person = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
     """Add a time-off period for a person."""
+    _authorize_person(person_id, current_user, db)
+
     # Get or create availability
     availability = db.query(Availability).filter(Availability.person_id == person_id).first()
 
     if not availability:
         # Create availability if it doesn't exist
-        person = db.query(Person).filter(Person.id == person_id).first()
-        if not person:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"Person '{person_id}' not found",
-            )
-
         availability = Availability(person_id=person_id, rrule=None, extra_data={})
         db.add(availability)
         db.flush()
@@ -150,9 +162,12 @@ def update_timeoff(
     person_id: str,
     timeoff_id: int,
     timeoff_data: TimeOffCreate,
+    current_user: Person = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
     """Update a time-off period."""
+    _authorize_person(person_id, current_user, db)
+
     # Get availability
     availability = db.query(Availability).filter(Availability.person_id == person_id).first()
 
@@ -222,8 +237,13 @@ def _get_or_create_availability(person_id: str, db: Session) -> Availability:
     "/{person_id}/exceptions",
     response_model=list[AvailabilityExceptionResponse],
 )
-def list_exceptions(person_id: str, db: Session = Depends(get_db)):
+def list_exceptions(
+    person_id: str,
+    current_user: Person = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
     """List single-date availability exceptions for a person."""
+    _authorize_person(person_id, current_user, db)
     availability = db.query(Availability).filter(Availability.person_id == person_id).first()
     if availability is None:
         return []
@@ -244,9 +264,11 @@ def list_exceptions(person_id: str, db: Session = Depends(get_db)):
 def add_exception(
     person_id: str,
     payload: AvailabilityExceptionCreate,
+    current_user: Person = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
     """Add a single-date exception. Idempotent on (availability_id, date)."""
+    _authorize_person(person_id, current_user, db)
     availability = _get_or_create_availability(person_id, db)
     existing = (
         db.query(AvailabilityException)
@@ -272,8 +294,14 @@ def add_exception(
     "/{person_id}/exceptions/{exception_id}",
     status_code=status.HTTP_204_NO_CONTENT,
 )
-def delete_exception(person_id: str, exception_id: int, db: Session = Depends(get_db)):
+def delete_exception(
+    person_id: str,
+    exception_id: int,
+    current_user: Person = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
     """Delete a single-date exception by id."""
+    _authorize_person(person_id, current_user, db)
     availability = db.query(Availability).filter(Availability.person_id == person_id).first()
     if availability is None:
         raise HTTPException(
@@ -299,12 +327,17 @@ def delete_exception(person_id: str, exception_id: int, db: Session = Depends(ge
 
 
 @router.get("/{person_id}/rrule", response_model=AvailabilityRruleResponse)
-def get_rrule(person_id: str, db: Session = Depends(get_db)):
+def get_rrule(
+    person_id: str,
+    current_user: Person = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
     """Return the single recurring-availability rrule for a person.
 
     Returns ``rrule: null`` when the person has no Availability row or has
     not set an rrule. Mobile renders this as "no recurring rule yet."
     """
+    _authorize_person(person_id, current_user, db)
     availability = db.query(Availability).filter(Availability.person_id == person_id).first()
     return AvailabilityRruleResponse(rrule=availability.rrule if availability else None)
 
@@ -313,9 +346,11 @@ def get_rrule(person_id: str, db: Session = Depends(get_db)):
 def set_rrule(
     person_id: str,
     payload: AvailabilityRruleUpdate,
+    current_user: Person = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
     """Set (or replace) the rrule string for a person."""
+    _authorize_person(person_id, current_user, db)
     availability = _get_or_create_availability(person_id, db)
     availability.rrule = payload.rrule
     db.commit()
@@ -324,12 +359,17 @@ def set_rrule(
 
 
 @router.delete("/{person_id}/rrule", status_code=status.HTTP_204_NO_CONTENT)
-def clear_rrule(person_id: str, db: Session = Depends(get_db)):
+def clear_rrule(
+    person_id: str,
+    current_user: Person = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
     """Clear the rrule string for a person.
 
     Idempotent — succeeds with 204 even if the row never had an rrule, or
     even if the Availability row doesn't exist yet.
     """
+    _authorize_person(person_id, current_user, db)
     availability = db.query(Availability).filter(Availability.person_id == person_id).first()
     if availability is not None and availability.rrule is not None:
         availability.rrule = None
@@ -338,8 +378,15 @@ def clear_rrule(person_id: str, db: Session = Depends(get_db)):
 
 
 @router.delete("/{person_id}/timeoff/{timeoff_id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_timeoff(person_id: str, timeoff_id: int, db: Session = Depends(get_db)):
+def delete_timeoff(
+    person_id: str,
+    timeoff_id: int,
+    current_user: Person = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
     """Delete a time-off period."""
+    _authorize_person(person_id, current_user, db)
+
     # Get availability
     availability = db.query(Availability).filter(Availability.person_id == person_id).first()
 

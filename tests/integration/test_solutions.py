@@ -133,13 +133,13 @@ class TestCreateAndRead:
         )
         assert resp.status_code == 400
 
-    def test_create_unknown_org_404(self, solutions_org):
+    def test_create_unknown_org_is_forbidden(self, solutions_org):
         data = solutions_org
         resp = data["admin_client"].post(
             f"{data['api_base']}/solutions/",
             json={"org_id": f"ghost_{int(time.time())}"},
         )
-        assert resp.status_code == 404
+        assert resp.status_code == 403
 
     def test_list_envelope_and_org_filter(self, solutions_org):
         data = solutions_org
@@ -209,7 +209,7 @@ class TestPublishUnpublish:
         sol = _create_solution(data["admin_client"], data["api_base"], data["org_id"])
 
         resp = data["stranger_client"].post(f"{data['api_base']}/solutions/{sol['id']}/publish")
-        assert resp.status_code == 403
+        assert resp.status_code == 404
 
     def test_publish_missing_solution_404(self, solutions_org):
         data = solutions_org

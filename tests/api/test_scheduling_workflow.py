@@ -56,7 +56,7 @@ class TestSchedulingWorkflow:
             event_ids.append(eid)
 
         # Verify events created
-        resp = client.get(f"/api/v1/events/?org_id={self.ORG}")
+        resp = client.get(f"/api/v1/events/?org_id={self.ORG}", headers=hdrs)
         assert resp.status_code == 200
         assert resp.json()["total"] == 3
 
@@ -93,6 +93,7 @@ class TestSchedulingWorkflow:
         for vol in volunteers[:2]:
             add_timeoff(
                 client,
+                vol["headers"],
                 vol["person_id"],
                 first_event_date,
                 first_event_date,
@@ -101,7 +102,9 @@ class TestSchedulingWorkflow:
 
         # Verify time-off recorded
         for vol in volunteers[:2]:
-            resp = client.get(f"/api/v1/availability/{vol['person_id']}/timeoff")
+            resp = client.get(
+                f"/api/v1/availability/{vol['person_id']}/timeoff", headers=vol["headers"]
+            )
             assert resp.status_code == 200
             assert resp.json()["total"] == 1
 
@@ -175,7 +178,7 @@ class TestSchedulingWorkflow:
         assert resp.status_code == 200
 
         # Verify assignment shows up
-        resp = client.get(f"/api/v1/events/assignments/all?org_id={self.ORG}")
+        resp = client.get(f"/api/v1/events/assignments/all?org_id={self.ORG}", headers=hdrs)
         assert resp.status_code == 200
         assignments = resp.json()["assignments"]
         assert any(a["person_id"] == vol["person_id"] for a in assignments)
@@ -239,7 +242,7 @@ class TestSchedulingWorkflow:
         # Block the "away" volunteer for a window that covers event_start.
         timeoff_start = (event_start - timedelta(days=1)).date().isoformat()
         timeoff_end = (event_start + timedelta(days=1)).date().isoformat()
-        add_timeoff(client, away["person_id"], timeoff_start, timeoff_end, reason="Vacation")
+        add_timeoff(client, hdrs, away["person_id"], timeoff_start, timeoff_end, reason="Vacation")
 
         # Run solver across a wide enough window.
         from_date = (event_start - timedelta(days=2)).date().isoformat()

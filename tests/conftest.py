@@ -26,6 +26,7 @@ if "SIGNUPFLOW_TEST_DATABASE_URL" not in os.environ:
 sanitize_test_process_environment(os.environ["SIGNUPFLOW_TEST_DATABASE_URL"])
 
 import pytest
+from fastapi import Request
 from fastapi.testclient import TestClient
 
 import api.database
@@ -71,10 +72,15 @@ def mock_authentication(request):
 
     from api.dependencies import get_current_admin_user, get_current_user
 
-    async def override_get_admin_user():
+    def actor_org_id(request: Request | None) -> str:
+        if request is None:
+            return "test_org"
+        return request.headers.get("X-Test-Actor-Org", "test_org")
+
+    async def override_get_admin_user(request: Request = None):
         return Person(
             id="test_admin",
-            org_id="test_org",
+            org_id=actor_org_id(request),
             name="Test Admin",
             email="admin@test.com",
             roles=["admin"],
@@ -83,10 +89,10 @@ def mock_authentication(request):
             status="active",
         )
 
-    async def override_get_user():
+    async def override_get_user(request: Request = None):
         return Person(
             id="test_admin",
-            org_id="test_org",
+            org_id=actor_org_id(request),
             name="Test Admin",
             email="admin@test.com",
             roles=["admin"],

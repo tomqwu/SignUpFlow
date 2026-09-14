@@ -1,5 +1,10 @@
 # SignUpFlow Security Guide
 
+> Historical security guide. Its production-ready and compliance statements are
+> not current certification. Use [API_AUTHORIZATION.md](API_AUTHORIZATION.md) for
+> the maintained route policy and [ROADMAP.md](ROADMAP.md) for unresolved release
+> evidence.
+
 **Last Updated:** 2024-10-24
 **Version:** 1.0.0
 **Status:** Production-Ready

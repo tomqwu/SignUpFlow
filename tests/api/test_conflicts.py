@@ -26,10 +26,11 @@ def _setup_org_and_event(client, suffix: str):
 @pytest.mark.no_mock_auth
 class TestNoConflicts:
     def test_clean_assignment_has_no_conflicts(self, client, db):
-        _, _, vol, event = _setup_org_and_event(client, "clean")
+        _, admin_hdrs, vol, event = _setup_org_and_event(client, "clean")
         resp = client.post(
             "/api/v1/conflicts/check",
             json={"person_id": vol["person_id"], "event_id": event["id"]},
+            headers=admin_hdrs,
         )
         assert resp.status_code == 200, resp.text
         body = resp.json()
@@ -52,6 +53,7 @@ class TestAlreadyAssigned:
         resp = client.post(
             "/api/v1/conflicts/check",
             json={"person_id": vol["person_id"], "event_id": event["id"]},
+            headers=admin_hdrs,
         )
         body = resp.json()
         assert body["has_conflicts"] is True
@@ -62,18 +64,20 @@ class TestAlreadyAssigned:
 @pytest.mark.no_mock_auth
 class TestUnknownEntities:
     def test_unknown_person_returns_404(self, client, db):
-        _, _, _, event = _setup_org_and_event(client, "unknown-p")
+        _, admin_hdrs, _, event = _setup_org_and_event(client, "unknown-p")
         resp = client.post(
             "/api/v1/conflicts/check",
             json={"person_id": "no-such-person", "event_id": event["id"]},
+            headers=admin_hdrs,
         )
         assert resp.status_code == 404
 
     def test_unknown_event_returns_404(self, client, db):
-        _, _, vol, _ = _setup_org_and_event(client, "unknown-e")
+        _, admin_hdrs, vol, _ = _setup_org_and_event(client, "unknown-e")
         resp = client.post(
             "/api/v1/conflicts/check",
             json={"person_id": vol["person_id"], "event_id": "no-such-event"},
+            headers=admin_hdrs,
         )
         assert resp.status_code == 404
 
@@ -94,6 +98,7 @@ class TestDoubleBooked:
         resp = client.post(
             "/api/v1/conflicts/check",
             json={"person_id": vol["person_id"], "event_id": ev_b["id"]},
+            headers=admin_hdrs,
         )
         body = resp.json()
         # Same start time = overlap. Conflict surfaced but assignable.

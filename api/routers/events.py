@@ -8,13 +8,14 @@ from sqlalchemy import or_
 from sqlalchemy.orm import Session
 
 from api.database import get_db
-from api.dependencies import get_current_admin_user, verify_org_member
+from api.dependencies import get_current_admin_user, get_current_user, verify_org_member
 from api.models import (
     Assignment,
     Event,
     EventTeam,
     Organization,
     Person,
+    Resource,
     Team,
 )
 from api.schemas.common import PaginationParams, get_pagination_params
@@ -88,6 +89,25 @@ def create_event(
             detail=error_message,
         )
 
+    if event_data.resource_id is not None:
+        resource = (
+            db.query(Resource)
+            .filter(
+                Resource.id == event_data.resource_id,
+                Resource.org_id == event_data.org_id,
+            )
+            .first()
+        )
+        if resource is None:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Resource not found")
+
+    teams: list[Team] = []
+    for team_id in event_data.team_ids or []:
+        team = db.query(Team).filter(Team.id == team_id, Team.org_id == event_data.org_id).first()
+        if team is None:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Team not found")
+        teams.append(team)
+
     # Create event
     event = Event(
         id=event_data.id,
@@ -102,17 +122,9 @@ def create_event(
     db.flush()
 
     # Add event teams
-    if event_data.team_ids:
-        for team_id in event_data.team_ids:
-            # Verify team exists
-            team = db.query(Team).filter(Team.id == team_id).first()
-            if not team:
-                db.rollback()
-                raise HTTPException(
-                    status_code=status.HTTP_404_NOT_FOUND,
-                    detail=f"Team '{team_id}' not found",
-                )
-            event_team = EventTeam(event_id=event.id, team_id=team_id)
+    if teams:
+        for team in teams:
+            event_team = EventTeam(event_id=event.id, team_id=team.id)
             db.add(event_team)
 
     db.commit()
@@ -136,13 +148,13 @@ def list_events(
         description="Filter by computed status: 'upcoming', 'past', or 'ongoing'",
     ),
     pagination: PaginationParams = Depends(get_pagination_params),
+    current_user: Person = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    """List events with optional filters."""
-    query = db.query(Event)
-
-    if org_id:
-        query = query.filter(Event.org_id == org_id)
+    """List events within the authenticated member's tenant."""
+    effective_org_id = org_id or current_user.org_id
+    verify_org_member(current_user, effective_org_id)
+    query = db.query(Event).filter(Event.org_id == effective_org_id)
     if event_type:
         query = query.filter(Event.type == event_type)
     if start_after:
@@ -180,13 +192,17 @@ def list_events(
 
 
 @router.get("/{event_id}", response_model=EventResponse)
-def get_event(event_id: str, db: Session = Depends(get_db)):
-    """Get event by ID."""
-    event = db.query(Event).filter(Event.id == event_id).first()
+def get_event(
+    event_id: str,
+    current_user: Person = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Get an event within the authenticated member's tenant."""
+    event = (
+        db.query(Event).filter(Event.id == event_id, Event.org_id == current_user.org_id).first()
+    )
     if not event:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail=f"Event '{event_id}' not found"
-        )
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Event not found")
     return event
 
 
@@ -198,11 +214,11 @@ def update_event(
     db: Session = Depends(get_db),
 ):
     """Update event (admin only)."""
-    event = db.query(Event).filter(Event.id == event_id).first()
+    event = (
+        db.query(Event).filter(Event.id == event_id, Event.org_id == current_admin.org_id).first()
+    )
     if not event:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail=f"Event '{event_id}' not found"
-        )
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Event not found")
 
     # Verify admin belongs to the same organization as the event
     verify_org_member(current_admin, event.org_id)
@@ -215,6 +231,16 @@ def update_event(
     if event_data.end_time is not None:
         event.end_time = event_data.end_time
     if event_data.resource_id is not None:
+        resource = (
+            db.query(Resource)
+            .filter(
+                Resource.id == event_data.resource_id,
+                Resource.org_id == event.org_id,
+            )
+            .first()
+        )
+        if resource is None:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Resource not found")
         event.resource_id = event_data.resource_id
     if event_data.extra_data is not None:
         event.extra_data = event_data.extra_data
@@ -239,11 +265,11 @@ def delete_event(
     db: Session = Depends(get_db),
 ):
     """Delete event (admin only)."""
-    event = db.query(Event).filter(Event.id == event_id).first()
+    event = (
+        db.query(Event).filter(Event.id == event_id, Event.org_id == current_admin.org_id).first()
+    )
     if not event:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail=f"Event '{event_id}' not found"
-        )
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Event not found")
 
     # Verify admin belongs to the same organization as the event
     verify_org_member(current_admin, event.org_id)
@@ -254,18 +280,22 @@ def delete_event(
 
 
 @router.get("/{event_id}/available-people", response_model=list[AvailablePerson])
-def get_available_people(event_id: str, db: Session = Depends(get_db)) -> list[AvailablePerson]:
+def get_available_people(
+    event_id: str,
+    current_admin: Person = Depends(get_current_admin_user),
+    db: Session = Depends(get_db),
+) -> list[AvailablePerson]:
     """
     Get people available for this event based on roles.
 
     Returns list of people who have matching roles, with flags indicating
     if they're already assigned or have blocked the event date.
     """
-    event = db.query(Event).filter(Event.id == event_id).first()
+    event = (
+        db.query(Event).filter(Event.id == event_id, Event.org_id == current_admin.org_id).first()
+    )
     if not event:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail=f"Event '{event_id}' not found"
-        )
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Event not found")
 
     # Get required roles from event
     required_roles = get_event_required_roles(event)
@@ -274,7 +304,7 @@ def get_available_people(event_id: str, db: Session = Depends(get_db)) -> list[A
     people = db.query(Person).filter(Person.org_id == event.org_id).all()
 
     # Get current assignments for this event
-    assigned_person_ids = get_assigned_person_ids(db, event_id)
+    assigned_person_ids = get_assigned_person_ids(db, event_id, event.org_id)
 
     # Get event date (just the date part, not time)
     event_date = event.start_time.date()
@@ -304,7 +334,11 @@ def get_available_people(event_id: str, db: Session = Depends(get_db)) -> list[A
 
 
 @router.get("/{event_id}/validation")
-def validate_event(event_id: str, db: Session = Depends(get_db)) -> dict:
+def validate_event(
+    event_id: str,
+    current_admin: Person = Depends(get_current_admin_user),
+    db: Session = Depends(get_db),
+) -> dict:
     """
     Validate if event has proper configuration and enough people.
 
@@ -316,11 +350,11 @@ def validate_event(event_id: str, db: Session = Depends(get_db)) -> dict:
     Returns:
         Dictionary with is_valid flag and list of validation warnings
     """
-    event = db.query(Event).filter(Event.id == event_id).first()
+    event = (
+        db.query(Event).filter(Event.id == event_id, Event.org_id == current_admin.org_id).first()
+    )
     if not event:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail=f"Event '{event_id}' not found"
-        )
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Event not found")
 
     warnings = []
     is_valid = True
@@ -353,7 +387,7 @@ def validate_event(event_id: str, db: Session = Depends(get_db)) -> dict:
 
     # Check if any assigned people are blocked on this event date
     event_date = event.start_time.date()
-    blocked_people = get_blocked_assigned_people(db, event_id, event_date)
+    blocked_people = get_blocked_assigned_people(db, event_id, event_date, event.org_id)
 
     if blocked_people:
         warnings.append(
@@ -377,14 +411,20 @@ def manage_assignment(
     db: Session = Depends(get_db),
 ):
     """Assign or unassign a person to/from an event (admin only)."""
-    event = db.query(Event).filter(Event.id == event_id).first()
+    event = (
+        db.query(Event).filter(Event.id == event_id, Event.org_id == current_admin.org_id).first()
+    )
     if not event:
         raise error_response("events.errors.event_not_found", status_code=status.HTTP_404_NOT_FOUND)
 
     # Verify admin belongs to the same organization as the event
     verify_org_member(current_admin, event.org_id)
 
-    person = db.query(Person).filter(Person.id == request.person_id).first()
+    person = (
+        db.query(Person)
+        .filter(Person.id == request.person_id, Person.org_id == event.org_id)
+        .first()
+    )
     if not person:
         raise error_response(
             "events.errors.person_not_found", status_code=status.HTTP_404_NOT_FOUND
@@ -469,9 +509,13 @@ def manage_assignment(
 
 @router.get("/assignments/all")
 def get_all_assignments(
-    org_id: str = Query(..., description="Organization ID"), db: Session = Depends(get_db)
+    org_id: str = Query(..., description="Organization ID"),
+    current_admin: Person = Depends(get_current_admin_user),
+    db: Session = Depends(get_db),
 ):
     """Get all assignments for an organization (both from solutions and manual)."""
+    verify_org_member(current_admin, org_id)
+
     # Verify organization exists
     org = db.query(Organization).filter(Organization.id == org_id).first()
     if not org:
@@ -480,22 +524,25 @@ def get_all_assignments(
         )
 
     # Get all assignments joined with events to filter by organization
-    assignments = db.query(Assignment).join(Event).filter(Event.org_id == org_id).all()
+    rows = (
+        db.query(Assignment, Event, Person)
+        .join(Event, Event.id == Assignment.event_id)
+        .join(Person, Person.id == Assignment.person_id)
+        .filter(Event.org_id == org_id, Person.org_id == org_id)
+        .all()
+    )
 
     result = []
-    for assignment in assignments:
-        event = db.query(Event).filter(Event.id == assignment.event_id).first()
-        person = db.query(Person).filter(Person.id == assignment.person_id).first()
-
+    for assignment, event, person in rows:
         result.append(
             {
                 "assignment_id": assignment.id,
                 "event_id": assignment.event_id,
-                "event_type": event.type if event else None,
-                "event_start": event.start_time if event else None,
-                "event_end": event.end_time if event else None,
+                "event_type": event.type,
+                "event_start": event.start_time,
+                "event_end": event.end_time,
                 "person_id": assignment.person_id,
-                "person_name": person.name if person else None,
+                "person_name": person.name,
                 "role": assignment.role,  # Event-specific role
                 "solution_id": assignment.solution_id,
                 "is_manual": assignment.solution_id is None,

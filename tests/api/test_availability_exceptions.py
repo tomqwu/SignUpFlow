@@ -12,8 +12,8 @@ from tests.api.conftest import seed_org, seed_user
 PERSON_PW = "VolPass1!"
 
 
-def _person_for(client, org_id: str, suffix: str) -> str:
-    """Sign up a volunteer and return their person_id (which is also auth subject)."""
+def _person_for(client, org_id: str, suffix: str) -> tuple[str, dict]:
+    """Sign up a volunteer and return their person id and bearer headers."""
     resp = seed_user(
         client,
         org_id,
@@ -21,7 +21,7 @@ def _person_for(client, org_id: str, suffix: str) -> str:
         name="Vol",
         password=PERSON_PW,
     )
-    return resp["person_id"]
+    return resp["person_id"], {"Authorization": f"Bearer {resp['token']}"}
 
 
 @pytest.mark.no_mock_auth
@@ -29,19 +29,20 @@ class TestAvailabilityExceptions:
     def test_list_empty_returns_empty_list(self, client):
         org_id = "ax-empty"
         seed_org(client, org_id)
-        person_id = _person_for(client, org_id, "e")
-        resp = client.get(f"/api/v1/availability/{person_id}/exceptions")
+        person_id, headers = _person_for(client, org_id, "e")
+        resp = client.get(f"/api/v1/availability/{person_id}/exceptions", headers=headers)
         assert resp.status_code == 200, resp.text
         assert resp.json() == []
 
     def test_post_creates_exception(self, client):
         org_id = "ax-create"
         seed_org(client, org_id)
-        person_id = _person_for(client, org_id, "c")
+        person_id, headers = _person_for(client, org_id, "c")
 
         resp = client.post(
             f"/api/v1/availability/{person_id}/exceptions",
             json={"exception_date": "2026-12-25"},
+            headers=headers,
         )
         assert resp.status_code == 201, resp.text
         body = resp.json()
@@ -49,7 +50,7 @@ class TestAvailabilityExceptions:
         assert "id" in body
 
         # GET reflects the new row.
-        listed = client.get(f"/api/v1/availability/{person_id}/exceptions")
+        listed = client.get(f"/api/v1/availability/{person_id}/exceptions", headers=headers)
         assert listed.status_code == 200
         assert len(listed.json()) == 1
         assert listed.json()[0]["exception_date"] == "2026-12-25"
@@ -57,53 +58,59 @@ class TestAvailabilityExceptions:
     def test_post_same_date_is_idempotent(self, client):
         org_id = "ax-idempo"
         seed_org(client, org_id)
-        person_id = _person_for(client, org_id, "i")
+        person_id, headers = _person_for(client, org_id, "i")
 
         first = client.post(
             f"/api/v1/availability/{person_id}/exceptions",
             json={"exception_date": "2026-07-04"},
+            headers=headers,
         )
         second = client.post(
             f"/api/v1/availability/{person_id}/exceptions",
             json={"exception_date": "2026-07-04"},
+            headers=headers,
         )
         assert first.status_code == 201
         # Second POST returns the same row (Pydantic doesn't change the
         # status_code we declared, so it's still 201 — but the id matches).
         assert second.json()["id"] == first.json()["id"]
-        listed = client.get(f"/api/v1/availability/{person_id}/exceptions")
+        listed = client.get(f"/api/v1/availability/{person_id}/exceptions", headers=headers)
         assert len(listed.json()) == 1
 
     def test_delete_removes_exception(self, client):
         org_id = "ax-del"
         seed_org(client, org_id)
-        person_id = _person_for(client, org_id, "d")
+        person_id, headers = _person_for(client, org_id, "d")
 
         created = client.post(
             f"/api/v1/availability/{person_id}/exceptions",
             json={"exception_date": "2026-03-15"},
+            headers=headers,
         )
         ex_id = created.json()["id"]
 
-        deleted = client.delete(f"/api/v1/availability/{person_id}/exceptions/{ex_id}")
+        deleted = client.delete(
+            f"/api/v1/availability/{person_id}/exceptions/{ex_id}", headers=headers
+        )
         assert deleted.status_code == 204
 
-        listed = client.get(f"/api/v1/availability/{person_id}/exceptions")
+        listed = client.get(f"/api/v1/availability/{person_id}/exceptions", headers=headers)
         assert listed.json() == []
 
     def test_delete_unknown_returns_404(self, client):
         org_id = "ax-404"
         seed_org(client, org_id)
-        person_id = _person_for(client, org_id, "n")
-        resp = client.delete(f"/api/v1/availability/{person_id}/exceptions/999999")
+        person_id, headers = _person_for(client, org_id, "n")
+        resp = client.delete(f"/api/v1/availability/{person_id}/exceptions/999999", headers=headers)
         assert resp.status_code == 404
 
     def test_post_for_unknown_person_returns_404(self, client):
         org_id = "ax-noperson"
         seed_org(client, org_id)
-        _person_for(client, org_id, "p")  # unrelated, just to land an org
+        _, headers = _person_for(client, org_id, "p")  # unrelated, just to land an org
         resp = client.post(
             "/api/v1/availability/person_does_not_exist/exceptions",
             json={"exception_date": "2026-01-01"},
+            headers=headers,
         )
         assert resp.status_code == 404

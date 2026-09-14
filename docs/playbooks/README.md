@@ -146,8 +146,10 @@ overflow assertion alone is not a comprehensive visual/accessibility audit.
 - Scheduling qualifications are stored beside, but are not, permission records.
   Every account has exactly one permission role (`admin` or `volunteer`); use
   `volunteer` plus scheduling qualifications for members.
-- These tests prove publish authorization, not complete tenant security. Several
-  solution-read and availability routes still need authentication/isolation work.
+- The route-policy and two-tenant regressions in
+  [API_AUTHORIZATION.md](../API_AUTHORIZATION.md) cover scheduling route
+  authentication, resource hiding, and export filtering. This does not replace
+  PostgreSQL, provider, deployment, or whole-application security acceptance.
 - Role-based solver assignments now retain their selected role. Old solutions
   with null roles need regeneration; no existing data is silently rewritten.
 - The role-less team fallback, venue collision checks, DST/timezone transitions,

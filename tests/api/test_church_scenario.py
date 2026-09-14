@@ -182,7 +182,7 @@ class TestChurchScenario:
             role_counts={"youth_leader": 1, "volunteer": 2},
         )
 
-        resp = client.get(f"/api/v1/events/?org_id={self.ORG}")
+        resp = client.get(f"/api/v1/events/?org_id={self.ORG}", headers=hdrs)
         assert resp.status_code == 200
         assert resp.json()["total"] == 3
 
@@ -201,20 +201,25 @@ class TestChurchScenario:
         vacation_start = (datetime.now() + timedelta(days=14)).strftime("%Y-%m-%d")
         vacation_end = (datetime.now() + timedelta(days=28)).strftime("%Y-%m-%d")
         add_timeoff(
-            client, maria_id, vacation_start, vacation_end, reason="Family vacation in Mexico"
+            client,
+            hdrs,
+            maria_id,
+            vacation_start,
+            vacation_end,
+            reason="Family vacation in Mexico",
         )
 
         # James: block the Wednesday (youth group day)
         wed_date = (datetime.now() + timedelta(days=17)).strftime("%Y-%m-%d")
-        add_timeoff(client, james_id, wed_date, wed_date, reason="Work commitment")
+        add_timeoff(client, hdrs, james_id, wed_date, wed_date, reason="Work commitment")
 
         # Verify time-off recorded
-        resp = client.get(f"/api/v1/availability/{maria_id}/timeoff")
+        resp = client.get(f"/api/v1/availability/{maria_id}/timeoff", headers=hdrs)
         assert resp.status_code == 200
         assert resp.json()["total"] == 1
         assert resp.json()["timeoff"][0]["reason"] == "Family vacation in Mexico"
 
-        resp = client.get(f"/api/v1/availability/{james_id}/timeoff")
+        resp = client.get(f"/api/v1/availability/{james_id}/timeoff", headers=hdrs)
         assert resp.status_code == 200
         assert resp.json()["total"] == 1
 
@@ -268,7 +273,7 @@ class TestChurchScenario:
         assert "per_person_counts" in fairness
 
         # Verify assignments via API
-        resp = client.get(f"/api/v1/events/assignments/all?org_id={self.ORG}")
+        resp = client.get(f"/api/v1/events/assignments/all?org_id={self.ORG}", headers=hdrs)
         assert resp.status_code == 200
         assignments = resp.json()["assignments"]
         assert len(assignments) > 0
@@ -311,7 +316,7 @@ class TestChurchScenario:
         assert resp.status_code == 200
 
         # Verify assignment
-        resp = client.get(f"/api/v1/events/assignments/all?org_id={self.ORG}")
+        resp = client.get(f"/api/v1/events/assignments/all?org_id={self.ORG}", headers=hdrs)
         assert resp.status_code == 200
         assignments = resp.json()["assignments"]
         sarah_assigned = [
@@ -361,8 +366,8 @@ class TestChurchScenario:
         assert resp.status_code == 200
         assert resp.json()["name"] == "Sarah Chen"
 
-        # Assignments list is org-wide (Sarah can see it)
-        resp = client.get(f"/api/v1/events/assignments/all?org_id={self.ORG}")
+        # The organization-wide assignment list remains an administrator view.
+        resp = client.get(f"/api/v1/events/assignments/all?org_id={self.ORG}", headers=hdrs)
         assert resp.status_code == 200
 
     # ------------------------------------------------------------------

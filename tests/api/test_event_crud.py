@@ -54,14 +54,14 @@ class TestEventCRUD:
         hdrs = self._setup(client)
         seed_event(client, hdrs, self.ORG, "evt-get")
 
-        resp = client.get("/api/v1/events/evt-get")
+        resp = client.get("/api/v1/events/evt-get", headers=hdrs)
         assert resp.status_code == 200
         assert resp.json()["id"] == "evt-get"
 
     def test_get_nonexistent_event_returns_404(self, client):
         """Getting a missing event returns 404."""
-        self._setup(client)
-        resp = client.get("/api/v1/events/does-not-exist")
+        hdrs = self._setup(client)
+        resp = client.get("/api/v1/events/does-not-exist", headers=hdrs)
         assert resp.status_code == 404
 
     def test_list_events_filtered_by_org(self, client):
@@ -70,7 +70,7 @@ class TestEventCRUD:
         seed_event(client, hdrs, self.ORG, "evt-a", days_from_now=14)
         seed_event(client, hdrs, self.ORG, "evt-b", days_from_now=21)
 
-        resp = client.get(f"/api/v1/events/?org_id={self.ORG}")
+        resp = client.get(f"/api/v1/events/?org_id={self.ORG}", headers=hdrs)
         assert resp.status_code == 200
         assert resp.json()["total"] == 2
 
@@ -128,7 +128,7 @@ class TestEventCRUD:
         assert resp.status_code == 204
 
         # Verify gone
-        resp = client.get("/api/v1/events/evt-delete")
+        resp = client.get("/api/v1/events/evt-delete", headers=hdrs)
         assert resp.status_code == 404
 
     def test_delete_nonexistent_event_returns_404(self, client):
@@ -184,6 +184,7 @@ class TestConflictDetection:
                 "person_id": vol["person_id"],
                 "event_id": event["id"],
             },
+            headers=hdrs,
         )
         assert resp.status_code == 200
         result = resp.json()
@@ -213,6 +214,7 @@ class TestConflictDetection:
                 "person_id": vol["person_id"],
                 "event_id": event["id"],
             },
+            headers=hdrs,
         )
         assert resp.status_code == 200
         result = resp.json()
@@ -228,7 +230,9 @@ class TestConflictDetection:
         event = seed_event(client, hdrs, self.ORG, "evt-timeoff", days_from_now=14)
 
         # Sarah blocks that day
-        add_timeoff(client, vol["person_id"], event_date, event_date, reason="Family vacation")
+        add_timeoff(
+            client, hdrs, vol["person_id"], event_date, event_date, reason="Family vacation"
+        )
 
         # Check conflicts — should detect time_off
         resp = client.post(
@@ -237,6 +241,7 @@ class TestConflictDetection:
                 "person_id": vol["person_id"],
                 "event_id": event["id"],
             },
+            headers=hdrs,
         )
         assert resp.status_code == 200
         result = resp.json()
@@ -270,6 +275,7 @@ class TestConflictDetection:
                 "person_id": vol["person_id"],
                 "event_id": evt_b["id"],
             },
+            headers=hdrs,
         )
         assert resp.status_code == 200
         result = resp.json()
@@ -289,6 +295,7 @@ class TestConflictDetection:
                 "person_id": "ghost-person",
                 "event_id": event["id"],
             },
+            headers=hdrs,
         )
         assert resp.status_code == 404
 
@@ -302,6 +309,7 @@ class TestConflictDetection:
                 "person_id": vol["person_id"],
                 "event_id": "ghost-event",
             },
+            headers=hdrs,
         )
         assert resp.status_code == 404
 
@@ -318,16 +326,16 @@ class TestAvailabilityManagement:
         seed_org(client, self.ORG)
         seed_user(client, self.ORG, self.ADMIN_EMAIL, "Admin", self.ADMIN_PW)
         vol = seed_user(client, self.ORG, "vol@avail.org", "Sarah", "VolPass123!")
-        return vol
+        return vol, {"Authorization": f"Bearer {vol['token']}"}
 
     def test_add_and_list_timeoff(self, client):
         """Add time-off and verify it appears in the list."""
-        vol = self._setup_with_volunteer(client)
+        vol, headers = self._setup_with_volunteer(client)
         pid = vol["person_id"]
 
-        add_timeoff(client, pid, "2026-06-01", "2026-06-07", reason="Vacation")
+        add_timeoff(client, headers, pid, "2026-06-01", "2026-06-07", reason="Vacation")
 
-        resp = client.get(f"/api/v1/availability/{pid}/timeoff")
+        resp = client.get(f"/api/v1/availability/{pid}/timeoff", headers=headers)
         assert resp.status_code == 200
         data = resp.json()
         assert data["total"] == 1
@@ -336,41 +344,40 @@ class TestAvailabilityManagement:
 
     def test_add_multiple_timeoff_periods(self, client):
         """Person can have multiple non-overlapping time-off periods."""
-        vol = self._setup_with_volunteer(client)
+        vol, headers = self._setup_with_volunteer(client)
         pid = vol["person_id"]
 
-        add_timeoff(client, pid, "2026-06-01", "2026-06-07", reason="Vacation 1")
-        add_timeoff(client, pid, "2026-07-01", "2026-07-07", reason="Vacation 2")
+        add_timeoff(client, headers, pid, "2026-06-01", "2026-06-07", reason="Vacation 1")
+        add_timeoff(client, headers, pid, "2026-07-01", "2026-07-07", reason="Vacation 2")
 
-        resp = client.get(f"/api/v1/availability/{pid}/timeoff")
+        resp = client.get(f"/api/v1/availability/{pid}/timeoff", headers=headers)
         assert resp.status_code == 200
         assert resp.json()["total"] == 2
 
     def test_delete_timeoff(self, client):
         """Delete a time-off period; it disappears from the list."""
-        vol = self._setup_with_volunteer(client)
+        vol, headers = self._setup_with_volunteer(client)
         pid = vol["person_id"]
 
-        add_timeoff(client, pid, "2026-08-01", "2026-08-07", reason="To be deleted")
+        add_timeoff(client, headers, pid, "2026-08-01", "2026-08-07", reason="To be deleted")
 
         # Get the timeoff ID
-        resp = client.get(f"/api/v1/availability/{pid}/timeoff")
+        resp = client.get(f"/api/v1/availability/{pid}/timeoff", headers=headers)
         timeoff_id = resp.json()["timeoff"][0]["id"]
 
         # Delete it
-        resp = client.delete(f"/api/v1/availability/{pid}/timeoff/{timeoff_id}")
+        resp = client.delete(f"/api/v1/availability/{pid}/timeoff/{timeoff_id}", headers=headers)
         assert resp.status_code == 204
 
         # Verify gone
-        resp = client.get(f"/api/v1/availability/{pid}/timeoff")
+        resp = client.get(f"/api/v1/availability/{pid}/timeoff", headers=headers)
         assert resp.json()["total"] == 0
 
-    def test_timeoff_for_unknown_person_returns_empty(self, client):
-        """Querying time-off for a non-existent person returns empty list."""
-        self._setup_with_volunteer(client)
-        resp = client.get("/api/v1/availability/ghost-person/timeoff")
-        assert resp.status_code == 200
-        assert resp.json()["total"] == 0
+    def test_timeoff_for_unknown_person_returns_404(self, client):
+        """Querying time-off for a non-existent person hides the identifier."""
+        _, headers = self._setup_with_volunteer(client)
+        resp = client.get("/api/v1/availability/ghost-person/timeoff", headers=headers)
+        assert resp.status_code == 404
 
 
 @pytest.mark.no_mock_auth

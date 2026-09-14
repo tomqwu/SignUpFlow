@@ -48,6 +48,10 @@ evidence with a local mock. Do not deploy or enable providers from a roadmap alo
   evidence. PostgreSQL migration/concurrency acceptance remains under #253/#260.
 - #253: organization authorization and audit fixes merged in PR #272; retain
   remaining PostgreSQL cascade/release evidence, not the old unmerged-PR blocker.
+- #254: the scheduling API now has an executable route policy, real-JWT
+  two-tenant event/conflict/availability/solution regressions, and pre-serialization
+  person/team export filtering. Local full-suite and PR evidence are required
+  before treating this source milestone as merged.
 - #263: assignment roles now persist; saved constraints remain ignored by the
   API solver. Track remaining constraint/eligibility acceptance separately.
 - #260: per-run SQLite database isolation exists. PostgreSQL business/concurrency
@@ -56,7 +60,8 @@ evidence with a local mock. Do not deploy or enable providers from a roadmap alo
   hygiene. No workflow, secret, provider or required status is needed for review.
 - #191: the Dart client is regenerated from the current OpenAPI snapshot and
   Flutter signup uses atomic bootstrap. Native build/device acceptance remains.
-- PR #251 remains separate open export work; do not count it as shipped.
+- ICS solution export remains explicitly unsupported with `501`; calendar ICS
+  export is separate. Do not represent unsupported solution ICS as shipped.
 
 These are verified partial milestones, not blanket closure of their tickets.
 Retire old effort totals until remaining acceptance criteria are re-estimated.

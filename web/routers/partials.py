@@ -214,11 +214,7 @@ def open_claim(
     race-safe; org-scoped direct write (no admin API reuse)."""
     from datetime import datetime
 
-    ev = (
-        db.query(Event)
-        .filter(Event.org_id == person.org_id, Event.id == event_id)
-        .first()
-    )
+    ev = db.query(Event).filter(Event.org_id == person.org_id, Event.id == event_id).first()
     if ev is None or (ev.start_time and ev.start_time < datetime.utcnow()):
         return _open_list(request, person, db, error="That event is no longer open.")
     rc = (ev.extra_data or {}).get("role_counts") or {}
@@ -233,11 +229,7 @@ def open_claim(
     if any(a.person_id == person.id for a in rows):
         return _open_list(request, person, db, error="You're already on this event.")
     if (
-        sum(
-            1
-            for a in rows
-            if (a.role or "") == role and (a.status or "").lower() != "declined"
-        )
+        sum(1 for a in rows if (a.role or "") == role and (a.status or "").lower() != "declined")
         >= rc[role]
     ):
         return _open_list(request, person, db, error="That role just filled up.")
@@ -292,13 +284,9 @@ def swap_claim(
         .first()
     )
     if a is None:
-        return _swaps_open_list(
-            request, person, db, error="That swap is no longer available."
-        )
+        return _swaps_open_list(request, person, db, error="That swap is no longer available.")
     if a.person_id == person.id:
-        return _swaps_open_list(
-            request, person, db, error="That's your own swap request."
-        )
+        return _swaps_open_list(request, person, db, error="That's your own swap request.")
     ev = db.query(Event).filter(Event.id == a.event_id).first()
     if ev is None or (ev.start_time and ev.start_time < datetime.utcnow()):
         return _swaps_open_list(request, person, db, error="That event has passed.")
@@ -313,9 +301,7 @@ def swap_claim(
         .first()
     )
     if already is not None:
-        return _swaps_open_list(
-            request, person, db, error="You're already on that event."
-        )
+        return _swaps_open_list(request, person, db, error="You're already on that event.")
 
     a.person_id = person.id
     a.status = "confirmed"
@@ -351,7 +337,7 @@ def timeoff_add(
     except ValueError:
         return _timeoff_list(request, person, db, error="Enter valid dates.")
     try:
-        add_timeoff(person.id, payload, db)
+        add_timeoff(person.id, payload, current_user=person, db=db)
     except HTTPException as exc:
         return _timeoff_list(request, person, db, error=str(exc.detail))
     return _timeoff_list(request, person, db)
@@ -365,7 +351,7 @@ def timeoff_delete(
     db: Session = Depends(get_db),
 ):
     try:
-        delete_timeoff(person.id, timeoff_id, db)
+        delete_timeoff(person.id, timeoff_id, current_user=person, db=db)
     except HTTPException:
         pass  # already gone — fall through to a fresh (correct) list
     return _timeoff_list(request, person, db)
@@ -399,7 +385,7 @@ def rrule_set(
         payload = AvailabilityRruleUpdate(rrule=rrule.strip())
     except ValueError:
         return _rrule_section(request, person, db, error="Enter a recurrence rule.")
-    set_rrule(person.id, payload, db)
+    set_rrule(person.id, payload, current_user=person, db=db)
     return _rrule_section(request, person, db)
 
 
@@ -409,7 +395,7 @@ def rrule_clear(
     person: Person = Depends(get_session_user),
     db: Session = Depends(get_db),
 ):
-    clear_rrule(person.id, db)
+    clear_rrule(person.id, current_user=person, db=db)
     return _rrule_section(request, person, db)
 
 
@@ -437,7 +423,7 @@ def exception_add(
         payload = AvailabilityExceptionCreate(exception_date=exception_date)
     except ValueError:
         return _exceptions_list(request, person, db, error="Pick a valid date.")
-    add_exception(person.id, payload, db)
+    add_exception(person.id, payload, current_user=person, db=db)
     return _exceptions_list(request, person, db)
 
 
@@ -452,7 +438,7 @@ def exception_delete(
     db: Session = Depends(get_db),
 ):
     try:
-        delete_exception(person.id, exception_id, db)
+        delete_exception(person.id, exception_id, current_user=person, db=db)
     except HTTPException:
         pass  # already gone — return a fresh, correct list
     return _exceptions_list(request, person, db)
@@ -1565,9 +1551,7 @@ def _emit_reminder_notifications(db: Session, person: Person, sid: int) -> int:
         return 0
     prefs = {
         p.person_id: (p.enabled_types or [])
-        for p in db.query(EmailPreference)
-        .filter(EmailPreference.org_id == person.org_id)
-        .all()
+        for p in db.query(EmailPreference).filter(EmailPreference.org_id == person.org_id).all()
     }
     created = 0
     for pid, eid in first_event.items():
@@ -1632,7 +1616,7 @@ def solution_publish(
             status_code=404,
         )
     try:
-        publish_solution(solution_id, request, person, db)
+        publish_solution(solution_id, request, current_admin=person, db=db)
     except HTTPException as exc:
         return _publish_state(request, person, db, solution_id, error=str(exc.detail))
     _emit_publish_notifications(db, person, solution_id)
@@ -1680,7 +1664,7 @@ def solution_unpublish(
             status_code=404,
         )
     try:
-        unpublish_solution(solution_id, request, person, db)
+        unpublish_solution(solution_id, request, current_admin=person, db=db)
     except HTTPException as exc:
         return _publish_state(request, person, db, solution_id, error=str(exc.detail))
     return _publish_state(request, person, db, solution_id)
@@ -1701,7 +1685,7 @@ def solution_rollback(
             status_code=404,
         )
     try:
-        rollback_solution(solution_id, request, person, db)
+        rollback_solution(solution_id, request, current_admin=person, db=db)
     except HTTPException as exc:
         return _publish_state(request, person, db, solution_id, error=str(exc.detail))
     return _publish_state(request, person, db, solution_id)
@@ -1731,7 +1715,7 @@ def compare_run(
     ):
         return _err("Pick two solutions from your organization.", 404)
     try:
-        diff = compare_solutions(solution_a, solution_b, person, db)
+        diff = compare_solutions(solution_a, solution_b, current_admin=person, db=db)
     except HTTPException as exc:
         return _err(str(exc.detail), exc.status_code or 400)
     return templates.TemplateResponse(

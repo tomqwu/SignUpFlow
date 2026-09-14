@@ -6367,6 +6367,11 @@
             "description": "Validation Error"
           }
         },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
         "summary": "Create Availability",
         "tags": [
           "availability"
@@ -6414,6 +6419,11 @@
             "description": "Validation Error"
           }
         },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
         "summary": "List Exceptions",
         "tags": [
           "availability"
@@ -6465,6 +6475,11 @@
             "description": "Validation Error"
           }
         },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
         "summary": "Add Exception",
         "tags": [
           "availability"
@@ -6510,6 +6525,11 @@
             "description": "Validation Error"
           }
         },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
         "summary": "Delete Exception",
         "tags": [
           "availability"
@@ -6546,6 +6566,11 @@
             "description": "Validation Error"
           }
         },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
         "summary": "Clear Rrule",
         "tags": [
           "availability"
@@ -6587,6 +6612,11 @@
             "description": "Validation Error"
           }
         },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
         "summary": "Get Rrule",
         "tags": [
           "availability"
@@ -6638,6 +6668,11 @@
             "description": "Validation Error"
           }
         },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
         "summary": "Set Rrule",
         "tags": [
           "availability"
@@ -6679,6 +6714,11 @@
             "description": "Validation Error"
           }
         },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
         "summary": "Get Timeoff",
         "tags": [
           "availability"
@@ -6728,6 +6768,11 @@
             "description": "Validation Error"
           }
         },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
         "summary": "Add Timeoff",
         "tags": [
           "availability"
@@ -6773,6 +6818,11 @@
             "description": "Validation Error"
           }
         },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
         "summary": "Delete Timeoff",
         "tags": [
           "availability"
@@ -6831,6 +6881,11 @@
             "description": "Validation Error"
           }
         },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
         "summary": "Update Timeoff",
         "tags": [
           "availability"
@@ -8084,6 +8139,11 @@
             "description": "Validation Error"
           }
         },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
         "summary": "Check Conflicts",
         "tags": [
           "conflicts"
@@ -8382,7 +8442,7 @@
     },
     "/api/v1/events/": {
       "get": {
-        "description": "List events with optional filters.",
+        "description": "List events within the authenticated member's tenant.",
         "operationId": "listEvents",
         "parameters": [
           {
@@ -8545,6 +8605,11 @@
             "description": "Validation Error"
           }
         },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
         "summary": "List Events",
         "tags": [
           "events"
@@ -8633,6 +8698,11 @@
             "description": "Validation Error"
           }
         },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
         "summary": "Get All Assignments",
         "tags": [
           "events"
@@ -8680,7 +8750,7 @@
         ]
       },
       "get": {
-        "description": "Get event by ID.",
+        "description": "Get an event within the authenticated member's tenant.",
         "operationId": "getEvent",
         "parameters": [
           {
@@ -8715,6 +8785,11 @@
             "description": "Validation Error"
           }
         },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
         "summary": "Get Event",
         "tags": [
           "events"
@@ -8874,6 +8949,11 @@
             "description": "Validation Error"
           }
         },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
         "summary": "Get Available People",
         "tags": [
           "events"
@@ -8919,6 +8999,11 @@
             "description": "Validation Error"
           }
         },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
         "summary": "Validate Event",
         "tags": [
           "events"
@@ -11529,7 +11614,7 @@
     },
     "/api/v1/solutions/": {
       "get": {
-        "description": "List solutions with optional filters.",
+        "description": "List solutions inside the authenticated admin's tenant.",
         "operationId": "listSolutions",
         "parameters": [
           {
@@ -11600,6 +11685,11 @@
             "description": "Validation Error"
           }
         },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
         "summary": "List Solutions",
         "tags": [
           "solutions"
@@ -11642,6 +11732,11 @@
             "description": "Validation Error"
           }
         },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
         "summary": "Create Manual Solution",
         "tags": [
           "solutions"
@@ -11735,13 +11830,18 @@
             "description": "Validation Error"
           }
         },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
         "summary": "Delete Solution",
         "tags": [
           "solutions"
         ]
       },
       "get": {
-        "description": "Get solution by ID.",
+        "description": "Get a solution inside the authenticated admin's tenant.",
         "operationId": "getSolution",
         "parameters": [
           {
@@ -11776,6 +11876,11 @@
             "description": "Validation Error"
           }
         },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
         "summary": "Get Solution",
         "tags": [
           "solutions"
@@ -11819,6 +11924,11 @@
             "description": "Validation Error"
           }
         },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
         "summary": "Get Solution Assignments",
         "tags": [
           "solutions"
@@ -11877,7 +11987,7 @@
     },
     "/api/v1/solutions/{solution_id}/export": {
       "post": {
-        "description": "Export solution in various formats (CSV, ICS, JSON).",
+        "description": "Export a tenant-scoped solution in JSON, CSV, or PDF.",
         "operationId": "exportSolution",
         "parameters": [
           {
@@ -11920,6 +12030,11 @@
             "description": "Validation Error"
           }
         },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
         "summary": "Export Solution",
         "tags": [
           "solutions"
