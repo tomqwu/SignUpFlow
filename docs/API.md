@@ -376,10 +376,10 @@ print(f"Moved {diff.total_changes} assignments")
 
 ## Complete Example
 
-See `examples/api_example.py` for a full working example:
+See `examples/api_client_example.py` for the maintained local Basketball workflow:
 
 ```bash
-python examples/api_example.py
+poetry run python examples/api_client_example.py
 ```
 
 ## Testing

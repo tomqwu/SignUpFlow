@@ -12,6 +12,7 @@ fastapi = "^0.109.0"
 uvicorn = {extras = ["standard"], version = "^0.27.0"}
 pydantic = {extras = ["email"], version = "^2.5.0"}
 pydantic-settings = "^2.0.0"
+click = "^8.1.0"
 pyyaml = "^6.0.1"
 ics = "^0.7.2"
 icalendar = "^6.0.1"
@@ -47,6 +48,7 @@ playwright = "^1.60.0"
 
 [tool.poetry.scripts]
 roster-api = "api.main:start"
+signupflow = "api.cli.main:main"
 
 [build-system]
 requires = ["poetry-core"]

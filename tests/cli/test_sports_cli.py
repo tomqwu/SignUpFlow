@@ -1,9 +1,6 @@
-"""
-CLI E2E: Sports club roster scheduling via YAML workspace.
+"""CLI E2E coverage for a Basketball team YAML workspace."""
 
-Cricket and basketball rosters for Riverside Sports Club.
-Dual-sport players, tournament week heavy load, role-specific assignments.
-"""
+from __future__ import annotations
 
 import json
 from datetime import datetime, timedelta
@@ -15,255 +12,159 @@ from tests.cli.conftest import run_cli, write_yaml
 
 
 @pytest.mark.no_mock_auth
-class TestSportsCLI:
-    def _build_sports_workspace(self, ws: Path, tournament: bool = False):
-        """Create a sports club workspace."""
+class TestBasketballCLI:
+    """Exercise Basketball roster generation through the public CLI."""
+
+    def _build_workspace(self, workspace: Path, *, tournament: bool = False) -> datetime:
+        """Create a Basketball workspace with two qualified players per position."""
         write_yaml(
-            ws / "org.yaml",
+            workspace / "org.yaml",
             {
-                "org_id": "riverside-sports",
-                "region": "AU",
+                "org_id": "riverside-basketball",
+                "region": "CA-ON",
                 "defaults": {"fairness_weight": 60},
             },
         )
-
-        write_yaml(
-            ws / "people.yaml",
-            {
-                "people": [
-                    {"id": "rahul", "name": "Rahul Sharma", "roles": ["batsman", "wicket_keeper"]},
-                    {"id": "priya", "name": "Priya Patel", "roles": ["bowler", "point_guard"]},
-                    {
-                        "id": "marcus",
-                        "name": "Marcus Johnson",
-                        "roles": ["center", "power_forward"],
-                    },
-                    {
-                        "id": "alex",
-                        "name": "Alex Rivera",
-                        "roles": ["shooting_guard", "all_rounder", "batsman"],
-                    },
-                    {
-                        "id": "tomoko",
-                        "name": "Tomoko Sato",
-                        "roles": ["small_forward", "point_guard"],
-                    },
-                    {"id": "ben", "name": "Ben O'Brien", "roles": ["batsman", "bowler"]},
-                ]
-            },
+        positions = (
+            "point_guard",
+            "shooting_guard",
+            "small_forward",
+            "power_forward",
+            "center",
         )
+        people = []
+        for position in positions:
+            label = position.replace("_", " ").title()
+            people.extend(
+                [
+                    {
+                        "id": f"{position}-a",
+                        "name": f"{label} A",
+                        "roles": [position],
+                    },
+                    {
+                        "id": f"{position}-b",
+                        "name": f"{label} B",
+                        "roles": [position],
+                    },
+                ]
+            )
+        people[0]["roles"].append("shooting_guard")
+        people[3]["roles"].append("point_guard")
+        write_yaml(workspace / "people.yaml", {"people": people})
 
         base = datetime.now().replace(hour=14, minute=0, second=0, microsecond=0)
         base += timedelta(days=14)
-
+        event_count = 5 if tournament else 3
         events = []
-        if tournament:
-            # Tournament: 3 cricket + 2 basketball in 3 days
-            for i in range(3):
-                events.append(
-                    {
-                        "id": f"cricket-t{i}",
-                        "type": "Tournament Cricket",
-                        "start": (base + timedelta(days=i)).isoformat(),
-                        "end": (base + timedelta(days=i, hours=6)).isoformat(),
-                        "required_roles": [
-                            {"role": "batsman", "count": 3},
-                            {"role": "bowler", "count": 2},
-                            {"role": "wicket_keeper", "count": 1},
-                        ],
-                    }
-                )
-            for i in range(2):
-                events.append(
-                    {
-                        "id": f"bball-t{i}",
-                        "type": "Tournament Basketball",
-                        "start": (base + timedelta(days=i, hours=7)).isoformat(),
-                        "end": (base + timedelta(days=i, hours=9)).isoformat(),
-                        "required_roles": [
-                            {"role": "point_guard", "count": 1},
-                            {"role": "shooting_guard", "count": 1},
-                            {"role": "center", "count": 1},
-                            {"role": "small_forward", "count": 1},
-                        ],
-                    }
-                )
-        else:
-            # Regular week
-            events = [
+        for index in range(event_count):
+            start = base + timedelta(days=index)
+            events.append(
                 {
-                    "id": "cricket-practice",
-                    "type": "Cricket Practice",
-                    "start": (base).isoformat(),
-                    "end": (base + timedelta(hours=3)).isoformat(),
-                    "required_roles": [
-                        {"role": "batsman", "count": 3},
-                        {"role": "bowler", "count": 2},
-                    ],
-                },
-                {
-                    "id": "bball-game",
-                    "type": "Basketball Game",
-                    "start": (base + timedelta(days=1)).isoformat(),
-                    "end": (base + timedelta(days=1, hours=2)).isoformat(),
-                    "required_roles": [
-                        {"role": "point_guard", "count": 1},
-                        {"role": "shooting_guard", "count": 1},
-                        {"role": "center", "count": 1},
-                        {"role": "small_forward", "count": 1},
-                        {"role": "power_forward", "count": 1},
-                    ],
-                },
-                {
-                    "id": "cricket-match",
-                    "type": "Cricket Match",
-                    "start": (base + timedelta(days=2)).isoformat(),
-                    "end": (base + timedelta(days=2, hours=6)).isoformat(),
-                    "required_roles": [
-                        {"role": "batsman", "count": 3},
-                        {"role": "bowler", "count": 2},
-                        {"role": "wicket_keeper", "count": 1},
-                    ],
-                },
-            ]
+                    "id": f"basketball-{'tournament' if tournament else 'game'}-{index + 1}",
+                    "type": "Basketball tournament game" if tournament else "Basketball game",
+                    "start": start.isoformat(),
+                    "end": (start + timedelta(hours=2)).isoformat(),
+                    "required_roles": [{"role": position, "count": 1} for position in positions],
+                }
+            )
+        write_yaml(workspace / "events.yaml", {"events": events})
+        return base
 
-        write_yaml(ws / "events.yaml", {"events": events})
+    def test_regular_games_are_fully_scheduled(self, tmp_path: Path) -> None:
+        """The solver returns one complete assignment block for every game."""
+        workspace = tmp_path / "basketball"
+        self._build_workspace(workspace)
 
-    # ------------------------------------------------------------------
-    # Test: Regular week roster
-    # ------------------------------------------------------------------
-
-    def test_regular_week_roster(self, tmp_path):
-        """Solver fills cricket practice, basketball game, and cricket match."""
-        ws = tmp_path / "sports"
-        self._build_sports_workspace(ws)
-
-        result = run_cli("solve", str(ws), "--json-output")
-        solution = json.loads(result.stdout)
+        solution = json.loads(run_cli("solve", str(workspace), "--json-output").stdout)
 
         assert solution["assignment_count"] == 3
-        event_ids = {a["event_id"] for a in solution["assignments"]}
-        assert "cricket-practice" in event_ids
-        assert "bball-game" in event_ids
-        assert "cricket-match" in event_ids
+        assert solution["hard_violations"] == 0
+        assert {row["event_id"] for row in solution["assignments"]} == {
+            "basketball-game-1",
+            "basketball-game-2",
+            "basketball-game-3",
+        }
+        assert all(len(row["assignees"]) == 5 for row in solution["assignments"])
 
-    def test_dual_sport_players_assigned(self, tmp_path):
-        """Priya (bowler + point_guard) and Alex (shooting_guard + batsman) serve both sports."""
-        ws = tmp_path / "sports"
-        self._build_sports_workspace(ws)
+    def test_multi_position_players_still_fill_one_slot_per_game(self, tmp_path: Path) -> None:
+        """A multi-position player cannot occupy two positions in one event."""
+        workspace = tmp_path / "basketball"
+        self._build_workspace(workspace)
 
-        result = run_cli("solve", str(ws), "--json-output")
-        solution = json.loads(result.stdout)
+        solution = json.loads(run_cli("solve", str(workspace), "--json-output").stdout)
 
-        # Collect all assigned person IDs per event type
-        cricket_assigned = set()
-        bball_assigned = set()
-        for a in solution["assignments"]:
-            if "cricket" in a["event_id"]:
-                cricket_assigned.update(a["assignees"])
-            elif "bball" in a["event_id"]:
-                bball_assigned.update(a["assignees"])
+        for assignment in solution["assignments"]:
+            assert len(assignment["assignees"]) == len(set(assignment["assignees"]))
+            assert set(assignment["assigned_roles"]) == set(assignment["assignees"])
 
-        # Priya should appear in cricket (bowler) or basketball (point_guard) or both
-        # Alex should appear in cricket (batsman) or basketball (shooting_guard) or both
-        dual_players = cricket_assigned & bball_assigned
-        # At least one dual-sport player should serve both
-        assert (
-            len(dual_players) >= 1
-        ), f"No dual-sport players found. Cricket: {cricket_assigned}, Basketball: {bball_assigned}"
+    def test_tournament_load_is_complete(self, tmp_path: Path) -> None:
+        """Five consecutive tournament games remain fully covered."""
+        workspace = tmp_path / "tournament"
+        self._build_workspace(workspace, tournament=True)
 
-    # ------------------------------------------------------------------
-    # Test: Tournament week (heavy load)
-    # ------------------------------------------------------------------
-
-    def test_tournament_week(self, tmp_path):
-        """5 events in 3 days — solver handles tournament load."""
-        ws = tmp_path / "tournament"
-        self._build_sports_workspace(ws, tournament=True)
-
-        result = run_cli("solve", str(ws), "--json-output")
-        solution = json.loads(result.stdout)
+        solution = json.loads(run_cli("solve", str(workspace), "--json-output").stdout)
 
         assert solution["assignment_count"] == 5
-        assert solution["health_score"] >= 0
+        assert solution["hard_violations"] == 0
+        assert all(len(row["assignees"]) == 5 for row in solution["assignments"])
 
-        # All 5 events should be assigned
-        event_ids = {a["event_id"] for a in solution["assignments"]}
-        for i in range(3):
-            assert f"cricket-t{i}" in event_ids
-        for i in range(2):
-            assert f"bball-t{i}" in event_ids
+    def test_tournament_load_is_shared(self, tmp_path: Path) -> None:
+        """Interchangeable players all receive work during the tournament."""
+        workspace = tmp_path / "tournament"
+        self._build_workspace(workspace, tournament=True)
 
-    def test_tournament_fairness(self, tmp_path):
-        """In a tournament, no player should be overloaded vs others."""
-        ws = tmp_path / "tournament"
-        self._build_sports_workspace(ws, tournament=True)
+        solution = json.loads(run_cli("solve", str(workspace), "--json-output").stdout)
+        assigned = {
+            person_id
+            for assignment in solution["assignments"]
+            for person_id in assignment["assignees"]
+        }
 
-        result = run_cli("solve", str(ws), "--json-output")
-        solution = json.loads(result.stdout)
+        assert len(assigned) == 10
+        assert solution["fairness_stdev"] < 1.0
 
-        person_counts = {}
-        for a in solution["assignments"]:
-            for pid in a["assignees"]:
-                person_counts[pid] = person_counts.get(pid, 0) + 1
+    def test_date_range_selects_one_game(self, tmp_path: Path) -> None:
+        """The documented date filters limit the solve horizon."""
+        workspace = tmp_path / "basketball"
+        base = self._build_workspace(workspace)
+        day = base.date().isoformat()
 
-        # 6 players across 5 events — everyone should contribute
-        assert len(person_counts) >= 4, f"Only {len(person_counts)} of 6 players used"
-
-    # ------------------------------------------------------------------
-    # Test: Date range filtering
-    # ------------------------------------------------------------------
-
-    def test_date_range_filter(self, tmp_path):
-        """--from-date and --to-date filter which events are scheduled."""
-        ws = tmp_path / "sports"
-        self._build_sports_workspace(ws)
-
-        # Solve only the first day (cricket practice)
-        base = datetime.now() + timedelta(days=14)
-        from_d = base.strftime("%Y-%m-%d")
-        to_d = from_d  # Same day
-
-        result = run_cli(
-            "solve", str(ws), "--from-date", from_d, "--to-date", to_d, "--json-output"
+        solution = json.loads(
+            run_cli(
+                "solve",
+                str(workspace),
+                "--from-date",
+                day,
+                "--to-date",
+                day,
+                "--json-output",
+            ).stdout
         )
-        solution = json.loads(result.stdout)
 
-        # Only events on that day
-        assert solution["assignment_count"] >= 1
-        event_ids = {a["event_id"] for a in solution["assignments"]}
-        assert "cricket-practice" in event_ids
+        assert solution["assignment_count"] == 1
+        assert solution["assignments"][0]["event_id"] == "basketball-game-1"
 
-    # ------------------------------------------------------------------
-    # Test: Human-readable output
-    # ------------------------------------------------------------------
+    def test_human_output_names_players(self, tmp_path: Path) -> None:
+        """Default output reports readable workspace and player details."""
+        workspace = tmp_path / "basketball"
+        self._build_workspace(workspace)
 
-    def test_human_readable_output(self, tmp_path):
-        """Default output shows names, not just IDs."""
-        ws = tmp_path / "sports"
-        self._build_sports_workspace(ws)
+        result = run_cli("solve", str(workspace))
 
-        result = run_cli("solve", str(ws))
-
-        # Should contain human-readable info
-        assert "Riverside" not in result.stdout or "Workspace:" in result.stdout
-        assert "People:" in result.stdout
-        assert "Events:" in result.stdout
+        assert "People:    10" in result.stdout
+        assert "Events:    3" in result.stdout
         assert "Solved in" in result.stdout
-        # Should show people names in assignments
-        assert any(
-            name in result.stdout for name in ["Rahul", "Priya", "Marcus", "Alex", "Tomoko", "Ben"]
+        assert "Point Guard" in result.stdout
+
+    def test_strict_mode_is_supported(self, tmp_path: Path) -> None:
+        """Strict mode accepts the complete Basketball workspace."""
+        workspace = tmp_path / "basketball"
+        self._build_workspace(workspace)
+
+        solution = json.loads(
+            run_cli("solve", str(workspace), "--mode", "strict", "--json-output").stdout
         )
 
-    # ------------------------------------------------------------------
-    # Test: Solve modes
-    # ------------------------------------------------------------------
-
-    def test_strict_mode(self, tmp_path):
-        """--mode strict runs the solver (mode currently unused but accepted)."""
-        ws = tmp_path / "sports"
-        self._build_sports_workspace(ws)
-
-        result = run_cli("solve", str(ws), "--mode", "strict", "--json-output")
-        solution = json.loads(result.stdout)
-        assert solution["assignment_count"] > 0
+        assert solution["assignment_count"] == 3
+        assert solution["hard_violations"] == 0

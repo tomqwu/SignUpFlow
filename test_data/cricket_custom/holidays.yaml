@@ -1,8 +1,0 @@
-region: CA-ON
-days:
-  - date: 2025-09-01
-    label: Labour Day
-    is_long_weekend: true
-  - date: 2025-10-13
-    label: Thanksgiving Monday
-    is_long_weekend: true

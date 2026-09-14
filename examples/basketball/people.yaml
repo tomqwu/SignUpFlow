@@ -1,0 +1,13 @@
+people:
+  - id: point-guard-a
+    name: Point Guard A
+    roles: [point_guard]
+  - id: point-guard-b
+    name: Point Guard B
+    roles: [point_guard]
+  - id: coach-a
+    name: Coach A
+    roles: [coach]
+  - id: coach-b
+    name: Coach B
+    roles: [coach]

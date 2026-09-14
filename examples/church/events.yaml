@@ -1,0 +1,13 @@
+events:
+  - {id: church-service-w1, type: Sunday worship, start: '2030-01-06T10:00:00', end: '2030-01-06T12:00:00', required_roles: [{role: worship_leader, count: 1}]}
+  - {id: church-rehearsal-w1, type: Rehearsal, start: '2030-01-05T18:00:00', end: '2030-01-05T20:00:00', required_roles: [{role: musician, count: 1}]}
+  - {id: church-service-w2, type: Sunday worship, start: '2030-01-13T10:00:00', end: '2030-01-13T12:00:00', required_roles: [{role: worship_leader, count: 1}]}
+  - {id: church-rehearsal-w2, type: Rehearsal, start: '2030-01-12T18:00:00', end: '2030-01-12T20:00:00', required_roles: [{role: musician, count: 1}]}
+  - {id: church-service-w3, type: Sunday worship, start: '2030-01-20T10:00:00', end: '2030-01-20T12:00:00', required_roles: [{role: worship_leader, count: 1}]}
+  - {id: church-rehearsal-w3, type: Rehearsal, start: '2030-01-19T18:00:00', end: '2030-01-19T20:00:00', required_roles: [{role: musician, count: 1}]}
+  - {id: church-service-w4, type: Sunday worship, start: '2030-01-27T10:00:00', end: '2030-01-27T12:00:00', required_roles: [{role: worship_leader, count: 1}]}
+  - {id: church-rehearsal-w4, type: Rehearsal, start: '2030-01-26T18:00:00', end: '2030-01-26T20:00:00', required_roles: [{role: musician, count: 1}]}
+  - {id: church-service-w5, type: Sunday worship, start: '2030-02-03T10:00:00', end: '2030-02-03T12:00:00', required_roles: [{role: worship_leader, count: 1}]}
+  - {id: church-rehearsal-w5, type: Rehearsal, start: '2030-02-02T18:00:00', end: '2030-02-02T20:00:00', required_roles: [{role: musician, count: 1}]}
+  - {id: church-service-w6, type: Sunday worship, start: '2030-02-10T10:00:00', end: '2030-02-10T12:00:00', required_roles: [{role: worship_leader, count: 1}]}
+  - {id: church-rehearsal-w6, type: Rehearsal, start: '2030-02-09T18:00:00', end: '2030-02-09T20:00:00', required_roles: [{role: musician, count: 1}]}
