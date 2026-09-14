@@ -52,15 +52,17 @@ def _queue_invitation_email(
 
     def _send_quiet() -> None:
         try:
-            email_service.send_invitation_email(
+            message_id = email_service.send_invitation_email(
                 to_email=to_email,
                 admin_name=admin_name,
                 org_name=org_name,
                 invitation_token=invitation_token,
                 app_url=web_app_url,
             )
+            if message_id is None:
+                logger.info("invitation email was not delivered by the configured backend")
         except Exception as exc:  # never let a send failure 5xx the user-facing endpoint
-            logger.warning("invitation email send failed for %s: %s", to_email, exc)
+            logger.warning("invitation email delivery failed: %s", exc)
 
     background_tasks.add_task(_send_quiet)
 

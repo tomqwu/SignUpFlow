@@ -31,6 +31,7 @@ POISONED_ENVIRONMENT = {
     "MAILTRAP_INBOX_ID": "mailtrap-live-inbox",
     "MAILTRAP_SMTP_USER": "mailtrap-live-user",
     "MAILTRAP_SMTP_PASSWORD": "mailtrap-live-password",
+    "LOCAL_EMAIL_CAPTURE_DIR": "/tmp/inherited-unowned-capture",
     "OLLAMA_API_KEY": "ollama-voice-key",
     "RECAPTCHA_SITE_KEY": "recaptcha-live-site-key",
     "RECAPTCHA_SECRET_KEY": "recaptcha-live-secret-key",
@@ -92,6 +93,21 @@ def test_live_server_environment_preserves_runtime_basics_only():
             "BILLING_ENABLED",
         }:
             assert name not in safe
+
+
+def test_mail_capture_requires_explicit_owned_path():
+    safe = build_test_environment(
+        POISONED_ENVIRONMENT,
+        database_url="sqlite:////tmp/owned-mail-e2e.db",
+        secret_key="owned-mail-secret-key-minimum-32-characters",
+        email_capture_dir="/tmp/owned-mail-capture",
+        frontend_url="http://127.0.0.1:8123",
+    )
+
+    assert safe["LOCAL_EMAIL_CAPTURE_DIR"] == "/tmp/owned-mail-capture"
+    assert safe["APP_URL"] == "http://127.0.0.1:8123"
+    assert safe["FRONTEND_URL"] == "http://127.0.0.1:8123"
+    assert safe["EMAIL_ENABLED"] == "false"
 
 
 def test_settings_ignore_dotenv_when_test_loading_is_disabled(tmp_path):

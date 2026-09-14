@@ -75,7 +75,9 @@ def _send_reset_email_quiet(to_email: str, name: str, reset_token: str, app_url:
             reset_token=reset_token,
             app_url=app_url,
         )
-        if not sent:
+        if not sent and email_service.delivery_mode == "disabled":
+            logger.info("Password-reset delivery is disabled; no message was sent")
+        elif not sent:
             logger.error("Password-reset email delivery failed; a fresh request may be retried")
     except Exception:  # noqa: BLE001 — see docstring; we never want this to bubble
         logger.error("Password-reset email delivery failed; a fresh request may be retried")
@@ -97,15 +99,15 @@ def request_password_reset(
     under the documented default ``WORKERS=4`` because the worker handling
     ``POST /reset-password`` may differ from the one that issued the token.
     The token is NEVER returned in the response in production. Set
-    ``DEBUG_RETURN_RESET_TOKEN=true`` in dev/test environments to opt into
-    receiving the token in the JSON body for E2E exercise.
+    ``DEBUG_RETURN_RESET_TOKEN=true`` only for isolated debugging. Committed
+    acceptance tests must follow the captured message and never use that shortcut.
 
     Email send is queued via ``BackgroundTasks`` so the HTTP response
     timing is independent of email backend latency — both for anti-
     enumeration and to prevent slow-SMTP DoS. The reset token is issued
     synchronously; email delivery is best-effort.
     """
-    generic_response = {"message": "If the email exists, a password reset link will be sent"}
+    generic_response = {"message": "If the email exists, recovery instructions were processed"}
     # Roster-only Persons (created via /people or bulk import) live in the
     # database without a login account — ``password_hash IS NULL``. Issuing
     # a reset for those rows would let anyone controlling the listed email

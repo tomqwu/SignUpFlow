@@ -57,6 +57,18 @@ def send_email_task(self, notification_id: int) -> dict[str, Any]:
             logger.error(f"Notification {notification_id} not found")
             return {"status": "error", "message": "Notification not found"}
 
+        terminal_statuses = {
+            NotificationStatus.SENT,
+            NotificationStatus.DELIVERED,
+            NotificationStatus.OPENED,
+            NotificationStatus.CLICKED,
+        }
+        if notification.status in terminal_statuses:
+            return {
+                "status": "already_sent",
+                "message_id": notification.sendgrid_message_id,
+            }
+
         # Get recipient
         recipient = db.query(Person).filter(Person.id == notification.recipient_id).first()
 
@@ -100,7 +112,7 @@ def send_email_task(self, notification_id: int) -> dict[str, Any]:
             return {"status": "error", "message": "Unknown notification type"}
 
         if message_id:
-            logger.info(f"Email sent successfully for notification {notification_id}")
+            logger.info("Notification %s delivered to configured backend", notification_id)
             return {"status": "success", "message_id": message_id}
         else:
             logger.error(f"Email send failed for notification {notification_id}")

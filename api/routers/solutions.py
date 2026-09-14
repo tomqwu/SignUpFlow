@@ -5,7 +5,16 @@ import math
 from copy import deepcopy
 from typing import Any
 
-from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response, status
+from fastapi import (
+    APIRouter,
+    BackgroundTasks,
+    Depends,
+    HTTPException,
+    Query,
+    Request,
+    Response,
+    status,
+)
 from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
 
@@ -24,6 +33,7 @@ from api.models import (
     Assignment,
     AuditAction,
     Event,
+    Notification,
     Organization,
     Person,
     Solution,
@@ -46,6 +56,7 @@ from api.schemas.solver import (
     WorkloadStats,
 )
 from api.services import event_bus
+from api.services.notification_service import dispatch_notification_ids
 from api.services.publication_service import (
     PublicationConflictError,
     publish_solution_transaction,
@@ -585,6 +596,7 @@ def export_solution(
 def publish_solution(
     solution_id: int,
     http_request: Request,
+    background_tasks: BackgroundTasks,
     current_admin: Person = Depends(get_current_admin_user),
     db: Session = Depends(get_db),
 ):
@@ -607,6 +619,17 @@ def publish_solution(
     except Exception:
         db.rollback()
         raise
+    notification_ids = [
+        row.id
+        for row in db.query(Notification)
+        .filter(
+            Notification.org_id == solution.org_id,
+            Notification.delivery_key.like(f"solution:{solution.id}:assignment:%"),
+            Notification.status == "pending",
+        )
+        .all()
+    ]
+    dispatch_notification_ids(background_tasks, notification_ids)
     return _solution_response(solution, db)
 
 

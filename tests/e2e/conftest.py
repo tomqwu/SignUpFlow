@@ -46,6 +46,18 @@ def db_path(tmp_path_factory) -> str:
 
 
 @pytest.fixture(scope="session")
+def mail_db_path(tmp_path_factory) -> str:
+    """Separate database for workflows that intentionally enable local mail capture."""
+    return str(tmp_path_factory.mktemp("e2e-mail") / "e2e-mail.db")
+
+
+@pytest.fixture(scope="session")
+def mail_capture_dir(tmp_path_factory) -> Path:
+    """Owned local RFC 822 sink; no provider or non-loopback connection is used."""
+    return tmp_path_factory.mktemp("e2e-mail-capture")
+
+
+@pytest.fixture(scope="session")
 def live_server(db_path):
     """Real uvicorn process on an ephemeral port, fresh DB, /health-gated."""
     import os
@@ -92,6 +104,64 @@ def live_server(db_path):
             else:
                 raise RuntimeError(
                     "live server did not become healthy in 60s\n" + read_server_log(log_path)
+                )
+            yield base
+        finally:
+            proc.terminate()
+            try:
+                proc.wait(timeout=10)
+            except subprocess.TimeoutExpired:
+                proc.kill()
+
+
+@pytest.fixture(scope="session")
+def mail_live_server(mail_db_path, mail_capture_dir):
+    """Real app with only the owned local `.eml` delivery backend enabled."""
+    import os
+
+    port = _free_port()
+    base = f"http://127.0.0.1:{port}"
+    env = build_test_environment(
+        os.environ,
+        database_url=f"sqlite:///{mail_db_path}",
+        secret_key="e2e-mail-secret-key-min-32-chars-long-xxxx",
+        email_capture_dir=str(mail_capture_dir),
+        frontend_url=base,
+    )
+    log_path = Path(mail_db_path).with_name("server.log")
+    with log_path.open("w", encoding="utf-8") as server_log:
+        proc = subprocess.Popen(
+            [
+                sys.executable,
+                "-m",
+                "uvicorn",
+                "api.main:app",
+                "--host",
+                "127.0.0.1",
+                "--port",
+                str(port),
+            ],
+            cwd=str(Path(__file__).resolve().parents[2]),
+            env=env,
+            stdout=server_log,
+            stderr=subprocess.STDOUT,
+        )
+        deadline = time.time() + 60
+        try:
+            while time.time() < deadline:
+                if proc.poll() is not None:
+                    raise RuntimeError(
+                        "mail uvicorn exited before becoming ready\n" + read_server_log(log_path)
+                    )
+                try:
+                    with urllib.request.urlopen(f"{base}/health", timeout=2) as response:
+                        if response.status == 200:
+                            break
+                except Exception:
+                    time.sleep(0.5)
+            else:
+                raise RuntimeError(
+                    "mail live server did not become healthy in 60s\n" + read_server_log(log_path)
                 )
             yield base
         finally:

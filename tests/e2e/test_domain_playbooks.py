@@ -64,7 +64,7 @@ def _onboard_qualified_members(page, new_context, base, db_path, playbook, width
         page.select_option("#inv_role", "volunteer")
         page.fill("#inv_qualifications", role)
         page.get_by_role("button", name="Send invite").click()
-        expect(page.locator("#invite-result")).to_contain_text(f"Invitation sent to {email}")
+        expect(page.locator("#invite-result")).to_contain_text(f"Invitation created for {email}")
 
         token = invite_token(db_path, email)
         assert token is not None

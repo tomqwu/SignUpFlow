@@ -8,7 +8,8 @@ Run these before calling a church or basketball scheduling release ready:
 
 These are scheduling acceptance exercises, not certification that a real organization
 is operationally ready. Use fictional people and a disposable database. Never run
-the fixtures against a customer organization. Email and SMS must remain disabled.
+the fixtures against a customer organization. External email, SMS, and billing must
+remain disabled; BO-09 intentionally enables only the owned local `.eml` capture backend.
 
 ## Reproduce
 
@@ -19,6 +20,7 @@ EMAIL_ENABLED=false SMS_ENABLED=false BILLING_ENABLED=false poetry run pytest te
 poetry run pytest tests/unit/test_solver_role_slots.py -v
 poetry run playwright install chromium
 EMAIL_ENABLED=false SMS_ENABLED=false BILLING_ENABLED=false poetry run pytest tests/e2e/test_domain_playbooks.py -v
+poetry run pytest tests/e2e/test_local_mail_playbooks.py -v
 make test-unit-fast
 make test-all
 ```
@@ -48,6 +50,15 @@ UI, move only the first occurrence, cancel only the second, and verify that the 
 is unchanged. They then use the separately labeled whole-series deletion. The primary
 published-roster journey also moves an accepted event through the browser and verifies
 that the member sees it as unanswered until accepting the new commitment revision.
+
+The BO-09 browser variants run the same recovery and notification journey for every
+discovered domain at 360px and 1440px. They use a dedicated live server with paid
+delivery disabled and `LOCAL_EMAIL_CAPTURE_DIR` set to an owned temporary directory.
+The administrator invites the domain's critical-role member, the member accepts and
+recovers the account through actual captured links, then publish, event-change, and
+reminder operations produce captured mail and matching in-app notifications. Every
+notification HTTP link is opened against that same server. No provider credential,
+non-loopback connection, or debug token is used.
 
 `church.json` and `basketball.json` are the executable role/headcount fixtures.
 `tests/playbooks/` validates and discovers them for both test tiers. Each run creates new
@@ -115,9 +126,9 @@ Coverage statuses have precise meanings: `automated` has executable local test
 evidence; `partial` has useful automated evidence but not the complete manifest
 oracle; `manual` is an accepted human operation; `blocked` names missing product
 behavior or evidence and includes the manual tier so it cannot look automated.
-The manifest records the full six-week plan, week-seven rollover, and shortage
-publication as automated evidence. Owned-mail delivery remains blocked, and later
-all-role browser operations remain partial where the manifest says so.
+The manifest records the full six-week plan, week-seven rollover, shortage publication,
+owned-mail delivery, and account recovery as automated evidence. External inbox
+delivery and later all-role operations remain separate where the manifest says so.
 
 This is a domain-definition plugin for the six-week lifecycle, not an arbitrary
 workflow language. Adding a different lifecycle requires implementing and testing
@@ -150,13 +161,9 @@ unknown workflow IDs or silently skip unsupported scenarios.
 | Notification read does not fabricate a response | Web regression |
 | Unchanged republish carries acknowledgement; browser event change resets it | API, web, and browser response regressions |
 | Qualified reserve covers a swap without losing role coverage | Browser journey, both domains |
-
-The focused BO-08 browser journey API-seeds only its already-published six-week
-precondition. The administrator then uses normal browser forms to add both week-seven
-sessions, solve the shifted six-week range, review it, and publish it. Its independent
-oracle requires exactly twelve weeks-two-through-seven events, one live solution, both
-completed event records, and every original future event. This boundary avoids counting
-fixture construction as the rollover operation under test.
+| Invitation, recovery, assignment, change, and reminder content reaches owned mail | Local-capture browser journey, both domains and widths |
+| Captured action links work and reset links reject replay | Local-capture browser journey and integration recovery regressions |
+| Disabled delivery is labeled disabled, never sent | Unit and web regressions |
 | Competing qualified claims produce one winner without overfill | SQLite and PostgreSQL integration race tests |
 | Ineligible, unavailable, overlapping, or stale claims preserve the roster | Web and integration regressions |
 | Unpublished solution history neither appears nor consumes live capacity | Web and integration regressions |
@@ -165,11 +172,18 @@ fixture construction as the rollover operation under test.
 | Phone and desktop page width | Browser journey at 360 and 1440 pixels |
 | Adjacent events remain legal | Unit regression |
 
+The focused BO-08 browser journey API-seeds only its already-published six-week
+precondition. The administrator then uses normal browser forms to add both week-seven
+sessions, solve the shifted six-week range, review it, and publish it. Its independent
+oracle requires exactly twelve weeks-two-through-seven events, one live solution, both
+completed event records, and every original future event. This boundary avoids counting
+fixture construction as the rollover operation under test.
+
 Browser runs save onboarding, complete six-week solution, unanswered-schedule,
-accepted-assignment, and occurrence-scope screenshots in pytest's temporary test
-directory, plus dashboard and qualification captures. Inspect them as well as assertion
-results. A horizontal overflow assertion alone is not a comprehensive
-visual/accessibility audit.
+accepted-assignment, occurrence-scope, local-mail admin status, and member-inbox
+screenshots in pytest's temporary test directory, plus dashboard and qualification
+captures. Inspect them as well as assertion results. A horizontal overflow assertion
+alone is not a comprehensive visual/accessibility audit.
 
 ## Known boundaries and release blockers
 
@@ -195,7 +209,7 @@ visual/accessibility audit.
 - Role-based solver assignments now retain their selected role. Old solutions
   with null roles need regeneration; no existing data is silently rewritten.
 - The role-less team fallback, venue collision checks, DST/timezone transitions,
-  advanced recurrence-rule edits and re-materialization, real notification delivery,
+  advanced recurrence-rule edits and re-materialization, external notification delivery,
   and PostgreSQL parity beyond allocation claims require separate acceptance before
   production use. Single-occurrence move/cancel and whole-series deletion are covered.
 - Basketball playing minutes, substitutions during play, scores, standings and

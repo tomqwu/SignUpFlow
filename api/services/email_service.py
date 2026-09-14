@@ -2,6 +2,7 @@
 Email service for sending transactional emails via SMTP or SendGrid.
 
 Supports:
+- Owned local RFC 822 capture (provider-free acceptance)
 - SMTP (Mailtrap for testing, any SMTP server for production)
 - SendGrid API (production email delivery with tracking)
 - Jinja2 template rendering with i18n support
@@ -14,6 +15,7 @@ import logging
 import os
 import smtplib
 import time
+import uuid
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from pathlib import Path
@@ -42,7 +44,7 @@ class EmailService:
     Email service for sending transactional emails.
 
     Features:
-    - Dual backend: SMTP (Mailtrap/testing) or SendGrid (production)
+    - Local capture, SMTP (sandbox), or SendGrid (production)
     - Jinja2 template rendering with i18n support (6 languages)
     - Retry logic with exponential backoff
     - Database notification tracking
@@ -59,6 +61,7 @@ class EmailService:
         from_name: str | None = None,
         sendgrid_api_key: str | None = None,
         use_sendgrid: bool = False,
+        capture_dir: str | Path | None = None,
     ):
         """
         Initialize email service.
@@ -84,21 +87,26 @@ class EmailService:
             use_sendgrid: Use SendGrid instead of SMTP (auto-detected if SENDGRID_API_KEY set)
         """
         # SMTP configuration (Mailtrap for testing)
-        self.smtp_host = smtp_host or os.getenv("MAILTRAP_SMTP_HOST", "sandbox.smtp.mailtrap.io")
-        self.smtp_port = smtp_port or int(os.getenv("MAILTRAP_SMTP_PORT", "2525"))
-        self.smtp_user = smtp_user or os.getenv("MAILTRAP_SMTP_USER", "")
-        self.smtp_password = smtp_password or os.getenv("MAILTRAP_SMTP_PASSWORD", "")
+        self.smtp_host: str = (
+            smtp_host or os.getenv("MAILTRAP_SMTP_HOST") or "sandbox.smtp.mailtrap.io"
+        )
+        self.smtp_port: int = smtp_port or int(os.getenv("MAILTRAP_SMTP_PORT", "2525"))
+        self.smtp_user: str = smtp_user or os.getenv("MAILTRAP_SMTP_USER") or ""
+        self.smtp_password: str = smtp_password or os.getenv("MAILTRAP_SMTP_PASSWORD") or ""
 
         # Email sender configuration
-        self.from_email = from_email or os.getenv("EMAIL_FROM", "noreply@signupflow.io")
-        self.from_name = from_name or os.getenv("EMAIL_FROM_NAME", "SignUpFlow")
+        self.from_email: str = from_email or os.getenv("EMAIL_FROM") or "noreply@signupflow.io"
+        self.from_name: str = from_name or os.getenv("EMAIL_FROM_NAME") or "SignUpFlow"
+
+        raw_capture_dir = capture_dir or os.getenv("LOCAL_EMAIL_CAPTURE_DIR")
+        self.capture_dir = Path(raw_capture_dir).resolve() if raw_capture_dir else None
 
         # SendGrid configuration (production)
         self.sendgrid_api_key = sendgrid_api_key or os.getenv("SENDGRID_API_KEY")
         self.use_sendgrid = use_sendgrid or bool(self.sendgrid_api_key)
 
         # Initialize SendGrid client if available and configured
-        self.sendgrid_client = None
+        self.sendgrid_client: Any | None = None
         if self.use_sendgrid and SENDGRID_AVAILABLE and self.sendgrid_api_key:
             self.sendgrid_client = SendGridAPIClient(self.sendgrid_api_key)
             logger.info("SendGrid client initialized for production email sending")
@@ -119,7 +127,9 @@ class EmailService:
         explicit_smtp_config = bool(smtp_user and smtp_password)
         env_enabled = os.getenv("EMAIL_ENABLED", "false").lower() == "true"
         testing_mode = os.getenv("TESTING", "").lower() == "true"
-        self.enabled = (explicit_smtp_config or env_enabled) and not testing_mode
+        self.enabled = bool(self.capture_dir) or (
+            (explicit_smtp_config or env_enabled) and not testing_mode
+        )
 
         # Initialize Jinja2 template environment
         template_dir = Path(__file__).parent.parent / "templates" / "email"
@@ -189,7 +199,7 @@ class EmailService:
             ... )
         """
         if not self.enabled:
-            logger.warning(f"Email sending disabled - would send to {to_email}")
+            logger.info("Email delivery disabled; message was not sent")
             return None
 
         # Render template if template_name provided
@@ -219,8 +229,10 @@ class EmailService:
                 if notification and db:
                     self._update_notification_status(notification, "sending", db)
 
-                # Send via SendGrid or SMTP
-                if self.use_sendgrid and self.sendgrid_client:
+                # Send through the explicitly configured delivery backend.
+                if self.capture_dir:
+                    message_id = self._capture_email(to_email, subject, html_content, plain_content)
+                elif self.use_sendgrid and self.sendgrid_client:
                     message_id = self._send_via_sendgrid(to_email, subject, html_content)
                 else:
                     message_id = self._send_via_smtp(to_email, subject, html_content, plain_content)
@@ -231,7 +243,10 @@ class EmailService:
                         notification, "sent", db, sendgrid_message_id=message_id
                     )
 
-                backend = "SendGrid" if self.use_sendgrid else "SMTP"
+                if self.capture_dir:
+                    backend = "local capture"
+                else:
+                    backend = "SendGrid" if self.use_sendgrid else "SMTP"
                 logger.info(
                     f"Email sent successfully to {to_email} via {backend} (id={message_id})"
                 )
@@ -268,6 +283,41 @@ class EmailService:
 
         return None
 
+    @property
+    def delivery_mode(self) -> str:
+        """Return the configured backend without exposing credentials."""
+        if self.capture_dir:
+            return "local_capture"
+        if not self.enabled:
+            return "disabled"
+        return "sendgrid" if self.use_sendgrid and self.sendgrid_client else "smtp"
+
+    def _capture_email(
+        self,
+        to_email: str,
+        subject: str,
+        html_content: str,
+        plain_content: str | None = None,
+    ) -> str:
+        """Write one parseable RFC 822 message to the owned local mail sink."""
+        assert self.capture_dir is not None
+        self.capture_dir.mkdir(parents=True, exist_ok=True)
+        message_id = f"local-{uuid.uuid4().hex}"
+        message = MIMEMultipart("alternative")
+        message["Message-ID"] = f"<{message_id}@signupflow.local>"
+        message["Subject"] = subject
+        message["From"] = f"{self.from_name} <{self.from_email}>"
+        message["To"] = to_email
+        if plain_content:
+            message.attach(MIMEText(plain_content, "plain", "utf-8"))
+        message.attach(MIMEText(html_content, "html", "utf-8"))
+
+        destination = self.capture_dir / f"{message_id}.eml"
+        temporary = destination.with_suffix(".tmp")
+        temporary.write_bytes(message.as_bytes())
+        temporary.replace(destination)
+        return message_id
+
     def _send_via_sendgrid(self, to_email: str, subject: str, html_content: str) -> str:
         """
         Send email via SendGrid API.
@@ -290,11 +340,13 @@ class EmailService:
             html_content=Content("text/html", html_content),
         )
 
+        if self.sendgrid_client is None:
+            raise RuntimeError("SendGrid client is not configured")
         response = self.sendgrid_client.send(message)
 
         # Extract message ID from response headers
         message_id = response.headers.get("X-Message-Id", "unknown")
-        return message_id
+        return str(message_id)
 
     def _send_via_smtp(
         self, to_email: str, subject: str, html_content: str, plain_content: str | None = None
@@ -399,7 +451,7 @@ class EmailService:
         db: Session,
         sendgrid_message_id: str | None = None,
         error_message: str | None = None,
-    ):
+    ) -> None:
         """
         Update notification status in database.
 
@@ -508,10 +560,10 @@ class EmailService:
             >>> service = EmailService()
             >>> url = service.get_unsubscribe_url("abc123def456")
             >>> print(url)
-            http://localhost:8000/unsubscribe?token=abc123def456
+            http://localhost:8000/v/inbox#notif-prefs
         """
-        app_url = os.getenv("APP_URL", "http://localhost:8000")
-        return f"{app_url}/unsubscribe?token={unsubscribe_token}"
+        app_url = os.getenv("APP_URL", "http://localhost:8000").rstrip("/")
+        return f"{app_url}/v/inbox#notif-prefs"
 
     def send_assignment_email(
         self,
@@ -566,7 +618,7 @@ class EmailService:
             ...     language="en"
             ... )
         """
-        app_url = os.getenv("APP_URL", "http://localhost:8000")
+        app_url = os.getenv("APP_URL", "http://localhost:8000").rstrip("/")
 
         # Build template data
         template_data = {
@@ -577,12 +629,12 @@ class EmailService:
             "event_location": event_location,
             "event_duration": event_duration,
             "additional_info": additional_info,
-            "calendar_url": calendar_url or f"{app_url}/app/calendar",
-            "schedule_url": schedule_url or f"{app_url}/app/schedule",
-            "availability_url": availability_url or f"{app_url}/app/schedule",
+            "calendar_url": calendar_url or f"{app_url}/v/profile",
+            "schedule_url": schedule_url or f"{app_url}/v/schedule",
+            "availability_url": availability_url or f"{app_url}/v/availability",
             "unsubscribe_url": self.get_unsubscribe_url(unsubscribe_token)
             if unsubscribe_token
-            else f"{app_url}/settings",
+            else f"{app_url}/v/inbox#notif-prefs",
         }
 
         # Email subject
@@ -655,7 +707,7 @@ class EmailService:
             ...     language="en"
             ... )
         """
-        app_url = os.getenv("APP_URL", "http://localhost:8000")
+        app_url = os.getenv("APP_URL", "http://localhost:8000").rstrip("/")
 
         # Build template data
         template_data = {
@@ -668,11 +720,11 @@ class EmailService:
             "event_duration": event_duration,
             "what_to_bring": what_to_bring,
             "additional_info": additional_info,
-            "calendar_url": calendar_url or f"{app_url}/app/calendar",
-            "schedule_url": schedule_url or f"{app_url}/app/schedule",
+            "calendar_url": calendar_url or f"{app_url}/v/profile",
+            "schedule_url": schedule_url or f"{app_url}/v/schedule",
             "unsubscribe_url": self.get_unsubscribe_url(unsubscribe_token)
             if unsubscribe_token
-            else f"{app_url}/settings",
+            else f"{app_url}/v/inbox#notif-prefs",
         }
 
         # Email subject
@@ -742,7 +794,7 @@ class EmailService:
             ...     language="en"
             ... )
         """
-        app_url = os.getenv("APP_URL", "http://localhost:8000")
+        app_url = os.getenv("APP_URL", "http://localhost:8000").rstrip("/")
 
         # Determine what changed
         time_changed = bool(old_datetime and old_datetime != new_datetime)
@@ -761,10 +813,10 @@ class EmailService:
             "location_changed": location_changed,
             "event_duration": event_duration,
             "other_changes": other_changes,
-            "schedule_url": schedule_url or f"{app_url}/app/schedule",
+            "schedule_url": schedule_url or f"{app_url}/v/schedule",
             "unsubscribe_url": self.get_unsubscribe_url(unsubscribe_token)
             if unsubscribe_token
-            else f"{app_url}/settings",
+            else f"{app_url}/v/inbox#notif-prefs",
         }
 
         # Email subject
@@ -830,7 +882,7 @@ class EmailService:
             ...     language="en"
             ... )
         """
-        app_url = os.getenv("APP_URL", "http://localhost:8000")
+        app_url = os.getenv("APP_URL", "http://localhost:8000").rstrip("/")
 
         # Build template data
         template_data = {
@@ -842,10 +894,10 @@ class EmailService:
             "cancellation_reason": cancellation_reason,
             "apology_message": apology_message
             or "We apologize for any inconvenience this may cause.",
-            "schedule_url": schedule_url or f"{app_url}/app/schedule",
+            "schedule_url": schedule_url or f"{app_url}/v/schedule",
             "unsubscribe_url": self.get_unsubscribe_url(unsubscribe_token)
             if unsubscribe_token
-            else f"{app_url}/settings",
+            else f"{app_url}/v/inbox#notif-prefs",
         }
 
         # Email subject
@@ -869,7 +921,7 @@ class EmailService:
         org_name: str,
         invitation_token: str,
         app_url: str = "http://localhost:8000",
-    ) -> bool:
+    ) -> str | None:
         """Send invitation email with a `signupflow://` mobile deep link
         plus a web fallback. Mirrors `send_password_reset_email`'s pattern.
 
@@ -884,8 +936,8 @@ class EmailService:
                 ``signupflow://`` scheme and is independent of this arg.
 
         Returns:
-            True on success or `self.enabled == False` no-op; False on
-            transport failure (same convention as the rest of EmailService).
+            Message ID on success, including local capture; None when delivery
+            is disabled or the transport fails.
         """
         # Mobile deep link → opens the app at /invitation. Triple-slash
         # so the URI's *path* is "/invitation" (empty authority); a
@@ -1015,7 +1067,7 @@ class EmailService:
         name: str,
         reset_token: str,
         app_url: str = "http://localhost:8000",
-    ) -> bool:
+    ) -> str | None:
         """
         Send password-reset email with a one-hour token link.
 
@@ -1032,10 +1084,9 @@ class EmailService:
                 independent of this argument.
 
         Returns:
-            True if email sent successfully, False otherwise. Also returns
-            True (no-op) when ``self.enabled`` is False — caller treats the
-            "no email service configured" case as a successful no-op so the
-            invitation/reset endpoints don't 5xx in dev.
+            Message ID on success, including local capture; None when delivery
+            is disabled or the transport fails. The endpoint keeps its generic
+            response in every case to prevent account enumeration.
 
         Notes:
             The mobile app registers the ``signupflow://`` URL scheme so the

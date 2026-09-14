@@ -14,9 +14,13 @@ from api.models import (
     Assignment,
     Event,
     EventTeam,
+    Notification,
+    NotificationStatus,
+    NotificationType,
     Organization,
     Person,
     Resource,
+    Solution,
     Team,
 )
 from api.schemas.common import PaginationParams, get_pagination_params
@@ -28,6 +32,7 @@ from api.services.allocation_service import (
     unassign_person_from_event,
 )
 from api.services.assignment_response import reset_event_assignment_responses
+from api.services.notification_service import dispatch_notification_ids
 from api.timeutils import utcnow
 from api.utils.event_helpers import (
     count_people_with_role,
@@ -217,6 +222,7 @@ def get_event(
 def update_event(
     event_id: str,
     event_data: EventUpdate,
+    background_tasks: BackgroundTasks,
     current_admin: Person = Depends(get_current_admin_user),
     db: Session = Depends(get_db),
 ):
@@ -229,6 +235,11 @@ def update_event(
 
     # Verify admin belongs to the same organization as the event
     verify_org_member(current_admin, event.org_id)
+
+    old_datetime = event.start_time.strftime("%A, %B %d, %Y at %I:%M %p")
+    old_location = (event.extra_data or {}).get("location") or (
+        event.resource.location if event.resource else None
+    )
 
     material_change = any(
         value is not None and value != getattr(event, field)
@@ -272,12 +283,64 @@ def update_event(
         )
 
     if material_change:
+        visible_assignments = (
+            db.query(Assignment)
+            .join(Person, Person.id == Assignment.person_id)
+            .outerjoin(Solution, Solution.id == Assignment.solution_id)
+            .filter(
+                Assignment.event_id == event.id,
+                Person.org_id == event.org_id,
+                Assignment.response_status != "declined",
+                or_(Assignment.solution_id.is_(None), Solution.is_published.is_(True)),
+            )
+            .all()
+        )
         reset_event_assignment_responses(db, event.id, event.org_id)
+        for assignment in visible_assignments:
+            delivery_key = (
+                f"event:{event.id}:update:{assignment.id}:" f"r{assignment.commitment_revision}"
+            )
+            existing = (
+                db.query(Notification)
+                .filter(
+                    Notification.org_id == event.org_id,
+                    Notification.delivery_key == delivery_key,
+                )
+                .first()
+            )
+            if existing is None:
+                db.add(
+                    Notification(
+                        org_id=event.org_id,
+                        recipient_id=assignment.person_id,
+                        type=NotificationType.UPDATE,
+                        status=NotificationStatus.PENDING,
+                        event_id=event.id,
+                        delivery_key=delivery_key,
+                        template_data={
+                            "old_datetime": old_datetime,
+                            "old_location": old_location,
+                            "role": assignment.role,
+                        },
+                    )
+                )
         if event.series_id is not None:
             setattr(event, "is_exception", True)
 
     db.commit()
     db.refresh(event)
+    if material_change:
+        notification_ids = [
+            row.id
+            for row in db.query(Notification)
+            .filter(
+                Notification.org_id == event.org_id,
+                Notification.delivery_key.like(f"event:{event.id}:update:%"),
+                Notification.status == NotificationStatus.PENDING,
+            )
+            .all()
+        ]
+        dispatch_notification_ids(background_tasks, notification_ids)
     return event
 
 

@@ -57,6 +57,7 @@ htmlcov/
 coverage/
 test-reports/
 test-artifacts/
+.local/email-capture/
 
 # Type checking
 .mypy_cache/

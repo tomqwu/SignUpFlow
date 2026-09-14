@@ -32,3 +32,15 @@ def test_email_section_enabled_with_smtp(client, db, monkeypatch):
     assert resp.status_code == 200
     assert "SMTP / Mailtrap" in resp.text
     assert "Sending as" in resp.text
+
+
+def test_email_section_reports_local_capture_without_exposing_path(client, db, monkeypatch):
+    tok = _admin(client, db, org="em_o3", email="em3@web.test")
+    monkeypatch.setenv("LOCAL_EMAIL_CAPTURE_DIR", "/tmp/private-owned-mail-path")
+
+    resp = client.get("/a/settings", cookies={SESSION_COOKIE: tok})
+
+    assert resp.status_code == 200
+    assert "Local capture" in resp.text
+    assert "No external message is sent" in resp.text
+    assert "/tmp/private-owned-mail-path" not in resp.text

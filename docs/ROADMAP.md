@@ -1,6 +1,6 @@
 # Production Roadmap
 
-Current policy, 2026-09-13. The owner directs: **no CI checks; everything is
+Current policy, 2026-09-14. The owner directs: **no CI checks; everything is
 validated locally**. This supersedes every older hosted-test, hosted-review,
 static-CI, migration-CI and required-status proposal, including historical issue
 comments. Ollama is not a code-review provider.
@@ -85,6 +85,14 @@ evidence with a local mock. Do not deploy or enable providers from a roadmap alo
   runs the week-seven add, shifted solve/review, and publish operations in both
   domain browsers at phone and desktop widths while independently preserving
   completed history and every original future event.
+- #262/#266/#289 BO-09: a provider-free local RFC 822 sink now carries actual
+  invitation, password-recovery, assignment, event-change, and reminder content.
+  Durable unique delivery keys prevent repeated publish/change/reminder operations
+  from sending the same intent twice; disabled delivery remains pending and is labeled
+  disabled rather than sent. Church and Basketball critical-role members execute the
+  full captured-link and in-app reconciliation flow at 360px and 1440px. External
+  inbox placement, provider webhooks, multi-worker queue recovery, and approved
+  production delivery remain later acceptance under #262/#266.
 - #260: per-run SQLite database isolation exists. PostgreSQL business/concurrency
   parity is now proven for allocation claims only. Full migration and broader
   business parity remain unverified release work; run that validation locally.

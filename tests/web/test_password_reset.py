@@ -25,7 +25,7 @@ def test_forgot_unknown_email_still_shows_sent(client, db):
     # No user enumeration: unknown email returns the same generic message.
     resp = client.post("/auth/forgot", data={"email": "nobody@example.com"})
     assert resp.status_code == 200
-    assert "reset link is on its way" in resp.text.lower()
+    assert "recovery instructions were processed" in resp.text.lower()
 
 
 def test_forgot_invalid_email_shows_validation_error(client, db):
@@ -139,9 +139,10 @@ def test_web_forgot_delivers_a_working_single_use_link(client, db, monkeypatch):
 
 @pytest.mark.parametrize("raises", [False, True])
 def test_web_forgot_delivery_failure_is_observable_and_retryable(
-    client, db, monkeypatch, caplog, raises
+    client, db, monkeypatch, caplog, tmp_path, raises
 ):
     person = seed_person(db, email="retry@example.com")
+    monkeypatch.setattr(reset_router.email_service, "capture_dir", tmp_path)
     send = MagicMock(
         return_value=False, side_effect=RuntimeError("mail unavailable") if raises else None
     )

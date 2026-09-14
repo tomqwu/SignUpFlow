@@ -444,6 +444,15 @@ publishes weeks two through seven through the UI, and verifies the new 84-slot r
 The independent oracle proves that the completed event records and every original future
 commitment remain; fixture seeding is not counted as a browser action.
 
+The local-mail journey runs for Church and Basketball at both browser widths with
+all paid providers disabled. It writes real RFC 822 messages to an owned temporary
+directory, accepts the invitation through its captured link, resets the member's
+password through the captured single-use link, and delivers assignment, schedule-change,
+and reminder messages from the published roster. The same run reconciles the member
+inbox, rejects the old password and replayed reset token, and opens every notification
+HTTP link against the owned local server. This is local business-flow evidence, not
+proof of external inbox placement or provider reliability.
+
 Saved REST scheduling rules support hard assignment caps, hard minimum rest gaps,
 and a weighted soft cooldown preference. They execute in API solves instead of
 being stored as inert text. See the
@@ -462,6 +471,10 @@ make test-all             # All Python tiers, including web + contract + Playwri
 make test-mobile          # Flutter tests (requires Flutter SDK)
 make migrate              # Run Alembic migrations
 ```
+
+Run the provider-free local delivery workflow directly with
+`poetry run pytest tests/e2e/test_local_mail_playbooks.py -v`. See the
+[local mail capture guide](docs/LOCAL_EMAIL_CAPTURE.md) for its backend contract.
 
 Single test: `poetry run pytest tests/unit/test_events.py::test_create_event -v`
 

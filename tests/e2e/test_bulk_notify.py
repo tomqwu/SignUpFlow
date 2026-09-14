@@ -33,7 +33,7 @@ def test_notify_published_schedule_reaches_inbox(live_server, new_context, page,
     page.fill("#inv_email", vol_email)
     page.select_option("#inv_role", "volunteer")
     page.click("button:has-text('Send invite')")
-    page.wait_for_selector("#invite-result:has-text('Invitation sent')")
+    page.wait_for_selector("#invite-result:has-text('Invitation created')")
     vol_page = accept_invitation(new_context(), base, invite_token(db_path, vol_email))
 
     ev_date = next_sunday_iso()
@@ -63,7 +63,7 @@ def test_notify_published_schedule_reaches_inbox(live_server, new_context, page,
 
     # Explicit bulk reminder.
     page.click("button:has-text('Notify assignees')")
-    page.wait_for_selector("#notify-result:has-text('Reminder sent to 1 assignee(s)')")
+    page.wait_for_selector("#notify-result:has-text('Reminder added to 1 assignee inbox(es)')")
 
     # The volunteer's inbox carries both the auto publish notice and the reminder.
     vol_page.goto(f"{base}/v/inbox")
