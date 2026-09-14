@@ -44,7 +44,7 @@ def mount_web(app: FastAPI) -> None:
     app.include_router(router, include_in_schema=False)
 
     @app.exception_handler(_RedirectToLogin)
-    async def _redirect_to_login(request: Request, exc: _RedirectToLogin):
+    async def _redirect_to_login(request: Request, exc: _RedirectToLogin) -> Response:
         if request.headers.get("HX-Request", "").lower() == "true":
             return Response(status_code=401, headers={"HX-Redirect": "/auth/login"})
         return RedirectResponse(url="/auth/login", status_code=303)
