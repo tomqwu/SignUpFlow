@@ -10,7 +10,7 @@ from web.deps import SESSION_COOKIE
 
 
 def _login(client, db, *, pid, org, email):
-    seed_person(db, person_id=pid, org_id=org, email=email, roles=["volunteer"])
+    seed_person(db, person_id=pid, org_id=org, email=email, roles=["volunteer", "usher"])
     r = client.post("/auth/login", data={"email": email, "password": "WebPass123!"})
     return r.cookies[SESSION_COOKIE]
 
@@ -68,7 +68,7 @@ def test_cannot_claim_if_already_on_event(client, db):
     db.add(Assignment(event_id="sm_ev2", person_id="sm_b2", role="greeter", status="confirmed"))
     db.commit()
     r = client.post(f"/v/swaps/{asg.id}/claim", cookies={SESSION_COOKIE: b_tok})
-    assert r.status_code == 400
+    assert r.status_code == 409
     assert "already on" in r.text.lower()
     db.refresh(asg)
     assert asg.person_id == "sm_a2"  # untouched
@@ -93,7 +93,32 @@ def test_cannot_claim_non_swap(client, db):
     db.commit()
     db.refresh(a)
     r = client.post(f"/v/swaps/{a.id}/claim", cookies={SESSION_COOKIE: b_tok})
-    assert r.status_code == 400
+    assert r.status_code == 409
+
+
+def test_unqualified_swap_is_hidden_and_direct_claim_is_rejected(client, db):
+    seed_person(db, person_id="sm_a5", org_id="sm_o5", email="a5@sm.test", roles=["volunteer"])
+    seed_person(db, person_id="sm_b5", org_id="sm_o5", email="b5@sm.test", roles=["volunteer"])
+    login = client.post(
+        "/auth/login",
+        data={"email": "b5@sm.test", "password": "WebPass123!"},
+    )
+    tok = login.cookies[SESSION_COOKIE]
+    assignment = _swap_setup(db, "sm_o5", eid="sm_ev5", requester="sm_a5")
+
+    page = client.get("/v/swaps", cookies={SESSION_COOKIE: tok})
+    assert page.status_code == 200
+    assert "Sunday Service" not in page.text
+
+    blocked = client.post(
+        f"/v/swaps/{assignment.id}/claim",
+        cookies={SESSION_COOKIE: tok},
+    )
+    assert blocked.status_code == 409
+    assert "not qualified" in blocked.text.lower()
+    db.refresh(assignment)
+    assert assignment.person_id == "sm_a5"
+    assert assignment.status == "swap_requested"
 
 
 def test_open_links_to_swaps(client, db):

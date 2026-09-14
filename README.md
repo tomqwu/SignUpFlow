@@ -400,6 +400,10 @@ regeneration, publication, acceptance, and swaps.
 Roster allocation is not member acceptance. See the
 [assignment response contract](docs/ASSIGNMENT_RESPONSES.md) for persisted states,
 revision handling, migration behavior, coordinator queues, and replay protection.
+Open-shift claims, swap covers, and coordinator roster edits share a serialized
+[allocation transaction contract](docs/ALLOCATION_TRANSACTIONS.md). It preserves
+draft history, rechecks qualification and availability after locking, prevents
+overfill and overlap races, and leaves the prior roster unchanged on failure.
 
 The [machine-readable coverage manifest](docs/playbooks/coverage.json) binds the
 shared BO journeys, every Church/Basketball qualification, stable scenario IDs,

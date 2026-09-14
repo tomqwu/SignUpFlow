@@ -17,6 +17,8 @@ Reconciled 2026-09-13 for testing, CI, and merge policy:
   validation, CLI equivalence, and built-in invariants.
 - [Operational playbooks](playbooks/README.md): church and basketball workflows.
 - [Assignment responses](ASSIGNMENT_RESPONSES.md): member response truth, revisions, migration, and coordinator follow-up.
+- [Allocation transactions](ALLOCATION_TRANSACTIONS.md): serialized claims,
+  roster edits, live-capacity semantics, rollback, and local PostgreSQL proof.
 - [Mobile guide](../mobile/README.md) and [device smoke checks](../mobile/SMOKE.md).
 - [Documentation reconciliation record](DOCUMENTATION_STATUS.md): audit scope,
   historical classification, and verification limits.

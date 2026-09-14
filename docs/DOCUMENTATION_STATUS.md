@@ -36,6 +36,11 @@ coordinator/member surfaces with the Church and Basketball browser playbooks. Th
 affected dashboard, unanswered schedule, and accepted-detail README screenshots
 were recaptured from the 360px Church browser case; the other walkthrough screens
 were unaffected by this package.
+The maintained allocation transaction contract now documents the shared lock,
+eligibility, live-capacity, idempotency, rollback, and disposable PostgreSQL test
+boundaries for open shifts, swap coverage/denial, and coordinator roster edits.
+This package changes behavior and conflict copy without changing page layout, so
+the README walkthrough screenshots remain applicable.
 The maintained [API authorization matrix](API_AUTHORIZATION.md) now binds every
 mounted operation to an executable policy and records scheduling tenant/export
 semantics. This package changes API authorization and generated contracts, not

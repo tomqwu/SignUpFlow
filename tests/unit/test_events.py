@@ -483,7 +483,7 @@ class TestEventAssignments:
             f"{API_BASE}/events/{event_id}/assignments",
             json={"person_id": person_id, "action": "assign"},
         )
-        assert response.status_code == 400
+        assert response.status_code == 409
 
     def test_assignment_shows_in_available_people(self, client):
         """Test that assignments are reflected in available people endpoint."""
@@ -527,10 +527,11 @@ class TestEventAssignments:
         assert people[0]["is_assigned"] is False
 
         # Assign
-        client.post(
+        assigned = client.post(
             f"{API_BASE}/events/{event_id}/assignments",
-            json={"person_id": person_id, "action": "assign"},
+            json={"person_id": person_id, "action": "assign", "role": "volunteer"},
         )
+        assert assigned.status_code == 200
 
         # Check after assignment
         response = client.get(f"{API_BASE}/events/{event_id}/available-people")
