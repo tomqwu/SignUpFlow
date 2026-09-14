@@ -189,6 +189,8 @@ class ScreenshotEntry(BaseModel):
     path: str
     domain: str
     viewport: dict[str, int]
+    device_scale_factor: float
+    pixel_size: dict[str, int]
     scenario: str
     actor: str
     caption: str
@@ -251,6 +253,7 @@ def capture_screenshot(page: Any, tmp_path: Path, domain: str, width: int, state
             "width": width,
             "state": state,
             "browser": f"Chromium {browser.version if browser else 'unknown'}",
+            "device_scale_factor": page.evaluate("window.devicePixelRatio"),
             "captured_at": datetime.now(UTC).isoformat(),
             "source_ref": source_ref,
         }
@@ -284,7 +287,8 @@ def finalize_capture(capture_root: Path, repo_root: Path, source_ref: str) -> Pa
         state = CAPTURE_STATES[state_name]
         image_path = capture_root / domain / str(width) / f"{state_name}.png"
         image_width, image_height = _png_dimensions(image_path)
-        if image_width != width or image_height < 900:
+        scale = record["device_scale_factor"]
+        if image_width != width * scale or image_height < 900 * scale:
             raise ValueError(
                 f"Unexpected screenshot dimensions for {image_path}: {image_width}x{image_height}"
             )
@@ -294,6 +298,8 @@ def finalize_capture(capture_root: Path, repo_root: Path, source_ref: str) -> Pa
                 "path": image_path.relative_to(repo_root).as_posix(),
                 "domain": domain,
                 "viewport": {"width": width, "height": 900},
+                "device_scale_factor": scale,
+                "pixel_size": {"width": image_width, "height": image_height},
                 "scenario": state.value("scenario", domain),
                 "actor": state.actor,
                 "caption": state.value("caption", domain),
@@ -353,7 +359,11 @@ def validate_manifest(
         if not image_path.is_file() or _sha256(image_path) != entry.image_sha256:
             raise ValueError(f"Missing or altered screenshot: {entry.path}")
         image_width, image_height = _png_dimensions(image_path)
-        if image_width != entry.viewport["width"] or image_height < entry.viewport["height"]:
+        if (
+            image_width != entry.viewport["width"] * entry.device_scale_factor
+            or image_height < entry.viewport["height"] * entry.device_scale_factor
+            or entry.pixel_size != {"width": image_width, "height": image_height}
+        ):
             raise ValueError(f"Viewport mismatch for {entry.path}")
         fixture_path = repo_root / entry.fixture_path
         if not fixture_path.is_file() or _sha256(fixture_path) != entry.fixture_sha256:

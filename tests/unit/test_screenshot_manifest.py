@@ -55,6 +55,8 @@ def _manifest(tmp_path: Path) -> tuple[Path, Path, dict]:
                 "path": image.relative_to(repo).as_posix(),
                 "domain": "church",
                 "viewport": {"width": 360, "height": 900},
+                "device_scale_factor": 1,
+                "pixel_size": {"width": 360, "height": 900},
                 "scenario": state.value("scenario", "church"),
                 "actor": state.actor,
                 "caption": state.value("caption", "church"),
