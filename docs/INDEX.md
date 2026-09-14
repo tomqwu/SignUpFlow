@@ -11,6 +11,8 @@ Reconciled 2026-09-13 for testing, CI, and merge policy:
   local checks, and commit-bound evidence. Use this instead of old test reports.
 - [Contributor workflow](../CONTRIBUTING.md) and [agent rules](../AGENTS.md).
 - [Local code review policy](ai-pr-review.md): local review evidence and merge rules.
+- [API authorization matrix](API_AUTHORIZATION.md): executable route classes,
+  tenant response semantics, and scheduling regression evidence.
 - [Operational playbooks](playbooks/README.md): church and basketball workflows.
 - [Mobile guide](../mobile/README.md) and [device smoke checks](../mobile/SMOKE.md).
 - [Documentation reconciliation record](DOCUMENTATION_STATUS.md): audit scope,

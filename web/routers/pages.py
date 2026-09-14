@@ -253,7 +253,7 @@ def _my_timeoff(db: Session, person: Person) -> list[dict]:
     from api.routers.availability import get_timeoff
 
     out = []
-    for t in get_timeoff(person.id, db)["timeoff"]:
+    for t in get_timeoff(person.id, current_user=person, db=db)["timeoff"]:
         s = _date.fromisoformat(t["start_date"])
         e = _date.fromisoformat(t["end_date"])
         out.append(
@@ -284,7 +284,7 @@ RRULE_PRESETS = [
 def _my_rrule(db: Session, person: Person) -> str | None:
     from api.routers.availability import get_rrule
 
-    return get_rrule(person.id, db).rrule
+    return get_rrule(person.id, current_user=person, db=db).rrule
 
 
 def _my_exceptions(db: Session, person: Person) -> list[dict]:
@@ -297,7 +297,7 @@ def _my_exceptions(db: Session, person: Person) -> list[dict]:
             "date": r.exception_date.isoformat(),
             "label": r.exception_date.strftime("%a %d %b %Y").upper(),
         }
-        for r in list_exceptions(person.id, db)
+        for r in list_exceptions(person.id, current_user=person, db=db)
     ]
 
 
@@ -1356,7 +1356,7 @@ def _solution_events(db: Session, person: Person, sid: int) -> list[dict] | None
 
     if _solution_owned(db, person, sid) is None:
         return None
-    assignments = get_solution_assignments(sid, db)
+    assignments = get_solution_assignments(sid, current_admin=person, db=db)
     return [
         {
             "event_type": e.event_type or e.event_id,
@@ -1378,8 +1378,8 @@ def _solution_review(db: Session, person: Person, sid: int) -> dict | None:
         return None
     from api.models import AuditAction, AuditLog
 
-    detail = get_solution(sid, db)
-    stats = get_solution_stats(sid, person, db)
+    detail = get_solution(sid, current_admin=person, db=db)
+    stats = get_solution_stats(sid, current_admin=person, db=db)
     events = _solution_events(db, person, sid)
     ever_published = (
         db.query(AuditLog)

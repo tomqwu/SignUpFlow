@@ -228,7 +228,7 @@ class TestSportsScenario:
             role_counts={"batsman": 4, "bowler": 2, "wicket_keeper": 1},
         )
 
-        resp = client.get(f"/api/v1/events/?org_id={self.ORG}")
+        resp = client.get(f"/api/v1/events/?org_id={self.ORG}", headers=hdrs)
         assert resp.status_code == 200
         assert resp.json()["total"] == 4
 
@@ -245,10 +245,15 @@ class TestSportsScenario:
         injury_start = (datetime.now() + timedelta(days=14)).strftime("%Y-%m-%d")
         injury_end = (datetime.now() + timedelta(days=28)).strftime("%Y-%m-%d")
         add_timeoff(
-            client, rahul_id, injury_start, injury_end, reason="Hamstring injury — physio recovery"
+            client,
+            hdrs,
+            rahul_id,
+            injury_start,
+            injury_end,
+            reason="Hamstring injury — physio recovery",
         )
 
-        resp = client.get(f"/api/v1/availability/{rahul_id}/timeoff")
+        resp = client.get(f"/api/v1/availability/{rahul_id}/timeoff", headers=hdrs)
         assert resp.status_code == 200
         periods = resp.json()["timeoff"]
         assert len(periods) == 1
@@ -314,7 +319,7 @@ class TestSportsScenario:
         assert solution["metrics"]["health_score"] >= 0
 
         # Every event should have assignments
-        resp = client.get(f"/api/v1/events/assignments/all?org_id={self.ORG}")
+        resp = client.get(f"/api/v1/events/assignments/all?org_id={self.ORG}", headers=hdrs)
         assert resp.status_code == 200
         assignments = resp.json()["assignments"]
         assigned_events = {a["event_id"] for a in assignments}
@@ -441,7 +446,7 @@ class TestSportsScenario:
         assert resp.status_code == 200
 
         # Verify only Ben remains assigned
-        resp = client.get(f"/api/v1/events/assignments/all?org_id={self.ORG}")
+        resp = client.get(f"/api/v1/events/assignments/all?org_id={self.ORG}", headers=hdrs)
         assert resp.status_code == 200
         match_assignments = [
             a for a in resp.json()["assignments"] if a["event_id"] == "finals-match"

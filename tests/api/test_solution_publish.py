@@ -81,7 +81,7 @@ class TestPublishSolution:
         sol_b = _seed_solution(db, "pub-b")
 
         resp = client.post(f"/api/v1/solutions/{sol_b.id}/publish", headers=a_hdrs)
-        assert resp.status_code == 403
+        assert resp.status_code == 404
 
     def test_publish_unpublishes_prior(self, client, db):
         """Publishing one solution should unpublish any prior published in the same org."""

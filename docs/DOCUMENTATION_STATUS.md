@@ -30,6 +30,11 @@ The maintained API, mobile, agent, and roadmap entry points now describe atomic
 organization/first-admin bootstrap, invitation-only membership for existing
 organizations, one permission role plus scheduling qualifications, and the
 regenerated Dart client. `API_README.md` is explicitly historical.
+The maintained [API authorization matrix](API_AUTHORIZATION.md) now binds every
+mounted operation to an executable policy and records scheduling tenant/export
+semantics. This package changes API authorization and generated contracts, not
+the web layout; the README walkthrough screenshots therefore remain applicable
+and were not recaptured as new visual evidence.
 Aligned contributor commit/merge rules with the agent baseline. The owner's latest
 clarification supersedes the previous Ollama review setup: code review runs
 locally, no CI checks remain, and Ollama must not review PRs. The later clarification

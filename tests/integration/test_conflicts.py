@@ -111,21 +111,17 @@ def _assign(client, api_base, event_id: str, person_id: str, role: str | None = 
     return resp.json()
 
 
-def _add_timeoff(api_base: str, person_id: str, start: date, end: date) -> None:
-    """Helper: post a time-off period for a person (unauthenticated endpoint)."""
-    anon = httpx.Client()
-    try:
-        resp = anon.post(
-            f"{api_base}/availability/{person_id}/timeoff",
-            json={
-                "start_date": start.isoformat(),
-                "end_date": end.isoformat(),
-                "reason": "integration test",
-            },
-        )
-        assert resp.status_code == 201, resp.text
-    finally:
-        anon.close()
+def _add_timeoff(client, api_base: str, person_id: str, start: date, end: date) -> None:
+    """Post a time-off period through an authenticated same-tenant administrator."""
+    resp = client.post(
+        f"{api_base}/availability/{person_id}/timeoff",
+        json={
+            "start_date": start.isoformat(),
+            "end_date": end.isoformat(),
+            "reason": "integration test",
+        },
+    )
+    assert resp.status_code == 201, resp.text
 
 
 class TestCheckConflicts:
@@ -135,15 +131,10 @@ class TestCheckConflicts:
         data = conflicts_org
         event = _create_event(data["admin_client"], data["api_base"], data["org_id"])
 
-        # Unauthenticated for this endpoint (no auth dependency in the router).
-        anon = httpx.Client()
-        try:
-            resp = anon.post(
-                f"{data['api_base']}/conflicts/check",
-                json={"person_id": data["vol_id"], "event_id": event["id"]},
-            )
-        finally:
-            anon.close()
+        resp = data["admin_client"].post(
+            f"{data['api_base']}/conflicts/check",
+            json={"person_id": data["vol_id"], "event_id": event["id"]},
+        )
         assert resp.status_code == 200, resp.text
         body = resp.json()
         assert body["has_conflicts"] is False
@@ -155,7 +146,7 @@ class TestCheckConflicts:
         event = _create_event(data["admin_client"], data["api_base"], data["org_id"])
         _assign(data["admin_client"], data["api_base"], event["id"], data["vol_id"])
 
-        resp = httpx.post(
+        resp = data["admin_client"].post(
             f"{data['api_base']}/conflicts/check",
             json={"person_id": data["vol_id"], "event_id": event["id"]},
         )
@@ -172,13 +163,14 @@ class TestCheckConflicts:
         event = _create_event(data["admin_client"], data["api_base"], data["org_id"], days=20)
         event_start = datetime.fromisoformat(event["start_time"]).date()
         _add_timeoff(
+            data["admin_client"],
             data["api_base"],
             data["vol_id"],
             event_start - timedelta(days=1),
             event_start + timedelta(days=1),
         )
 
-        resp = httpx.post(
+        resp = data["admin_client"].post(
             f"{data['api_base']}/conflicts/check",
             json={"person_id": data["vol_id"], "event_id": event["id"]},
         )
@@ -196,7 +188,7 @@ class TestCheckConflicts:
         # Both events use the identical future window: overlap guaranteed
         _assign(data["admin_client"], data["api_base"], event_a["id"], data["vol_id"])
 
-        resp = httpx.post(
+        resp = data["admin_client"].post(
             f"{data['api_base']}/conflicts/check",
             json={"person_id": data["vol_id"], "event_id": event_b["id"]},
         )
@@ -210,7 +202,7 @@ class TestCheckConflicts:
     def test_missing_person_returns_404(self, conflicts_org):
         data = conflicts_org
         event = _create_event(data["admin_client"], data["api_base"], data["org_id"])
-        resp = httpx.post(
+        resp = data["admin_client"].post(
             f"{data['api_base']}/conflicts/check",
             json={"person_id": f"ghost_{int(time.time())}", "event_id": event["id"]},
         )
@@ -218,7 +210,7 @@ class TestCheckConflicts:
 
     def test_missing_event_returns_404(self, conflicts_org):
         data = conflicts_org
-        resp = httpx.post(
+        resp = data["admin_client"].post(
             f"{data['api_base']}/conflicts/check",
             json={"person_id": data["vol_id"], "event_id": f"nope_{int(time.time())}"},
         )
@@ -246,6 +238,7 @@ class TestListConflicts:
         _assign(data["admin_client"], data["api_base"], event["id"], data["vol_id"])
         event_start = datetime.fromisoformat(event["start_time"]).date()
         _add_timeoff(
+            data["admin_client"],
             data["api_base"],
             data["vol_id"],
             event_start - timedelta(days=1),

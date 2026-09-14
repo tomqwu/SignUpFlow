@@ -89,7 +89,7 @@ class TestSolutionAssignmentsEnriched:
     def test_groups_assignees_by_event(self, client, db):
         org_id = "sa-grouping"
         seed_org(client, org_id)
-        _admin_for(client, org_id, "g")
+        headers = _admin_for(client, org_id, "g")
 
         sol = _seed_solution(db, org_id)
         _seed_event(db, org_id, "evt-a", event_type="Sunday Service")
@@ -98,7 +98,7 @@ class TestSolutionAssignmentsEnriched:
         _seed_assignment(db, sol.id, "evt-a", "p1")
         _seed_assignment(db, sol.id, "evt-a", "p2")
 
-        resp = client.get(f"/api/v1/solutions/{sol.id}/assignments")
+        resp = client.get(f"/api/v1/solutions/{sol.id}/assignments", headers=headers)
         assert resp.status_code == 200, resp.text
         body = resp.json()
 
@@ -114,10 +114,10 @@ class TestSolutionAssignmentsEnriched:
     def test_empty_solution_returns_zero_events(self, client, db):
         org_id = "sa-empty"
         seed_org(client, org_id)
-        _admin_for(client, org_id, "e")
+        headers = _admin_for(client, org_id, "e")
         sol = _seed_solution(db, org_id)
 
-        resp = client.get(f"/api/v1/solutions/{sol.id}/assignments")
+        resp = client.get(f"/api/v1/solutions/{sol.id}/assignments", headers=headers)
         assert resp.status_code == 200, resp.text
         body = resp.json()
         assert body["solution_id"] == sol.id
@@ -127,14 +127,14 @@ class TestSolutionAssignmentsEnriched:
     def test_unknown_solution_returns_404(self, client):
         org_id = "sa-404"
         seed_org(client, org_id)
-        _admin_for(client, org_id, "x")
-        resp = client.get("/api/v1/solutions/999999/assignments")
+        headers = _admin_for(client, org_id, "x")
+        resp = client.get("/api/v1/solutions/999999/assignments", headers=headers)
         assert resp.status_code == 404
 
     def test_two_events_in_one_solution(self, client, db):
         org_id = "sa-twoevt"
         seed_org(client, org_id)
-        _admin_for(client, org_id, "t")
+        headers = _admin_for(client, org_id, "t")
 
         sol = _seed_solution(db, org_id)
         _seed_event(db, org_id, "evt-1", event_type="Practice")
@@ -143,7 +143,7 @@ class TestSolutionAssignmentsEnriched:
         _seed_assignment(db, sol.id, "evt-1", "p1")
         _seed_assignment(db, sol.id, "evt-2", "p1")
 
-        resp = client.get(f"/api/v1/solutions/{sol.id}/assignments")
+        resp = client.get(f"/api/v1/solutions/{sol.id}/assignments", headers=headers)
         assert resp.status_code == 200
         body = resp.json()
         assert body["total_assignments"] == 2

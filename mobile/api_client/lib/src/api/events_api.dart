@@ -211,7 +211,13 @@ class EventsApi {
         ...?headers,
       },
       extra: <String, dynamic>{
-        'secure': <Map<String, String>>[],
+        'secure': <Map<String, String>>[
+          {
+            'type': 'http',
+            'scheme': 'bearer',
+            'name': 'HTTPBearer',
+          },
+        ],
         ...?extra,
       },
       validateStatus: validateStatus,
@@ -291,7 +297,13 @@ class EventsApi {
         ...?headers,
       },
       extra: <String, dynamic>{
-        'secure': <Map<String, String>>[],
+        'secure': <Map<String, String>>[
+          {
+            'type': 'http',
+            'scheme': 'bearer',
+            'name': 'HTTPBearer',
+          },
+        ],
         ...?extra,
       },
       validateStatus: validateStatus,
@@ -366,7 +378,13 @@ class EventsApi {
         ...?headers,
       },
       extra: <String, dynamic>{
-        'secure': <Map<String, String>>[],
+        'secure': <Map<String, String>>[
+          {
+            'type': 'http',
+            'scheme': 'bearer',
+            'name': 'HTTPBearer',
+          },
+        ],
         ...?extra,
       },
       validateStatus: validateStatus,
@@ -455,7 +473,13 @@ class EventsApi {
         ...?headers,
       },
       extra: <String, dynamic>{
-        'secure': <Map<String, String>>[],
+        'secure': <Map<String, String>>[
+          {
+            'type': 'http',
+            'scheme': 'bearer',
+            'name': 'HTTPBearer',
+          },
+        ],
         ...?extra,
       },
       validateStatus: validateStatus,
@@ -748,7 +772,13 @@ class EventsApi {
         ...?headers,
       },
       extra: <String, dynamic>{
-        'secure': <Map<String, String>>[],
+        'secure': <Map<String, String>>[
+          {
+            'type': 'http',
+            'scheme': 'bearer',
+            'name': 'HTTPBearer',
+          },
+        ],
         ...?extra,
       },
       validateStatus: validateStatus,

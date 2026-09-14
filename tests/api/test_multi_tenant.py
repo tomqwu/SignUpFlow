@@ -101,8 +101,8 @@ class TestMultiTenantIsolation:
         seed_event(client, hdrs1, self.ORG1, "evt-alpha-only")
         seed_event(client, hdrs2, self.ORG2, "evt-beta-only")
 
-        resp1 = client.get(f"/api/v1/events/?org_id={self.ORG1}")
-        resp2 = client.get(f"/api/v1/events/?org_id={self.ORG2}")
+        resp1 = client.get(f"/api/v1/events/?org_id={self.ORG1}", headers=hdrs1)
+        resp2 = client.get(f"/api/v1/events/?org_id={self.ORG2}", headers=hdrs2)
         assert resp1.status_code == 200
         assert resp2.status_code == 200
 

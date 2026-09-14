@@ -14,7 +14,7 @@ request time from the same dict.
 
 import pytest
 
-from api.models import Solution
+from api.models import Person, Solution
 from api.timeutils import utcnow
 from tests.api.conftest import auth_headers, seed_org, seed_user
 
@@ -38,6 +38,18 @@ def _seed_solution_with_metrics(
     moves_from_published: int = 0,
     affected_persons: int = 0,
 ) -> Solution:
+    db.add_all(
+        [
+            Person(
+                id=person_id,
+                org_id=org_id,
+                name=person_id,
+                roles=["volunteer"],
+                status="active",
+            )
+            for person_id in per_person_counts
+        ]
+    )
     sol = Solution(
         org_id=org_id,
         solve_ms=12.5,
@@ -128,7 +140,7 @@ class TestSolutionStats:
         sol_b = _seed_solution_with_metrics(db, "stats-b", per_person_counts={"p1": 1})
 
         resp = client.get(f"/api/v1/solutions/{sol_b.id}/stats", headers=a_hdrs)
-        assert resp.status_code == 403
+        assert resp.status_code == 404
 
     def test_missing_solution_404(self, client, db):
         org_id = "stats-missing"

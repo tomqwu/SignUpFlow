@@ -238,11 +238,12 @@ class TestSolverHonorsAvailability:
         )
         present_id = present["person_id"]
 
-        # Block vol1 across the event day. This endpoint is currently
-        # anon per its router, hence the bare httpx.Client.
+        bootstrap.close()
+
+        # Block vol1 across the event day as the same-tenant administrator.
         timeoff_start = _date(data["event_start_days"] - 1)
         timeoff_end = _date(data["event_start_days"] + 1)
-        r = bootstrap.post(
+        r = data["admin1_client"].post(
             f"{data['api_base']}/availability/{data['vol1_id']}/timeoff",
             json={
                 "start_date": timeoff_start,
@@ -251,7 +252,6 @@ class TestSolverHonorsAvailability:
             },
         )
         assert r.status_code in (200, 201), r.text
-        bootstrap.close()
 
         # Solve.
         resp = data["admin1_client"].post(

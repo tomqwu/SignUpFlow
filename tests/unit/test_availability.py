@@ -172,13 +172,10 @@ class TestAvailabilityRead:
         assert data["total"] == 0
 
     def test_list_availability_nonexistent_person(self, client):
-        """Test listing availability for non-existent person returns empty list."""
+        """Test listing availability for an unknown person does not reveal data."""
         response = client.get(f"{API_BASE}/availability/nonexistent_person/timeoff")
-        assert response.status_code == 200
-        data = response.json()
-        # Should return empty list rather than 404
-        assert data["timeoff"] == []
-        assert data["total"] == 0
+        assert response.status_code == 404
+        assert response.json()["detail"] == "Person not found"
 
 
 class TestAvailabilityDelete:

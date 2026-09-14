@@ -58,6 +58,23 @@ def verify_org_member(
         )
 
 
+def get_person_in_actor_org(person_id: str, actor: Person, db: Session) -> Person:
+    """Load a person only through the authenticated actor's tenant."""
+    person = db.query(Person).filter(Person.id == person_id, Person.org_id == actor.org_id).first()
+    if person is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Person not found")
+    return person
+
+
+def verify_self_or_admin(actor: Person, target: Person) -> None:
+    """Allow self-service or an administrator in the already-scoped tenant."""
+    if actor.id != target.id and not check_admin_permission(actor):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Access denied: self-service or admin access required",
+        )
+
+
 async def get_current_user(
     credentials: HTTPAuthorizationCredentials = Depends(security), db: Session = Depends(get_db)
 ) -> Person:

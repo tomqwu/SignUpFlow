@@ -7,7 +7,7 @@ from httpx import Response
 def bootstrap_organization(client: TestClient, *, json: dict) -> Response:
     """Create an organization and its first admin through atomic signup."""
     org_id = json.get("id", "")
-    return client.post(
+    response = client.post(
         "/api/v1/auth/signup",
         json={
             "org_id": org_id,
@@ -18,3 +18,6 @@ def bootstrap_organization(client: TestClient, *, json: dict) -> Response:
             "password": "OwnerPass1!",
         },
     )
+    if response.status_code == 201:
+        client.headers["X-Test-Actor-Org"] = org_id
+    return response

@@ -174,7 +174,7 @@ class TestCompareSolutions:
         sol_b = _seed_solution(db, "cmp-b")
 
         resp = client.get(f"/api/v1/solutions/{sol_a.id}/compare/{sol_b.id}", headers=a_hdrs)
-        assert resp.status_code == 403
+        assert resp.status_code == 404
 
     def test_compare_missing_solution_404(self, client, db):
         org_id = "cmp-missing"
@@ -263,7 +263,7 @@ class TestRollbackSolution:
         client.post(f"/api/v1/solutions/{sol_b.id}/publish", headers=b_hdrs)
 
         resp = client.post(f"/api/v1/solutions/{sol_b.id}/rollback", headers=a_hdrs)
-        assert resp.status_code == 403
+        assert resp.status_code == 404
 
     def test_rollback_emits_audit_row(self, client, db):
         org_id = "rb-audit"
