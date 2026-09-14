@@ -35,6 +35,14 @@ def test_discover_new_definition(tmp_path):
     specs = discover_playbooks([tmp_path])
     assert [spec.id for spec in specs] == ["community"]
     assert specs[0].secondary_event == "Preparation"
+    assert specs[0].late_cover_roles == []
+
+
+def test_bundled_definitions_declare_domain_late_cover_roles():
+    specs = {spec.id: spec for spec in discover_playbooks([ROOT / "docs" / "playbooks"])}
+
+    assert specs["church"].late_cover_roles == ["sound", "children_leader"]
+    assert specs["basketball"].late_cover_roles == ["coach", "scorekeeper"]
 
 
 @pytest.mark.parametrize(
@@ -46,6 +54,8 @@ def test_discover_new_definition(tmp_path):
         {"roles": {"leader": "1"}},
         {"secondary_event": " "},
         {"critical_role": "missing"},
+        {"late_cover_roles": ["missing"]},
+        {"late_cover_roles": ["leader", "leader"]},
         {"roles": {"leader": 2}},
         {"version": 2},
         {"workflow": "unknown"},

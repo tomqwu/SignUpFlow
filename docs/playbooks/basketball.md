@@ -123,25 +123,27 @@ publish, read a Church person, or change a Basketball peer's availability. Acces
 credentials also fail when their tenant claim is missing or mismatched or the membership is
 inactive.
 
+BB-D02 runs separate coach and scorekeeper withdrawals at 360px and 1440px. The manager
+sees each role-specific gap. A wrong-role reserve and a same-role reserve with time off
+cannot see the shift, while a newly invited exact-role available reserve covers it through
+the browser. The original staff member loses exactly that assignment and all five player
+positions plus the other staff slot remain unchanged.
+
 ## Additional operational drills
 
-Record these separately as manual/extended acceptance:
+Record these remaining items separately as manual/extended acceptance:
 
-1. A player requests a swap. Use a reserve qualified for the same position; verify
-   the roster has exactly one person in that slot and the original player loses it.
-2. A coach or scorekeeper withdraws on game day. Arrange qualified cover and verify
-   it is visible to both the replacement and manager before relying on it.
-3. A venue cancels a game. Coordinate the postponement, inspect calendar exports,
+1. A venue cancels a game. Coordinate the postponement, inspect calendar exports,
    communicate the change and obtain responses. Automated court collision and external
    provider delivery are not established by this exercise.
-4. Two teams share players in one organization. Test team eligibility explicitly
+2. Two teams share players in one organization. Test team eligibility explicitly
    before use; current role-based solving is not proven to restrict by team roster.
-5. A tournament needs travel/rest gaps. The supported saved minimum-gap rule runs
+3. A tournament needs travel/rest gaps. The supported saved minimum-gap rule runs
    in API solves, but venue travel and tournament policy remain manual; a configured
    generic gap is not proof that those domain rules are satisfied.
-6. An injury affects several weeks. Record the correct date range, regenerate
+4. An injury affects several weeks. Record the correct date range, regenerate
    the entire future horizon and follow the organization's separate return policy.
-7. A member imports the feed into a specific calendar app. Check that client's refresh
+5. A member imports the feed into a specific calendar app. Check that client's refresh
    interval and device rendering; local ICS generation tests do not certify third-party
    polling behavior.
 

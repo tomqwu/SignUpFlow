@@ -471,6 +471,12 @@ are bound to the active account's tenant; missing, mismatched, or inactive membe
 claims fail authentication. This is local application evidence, not deployment or
 infrastructure certification.
 
+The domain late-cover journey is driven by each playbook's declared roles. Church tests
+separate sound-operator and children's-leader withdrawals; Basketball tests separate coach
+and scorekeeper withdrawals. At both browser widths, the coordinator sees the real gap,
+wrong-role and unavailable reserves cannot see it, and one exact qualified available reserve
+covers it without changing any other player, ministry, or staff slot.
+
 Saved REST scheduling rules support hard assignment caps, hard minimum rest gaps,
 and a weighted soft cooldown preference. They execute in API solves instead of
 being stored as inert text. See the

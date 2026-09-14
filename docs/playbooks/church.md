@@ -124,24 +124,24 @@ volunteer schedule when attempting the admin directory, and cannot invite, publi
 Basketball person, or change a Church peer's availability. Access and browser credentials
 also fail when their tenant claim is missing or mismatched or the membership is inactive.
 
+CH-D01 runs separate sound-operator and children's-leader withdrawals at 360px and 1440px.
+The administrator sees each role-specific gap. A wrong-role reserve and a same-role reserve
+with time off cannot see the shift, while a newly invited exact-role available reserve covers
+it through the browser. The original member loses exactly that assignment and every other
+role remains unchanged.
+
 ## Additional operational drills
 
-Record these separately as manual/extended acceptance, not as passed by CH-01-08:
+Record these remaining items separately as manual/extended acceptance:
 
-1. A sound operator requests a last-minute swap. Have a qualified, available reserve
-   cover it; verify the original person loses the shift and the sound role remains filled.
-2. A children's leader becomes ineligible. Remove that qualification, regenerate
+1. A children's leader becomes ineligible. Remove that qualification, regenerate
    every affected future event, and obtain ministry approval before republishing.
-3. A holiday changes service times or headcounts. Change only the intended events;
+2. A holiday changes service times or headcounts. Change only the intended events;
    verify recurrence exceptions and avoid changing already completed services.
-4. A member never responds. Contact them through an approved channel and arrange
+3. A member never responds. Contact them through an approved channel and arrange
    confirmed cover; do not treat an assignment's default status as delivery evidence.
-5. The venue is unavailable. Arrange a venue/time manually; the current playbook
+4. The venue is unavailable. Arrange a venue/time manually; the current playbook
    does not establish automated room conflict prevention.
-6. Test a multi-skilled worship/sound member with another eligible specialist.
-   Review any greedy-solver shortage manually; a feasible schedule is not guaranteed
-   just because qualifications collectively appear sufficient.
-
 ## Release sign-off
 
 Require exact role counts, no double-booking, no assignments during recorded
