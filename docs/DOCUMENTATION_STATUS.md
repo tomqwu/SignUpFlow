@@ -53,6 +53,12 @@ and week-seven rollover. The README and playbook coverage no longer claim that a
 incomplete roster can publish or that rollover is blocked. Successful publication
 keeps the same layout shown in the walkthrough; rejection adds text to the existing
 alert component, so the current screenshots remain applicable to this package.
+The focused BO-08 browser acceptance now adds both week-seven sessions, solves,
+reviews, and publishes the shifted horizon for Church and Basketball at 360px and
+1440px. Its setup is explicitly labeled API-seeded; the oracle preserves completed
+history and every original future event instead of crediting fixture construction as
+a browser action. The flow uses existing event, solver, and solution-review surfaces,
+so it does not invalidate the maintained walkthrough screenshots.
 The maintained [API authorization matrix](API_AUTHORIZATION.md) now binds every
 mounted operation to an executable policy and records scheduling tenant/export
 semantics. This package changes API authorization and generated contracts, not

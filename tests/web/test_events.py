@@ -51,6 +51,7 @@ def test_events_split_upcoming_past(client, db):
     assert resp.status_code == 200
     assert "Future Service" in resp.text
     assert "Old Meeting" in resp.text
+    assert 'class="row event-row" data-event-id="e_past"' in resp.text
     # Upcoming section appears before Past in the document.
     assert resp.text.index("Future Service") < resp.text.index("Old Meeting")
 

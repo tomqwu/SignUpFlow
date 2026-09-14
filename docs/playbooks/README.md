@@ -140,7 +140,7 @@ unknown workflow IDs or silently skip unsupported scenarios.
 | Incomplete roster is rejected and identifies the missing role | API journey in both domains; API and web safety regressions |
 | Repaired publication replaces old publication | API journey |
 | Narrower replacement cannot remove a future published event | API safety regression |
-| Explicit cancellation and week-seven rollover preserve the remaining horizon | API safety regression |
+| Explicit cancellation and week-seven rollover preserve the remaining horizon | API safety regression; browser rollover in both domains and widths |
 | One-occurrence move/cancel leaves sibling occurrences unchanged | Web regression and browser journey, both domains and widths |
 | Whole-series deletion is distinct from occurrence cancellation | Web regression and browser journey, both domains and widths |
 | Changed event snapshot or member qualification blocks stale publication | API safety regressions |
@@ -150,6 +150,13 @@ unknown workflow IDs or silently skip unsupported scenarios.
 | Notification read does not fabricate a response | Web regression |
 | Unchanged republish carries acknowledgement; browser event change resets it | API, web, and browser response regressions |
 | Qualified reserve covers a swap without losing role coverage | Browser journey, both domains |
+
+The focused BO-08 browser journey API-seeds only its already-published six-week
+precondition. The administrator then uses normal browser forms to add both week-seven
+sessions, solve the shifted six-week range, review it, and publish it. Its independent
+oracle requires exactly twelve weeks-two-through-seven events, one live solution, both
+completed event records, and every original future event. This boundary avoids counting
+fixture construction as the rollover operation under test.
 | Competing qualified claims produce one winner without overfill | SQLite and PostgreSQL integration race tests |
 | Ineligible, unavailable, overlapping, or stale claims preserve the roster | Web and integration regressions |
 | Unpublished solution history neither appears nor consumes live capacity | Web and integration regressions |

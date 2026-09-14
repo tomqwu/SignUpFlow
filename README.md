@@ -437,6 +437,13 @@ is unchanged, and uses a separately labeled action to delete the entire series. 
 already accepted published event resets that commitment to unanswered, so the assigned
 member must review and accept the changed time again.
 
+The rolling-horizon journey starts from an API-seeded, already published six-week
+precondition with its first primary and secondary sessions completed. At both browser
+widths, each domain administrator adds week seven through the event form, solves and
+publishes weeks two through seven through the UI, and verifies the new 84-slot roster.
+The independent oracle proves that the completed event records and every original future
+commitment remain; fixture seeding is not counted as a browser action.
+
 Saved REST scheduling rules support hard assignment caps, hard minimum rest gaps,
 and a weighted soft cooldown preference. They execute in API solves instead of
 being stored as inert text. See the
