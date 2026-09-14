@@ -112,7 +112,7 @@ make test-all         # All Python tiers, including web + contract + Playwright
 make test-mobile      # Flutter tests (requires Flutter SDK)
 make test-unit        # Python unit tests only
 make test-unit-fast   # Unit tests excluding slow bcrypt tests (~7s)
-make clean            # Remove caches, temp DBs, coverage
+make clean            # Retired; each command cleans only artifacts it owns
 ```
 
 Reset local DB: `rm roster.db && make migrate`.

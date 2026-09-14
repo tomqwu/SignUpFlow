@@ -7,6 +7,7 @@ import ast
 import json
 import os
 import platform
+import signal
 import subprocess
 import sys
 import uuid
@@ -160,12 +161,37 @@ def run_tier(
             stderr=subprocess.STDOUT,
             text=True,
             bufsize=1,
+            start_new_session=True,
         )
         assert process.stdout is not None
-        for line in process.stdout:
-            sys.stdout.write(line)
-            log.write(line)
-        exit_code = process.wait()
+        interrupted = False
+        try:
+            for line in process.stdout:
+                sys.stdout.write(line)
+                sys.stdout.flush()
+                log.write(line)
+                log.flush()
+            exit_code = process.wait()
+        except KeyboardInterrupt:
+            interrupted = True
+            message = "Local validation interrupted; stopping owned test process.\n"
+            sys.stderr.write(message)
+            log.write(message)
+            log.flush()
+            if process.poll() is None:
+                try:
+                    os.killpg(process.pid, signal.SIGTERM)
+                except ProcessLookupError:
+                    pass
+                try:
+                    process.wait(timeout=5)
+                except subprocess.TimeoutExpired:
+                    try:
+                        os.killpg(process.pid, signal.SIGKILL)
+                    except ProcessLookupError:
+                        pass
+                    process.wait()
+            exit_code = 130
     counts = _junit_counts(junit_path)
     status = "passed" if exit_code == 0 and counts["tests"] > 0 else "failed"
     return {
@@ -177,6 +203,7 @@ def run_tier(
         "started_at": started.isoformat().replace("+00:00", "Z"),
         "duration_seconds": round((utc_now() - started).total_seconds(), 3),
         "exit_code": exit_code,
+        "interrupted": interrupted,
         "counts": counts,
         "artifacts": {"log": str(log_path), "junit": str(junit_path)},
     }

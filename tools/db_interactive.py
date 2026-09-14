@@ -1,124 +1,64 @@
 #!/usr/bin/env python3
-"""Interactive database viewer for roster SQLite database."""
+"""Interactively inspect an explicit SQLite database in read-only mode."""
 
+from __future__ import annotations
+
+import argparse
 import sqlite3
 import sys
-import tabulate as tab_module
+
+from sqlite_readonly import (
+    connect_read_only,
+    print_rows,
+    quote_identifier,
+    require_database,
+    require_read_query,
+    require_table,
+    table_names,
+)
 
 
-def view_database(db_path='cricket_roster.db'):
-    """View database contents interactively."""
+def main() -> int:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("db", help="Existing SQLite database path; symlinks are refused")
+    args = parser.parse_args()
 
     try:
-        conn = sqlite3.connect(db_path)
-        conn.row_factory = sqlite3.Row
-        cursor = conn.cursor()
-    except sqlite3.Error as e:
-        print(f"❌ Error connecting to database: {e}")
-        return
-
-    print(f"\n📊 Database: {db_path}\n")
-
-    # Get all tables
-    cursor.execute("SELECT name FROM sqlite_master WHERE type='table' ORDER BY name")
-    tables = [row[0] for row in cursor.fetchall()]
-
-    print("Available Tables:")
-    for i, table in enumerate(tables, 1):
-        cursor.execute(f"SELECT COUNT(*) FROM {table}")
-        count = cursor.fetchone()[0]
-        print(f"  {i:2d}. {table:30s} ({count} rows)")
-
-    print("\nCommands:")
-    print("  • Type table number or name to view")
-    print("  • 'sql <query>' to run custom SQL")
-    print("  • 'schema <table>' to see table structure")
-    print("  • 'exit' or 'quit' to exit")
-
-    while True:
-        try:
-            print("\n" + "="*70)
-            cmd = input("roster-db> ").strip()
-
-            if cmd.lower() in ['exit', 'quit', 'q']:
-                break
-
-            # Schema command
-            if cmd.lower().startswith('schema '):
-                table = cmd.split(maxsplit=1)[1]
-                cursor.execute(f"PRAGMA table_info({table})")
-                columns = cursor.fetchall()
-                headers = ['ID', 'Name', 'Type', 'NotNull', 'Default', 'PK']
-                print(f"\n📋 Schema for {table}:")
-                print(tab_module.tabulate(columns, headers=headers, tablefmt='simple'))
-                continue
-
-            # SQL command
-            if cmd.lower().startswith('sql '):
-                query = cmd[4:]
+        path = require_database(args.db)
+        with connect_read_only(path) as connection:
+            tables = table_names(connection)
+            print(f"Database (read-only): {path}")
+            print("Commands: table name, schema <table>, sql <read query>, quit")
+            while True:
                 try:
-                    cursor.execute(query)
-                    if query.strip().upper().startswith('SELECT'):
-                        results = cursor.fetchall()
-                        if results:
-                            headers = [description[0] for description in cursor.description]
-                            print(tab_module.tabulate(results, headers=headers, tablefmt='simple'))
-                            print(f"\n{len(results)} rows")
-                        else:
-                            print("No results")
-                    else:
-                        conn.commit()
-                        print(f"✓ Query executed")
-                except sqlite3.Error as e:
-                    print(f"❌ Error: {e}")
-                continue
-
-            # Table selection by number
-            if cmd.isdigit():
-                idx = int(cmd) - 1
-                if 0 <= idx < len(tables):
-                    cmd = tables[idx]
-                else:
-                    print(f"Invalid table number. Choose 1-{len(tables)}")
-                    continue
-
-            # Show table contents
-            if cmd in tables:
-                cursor.execute(f"SELECT COUNT(*) FROM {cmd}")
-                total = cursor.fetchone()[0]
-
-                cursor.execute(f"SELECT * FROM {cmd} LIMIT 20")
-                results = cursor.fetchall()
-
-                if results:
-                    headers = [description[0] for description in cursor.description]
-                    print(f"\n📋 {cmd} (showing {len(results)} of {total} rows):\n")
-                    print(tab_module.tabulate(results, headers=headers, tablefmt='simple'))
-                else:
-                    print(f"No rows in {cmd}")
-            else:
-                print(f"Unknown command or table: {cmd}")
-
-        except KeyboardInterrupt:
-            print("\n\nExiting...")
-            break
-        except Exception as e:
-            print(f"❌ Error: {e}")
-
-    conn.close()
-    print("\n👋 Goodbye!\n")
+                    command = input("signupflow-db> ").strip()
+                except EOFError:
+                    break
+                if command.lower() in {"exit", "quit", "q"}:
+                    break
+                if command.lower().startswith("schema "):
+                    table = require_table(connection, command.split(maxsplit=1)[1])
+                    rows = connection.execute(
+                        f"PRAGMA table_info({quote_identifier(table)})"
+                    ).fetchall()
+                    print_rows(("id", "name", "type", "notnull", "default", "pk"), rows)
+                elif command.lower().startswith("sql "):
+                    cursor = connection.execute(require_read_query(command[4:]))
+                    headers = [column[0] for column in cursor.description or []]
+                    print_rows(headers, cursor.fetchmany(1000))
+                elif command in tables:
+                    cursor = connection.execute(
+                        f"SELECT * FROM {quote_identifier(command)} LIMIT 20"
+                    )
+                    headers = [column[0] for column in cursor.description or []]
+                    print_rows(headers, cursor.fetchall())
+                elif command:
+                    print(f"Unknown read-only command or table: {command}", file=sys.stderr)
+    except (sqlite3.Error, ValueError) as exc:
+        print(f"Database inspection refused: {exc}", file=sys.stderr)
+        return 2
+    return 0
 
 
 if __name__ == "__main__":
-    db_path = sys.argv[1] if len(sys.argv) > 1 else 'cricket_roster.db'
-
-    # Check if tabulate is available
-    try:
-        import tabulate
-    except ImportError:
-        print("Installing tabulate for better display...")
-        import subprocess
-        subprocess.check_call([sys.executable, "-m", "pip", "install", "tabulate"])
-        import tabulate
-
-    view_database(db_path)
+    raise SystemExit(main())

@@ -30,7 +30,7 @@ delivery is disabled and the application does not label the message sent. Run th
 Run the existing prerequisite check first:
 
 ```bash
-./scripts/validate_email_system.sh
+poetry run python scripts/email_smoke.py --allow-live-send --to APPROVED_RECIPIENT
 ```
 
 It verifies Python 3.10+, Poetry, and Redis (the broker for the Celery
@@ -85,7 +85,7 @@ SENDGRID_API_KEY=        # leave blank — forces SMTP backend
 ### 3. Run the smoke send
 
 ```bash
-poetry run python scripts/email_smoke.py --to your-mailtrap-inbox@example.com
+poetry run python scripts/email_smoke.py --allow-live-send --to your-mailtrap-inbox@example.com
 ```
 
 (The `--to` address is the envelope recipient. Mailtrap captures it
@@ -146,7 +146,7 @@ client is never constructed.
 ### 4. Run the smoke send
 
 ```bash
-poetry run python scripts/email_smoke.py --to your-personal-inbox@example.com
+poetry run python scripts/email_smoke.py --allow-live-send --to your-personal-inbox@example.com
 ```
 
 ### 5. Verify
@@ -198,6 +198,7 @@ need to immediately stop further sends:
   pipeline (templates, notification model, future webhook).
 - `specs/001-email-notifications/spec.md` — original spec, including the
   Mailtrap-for-staging / SendGrid-for-prod split.
-- `scripts/validate_email_system.sh` — prerequisite checks (Python,
-  Poetry, Redis).
+- `scripts/validate_email_system.sh` is retired. Use `scripts/email_smoke.py`
+  with `--allow-live-send` after explicit provider/recipient authorization.
+  Earlier prerequisite checks covered Python, Poetry, and Redis.
 - `api/services/email_service.py` — the implementation under test here.

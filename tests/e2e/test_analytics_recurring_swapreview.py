@@ -89,12 +89,19 @@ def test_all_assignments_view(live_server, page):
     signup_admin(page, base)
     qualify_only_member(page, base, "greeter")
     _new_event(page, base, "Midweek Prayer", role="greeter")
-    page.click("a:has-text('Manage')")
+    page.locator(".event-row", has_text="Midweek Prayer").get_by_role("link", name="Manage").click()
     page.wait_for_selector("#event-assignments")
     page.select_option("#ea_person", label="Admin Dana")
     page.fill("#ea_role", "greeter")
-    page.click("button:has-text('Add to event')")
-    page.wait_for_selector("#event-assignments:has-text('Admin Dana')")
+    with page.expect_response(
+        lambda response: response.request.method == "POST"
+        and response.url.endswith("/assignments/add")
+    ) as response_info:
+        page.click("button:has-text('Add to event')")
+    assert response_info.value.ok
+    page.locator("#event-assignments .row", has_text="Admin Dana").get_by_role(
+        "button", name="Remove"
+    ).wait_for()
 
     page.goto(f"{base}/a/assignments")
     page.wait_for_selector(".page-title:has-text('Assignments')")

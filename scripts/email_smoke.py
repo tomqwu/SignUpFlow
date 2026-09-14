@@ -1,7 +1,7 @@
 """One-shot live email send for smoke testing the EmailService pipeline.
 
 Usage:
-    poetry run python scripts/email_smoke.py --to recipient@example.com
+    poetry run python scripts/email_smoke.py --allow-live-send --to recipient@example.com
 
 Reads credentials from .env (loaded automatically by api.main / dotenv).
 Picks SendGrid if SENDGRID_API_KEY is set, otherwise falls back to SMTP
@@ -17,7 +17,7 @@ from __future__ import annotations
 import argparse
 import os
 import sys
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from dotenv import dotenv_values, load_dotenv
 
@@ -30,7 +30,19 @@ def main() -> int:
         help="Recipient email address. For Mailtrap sandbox, this is captured "
         "regardless of the address — anything goes to your sandbox inbox.",
     )
+    parser.add_argument(
+        "--allow-live-send",
+        action="store_true",
+        help="Acknowledge that this command may contact the configured email provider.",
+    )
     args = parser.parse_args()
+
+    if not args.allow_live_send:
+        print(
+            "Refusing provider contact without --allow-live-send. No credentials were loaded.",
+            file=sys.stderr,
+        )
+        return 2
 
     load_dotenv()
     # Narrow override: if .env *explicitly* sets SENDGRID_API_KEY to blank,
@@ -78,7 +90,7 @@ def main() -> int:
         )
         return 0
 
-    timestamp = datetime.now(timezone.utc).isoformat(timespec="seconds")
+    timestamp = datetime.now(UTC).isoformat(timespec="seconds")
     subject = f"[smoke] SignUpFlow email pipeline test — {timestamp}"
     html = (
         "<p>This is a smoke-test message from "

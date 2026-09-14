@@ -9,6 +9,7 @@ navigation, and router-state claims in active developer entry points.
 - [Testing and merge policy](TESTING.md): current commands and validation boundaries.
 - [Local validation inventory](../tests/local_validation_manifest.json): machine-checked
   default and opt-in test ownership used to produce SHA-bound local reports.
+- [Tool safety ledger](TOOLS.md): current supported, delegated, and retired script contracts.
 - [Repository overview](../README.md) and [contributor workflow](../CONTRIBUTING.md).
 - [Agent baseline](../AGENTS.md), [Claude guidance](../CLAUDE.md), and
   [Copilot guidance](../.github/copilot-instructions.md).

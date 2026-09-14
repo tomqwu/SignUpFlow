@@ -45,7 +45,7 @@ DOCKER_TARGETS := up down build rebuild logs logs-api logs-db logs-redis shell d
 	test-docker test-docker-quick test-docker-summary test-docker-file \
 	test-docker-unit test-docker-unit-fast test-docker-integration \
 	test-docker-coverage \
-	migrate-docker restart-api ps clean-docker clean-docker-all
+	migrate-docker restart-api ps
 
 $(DOCKER_TARGETS): check-docker
 
@@ -145,15 +145,12 @@ celery: check-poetry
 dev: run
 
 stop:
-	@echo "🛑 Stopping SignUpFlow server..."
-	@-pkill -f "uvicorn api.main:app" 2>/dev/null || true
-	@-lsof -ti:8000 | xargs kill -9 2>/dev/null || true
-	@echo "✅ Server stopped"
+	@echo "Retired: stop the development server from the terminal that ran 'make run'."
+	@exit 2
 
-restart: stop
-	@sleep 1
-	@echo "🔄 Restarting server..."
-	@$(MAKE) run
+restart:
+	@echo "Retired: stop the owned 'make run' process, then run 'make run' again."
+	@exit 2
 
 setup:
 	@echo "🚀 Starting SignUpFlow setup..."
@@ -231,27 +228,16 @@ test-unit-file: check-poetry
 	@timeout 60 poetry run pytest $(FILE) -v --tb=short -s
 
 clean:
-	@echo "🧹 Cleaning test artifacts and temporary files..."
-	@rm -rf coverage
-	@rm -rf htmlcov
-	@rm -rf .pytest_cache
-	@rm -f $(TEST_DB_PATH) $(TEST_DB_PATH)-shm $(TEST_DB_PATH)-wal
-	@rm -rf __pycache__
-	@find . -type d -name "__pycache__" ! -path "*/.venv/*" -exec rm -rf {} + 2>/dev/null || true
-	@find . -type f -name "*.pyc" ! -path "*/.venv/*" -delete 2>/dev/null || true
-	@find . -type f -name ".DS_Store" -delete 2>/dev/null || true
-	@rm -f *.db-shm *.db-wal 2>/dev/null || true
-	@echo "✅ Clean complete"
+	@echo "Retired: each command cleans only the unique artifacts it owns."
+	@exit 2
 
 clean-weekly:
-	@echo "🧹 Running weekly maintenance cleanup..."
-	@./scripts/cleanup_maintenance.sh
-	@echo "✅ Weekly maintenance complete"
+	@echo "Retired: no repository-wide scheduled deletion is supported."
+	@exit 2
 
-clean-all: stop clean
-	@echo "🧹 Deep cleaning (removing dependencies)..."
-	@rm -rf .venv
-	@echo "✅ Deep clean complete. Run 'make setup' to reinstall."
+clean-all:
+	@echo "Retired: remove dependencies or data only with an explicit path-specific action."
+	@exit 2
 
 pre-commit: check-poetry
 	@echo "⚡ Running fast pre-commit tests..."
@@ -427,14 +413,12 @@ ps:
 	@$(DOCKER_COMPOSE) -f docker-compose.dev.yml ps
 
 clean-docker:
-	@echo "🧹 Cleaning Docker volumes and containers..."
-	@$(DOCKER_COMPOSE) -f docker-compose.dev.yml down -v
-	@echo "✅ Docker cleanup complete"
+	@echo "Retired: use 'make down' for the owned Compose project; volume deletion is separate."
+	@exit 2
 
-clean-docker-all: clean-docker
-	@echo "🧹 Removing Docker images..."
-	@$(DOCKER_COMPOSE) -f docker-compose.dev.yml down --rmi all
-	@echo "✅ Complete Docker cleanup done"
+clean-docker-all:
+	@echo "Retired: global image and volume deletion is not a repository helper operation."
+	@exit 2
 
 .DEFAULT_GOAL := help
 
@@ -459,8 +443,8 @@ help:
 	@echo "  make build            - Build Docker images"
 	@echo "  make rebuild          - Rebuild and restart all services"
 	@echo "  make ps               - Show running services"
-	@echo "  make clean-docker     - Clean Docker volumes and containers"
-	@echo "  make clean-docker-all - Remove everything including images"
+	@echo "  make clean-docker     - Retired; does not delete volumes"
+	@echo "  make clean-docker-all - Retired; does not delete images or volumes"
 	@echo ""
 	@echo "💻 Local Development (Without Docker):"
 	@echo "  make check-deps       - Check which dependencies are installed"
@@ -471,8 +455,8 @@ help:
 	@echo ""
 	@echo "Development:"
 	@echo "  make dev              - Alias for 'make run'"
-	@echo "  make stop             - Stop the development server"
-	@echo "  make restart          - Restart the development server"
+	@echo "  make stop             - Retired; stop the owning 'make run' terminal"
+	@echo "  make restart          - Retired; restart from the owning terminal"
 	@echo "  make migrate          - Run database migrations"
 	@echo ""
 	@echo "Testing:"
@@ -493,9 +477,9 @@ help:
 	@echo "  make pre-commit       - Run fast tests for pre-commit hook"
 	@echo ""
 	@echo "Maintenance:"
-	@echo "  make clean            - Clean test artifacts and temp files"
-	@echo "  make clean-weekly     - Weekly maintenance cleanup"
-	@echo "  make clean-all        - Deep clean (stop server + remove dependencies)"
+	@echo "  make clean            - Retired; commands clean only owned artifacts"
+	@echo "  make clean-weekly     - Retired; no broad scheduled deletion"
+	@echo "  make clean-all        - Retired; no broad dependency/data deletion"
 	@echo "  make help             - Show this help message"
 	@echo ""
 	@echo "Manual Dependency Installation (if auto-install fails):"
