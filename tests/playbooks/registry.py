@@ -26,12 +26,17 @@ class PlaybookSpec(BaseModel):
     secondary_event: Label
     critical_role: Role
     roles: dict[Role, Headcount] = Field(min_length=1)
+    late_cover_roles: list[Role] = Field(default_factory=list)
 
     @model_validator(mode="after")
     def validate_critical_role(self) -> Self:
         # The absence/replacement drill removes both reserves, then adds one person.
         if self.roles.get(self.critical_role) != 1:
             raise ValueError("critical_role must name a role with exactly one required slot")
+        if len(self.late_cover_roles) != len(set(self.late_cover_roles)):
+            raise ValueError("late_cover_roles must be unique")
+        if set(self.late_cover_roles) - set(self.roles):
+            raise ValueError("late_cover_roles must reference declared roles")
         return self
 
 

@@ -263,6 +263,138 @@ def test_every_domain_role_records_unavailability(
 
 
 @pytest.mark.parametrize("width", [360, 1440])
+def test_domain_late_withdrawals_require_exact_available_cover(
+    live_server, page, new_context, tmp_path, playbook_spec, width
+):
+    """Exercise CH-D01 and BB-D02 from roles declared by each plugin fixture."""
+    base = live_server
+    page.set_viewport_size({"width": width, "height": 900})
+    with httpx.Client(base_url=base, timeout=30) as client:
+        playbook = Playbook(client, playbook_spec)
+        assert playbook_spec.late_cover_roles
+        event_ids = [
+            playbook.event(index, f"{role}-late-cover")
+            for index, role in enumerate(playbook_spec.late_cover_roles)
+        ]
+        solution = playbook.solve()
+        solution_id = solution["solution_id"]
+        playbook.assert_complete(solution_id)
+        playbook.request("POST", f"/solutions/{solution_id}/publish")
+
+        wrong_role = next(
+            role for role in playbook.spec["roles"] if role not in playbook_spec.late_cover_roles
+        )
+        wrong_id = playbook.invite("Wrong-role reserve", [wrong_role])
+        wrong = playbook.people[wrong_id]
+        wrong_page = new_context().new_page()
+        wrong_page.set_viewport_size({"width": width, "height": 900})
+        _login(wrong_page, base, wrong["email"], playbook.password, "/v/schedule")
+
+        _login(page, base, playbook.email, playbook.password, "/a/dashboard")
+        for event_id, role in zip(event_ids, playbook_spec.late_cover_roles, strict=True):
+            title = playbook.events[event_id]["type"]
+            before = next(
+                entry
+                for entry in playbook.assignments(solution_id)
+                if entry["event_id"] == event_id
+            )["assignees"]
+            assigned_ids = {assignment["person_id"] for assignment in before}
+            original_assignment = next(
+                assignment for assignment in before if assignment["role"] == role
+            )
+            original_id = original_assignment["person_id"]
+            unavailable_id = next(
+                person_id
+                for person_id, person in playbook.people.items()
+                if person_id not in assigned_ids and role in person["roles"]
+            )
+            event_date = datetime.fromisoformat(playbook.events[event_id]["start_time"]).date()
+            playbook.request(
+                "POST",
+                f"/availability/{unavailable_id}/timeoff",
+                201,
+                {
+                    "start_date": event_date.isoformat(),
+                    "end_date": event_date.isoformat(),
+                    "reason": f"Unavailable {role} reserve",
+                },
+            )
+            playbook.blocked.add((unavailable_id, event_date.isoformat()))
+            available_id = playbook.invite(f"Available {role} reserve", [role])
+
+            original = playbook.people[original_id]
+            original_page = new_context().new_page()
+            original_page.set_viewport_size({"width": width, "height": 900})
+            _login(original_page, base, original["email"], playbook.password, "/v/schedule")
+            original_page.get_by_role("link", name=title, exact=False).click()
+            original_page.get_by_role("button", name="Request swap").click()
+            expect(
+                original_page.locator("#assignment-card .status-text.replacement_needed")
+            ).to_contain_text("Replacement needed")
+
+            page.goto(f"{base}/a/swaps")
+            expect(page.locator("#swaps-list")).to_contain_text(title)
+            expect(page.locator("#swaps-list")).to_contain_text(role)
+            _fits(page)
+            page.screenshot(
+                path=str(tmp_path / f"{playbook_spec.id}-{width}-{role}-late-gap.png"),
+                full_page=True,
+            )
+
+            wrong_page.goto(f"{base}/v/swaps")
+            expect(wrong_page.locator("#swaps-open-list")).not_to_contain_text(title)
+            unavailable = playbook.people[unavailable_id]
+            unavailable_page = new_context().new_page()
+            unavailable_page.set_viewport_size({"width": width, "height": 900})
+            _login(
+                unavailable_page,
+                base,
+                unavailable["email"],
+                playbook.password,
+                "/v/schedule",
+            )
+            unavailable_page.goto(f"{base}/v/swaps")
+            expect(unavailable_page.locator("#swaps-open-list")).not_to_contain_text(title)
+
+            available = playbook.people[available_id]
+            cover_page = new_context().new_page()
+            cover_page.set_viewport_size({"width": width, "height": 900})
+            _login(cover_page, base, available["email"], playbook.password, "/v/schedule")
+            cover_page.goto(f"{base}/v/swaps")
+            expect(cover_page.locator("#swaps-open-list")).to_contain_text(title)
+            expect(cover_page.locator("#swaps-open-list")).to_contain_text(role)
+            cover_page.get_by_role("button", name="Cover this shift").click()
+            expect(cover_page.locator("#swaps-open-list")).not_to_contain_text(title)
+            cover_page.goto(f"{base}/v/schedule")
+            expect(cover_page.get_by_role("link", name=title, exact=False)).to_have_count(1)
+
+            after = next(
+                entry
+                for entry in playbook.assignments(solution_id)
+                if entry["event_id"] == event_id
+            )["assignees"]
+            assert Counter(
+                (assignment["person_id"], assignment["role"])
+                for assignment in after
+                if assignment["role"] != role
+            ) == Counter(
+                (assignment["person_id"], assignment["role"])
+                for assignment in before
+                if assignment["role"] != role
+            )
+            replacement = next(assignment for assignment in after if assignment["role"] == role)
+            assert replacement["person_id"] == available_id
+            assert replacement["person_id"] != original_id
+            playbook.assert_complete(solution_id)
+            no_js_errors(original_page)
+            no_js_errors(unavailable_page)
+            no_js_errors(cover_page)
+
+        no_js_errors(wrong_page)
+        no_js_errors(page)
+
+
+@pytest.mark.parametrize("width", [360, 1440])
 def test_two_org_every_role_respects_tenant_and_admin_boundaries(
     live_server, new_context, tmp_path, width
 ):

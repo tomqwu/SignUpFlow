@@ -67,13 +67,15 @@ surface when attempting an administrator route, and receives denials for invitat
 publication, foreign-person reads, and peer availability changes. Separate API and web
 regressions bind access credentials to an active person and the tenant encoded at login.
 
-`church.json` and `basketball.json` are the executable role/headcount fixtures.
+`church.json` and `basketball.json` are the executable role/headcount fixtures. Their
+`late_cover_roles` fields plug domain-specific withdrawal roles into the shared browser drill.
 `tests/playbooks/` validates and discovers them for both test tiers. Each run creates new
 organizations and invitations with fictional `.example` addresses. Dates start
 on a Sunday at least two weeks ahead, avoiding expired-date tests.
 
 [`coverage.json`](coverage.json) is the machine-readable business-flow manifest.
-It records BO-01 through BO-12, CH-01 through CH-08, BB-01 through BB-08,
+It records BO-01 through BO-12, BO-DUAL, CH-01 through CH-08, CH-D01 through CH-D03,
+BB-01 through BB-08, BB-D01 through BB-D03,
 operational actors, preconditions, operations, expected results, execution tiers,
 evidence paths, and honest coverage status. Pytest validates it before collecting
 playbook cases. Removing a bundled domain, required scenario, administrator,
@@ -120,7 +122,9 @@ Version 1 requires `id`, `version: 1`, `workflow: six_week_roster`, `name`,
 digits, underscores or hyphens; role codes use lowercase letters, digits or
 underscores. Both start with a letter. Role counts are positive integers, not
 booleans or numeric strings. The critical role must require exactly one person,
-matching the absence/shortage/replacement drill. Definitions contain no passwords,
+matching the absence/shortage/replacement drill. Optional `late_cover_roles` entries must
+be unique declared roles; an empty list leaves that extension drill unconfigured for an
+external plugin. Definitions contain no passwords,
 API keys, executable code or production endpoint settings.
 
 The runtime creates fresh organizations and a deep-copied definition per test.
