@@ -65,7 +65,9 @@ def test_deny_keeps_assignment(client, db):
     r = client.post(f"/a/swaps/{a.id}/deny", cookies={SESSION_COOKIE: tok})
     assert r.status_code == 200
     db.refresh(a)
-    assert a.status == "confirmed"
+    assert a.status == "pending"
+    assert a.response_status == "pending"
+    assert a.response_revision is None
     assert "No swap requests" in r.text  # no longer pending
 
 

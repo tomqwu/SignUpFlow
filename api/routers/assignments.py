@@ -13,7 +13,7 @@ Admins keep their existing entry points in api/routers/events.py
 
 from typing import cast
 
-from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Request, status
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query, Request, status
 from sqlalchemy.orm import Session
 
 from api.database import get_db
@@ -26,6 +26,10 @@ from api.schemas.assignment import (
 )
 from api.schemas.common import ListResponse, PaginationParams, get_pagination_params
 from api.services import event_bus
+from api.services.assignment_response import (
+    StaleAssignmentResponseError,
+    record_assignment_response,
+)
 from api.services.assignment_visibility import member_visible_assignment
 from api.utils.audit_logger import log_audit_event
 
@@ -74,7 +78,55 @@ def _audit_status_change(
         details=details or {},
         ip_address=http_request.client.host if http_request.client else None,
         user_agent=http_request.headers.get("user-agent"),
+        commit=False,
     )
+
+
+def _record_and_commit_response(
+    db: Session,
+    *,
+    assignment: Assignment,
+    user: Person,
+    http_request: Request,
+    action: str,
+    response_status: str,
+    workflow_status: str,
+    expected_revision: int | None,
+    decline_reason: str | None = None,
+    details: dict | None = None,
+) -> bool:
+    try:
+        changed = record_assignment_response(
+            assignment,
+            actor_person_id=user.id,
+            response_status=response_status,
+            workflow_status=workflow_status,
+            expected_revision=expected_revision,
+            decline_reason=decline_reason,
+        )
+        if not changed:
+            return False
+        _audit_status_change(
+            db,
+            action=action,
+            user=user,
+            assignment=assignment,
+            http_request=http_request,
+            details={
+                **(details or {}),
+                "response_status": response_status,
+                "commitment_revision": assignment.commitment_revision,
+            },
+        )
+        db.commit()
+    except StaleAssignmentResponseError as exc:
+        db.rollback()
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(exc)) from exc
+    except Exception:
+        db.rollback()
+        raise
+    db.refresh(assignment)
+    return True
 
 
 def _publish_assignment_change(
@@ -105,21 +157,22 @@ def accept_assignment(
     background_tasks: BackgroundTasks,
     current_user: Person = Depends(get_current_user),
     db: Session = Depends(get_db),
+    expected_revision: int | None = Query(None, ge=1),
 ):
-    """Mark the caller's assignment as confirmed."""
+    """Record the caller's explicit acceptance of the current commitment."""
     assignment = _load_own_assignment(assignment_id, current_user, db)
-    assignment.status = "confirmed"
-    assignment.decline_reason = None
-    db.commit()
-    db.refresh(assignment)
-    _audit_status_change(
+    changed = _record_and_commit_response(
         db,
-        action=AuditAction.ASSIGNMENT_ACCEPTED,
-        user=current_user,
         assignment=assignment,
+        user=current_user,
         http_request=http_request,
+        action=AuditAction.ASSIGNMENT_ACCEPTED,
+        response_status="accepted",
+        workflow_status="confirmed",
+        expected_revision=expected_revision,
     )
-    _publish_assignment_change(background_tasks, assignment)
+    if changed:
+        _publish_assignment_change(background_tasks, assignment)
     return assignment
 
 
@@ -134,19 +187,20 @@ def decline_assignment(
 ):
     """Decline the caller's assignment with a reason."""
     assignment = _load_own_assignment(assignment_id, current_user, db)
-    assignment.status = "declined"
-    assignment.decline_reason = body.decline_reason
-    db.commit()
-    db.refresh(assignment)
-    _audit_status_change(
+    changed = _record_and_commit_response(
         db,
-        action=AuditAction.ASSIGNMENT_DECLINED,
-        user=current_user,
         assignment=assignment,
+        user=current_user,
         http_request=http_request,
+        action=AuditAction.ASSIGNMENT_DECLINED,
+        response_status="declined",
+        workflow_status="declined",
+        expected_revision=body.expected_revision,
+        decline_reason=body.decline_reason,
         details={"decline_reason": body.decline_reason},
     )
-    _publish_assignment_change(background_tasks, assignment)
+    if changed:
+        _publish_assignment_change(background_tasks, assignment)
     return assignment
 
 
@@ -159,21 +213,23 @@ def request_swap(
     current_user: Person = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    """Flag the caller's assignment for swap; admin follows up out of band."""
+    """Record that the caller needs a replacement for the current commitment."""
     assignment = _load_own_assignment(assignment_id, current_user, db)
-    assignment.status = "swap_requested"
-    db.commit()
-    db.refresh(assignment)
     details = {"note": body.note} if body.note else {}
-    _audit_status_change(
+    changed = _record_and_commit_response(
         db,
-        action=AuditAction.ASSIGNMENT_SWAP_REQUESTED,
-        user=current_user,
         assignment=assignment,
+        user=current_user,
         http_request=http_request,
+        action=AuditAction.ASSIGNMENT_SWAP_REQUESTED,
+        response_status="declined",
+        workflow_status="swap_requested",
+        expected_revision=body.expected_revision,
+        decline_reason=body.note,
         details=details,
     )
-    _publish_assignment_change(background_tasks, assignment)
+    if changed:
+        _publish_assignment_change(background_tasks, assignment)
     return assignment
 
 

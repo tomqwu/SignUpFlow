@@ -240,7 +240,29 @@ a { color: var(--accent); text-decoration: none; }
 .status-text.pending   { color: var(--warning); }
 .status-text.declined  { color: var(--danger); }
 .status-text.swap_requested { color: var(--warning); }
+.status-text.accepted { color: var(--success); }
+.status-text.replacement_needed { color: var(--warning); }
 .status-text::before { content: '●'; font-size: 8px; }
+
+.segment {
+  display: flex;
+  gap: 2px;
+  overflow-x: auto;
+  border-bottom: 1px solid var(--line-1);
+}
+.segment a {
+  flex: 0 0 auto;
+  padding: 9px 10px;
+  color: var(--ink-2);
+  font-size: 12px;
+  font-weight: 600;
+  text-decoration: none;
+  border-bottom: 2px solid transparent;
+}
+.segment a.active {
+  color: var(--ink-1);
+  border-bottom-color: var(--accent);
+}
 
 /* ─── Avatars ───────────────────────────────────────────────────────── */
 .avatar {

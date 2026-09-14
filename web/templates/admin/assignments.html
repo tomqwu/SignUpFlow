@@ -20,10 +20,20 @@
           {% if p.id == data.person_id %}selected{% endif %}>{{ p.name }}</option>
         {% endfor %}
       </select>
+      <input type="hidden" name="response" value="{{ data.response_filter }}">
     </div>
     <div class="spacer-12"></div>
     <button class="btn btn-secondary" type="submit">Apply</button>
   </form>
+
+  <div class="segment" style="margin-top:18px">
+    {% for value, label in [('', 'All'), ('unanswered', 'Unanswered'), ('accepted', 'Accepted'), ('declined', 'Declined'), ('replacement', 'Replacement')] %}
+    <a class="{% if data.response_filter == value %}active{% endif %}"
+       href="/a/assignments?response={{ value }}{% if data.person_id %}&person_id={{ data.person_id }}{% endif %}">
+      {{ label }} ({{ data.counts[value or 'all'] }})
+    </a>
+    {% endfor %}
+  </div>
 
   <div class="mono-label" style="margin-top:18px">
     {{ data.total }} assignment{{ '' if data.total == 1 else 's' }}
@@ -41,8 +51,17 @@
           <span class="role-chip">{{ r.person_name }}</span>
           {% if r.role %}<span class="role-chip">{{ r.role }}</span>{% endif %}
           <span class="role-chip">{{ 'manual' if r.manual else 'solver' }}</span>
-          <span class="status-text {{ r.status }}">{{ r.status }}</span>
+          <span class="status-text {{ r.status }}">{{ r.status_label }}</span>
         </div>
+        {% if r.responded_at %}
+        <div class="row-sub" style="margin-top:5px">
+          Response r{{ r.response_revision }} · {{ r.responded_at.strftime('%d %b %Y at %H:%M') }}
+        </div>
+        {% else %}
+        <div class="row-sub" style="margin-top:5px">
+          Awaiting response for r{{ r.commitment_revision }}
+        </div>
+        {% endif %}
       </div>
     </div>
     {% endfor %}

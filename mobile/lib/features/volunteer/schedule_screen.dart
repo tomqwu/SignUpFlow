@@ -39,7 +39,9 @@ class VolunteerScheduleScreen extends ConsumerWidget {
                       ),
                     ),
                     onPressed: () => ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Calendar export lands in 7.6')),
+                      const SnackBar(
+                        content: Text('Calendar export lands in 7.6'),
+                      ),
                     ),
                     child: const Text('EXPORT'),
                   ),
@@ -90,7 +92,9 @@ class _ScheduleList extends StatelessWidget {
             (x) => x.date.isAfter(thisMonday.subtract(const Duration(days: 1))),
           );
           if (idx == firstThisWeek) weekTag = 'THIS WEEK';
-        } else if (g.date.isAfter(nextMonday.subtract(const Duration(days: 1))) &&
+        } else if (g.date.isAfter(
+              nextMonday.subtract(const Duration(days: 1)),
+            ) &&
             g.date.isBefore(nextMonday.add(const Duration(days: 7)))) {
           final firstNextWeek = data.groups.indexWhere(
             (x) => x.date.isAfter(nextMonday.subtract(const Duration(days: 1))),
@@ -117,7 +121,12 @@ class _DateGroup extends StatelessWidget {
         MonoLabel(
           dateLabel,
           trailing: weekTag != null
-              ? Text(weekTag!, style: BlockType.monoLabel.copyWith(color: BlockColors.accent))
+              ? Text(
+                  weekTag!,
+                  style: BlockType.monoLabel.copyWith(
+                    color: BlockColors.accent,
+                  ),
+                )
               : null,
         ),
         ...group.rows.map((r) => _AssignmentRow(row: r)),
@@ -135,12 +144,21 @@ class _AssignmentRow extends StatelessWidget {
     return '${f.format(row.start)}–${f.format(row.end)}';
   }
 
-  StatusKind _status() => switch (row.assignment.status.toLowerCase()) {
-        'confirmed' || 'accepted' => StatusKind.confirmed,
-        'pending' => StatusKind.pending,
-        'declined' => StatusKind.declined,
-        _ => StatusKind.neutral,
-      };
+  String _responseLabel() {
+    if (row.assignment.status.toLowerCase() == 'swap_requested') {
+      return 'Replacement needed';
+    }
+    if (!row.assignment.responseCurrent) return 'Unanswered';
+    return row.assignment.responseStatus;
+  }
+
+  StatusKind _status() => switch (_responseLabel().toLowerCase()) {
+    'accepted' => StatusKind.confirmed,
+    'pending' => StatusKind.pending,
+    'unanswered' || 'replacement needed' => StatusKind.pending,
+    'declined' => StatusKind.declined,
+    _ => StatusKind.neutral,
+  };
 
   @override
   Widget build(BuildContext context) {
@@ -173,10 +191,7 @@ class _AssignmentRow extends StatelessWidget {
                         ],
                       ),
                       const SizedBox(height: 6),
-                      Text(
-                        row.event.type,
-                        style: BlockType.subhead,
-                      ),
+                      Text(row.event.type, style: BlockType.subhead),
                       const SizedBox(height: 4),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -187,16 +202,25 @@ class _AssignmentRow extends StatelessWidget {
                           // location field.
                           Text(
                             'Event ${row.event.id}',
-                            style: BlockType.bodySm.copyWith(color: context.blockColor(light: BlockColors.ink2, dark: BlockColors.ink2Dark)),
+                            style: BlockType.bodySm.copyWith(
+                              color: context.blockColor(
+                                light: BlockColors.ink2,
+                                dark: BlockColors.ink2Dark,
+                              ),
+                            ),
                           ),
-                          StatusText(kind: _status(), label: row.assignment.status),
+                          StatusText(kind: _status(), label: _responseLabel()),
                         ],
                       ),
                     ],
                   ),
                 ),
                 const SizedBox(width: 4),
-                const Icon(Icons.chevron_right, color: BlockColors.ink3, size: 20),
+                const Icon(
+                  Icons.chevron_right,
+                  color: BlockColors.ink3,
+                  size: 20,
+                ),
               ],
             ),
           ),
@@ -243,13 +267,12 @@ class _ErrorState extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text('FAILED TO LOAD', style: BlockType.monoLabel.copyWith(color: BlockColors.danger)),
-            const SizedBox(height: 8),
             Text(
-              message,
-              style: BlockType.bodySm,
-              textAlign: TextAlign.center,
+              'FAILED TO LOAD',
+              style: BlockType.monoLabel.copyWith(color: BlockColors.danger),
             ),
+            const SizedBox(height: 8),
+            Text(message, style: BlockType.bodySm, textAlign: TextAlign.center),
             const SizedBox(height: 16),
             BlockButton(
               label: 'Retry',

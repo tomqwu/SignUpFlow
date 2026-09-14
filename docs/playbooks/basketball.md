@@ -70,7 +70,7 @@ choose tactical substitutions or enforce league participation rules.
 | BB-04 | Position unavailable | Block both point guards for Sunday week 4 | That game has a reported point-guard shortage; failing draft is not published |
 | BB-05 | Replacement onboarded | Invite another qualified point guard | Regeneration repairs the gap without assigning a center or coach to that position |
 | BB-06 | Game postponed | Move week-6 game to Monday 10:00-12:00 | Regenerated schedule contains the new time with all roles covered; publication replaces the old version |
-| BB-07 | Player acknowledgement | View draft as player, publish, then accept | Draft is invisible to player; published assignment appears and can be accepted in browser |
+| BB-07 | Player acknowledgement | View draft as player, publish, then accept | Draft absent; published assignment is unanswered; explicit acceptance records the current revision in player and coach views |
 | BB-08 | Qualified swap | Request a swap and have a reserve for the same position cover | Original player loses the shift; reserve gains it; all position/staff slots remain covered |
 
 BB-01 through BB-06 run as an automated API lifecycle. BB-07/08 and multi-role form

@@ -8,13 +8,15 @@ part of 'assignment_swap_request.dart';
 
 class _$AssignmentSwapRequest extends AssignmentSwapRequest {
   @override
+  final int? expectedRevision;
+  @override
   final String? note;
 
   factory _$AssignmentSwapRequest(
           [void Function(AssignmentSwapRequestBuilder)? updates]) =>
       (AssignmentSwapRequestBuilder()..update(updates))._build();
 
-  _$AssignmentSwapRequest._({this.note}) : super._();
+  _$AssignmentSwapRequest._({this.expectedRevision, this.note}) : super._();
   @override
   AssignmentSwapRequest rebuild(
           void Function(AssignmentSwapRequestBuilder) updates) =>
@@ -27,12 +29,15 @@ class _$AssignmentSwapRequest extends AssignmentSwapRequest {
   @override
   bool operator ==(Object other) {
     if (identical(other, this)) return true;
-    return other is AssignmentSwapRequest && note == other.note;
+    return other is AssignmentSwapRequest &&
+        expectedRevision == other.expectedRevision &&
+        note == other.note;
   }
 
   @override
   int get hashCode {
     var _$hash = 0;
+    _$hash = $jc(_$hash, expectedRevision.hashCode);
     _$hash = $jc(_$hash, note.hashCode);
     _$hash = $jf(_$hash);
     return _$hash;
@@ -41,6 +46,7 @@ class _$AssignmentSwapRequest extends AssignmentSwapRequest {
   @override
   String toString() {
     return (newBuiltValueToStringHelper(r'AssignmentSwapRequest')
+          ..add('expectedRevision', expectedRevision)
           ..add('note', note))
         .toString();
   }
@@ -49,6 +55,11 @@ class _$AssignmentSwapRequest extends AssignmentSwapRequest {
 class AssignmentSwapRequestBuilder
     implements Builder<AssignmentSwapRequest, AssignmentSwapRequestBuilder> {
   _$AssignmentSwapRequest? _$v;
+
+  int? _expectedRevision;
+  int? get expectedRevision => _$this._expectedRevision;
+  set expectedRevision(int? expectedRevision) =>
+      _$this._expectedRevision = expectedRevision;
 
   String? _note;
   String? get note => _$this._note;
@@ -61,6 +72,7 @@ class AssignmentSwapRequestBuilder
   AssignmentSwapRequestBuilder get _$this {
     final $v = _$v;
     if ($v != null) {
+      _expectedRevision = $v.expectedRevision;
       _note = $v.note;
       _$v = null;
     }
@@ -83,6 +95,7 @@ class AssignmentSwapRequestBuilder
   _$AssignmentSwapRequest _build() {
     final _$result = _$v ??
         _$AssignmentSwapRequest._(
+          expectedRevision: expectedRevision,
           note: note,
         );
     replace(_$result);

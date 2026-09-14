@@ -9,13 +9,13 @@ the assignment card partial so HTMX swaps the fresh status in place.
 
 from __future__ import annotations
 
-from fastapi import APIRouter, BackgroundTasks, Depends, Form, HTTPException, Request
+from fastapi import APIRouter, BackgroundTasks, Depends, Form, HTTPException, Query, Request
 from fastapi.responses import HTMLResponse
 from pydantic import ValidationError
 from sqlalchemy.orm import Session
 
 from api.database import get_db
-from api.models import Assignment, EmailPreference, Event, Notification, Person
+from api.models import Assignment, AuditAction, EmailPreference, Event, Notification, Person
 from api.roles import build_roles, parse_qualifications, replace_qualifications
 from api.routers.assignments import (
     accept_assignment,
@@ -73,7 +73,9 @@ from api.schemas.organization import OrganizationUpdate
 from api.schemas.person import PersonUpdate
 from api.schemas.solver import SolveRequest
 from api.schemas.team import TeamCreate, TeamMemberAdd, TeamMemberRemove, TeamUpdate
+from api.services.assignment_response import record_assignment_response, reset_assignment_response
 from api.timeutils import utcnow
+from api.utils.audit_logger import log_audit_event
 from web.deps import get_session_admin, get_session_user
 from web.routers.pages import (
     NOTIF_TYPES,
@@ -109,13 +111,24 @@ def _gone() -> HTMLResponse:
     )
 
 
-def _card(request: Request, person: Person, db: Session, aid: int):
+def _card(
+    request: Request,
+    person: Person,
+    db: Session,
+    aid: int,
+    *,
+    error: str | None = None,
+):
     from web.app import templates
 
     row = _my_assignment(db, person, aid)
     if row is None:
         return _gone()
-    return templates.TemplateResponse(request, "partials/assignment_detail_card.html", {"row": row})
+    return templates.TemplateResponse(
+        request,
+        "partials/assignment_detail_card.html",
+        {"row": row, "error": error},
+    )
 
 
 # NOTE: these routes declare `background_tasks: BackgroundTasks` as a
@@ -131,12 +144,22 @@ def accept(
     request: Request,
     assignment_id: int,
     background_tasks: BackgroundTasks,
+    expected_revision: int | None = Query(None, ge=1),
     person: Person = Depends(get_session_user),
     db: Session = Depends(get_db),
 ):
     try:
-        accept_assignment(assignment_id, request, background_tasks, person, db)
-    except HTTPException:
+        accept_assignment(
+            assignment_id,
+            request,
+            background_tasks,
+            person,
+            db,
+            expected_revision=expected_revision,
+        )
+    except HTTPException as exc:
+        if exc.status_code == 409:
+            return _card(request, person, db, assignment_id, error=str(exc.detail))
         return _gone()
     return _card(request, person, db, assignment_id)
 
@@ -147,19 +170,25 @@ def decline(
     assignment_id: int,
     background_tasks: BackgroundTasks,
     decline_reason: str = Form(...),
+    expected_revision: int | None = Form(None),
     person: Person = Depends(get_session_user),
     db: Session = Depends(get_db),
 ):
     try:
         decline_assignment(
             assignment_id,
-            AssignmentDeclineRequest(decline_reason=decline_reason),
+            AssignmentDeclineRequest(
+                decline_reason=decline_reason,
+                expected_revision=expected_revision,
+            ),
             request,
             background_tasks,
             person,
             db,
         )
-    except HTTPException:
+    except HTTPException as exc:
+        if exc.status_code == 409:
+            return _card(request, person, db, assignment_id, error=str(exc.detail))
         return _gone()
     return _card(request, person, db, assignment_id)
 
@@ -170,19 +199,22 @@ def swap(
     assignment_id: int,
     background_tasks: BackgroundTasks,
     note: str | None = Form(None),
+    expected_revision: int | None = Form(None),
     person: Person = Depends(get_session_user),
     db: Session = Depends(get_db),
 ):
     try:
         request_swap(
             assignment_id,
-            AssignmentSwapRequest(note=note),
+            AssignmentSwapRequest(note=note, expected_revision=expected_revision),
             request,
             background_tasks,
             person,
             db,
         )
-    except HTTPException:
+    except HTTPException as exc:
+        if exc.status_code == 409:
+            return _card(request, person, db, assignment_id, error=str(exc.detail))
         return _gone()
     return _card(request, person, db, assignment_id)
 
@@ -234,16 +266,38 @@ def open_claim(
     ):
         return _open_list(request, person, db, error="That role just filled up.")
 
-    db.add(
-        Assignment(
-            event_id=event_id,
-            person_id=person.id,
-            role=role,
-            solution_id=None,
-            status="confirmed",
-        )
+    assignment = Assignment(
+        event_id=event_id,
+        person_id=person.id,
+        role=role,
+        solution_id=None,
+        commitment_revision=1,
     )
-    db.commit()
+    record_assignment_response(
+        assignment,
+        actor_person_id=person.id,
+        response_status="accepted",
+        workflow_status="confirmed",
+        expected_revision=1,
+    )
+    try:
+        db.add(assignment)
+        db.flush()
+        log_audit_event(
+            db,
+            action=AuditAction.ASSIGNMENT_ACCEPTED,
+            user_id=person.id,
+            user_email=person.email,
+            organization_id=person.org_id,
+            resource_type="assignment",
+            resource_id=str(assignment.id),
+            details={"source": "open_shift_claim", "commitment_revision": 1},
+            commit=False,
+        )
+        db.commit()
+    except Exception:
+        db.rollback()
+        raise
     return _open_list(request, person, db)
 
 
@@ -303,10 +357,36 @@ def swap_claim(
     if already is not None:
         return _swaps_open_list(request, person, db, error="You're already on that event.")
 
+    prior_person_id = a.person_id
     a.person_id = person.id
-    a.status = "confirmed"
-    a.decline_reason = None
-    db.commit()
+    reset_assignment_response(a)
+    record_assignment_response(
+        a,
+        actor_person_id=person.id,
+        response_status="accepted",
+        workflow_status="confirmed",
+        expected_revision=a.commitment_revision,
+    )
+    try:
+        log_audit_event(
+            db,
+            action=AuditAction.ASSIGNMENT_ACCEPTED,
+            user_id=person.id,
+            user_email=person.email,
+            organization_id=person.org_id,
+            resource_type="assignment",
+            resource_id=str(a.id),
+            details={
+                "source": "swap_claim",
+                "prior_person_id": prior_person_id,
+                "commitment_revision": a.commitment_revision,
+            },
+            commit=False,
+        )
+        db.commit()
+    except Exception:
+        db.rollback()
+        raise
     return _swaps_open_list(request, person, db)
 
 
@@ -1125,10 +1205,10 @@ def swap_deny(
     person: Person = Depends(get_session_admin),
     db: Session = Depends(get_db),
 ):
-    """Deny the swap = keep the volunteer on; reset status to confirmed."""
+    """Deny the swap while requiring the member to answer again."""
     a = _owned_swap(db, person, assignment_id)
     if a is not None:
-        a.status = "confirmed"
+        reset_assignment_response(a)
         db.commit()
     return _swaps_list(request, person, db)
 

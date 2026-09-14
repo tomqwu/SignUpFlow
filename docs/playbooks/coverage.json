@@ -57,8 +57,8 @@
       "operation": "Explicitly accept, decline, or request a swap while the administrator follows up",
       "expected": "Unanswered and explicit responses remain distinguishable in every view",
       "tiers": ["integration", "e2e"],
-      "status": "partial",
-      "evidence": ["tests/integration/test_assignments.py", "tests/e2e/test_decline_reopen.py"]
+      "status": "automated",
+      "evidence": ["tests/api/test_assignment_response_truth.py", "tests/web/test_all_assignments.py", "tests/integration/test_assignments.py", "tests/e2e/test_decline_reopen.py", "tests/e2e/test_domain_playbooks.py"]
     },
     {
       "id": "BO-06",
@@ -152,7 +152,7 @@
         {"id": "CH-04", "actor": "administrator", "precondition": "Both worship leaders are unavailable in week four", "operation": "Generate and attempt to review the incomplete draft", "expected": "The worship-leader shortage is explicit and the draft cannot replace the live roster", "tiers": ["api"], "status": "partial", "evidence": ["tests/playbooks/workflows.py"]},
         {"id": "CH-05", "actor": "administrator", "precondition": "Week four has a worship-leader shortage", "operation": "Invite a qualified replacement and regenerate", "expected": "The replacement repairs every affected event without substituting another role", "tiers": ["api"], "status": "automated", "evidence": ["tests/playbooks/workflows.py"]},
         {"id": "CH-06", "actor": "administrator", "precondition": "The week-six service time changes", "operation": "Move the event, regenerate, and publish", "expected": "The new time is live and stale assignments are hidden and rejected", "tiers": ["api"], "status": "automated", "evidence": ["tests/playbooks/workflows.py"]},
-        {"id": "CH-07", "actor": "member", "precondition": "An assigned member has a draft and then published shift", "operation": "Open the schedule and explicitly accept", "expected": "The draft is hidden and the published assignment becomes confirmed only after acceptance", "tiers": ["e2e"], "status": "automated", "evidence": ["tests/e2e/test_domain_playbooks.py"]},
+        {"id": "CH-07", "actor": "member", "precondition": "An assigned member has a draft and then published shift", "operation": "Open the schedule and explicitly accept", "expected": "The draft is hidden, publication remains unanswered, and explicit acceptance records the current response revision in member and coordinator views", "tiers": ["api", "web", "e2e"], "status": "automated", "evidence": ["tests/api/test_assignment_response_truth.py", "tests/web/test_all_assignments.py", "tests/e2e/test_domain_playbooks.py"]},
         {"id": "CH-08", "actor": "reserve", "precondition": "A member requests a swap for a published role", "operation": "A reserve with the same qualification covers the shift", "expected": "The reserve gains one assignment and the original member loses it without a role gap", "tiers": ["e2e"], "status": "automated", "evidence": ["tests/e2e/test_domain_playbooks.py"]}
       ]
     },
@@ -178,7 +178,7 @@
         {"id": "BB-04", "actor": "administrator", "precondition": "Both point guards are unavailable in week four", "operation": "Generate and attempt to review the incomplete draft", "expected": "The point-guard shortage is explicit and the draft cannot replace the live roster", "tiers": ["api"], "status": "partial", "evidence": ["tests/playbooks/workflows.py"]},
         {"id": "BB-05", "actor": "administrator", "precondition": "Week four has a point-guard shortage", "operation": "Invite a qualified replacement and regenerate", "expected": "The replacement repairs every affected event without substituting another position", "tiers": ["api"], "status": "automated", "evidence": ["tests/playbooks/workflows.py"]},
         {"id": "BB-06", "actor": "administrator", "precondition": "The week-six game time changes", "operation": "Move the event, regenerate, and publish", "expected": "The new time is live and stale assignments are hidden and rejected", "tiers": ["api"], "status": "automated", "evidence": ["tests/playbooks/workflows.py"]},
-        {"id": "BB-07", "actor": "member", "precondition": "An assigned member has a draft and then published shift", "operation": "Open the schedule and explicitly accept", "expected": "The draft is hidden and the published assignment becomes confirmed only after acceptance", "tiers": ["e2e"], "status": "automated", "evidence": ["tests/e2e/test_domain_playbooks.py"]},
+        {"id": "BB-07", "actor": "member", "precondition": "An assigned member has a draft and then published shift", "operation": "Open the schedule and explicitly accept", "expected": "The draft is hidden, publication remains unanswered, and explicit acceptance records the current response revision in player and coach views", "tiers": ["api", "web", "e2e"], "status": "automated", "evidence": ["tests/api/test_assignment_response_truth.py", "tests/web/test_all_assignments.py", "tests/e2e/test_domain_playbooks.py"]},
         {"id": "BB-08", "actor": "reserve", "precondition": "A player or staff member requests a swap for a published role", "operation": "A reserve with the same qualification covers the shift", "expected": "The reserve gains one assignment and the original member loses it without a role gap", "tiers": ["e2e"], "status": "automated", "evidence": ["tests/e2e/test_domain_playbooks.py"]}
       ]
     }

@@ -30,6 +30,12 @@ The maintained API, mobile, agent, and roadmap entry points now describe atomic
 organization/first-admin bootstrap, invitation-only membership for existing
 organizations, one permission role plus scheduling qualifications, and the
 regenerated Dart client. `API_README.md` is explicitly historical.
+The maintained assignment-response contract now separates roster allocation from
+member acknowledgement, documents revision and migration behavior, and aligns the
+coordinator/member surfaces with the Church and Basketball browser playbooks. The
+affected dashboard, unanswered schedule, and accepted-detail README screenshots
+were recaptured from the 360px Church browser case; the other walkthrough screens
+were unaffected by this package.
 The maintained [API authorization matrix](API_AUTHORIZATION.md) now binds every
 mounted operation to an executable policy and records scheduling tenant/export
 semantics. This package changes API authorization and generated contracts, not

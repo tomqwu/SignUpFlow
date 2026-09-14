@@ -21,6 +21,7 @@ from api.models import (
 from api.schemas.common import PaginationParams, get_pagination_params
 from api.schemas.event import EventCreate, EventList, EventResponse, EventUpdate
 from api.services import event_bus
+from api.services.assignment_response import reset_event_assignment_responses
 from api.timeutils import utcnow
 from api.utils.event_helpers import (
     count_people_with_role,
@@ -223,6 +224,17 @@ def update_event(
     # Verify admin belongs to the same organization as the event
     verify_org_member(current_admin, event.org_id)
 
+    material_change = any(
+        value is not None and value != getattr(event, field)
+        for field, value in (
+            ("type", event_data.type),
+            ("start_time", event_data.start_time),
+            ("end_time", event_data.end_time),
+            ("resource_id", event_data.resource_id),
+            ("extra_data", event_data.extra_data),
+        )
+    )
+
     # Update fields
     if event_data.type is not None:
         event.type = event_data.type
@@ -252,6 +264,9 @@ def update_event(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=error_message,
         )
+
+    if material_change:
+        reset_event_assignment_responses(db, event.id, event.org_id)
 
     db.commit()
     db.refresh(event)
@@ -546,6 +561,13 @@ def get_all_assignments(
                 "role": assignment.role,  # Event-specific role
                 "solution_id": assignment.solution_id,
                 "is_manual": assignment.solution_id is None,
+                "status": assignment.status,
+                "response_status": assignment.response_status,
+                "responded_by_person_id": assignment.responded_by_person_id,
+                "responded_at": assignment.responded_at,
+                "commitment_revision": assignment.commitment_revision,
+                "response_revision": assignment.response_revision,
+                "response_current": assignment.response_current,
             }
         )
 

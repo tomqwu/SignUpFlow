@@ -11,9 +11,13 @@ part 'assignment_swap_request.g.dart';
 /// Body for POST /assignments/{id}/swap-request.
 ///
 /// Properties:
+/// * [expectedRevision]
 /// * [note]
 @BuiltValue()
 abstract class AssignmentSwapRequest implements Built<AssignmentSwapRequest, AssignmentSwapRequestBuilder> {
+  @BuiltValueField(wireName: r'expected_revision')
+  int? get expectedRevision;
+
   @BuiltValueField(wireName: r'note')
   String? get note;
 
@@ -40,6 +44,13 @@ class _$AssignmentSwapRequestSerializer implements PrimitiveSerializer<Assignmen
     AssignmentSwapRequest object, {
     FullType specifiedType = FullType.unspecified,
   }) sync* {
+    if (object.expectedRevision != null) {
+      yield r'expected_revision';
+      yield serializers.serialize(
+        object.expectedRevision,
+        specifiedType: const FullType.nullable(int),
+      );
+    }
     if (object.note != null) {
       yield r'note';
       yield serializers.serialize(
@@ -70,6 +81,14 @@ class _$AssignmentSwapRequestSerializer implements PrimitiveSerializer<Assignmen
       final key = serializedList[i] as String;
       final value = serializedList[i + 1];
       switch (key) {
+        case r'expected_revision':
+          final valueDes = serializers.deserialize(
+            value,
+            specifiedType: const FullType.nullable(int),
+          ) as int?;
+          if (valueDes == null) continue;
+          result.expectedRevision = valueDes;
+          break;
         case r'note':
           final valueDes = serializers.deserialize(
             value,

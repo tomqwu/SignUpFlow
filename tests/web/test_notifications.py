@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
-from api.models import EmailPreference, Notification
+from datetime import datetime, timedelta
+
+from api.models import Assignment, EmailPreference, Event, Notification
 from api.timeutils import utcnow
 from tests.web.conftest import seed_person
 from web.deps import SESSION_COOKIE
@@ -54,11 +56,27 @@ def test_mark_read_and_read_all(client, db):
     tok = _login(client, db, pid="n2", org="n_o2", email="n2@web.test")
     a = _notif(db, org="n_o2", recipient="n2")
     b = _notif(db, org="n_o2", recipient="n2")
+    start = datetime(2026, 10, 4, 10, 0)
+    db.add(
+        Event(
+            id="n_o2_event",
+            org_id="n_o2",
+            type="Sunday Service",
+            start_time=start,
+            end_time=start + timedelta(hours=1),
+        )
+    )
+    assignment = Assignment(event_id="n_o2_event", person_id="n2", role="usher")
+    db.add(assignment)
+    db.commit()
 
     r = client.post(f"/v/inbox/{a.id}/read", cookies={SESSION_COOKIE: tok})
     assert r.status_code == 200
     db.refresh(a)
     assert a.opened_at is not None
+    db.refresh(assignment)
+    assert assignment.response_status == "pending"
+    assert assignment.responded_at is None
 
     r2 = client.post("/v/inbox/read-all", cookies={SESSION_COOKIE: tok})
     assert r2.status_code == 200
@@ -66,6 +84,8 @@ def test_mark_read_and_read_all(client, db):
     assert b.opened_at is not None
     assert "No notifications yet" not in r2.text
     assert "unread" not in r2.text  # all read → no "unread" anywhere
+    db.refresh(assignment)
+    assert assignment.response_status == "pending"
 
 
 def test_cannot_read_another_users_notification(client, db):

@@ -16,6 +16,7 @@ Reconciled 2026-09-13 for testing, CI, and merge policy:
 - [Scheduling constraints](SCHEDULING_CONSTRAINTS.md): supported saved-rule mapping,
   validation, CLI equivalence, and built-in invariants.
 - [Operational playbooks](playbooks/README.md): church and basketball workflows.
+- [Assignment responses](ASSIGNMENT_RESPONSES.md): member response truth, revisions, migration, and coordinator follow-up.
 - [Mobile guide](../mobile/README.md) and [device smoke checks](../mobile/SMOKE.md).
 - [Documentation reconciliation record](DOCUMENTATION_STATUS.md): audit scope,
   historical classification, and verification limits.

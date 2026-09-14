@@ -27,9 +27,7 @@ class AssignmentDetailScreen extends ConsumerWidget {
     final id = _id;
     if (id == null) {
       return const _DetailFrame(
-        body: Center(
-          child: Text('Invalid assignment id'),
-        ),
+        body: Center(child: Text('Invalid assignment id')),
       );
     }
 
@@ -52,7 +50,11 @@ class AssignmentDetailScreen extends ConsumerWidget {
         ),
         data: (row) => row == null
             ? const _NotFound()
-            : _Body(row: row, busy: mutation.status == MutationStatus.busy, error: mutation.error),
+            : _Body(
+                row: row,
+                busy: mutation.status == MutationStatus.busy,
+                error: mutation.error,
+              ),
       ),
     );
   }
@@ -77,7 +79,9 @@ class _DetailFrame extends StatelessWidget {
                   if (onBack != null)
                     TextButton(
                       onPressed: onBack,
-                      style: TextButton.styleFrom(foregroundColor: BlockColors.accent),
+                      style: TextButton.styleFrom(
+                        foregroundColor: BlockColors.accent,
+                      ),
                       child: Text(
                         '‹ SCHEDULE',
                         style: BlockType.monoLabel.copyWith(
@@ -138,12 +142,21 @@ class _Body extends ConsumerWidget {
   final bool busy;
   final String? error;
 
-  StatusKind _status() => switch (row.assignment.status.toLowerCase()) {
-        'confirmed' || 'accepted' => StatusKind.confirmed,
-        'pending' => StatusKind.pending,
-        'declined' => StatusKind.declined,
-        _ => StatusKind.neutral,
-      };
+  String _responseLabel() {
+    if (row.assignment.status.toLowerCase() == 'swap_requested') {
+      return 'Replacement needed';
+    }
+    if (!row.assignment.responseCurrent) return 'Unanswered';
+    return row.assignment.responseStatus;
+  }
+
+  StatusKind _status() => switch (_responseLabel().toLowerCase()) {
+    'accepted' => StatusKind.confirmed,
+    'pending' => StatusKind.pending,
+    'unanswered' || 'replacement needed' => StatusKind.pending,
+    'declined' => StatusKind.declined,
+    _ => StatusKind.neutral,
+  };
 
   String _timeRange() {
     final f = DateFormat('HH:mm');
@@ -166,27 +179,32 @@ class _Body extends ConsumerWidget {
                   crossAxisAlignment: WrapCrossAlignment.center,
                   children: [
                     TimeChip(_timeRange()),
-                    if (row.assignment.role != null) RoleChip(row.assignment.role!),
-                    StatusText(kind: _status(), label: row.assignment.status),
+                    if (row.assignment.role != null)
+                      RoleChip(row.assignment.role!),
+                    StatusText(kind: _status(), label: _responseLabel()),
                   ],
                 ),
                 const SizedBox(height: 10),
                 Text(
                   row.event.type,
-                  style: BlockType.displayUpper(22).copyWith(
-                    fontSize: 22,
-                    height: 1.15,
-                  ),
+                  style: BlockType.displayUpper(
+                    22,
+                  ).copyWith(fontSize: 22, height: 1.15),
                 ),
                 const SizedBox(height: 6),
                 Text(
-                  DateFormat('EEE d MMM y · h:mm a').format(row.start).toUpperCase(),
+                  DateFormat(
+                    'EEE d MMM y · h:mm a',
+                  ).format(row.start).toUpperCase(),
                   style: BlockType.monoData.copyWith(fontSize: 11),
                 ),
                 const SizedBox(height: 12),
                 Text(
-                  'Tap a button below to update your response. The schedule '
-                  'will refresh once the change reaches the server.',
+                  row.assignment.responseCurrent
+                      ? 'Response recorded for revision '
+                            '${row.assignment.responseRevision}.'
+                      : 'Awaiting response for revision '
+                            '${row.assignment.commitmentRevision}.',
                   style: BlockType.bodySm,
                 ),
               ],
@@ -234,7 +252,7 @@ class _Body extends ConsumerWidget {
   Future<void> _doAccept(BuildContext context, WidgetRef ref) async {
     final err = await ref
         .read(assignmentMutationsProvider.notifier)
-        .accept(row.assignment.id);
+        .accept(row.assignment.id, row.assignment.commitmentRevision);
     if (!context.mounted) return;
     if (err == null) context.go('/v/schedule');
   }
@@ -249,7 +267,11 @@ class _Body extends ConsumerWidget {
     if (note == null || !context.mounted) return; // user cancelled
     final err = await ref
         .read(assignmentMutationsProvider.notifier)
-        .requestSwap(row.assignment.id, note);
+        .requestSwap(
+          row.assignment.id,
+          row.assignment.commitmentRevision,
+          note,
+        );
     if (!context.mounted) return;
     if (err == null) context.go('/v/schedule');
   }
@@ -265,7 +287,7 @@ class _Body extends ConsumerWidget {
     if (reason == null || !context.mounted) return;
     final err = await ref
         .read(assignmentMutationsProvider.notifier)
-        .decline(row.assignment.id, reason);
+        .decline(row.assignment.id, row.assignment.commitmentRevision, reason);
     if (!context.mounted) return;
     if (err == null) context.go('/v/schedule');
   }
@@ -300,7 +322,15 @@ class _Body extends ConsumerWidget {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Text(title, style: BlockType.monoLabel.copyWith(color: context.blockColor(light: BlockColors.ink1, dark: BlockColors.ink1Dark))),
+              Text(
+                title,
+                style: BlockType.monoLabel.copyWith(
+                  color: context.blockColor(
+                    light: BlockColors.ink1,
+                    dark: BlockColors.ink1Dark,
+                  ),
+                ),
+              ),
               const SizedBox(height: 8),
               TextField(
                 controller: ctrl,
@@ -309,7 +339,12 @@ class _Body extends ConsumerWidget {
                 style: BlockType.body,
                 decoration: InputDecoration(
                   hintText: hint,
-                  hintStyle: BlockType.bodySm.copyWith(color: context.blockColor(light: BlockColors.ink3, dark: BlockColors.ink3Dark)),
+                  hintStyle: BlockType.bodySm.copyWith(
+                    color: context.blockColor(
+                      light: BlockColors.ink3,
+                      dark: BlockColors.ink3Dark,
+                    ),
+                  ),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
                     borderSide: const BorderSide(color: BlockColors.line1),

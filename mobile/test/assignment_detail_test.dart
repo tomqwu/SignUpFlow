@@ -16,12 +16,17 @@ api.AssignmentResponse _assn({
   required String role,
   required String status,
 }) {
+  final accepted = status == 'confirmed';
   return (api.AssignmentResponseBuilder()
         ..id = id
         ..eventId = eventId
         ..personId = 'me'
         ..role = role
         ..status = status
+        ..responseStatus = accepted ? 'accepted' : 'pending'
+        ..responseCurrent = accepted
+        ..commitmentRevision = 1
+        ..responseRevision = accepted ? 1 : null
         ..assignedAt = DateTime(2026, 5, 1).toUtc())
       .build();
 }
@@ -54,7 +59,9 @@ ScheduleData _scheduleWithOneRow() {
     ),
   );
   return ScheduleData(
-    groups: [ScheduleGroup(date: DateTime(2026, 5, 25), rows: [row])],
+    groups: [
+      ScheduleGroup(date: DateTime(2026, 5, 25), rows: [row]),
+    ],
   );
 }
 
@@ -77,7 +84,8 @@ void main() {
     expect(find.text('ASSIGNMENT'), findsOneWidget);
     expect(find.text('Sunday Service'), findsOneWidget);
     expect(find.text('USHER'), findsOneWidget);
-    expect(find.text('PENDING'), findsOneWidget);
+    expect(find.text('UNANSWERED'), findsOneWidget);
+    expect(find.text('Awaiting response for revision 1.'), findsOneWidget);
     expect(find.text('ACCEPT'), findsOneWidget);
     expect(find.text('SWAP'), findsOneWidget);
     expect(find.text('DECLINE'), findsOneWidget);

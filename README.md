@@ -22,6 +22,7 @@
 - **CLI + API** — schedule from YAML files or through REST endpoints
 - **Multi-tenant** — full org isolation with JWT auth and RBAC (admin/volunteer)
 - **Invitation system** — token-based volunteer onboarding
+- **Truthful responses** — unanswered, accepted, declined, and replacement-needed work stay distinct from roster allocation
 - **Availability tracking** — volunteers block dates, time-off with reasons
 - **Calendar export** — ICS files and webcal subscriptions
 
@@ -302,7 +303,7 @@ session** driving the real UI (not mockups). Source images live in
 
 | Volunteer responds | |
 |---|---|
-| **9 · Volunteer sees the shift**<br>Published schedule, live via SSE.<br><img src="docs/screenshots/09_volunteer_schedule.png" width="270">|**10 · Accept the assignment**<br>Status confirmed end-to-end.<br><img src="docs/screenshots/10_accept_assignment.png" width="270">|
+| **9 · Volunteer sees the shift**<br>Newly published work remains unanswered.<br><img src="docs/screenshots/09_volunteer_schedule.png" width="270">|**10 · Accept the assignment**<br>Acceptance records the member and commitment revision.<br><img src="docs/screenshots/10_accept_assignment.png" width="270">|
 
 > Captured with Playwright against a server started by `make run`, exercising the
 > real HTMX/Alpine UI. Reproduce locally: `make run`, then sign up at
@@ -395,6 +396,10 @@ replacement, regeneration, publication, acceptance, and swaps.
 **Basketball team** — A coach runs a six-week game and practice roster with
 multi-position players, injuries, simultaneous events, shortages, replacement,
 regeneration, publication, acceptance, and swaps.
+
+Roster allocation is not member acceptance. See the
+[assignment response contract](docs/ASSIGNMENT_RESPONSES.md) for persisted states,
+revision handling, migration behavior, coordinator queues, and replay protection.
 
 The [machine-readable coverage manifest](docs/playbooks/coverage.json) binds the
 shared BO journeys, every Church/Basketball qualification, stable scenario IDs,

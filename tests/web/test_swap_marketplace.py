@@ -54,6 +54,9 @@ def test_claim_transfers_assignment(client, db):
     assert r.status_code == 200
     db.refresh(asg)
     assert asg.person_id == "sm_b" and asg.status == "confirmed"
+    assert asg.response_status == "accepted"
+    assert asg.responded_by_person_id == "sm_b"
+    assert asg.response_current is True
     assert "No swap requests to cover" in r.text  # nothing left for B
 
 

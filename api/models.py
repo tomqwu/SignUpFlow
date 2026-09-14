@@ -672,8 +672,13 @@ class Assignment(Base):
         String, nullable=True
     )  # Event-specific role (e.g., "usher", "greeter", "sound_tech")
     status = Column(
-        String, default="confirmed", nullable=False
-    )  # confirmed, declined, swap_requested
+        String, default="pending", nullable=False
+    )  # Compatibility workflow state: pending, confirmed, declined, swap_requested
+    response_status = Column(String, default="pending", nullable=False)
+    responded_by_person_id = Column(String, nullable=True)
+    responded_at = Column(DateTime, nullable=True)
+    commitment_revision = Column(Integer, default=1, nullable=False)
+    response_revision = Column(Integer, nullable=True)
     decline_reason = Column(String, nullable=True)
     assigned_at = Column(DateTime, default=utcnow)
 
@@ -687,7 +692,17 @@ class Assignment(Base):
         Index("idx_assignments_solution_id", "solution_id"),
         Index("idx_assignments_event_id", "event_id"),
         Index("idx_assignments_person_id", "person_id"),
+        Index("idx_assignments_response_status", "response_status"),
     )
+
+    @property
+    def response_current(self) -> bool:
+        """Whether the persisted response acknowledges this exact commitment."""
+        return bool(
+            self.response_status in {"accepted", "declined"}
+            and self.response_revision is not None
+            and self.response_revision == self.commitment_revision
+        )
 
 
 # ==============================================================================

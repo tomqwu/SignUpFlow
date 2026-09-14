@@ -60,7 +60,8 @@ def test_schedule_lists_assignment_with_event_details(client, db):
     assert "Sunday Service" in resp.text
     assert "10:00" in resp.text and "11:30" in resp.text
     assert "usher" in resp.text
-    assert "confirmed" in resp.text
+    assert "Unanswered" in resp.text
+    assert "confirmed" not in resp.text
     # Row links to the (future) detail page.
     assert "/v/schedule/" in resp.text
 
@@ -84,3 +85,27 @@ def test_schedule_scoped_to_caller(client, db):
     assert resp.status_code == 200
     assert "Not Mine" not in resp.text
     assert "No assignments yet" in resp.text
+
+
+def test_stale_response_refreshes_card_with_visible_error(client, db):
+    person = seed_person(db, person_id="p_stale", email="stale@web.test")
+    _seed_assignment(db, person, eid="evt_stale", status="pending")
+    assignment = db.query(Assignment).filter(Assignment.event_id == "evt_stale").one()
+    assignment.commitment_revision = 2
+    db.commit()
+    login = client.post(
+        "/auth/login",
+        data={"email": "stale@web.test", "password": "WebPass123!"},
+    )
+    token = login.cookies[SESSION_COOKIE]
+
+    response = client.post(
+        f"/v/schedule/{assignment.id}/accept?expected_revision=1",
+        cookies={SESSION_COOKIE: token},
+    )
+
+    assert response.status_code == 200
+    assert "Assignment changed from revision 1 to 2" in response.text
+    assert "expected_revision=2" in response.text
+    db.refresh(assignment)
+    assert assignment.response_status == "pending"
