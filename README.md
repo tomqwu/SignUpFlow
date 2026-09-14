@@ -421,6 +421,10 @@ The browser playbooks create each organization and first admin through normal si
 then invite and accept fourteen baseline members plus a qualified replacement through
 the UI. They preserve `admin`/`volunteer` account access separately from custom
 scheduling qualifications such as `worship_leader`, `center`, and `scorekeeper`.
+Every Church and Basketball qualification also runs the member availability page at
+360px and 1440px: it records Wednesday time off and recurring Sunday unavailability,
+rejects peer edits without mutation, and verifies exclusion across twelve API-seeded
+events while retaining a complete qualified roster.
 
 Saved REST scheduling rules support hard assignment caps, hard minimum rest gaps,
 and a weighted soft cooldown preference. They execute in API solves instead of

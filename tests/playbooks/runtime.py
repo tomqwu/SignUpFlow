@@ -64,6 +64,16 @@ class Playbook:
         self.org = auth["org_id"]
         self.headers = {"Authorization": f"Bearer {auth['token']}"}
 
+    def member_headers(self, person_id):
+        person = self.people[person_id]
+        auth = self.request(
+            "POST",
+            "/auth/login",
+            data={"email": person["email"], "password": self.password},
+            headers={},
+        )
+        return {"Authorization": f"Bearer {auth['token']}"}
+
     def request(self, method, path, status=200, data=None, headers=None):
         response = self.client.request(
             method,

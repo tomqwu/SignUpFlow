@@ -39,11 +39,14 @@ evidence with a local mock. Do not deploy or enable providers from a roadmap alo
 - #279/#289 FLOW-1: the machine-readable playbook coverage manifest now binds
   BO-01..12, CH-01..08, BB-01..08, every scheduling qualification, evidence tier,
   and partial/blocked status; pytest rejects omitted bundled roles or scenarios.
-  BO-01 and BO-02 are automated: each domain browser flow creates its organization
+  BO-01 through BO-03 are automated: each domain browser flow creates its organization
   and first admin through normal signup, starts from the empty onboarding state,
   invites and accepts fourteen baseline members plus a qualified replacement with
   explicit qualifications, and verifies the admin-only qualification editor at 360px
-  and 1440px. Repeated-event setup remains an explicitly API-seeded browser-test step.
+  and 1440px. A separate role-parameterized browser flow records one-off and recurring
+  unavailability for every qualification, rejects peer edits without mutation, and
+  proves solver exclusion across twelve API-seeded events. Repeated-event setup remains
+  an explicitly API-seeded browser-test step.
 - #255: atomic organization/first-admin bootstrap, invitation-only later
   membership, shared role normalization, request-override rejection, and
   concurrent acceptance protection are implemented with local API/integration

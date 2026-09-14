@@ -76,6 +76,9 @@ choose tactical substitutions or enforce league participation rules.
 BB-01 through BB-06 run as an automated API lifecycle. BB-07/08 and multi-role form
 entry run in Chromium at phone and desktop sizes. The overlapping-game scenario
 is a staffing capacity drill, not a recommendation to split a competition team.
+BO-03 separately runs all seven Basketball qualifications through one-off and recurring
+availability entry at both widths, rejects peer edits, and verifies solver exclusion
+across twelve API-seeded events.
 
 ## Additional operational drills
 

@@ -17,11 +17,7 @@ def run_six_week_roster(client, playbook_spec):
     assert baseline["metrics"]["hard_violations"] == 0
     p.assert_complete(baseline["solution_id"])
     initial = p.assignments(baseline["solution_id"])[0]["assignees"][0]
-    member = p.people[initial["person_id"]]
-    login = p.request(
-        "POST", "/auth/login", data={"email": member["email"], "password": p.password}
-    )
-    member_headers = {"Authorization": f"Bearer {login['token']}"}
+    member_headers = p.member_headers(initial["person_id"])
     assert p.request("GET", "/assignments/me", headers=member_headers)["total"] == 0
     for action, body in [
         ("accept", None),
@@ -96,9 +92,7 @@ def run_six_week_roster(client, playbook_spec):
     assert initial["assignment_id"] not in visible_ids
 
     # Volunteers and another organization's admin cannot run/publish this roster.
-    person = p.people[absent]
-    auth = p.request("POST", "/auth/login", data={"email": person["email"], "password": p.password})
-    volunteer = {"Authorization": f"Bearer {auth['token']}"}
+    volunteer = p.member_headers(absent)
     p.request("POST", f"/solutions/{repaired['solution_id']}/publish", 403, headers=volunteer)
     other = Playbook(client, playbook_spec)
     p.request("POST", f"/solutions/{repaired['solution_id']}/publish", 404, headers=other.headers)

@@ -37,8 +37,8 @@
       "operation": "Record one-time or recurring unavailability",
       "expected": "The solver excludes the member and another member cannot edit the record",
       "tiers": ["api", "e2e"],
-      "status": "partial",
-      "evidence": ["tests/playbooks/workflows.py", "tests/e2e/test_availability_solver.py", "tests/api/test_availability_rrule.py", "tests/api/test_saved_constraint_enforcement.py"]
+      "status": "automated",
+      "evidence": ["tests/e2e/test_domain_playbooks.py", "tests/api/test_scheduling_tenant_boundaries.py", "tests/api/test_availability_rrule.py", "tests/api/test_saved_constraint_enforcement.py"]
     },
     {
       "id": "BO-04",
