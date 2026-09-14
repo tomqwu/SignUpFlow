@@ -117,6 +117,13 @@ sessions, old passwords, replayed reset links, expired tokens, and short API res
 fail without losing the account. Recovery screenshots are saved in pytest's temporary
 directory; external mailbox delivery and distributed abuse controls remain separate work.
 
+BO-12 keeps this Church and the Basketball organization alive in the same local server.
+The Church administrator sees only Church members. A worship leader, musician, sound
+operator, usher, and children's leader each signs in at 360px and 1440px, remains on the
+volunteer schedule when attempting the admin directory, and cannot invite, publish, read a
+Basketball person, or change a Church peer's availability. Access and browser credentials
+also fail when their tenant claim is missing or mismatched or the membership is inactive.
+
 ## Additional operational drills
 
 Record these separately as manual/extended acceptance, not as passed by CH-01-08:
@@ -140,5 +147,5 @@ Record these separately as manual/extended acceptance, not as passed by CH-01-08
 Require exact role counts, no double-booking, no assignments during recorded
 absence, no unpublished drafts exposed in member schedules, and successful member
 acceptance. Recheck every future week after republishing. Keep human safeguarding,
-external calendar-client polling, delivery, and broader tenant-security blockers visible
-in the release record.
+external calendar-client polling, delivery, infrastructure isolation, and broader security
+blockers visible in the release record.

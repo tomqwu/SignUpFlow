@@ -1,6 +1,6 @@
 # API Authorization Matrix
 
-Current policy, 2026-09-13. The executable source of truth is
+Current policy, 2026-09-14. The executable source of truth is
 [`api/route_auth_policy.py`](../api/route_auth_policy.py). It names every mounted
 FastAPI operation as `public`, `public-token`, `public-callback`, `member`, or
 `admin`.
@@ -22,6 +22,22 @@ An invalid bearer token returns `401`. A missing bearer token on protected route
 retains FastAPI HTTPBearer's `403`. An authenticated actor requesting an explicit
 foreign organization receives `403`; a guessed resource identifier is looked up
 inside the actor's tenant and returns `404` whether it is foreign or absent.
+
+## Session And Tenant Binding
+
+Every API access token and browser session cookie contains both the person `sub` and
+the person's `org_id`. Authentication reloads an active person by both values; a
+missing tenant claim, mismatched tenant claim, inactive membership, or deleted person
+invalidates the credential. Refresh tokens already carry the same tenant and may rotate
+only an active matching membership. Password changes and resets continue to revoke
+older credentials through `pwd_iat` and refresh-token versioning.
+
+Church and Basketball BO-12 browser acceptance runs both tenants in one application
+process. It checks each administrator's isolated directory and signs in one member for
+every declared scheduling qualification at 360px and 1440px. Those members cannot open
+the administrator surface, invite, publish, inspect a foreign person, or mutate a peer's
+availability. This is application-level local evidence; it does not certify deployment,
+provider, or database-infrastructure isolation.
 
 ## Scheduling Surface
 
@@ -52,7 +68,7 @@ those feature gates are enabled.
 6. Run the matrix and scheduling regressions locally:
 
 ```bash
-poetry run pytest tests/unit/test_api_route_auth_policy.py tests/api/test_scheduling_tenant_boundaries.py -q
+poetry run pytest tests/unit/test_api_route_auth_policy.py tests/api/test_access_token_tenancy.py tests/api/test_scheduling_tenant_boundaries.py tests/security/test_authentication.py -q
 ```
 
 Do not use the tenancy warning listener as authorization. Every query that can

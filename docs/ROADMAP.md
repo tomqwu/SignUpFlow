@@ -104,6 +104,13 @@ evidence with a local mock. Do not deploy or enable providers from a roadmap alo
   real captured reset-link recovery at 360px and 1440px. Old passwords, replayed links,
   expired tokens, and short API reset passwords fail without consuming a usable token.
   External mailbox/provider delivery and distributed abuse controls remain later work.
+- #254/#255/#285/#289 BO-12: every API access token and browser session is bound to
+  the active account tenant. Church and Basketball coexist in one local server; each
+  administrator sees only its own directory, and every declared scheduling qualification
+  runs as a volunteer at 360px and 1440px. Missing/mismatched tenant claims, inactive
+  memberships, admin-surface access, invitations, publication, foreign-person reads, and
+  peer availability writes fail locally. Deployment and infrastructure isolation remain
+  separate release evidence.
 - #260: per-run SQLite database isolation exists. PostgreSQL business/concurrency
   parity is now proven for allocation claims only. Full migration and broader
   business parity remain unverified release work; run that validation locally.

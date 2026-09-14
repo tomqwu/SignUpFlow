@@ -84,7 +84,7 @@ def _seed(
     db.add(assignment)
     db.commit()
     db.refresh(assignment)
-    return assignment, create_access_token({"sub": person_id})
+    return assignment, create_access_token({"sub": person_id, "org_id": org_id})
 
 
 async def _spawn_listener(topic: str) -> tuple[asyncio.Task, list[dict]]:
@@ -310,7 +310,7 @@ async def test_admin_assign_does_not_publish(db):
         )
     )
     db.commit()
-    jwt = create_access_token({"sub": "pub_assign_admin"})
+    jwt = create_access_token({"sub": "pub_assign_admin", "org_id": "pub_assign"})
 
     async def hit():
         async with AsyncClient(app=app, base_url="http://test") as client:

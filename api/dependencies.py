@@ -94,17 +94,25 @@ async def get_current_user(
     token = credentials.credentials
     payload = verify_token(token)
 
-    # Extract person_id from token payload
-    person_id: str = payload.get("sub")
-    if person_id is None:
+    # Bind the subject reload to the tenant encoded at authentication.
+    person_id = payload.get("sub")
+    token_org_id = payload.get("org_id")
+    if not isinstance(person_id, str) or not isinstance(token_org_id, str):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Could not validate credentials",
             headers={"WWW-Authenticate": "Bearer"},
         )
 
-    # Get person from database
-    person = db.query(Person).filter(Person.id == person_id).first()
+    person = (
+        db.query(Person)
+        .filter(
+            Person.id == person_id,
+            Person.org_id == token_org_id,
+            Person.status == "active",
+        )
+        .first()
+    )
     if person is None:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,

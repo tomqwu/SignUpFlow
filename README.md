@@ -462,6 +462,15 @@ and real-JWT API regressions cover a DST transition, consistent download/feed sc
 declined assignments, and deliberately mismatched foreign-tenant child rows. This proves
 local ICS behavior, not the polling interval or rendering of every third-party client.
 
+The two-organization BO-12 journey starts Church and Basketball together in the same
+disposable application. Each administrator sees only its own people, and one volunteer
+for every declared Church and Basketball scheduling qualification signs in at 360px and
+1440px. Volunteers stay out of the administrator surface and cannot invite, publish,
+inspect a foreign person, or mutate a peer's availability. API and browser credentials
+are bound to the active account's tenant; missing, mismatched, or inactive membership
+claims fail authentication. This is local application evidence, not deployment or
+infrastructure certification.
+
 Saved REST scheduling rules support hard assignment caps, hard minimum rest gaps,
 and a weighted soft cooldown preference. They execute in API solves instead of
 being stored as inert text. See the

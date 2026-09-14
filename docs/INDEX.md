@@ -12,7 +12,8 @@ Reconciled 2026-09-13 for testing, CI, and merge policy:
 - [Contributor workflow](../CONTRIBUTING.md) and [agent rules](../AGENTS.md).
 - [Local code review policy](ai-pr-review.md): local review evidence and merge rules.
 - [API authorization matrix](API_AUTHORIZATION.md): executable route classes,
-  tenant response semantics, and scheduling regression evidence.
+  active-tenant session binding, role separation, response semantics, and scheduling
+  regression evidence.
 - [Scheduling constraints](SCHEDULING_CONSTRAINTS.md): supported saved-rule mapping,
   validation, CLI equivalence, and built-in invariants.
 - [Operational playbooks](playbooks/README.md): church and basketball workflows.

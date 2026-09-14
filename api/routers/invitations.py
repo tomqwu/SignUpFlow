@@ -335,7 +335,9 @@ def accept_invitation(
         if person.password_changed_at is not None
         else utcnow().timestamp()
     )
-    access_token = create_access_token(data={"sub": person.id, "pwd_iat": pwd_iat})
+    access_token = create_access_token(
+        data={"sub": person.id, "org_id": person.org_id, "pwd_iat": pwd_iat}
+    )
     refresh_token = create_refresh_token(
         data={
             "sub": person.id,

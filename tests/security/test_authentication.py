@@ -8,6 +8,8 @@ from httpx import AsyncClient
 from api.main import app
 from api.security import create_access_token, hash_password, verify_password, verify_token
 
+pytestmark = pytest.mark.no_mock_auth
+
 
 def test_password_hashing():
     """Test bcrypt password hashing."""
@@ -171,7 +173,7 @@ async def test_authenticated_request_with_valid_token():
     db.commit()
 
     # Create valid token for this user
-    token = create_access_token(data={"sub": "auth_test_person"})
+    token = create_access_token(data={"sub": "auth_test_person", "org_id": "test_auth_org"})
 
     async with AsyncClient(app=app, base_url="http://test") as ac:
         response = await ac.get("/api/v1/people/me", headers={"Authorization": f"Bearer {token}"})

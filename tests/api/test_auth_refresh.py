@@ -114,7 +114,13 @@ class TestAuthRefreshRejection:
     def test_access_token_rejected_at_refresh_endpoint(self, client, db):
         person = _seed_login_user(db, email="refresh-wrongtype@example.com")
         # Forge an access token directly (skip login round-trip).
-        access = create_access_token(data={"sub": person.id, "pwd_iat": utcnow().timestamp()})
+        access = create_access_token(
+            data={
+                "sub": person.id,
+                "org_id": person.org_id,
+                "pwd_iat": utcnow().timestamp(),
+            }
+        )
         resp = client.post("/api/v1/auth/refresh", json={"refresh_token": access})
         assert resp.status_code == 401
         assert (

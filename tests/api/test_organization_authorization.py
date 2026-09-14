@@ -36,7 +36,9 @@ def actors(db):
                 roles=roles,
             )
         )
-        headers[identity] = {"Authorization": f"Bearer {create_access_token({'sub': identity})}"}
+        headers[identity] = {
+            "Authorization": (f"Bearer {create_access_token({'sub': identity, 'org_id': org_id})}")
+        }
     db.commit()
     return headers
 

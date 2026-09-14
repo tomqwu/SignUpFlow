@@ -200,7 +200,7 @@ test-all: ensure-test-env
 	@echo "================================"
 	@echo "   API TESTS"
 	@echo "================================"
-	@poetry run pytest tests/api/ -v --tb=short
+	@poetry run pytest tests/api/ tests/security/ -v --tb=short
 	@echo ""
 	@echo "================================"
 	@echo "   CLI TESTS"

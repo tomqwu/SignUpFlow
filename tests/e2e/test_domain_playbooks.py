@@ -14,6 +14,7 @@ import pytest
 from playwright.sync_api import expect
 
 from tests.e2e._helpers import invite_token, no_js_errors, signup_admin
+from tests.playbooks.registry import BUILTIN_DIRECTORY, discover_playbooks
 from tests.playbooks.runtime import Playbook
 
 pytestmark = pytest.mark.e2e
@@ -259,6 +260,114 @@ def test_every_domain_role_records_unavailability(
                 assert assigned_ids.isdisjoint(unavailable_ids)
             if event_date == one_off:
                 assert assigned_ids.isdisjoint(unavailable_ids)
+
+
+@pytest.mark.parametrize("width", [360, 1440])
+def test_two_org_every_role_respects_tenant_and_admin_boundaries(
+    live_server, new_context, tmp_path, width
+):
+    """Run BO-12 with both bundled organizations alive in the same server."""
+    base = live_server
+    specs = discover_playbooks([BUILTIN_DIRECTORY])
+    assert {spec.id for spec in specs} == {"church", "basketball"}
+
+    with httpx.Client(base_url=base, timeout=30) as client:
+        domains = {spec.id: Playbook(client, spec.model_copy(deep=True)) for spec in specs}
+        solutions = {}
+        for domain, playbook in domains.items():
+            playbook.event(0)
+            solution = playbook.solve()
+            playbook.assert_complete(solution["solution_id"])
+            solutions[domain] = solution["solution_id"]
+
+        for domain, playbook in domains.items():
+            foreign = next(candidate for key, candidate in domains.items() if key != domain)
+            foreign_person_id, foreign_person = next(iter(foreign.people.items()))
+
+            admin = new_context().new_page()
+            admin.set_viewport_size({"width": width, "height": 900})
+            _login(admin, base, playbook.email, playbook.password, "/a/dashboard")
+            admin.goto(f"{base}/a/people")
+            expect(admin.locator("#people-list")).to_contain_text(
+                next(iter(playbook.people.values()))["name"]
+            )
+            expect(admin.locator("#people-list")).not_to_contain_text(foreign_person["name"])
+            _fits(admin)
+            admin.screenshot(
+                path=str(tmp_path / f"{domain}-{width}-tenant-admin-boundary.png"),
+                full_page=True,
+            )
+
+            playbook.request("GET", f"/organizations/{foreign.org}", 403)
+            playbook.request("GET", f"/people/?org_id={foreign.org}", 403)
+            playbook.request(
+                "POST",
+                f"/solutions/{solutions[foreign.spec['id']]}/publish",
+                404,
+            )
+
+            for role in playbook.spec["roles"]:
+                person_id, person = next(
+                    (candidate_id, candidate)
+                    for candidate_id, candidate in playbook.people.items()
+                    if role in candidate["roles"]
+                )
+                peer_id = next(
+                    candidate_id for candidate_id in playbook.people if candidate_id != person_id
+                )
+                member_headers = playbook.member_headers(person_id)
+
+                actor = new_context().new_page()
+                actor.set_viewport_size({"width": width, "height": 900})
+                _login(actor, base, person["email"], playbook.password, "/v/schedule")
+                expect(actor.locator(".page-title")).to_have_text("Schedule")
+                _fits(actor)
+                actor.screenshot(
+                    path=str(tmp_path / f"{domain}-{width}-{role}-tenant-boundary.png"),
+                    full_page=True,
+                )
+                actor.goto(f"{base}/a/people")
+                actor.wait_for_url("**/v/schedule")
+                expect(actor.locator(".page-title")).to_have_text("Schedule")
+
+                me = playbook.request("GET", "/people/me", headers=member_headers)
+                assert me["id"] == person_id
+                assert me["org_id"] == playbook.org
+                playbook.request(
+                    "POST",
+                    f"/invitations?org_id={playbook.org}",
+                    403,
+                    {
+                        "name": "Unauthorized invite",
+                        "email": f"denied-{role}@{playbook.org}.example",
+                        "roles": ["volunteer"],
+                    },
+                    headers=member_headers,
+                )
+                playbook.request(
+                    "POST",
+                    f"/solutions/{solutions[domain]}/publish",
+                    403,
+                    headers=member_headers,
+                )
+                playbook.request(
+                    "GET",
+                    f"/people/{foreign_person_id}",
+                    403,
+                    headers=member_headers,
+                )
+                rejected_date = (playbook.start + timedelta(days=2)).isoformat()
+                playbook.request(
+                    "POST",
+                    f"/availability/{peer_id}/timeoff",
+                    403,
+                    {
+                        "start_date": rejected_date,
+                        "end_date": rejected_date,
+                        "reason": "Peer mutation must fail",
+                    },
+                    headers=member_headers,
+                )
 
 
 @pytest.mark.parametrize("width", [360, 1440])

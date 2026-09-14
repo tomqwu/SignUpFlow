@@ -38,7 +38,7 @@ Default Python tests also reject non-loopback socket connections before transpor
 | Tier | Location | Purpose |
 | --- | --- | --- |
 | Unit | `tests/unit/` | Fast regressions, mocked auth, policy/runner checks |
-| API | `tests/api/` | HTTP workflows with real JWT and isolated SQLite |
+| API | `tests/api/`, `tests/security/` | HTTP and authentication workflows with real JWT and isolated SQLite |
 | CLI | `tests/cli/` | YAML-to-solution subprocess workflows |
 | Integration | `tests/integration/` | Application/database integration |
 | Web | `tests/web/` | In-process cookie and HTMX workflows |
@@ -52,9 +52,7 @@ It does not include Flutter tests or device-dependent mobile integration tests;
 follow [mobile smoke checks](../mobile/SMOKE.md) for the latter. `make test` and
 `make test-all` are the same supported complete Python entry point.
 
-Three historical files are intentionally outside that entry point:
-`tests/security/test_authentication.py` duplicates current unit/API auth coverage
-and still uses shared-database/obsolete HTTPX patterns;
+Two historical files are intentionally outside that entry point:
 `tests/test_test_data_setup.py` imports the removed comprehensive suite; and
 `tests/performance/test_load.py` mutates a hard-coded running service. Do not run
 them against a developer or customer environment. Rehabilitate a valuable case
@@ -70,6 +68,13 @@ administrator and volunteer password change/recovery, logout/login, stale-sessio
 revocation, old credentials, replay, and captured recovery screenshots. Manual drills,
 external delivery, and production database/concurrency acceptance are not implied by a
 green local run.
+
+BO-12 keeps both bundled organizations alive in one disposable browser server. Each
+administrator sees only its own directory, and every declared Church and Basketball
+scheduling qualification signs in as a volunteer, stays on the member surface, and is
+denied administrative, peer-mutation, foreign-person, and publication operations. API
+and web regressions also require every access/session token to carry the account tenant
+and reject missing, mismatched, or inactive membership claims.
 
 ## Local Validation Only
 

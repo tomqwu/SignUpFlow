@@ -115,6 +115,14 @@ sessions, old passwords, replayed reset links, expired tokens, and short API res
 fail without losing the account. Recovery screenshots are saved in pytest's temporary
 directory; external mailbox delivery and distributed abuse controls remain separate work.
 
+BO-12 keeps this Basketball organization and the Church alive in the same local server.
+The Basketball manager sees only Basketball members. A point guard, shooting guard, small
+forward, power forward, center, coach, and scorekeeper each signs in at 360px and 1440px,
+remains on the volunteer schedule when attempting the admin directory, and cannot invite,
+publish, read a Church person, or change a Basketball peer's availability. Access and browser
+credentials also fail when their tenant claim is missing or mismatched or the membership is
+inactive.
+
 ## Additional operational drills
 
 Record these separately as manual/extended acceptance:
@@ -141,5 +149,5 @@ Record these separately as manual/extended acceptance:
 
 Require complete position/staff coverage, distinct people at overlapping times,
 absence compliance, visible published schedules and successful member acceptance.
-Keep game execution, playing time, league eligibility, delivery and security
-blockers separate from the scheduling acceptance result.
+Keep game execution, playing time, league eligibility, delivery, infrastructure isolation,
+and broader security blockers separate from the scheduling acceptance result.

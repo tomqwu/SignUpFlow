@@ -147,7 +147,9 @@ def signup(request: SignupRequest, db: Session = Depends(get_db)):
     # Generate access + refresh tokens (pwd_iat allows revocation on password change;
     # rtv binds the refresh token to the user's current refresh-token version, so
     # rotating-on-refresh invalidates the prior refresh JWT).
-    access_token = create_access_token(data={"sub": person.id, "pwd_iat": _pwd_iat_for(person)})
+    access_token = create_access_token(
+        data={"sub": person.id, "org_id": person.org_id, "pwd_iat": _pwd_iat_for(person)}
+    )
     refresh_token = create_refresh_token(
         data={
             "sub": person.id,
@@ -176,7 +178,7 @@ def login(request: LoginRequest, db: Session = Depends(get_db)):
 
     # Find user by email
     person = db.query(Person).filter(Person.email == request.email).first()
-    if not person or not person.password_hash:
+    if not person or person.status != "active" or not person.password_hash:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid email or password"
         )
@@ -190,7 +192,9 @@ def login(request: LoginRequest, db: Session = Depends(get_db)):
     # Generate access + refresh tokens (pwd_iat allows revocation on password
     # change; rtv binds the refresh token to the user's current
     # refresh_token_version so rotating-on-refresh invalidates prior tokens).
-    access_token = create_access_token(data={"sub": person.id, "pwd_iat": _pwd_iat_for(person)})
+    access_token = create_access_token(
+        data={"sub": person.id, "org_id": person.org_id, "pwd_iat": _pwd_iat_for(person)}
+    )
     refresh_token = create_refresh_token(
         data={
             "sub": person.id,
@@ -238,7 +242,11 @@ def change_password(
     db.refresh(current_user)
 
     access_token = create_access_token(
-        data={"sub": current_user.id, "pwd_iat": _pwd_iat_for(current_user)}
+        data={
+            "sub": current_user.id,
+            "org_id": current_user.org_id,
+            "pwd_iat": _pwd_iat_for(current_user),
+        }
     )
     refresh_token = create_refresh_token(
         data={
@@ -300,7 +308,15 @@ def refresh(request: RefreshRequest, db: Session = Depends(get_db)):
         )
 
     # Multi-tenant filter: lookup must match BOTH person_id AND org_id.
-    person = db.query(Person).filter(Person.id == person_id, Person.org_id == token_org_id).first()
+    person = (
+        db.query(Person)
+        .filter(
+            Person.id == person_id,
+            Person.org_id == token_org_id,
+            Person.status == "active",
+        )
+        .first()
+    )
     if not person:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="User not found")
 
@@ -323,6 +339,7 @@ def refresh(request: RefreshRequest, db: Session = Depends(get_db)):
         .filter(
             Person.id == person_id,
             Person.org_id == token_org_id,
+            Person.status == "active",
             Person.refresh_token_version == expected_rtv,
         )
         .update({Person.refresh_token_version: new_rtv}, synchronize_session=False)
@@ -340,7 +357,9 @@ def refresh(request: RefreshRequest, db: Session = Depends(get_db)):
     # Re-read the now-updated row so we mint tokens from a known-good value.
     db.refresh(person)
 
-    new_access = create_access_token(data={"sub": person.id, "pwd_iat": _pwd_iat_for(person)})
+    new_access = create_access_token(
+        data={"sub": person.id, "org_id": person.org_id, "pwd_iat": _pwd_iat_for(person)}
+    )
     new_refresh = create_refresh_token(
         data={
             "sub": person.id,

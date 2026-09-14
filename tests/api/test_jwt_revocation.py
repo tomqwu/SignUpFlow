@@ -28,8 +28,8 @@ class TestPasswordChangedAt:
         seed_user(client, "rev-legacy", email="l@o.org", name="L", password="Pass1234!")
         person = db.query(Person).filter(Person.email == "l@o.org").first()
 
-        # Token minted directly without pwd_iat — emulates a pre-rollout token.
-        legacy_token = create_access_token(data={"sub": person.id})
+        # Token minted directly without pwd_iat — emulates a pre-pwd_iat token.
+        legacy_token = create_access_token(data={"sub": person.id, "org_id": person.org_id})
         resp = client.get(
             "/api/v1/people/me",
             headers={"Authorization": f"Bearer {legacy_token}"},
@@ -50,7 +50,9 @@ class TestPasswordChangedAt:
         # Mint a token with pwd_iat in the past (pre-password-change).
         person = db.query(Person).filter(Person.email == "x@o.org").first()
         old_pwd_iat = (datetime.utcnow() - timedelta(hours=2)).timestamp()
-        old_token = create_access_token(data={"sub": person.id, "pwd_iat": old_pwd_iat})
+        old_token = create_access_token(
+            data={"sub": person.id, "org_id": person.org_id, "pwd_iat": old_pwd_iat}
+        )
 
         # Bump password_changed_at to "now" — newer than the token's pwd_iat.
         person.password_changed_at = datetime.utcnow()
@@ -74,6 +76,7 @@ class TestPasswordChangedAt:
         token = create_access_token(
             data={
                 "sub": person.id,
+                "org_id": person.org_id,
                 "pwd_iat": person.password_changed_at.timestamp(),
             }
         )

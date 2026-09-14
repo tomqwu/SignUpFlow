@@ -32,6 +32,8 @@ def test_local_all_runs_each_python_tier_in_a_separate_process():
     assert len(commands) == 7
     for tier in ("unit", "api", "cli", "integration", "web", "contract", "e2e"):
         assert sum(f"pytest tests/{tier}/ " in command for command in commands) == 1
+    api_command = next(command for command in commands if "pytest tests/api/ " in command)
+    assert "tests/security/" in api_command
 
 
 def test_make_test_uses_the_supported_complete_local_suite():
@@ -42,6 +44,7 @@ def test_make_test_uses_the_supported_complete_local_suite():
     assert "tests/comprehensive_test_suite.py" not in result.stdout
     for tier in ("unit", "api", "cli", "integration", "web", "contract", "e2e"):
         assert f"pytest tests/{tier}/ " in result.stdout
+    assert "pytest tests/api/ tests/security/" in result.stdout
 
 
 def test_playwright_is_a_locked_development_dependency():
