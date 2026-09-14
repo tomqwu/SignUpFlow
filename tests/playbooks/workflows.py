@@ -62,6 +62,8 @@ def run_six_week_roster(client, playbook_spec):
     shortage = p.solve()
     assert shortage["metrics"]["hard_violations"] == 1
     assert all(v["constraint_key"] == "require_role_coverage" for v in shortage["violations"])
+    rejected = p.request("POST", f"/solutions/{shortage['solution_id']}/publish", 409)
+    assert "required role shortages" in rejected["detail"].lower()
     assert p.request("GET", f"/solutions/{baseline['solution_id']}")["is_published"]
     assert not p.request("GET", f"/solutions/{shortage['solution_id']}")["is_published"]
 

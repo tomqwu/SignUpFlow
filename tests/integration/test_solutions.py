@@ -19,6 +19,7 @@ Endpoints exercised:
 """
 
 import time
+from datetime import datetime, timedelta
 
 import httpx
 import pytest
@@ -115,6 +116,39 @@ def _create_solution(client: httpx.Client, api_base: str, org_id: str) -> dict:
     return resp.json()
 
 
+def _solve_publishable_solution(client: httpx.Client, api_base: str, org_id: str) -> dict:
+    event_id = f"publish_event_{org_id}"
+    start = datetime.now() + timedelta(days=14)
+    event = client.post(
+        f"{api_base}/events/",
+        json={
+            "id": event_id,
+            "org_id": org_id,
+            "type": "Publication lifecycle",
+            "start_time": start.isoformat(),
+            "end_time": (start + timedelta(hours=1)).isoformat(),
+            "extra_data": {"role_counts": {}},
+        },
+    )
+    if event.status_code not in (201, 409):
+        pytest.fail(event.text)
+    solve = client.post(
+        f"{api_base}/solver/solve",
+        json={
+            "org_id": org_id,
+            "from_date": start.date().isoformat(),
+            "to_date": start.date().isoformat(),
+            "mode": "strict",
+            "change_min": False,
+        },
+    )
+    assert solve.status_code == 200, solve.text
+    solution_id = solve.json()["solution_id"]
+    response = client.get(f"{api_base}/solutions/{solution_id}")
+    assert response.status_code == 200, response.text
+    return response.json()
+
+
 class TestCreateAndRead:
     """POST /solutions/, GET /solutions/, GET /solutions/{id}."""
 
@@ -174,7 +208,7 @@ class TestPublishUnpublish:
 
     def test_publish_flow_sets_is_published(self, solutions_org):
         data = solutions_org
-        sol = _create_solution(data["admin_client"], data["api_base"], data["org_id"])
+        sol = _solve_publishable_solution(data["admin_client"], data["api_base"], data["org_id"])
 
         resp = data["admin_client"].post(f"{data['api_base']}/solutions/{sol['id']}/publish")
         assert resp.status_code == 200, resp.text
@@ -184,8 +218,8 @@ class TestPublishUnpublish:
 
     def test_publish_replaces_prior_in_same_org(self, solutions_org):
         data = solutions_org
-        first = _create_solution(data["admin_client"], data["api_base"], data["org_id"])
-        second = _create_solution(data["admin_client"], data["api_base"], data["org_id"])
+        first = _solve_publishable_solution(data["admin_client"], data["api_base"], data["org_id"])
+        second = _solve_publishable_solution(data["admin_client"], data["api_base"], data["org_id"])
 
         p1 = data["admin_client"].post(f"{data['api_base']}/solutions/{first['id']}/publish")
         assert p1.status_code == 200
@@ -199,7 +233,7 @@ class TestPublishUnpublish:
 
     def test_publish_requires_admin(self, solutions_org):
         data = solutions_org
-        sol = _create_solution(data["admin_client"], data["api_base"], data["org_id"])
+        sol = _solve_publishable_solution(data["admin_client"], data["api_base"], data["org_id"])
 
         resp = data["vol_client"].post(f"{data['api_base']}/solutions/{sol['id']}/publish")
         assert resp.status_code == 403
@@ -218,7 +252,7 @@ class TestPublishUnpublish:
 
     def test_unpublish_clears_flags(self, solutions_org):
         data = solutions_org
-        sol = _create_solution(data["admin_client"], data["api_base"], data["org_id"])
+        sol = _solve_publishable_solution(data["admin_client"], data["api_base"], data["org_id"])
 
         pub = data["admin_client"].post(f"{data['api_base']}/solutions/{sol['id']}/publish")
         assert pub.status_code == 200
@@ -241,8 +275,8 @@ class TestRollback:
 
     def test_rollback_republishes_prior(self, solutions_org):
         data = solutions_org
-        first = _create_solution(data["admin_client"], data["api_base"], data["org_id"])
-        second = _create_solution(data["admin_client"], data["api_base"], data["org_id"])
+        first = _solve_publishable_solution(data["admin_client"], data["api_base"], data["org_id"])
+        second = _solve_publishable_solution(data["admin_client"], data["api_base"], data["org_id"])
 
         assert (
             data["admin_client"]

@@ -104,11 +104,13 @@ def test_manual_assign_and_remove(live_server, page):
 def test_publish_then_unpublish_state(live_server, page):
     base = live_server
     signup_admin(page, base)
-    _new_event(page, base, etype="Service A")
+    qualify_only_member(page, base, "greeter")
+    _new_event(page, base, etype="Service A", role="greeter")
     _solve_and_publish(page, base)
 
     # Unpublish returns the control to its pre-publish state; because the
     # solution was previously published, rollback is now offered.
+    page.once("dialog", lambda dialog: dialog.accept())
     page.click("#publish-state button:has-text('Unpublish')")
     page.wait_for_selector("#publish-state:has-text('Publish this solution')")
     page.wait_for_selector("#publish-state:has-text('Roll back to this version')")

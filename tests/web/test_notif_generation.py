@@ -2,9 +2,11 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timedelta
+from datetime import timedelta
 
 from api.models import Assignment, Event, Notification, Solution
+from api.services.publication_service import capture_solution_scope
+from api.timeutils import utcnow
 from tests.web.conftest import seed_person
 from web.deps import SESSION_COOKIE
 
@@ -16,24 +18,40 @@ def _login(client, email):
 
 def test_publish_creates_inbox_notifications(client, db):
     seed_person(db, person_id="ng_adm", org_id="ng_o1", email="ngadm@web.test", roles=["admin"])
-    seed_person(db, person_id="ng_vol", org_id="ng_o1", email="ngvol@web.test", roles=["volunteer"])
+    seed_person(
+        db,
+        person_id="ng_vol",
+        org_id="ng_o1",
+        email="ngvol@web.test",
+        roles=["volunteer", "usher"],
+    )
+    start = utcnow() + timedelta(days=14)
+    event = Event(
+        id="ng_ev",
+        org_id="ng_o1",
+        type="Sunday Service",
+        start_time=start,
+        end_time=start + timedelta(hours=1),
+        extra_data={"role_counts": {"usher": 1}},
+    )
+    db.add(event)
+    db.commit()
+    scope = capture_solution_scope(
+        [event], range_start=event.start_time.date(), range_end=event.start_time.date()
+    )
     sol = Solution(
-        org_id="ng_o1", hard_violations=0, soft_score=1.0, health_score=90.0, solve_ms=5.0
+        org_id="ng_o1",
+        hard_violations=0,
+        soft_score=1.0,
+        health_score=90.0,
+        solve_ms=5.0,
+        scope_start=scope.range_start,
+        scope_end=scope.range_end,
+        scope_event_ids=scope.event_ids,
+        scope_fingerprint=scope.fingerprint,
     )
     db.add(sol)
-    db.commit()
-    db.refresh(sol)
-    start = datetime(2026, 6, 7, 10, 0, 0)
-    db.add(
-        Event(
-            id="ng_ev",
-            org_id="ng_o1",
-            type="Sunday Service",
-            start_time=start,
-            end_time=start + timedelta(hours=1),
-        )
-    )
-    db.commit()
+    db.flush()
     db.add(
         Assignment(
             event_id="ng_ev",
@@ -72,8 +90,30 @@ def test_publish_creates_inbox_notifications(client, db):
 
 def test_publish_without_assignments_still_ok(client, db):
     seed_person(db, person_id="ng_a2", org_id="ng_o2", email="ng2@web.test", roles=["admin"])
+    start = utcnow() + timedelta(days=14)
+    event = Event(
+        id="ng_empty_event",
+        org_id="ng_o2",
+        type="No staffing needed",
+        start_time=start,
+        end_time=start + timedelta(hours=1),
+        extra_data={"role_counts": {}},
+    )
+    db.add(event)
+    db.flush()
+    scope = capture_solution_scope(
+        [event], range_start=event.start_time.date(), range_end=event.start_time.date()
+    )
     sol = Solution(
-        org_id="ng_o2", hard_violations=0, soft_score=1.0, health_score=90.0, solve_ms=5.0
+        org_id="ng_o2",
+        hard_violations=0,
+        soft_score=1.0,
+        health_score=90.0,
+        solve_ms=5.0,
+        scope_start=scope.range_start,
+        scope_end=scope.range_end,
+        scope_event_ids=scope.event_ids,
+        scope_fingerprint=scope.fingerprint,
     )
     db.add(sol)
     db.commit()

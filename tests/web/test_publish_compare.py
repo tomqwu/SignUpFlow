@@ -2,7 +2,11 @@
 
 from __future__ import annotations
 
-from api.models import Solution
+from datetime import timedelta
+
+from api.models import Event, Organization, Solution
+from api.services.publication_service import capture_solution_scope
+from api.timeutils import utcnow
 from tests.web.conftest import seed_person
 from web.deps import SESSION_COOKIE
 
@@ -14,12 +18,34 @@ def _admin(client, db, *, org="pc_org", email="pcadmin@web.test"):
 
 
 def _sol(db, org):
+    if db.get(Organization, org) is None:
+        db.add(Organization(id=org, name="Web Org", region="Test"))
+    event = db.get(Event, f"publish-event-{org}")
+    if event is None:
+        start = utcnow() + timedelta(days=14)
+        event = Event(
+            id=f"publish-event-{org}",
+            org_id=org,
+            type="No staffing needed",
+            start_time=start,
+            end_time=start + timedelta(hours=1),
+            extra_data={"role_counts": {}},
+        )
+        db.add(event)
+        db.flush()
+    scope = capture_solution_scope(
+        [event], range_start=event.start_time.date(), range_end=event.start_time.date()
+    )
     s = Solution(
         org_id=org,
         hard_violations=0,
         soft_score=1.0,
         health_score=90.0,
         solve_ms=5.0,
+        scope_start=scope.range_start,
+        scope_end=scope.range_end,
+        scope_event_ids=scope.event_ids,
+        scope_fingerprint=scope.fingerprint,
     )
     db.add(s)
     db.commit()

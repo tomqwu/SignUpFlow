@@ -6,9 +6,13 @@ endpoints. Publishing a solution unpublishes any previously published one in
 the same organization. Both transitions are audited.
 """
 
+from datetime import timedelta
+
 import pytest
 
-from api.models import AuditAction, AuditLog, Solution
+from api.models import Assignment, AuditAction, AuditLog, Event, Person, Solution
+from api.services.publication_service import capture_solution_scope
+from api.timeutils import utcnow
 from tests.api.conftest import auth_headers, seed_org, seed_user
 
 
@@ -18,6 +22,32 @@ def _admin_for(client, org_id: str, suffix: str):
 
 
 def _seed_solution(db, org_id: str) -> Solution:
+    event = db.get(Event, f"publish-event-{org_id}")
+    if event is None:
+        start = utcnow() + timedelta(days=14)
+        event = Event(
+            id=f"publish-event-{org_id}",
+            org_id=org_id,
+            type="Service",
+            start_time=start,
+            end_time=start + timedelta(hours=1),
+            extra_data={"role_counts": {"usher": 1}},
+        )
+        db.add(event)
+    member = db.get(Person, f"publish-member-{org_id}")
+    if member is None:
+        member = Person(
+            id=f"publish-member-{org_id}",
+            org_id=org_id,
+            name="Member",
+            roles=["usher"],
+            status="active",
+        )
+        db.add(member)
+    db.flush()
+    scope = capture_solution_scope(
+        [event], range_start=event.start_time.date(), range_end=event.start_time.date()
+    )
     sol = Solution(
         org_id=org_id,
         solve_ms=10.0,
@@ -25,8 +55,21 @@ def _seed_solution(db, org_id: str) -> Solution:
         soft_score=1.0,
         health_score=1.0,
         metrics={},
+        scope_start=scope.range_start,
+        scope_end=scope.range_end,
+        scope_event_ids=scope.event_ids,
+        scope_fingerprint=scope.fingerprint,
     )
     db.add(sol)
+    db.flush()
+    db.add(
+        Assignment(
+            solution_id=sol.id,
+            event_id=event.id,
+            person_id=member.id,
+            role="usher",
+        )
+    )
     db.commit()
     db.refresh(sol)
     return sol

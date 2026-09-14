@@ -81,6 +81,10 @@ class SolutionResponse(BaseModel):
     soft_score: float
     health_score: float
     metrics: dict[str, Any] | None
+    scope_start: date | None = None
+    scope_end: date | None = None
+    scope_event_ids: list[str] | None = None
+    scope_fingerprint: str | None = None
     created_at: datetime
     is_published: bool = False
     published_at: datetime | None = None

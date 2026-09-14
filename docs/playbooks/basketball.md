@@ -67,7 +67,7 @@ choose tactical substitutions or enforce league participation rules.
 | BB-01 | Baseline | Generate twelve events and publish | Five distinct positions plus coach and scorekeeper on every event; interchangeable baseline loads differ by at most one |
 | BB-02 | Player absent | Block one point guard for Sunday week 2 | That player is excluded that date; the other qualified point guard covers |
 | BB-03 | Overlapping game | Add week-3 game 11:00-13:00 | Disjoint players and staff cover both simultaneous games; no double-booking |
-| BB-04 | Position unavailable | Block both point guards for Sunday week 4 | That game has a reported point-guard shortage; failing draft is not published |
+| BB-04 | Position unavailable | Block both point guards for Sunday week 4 and attempt publication | That game reports a point-guard shortage; publication is rejected and the prior roster stays live |
 | BB-05 | Replacement onboarded | Invite another qualified point guard | Regeneration repairs the gap without assigning a center or coach to that position |
 | BB-06 | Game postponed | Move week-6 game to Monday 10:00-12:00 | Regenerated schedule contains the new time with all roles covered; publication replaces the old version |
 | BB-07 | Player acknowledgement | View draft as player, publish, then accept | Draft absent; published assignment is unanswered; explicit acceptance records the current revision in player and coach views |
@@ -90,8 +90,9 @@ Record these separately as manual/extended acceptance:
    notification delivery are not established by this exercise.
 4. Two teams share players in one organization. Test team eligibility explicitly
    before use; current role-based solving is not proven to restrict by team roster.
-5. A tournament needs travel/rest gaps. Validate manually; API solver integration
-   currently ignores saved custom constraints, so a configured gap is not proof.
+5. A tournament needs travel/rest gaps. The supported saved minimum-gap rule runs
+   in API solves, but venue travel and tournament policy remain manual; a configured
+   generic gap is not proof that those domain rules are satisfied.
 6. An injury affects several weeks. Record the correct date range, regenerate
    the entire future horizon and follow the organization's separate return policy.
 7. A member needs calendar export or uses a different timezone. Check actual dates

@@ -19,6 +19,8 @@ Reconciled 2026-09-13 for testing, CI, and merge policy:
 - [Assignment responses](ASSIGNMENT_RESPONSES.md): member response truth, revisions, migration, and coordinator follow-up.
 - [Allocation transactions](ALLOCATION_TRANSACTIONS.md): serialized claims,
   roster edits, live-capacity semantics, rollback, and local PostgreSQL proof.
+- [Schedule publication](SCHEDULE_PUBLICATION.md): full-horizon scope, current-fact
+  validation, response preservation, notification intent, and rollback rules.
 - [Mobile guide](../mobile/README.md) and [device smoke checks](../mobile/SMOKE.md).
 - [Documentation reconciliation record](DOCUMENTATION_STATUS.md): audit scope,
   historical classification, and verification limits.

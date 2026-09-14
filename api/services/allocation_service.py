@@ -119,6 +119,11 @@ def _require_available(db: Session, person: Person, event: Event) -> None:
         raise AllocationConflictError("unavailable", "You are unavailable for that event.")
 
 
+def require_person_available(db: Session, *, person: Person, event: Event) -> None:
+    """Reject an assignment when the member has a current availability block."""
+    _require_available(db, person, event)
+
+
 def _active_assignments(db: Session, org_id: str) -> Query[Assignment]:
     return (
         db.query(Assignment)

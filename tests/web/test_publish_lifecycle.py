@@ -2,7 +2,11 @@
 
 from __future__ import annotations
 
-from api.models import Solution
+from datetime import timedelta
+
+from api.models import Assignment, Event, Organization, Person, Solution
+from api.services.publication_service import capture_solution_scope
+from api.timeutils import utcnow
 from tests.web.conftest import seed_person
 from web.deps import SESSION_COOKIE
 
@@ -13,9 +17,57 @@ def _admin(client, db, *, org, email):
     return r.cookies[SESSION_COOKIE]
 
 
-def _sol(db, org):
-    s = Solution(org_id=org, hard_violations=0, soft_score=1.0, health_score=90.0, solve_ms=5.0)
+def _sol(db, org, *, required=1, assigned=1):
+    if db.get(Organization, org) is None:
+        db.add(Organization(id=org, name="Web Org", region="Test"))
+    event = db.get(Event, f"publish-event-{org}")
+    if event is None:
+        start = utcnow() + timedelta(days=14)
+        event = Event(
+            id=f"publish-event-{org}",
+            org_id=org,
+            type="Service",
+            start_time=start,
+            end_time=start + timedelta(hours=1),
+            extra_data={"role_counts": {"usher": required}},
+        )
+        db.add(event)
+    member = db.get(Person, f"publish-member-{org}")
+    if member is None:
+        member = Person(
+            id=f"publish-member-{org}",
+            org_id=org,
+            name="Publish Member",
+            roles=["usher"],
+            status="active",
+        )
+        db.add(member)
+    db.flush()
+    scope = capture_solution_scope(
+        [event], range_start=event.start_time.date(), range_end=event.start_time.date()
+    )
+    s = Solution(
+        org_id=org,
+        hard_violations=0,
+        soft_score=1.0,
+        health_score=90.0,
+        solve_ms=5.0,
+        scope_start=scope.range_start,
+        scope_end=scope.range_end,
+        scope_event_ids=scope.event_ids,
+        scope_fingerprint=scope.fingerprint,
+    )
     db.add(s)
+    db.flush()
+    if assigned:
+        db.add(
+            Assignment(
+                solution_id=s.id,
+                event_id=event.id,
+                person_id=member.id,
+                role="usher",
+            )
+        )
     db.commit()
     db.refresh(s)
     return s
@@ -39,6 +91,22 @@ def test_publish_then_unpublish_cycle(client, db):
     assert s.is_published is False
     # Previously published → rollback now offered.
     assert "Roll back to this version" in unp.text
+
+
+def test_incomplete_publish_names_missing_event_and_role(client, db):
+    tok = _admin(client, db, org="pl_short", email="pl-short@web.test")
+    solution = _sol(db, "pl_short", required=2, assigned=1)
+
+    response = client.post(
+        f"/a/solution/{solution.id}/publish",
+        cookies={SESSION_COOKIE: tok},
+    )
+
+    assert response.status_code == 409
+    assert 'role="alert"' in response.text
+    assert "publish-event-pl_short:usher needs 1" in response.text
+    db.refresh(solution)
+    assert solution.is_published is False
 
 
 def test_rollback_restores_previous(client, db):

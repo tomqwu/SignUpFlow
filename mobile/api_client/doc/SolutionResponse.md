@@ -17,9 +17,12 @@ Name | Type | Description | Notes
 **metrics** | [**BuiltMap&lt;String, JsonObject&gt;**](JsonObject.md) |  |
 **orgId** | **String** |  |
 **publishedAt** | [**DateTime**](DateTime.md) |  | [optional]
+**scopeEnd** | [**Date**](Date.md) |  | [optional]
+**scopeEventIds** | **BuiltList&lt;String&gt;** |  | [optional]
+**scopeFingerprint** | **String** |  | [optional]
+**scopeStart** | [**Date**](Date.md) |  | [optional]
 **softScore** | **num** |  |
 **solveMs** | **num** |  |
 
 [[Back to Model list]](../README.md#documentation-for-models) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to README]](../README.md)
-
 

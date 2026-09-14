@@ -62,7 +62,7 @@ def test_timeoff_blocks_solver_assignment(live_server, new_context, page, db_pat
     page.click("button:has-text('Create event')")
     page.wait_for_selector("#events-list:has-text('Sunday 10am Service')")
 
-    # Solve, then publish.
+    # Solve, then verify the incomplete result cannot replace the live schedule.
     page.goto(f"{base}/a/solver")
     page.fill("#from_date", from_date)
     page.fill("#to_date", to_date)
@@ -72,7 +72,10 @@ def test_timeoff_blocks_solver_assignment(live_server, new_context, page, db_pat
     page.wait_for_url("**/a/solution/**")
     page.wait_for_selector("#publish-state")
     page.click("button:has-text('Publish this solution')")
-    page.wait_for_selector("#publish-state:has-text('Unpublish')")
+    page.wait_for_selector("#publish-state .form-error")
+    assert "Sunday 10am Service" in page.locator("#publish-state").text_content()
+    assert "volunteer" in page.locator("#publish-state").text_content()
+    assert page.locator("#publish-state button:has-text('Unpublish')").count() == 0
 
     # The on-time-off volunteer was NOT scheduled.
     vol_page.goto(f"{base}/v/schedule")

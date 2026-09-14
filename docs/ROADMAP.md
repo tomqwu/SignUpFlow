@@ -65,6 +65,13 @@ evidence with a local mock. Do not deploy or enable providers from a roadmap alo
   connections prove one winner for capacity, overlap, and swap races on SQLite
   and an owned local PostgreSQL 16 database; qualification, availability,
   idempotency, audit rollback, and unpublished history are covered locally.
+- #286/#289 FLOW-3: generated solutions persist an immutable full solve scope,
+  including unfilled events. Publication and rollback revalidate current events,
+  qualifications, availability, exact role coverage, and the existing future
+  horizon under the shared organization lock. Incomplete, stale, legacy, or
+  narrower candidates leave the prior roster active; audit and local notification
+  intent commit with the roster switch. Church/Basketball shortage repair and the
+  cancellation/week-seven rollover contract have local API evidence.
 - #260: per-run SQLite database isolation exists. PostgreSQL business/concurrency
   parity is now proven for allocation claims only. Full migration and broader
   business parity remain unverified release work; run that validation locally.

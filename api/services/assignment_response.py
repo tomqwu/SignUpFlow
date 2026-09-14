@@ -72,6 +72,7 @@ def carry_forward_current_responses(
     *,
     solution: Solution,
     prior_solutions: list[Solution],
+    reset_stale_target_responses: bool = False,
 ) -> None:
     """Carry verified responses to an unchanged assignment in a replacement solution."""
     if not prior_solutions:
@@ -100,10 +101,10 @@ def carry_forward_current_responses(
         .all()
     )
     for target in target_rows:
-        if target.response_current:
-            continue
         source = verified.get((target.event_id, target.person_id, target.role))
         if source is None:
+            if reset_stale_target_responses and target.response_current:
+                reset_assignment_response(target)
             continue
         target.status = source.status
         target.response_status = source.response_status

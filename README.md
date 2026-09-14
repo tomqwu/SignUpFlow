@@ -405,6 +405,13 @@ Open-shift claims, swap covers, and coordinator roster edits share a serialized
 draft history, rechecks qualification and availability after locking, prevents
 overfill and overlap races, and leaves the prior roster unchanged on failure.
 
+Publishing follows a strict [full-horizon schedule contract](docs/SCHEDULE_PUBLICATION.md).
+The server rejects incomplete, stale, ineligible, overlapping, or narrower replacement
+rosters before changing member visibility. Generated solutions include every event
+in their solve scope, including unfilled events; legacy scope-less solutions must be
+regenerated. Explicitly cancel an event, add the next week, regenerate the remaining
+horizon, and publish only after every required role is covered.
+
 The [machine-readable coverage manifest](docs/playbooks/coverage.json) binds the
 shared BO journeys, every Church/Basketball qualification, stable scenario IDs,
 execution tiers, and remaining partial/blocked work. Pytest validates it before
