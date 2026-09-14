@@ -73,9 +73,11 @@ choose tactical substitutions or enforce league participation rules.
 | BB-07 | Player acknowledgement | View draft as player, publish, then accept | Draft absent; published assignment is unanswered; explicit acceptance records the current revision in player and coach views |
 | BB-08 | Qualified swap | Request a swap and have a reserve for the same position cover | Original player loses the shift; reserve gains it; all position/staff slots remain covered |
 
-BB-01 through BB-06 run as an automated API lifecycle. BB-07/08 and multi-role form
-entry run in Chromium at phone and desktop sizes. The overlapping-game scenario
-is a staffing capacity drill, not a recommendation to split a competition team.
+BB-01 through BB-06 run as an automated API lifecycle. The browser journey creates all
+twelve BB-01 events through the multi-role form, then independently verifies all 84
+qualified, distinct, non-overlapping assignments and balanced loads at phone and desktop
+sizes. BB-07/08 run in that same journey. The overlapping-game scenario is a staffing
+capacity drill, not a recommendation to split a competition team.
 BO-03 separately runs all seven Basketball qualifications through one-off and recurring
 availability entry at both widths, rejects peer edits, and verifies solver exclusion
 across twelve API-seeded events.

@@ -29,10 +29,11 @@ The default business profile has billing and paid SMS disabled; neither playbook
 creates a subscription or contacts an external provider. In each browser variant,
 the administrator creates the organization through the signup form, verifies the
 fresh onboarding state, invites fourteen baseline members plus a qualified replacement,
-and verifies the qualification editor after every member accepts. Five repeated weeks
-are then created by API before the browser creates the remaining event, solves, reviews,
-publishes, and records member response. The repeated-event setup remains explicitly
-API-seeded until its separate browser slice is complete.
+and verifies the qualification editor after every member accepts. The administrator then
+creates all six primary and six rehearsal/practice sessions through the multi-role event
+form, solves and reviews the complete 84-slot roster, publishes, and records member
+response. An independent oracle checks exact role counts, distinct qualified assignees,
+non-overlap, and balanced loads before publication at both browser widths.
 
 The BO-03 browser variants API-seed fourteen qualified members and all twelve events so
 they can focus on self-service behavior. One member for every Church and Basketball
@@ -108,9 +109,9 @@ Coverage statuses have precise meanings: `automated` has executable local test
 evidence; `partial` has useful automated evidence but not the complete manifest
 oracle; `manual` is an accepted human operation; `blocked` names missing product
 behavior or evidence and includes the manual tier so it cannot look automated.
-The manifest records week-seven rollover and shortage publication as automated API
-evidence. Owned-mail delivery remains blocked, and incomplete all-role/browser
-journeys remain partial.
+The manifest records the full six-week plan, week-seven rollover, and shortage
+publication as automated evidence. Owned-mail delivery remains blocked, and later
+all-role browser operations remain partial where the manifest says so.
 
 This is a domain-definition plugin for the six-week lifecycle, not an arbitrary
 workflow language. Adding a different lifecycle requires implementing and testing
@@ -122,7 +123,8 @@ unknown workflow IDs or silently skip unsupported scenarios.
 | Requirement | Automated evidence |
 | --- | --- |
 | Every required role filled by a distinct eligible person | API journey, every event in all six weeks; browser post-solve oracle |
-| Balanced load among interchangeable people | API baseline actual assignment counts, maximum difference one |
+| All twelve events entered through the multi-role form | Browser journey, both domains at 360 and 1440 pixels |
+| Balanced load among interchangeable people | API and browser baseline actual assignment counts, maximum difference one |
 | Planned absence uses a qualified reserve | API week 2 |
 | Simultaneous services/games use disjoint people | API week 3; overlap unit regression |
 | Missing role is reported instead of silently double-counted | API week 4; multi-skilled unit regression |
@@ -148,9 +150,9 @@ unknown workflow IDs or silently skip unsupported scenarios.
 | Phone and desktop page width | Browser journey at 360 and 1440 pixels |
 | Adjacent events remain legal | Unit regression |
 
-Browser runs save onboarding and accepted-assignment screenshots in pytest's
-temporary test directory, plus dashboard and unanswered-schedule captures. Inspect
-them as well as assertion results. A horizontal
+Browser runs save onboarding, complete six-week solution, unanswered-schedule, and
+accepted-assignment screenshots in pytest's temporary test directory, plus dashboard
+and qualification captures. Inspect them as well as assertion results. A horizontal
 overflow assertion alone is not a comprehensive visual/accessibility audit.
 
 ## Known boundaries and release blockers
