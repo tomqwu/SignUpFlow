@@ -102,6 +102,12 @@ captured schedule, availability, profile/calendar, and notification-preference l
 the same local server. Team approval and external inbox delivery remain human or provider
 acceptance work.
 
+BO-10 runs a qualified Basketball member's personal calendar at 360px and 1440px. A
+draft game is absent; publication adds exactly one entry in `America/Toronto`; postponing
+the game updates the same UID and local time; cancelling it removes the entry on refresh.
+The authenticated download and public token feed share the same published, non-declined,
+tenant-scoped assignment policy. A separate unit case crosses the spring DST boundary.
+
 ## Additional operational drills
 
 Record these separately as manual/extended acceptance:
@@ -120,8 +126,9 @@ Record these separately as manual/extended acceptance:
    generic gap is not proof that those domain rules are satisfied.
 6. An injury affects several weeks. Record the correct date range, regenerate
    the entire future horizon and follow the organization's separate return policy.
-7. A member needs calendar export or uses a different timezone. Check actual dates
-   and device rendering; these domain tests use UTC and do not certify DST behavior.
+7. A member imports the feed into a specific calendar app. Check that client's refresh
+   interval and device rendering; local ICS generation tests do not certify third-party
+   polling behavior.
 
 ## Release sign-off
 

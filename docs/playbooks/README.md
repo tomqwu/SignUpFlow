@@ -164,6 +164,10 @@ unknown workflow IDs or silently skip unsupported scenarios.
 | Invitation, recovery, assignment, change, and reminder content reaches owned mail | Local-capture browser journey, both domains and widths |
 | Captured action links work and reset links reject replay | Local-capture browser journey and integration recovery regressions |
 | Disabled delivery is labeled disabled, never sent | Unit and web regressions |
+| Personal download and subscription expose the same current assignments | API regression |
+| Published calendar entry moves under one UID and disappears after cancellation | Browser journey, both domains and widths |
+| Non-UTC output crosses a DST boundary correctly | Unit regression; browser journey uses `America/Toronto` |
+| Declined and foreign-tenant child rows stay out of personal calendars | Real-JWT two-tenant API regression |
 | Competing qualified claims produce one winner without overfill | SQLite and PostgreSQL integration race tests |
 | Ineligible, unavailable, overlapping, or stale claims preserve the roster | Web and integration regressions |
 | Unpublished solution history neither appears nor consumes live capacity | Web and integration regressions |
@@ -180,7 +184,7 @@ completed event records, and every original future event. This boundary avoids c
 fixture construction as the rollover operation under test.
 
 Browser runs save onboarding, complete six-week solution, unanswered-schedule,
-accepted-assignment, occurrence-scope, local-mail admin status, and member-inbox
+accepted-assignment, occurrence-scope, calendar-current, local-mail admin status, and member-inbox
 screenshots in pytest's temporary test directory, plus dashboard and qualification
 captures. Inspect them as well as assertion results. A horizontal overflow assertion
 alone is not a comprehensive visual/accessibility audit.
@@ -208,8 +212,8 @@ alone is not a comprehensive visual/accessibility audit.
   PostgreSQL, provider, deployment, or whole-application security acceptance.
 - Role-based solver assignments now retain their selected role. Old solutions
   with null roles need regeneration; no existing data is silently rewritten.
-- The role-less team fallback, venue collision checks, DST/timezone transitions,
-  advanced recurrence-rule edits and re-materialization, external notification delivery,
+- The role-less team fallback, venue collision checks, advanced recurrence-rule edits
+  and re-materialization, third-party calendar polling, external notification delivery,
   and PostgreSQL parity beyond allocation claims require separate acceptance before
   production use. Single-occurrence move/cancel and whole-series deletion are covered.
 - Basketball playing minutes, substitutions during play, scores, standings and

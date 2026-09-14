@@ -1,5 +1,7 @@
 """Calendar export and subscription endpoints."""
 
+from typing import Any, cast
+
 from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
 from pydantic import BaseModel
 from sqlalchemy import or_
@@ -35,6 +37,65 @@ def _ensure_self_or_same_org_admin(current_user: Person, target: Person) -> None
         status_code=status.HTTP_403_FORBIDDEN,
         detail="Access denied: must be self or admin in the same organization",
     )
+
+
+def _visible_assignments_for_person(db: Session, person: Person) -> list[Assignment]:
+    """Return only current, non-declined work belonging to the person's tenant."""
+    return (
+        db.query(Assignment)
+        .join(Event, Event.id == Assignment.event_id)
+        .join(Person, Person.id == Assignment.person_id)
+        .outerjoin(Solution, Assignment.solution_id == Solution.id)
+        .filter(
+            Assignment.person_id == person.id,
+            Person.org_id == person.org_id,
+            Event.org_id == person.org_id,
+            Assignment.response_status != "declined",
+            or_(Assignment.solution_id.is_(None), Solution.is_published.is_(True)),
+        )
+        .order_by(Event.start_time, Assignment.id)
+        .all()
+    )
+
+
+def _assignment_calendar_data(
+    db: Session,
+    person: Person,
+    assignments: list[Assignment],
+) -> list[dict[str, Any]]:
+    """Build calendar rows while preserving tenant boundaries on child lookups."""
+    rows = []
+    for assignment in assignments:
+        event = (
+            db.query(Event)
+            .filter(Event.id == assignment.event_id, Event.org_id == person.org_id)
+            .first()
+        )
+        if event is None:
+            continue
+        resource = None
+        if event.resource_id:
+            resource = (
+                db.query(Resource)
+                .filter(Resource.id == event.resource_id, Resource.org_id == person.org_id)
+                .first()
+            )
+        rows.append(
+            {
+                "id": assignment.id,
+                "person": {"id": person.id, "name": person.name},
+                "event": {
+                    "id": event.id,
+                    "type": event.type,
+                    "start_time": event.start_time,
+                    "end_time": event.end_time,
+                    "extra_data": event.extra_data or {},
+                    "resource": {"location": resource.location} if resource else None,
+                },
+                "role": assignment.role,
+            }
+        )
+    return rows
 
 
 # Schemas
@@ -86,8 +147,7 @@ def export_personal_schedule(
         )
     _ensure_self_or_same_org_admin(current_user, person)
 
-    # Get all assignments for this person
-    assignments = db.query(Assignment).filter(Assignment.person_id == person_id).all()
+    assignments = _visible_assignments_for_person(db, person)
 
     if not assignments:
         raise HTTPException(
@@ -95,39 +155,7 @@ def export_personal_schedule(
             detail="No assignments found for this person",
         )
 
-    # Load event and resource data for each assignment
-    assignment_data = []
-    for assignment in assignments:
-        event = db.query(Event).filter(Event.id == assignment.event_id).first()
-        if not event:
-            continue
-
-        resource = None
-        if event.resource_id:
-            resource = db.query(Resource).filter(Resource.id == event.resource_id).first()
-
-        assignment_data.append(
-            {
-                "id": assignment.id,
-                "person": {
-                    "id": person.id,
-                    "name": person.name,
-                },
-                "event": {
-                    "id": event.id,
-                    "type": event.type,
-                    "start_time": event.start_time,
-                    "end_time": event.end_time,
-                    "extra_data": event.extra_data or {},
-                    "resource": {
-                        "location": resource.location if resource else "TBD",
-                    }
-                    if resource
-                    else None,
-                },
-                "role": assignment.role,  # Event-specific role (usher, greeter, etc.)
-            }
-        )
+    assignment_data = _assignment_calendar_data(db, person, assignments)
 
     # Generate ICS file
     calendar_name = f"{person.name}'s Schedule"
@@ -331,13 +359,17 @@ def export_organization_events(
         )
 
     # Load event data with resources and assignments
-    event_data = []
+    event_data: list[dict[str, Any]] = []
     for event in events:
         resource = None
         if event.resource_id:
-            resource = db.query(Resource).filter(Resource.id == event.resource_id).first()
+            resource = (
+                db.query(Resource)
+                .filter(Resource.id == event.resource_id, Resource.org_id == org_id)
+                .first()
+            )
 
-        event_dict = {
+        event_dict: dict[str, Any] = {
             "id": event.id,
             "type": event.type,
             "start_time": event.start_time,
@@ -352,17 +384,30 @@ def export_organization_events(
 
         # Add assignments if requested
         if include_assignments:
-            assignments = db.query(Assignment).filter(Assignment.event_id == event.id).all()
+            assignments = (
+                db.query(Assignment)
+                .join(Person, Person.id == Assignment.person_id)
+                .filter(
+                    Assignment.event_id == event.id,
+                    Person.org_id == org_id,
+                    Assignment.response_status != "declined",
+                )
+                .all()
+            )
             event_dict["assignments"] = []
             for assignment in assignments:
-                person_assigned = db.query(Person).filter(Person.id == assignment.person_id).first()
+                person_assigned = (
+                    db.query(Person)
+                    .filter(Person.id == assignment.person_id, Person.org_id == org_id)
+                    .first()
+                )
                 if person_assigned:
                     event_dict["assignments"].append(
                         {
                             "person": {
                                 "name": person_assigned.name,
                             },
-                            "role": None,  # Could be extracted from extra_data
+                            "role": assignment.role,
                         }
                     )
 
@@ -370,10 +415,11 @@ def export_organization_events(
 
     # Generate ICS file
     calendar_name = f"{org.name} - All Events"
+    org_config = cast(dict[str, Any], org.config or {})
     ics_content = generate_ics_from_events(
         event_data,
         calendar_name=calendar_name,
-        timezone="UTC",
+        timezone=str(org_config.get("timezone") or "UTC"),
         include_assignments=include_assignments,
     )
 
@@ -401,53 +447,8 @@ def calendar_feed(token: str, db: Session = Depends(get_db)):
             detail="Invalid calendar token",
         )
 
-    # Only published assignments belong on a subscribed calendar: those
-    # tied to a published solution, plus direct (manual / self-serve /
-    # swap) assignments that have no solution. Draft solver output stays
-    # out of the volunteer's calendar until it is published.
-    assignments = (
-        db.query(Assignment)
-        .outerjoin(Solution, Assignment.solution_id == Solution.id)
-        .filter(
-            Assignment.person_id == person.id,
-            or_(Assignment.solution_id.is_(None), Solution.is_published.is_(True)),
-        )
-        .all()
-    )
-
-    # Load event and resource data for each assignment
-    assignment_data = []
-    for assignment in assignments:
-        event = db.query(Event).filter(Event.id == assignment.event_id).first()
-        if not event:
-            continue
-
-        resource = None
-        if event.resource_id:
-            resource = db.query(Resource).filter(Resource.id == event.resource_id).first()
-
-        assignment_data.append(
-            {
-                "id": assignment.id,
-                "person": {
-                    "id": person.id,
-                    "name": person.name,
-                },
-                "event": {
-                    "id": event.id,
-                    "type": event.type,
-                    "start_time": event.start_time,
-                    "end_time": event.end_time,
-                    "extra_data": event.extra_data or {},
-                    "resource": {
-                        "location": resource.location if resource else "TBD",
-                    }
-                    if resource
-                    else None,
-                },
-                "role": assignment.role,  # Event-specific role (usher, greeter, etc.)
-            }
-        )
+    assignments = _visible_assignments_for_person(db, person)
+    assignment_data = _assignment_calendar_data(db, person, assignments)
 
     # Generate ICS file
     calendar_name = f"{person.name}'s Schedule"

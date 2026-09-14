@@ -7,14 +7,33 @@ This module handles:
 - Building webcal:// subscription URLs
 """
 
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import Any, cast
-from zoneinfo import ZoneInfo
+from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from icalendar import Calendar, vDatetime
 from icalendar import Event as ICalEvent
 
 from api.timeutils import utcnow
+
+
+def _calendar_zone(timezone: str) -> tuple[str, ZoneInfo]:
+    """Resolve an IANA timezone, falling back to UTC for legacy bad data."""
+    try:
+        return timezone, ZoneInfo(timezone)
+    except (ZoneInfoNotFoundError, ValueError):
+        return "UTC", ZoneInfo("UTC")
+
+
+def _localized_datetime(value: datetime | str | None, zone: ZoneInfo) -> datetime:
+    """Treat persisted naive values as UTC and render them in the calendar zone."""
+    if value is None:
+        raise ValueError("Calendar event time is required")
+    if isinstance(value, str):
+        value = datetime.fromisoformat(value.replace("Z", "+00:00"))
+    if value.tzinfo is None:
+        value = value.replace(tzinfo=UTC)
+    return value.astimezone(zone)
 
 
 def generate_ics_from_assignments(
@@ -33,6 +52,7 @@ def generate_ics_from_assignments(
     Returns:
         ICS file content as string
     """
+    timezone, zone = _calendar_zone(timezone)
     cal = Calendar()
     cal.add("prodid", "-//Rostio//Calendar Export//EN")
     cal.add("version", "2.0")
@@ -53,16 +73,8 @@ def generate_ics_from_assignments(
         start_time = event_data.get("start_time")
         end_time = event_data.get("end_time")
 
-        if isinstance(start_time, str):
-            start_time = datetime.fromisoformat(start_time.replace("Z", "+00:00"))
-        if isinstance(end_time, str):
-            end_time = datetime.fromisoformat(end_time.replace("Z", "+00:00"))
-
-        # Ensure timezone-aware
-        if start_time and start_time.tzinfo is None:
-            start_time = start_time.replace(tzinfo=ZoneInfo("UTC"))
-        if end_time and end_time.tzinfo is None:
-            end_time = end_time.replace(tzinfo=ZoneInfo("UTC"))
+        start_time = _localized_datetime(start_time, zone)
+        end_time = _localized_datetime(end_time, zone)
 
         event.add("dtstart", vDatetime(start_time))
         event.add("dtend", vDatetime(end_time))
@@ -122,6 +134,7 @@ def generate_ics_from_events(
     Returns:
         ICS file content as string
     """
+    timezone, zone = _calendar_zone(timezone)
     cal = Calendar()
     cal.add("prodid", "-//Rostio//Calendar Export//EN")
     cal.add("version", "2.0")
@@ -141,16 +154,8 @@ def generate_ics_from_events(
         start_time = event_data.get("start_time")
         end_time = event_data.get("end_time")
 
-        if isinstance(start_time, str):
-            start_time = datetime.fromisoformat(start_time.replace("Z", "+00:00"))
-        if isinstance(end_time, str):
-            end_time = datetime.fromisoformat(end_time.replace("Z", "+00:00"))
-
-        # Ensure timezone-aware
-        if start_time and start_time.tzinfo is None:
-            start_time = start_time.replace(tzinfo=ZoneInfo("UTC"))
-        if end_time and end_time.tzinfo is None:
-            end_time = end_time.replace(tzinfo=ZoneInfo("UTC"))
+        start_time = _localized_datetime(start_time, zone)
+        end_time = _localized_datetime(end_time, zone)
 
         event.add("dtstart", vDatetime(start_time))
         event.add("dtend", vDatetime(end_time))

@@ -106,9 +106,9 @@
       "precondition": "The member has current published assignments",
       "operation": "Subscribe to or download the personal calendar across a schedule change",
       "expected": "Current entries appear once with no foreign assignments and a non-UTC case is correct",
-      "tiers": ["unit", "e2e"],
-      "status": "partial",
-      "evidence": ["tests/unit/test_calendar.py", "tests/e2e/test_calendar_subscription.py"]
+      "tiers": ["unit", "api", "e2e"],
+      "status": "automated",
+      "evidence": ["tests/unit/test_calendar.py", "tests/api/test_calendar_auth.py", "tests/e2e/test_calendar_subscription.py"]
     },
     {
       "id": "BO-11",

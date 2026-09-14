@@ -1,8 +1,10 @@
 """Unit tests for calendar export and subscription endpoints."""
 
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
+from zoneinfo import ZoneInfo
 
 import pytest
+from icalendar import Calendar
 
 from api.utils.calendar_utils import (
     generate_https_feed_url,
@@ -88,6 +90,88 @@ class TestCalendarUtils:
         # Verify event data
         assert "SUMMARY:Sunday Service - Greeter" in ics_content
         assert "LOCATION:Main Church Building" in ics_content
+
+    def test_assignment_calendar_converts_utc_across_dst_and_keeps_uid(self, client):
+        assignment = {
+            "id": 42,
+            "person": {"id": "person_1", "name": "Alex Member"},
+            "event": {
+                "id": "event_1",
+                "type": "Sunday Service",
+                "start_time": datetime(2026, 3, 8, 6, 30),
+                "end_time": datetime(2026, 3, 8, 8, 30),
+                "extra_data": {},
+                "resource": None,
+            },
+            "role": "sound",
+        }
+
+        before = Calendar.from_ical(
+            generate_ics_from_assignments(
+                [assignment],
+                timezone="America/Toronto",
+            )
+        )
+        before_event = before.walk("VEVENT")[0]
+        assert before_event["UID"] == "rostio-assignment-42@rostio.app"
+        before_start = before_event.decoded("DTSTART")
+        before_end = before_event.decoded("DTEND")
+        assert getattr(before_start.tzinfo, "key", None) == "America/Toronto"
+        assert getattr(before_end.tzinfo, "key", None) == "America/Toronto"
+        assert before_start == datetime(
+            2026,
+            3,
+            8,
+            1,
+            30,
+            tzinfo=ZoneInfo("America/Toronto"),
+        )
+        assert before_end == datetime(
+            2026,
+            3,
+            8,
+            4,
+            30,
+            tzinfo=ZoneInfo("America/Toronto"),
+        )
+
+        assignment["event"]["start_time"] = datetime(2026, 3, 8, 7, 30, tzinfo=UTC)
+        assignment["event"]["end_time"] = datetime(2026, 3, 8, 9, 30, tzinfo=UTC)
+        after = Calendar.from_ical(
+            generate_ics_from_assignments(
+                [assignment],
+                timezone="America/Toronto",
+            )
+        )
+        after_events = after.walk("VEVENT")
+        assert len(after_events) == 1
+        assert after_events[0]["UID"] == before_event["UID"]
+        after_start = after_events[0].decoded("DTSTART")
+        assert getattr(after_start.tzinfo, "key", None) == "America/Toronto"
+        assert (after_start.hour, after_start.minute) == (3, 30)
+        assert after_start == datetime(
+            2026,
+            3,
+            8,
+            3,
+            30,
+            tzinfo=ZoneInfo("America/Toronto"),
+        )
+
+    def test_invalid_calendar_timezone_falls_back_to_utc(self, client):
+        events = [
+            {
+                "id": "event_1",
+                "type": "Practice",
+                "start_time": datetime(2026, 1, 2, 15, 0),
+                "end_time": datetime(2026, 1, 2, 16, 0),
+            }
+        ]
+
+        calendar = Calendar.from_ical(generate_ics_from_events(events, timezone="Not/A_Timezone"))
+        event = calendar.walk("VEVENT")[0]
+        assert calendar["X-WR-TIMEZONE"] == "UTC"
+        assert event.decoded("DTSTART") == datetime(2026, 1, 2, 15, 0, tzinfo=UTC)
 
     def test_generate_ics_from_events(self, client):
         """Test ICS generation from events (admin export)."""

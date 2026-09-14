@@ -453,6 +453,13 @@ inbox, rejects the old password and replayed reset token, and opens every notifi
 HTTP link against the owned local server. This is local business-flow evidence, not
 proof of external inbox placement or provider reliability.
 
+The personal-calendar journey also runs for both domains at 360px and 1440px. Draft
+work is absent, publication creates one entry, a schedule move updates the same UID in
+the member's `America/Toronto` timezone, and cancellation removes it on refresh. Unit
+and real-JWT API regressions cover a DST transition, consistent download/feed scope,
+declined assignments, and deliberately mismatched foreign-tenant child rows. This proves
+local ICS behavior, not the polling interval or rendering of every third-party client.
+
 Saved REST scheduling rules support hard assignment caps, hard minimum rest gaps,
 and a weighted soft cooldown preference. They execute in API solves instead of
 being stored as inert text. See the

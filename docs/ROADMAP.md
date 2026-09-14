@@ -93,6 +93,12 @@ evidence with a local mock. Do not deploy or enable providers from a roadmap alo
   full captured-link and in-app reconciliation flow at 360px and 1440px. External
   inbox placement, provider webhooks, multi-worker queue recovery, and approved
   production delivery remain later acceptance under #262/#266.
+- #254/#285/#289 BO-10: personal calendar download and token feeds now share one
+  current-assignment policy: draft, declined, deleted, and foreign-tenant child rows
+  stay out. UTC storage converts to the member's resolvable IANA rendering zone,
+  including DST transitions, while a moved assignment retains one stable UID. Church
+  and Basketball publish, move, refresh, and cancel the calendar entry at 360px and
+  1440px. External calendar-client polling behavior remains device/provider acceptance.
 - #260: per-run SQLite database isolation exists. PostgreSQL business/concurrency
   parity is now proven for allocation claims only. Full migration and broader
   business parity remain unverified release work; run that validation locally.
