@@ -421,6 +421,20 @@ def _queue_assignment_intent(
     for assignment in assignments:
         if assignment.response_current and assignment.response_status == "accepted":
             continue
+        delivery_key = (
+            f"solution:{solution.id}:assignment:{assignment.id}:"
+            f"r{assignment.commitment_revision}"
+        )
+        existing = (
+            db.query(Notification)
+            .filter(
+                Notification.org_id == solution.org_id,
+                Notification.delivery_key == delivery_key,
+            )
+            .first()
+        )
+        if existing is not None:
+            continue
         db.add(
             Notification(
                 org_id=solution.org_id,
@@ -428,6 +442,7 @@ def _queue_assignment_intent(
                 type="assignment",
                 status="pending",
                 event_id=assignment.event_id,
+                delivery_key=delivery_key,
                 template_data={
                     "event_id": assignment.event_id,
                     "solution_id": solution.id,

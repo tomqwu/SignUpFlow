@@ -1,25 +1,27 @@
 # Email Smoke Testing — Runbook
 
-End-to-end verification that the email pipeline (`api/services/email_service.py`)
-actually delivers a message to a real inbox, after credentials have been
-configured in `.env`. Use this when:
+Authorized external-provider verification that the email pipeline
+(`api/services/email_service.py`) delivers a message beyond the owned local sink.
+Do not run this from routine local validation or CI. Obtain explicit approval for
+the provider, credentials, recipient, and environment first. Use this when:
 
 - Wiring a new environment for the first time (dev, staging, prod).
 - After rotating the SendGrid API key or Mailtrap credentials.
-- After any change to `EmailService` itself (sanity check that the send
-  path still works against a live backend, not just unit-test mocks).
+- Before an approved provider or release rollout after local capture is green.
 
 The pipeline has two backends:
 
 | Backend  | When                | Vars                                    |
 |----------|---------------------|-----------------------------------------|
-| SMTP     | dev / staging / CI  | `MAILTRAP_SMTP_*` (Mailtrap sandbox)    |
+| Local capture | local acceptance | `LOCAL_EMAIL_CAPTURE_DIR` (no provider) |
+| SMTP     | authorized sandbox  | `MAILTRAP_SMTP_*` (Mailtrap sandbox)    |
 | SendGrid | production          | `SENDGRID_API_KEY` (auto-selects)       |
 
-Selection is automatic in `EmailService.__init__`: if `SENDGRID_API_KEY` is
-set, the SendGrid backend is used; otherwise SMTP. `EMAIL_ENABLED=true` is
-required either way — without it, every send is a no-op (with a `WARNING`
-log line). See `specs/001-email-notifications/spec.md:105` for the design.
+Selection is automatic in `EmailService.__init__`: local capture takes precedence;
+otherwise a configured `SENDGRID_API_KEY` selects SendGrid and SMTP is the fallback.
+External backends require `EMAIL_ENABLED=true`; without capture or external enablement,
+delivery is disabled and the application does not label the message sent. Run the
+[owned local workflow](../LOCAL_EMAIL_CAPTURE.md) before this external smoke.
 
 ---
 
@@ -38,7 +40,7 @@ continuing.
 
 ---
 
-## Path A — Mailtrap sandbox (dev / staging / CI)
+## Path A — Authorized Mailtrap sandbox
 
 Mailtrap captures every send to a virtual inbox you can view in the
 browser. Nothing leaves their network — safe to use without any domain
@@ -163,8 +165,8 @@ poetry run python scripts/email_smoke.py --to your-personal-inbox@example.com
 
 | Symptom | Cause | Fix |
 |---|---|---|
-| Script prints `email service disabled — set EMAIL_ENABLED=true` and exits 0 | `EMAIL_ENABLED=false` in `.env` (or unset — default is now `false` per #78) | Set `EMAIL_ENABLED=true`. The no-op log lives at `api/services/email_service.py:191-193`. |
-| Script refuses with `won't run under TESTING=true` and exits 1 | `TESTING=true` in your shell or `.env` | Unset `TESTING` only for an authorized live-provider smoke. Local tests use mocked/disabled delivery; Actions does not run tests. |
+| Script prints `email service disabled — set EMAIL_ENABLED=true` and exits 0 | `EMAIL_ENABLED=false` in `.env` | Set it only for the approved provider smoke; use local capture for routine acceptance. |
+| Script refuses with `won't run under TESTING=true` and exits 1 | `TESTING=true` in your shell or `.env` | Unset `TESTING` only for an authorized provider smoke. Local tests use disabled or owned-capture delivery; GitHub Actions does not run tests. |
 | `backend: sendgrid` + 401 in the exception | API key invalid, expired, or revoked | Regenerate the key (Path B step 1). The 401 surfaces from `sendgrid.SendGridAPIClient.send` and is logged at `email_service.py:295`. |
 | `backend: sendgrid` + 403 in the exception | `EMAIL_FROM` is not an authenticated SendGrid sender | Either authenticate the domain (Path B step 2) or change `EMAIL_FROM` to a verified address. |
 | `backend: smtp` + auth error | Mailtrap user/password wrong, or you used a non-sandbox host without a paid plan | Re-paste from Mailtrap dashboard; confirm `MAILTRAP_SMTP_HOST=sandbox.smtp.mailtrap.io`. |

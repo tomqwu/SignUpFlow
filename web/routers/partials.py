@@ -87,6 +87,8 @@ from api.services.allocation_service import (
     cover_swap,
     deny_swap_request,
 )
+from api.services.email_service import email_service
+from api.services.notification_service import dispatch_notification_ids
 from api.timeutils import utcnow
 from web.deps import get_session_admin, get_session_user
 from web.routers.pages import (
@@ -519,7 +521,13 @@ def people_invite(
         create_invitation(payload, background_tasks, org_id=person.org_id, inviter=person, db=db)
     except HTTPException as exc:
         return _result(False, str(exc.detail), exc.status_code or 400)
-    return _result(True, f"Invitation sent to {email}.")
+    if email_service.delivery_mode == "disabled":
+        message = f"Invitation created for {email}. Email delivery is disabled."
+    elif email_service.delivery_mode == "local_capture":
+        message = f"Invitation created for {email}; queued in local mail capture."
+    else:
+        message = f"Invitation created for {email}; email queued."
+    return _result(True, message)
 
 
 @router.post("/a/people/{person_id}/qualifications", response_class=HTMLResponse)
@@ -1455,6 +1463,7 @@ def event_create(
 def event_update(
     request: Request,
     event_id: str,
+    background_tasks: BackgroundTasks,
     type: str = Form(...),
     event_date: str = Form(...),
     start_time: str = Form(...),
@@ -1476,6 +1485,7 @@ def event_update(
         update_event(
             event_id,
             EventUpdate(type=type, start_time=start_dt, end_time=end_dt),
+            background_tasks,
             person,
             db,
         )
@@ -1555,7 +1565,12 @@ def solver_run(
 # ── Admin: publish solution + compare ────────────────────────────────
 
 
-def _emit_reminder_notifications(db: Session, person: Person, sid: int) -> int:
+def _emit_reminder_notifications(
+    db: Session,
+    person: Person,
+    sid: int,
+    background_tasks: BackgroundTasks,
+) -> tuple[int, str]:
     """Create a `reminder` inbox Notification for each distinct assignee
     in the (published) solution, honoring per-person EmailPreference —
     recipients who removed `reminder` from enabled_types are skipped.
@@ -1568,32 +1583,51 @@ def _emit_reminder_notifications(db: Session, person: Person, sid: int) -> int:
         .all()
     )
     first_event: dict[str, str] = {}
-    for pid, eid in rows:
+    for raw_pid, raw_eid in rows:
+        pid = cast(str, raw_pid)
+        eid = cast(str, raw_eid)
         first_event.setdefault(pid, eid)
     if not first_event:
-        return 0
-    prefs = {
-        p.person_id: (p.enabled_types or [])
+        return 0, "disabled"
+    prefs: dict[str, list[str]] = {
+        cast(str, p.person_id): cast(list[str], p.enabled_types or [])
         for p in db.query(EmailPreference).filter(EmailPreference.org_id == person.org_id).all()
     }
     created = 0
+    notification_ids: list[int] = []
     for pid, eid in first_event.items():
         if pid in prefs and "reminder" not in prefs[pid]:
             continue
-        db.add(
-            Notification(
-                org_id=person.org_id,
-                recipient_id=pid,
-                type="reminder",
-                status="pending",
-                event_id=eid,
-                template_data={"solution_id": sid},
+        delivery_key = f"solution:{sid}:reminder:{pid}"
+        existing = (
+            db.query(Notification)
+            .filter(
+                Notification.org_id == person.org_id,
+                Notification.delivery_key == delivery_key,
             )
+            .first()
         )
+        if existing is not None:
+            if existing.status == "pending":
+                notification_ids.append(cast(int, existing.id))
+            continue
+        notification = Notification(
+            org_id=person.org_id,
+            recipient_id=pid,
+            type="reminder",
+            status="pending",
+            event_id=eid,
+            delivery_key=delivery_key,
+            template_data={"solution_id": sid},
+        )
+        db.add(notification)
+        db.flush()
+        notification_ids.append(cast(int, notification.id))
         created += 1
     if created:
         db.commit()
-    return created
+    mode = dispatch_notification_ids(background_tasks, notification_ids)
+    return created, mode
 
 
 def _publish_state(
@@ -1604,6 +1638,7 @@ def _publish_state(
     *,
     error=None,
     notified=None,
+    delivery_mode=None,
     status_code: int = 400,
 ):
     """Re-render #publish-state from the solution's current state
@@ -1627,6 +1662,7 @@ def _publish_state(
             "can_rollback": review["can_rollback"],
             "error": error,
             "notified": notified,
+            "delivery_mode": delivery_mode,
         },
         status_code=status_code if error else 200,
     )
@@ -1636,6 +1672,7 @@ def _publish_state(
 def solution_publish(
     request: Request,
     solution_id: int,
+    background_tasks: BackgroundTasks,
     person: Person = Depends(get_session_admin),
     db: Session = Depends(get_db),
 ):
@@ -1646,7 +1683,13 @@ def solution_publish(
             status_code=404,
         )
     try:
-        publish_solution(solution_id, request, current_admin=person, db=db)
+        publish_solution(
+            solution_id,
+            request,
+            background_tasks,
+            current_admin=person,
+            db=db,
+        )
     except HTTPException as exc:
         return _publish_state(
             request,
@@ -1663,6 +1706,7 @@ def solution_publish(
 def solution_notify(
     request: Request,
     solution_id: int,
+    background_tasks: BackgroundTasks,
     person: Person = Depends(get_session_admin),
     db: Session = Depends(get_db),
 ):
@@ -1682,8 +1726,17 @@ def solution_notify(
             solution_id,
             error="Publish the solution before notifying assignees.",
         )
-    count = _emit_reminder_notifications(db, person, solution_id)
-    return _publish_state(request, person, db, solution_id, notified=count)
+    count, delivery_mode = _emit_reminder_notifications(
+        db, person, solution_id, background_tasks
+    )
+    return _publish_state(
+        request,
+        person,
+        db,
+        solution_id,
+        notified=count,
+        delivery_mode=delivery_mode,
+    )
 
 
 @router.post("/a/solution/{solution_id}/unpublish", response_class=HTMLResponse)

@@ -1,6 +1,6 @@
 # Documentation Reconciliation
 
-Audit date: 2026-09-13. Scope: local-only review and all validation, with no CI checks, test commands
+Audit date: 2026-09-14. Scope: local-only review and all validation, with no CI checks, test commands
 and counts, merge instructions, related specification proposals, documentation
 navigation, and router-state claims in active developer entry points.
 
@@ -59,6 +59,13 @@ reviews, and publishes the shifted horizon for Church and Basketball at 360px an
 history and every original future event instead of crediting fixture construction as
 a browser action. The flow uses existing event, solver, and solution-review surfaces,
 so it does not invalidate the maintained walkthrough screenshots.
+The maintained local-mail guide and BO-09 manifest row now match the executable
+provider-free workflow. Church and Basketball each run invitation acceptance, password
+recovery, publication, event change, reminder delivery, and member-inbox reconciliation
+at both browser widths. The application no longer labels disabled delivery as sent, and
+template links target real member pages. These changes affect transient status copy and
+email content, not the README walkthrough layout, so existing screenshots remain
+applicable. External provider delivery remains unverified and explicitly deferred.
 The maintained [API authorization matrix](API_AUTHORIZATION.md) now binds every
 mounted operation to an executable policy and records scheduling tenant/export
 semantics. This package changes API authorization and generated contracts, not

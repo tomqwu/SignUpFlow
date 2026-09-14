@@ -36,7 +36,8 @@ def test_invite_creates_invitation(client, db):
         cookies={SESSION_COOKIE: token},
     )
     assert resp.status_code == 200
-    assert "Invitation sent to jamie@example.com" in resp.text
+    assert "Invitation created for jamie@example.com" in resp.text
+    assert "Email delivery is disabled" in resp.text
     inv = db.query(Invitation).filter(Invitation.email == "jamie@example.com").first()
     assert inv is not None
     assert inv.org_id == "i_org2"

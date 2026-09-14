@@ -54,7 +54,7 @@ def test_forgot_password_is_non_enumerating(live_server, page):
     page.click("button:has-text('Sign out')")
     page.wait_for_url("**/auth/login")
 
-    msg = "If an account exists for that email, a reset link is on its way."
+    msg = "If an account exists for that email, recovery instructions were processed."
 
     # Known account → generic message.
     page.goto(f"{base}/auth/forgot")
@@ -80,7 +80,7 @@ def test_invite_accept_lands_on_schedule(live_server, new_context, page, db_path
     page.fill("#inv_email", vol_email)
     page.select_option("#inv_role", "volunteer")
     page.click("button:has-text('Send invite')")
-    page.wait_for_selector("#invite-result:has-text('Invitation sent')")
+    page.wait_for_selector("#invite-result:has-text('Invitation created')")
 
     tok = invite_token(db_path, vol_email)
     assert tok, "invitation token not found"

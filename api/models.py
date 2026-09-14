@@ -777,6 +777,7 @@ class Notification(Base):
         String, ForeignKey("events.id"), nullable=True
     )  # Related event (if applicable)
     template_data = Column(JSONType, nullable=True)  # Template rendering data
+    delivery_key = Column(String, nullable=True)
     retry_count = Column(Integer, default=0, nullable=False)
     sendgrid_message_id = Column(String, nullable=True, unique=True)  # SendGrid message ID
     error_message = Column(Text, nullable=True)
@@ -800,6 +801,7 @@ class Notification(Base):
         Index("idx_notifications_event_id", "event_id"),
         Index("idx_notifications_status", "status"),
         Index("idx_notifications_created_at", "created_at"),
+        Index("idx_notifications_delivery_key", "delivery_key", unique=True),
     )
 
 

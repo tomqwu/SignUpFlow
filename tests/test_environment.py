@@ -31,6 +31,7 @@ PROVIDER_ENVIRONMENT_KEYS = {
     "MAILTRAP_SMTP_PASSWORD",
     "MAILTRAP_SMTP_PORT",
     "MAILTRAP_SMTP_USER",
+    "LOCAL_EMAIL_CAPTURE_DIR",
     "OLLAMA_API_KEY",
     "OLLAMA_BASE_URL",
     "OLLAMA_HOST",
@@ -93,6 +94,8 @@ def build_test_environment(
     *,
     database_url: str,
     secret_key: str,
+    email_capture_dir: str | None = None,
+    frontend_url: str | None = None,
 ) -> dict[str, str]:
     """Return the allowlisted environment for an owned local app subprocess."""
     environment = {key: value for key, value in source.items() if key in RUNTIME_ENVIRONMENT_KEYS}
@@ -108,4 +111,9 @@ def build_test_environment(
             "SMS_ENABLED": "false",
         }
     )
+    if email_capture_dir:
+        environment["LOCAL_EMAIL_CAPTURE_DIR"] = email_capture_dir
+    if frontend_url:
+        environment["APP_URL"] = frontend_url
+        environment["FRONTEND_URL"] = frontend_url
     return environment

@@ -1,5 +1,11 @@
 # Feature: Complete Invitation Workflow (E2E)
 
+> Historical feature draft. It does not describe the current routes, UI copy, or
+> acceptance status. Use [the operational playbooks](../playbooks/README.md) and
+> [local email capture](../LOCAL_EMAIL_CAPTURE.md) for the maintained invitation
+> and delivery contract. In particular, creating an invitation is not proof that
+> an external message was sent.
+
 ## User Story
 **As a** new volunteer
 **I want to** accept an organization invitation via invitation code

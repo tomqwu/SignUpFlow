@@ -12,6 +12,7 @@ from datetime import datetime, timedelta
 
 import pytest
 
+from api.models import Assignment, Notification
 from tests.api.conftest import (
     add_timeoff,
     auth_headers,
@@ -112,6 +113,67 @@ class TestEventCRUD:
         )
         assert resp.status_code == 200
         assert "T10:00:00" in resp.json()["start_time"]
+
+    def test_update_event_creates_one_pending_notification_for_visible_assignee(self, client, db):
+        hdrs = self._setup(client)
+        volunteer = seed_user(
+            client,
+            self.ORG,
+            "notify@crud.org",
+            "Notify Member",
+            "VolPass123!",
+            roles=["volunteer", "usher"],
+        )
+        seed_event(client, hdrs, self.ORG, "evt-notify")
+        assigned = client.post(
+            "/api/v1/events/evt-notify/assignments",
+            json={"person_id": volunteer["person_id"], "action": "assign", "role": "usher"},
+            headers=hdrs,
+        )
+        assert assigned.status_code == 200
+
+        changed = client.put(
+            "/api/v1/events/evt-notify",
+            json={"type": "Updated Service"},
+            headers=hdrs,
+        )
+        assert changed.status_code == 200
+
+        db.expire_all()
+        assignment = (
+            db.query(Assignment)
+            .filter(
+                Assignment.event_id == "evt-notify",
+                Assignment.person_id == volunteer["person_id"],
+            )
+            .one()
+        )
+        notification = (
+            db.query(Notification)
+            .filter(
+                Notification.org_id == self.ORG,
+                Notification.recipient_id == volunteer["person_id"],
+                Notification.type == "update",
+            )
+            .one()
+        )
+        assert assignment.commitment_revision == 2
+        assert assignment.response_status == "pending"
+        assert notification.status == "pending"
+        assert notification.delivery_key == f"event:evt-notify:update:{assignment.id}:r2"
+
+        unchanged = client.put(
+            "/api/v1/events/evt-notify",
+            json={"type": "Updated Service"},
+            headers=hdrs,
+        )
+        assert unchanged.status_code == 200
+        assert (
+            db.query(Notification)
+            .filter(Notification.org_id == self.ORG, Notification.type == "update")
+            .count()
+            == 1
+        )
 
     def test_update_nonexistent_event_returns_404(self, client):
         """Updating a missing event returns 404."""

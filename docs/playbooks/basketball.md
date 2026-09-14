@@ -93,6 +93,15 @@ solves and publishes weeks two through seven through the browser, and verifies a
 qualified slots. The prior week remains visible as event history and every original future
 game/practice remains in the new horizon.
 
+BO-09 runs a point-guard account through the owned local mail backend at 360px and
+1440px. The manager creates the invitation, the player accepts its captured link,
+requests a password reset, rejects the old password and replayed token, and signs in with
+the replacement password. Publishing a game, postponing its time, and sending a reminder
+produce distinct durable messages plus matching member-inbox entries. The test opens the
+captured schedule, availability, profile/calendar, and notification-preference links on
+the same local server. Team approval and external inbox delivery remain human or provider
+acceptance work.
+
 ## Additional operational drills
 
 Record these separately as manual/extended acceptance:
@@ -102,8 +111,8 @@ Record these separately as manual/extended acceptance:
 2. A coach or scorekeeper withdraws on game day. Arrange qualified cover and verify
    it is visible to both the replacement and manager before relying on it.
 3. A venue cancels a game. Coordinate the postponement, inspect calendar exports,
-   communicate the change and obtain responses. Automated court collision and
-   notification delivery are not established by this exercise.
+   communicate the change and obtain responses. Automated court collision and external
+   provider delivery are not established by this exercise.
 4. Two teams share players in one organization. Test team eligibility explicitly
    before use; current role-based solving is not proven to restrict by team roster.
 5. A tournament needs travel/rest gaps. The supported saved minimum-gap rule runs

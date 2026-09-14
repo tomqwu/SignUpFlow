@@ -95,6 +95,15 @@ solves and publishes weeks two through seven through the browser, and verifies a
 qualified slots. The prior week remains visible as event history and every original future
 service/rehearsal remains in the new horizon.
 
+BO-09 runs a worship-leader account through the owned local mail backend at 360px and
+1440px. The administrator creates the invitation, the member accepts its captured link,
+requests a password reset, rejects the old password and replayed token, and signs in with
+the replacement password. Publishing a service, moving its time, and sending a reminder
+produce distinct durable messages plus matching member-inbox entries. The test opens the
+captured schedule, availability, profile/calendar, and notification-preference links on
+the same local server. Ministry approval and external inbox delivery remain human or
+provider acceptance work.
+
 ## Additional operational drills
 
 Record these separately as manual/extended acceptance, not as passed by CH-01-08:

@@ -35,7 +35,7 @@ def test_timeoff_blocks_solver_assignment(live_server, new_context, page, db_pat
     page.fill("#inv_email", vol_email)
     page.select_option("#inv_role", "volunteer")
     page.click("button:has-text('Send invite')")
-    page.wait_for_selector("#invite-result:has-text('Invitation sent')")
+    page.wait_for_selector("#invite-result:has-text('Invitation created')")
     vol_page = accept_invitation(new_context(), base, invite_token(db_path, vol_email))
 
     # Volunteer books time-off covering the event date.

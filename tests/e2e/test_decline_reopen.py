@@ -27,7 +27,7 @@ def _invite(page, base, name, email):
     page.fill("#inv_email", email)
     page.select_option("#inv_role", "volunteer")
     page.click("button:has-text('Send invite')")
-    page.wait_for_selector("#invite-result:has-text('Invitation sent')")
+    page.wait_for_selector("#invite-result:has-text('Invitation created')")
 
 
 def test_decline_reopens_slot(live_server, new_context, page, db_path):

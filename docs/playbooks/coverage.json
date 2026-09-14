@@ -96,9 +96,9 @@
       "precondition": "An owned local mail sink is configured and paid delivery is disabled",
       "operation": "Send invitations, reset links, schedule changes, and reminders",
       "expected": "Captured content is usable and failed or disabled delivery is never labeled delivered",
-      "tiers": ["manual"],
-      "status": "blocked",
-      "evidence": ["GitHub issue #266 local committed-notification slice"]
+      "tiers": ["unit", "api", "web", "e2e"],
+      "status": "automated",
+      "evidence": ["tests/unit/test_local_email_capture.py", "tests/api/test_event_crud.py", "tests/api/test_solution_publication_safety.py", "tests/web/test_invite_person.py", "tests/web/test_password_reset.py", "tests/web/test_bulk_notify.py", "tests/e2e/test_local_mail_playbooks.py"]
     },
     {
       "id": "BO-10",
@@ -117,8 +117,8 @@
       "operation": "Log out and in, change password, and recover through a reset link",
       "expected": "Expired, replayed, or stale credentials fail without losing the account",
       "tiers": ["unit", "integration", "e2e"],
-      "status": "partial",
-      "evidence": ["tests/e2e/test_auth_flows.py", "tests/integration/test_password_reset.py"]
+      "status": "automated",
+      "evidence": ["tests/e2e/test_auth_flows.py", "tests/e2e/test_local_mail_playbooks.py", "tests/integration/test_password_reset.py"]
     },
     {
       "id": "BO-12",

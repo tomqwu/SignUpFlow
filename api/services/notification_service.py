@@ -10,6 +10,7 @@ import os
 import secrets
 from typing import Any
 
+from fastapi import BackgroundTasks
 from sqlalchemy.orm import Session
 
 from api.core.config import settings
@@ -22,6 +23,7 @@ from api.models import (
     NotificationType,
     Person,
 )
+from api.services.email_service import email_service
 from api.tasks.notifications import send_email_task
 from api.timeutils import utcnow
 
@@ -39,13 +41,28 @@ def _should_queue_email(send_immediately: bool) -> bool:
     """Centralised gate for deciding whether to enqueue email tasks."""
     if not send_immediately:
         return False
-    if _testing_mode_enabled():
+    if _testing_mode_enabled() and email_service.delivery_mode != "local_capture":
         logger.debug("Notification emails suppressed: testing mode active.")
         return False
-    if not settings.EMAIL_ENABLED:
+    if not settings.EMAIL_ENABLED and email_service.delivery_mode != "local_capture":
         logger.debug("Notification emails suppressed: EMAIL_ENABLED is false.")
         return False
     return True
+
+
+def dispatch_notification_ids(
+    background_tasks: BackgroundTasks,
+    notification_ids: list[int],
+) -> str:
+    """Dispatch committed intents through the configured backend."""
+    if not notification_ids or email_service.delivery_mode == "disabled":
+        return "disabled"
+    for notification_id in notification_ids:
+        if email_service.delivery_mode == "local_capture":
+            background_tasks.add_task(send_email_task.run, notification_id)
+        else:
+            background_tasks.add_task(send_email_task.delay, notification_id)
+    return email_service.delivery_mode
 
 
 def create_assignment_notifications(
@@ -174,7 +191,8 @@ def create_notification(
     notification_type: str,
     event_id: str | None = None,
     template_data: dict[str, Any] | None = None,
-    db: Session = None,
+    delivery_key: str | None = None,
+    db: Session | None = None,
     send_immediately: bool = True,
 ) -> Notification | None:
     """
@@ -201,6 +219,18 @@ def create_notification(
         ...     db=db
         ... )
     """
+    if db is None:
+        raise ValueError("db is required")
+
+    if delivery_key:
+        existing = (
+            db.query(Notification)
+            .filter(Notification.org_id == org_id, Notification.delivery_key == delivery_key)
+            .first()
+        )
+        if existing is not None:
+            return existing
+
     # Get email preferences
     email_pref = db.query(EmailPreference).filter(EmailPreference.person_id == recipient_id).first()
 
@@ -217,6 +247,7 @@ def create_notification(
         status=NotificationStatus.PENDING,
         event_id=event_id,
         template_data=template_data or {},
+        delivery_key=delivery_key,
         created_at=utcnow(),
     )
     db.add(notification)

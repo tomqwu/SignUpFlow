@@ -706,16 +706,18 @@ def _email_status() -> dict:
     from api.services.email_service import EmailService
 
     svc = EmailService()
-    if not svc.enabled:
+    if svc.delivery_mode == "disabled":
         backend = "disabled"
-    elif svc.use_sendgrid:
+    elif svc.delivery_mode == "local_capture":
+        backend = "Local capture"
+    elif svc.delivery_mode == "sendgrid":
         backend = "SendGrid"
     else:
         backend = "SMTP / Mailtrap"
     return {
         "enabled": svc.enabled,
         "backend": backend,
-        "host": None if svc.use_sendgrid else svc.smtp_host,
+        "host": svc.smtp_host if svc.delivery_mode == "smtp" else None,
         "from_email": svc.from_email,
     }
 

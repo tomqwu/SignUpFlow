@@ -1,6 +1,6 @@
 # Testing and Merge Policy
 
-Current policy, reconciled 2026-09-13 against `Makefile`, the registered pytest
+Current policy, reconciled 2026-09-14 against `Makefile`, the registered pytest
 plugin, and `.github/workflows/`. This guide supersedes testing commands,
 counts, timing estimates, and hosted-test proposals in older reports.
 
@@ -27,8 +27,10 @@ make test-mobile        # Flutter unit/widget tests; requires Flutter SDK
 ```
 
 Set `FLUTTER=/absolute/path/to/flutter` when the SDK is not on PATH.
-The test harness strips provider credentials, disables email/SMS/billing, ignores
-the developer `.env`, and gives each invocation a disposable database. Keep the
+The test harness strips provider credentials, disables external email/SMS/billing,
+ignores the developer `.env`, and gives each invocation a disposable database. BO-09
+uses a dedicated live server and owned temporary `.eml` sink; no provider is enabled.
+Keep the
 flags explicit for focused manual runs:
 `EMAIL_ENABLED=false SMS_ENABLED=false BILLING_ENABLED=false make test-all`.
 Default Python tests also reject non-loopback socket connections before transport.
@@ -61,7 +63,8 @@ isolated targets.
 
 The [playbook guide](playbooks/README.md) describes automatic discovery, selectors,
 and external definitions. Church and basketball run in API and browser tiers;
-browser cases use phone and desktop widths. Manual drills, live delivery, and
+browser cases use phone and desktop widths. Owned local delivery runs in both domains;
+manual drills, external delivery, and
 production database/concurrency acceptance are not implied by a green local run.
 
 ## Local Validation Only

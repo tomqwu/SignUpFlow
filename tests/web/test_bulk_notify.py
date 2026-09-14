@@ -59,13 +59,24 @@ def test_notify_creates_reminder_per_assignee(client, db):
     sol = _published_solution(db, "bn_o1", people=["bn_a", "bn_b"])
     r = client.post(f"/a/solution/{sol.id}/notify", cookies={SESSION_COOKIE: tok})
     assert r.status_code == 200
-    assert "Reminder sent to 2 assignee(s)" in r.text
+    assert "Reminder added to 2 assignee inbox(es)" in r.text
+    assert "Email delivery is disabled" in r.text
     n = (
         db.query(Notification)
         .filter(Notification.org_id == "bn_o1", Notification.type == "reminder")
         .all()
     )
     assert {x.recipient_id for x in n} == {"bn_a", "bn_b"}
+
+    repeated = client.post(f"/a/solution/{sol.id}/notify", cookies={SESSION_COOKIE: tok})
+    assert repeated.status_code == 200
+    assert "No assignees to notify" in repeated.text
+    assert (
+        db.query(Notification)
+        .filter(Notification.org_id == "bn_o1", Notification.type == "reminder")
+        .count()
+        == 2
+    )
 
 
 def test_notify_honors_email_preferences(client, db):
@@ -82,7 +93,7 @@ def test_notify_honors_email_preferences(client, db):
     )
     db.commit()
     r = client.post(f"/a/solution/{sol.id}/notify", cookies={SESSION_COOKIE: tok})
-    assert "Reminder sent to 1 assignee(s)" in r.text
+    assert "Reminder added to 1 assignee inbox(es)" in r.text
     recips = {
         x.recipient_id
         for x in db.query(Notification)

@@ -16,7 +16,8 @@ This directory contains all project documentation organized by category.
 - [Quick Start Guide](QUICK_START.md) - Setup and installation (if exists)
 - [API Quickstart](API_QUICKSTART.md) - API usage examples
 - [API Documentation](API.md) - Complete API reference
-- [Local Email Setup](LOCAL_EMAIL_SETUP.md) - Configure email testing with Mailtrap
+- [Local Email Capture](LOCAL_EMAIL_CAPTURE.md) - Test transactional flows without a provider
+- [External Email Smoke Testing](saas/SMOKE_TESTING_EMAIL.md) - Authorized provider checks
 
 ### Architecture & Design
 - [Admin Console Structure](ADMIN_TABS_STRUCTURE.md) - Admin UI architecture

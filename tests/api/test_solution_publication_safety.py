@@ -543,7 +543,13 @@ def test_publish_resets_responses_when_people_change_roles(client, db):
     )
     assert {assignment.response_status for assignment in candidate_assignments} == {"pending"}
     assert not any(assignment.response_current for assignment in candidate_assignments)
-    assert db.query(Notification).filter(Notification.org_id == org_id).count() == 2
+    notifications = db.query(Notification).filter(Notification.org_id == org_id).all()
+    assert len(notifications) == 2
+    assert len({notification.delivery_key for notification in notifications}) == 2
+    assert all(
+        notification.delivery_key.startswith(f"solution:{candidate.id}:assignment:")
+        for notification in notifications
+    )
 
 
 @pytest.mark.no_mock_auth

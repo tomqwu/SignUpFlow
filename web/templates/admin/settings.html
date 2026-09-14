@@ -26,7 +26,12 @@
         {{ email.backend }}
       </span>
     </div>
-    {% if email.enabled %}
+    {% if email.backend == "Local capture" %}
+    <div class="row-sub" style="margin-top:4px">
+      Capturing as {{ email.from_email }} in the owned local mail sink.
+      No external message is sent.
+    </div>
+    {% elif email.enabled %}
     <div class="row-sub" style="margin-top:4px">
       Sending as {{ email.from_email }}{% if email.host %} via {{ email.host }}{% endif %}.
       Password-reset &amp; invitation emails are delivered.
@@ -34,7 +39,8 @@
     {% else %}
     <div class="row-sub" style="margin-top:4px">
       Password-reset &amp; invitation emails are wired but not sent. For a
-      sandbox, set <code>EMAIL_ENABLED=true</code> and the
+      provider-free local sink, set <code>LOCAL_EMAIL_CAPTURE_DIR</code>. For an
+      explicitly authorized sandbox, set <code>EMAIL_ENABLED=true</code> and the
       <code>MAILTRAP_SMTP_USER</code> / <code>MAILTRAP_SMTP_PASSWORD</code>
       env vars (or <code>SENDGRID_API_KEY</code> for production).
     </div>

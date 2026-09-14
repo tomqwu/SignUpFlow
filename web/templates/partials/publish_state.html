@@ -9,7 +9,9 @@
   {% if notified is not none %}
   <div class="spacer-12"></div>
   <div class="form-notice" role="status" id="notify-result">
-    {% if notified %}Reminder sent to {{ notified }} assignee(s).
+    {% if notified and delivery_mode == "disabled" %}Reminder added to {{ notified }} assignee inbox(es). Email delivery is disabled.
+    {% elif notified and delivery_mode == "local_capture" %}Reminder queued for {{ notified }} assignee(s) in local mail capture.
+    {% elif notified %}Reminder queued for {{ notified }} assignee(s).
     {% else %}No assignees to notify.{% endif %}
   </div>
   {% endif %}
