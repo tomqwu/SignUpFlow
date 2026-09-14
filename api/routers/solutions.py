@@ -47,6 +47,7 @@ from api.schemas.solver import (
     WorkloadStats,
 )
 from api.services import event_bus
+from api.services.assignment_response import carry_forward_current_responses
 from api.timeutils import utcnow
 from api.utils.audit_logger import log_audit_event
 from api.utils.pdf_export import generate_schedule_pdf
@@ -598,6 +599,7 @@ def publish_solution(
         )
         .all()
     )
+    carry_forward_current_responses(db, solution=solution, prior_solutions=prior)
     for s in prior:
         s.is_published = False
         s.published_at = None
@@ -750,6 +752,7 @@ def rollback_solution(
         )
         .all()
     )
+    carry_forward_current_responses(db, solution=solution, prior_solutions=prior)
     for s in prior:
         s.is_published = False
         s.published_at = None

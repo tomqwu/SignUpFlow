@@ -56,13 +56,14 @@ def test_cover_a_swap_end_to_end(live_server, new_context, page, db_path):
     a_page.wait_for_selector("#open-list:has-text('Sunday 10am Service')")
     a_page.click("button:has-text('Claim')")
     # Wait for the claim's HTMX swap to commit before navigating away —
-    # otherwise the assignment may not be persisted yet (CI race).
+    # otherwise the assignment may not be persisted before browser navigation.
     a_page.wait_for_selector("#open-list:has-text('No open shifts')")
     a_page.goto(f"{base}/v/schedule")
     a_page.click("a:has-text('Sunday 10am Service')")
     a_page.wait_for_selector("#assignment-card")
     a_page.click("button:has-text('Request swap')")
-    a_page.wait_for_selector("#assignment-card .status-text.swap_requested")
+    a_page.wait_for_selector("#assignment-card .status-text.replacement_needed")
+    assert "Replacement needed" in a_page.locator("#assignment-card").text_content()
 
     # Vol B covers it.
     b_page.goto(f"{base}/v/swaps")

@@ -122,7 +122,10 @@ unknown workflow IDs or silently skip unsupported scenarios.
 | Old published roster survives draft generation | API journey |
 | Repaired publication replaces old publication | API journey |
 | Volunteer, anonymous user, foreign admin cannot publish | API journey |
-| Draft invisible, published shift visible, member can accept | Browser journey, both domains |
+| Draft invisible; newly published shift unanswered; member can accept | Browser journey, both domains |
+| Coordinator filters unanswered, accepted, and replacement-needed work | Browser journey, both domains, 360 and 1440 pixels |
+| Notification read does not fabricate a response | Web regression |
+| Unchanged republish carries acknowledgement; material event change resets it | API response-truth regression |
 | Qualified reserve covers a swap without losing role coverage | Browser journey, both domains |
 | Draft/replaced assignments cannot be accepted, declined or swapped | API journey and web publication regression |
 | Multi-role form preserves exact names/counts | Browser journey, both domains |
@@ -130,7 +133,8 @@ unknown workflow IDs or silently skip unsupported scenarios.
 | Adjacent events remain legal | Unit regression |
 
 Browser runs save onboarding and accepted-assignment screenshots in pytest's
-temporary test directory. Inspect them as well as assertion results. A horizontal
+temporary test directory, plus dashboard and unanswered-schedule captures. Inspect
+them as well as assertion results. A horizontal
 overflow assertion alone is not a comprehensive visual/accessibility audit.
 
 ## Known boundaries and release blockers

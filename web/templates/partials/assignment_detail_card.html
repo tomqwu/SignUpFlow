@@ -2,11 +2,12 @@
    full detail page and returned standalone by the HTMX action POSTs
    (outerHTML-swapped into #assignment-card). #}
 <div id="assignment-card" x-data="{ declining: false }">
+  {% if error %}<div class="alert alert-error">{{ error }}</div><div class="spacer-12"></div>{% endif %}
   <div class="card">
     <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:10px">
       {% if row.time_label %}<span class="time-chip">{{ row.time_label }}</span>{% endif %}
       {% if row.role %}<span class="role-chip">{{ row.role }}</span>{% endif %}
-      <span class="status-text {{ row.status }}">{{ row.status }}</span>
+      <span class="status-text {{ row.status }}">{{ row.status_label }}</span>
     </div>
     <div class="page-title" style="padding:0;font-size:24px">{{ row.event_type }}</div>
     <div class="row-sub" style="margin-top:6px">{{ row.date_label }}</div>
@@ -15,6 +16,12 @@
     <div class="mono-label" style="margin:0 0 4px">Decline reason</div>
     <div class="row-sub">{{ row.decline_reason }}</div>
     {% endif %}
+    {% if row.response_current and row.responded_at %}
+    <div class="row-sub" style="margin-top:8px">
+      Recorded for revision {{ row.response_revision }} on
+      {{ row.responded_at.strftime('%d %b %Y at %H:%M') }}.
+    </div>
+    {% endif %}
   </div>
 
   <div class="spacer-18"></div>
@@ -22,12 +29,13 @@
 
   <div class="btn-row cols-2">
     <button class="btn btn-go" type="button"
-            hx-post="/v/schedule/{{ row.id }}/accept"
+            hx-post="/v/schedule/{{ row.id }}/accept?expected_revision={{ row.commitment_revision }}"
             hx-target="#assignment-card" hx-swap="outerHTML">
       Accept
     </button>
     <button class="btn btn-secondary" type="button"
             hx-post="/v/schedule/{{ row.id }}/swap-request"
+            hx-vals='{"expected_revision":"{{ row.commitment_revision }}"}'
             hx-target="#assignment-card" hx-swap="outerHTML">
       Request swap
     </button>
@@ -43,6 +51,7 @@
         hx-post="/v/schedule/{{ row.id }}/decline"
         hx-target="#assignment-card" hx-swap="outerHTML">
     <div class="field">
+      <input type="hidden" name="expected_revision" value="{{ row.commitment_revision }}">
       <label class="field-label" for="decline_reason">Reason</label>
       <input id="decline_reason" name="decline_reason" type="text"
              required minlength="1" maxlength="500"

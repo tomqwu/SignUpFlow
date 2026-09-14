@@ -16,11 +16,11 @@ Method | HTTP request | Description
 
 
 # **acceptAssignment**
-> AssignmentResponse acceptAssignment(assignmentId)
+> AssignmentResponse acceptAssignment(assignmentId, expectedRevision)
 
 Accept Assignment
 
-Mark the caller's assignment as confirmed.
+Record the caller's explicit acceptance of the current commitment.
 
 ### Example
 ```dart
@@ -28,9 +28,10 @@ import 'package:signupflow_api/api.dart';
 
 final api = SignupflowApi().getAssignmentsApi();
 final int assignmentId = 56; // int |
+final int expectedRevision = 56; // int |
 
 try {
-    final response = api.acceptAssignment(assignmentId);
+    final response = api.acceptAssignment(assignmentId, expectedRevision);
     print(response);
 } catch on DioException (e) {
     print('Exception when calling AssignmentsApi->acceptAssignment: $e\n');
@@ -42,6 +43,7 @@ try {
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
  **assignmentId** | **int**|  |
+ **expectedRevision** | **int**|  | [optional]
 
 ### Return type
 
@@ -153,7 +155,7 @@ Name | Type | Description  | Notes
 
 Request Swap
 
-Flag the caller's assignment for swap; admin follows up out of band.
+Record that the caller needs a replacement for the current commitment.
 
 ### Example
 ```dart

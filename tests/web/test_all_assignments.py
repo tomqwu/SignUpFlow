@@ -5,6 +5,7 @@ from __future__ import annotations
 from datetime import datetime, timedelta
 
 from api.models import Assignment, Event
+from api.timeutils import utcnow
 from tests.web.conftest import seed_person
 from web.deps import SESSION_COOKIE
 
@@ -33,6 +34,8 @@ def _assign(db, eid, pid, role=None, solution_id=None):
     a = Assignment(event_id=eid, person_id=pid, role=role, solution_id=solution_id)
     db.add(a)
     db.commit()
+    db.refresh(a)
+    return a
 
 
 def test_all_assignments_admin_only(client, db):
@@ -54,8 +57,14 @@ def test_lists_and_person_filter(client, db):
     seed_person(db, person_id="aa_p1", org_id="aa_o2", email="p1@aa.test", roles=["volunteer"])
     seed_person(db, person_id="aa_p2", org_id="aa_o2", email="p2@aa.test", roles=["volunteer"])
     _event(db, "aa_o2", "aa_ev")
-    _assign(db, "aa_ev", "aa_p1", role="usher")  # manual
+    accepted = _assign(db, "aa_ev", "aa_p1", role="usher")  # manual
     _assign(db, "aa_ev", "aa_p2", solution_id=None)
+    accepted.status = "confirmed"
+    accepted.response_status = "accepted"
+    accepted.responded_by_person_id = "aa_p1"
+    accepted.responded_at = utcnow()
+    accepted.response_revision = accepted.commitment_revision
+    db.commit()
 
     allv = client.get("/a/assignments", cookies={SESSION_COOKIE: tok})
     assert allv.status_code == 200
@@ -67,6 +76,18 @@ def test_lists_and_person_filter(client, db):
     assert "1 assignment" in one.text
     # Web User is the seeded name for both; ensure the filter narrowed the count.
     assert "2 assignments" not in one.text
+
+    accepted_view = client.get("/a/assignments?response=accepted", cookies={SESSION_COOKIE: tok})
+    assert "1 assignment" in accepted_view.text
+    assert "Accepted" in accepted_view.text
+    assert "Response r1" in accepted_view.text
+
+    unanswered_view = client.get(
+        "/a/assignments?response=unanswered", cookies={SESSION_COOKIE: tok}
+    )
+    assert "1 assignment" in unanswered_view.text
+    assert "Unanswered" in unanswered_view.text
+    assert "Awaiting response for r1" in unanswered_view.text
 
 
 def test_dashboard_links_to_assignments(client, db):

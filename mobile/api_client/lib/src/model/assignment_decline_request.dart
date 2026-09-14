@@ -12,10 +12,14 @@ part 'assignment_decline_request.g.dart';
 ///
 /// Properties:
 /// * [declineReason]
+/// * [expectedRevision]
 @BuiltValue()
 abstract class AssignmentDeclineRequest implements Built<AssignmentDeclineRequest, AssignmentDeclineRequestBuilder> {
   @BuiltValueField(wireName: r'decline_reason')
   String get declineReason;
+
+  @BuiltValueField(wireName: r'expected_revision')
+  int? get expectedRevision;
 
   AssignmentDeclineRequest._();
 
@@ -45,6 +49,13 @@ class _$AssignmentDeclineRequestSerializer implements PrimitiveSerializer<Assign
       object.declineReason,
       specifiedType: const FullType(String),
     );
+    if (object.expectedRevision != null) {
+      yield r'expected_revision';
+      yield serializers.serialize(
+        object.expectedRevision,
+        specifiedType: const FullType.nullable(int),
+      );
+    }
   }
 
   @override
@@ -74,6 +85,14 @@ class _$AssignmentDeclineRequestSerializer implements PrimitiveSerializer<Assign
             specifiedType: const FullType(String),
           ) as String;
           result.declineReason = valueDes;
+          break;
+        case r'expected_revision':
+          final valueDes = serializers.deserialize(
+            value,
+            specifiedType: const FullType.nullable(int),
+          ) as int?;
+          if (valueDes == null) continue;
+          result.expectedRevision = valueDes;
           break;
         default:
           unhandled.add(key);

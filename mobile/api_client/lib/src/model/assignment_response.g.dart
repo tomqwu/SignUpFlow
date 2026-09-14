@@ -10,6 +10,8 @@ class _$AssignmentResponse extends AssignmentResponse {
   @override
   final DateTime assignedAt;
   @override
+  final int commitmentRevision;
+  @override
   final String? declineReason;
   @override
   final String eventId;
@@ -17,6 +19,16 @@ class _$AssignmentResponse extends AssignmentResponse {
   final int id;
   @override
   final String personId;
+  @override
+  final DateTime? respondedAt;
+  @override
+  final String? respondedByPersonId;
+  @override
+  final bool responseCurrent;
+  @override
+  final int? responseRevision;
+  @override
+  final String responseStatus;
   @override
   final String? role;
   @override
@@ -28,10 +40,16 @@ class _$AssignmentResponse extends AssignmentResponse {
 
   _$AssignmentResponse._(
       {required this.assignedAt,
+      required this.commitmentRevision,
       this.declineReason,
       required this.eventId,
       required this.id,
       required this.personId,
+      this.respondedAt,
+      this.respondedByPersonId,
+      required this.responseCurrent,
+      this.responseRevision,
+      required this.responseStatus,
       this.role,
       required this.status})
       : super._();
@@ -49,10 +67,16 @@ class _$AssignmentResponse extends AssignmentResponse {
     if (identical(other, this)) return true;
     return other is AssignmentResponse &&
         assignedAt == other.assignedAt &&
+        commitmentRevision == other.commitmentRevision &&
         declineReason == other.declineReason &&
         eventId == other.eventId &&
         id == other.id &&
         personId == other.personId &&
+        respondedAt == other.respondedAt &&
+        respondedByPersonId == other.respondedByPersonId &&
+        responseCurrent == other.responseCurrent &&
+        responseRevision == other.responseRevision &&
+        responseStatus == other.responseStatus &&
         role == other.role &&
         status == other.status;
   }
@@ -61,10 +85,16 @@ class _$AssignmentResponse extends AssignmentResponse {
   int get hashCode {
     var _$hash = 0;
     _$hash = $jc(_$hash, assignedAt.hashCode);
+    _$hash = $jc(_$hash, commitmentRevision.hashCode);
     _$hash = $jc(_$hash, declineReason.hashCode);
     _$hash = $jc(_$hash, eventId.hashCode);
     _$hash = $jc(_$hash, id.hashCode);
     _$hash = $jc(_$hash, personId.hashCode);
+    _$hash = $jc(_$hash, respondedAt.hashCode);
+    _$hash = $jc(_$hash, respondedByPersonId.hashCode);
+    _$hash = $jc(_$hash, responseCurrent.hashCode);
+    _$hash = $jc(_$hash, responseRevision.hashCode);
+    _$hash = $jc(_$hash, responseStatus.hashCode);
     _$hash = $jc(_$hash, role.hashCode);
     _$hash = $jc(_$hash, status.hashCode);
     _$hash = $jf(_$hash);
@@ -75,10 +105,16 @@ class _$AssignmentResponse extends AssignmentResponse {
   String toString() {
     return (newBuiltValueToStringHelper(r'AssignmentResponse')
           ..add('assignedAt', assignedAt)
+          ..add('commitmentRevision', commitmentRevision)
           ..add('declineReason', declineReason)
           ..add('eventId', eventId)
           ..add('id', id)
           ..add('personId', personId)
+          ..add('respondedAt', respondedAt)
+          ..add('respondedByPersonId', respondedByPersonId)
+          ..add('responseCurrent', responseCurrent)
+          ..add('responseRevision', responseRevision)
+          ..add('responseStatus', responseStatus)
           ..add('role', role)
           ..add('status', status))
         .toString();
@@ -92,6 +128,11 @@ class AssignmentResponseBuilder
   DateTime? _assignedAt;
   DateTime? get assignedAt => _$this._assignedAt;
   set assignedAt(DateTime? assignedAt) => _$this._assignedAt = assignedAt;
+
+  int? _commitmentRevision;
+  int? get commitmentRevision => _$this._commitmentRevision;
+  set commitmentRevision(int? commitmentRevision) =>
+      _$this._commitmentRevision = commitmentRevision;
 
   String? _declineReason;
   String? get declineReason => _$this._declineReason;
@@ -110,6 +151,30 @@ class AssignmentResponseBuilder
   String? get personId => _$this._personId;
   set personId(String? personId) => _$this._personId = personId;
 
+  DateTime? _respondedAt;
+  DateTime? get respondedAt => _$this._respondedAt;
+  set respondedAt(DateTime? respondedAt) => _$this._respondedAt = respondedAt;
+
+  String? _respondedByPersonId;
+  String? get respondedByPersonId => _$this._respondedByPersonId;
+  set respondedByPersonId(String? respondedByPersonId) =>
+      _$this._respondedByPersonId = respondedByPersonId;
+
+  bool? _responseCurrent;
+  bool? get responseCurrent => _$this._responseCurrent;
+  set responseCurrent(bool? responseCurrent) =>
+      _$this._responseCurrent = responseCurrent;
+
+  int? _responseRevision;
+  int? get responseRevision => _$this._responseRevision;
+  set responseRevision(int? responseRevision) =>
+      _$this._responseRevision = responseRevision;
+
+  String? _responseStatus;
+  String? get responseStatus => _$this._responseStatus;
+  set responseStatus(String? responseStatus) =>
+      _$this._responseStatus = responseStatus;
+
   String? _role;
   String? get role => _$this._role;
   set role(String? role) => _$this._role = role;
@@ -126,10 +191,16 @@ class AssignmentResponseBuilder
     final $v = _$v;
     if ($v != null) {
       _assignedAt = $v.assignedAt;
+      _commitmentRevision = $v.commitmentRevision;
       _declineReason = $v.declineReason;
       _eventId = $v.eventId;
       _id = $v.id;
       _personId = $v.personId;
+      _respondedAt = $v.respondedAt;
+      _respondedByPersonId = $v.respondedByPersonId;
+      _responseCurrent = $v.responseCurrent;
+      _responseRevision = $v.responseRevision;
+      _responseStatus = $v.responseStatus;
       _role = $v.role;
       _status = $v.status;
       _$v = null;
@@ -155,6 +226,8 @@ class AssignmentResponseBuilder
         _$AssignmentResponse._(
           assignedAt: BuiltValueNullFieldError.checkNotNull(
               assignedAt, r'AssignmentResponse', 'assignedAt'),
+          commitmentRevision: BuiltValueNullFieldError.checkNotNull(
+              commitmentRevision, r'AssignmentResponse', 'commitmentRevision'),
           declineReason: declineReason,
           eventId: BuiltValueNullFieldError.checkNotNull(
               eventId, r'AssignmentResponse', 'eventId'),
@@ -162,6 +235,13 @@ class AssignmentResponseBuilder
               id, r'AssignmentResponse', 'id'),
           personId: BuiltValueNullFieldError.checkNotNull(
               personId, r'AssignmentResponse', 'personId'),
+          respondedAt: respondedAt,
+          respondedByPersonId: respondedByPersonId,
+          responseCurrent: BuiltValueNullFieldError.checkNotNull(
+              responseCurrent, r'AssignmentResponse', 'responseCurrent'),
+          responseRevision: responseRevision,
+          responseStatus: BuiltValueNullFieldError.checkNotNull(
+              responseStatus, r'AssignmentResponse', 'responseStatus'),
           role: role,
           status: BuiltValueNullFieldError.checkNotNull(
               status, r'AssignmentResponse', 'status'),

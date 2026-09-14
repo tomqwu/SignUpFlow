@@ -17,12 +17,17 @@ api.AssignmentResponse _assn({
   required String role,
   required String status,
 }) {
+  final accepted = status == 'confirmed';
   return (api.AssignmentResponseBuilder()
         ..id = id
         ..eventId = eventId
         ..personId = 'me'
         ..role = role
         ..status = status
+        ..responseStatus = accepted ? 'accepted' : 'pending'
+        ..responseCurrent = accepted
+        ..commitmentRevision = 1
+        ..responseRevision = accepted ? 1 : null
         ..assignedAt = DateTime(2026, 5, 1).toUtc())
       .build();
 }
@@ -45,30 +50,33 @@ api.EventResponse _event({
 }
 
 void main() {
-  testWidgets('schedule renders date groups + time chips + status', (tester) async {
-    final group1 = ScheduleGroup(date: DateTime(2026, 5, 25), rows: [
-      ScheduleRow(
-        assignment: _assn(
-          id: 1,
-          eventId: 'e1',
-          role: 'usher',
-          status: 'confirmed',
+  testWidgets('schedule renders date groups + time chips + status', (
+    tester,
+  ) async {
+    final group1 = ScheduleGroup(
+      date: DateTime(2026, 5, 25),
+      rows: [
+        ScheduleRow(
+          assignment: _assn(
+            id: 1,
+            eventId: 'e1',
+            role: 'usher',
+            status: 'confirmed',
+          ),
+          event: _event(
+            id: 'e1',
+            type: 'Sunday Service',
+            start: DateTime(2026, 5, 25, 10),
+            end: DateTime(2026, 5, 25, 11, 30),
+          ),
         ),
-        event: _event(
-          id: 'e1',
-          type: 'Sunday Service',
-          start: DateTime(2026, 5, 25, 10),
-          end: DateTime(2026, 5, 25, 11, 30),
-        ),
-      ),
-    ]);
+      ],
+    );
     final fakeData = ScheduleData(groups: [group1]);
 
     await tester.pumpWidget(
       ProviderScope(
-        overrides: [
-          scheduleProvider.overrideWith((ref) async => fakeData),
-        ],
+        overrides: [scheduleProvider.overrideWith((ref) async => fakeData)],
         child: MaterialApp(
           theme: buildBlockMonoTheme(),
           home: const VolunteerScheduleScreen(),
@@ -85,7 +93,7 @@ void main() {
     expect(find.textContaining('25 MAY'), findsOneWidget);
     expect(find.text('10:00–11:30'), findsOneWidget);
     expect(find.text('USHER'), findsOneWidget);
-    expect(find.text('CONFIRMED'), findsOneWidget);
+    expect(find.text('ACCEPTED'), findsOneWidget);
     expect(find.text('Sunday Service'), findsOneWidget);
   });
 
@@ -93,7 +101,9 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
-          scheduleProvider.overrideWith((ref) async => const ScheduleData(groups: [])),
+          scheduleProvider.overrideWith(
+            (ref) async => const ScheduleData(groups: []),
+          ),
         ],
         child: MaterialApp(
           theme: buildBlockMonoTheme(),

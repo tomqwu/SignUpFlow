@@ -24,10 +24,11 @@ class AssignmentsApi {
   const AssignmentsApi(this._dio, this._serializers);
 
   /// Accept Assignment
-  /// Mark the caller&#39;s assignment as confirmed.
+  /// Record the caller&#39;s explicit acceptance of the current commitment.
   ///
   /// Parameters:
   /// * [assignmentId]
+  /// * [expectedRevision]
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -39,6 +40,7 @@ class AssignmentsApi {
   /// Throws [DioException] if API call or serialization fails
   Future<Response<AssignmentResponse>> acceptAssignment({
     required int assignmentId,
+    int? expectedRevision,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -65,9 +67,14 @@ class AssignmentsApi {
       validateStatus: validateStatus,
     );
 
+    final _queryParameters = <String, dynamic>{
+      r'expected_revision': encodeQueryParameter(_serializers, expectedRevision, const FullType(int)),
+    };
+
     final _response = await _dio.request<Object>(
       _path,
       options: _options,
+      queryParameters: _queryParameters,
       cancelToken: cancelToken,
       onSendProgress: onSendProgress,
       onReceiveProgress: onReceiveProgress,
@@ -297,7 +304,7 @@ class AssignmentsApi {
   }
 
   /// Request Swap
-  /// Flag the caller&#39;s assignment for swap; admin follows up out of band.
+  /// Record that the caller needs a replacement for the current commitment.
   ///
   /// Parameters:
   /// * [assignmentId]

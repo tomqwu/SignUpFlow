@@ -55,6 +55,11 @@ evidence with a local mock. Do not deploy or enable providers from a roadmap alo
 - #263: assignment roles persist in API and CLI output; saved assignment caps,
   minimum gaps, and cooldown preferences now validate and execute in API solves.
   Broader team/league eligibility policy remains separate product scope.
+- #287: assignment allocation is separate from persisted member response truth;
+  new and historical ambiguous assignments remain unanswered, member actions are
+  revision-aware and atomic with audit, unchanged publication carries proven
+  responses, material changes reset them, and coordinator/member browser states
+  run through both domain playbooks at 360px and 1440px.
 - #260: per-run SQLite database isolation exists. PostgreSQL business/concurrency
   and migration parity remain unverified release work; run that validation locally.
 - #259: repurpose the obsolete AI/CI gate ticket as local validation and evidence

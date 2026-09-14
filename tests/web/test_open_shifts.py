@@ -55,6 +55,9 @@ def test_lists_and_claims_open_role(client, db):
         .first()
     )
     assert a is not None and a.role == "volunteer" and a.status == "confirmed"
+    assert a.response_status == "accepted"
+    assert a.responded_by_person_id == "os_v1"
+    assert a.response_current is True
     # Already on the event → no longer offered.
     assert "Sunday Service" not in r.text
 

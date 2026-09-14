@@ -22,7 +22,7 @@
       <div style="margin-top:6px;display:flex;gap:8px;align-items:center;flex-wrap:wrap">
         {% if r.time_label %}<span class="time-chip">{{ r.time_label }}</span>{% endif %}
         {% if r.role %}<span class="role-chip">{{ r.role }}</span>{% endif %}
-        <span class="status-text {{ r.status }}">{{ r.status }}</span>
+        <span class="status-text {{ r.status }}">{{ r.status_label }}</span>
       </div>
     </div>
     <span class="chev">›</span>

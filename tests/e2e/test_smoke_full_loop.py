@@ -79,7 +79,8 @@ def test_full_loop(live_server, new_context, page, db_path):
     vol_page.click("a:has-text('Sunday 10am Service')")
     vol_page.wait_for_selector("#assignment-card")
     vol_page.click("button:has-text('Accept')")
-    vol_page.wait_for_selector("#assignment-card .status-text.confirmed")
+    vol_page.wait_for_selector("#assignment-card .status-text.accepted")
+    assert "Accepted" in vol_page.locator("#assignment-card").text_content()
 
     # Admin review reflects the assignee.
     page.reload()

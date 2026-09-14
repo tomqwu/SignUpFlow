@@ -39,6 +39,18 @@
             "minLength": 1,
             "title": "Decline Reason",
             "type": "string"
+          },
+          "expected_revision": {
+            "anyOf": [
+              {
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Expected Revision"
           }
         },
         "required": [
@@ -85,6 +97,10 @@
             "title": "Assigned At",
             "type": "string"
           },
+          "commitment_revision": {
+            "title": "Commitment Revision",
+            "type": "integer"
+          },
           "decline_reason": {
             "anyOf": [
               {
@@ -106,6 +122,48 @@
           },
           "person_id": {
             "title": "Person Id",
+            "type": "string"
+          },
+          "responded_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Responded At"
+          },
+          "responded_by_person_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Responded By Person Id"
+          },
+          "response_current": {
+            "title": "Response Current",
+            "type": "boolean"
+          },
+          "response_revision": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Response Revision"
+          },
+          "response_status": {
+            "title": "Response Status",
             "type": "string"
           },
           "role": {
@@ -130,6 +188,12 @@
           "person_id",
           "role",
           "status",
+          "response_status",
+          "responded_by_person_id",
+          "responded_at",
+          "commitment_revision",
+          "response_revision",
+          "response_current",
           "decline_reason",
           "assigned_at"
         ],
@@ -139,6 +203,18 @@
       "AssignmentSwapRequest": {
         "description": "Body for POST /assignments/{id}/swap-request.",
         "properties": {
+          "expected_revision": {
+            "anyOf": [
+              {
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Expected Revision"
+          },
           "note": {
             "anyOf": [
               {
@@ -5699,7 +5775,7 @@
     },
     "/api/v1/assignments/{assignment_id}/accept": {
       "post": {
-        "description": "Mark the caller's assignment as confirmed.",
+        "description": "Record the caller's explicit acceptance of the current commitment.",
         "operationId": "acceptAssignment",
         "parameters": [
           {
@@ -5709,6 +5785,23 @@
             "schema": {
               "title": "Assignment Id",
               "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "expected_revision",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "minimum": 1,
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Expected Revision"
             }
           }
         ],
@@ -5805,7 +5898,7 @@
     },
     "/api/v1/assignments/{assignment_id}/swap-request": {
       "post": {
-        "description": "Flag the caller's assignment for swap; admin follows up out of band.",
+        "description": "Record that the caller needs a replacement for the current commitment.",
         "operationId": "requestSwap",
         "parameters": [
           {

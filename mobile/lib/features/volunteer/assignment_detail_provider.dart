@@ -18,18 +18,19 @@ import 'package:signupflow_mobile/features/volunteer/schedule_provider.dart';
 /// Returns the schedule row for the given assignment id if it's already present in
 /// the loaded schedule, otherwise null. Wraps the schedule's loading/error
 /// state so the screen can show the same spinners as the list.
-final assignmentDetailProvider =
-    Provider.family<AsyncValue<ScheduleRow?>, int>((ref, assignmentId) {
-  final schedule = ref.watch(scheduleProvider);
-  return schedule.whenData((data) {
-    for (final g in data.groups) {
-      for (final r in g.rows) {
-        if (r.assignment.id == assignmentId) return r;
+final assignmentDetailProvider = Provider.family<AsyncValue<ScheduleRow?>, int>(
+  (ref, assignmentId) {
+    final schedule = ref.watch(scheduleProvider);
+    return schedule.whenData((data) {
+      for (final g in data.groups) {
+        for (final r in g.rows) {
+          if (r.assignment.id == assignmentId) return r;
+        }
       }
-    }
-    return null;
-  });
-});
+      return null;
+    });
+  },
+);
 
 enum MutationStatus { idle, busy, error }
 
@@ -49,13 +50,16 @@ class AssignmentMutationsController extends Notifier<MutationState> {
   MutationState build() => const MutationState();
 
   /// Accept. Returns null on success or error message on failure.
-  Future<String?> accept(int assignmentId) async {
+  Future<String?> accept(int assignmentId, int expectedRevision) async {
     state = state.busy();
     try {
       await ref
           .read(signupflowApiProvider)
           .getAssignmentsApi()
-          .acceptAssignment(assignmentId: assignmentId);
+          .acceptAssignment(
+            assignmentId: assignmentId,
+            expectedRevision: expectedRevision,
+          );
       ref.invalidate(scheduleProvider);
       state = state.idle();
       return null;
@@ -67,15 +71,24 @@ class AssignmentMutationsController extends Notifier<MutationState> {
   }
 
   /// Decline. `reason` is required on the backend even when blank-ish.
-  Future<String?> decline(int assignmentId, String reason) async {
+  Future<String?> decline(
+    int assignmentId,
+    int expectedRevision,
+    String reason,
+  ) async {
     state = state.busy();
     try {
-      final body = (api.AssignmentDeclineRequestBuilder()
-            ..declineReason = reason.trim().isEmpty
-                ? 'No reason provided'
-                : reason.trim())
-          .build();
-      await ref.read(signupflowApiProvider).getAssignmentsApi().declineAssignment(
+      final body =
+          (api.AssignmentDeclineRequestBuilder()
+                ..declineReason = reason.trim().isEmpty
+                    ? 'No reason provided'
+                    : reason.trim()
+                ..expectedRevision = expectedRevision)
+              .build();
+      await ref
+          .read(signupflowApiProvider)
+          .getAssignmentsApi()
+          .declineAssignment(
             assignmentId: assignmentId,
             assignmentDeclineRequest: body,
           );
@@ -90,12 +103,20 @@ class AssignmentMutationsController extends Notifier<MutationState> {
   }
 
   /// Request a swap. `note` is optional.
-  Future<String?> requestSwap(int assignmentId, String? note) async {
+  Future<String?> requestSwap(
+    int assignmentId,
+    int expectedRevision,
+    String? note,
+  ) async {
     state = state.busy();
     try {
-      final builder = api.AssignmentSwapRequestBuilder();
+      final builder = api.AssignmentSwapRequestBuilder()
+        ..expectedRevision = expectedRevision;
       if (note != null && note.trim().isNotEmpty) builder.note = note.trim();
-      await ref.read(signupflowApiProvider).getAssignmentsApi().requestSwap(
+      await ref
+          .read(signupflowApiProvider)
+          .getAssignmentsApi()
+          .requestSwap(
             assignmentId: assignmentId,
             assignmentSwapRequest: builder.build(),
           );
@@ -117,5 +138,5 @@ class AssignmentMutationsController extends Notifier<MutationState> {
 
 final assignmentMutationsProvider =
     NotifierProvider<AssignmentMutationsController, MutationState>(
-  AssignmentMutationsController.new,
-);
+      AssignmentMutationsController.new,
+    );

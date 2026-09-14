@@ -119,7 +119,8 @@ def test_swap_review_approve(live_server, new_context, page, db_path):
     vol_page.click("a:has-text('Sunday 10am Service')")
     vol_page.wait_for_selector("#assignment-card")
     vol_page.click("button:has-text('Request swap')")
-    vol_page.wait_for_selector("#assignment-card .status-text.swap_requested")
+    vol_page.wait_for_selector("#assignment-card .status-text.replacement_needed")
+    assert "Replacement needed" in vol_page.locator("#assignment-card").text_content()
 
     page.goto(f"{base}/a/swaps")
     page.wait_for_selector("#swaps-list:has-text('Sunday 10am Service')")

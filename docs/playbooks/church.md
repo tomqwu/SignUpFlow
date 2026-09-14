@@ -73,7 +73,7 @@ and service execution remain human responsibilities, not inferred from a green s
 | CH-04 | No leader available | Block both worship leaders for Sunday week 4 | Exactly that service reports missing worship leadership; leave the failing draft unpublished |
 | CH-05 | New qualified cover | Invite and onboard a replacement worship leader | Regeneration fills week 4 and every other event; no other qualification is substituted |
 | CH-06 | Service moved | Move week-6 Sunday event to Monday 10:00-12:00 | New solution carries the changed time and full coverage; publishing replaces the previous solution |
-| CH-07 | Member acknowledgement | Open draft as assigned member, then publish and accept | Draft absent from member schedule; published assignment visible and acceptance confirmed in browser |
+| CH-07 | Member acknowledgement | Open draft as assigned member, then publish and accept | Draft absent; published assignment is unanswered; explicit acceptance records the current revision in member and coordinator views |
 | CH-08 | Qualified swap | Request a swap and have a reserve with the same qualification cover | Original member loses the shift; reserve gains it; every role remains filled |
 
 CH-01 through CH-06 are one automated API lifecycle with assertions after each

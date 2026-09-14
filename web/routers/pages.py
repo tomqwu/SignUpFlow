@@ -30,6 +30,14 @@ router = APIRouter(tags=["web-pages"])
 
 def _row_dict(a: Assignment, e: Event) -> dict:
     start, end = e.start_time, e.end_time
+    response_status = a.response_status if a.response_current else "pending"
+    display_status = "replacement_needed" if a.status == "swap_requested" else response_status
+    status_labels = {
+        "pending": "Unanswered",
+        "accepted": "Accepted",
+        "declined": "Declined",
+        "replacement_needed": "Replacement needed",
+    }
     return {
         "id": a.id,
         "event_type": e.type,
@@ -38,7 +46,15 @@ def _row_dict(a: Assignment, e: Event) -> dict:
             f"{start.strftime('%H:%M')}–{end.strftime('%H:%M')}" if start and end else ""
         ),
         "role": a.role,
-        "status": (a.status or "pending").lower(),
+        "status": display_status,
+        "status_label": status_labels[display_status],
+        "workflow_status": (a.status or "pending").lower(),
+        "response_status": response_status,
+        "responded_by_person_id": a.responded_by_person_id,
+        "responded_at": a.responded_at,
+        "commitment_revision": a.commitment_revision or 1,
+        "response_revision": a.response_revision,
+        "response_current": a.response_current,
         "decline_reason": a.decline_reason,
     }
 
@@ -489,6 +505,19 @@ def _dashboard_kpis(db: Session, person: Person) -> dict:
     sh = get_schedule_health(org_id, current_admin=person, db=db)
     br = get_burnout_risk(org_id, threshold=4, current_admin=person, db=db)
     latest = sh.get("latest_solution")
+    visible_assignments = (
+        db.query(Assignment)
+        .join(Event, Assignment.event_id == Event.id)
+        .filter(Event.org_id == org_id, member_visible_assignment(org_id))
+        .all()
+    )
+    unanswered = sum(1 for row in visible_assignments if not row.response_current)
+    declined = sum(
+        1
+        for row in visible_assignments
+        if row.response_current and row.response_status == "declined"
+    )
+    replacements = sum(1 for row in visible_assignments if row.status == "swap_requested")
     return {
         "active_volunteers": vs["active_volunteers"],
         "total_volunteers": vs["total_volunteers"],
@@ -498,6 +527,10 @@ def _dashboard_kpis(db: Session, person: Person) -> dict:
         "health_score": (round(latest["health_score"]) if latest else None),
         "at_risk_count": br["at_risk_count"],
         "top_volunteers": vs["top_volunteers"][:5],
+        "unanswered_assignments": unanswered,
+        "declined_assignments": declined,
+        "replacement_requests": replacements,
+        "responses_needing_attention": unanswered + declined,
     }
 
 
@@ -1120,37 +1153,71 @@ def admin_swaps(
     )
 
 
-def _all_assignments(db: Session, org_id: str, person_id: str | None) -> dict:
+def _all_assignments(
+    db: Session,
+    org_id: str,
+    person_id: str | None,
+    response_filter: str | None,
+) -> dict:
     """Org-wide assignments (Assignment ⋈ Event ⋈ Person), newest event
     first, optionally filtered to one person. Org-scoped via the Event
     join (mirrors api get_all_assignments)."""
+    allowed_filters = {"unanswered", "accepted", "declined", "replacement"}
+    if response_filter not in allowed_filters:
+        response_filter = None
+
     q = (
         db.query(Assignment, Event, Person)
         .join(Event, Assignment.event_id == Event.id)
         .join(Person, Assignment.person_id == Person.id)
-        .filter(Event.org_id == org_id)
+        .filter(Event.org_id == org_id, member_visible_assignment(org_id))
     )
     if person_id:
         q = q.filter(Assignment.person_id == person_id)
     joined = q.order_by(Event.start_time.desc()).all()
-    out = [
-        {
-            "event_type": e.type,
-            "when": e.start_time.strftime("%a %d %b %Y · %H:%M") if e.start_time else "",
-            "person_id": p.id,
-            "person_name": p.name,
-            "role": a.role,
-            "status": (a.status or "pending").lower(),
-            "manual": a.solution_id is None,
-        }
-        for a, e, p in joined
-    ]
+    out = []
+    counts = {"all": 0, "unanswered": 0, "accepted": 0, "declined": 0, "replacement": 0}
+    for a, e, p in joined:
+        response_status = a.response_status if a.response_current else "pending"
+        bucket = (
+            "replacement"
+            if a.status == "swap_requested"
+            else "unanswered"
+            if response_status == "pending"
+            else response_status
+        )
+        counts["all"] += 1
+        counts[bucket] += 1
+        if response_filter and response_filter != bucket:
+            continue
+        out.append(
+            {
+                "event_type": e.type,
+                "when": e.start_time.strftime("%a %d %b %Y · %H:%M") if e.start_time else "",
+                "person_id": p.id,
+                "person_name": p.name,
+                "role": a.role,
+                "status": "replacement_needed" if bucket == "replacement" else response_status,
+                "status_label": {
+                    "unanswered": "Unanswered",
+                    "accepted": "Accepted",
+                    "declined": "Declined",
+                    "replacement": "Replacement needed",
+                }[bucket],
+                "responded_at": a.responded_at,
+                "response_revision": a.response_revision,
+                "commitment_revision": a.commitment_revision or 1,
+                "manual": a.solution_id is None,
+            }
+        )
     people = db.query(Person).filter(Person.org_id == org_id).order_by(Person.name.asc()).all()
     return {
         "rows": out,
         "total": len(out),
         "people": [{"id": p.id, "name": p.name} for p in people],
         "person_id": person_id or "",
+        "response_filter": response_filter or "",
+        "counts": counts,
     }
 
 
@@ -1158,6 +1225,7 @@ def _all_assignments(db: Session, org_id: str, person_id: str | None) -> dict:
 def admin_all_assignments(
     request: Request,
     person_id: str | None = None,
+    response: str | None = None,
     person: Person = Depends(get_session_admin),
     db: Session = Depends(get_db),
 ):
@@ -1169,7 +1237,7 @@ def admin_all_assignments(
         {
             "person": person,
             "active_tab": "events",
-            "data": _all_assignments(db, person.org_id, person_id),
+            "data": _all_assignments(db, person.org_id, person_id, response),
         },
     )
 

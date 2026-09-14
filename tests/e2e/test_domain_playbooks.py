@@ -4,7 +4,7 @@ Five repeated weeks are seeded by API. Member qualification, invitation acceptan
 the first event, solve, review, publish and response use real browser interactions.
 """
 
-from datetime import timedelta
+from datetime import datetime, timedelta
 
 import httpx
 import pytest
@@ -93,6 +93,7 @@ def test_domain_browser_workflow(
         for week in range(1, 6):
             p.event(week)
         _login(page, base, p.email, p.password, "/a/dashboard")
+        page.screenshot(path=str(tmp_path / f"{domain}-{width}-dashboard.png"), full_page=True)
         page.goto(f"{base}/a/onboarding")
         _fits(page)
         page.screenshot(path=str(tmp_path / f"{domain}-{width}-onboarding.png"), full_page=True)
@@ -142,11 +143,37 @@ def test_domain_browser_workflow(
         page.get_by_role("button", name="Publish this solution").click()
         expect(page.locator("#publish-state")).to_contain_text("Unpublish")
         member.reload()
+        member.screenshot(path=str(tmp_path / f"{domain}-{width}-unanswered.png"), full_page=True)
         member.get_by_role("link", name=title, exact=False).click()
+        expect(member.locator("#assignment-card .status-text.pending")).to_contain_text(
+            "Unanswered"
+        )
+        moved_start = datetime.fromisoformat(created["start_time"]) + timedelta(minutes=15)
+        moved_end = datetime.fromisoformat(created["end_time"]) + timedelta(minutes=15)
+        moved_event = {
+            "start_time": moved_start.isoformat(),
+            "end_time": moved_end.isoformat(),
+        }
+        p.request("PUT", f"/events/{created['id']}", data=moved_event)
+        p.events[created["id"]].update(moved_event)
         member.get_by_role("button", name="Accept", exact=True).click()
-        expect(member.locator("#assignment-card .status-text.confirmed")).to_be_visible()
+        expect(member.locator("#assignment-card .alert-error")).to_contain_text(
+            "Assignment changed from revision 1 to 2"
+        )
+        _fits(member)
+        member.reload()
+        member.get_by_role("button", name="Accept", exact=True).click()
+        expect(member.locator("#assignment-card .status-text.accepted")).to_contain_text("Accepted")
         _fits(member)
         member.screenshot(path=str(tmp_path / f"{domain}-{width}-accepted.png"), full_page=True)
+        member.context.clear_cookies()
+        _login(member, base, person["email"], p.password, "/v/schedule")
+        member.get_by_role("link", name=title, exact=False).click()
+        expect(member.locator("#assignment-card .status-text.accepted")).to_contain_text("Accepted")
+        page.goto(f"{base}/a/assignments?response=accepted")
+        expect(page.locator(".status-text.accepted")).to_contain_text("Accepted")
+        expect(page.locator(".scroll")).to_contain_text(person["name"])
+        _fits(page)
         # A qualified reserve covers the actual published slot, preserving its role.
         role = first["assignees"][0]["role"]
         assigned_ids = {a["person_id"] for a in first["assignees"]}
@@ -156,7 +183,14 @@ def test_domain_browser_workflow(
             if pid not in assigned_ids and role in person["roles"]
         )
         member.get_by_role("button", name="Request swap").click()
-        expect(member.locator("#assignment-card .status-text.swap_requested")).to_be_visible()
+        expect(member.locator("#assignment-card .status-text.replacement_needed")).to_contain_text(
+            "Replacement needed"
+        )
+        page.goto(f"{base}/a/assignments?response=replacement")
+        expect(page.locator(".status-text.replacement_needed")).to_contain_text(
+            "Replacement needed"
+        )
+        _fits(page)
         cover = new_context().new_page()
         cover.on("pageerror", lambda error: errors.append(str(error)))
         _login(cover, base, reserve["email"], p.password, "/v/schedule")
@@ -166,6 +200,9 @@ def test_domain_browser_workflow(
         expect(cover.locator("#swaps-open-list")).to_contain_text("No swap requests to cover")
         cover.goto(f"{base}/v/schedule")
         expect(cover.get_by_role("link", name=title)).to_have_count(1)
+        cover.get_by_role("link", name=title).click()
+        expect(cover.locator("#assignment-card .status-text.accepted")).to_contain_text("Accepted")
+        _fits(cover)
         member.goto(f"{base}/v/schedule")
         expect(member.get_by_role("link", name=title)).to_have_count(0)
         p.assert_complete(solution_id)

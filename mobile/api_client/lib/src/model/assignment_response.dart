@@ -12,16 +12,25 @@ part 'assignment_response.g.dart';
 ///
 /// Properties:
 /// * [assignedAt]
+/// * [commitmentRevision]
 /// * [declineReason]
 /// * [eventId]
 /// * [id]
 /// * [personId]
+/// * [respondedAt]
+/// * [respondedByPersonId]
+/// * [responseCurrent]
+/// * [responseRevision]
+/// * [responseStatus]
 /// * [role]
 /// * [status]
 @BuiltValue()
 abstract class AssignmentResponse implements Built<AssignmentResponse, AssignmentResponseBuilder> {
   @BuiltValueField(wireName: r'assigned_at')
   DateTime get assignedAt;
+
+  @BuiltValueField(wireName: r'commitment_revision')
+  int get commitmentRevision;
 
   @BuiltValueField(wireName: r'decline_reason')
   String? get declineReason;
@@ -34,6 +43,21 @@ abstract class AssignmentResponse implements Built<AssignmentResponse, Assignmen
 
   @BuiltValueField(wireName: r'person_id')
   String get personId;
+
+  @BuiltValueField(wireName: r'responded_at')
+  DateTime? get respondedAt;
+
+  @BuiltValueField(wireName: r'responded_by_person_id')
+  String? get respondedByPersonId;
+
+  @BuiltValueField(wireName: r'response_current')
+  bool get responseCurrent;
+
+  @BuiltValueField(wireName: r'response_revision')
+  int? get responseRevision;
+
+  @BuiltValueField(wireName: r'response_status')
+  String get responseStatus;
 
   @BuiltValueField(wireName: r'role')
   String? get role;
@@ -69,6 +93,11 @@ class _$AssignmentResponseSerializer implements PrimitiveSerializer<AssignmentRe
       object.assignedAt,
       specifiedType: const FullType(DateTime),
     );
+    yield r'commitment_revision';
+    yield serializers.serialize(
+      object.commitmentRevision,
+      specifiedType: const FullType(int),
+    );
     yield r'decline_reason';
     yield object.declineReason == null ? null : serializers.serialize(
       object.declineReason,
@@ -87,6 +116,31 @@ class _$AssignmentResponseSerializer implements PrimitiveSerializer<AssignmentRe
     yield r'person_id';
     yield serializers.serialize(
       object.personId,
+      specifiedType: const FullType(String),
+    );
+    yield r'responded_at';
+    yield object.respondedAt == null ? null : serializers.serialize(
+      object.respondedAt,
+      specifiedType: const FullType.nullable(DateTime),
+    );
+    yield r'responded_by_person_id';
+    yield object.respondedByPersonId == null ? null : serializers.serialize(
+      object.respondedByPersonId,
+      specifiedType: const FullType.nullable(String),
+    );
+    yield r'response_current';
+    yield serializers.serialize(
+      object.responseCurrent,
+      specifiedType: const FullType(bool),
+    );
+    yield r'response_revision';
+    yield object.responseRevision == null ? null : serializers.serialize(
+      object.responseRevision,
+      specifiedType: const FullType.nullable(int),
+    );
+    yield r'response_status';
+    yield serializers.serialize(
+      object.responseStatus,
       specifiedType: const FullType(String),
     );
     yield r'role';
@@ -129,6 +183,13 @@ class _$AssignmentResponseSerializer implements PrimitiveSerializer<AssignmentRe
           ) as DateTime;
           result.assignedAt = valueDes;
           break;
+        case r'commitment_revision':
+          final valueDes = serializers.deserialize(
+            value,
+            specifiedType: const FullType(int),
+          ) as int;
+          result.commitmentRevision = valueDes;
+          break;
         case r'decline_reason':
           final valueDes = serializers.deserialize(
             value,
@@ -157,6 +218,44 @@ class _$AssignmentResponseSerializer implements PrimitiveSerializer<AssignmentRe
             specifiedType: const FullType(String),
           ) as String;
           result.personId = valueDes;
+          break;
+        case r'responded_at':
+          final valueDes = serializers.deserialize(
+            value,
+            specifiedType: const FullType.nullable(DateTime),
+          ) as DateTime?;
+          if (valueDes == null) continue;
+          result.respondedAt = valueDes;
+          break;
+        case r'responded_by_person_id':
+          final valueDes = serializers.deserialize(
+            value,
+            specifiedType: const FullType.nullable(String),
+          ) as String?;
+          if (valueDes == null) continue;
+          result.respondedByPersonId = valueDes;
+          break;
+        case r'response_current':
+          final valueDes = serializers.deserialize(
+            value,
+            specifiedType: const FullType(bool),
+          ) as bool;
+          result.responseCurrent = valueDes;
+          break;
+        case r'response_revision':
+          final valueDes = serializers.deserialize(
+            value,
+            specifiedType: const FullType.nullable(int),
+          ) as int?;
+          if (valueDes == null) continue;
+          result.responseRevision = valueDes;
+          break;
+        case r'response_status':
+          final valueDes = serializers.deserialize(
+            value,
+            specifiedType: const FullType(String),
+          ) as String;
+          result.responseStatus = valueDes;
           break;
         case r'role':
           final valueDes = serializers.deserialize(

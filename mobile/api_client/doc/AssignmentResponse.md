@@ -9,10 +9,16 @@ import 'package:signupflow_api/api.dart';
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
 **assignedAt** | [**DateTime**](DateTime.md) |  |
+**commitmentRevision** | **int** |  |
 **declineReason** | **String** |  |
 **eventId** | **String** |  |
 **id** | **int** |  |
 **personId** | **String** |  |
+**respondedAt** | [**DateTime**](DateTime.md) |  |
+**respondedByPersonId** | **String** |  |
+**responseCurrent** | **bool** |  |
+**responseRevision** | **int** |  |
+**responseStatus** | **String** |  |
 **role** | **String** |  |
 **status** | **String** |  |
 

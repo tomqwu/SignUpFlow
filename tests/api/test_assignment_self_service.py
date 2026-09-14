@@ -64,7 +64,10 @@ class TestVolunteerAccept:
 
         resp = client.post(f"/api/v1/assignments/{ctx['assignment_id']}/accept", headers=vol_hdrs)
         assert resp.status_code == 200, resp.text
-        assert resp.json()["status"] == "confirmed"
+        body = resp.json()
+        assert body["status"] == "confirmed"
+        assert body["response_status"] == "accepted"
+        assert body["response_current"] is True
 
     def test_volunteer_cannot_accept_someone_elses_assignment(self, client, db):
         ctx = _setup_org_with_assignment(client, db, "cross")
@@ -97,6 +100,8 @@ class TestVolunteerDecline:
         assert resp.status_code == 200, resp.text
         body = resp.json()
         assert body["status"] == "declined"
+        assert body["response_status"] == "declined"
+        assert body["response_current"] is True
         assert body["decline_reason"] == "Out of town"
 
     def test_decline_requires_reason(self, client, db):
@@ -124,6 +129,7 @@ class TestVolunteerSwapRequest:
         )
         assert resp.status_code == 200, resp.text
         assert resp.json()["status"] == "swap_requested"
+        assert resp.json()["response_status"] == "declined"
 
     def test_swap_request_works_without_note(self, client, db):
         ctx = _setup_org_with_assignment(client, db, "swap-no-note")
@@ -179,6 +185,8 @@ class TestListMyAssignments:
         assert body["total"] == 1
         assert len(body["items"]) == 1
         assert body["items"][0]["event_id"] == ctx["event"]["id"]
+        assert body["items"][0]["response_status"] == "pending"
+        assert body["items"][0]["response_current"] is False
 
 
 @pytest.mark.no_mock_auth
