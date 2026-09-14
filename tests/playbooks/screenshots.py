@@ -260,7 +260,7 @@ def capture_screenshot(page: Any, tmp_path: Path, domain: str, width: int, state
         record_path.write_text(json.dumps(record, indent=2) + "\n", encoding="utf-8")
     else:
         path = tmp_path / f"{domain}-{width}-{state}.png"
-    page.screenshot(path=str(path), full_page=True)
+    page.screenshot(path=str(path), full_page=not bool(root_value))
     return path
 
 
