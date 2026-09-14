@@ -1,0 +1,5 @@
+org_id: riverside-basketball-example
+region: CA-ON
+defaults:
+  fairness_weight: 50
+  cooldown_days: 7

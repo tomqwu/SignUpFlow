@@ -153,7 +153,7 @@ print(f"✓ Created {len(solution.assignments)} assignments")
 python test_api.py
 
 # Run usage example
-python examples/api_example.py
+poetry run python examples/api_client_example.py
 ```
 
 ## Key Objects

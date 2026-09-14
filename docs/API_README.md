@@ -176,7 +176,8 @@ curl -X POST http://localhost:8000/solutions/1/export \
 
 ## 🐍 Python Client Example
 
-See [examples/api_client_example.py](examples/api_client_example.py) for a complete working example.
+See [examples/api_client_example.py](../examples/api_client_example.py) for a complete
+provider-free workflow against an owned loopback server.
 
 ```python
 import httpx

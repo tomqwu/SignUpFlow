@@ -1,8 +1,0 @@
-key: round_robin_balance
-scope: schedule
-applies_to: [match]
-severity: hard
-then:
-  enforce_graph:
-    kind: round_robin
-    games_per_pair: 1

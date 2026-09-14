@@ -3,10 +3,10 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>SignUpFlow — volunteer scheduling that schedules itself</title>
-  <meta name="description" content="SignUpFlow is a headless volunteer scheduling and sign-up platform with a constraint-based solver, self-serve shifts, swaps, availability, and calendar sync. REST API + CLI.">
-  <meta property="og:title" content="SignUpFlow — volunteer scheduling that schedules itself">
-  <meta property="og:description" content="Auto-generate fair rosters for churches, sports leagues, and non-profits. Constraint solver, self-serve shifts, swaps, calendar sync. API + CLI.">
+  <title>SignUpFlow — local Church and Basketball scheduling</title>
+  <meta name="description" content="Run six-week Church and Basketball roster workflows locally with a FastAPI web app, REST API, and YAML CLI.">
+  <meta property="og:title" content="SignUpFlow — local Church and Basketball scheduling">
+  <meta property="og:description" content="Build, publish, and operate six-week Church and Basketball rosters with tested local workflows.">
   <meta property="og:type" content="website">
   <link rel="stylesheet" href="styles.css">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='22' fill='%230F766E'/><text x='50' y='68' font-size='58' font-family='Arial' font-weight='bold' fill='white' text-anchor='middle'>S</text></svg>">
@@ -17,9 +17,9 @@
       <a class="logo" href="#top"><span class="mark">S</span> SignUpFlow</a>
       <nav class="links">
         <a href="#features">Features</a>
-        <a href="#plans">Plans</a>
+        <a href="#workflows">Workflows</a>
         <a href="https://github.com/tomqwu/SignUpFlow">GitHub</a>
-        <a class="btn btn-primary btn-sm" href="https://github.com/tomqwu/SignUpFlow">Get started</a>
+        <a class="btn btn-primary btn-sm" href="https://github.com/tomqwu/SignUpFlow#quick-start">Run locally</a>
       </nav>
     </div>
   </header>
@@ -27,16 +27,16 @@
   <main id="top">
     <section class="hero">
       <div class="wrap">
-        <span class="eyebrow">Open-source · API-first</span>
-        <h1>Volunteer scheduling that schedules itself.</h1>
+        <span class="eyebrow">Open source · Local first</span>
+        <h1>Church and Basketball scheduling, week by week.</h1>
         <p class="lede">
-          SignUpFlow auto-generates fair rosters for churches, sports leagues,
-          and non-profits — a constraint-based solver does the hard part while
-          volunteers self-serve open shifts and cover each other's swaps.
+          SignUpFlow gives coordinators, volunteers, players, and staff one local
+          workflow for availability, qualified roster generation, publication,
+          responses, cover, schedule changes, and the next planning horizon.
         </p>
         <div class="cta-row">
-          <a class="btn btn-primary" href="https://github.com/tomqwu/SignUpFlow">View on GitHub</a>
-          <a class="btn btn-ghost" href="#features">See what it does</a>
+          <a class="btn btn-primary" href="https://github.com/tomqwu/SignUpFlow#quick-start">Read local setup</a>
+          <a class="btn btn-ghost" href="https://github.com/tomqwu/SignUpFlow/blob/main/docs/playbooks/README.md">Open playbooks</a>
         </div>
       </div>
     </section>
@@ -44,16 +44,16 @@
     <section id="features">
       <div class="wrap">
         <div class="section-head">
-          <h2>Everything a roster needs, end to end</h2>
-          <p>From the first invite to a published, calendar-synced schedule —
-             with the scheduling itself automated.</p>
+          <h2>Tested roster operations</h2>
+          <p>From the first invite to a published, calendar-synced schedule,
+             with local API and browser evidence for the supported workflow.</p>
         </div>
         <div class="grid">
           <div class="card">
             <div class="ico">⚙︎</div>
             <h3>Auto-scheduling solver</h3>
-            <p>A greedy heuristic solver with constraint-based optimization
-               builds fair schedules across roles and people automatically.</p>
+            <p>The greedy heuristic solver selects distinct qualified people,
+               respects availability, and reports uncovered role slots.</p>
           </div>
           <div class="card">
             <div class="ico">◷</div>
@@ -75,9 +75,9 @@
           </div>
           <div class="card">
             <div class="ico">∑</div>
-            <h3>Constraints DSL</h3>
-            <p>Express scheduling rules — spacing, eligibility, caps — in a
-               compact constraint language the solver evaluates.</p>
+            <h3>Validated scheduling rules</h3>
+            <p>Saved rules support assignment caps, minimum rest gaps, and a
+               weighted cooldown preference. Unsupported predicates are rejected.</p>
           </div>
           <div class="card">
             <div class="ico">⧉</div>
@@ -101,57 +101,57 @@
       </div>
     </section>
 
-    <section id="plans">
+    <section id="workflows">
       <div class="wrap">
         <div class="section-head">
-          <h2>Plans that scale with your program</h2>
-          <p>Limits mirror the platform's enforced quotas. Pick a tier by the
-             size of your volunteer base.</p>
+          <h2>Two operational playbooks</h2>
+          <p>Each fixture runs six primary events and six rehearsals or practices,
+             then exercises exceptions, responses, cover, and week-seven rollover.</p>
         </div>
         <div class="tier-grid">
           <div class="tier">
-            <div class="name">Free</div>
-            <div class="blurb">Get started — small teams &amp; trials.</div>
+            <div class="name">Church</div>
+            <div class="blurb">Worship, rehearsal, and ministry coverage.</div>
             <ul>
-              <li><span>Volunteers</span><span>10</span></li>
-              <li><span>Events / month</span><span>50</span></li>
-              <li><span>Storage</span><span>100 MB</span></li>
-              <li><span>API calls / day</span><span>1,000</span></li>
+              <li><span>Scenario IDs</span><span>CH-01 to CH-08</span></li>
+              <li><span>Roles</span><span>6 qualifications</span></li>
+              <li><span>Horizon</span><span>6 weeks</span></li>
+              <li><span>Events</span><span>12</span></li>
             </ul>
-            <a class="btn btn-ghost btn-sm" href="https://github.com/tomqwu/SignUpFlow" style="margin-top:18px">Start free</a>
+            <a class="btn btn-ghost btn-sm" href="https://github.com/tomqwu/SignUpFlow/blob/main/docs/playbooks/church.md" style="margin-top:18px">Read Church playbook</a>
           </div>
           <div class="tier">
-            <div class="name">Starter</div>
-            <div class="blurb">Growing volunteer programs.</div>
+            <div class="name">Basketball</div>
+            <div class="blurb">Games, practices, positions, and staff.</div>
             <ul>
-              <li><span>Volunteers</span><span>50</span></li>
-              <li><span>Events / month</span><span>200</span></li>
-              <li><span>Storage</span><span>1,000 MB</span></li>
-              <li><span>API calls / day</span><span>10,000</span></li>
+              <li><span>Scenario IDs</span><span>BB-01 to BB-08</span></li>
+              <li><span>Roles</span><span>7 qualifications</span></li>
+              <li><span>Horizon</span><span>6 weeks</span></li>
+              <li><span>Events</span><span>12</span></li>
             </ul>
-            <a class="btn btn-ghost btn-sm" href="https://github.com/tomqwu/SignUpFlow" style="margin-top:18px">Choose Starter</a>
+            <a class="btn btn-ghost btn-sm" href="https://github.com/tomqwu/SignUpFlow/blob/main/docs/playbooks/basketball.md" style="margin-top:18px">Read Basketball playbook</a>
           </div>
           <div class="tier featured">
-            <div class="name">Pro</div>
-            <div class="blurb">Established organizations.</div>
+            <div class="name">Local validation</div>
+            <div class="blurb">Review and tests run on the exact local source.</div>
             <ul>
-              <li><span>Volunteers</span><span>200</span></li>
-              <li><span>Events / month</span><span>1,000</span></li>
-              <li><span>Storage</span><span>10,000 MB</span></li>
-              <li><span>API calls / day</span><span>50,000</span></li>
+              <li><span>Unit and API</span><span>Local</span></li>
+              <li><span>CLI and contract</span><span>Local</span></li>
+              <li><span>Web and Playwright</span><span>Local</span></li>
+              <li><span>Evidence</span><span>SHA-bound report</span></li>
             </ul>
-            <a class="btn btn-primary btn-sm" href="https://github.com/tomqwu/SignUpFlow" style="margin-top:18px">Choose Pro</a>
+            <a class="btn btn-primary btn-sm" href="https://github.com/tomqwu/SignUpFlow/blob/main/docs/TESTING.md" style="margin-top:18px">Read testing guide</a>
           </div>
           <div class="tier">
-            <div class="name">Enterprise</div>
-            <div class="blurb">Large / multi-ministry. Custom terms.</div>
+            <div class="name">Current scope</div>
+            <div class="blurb">No hosted service or paid plan is available.</div>
             <ul>
-              <li><span>Volunteers</span><span>Unlimited</span></li>
-              <li><span>Events / month</span><span>Unlimited</span></li>
-              <li><span>Storage</span><span>Unlimited</span></li>
-              <li><span>API calls / day</span><span>Unlimited</span></li>
+              <li><span>Application</span><span>Self-hosted</span></li>
+              <li><span>Billing</span><span>Disabled</span></li>
+              <li><span>Paid SMS</span><span>Disabled</span></li>
+              <li><span>Providers</span><span>Not required</span></li>
             </ul>
-            <a class="btn btn-ghost btn-sm" href="https://github.com/tomqwu/SignUpFlow" style="margin-top:18px">Contact us</a>
+            <a class="btn btn-ghost btn-sm" href="https://github.com/tomqwu/SignUpFlow/blob/main/docs/ROADMAP.md" style="margin-top:18px">Read roadmap</a>
           </div>
         </div>
       </div>
@@ -164,7 +164,7 @@
           <p>SignUpFlow is open source. Clone the repo, run the API and CLI,
              and own your scheduling stack end to end.</p>
         </div>
-        <a class="btn btn-primary" href="https://github.com/tomqwu/SignUpFlow">Get started on GitHub</a>
+        <a class="btn btn-primary" href="https://github.com/tomqwu/SignUpFlow#quick-start">Run locally</a>
       </div>
     </section>
   </main>
@@ -175,7 +175,7 @@
       <div>
         <a href="https://github.com/tomqwu/SignUpFlow">GitHub</a> ·
         <a href="#features">Features</a> ·
-        <a href="#plans">Plans</a>
+        <a href="#workflows">Workflows</a>
       </div>
     </div>
   </footer>

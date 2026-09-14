@@ -1,0 +1,13 @@
+people:
+  - id: worship-leader-a
+    name: Worship Leader A
+    roles: [worship_leader]
+  - id: worship-leader-b
+    name: Worship Leader B
+    roles: [worship_leader]
+  - id: musician-a
+    name: Musician A
+    roles: [musician]
+  - id: musician-b
+    name: Musician B
+    roles: [musician]

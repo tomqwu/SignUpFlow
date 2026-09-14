@@ -2,12 +2,14 @@
 
 # SignUpFlow
 
-### Volunteer Scheduling Made Simple
+### Church and Basketball Scheduling, Run Locally
 
-*AI-powered sign-up management for churches, sports leagues, and non-profits*
+*Week-to-week roster operations for coordinators, volunteers, players, and staff*
 
-[![Python](https://img.shields.io/badge/python-3.11+-blue?style=for-the-badge&logo=python)](https://www.python.org/)
+[![Python](https://img.shields.io/badge/python-3.11--3.13-blue?style=for-the-badge&logo=python)](https://www.python.org/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.109+-009688?style=for-the-badge&logo=fastapi)](https://fastapi.tiangolo.com/)
+[![Validation](https://img.shields.io/badge/validation-local_only-167D8D?style=for-the-badge)](docs/TESTING.md)
+[![Playbooks](https://img.shields.io/badge/playbooks-Church_%2B_Basketball-0F766E?style=for-the-badge)](docs/playbooks/README.md)
 [![License](https://img.shields.io/badge/license-MIT-green?style=for-the-badge)](LICENSE)
 
 </div>
@@ -30,256 +32,55 @@
 
 ## Quick Start
 
+SignUpFlow is an open-source application you run yourself. No hosted service,
+paid plan, or production deployment is included. Billing and paid SMS stay disabled
+by default and are not required for the Church or Basketball workflows.
+
 ```bash
-git clone https://github.com/tomqwu/signupflow.git
-cd signupflow && make setup
+git clone https://github.com/tomqwu/SignUpFlow.git
+cd SignUpFlow
+make setup
+poetry run signupflow --help
 ```
 
 ---
 
-## CLI Example: Schedule a Church in 3 Commands
+## CLI Examples
 
-### 1. Create a workspace
-
-```bash
-$ poetry run python -m api.cli.main init my-church
-
-Created workspace at my-church/
-  org.yaml      — organization config
-  people.yaml   — volunteers and their roles
-  events.yaml   — events to schedule
-```
-
-This generates three YAML files. Here's what `people.yaml` looks like:
-
-```yaml
-people:
-- id: sarah
-  name: Sarah Chen
-  roles: [musician, teacher]     # Serves in worship AND Sunday school
-- id: david
-  name: David Kim
-  roles: [musician, sound_tech]
-- id: maria
-  name: Maria Lopez
-  roles: [teacher, volunteer]
-- id: james
-  name: James Brown
-  roles: [usher, volunteer]
-- id: emily
-  name: Emily Davis
-  roles: [musician, youth_leader]
-```
-
-And `events.yaml`:
-
-```yaml
-events:
-- id: sunday-worship-1
-  type: Sunday Worship
-  start: '2026-04-23T09:00:00'
-  end: '2026-04-23T11:00:00'
-  required_roles:
-  - {role: musician, count: 2}
-  - {role: sound_tech, count: 1}
-  - {role: usher, count: 1}
-- id: sunday-worship-2
-  type: Sunday Worship
-  start: '2026-04-30T09:00:00'
-  end: '2026-04-30T11:00:00'
-  required_roles:
-  - {role: musician, count: 2}
-  - {role: sound_tech, count: 1}
-  - {role: usher, count: 1}
-```
-
-### 2. Run the solver
+Run either maintained six-week YAML workspace without a database or API server:
 
 ```bash
-$ poetry run python -m api.cli.main solve my-church
-
-Workspace: my-church
-People:    5
-Events:    2
-Range:     2026-04-23 → 2026-04-30
-Mode:      relaxed
-
-Solved in 0ms
-Health score: 100.0/100
-Assignments:  2
-Violations:   0 hard, 0 soft
-Fairness:     stdev=0.43
-
-  sunday-worship-1: Sarah Chen, David Kim, James Brown
-  sunday-worship-2: Emily Davis, Sarah Chen, David Kim, James Brown
-
-Solution saved to my-church/output/solution.json
+poetry run signupflow solve examples/church
+poetry run signupflow solve examples/basketball
 ```
 
-### 3. Get JSON output (for scripting)
+Create a new sample or use the equivalent module command:
 
 ```bash
-$ poetry run python -m api.cli.main solve my-church --json-output
+poetry run signupflow init /tmp/my-church
+poetry run signupflow solve /tmp/my-church --json-output
+poetry run python -m api.cli.main solve examples/church --json-output
 ```
 
-```json
-{
-  "solve_ms": 0.12,
-  "health_score": 100.0,
-  "hard_violations": 0,
-  "assignment_count": 2,
-  "fairness_stdev": 0.43,
-  "assignments": [
-    {"event_id": "sunday-worship-1", "assignees": ["sarah", "david", "james"]},
-    {"event_id": "sunday-worship-2", "assignees": ["emily", "sarah", "david", "james"]}
-  ],
-  "violations": []
-}
-```
+The examples are deliberately compact. The complete role-by-role business workflow
+is the API/browser playbook described below and in [examples](examples/README.md).
 
-### CLI Reference
+## Local API Example
+
+Start an owned local server and run the executable Basketball workflow. It creates
+an organization and admin atomically, accepts seven member invitations, creates one
+fully staffed event, solves it, and publishes it through canonical `/api/v1` routes.
 
 ```bash
-poetry run python -m api.cli.main init <workspace>           # Create sample workspace
-poetry run python -m api.cli.main solve <workspace>           # Solve and print results
-poetry run python -m api.cli.main solve <workspace> --json-output     # JSON to stdout
-poetry run python -m api.cli.main solve <workspace> -o results/       # Custom output dir
-poetry run python -m api.cli.main solve <workspace> --from-date 2026-05-01 --to-date 2026-05-31
-poetry run python -m api.cli.main solve <workspace> --mode strict
+EMAIL_ENABLED=false SMS_ENABLED=false BILLING_ENABLED=false make run
+curl http://127.0.0.1:8000/health
+poetry run python examples/api_client_example.py
 ```
 
----
-
-## API Example: Full Volunteer Onboarding Workflow
-
-Start the server: `make run` (runs on http://localhost:8000)
-
-### 1. Create an organization and its first admin atomically
-
-```bash
-$ curl -X POST http://localhost:8000/api/v1/auth/signup \
-  -H "Content-Type: application/json" \
-  -d '{
-    "org_id": "grace-church",
-    "org_name": "Grace Community Church",
-    "region": "US",
-    "name": "Pastor Mike",
-    "email": "mike@grace.org",
-    "password": "Pass123!"
-  }'
-```
-
-```json
-{
-  "person_id": "person_mike_d2d61d7f",
-  "org_id": "grace-church",
-  "name": "Pastor Mike",
-  "roles": ["admin"],
-  "token": "eyJhbGciOiJIUzI1NiIs..."
-}
-```
-
-Existing organizations reject public signup. Add every later member through an
-administrator-created invitation.
-
-### 2. Create an event with role requirements
-
-```bash
-$ curl -X POST http://localhost:8000/api/v1/events/ \
-  -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIs..." \
-  -H "Content-Type: application/json" \
-  -d '{
-    "id": "sunday-worship",
-    "org_id": "grace-church",
-    "type": "Sunday Worship",
-    "start_time": "2026-04-30T09:00:00",
-    "end_time": "2026-04-30T11:00:00",
-    "extra_data": {
-      "role_counts": {"musician": 2, "sound_tech": 1, "usher": 1}
-    }
-  }'
-```
-
-```json
-{
-  "id": "sunday-worship",
-  "org_id": "grace-church",
-  "type": "Sunday Worship",
-  "start_time": "2026-04-30T09:00:00",
-  "end_time": "2026-04-30T11:00:00",
-  "extra_data": {"role_counts": {"musician": 2, "sound_tech": 1, "usher": 1}}
-}
-```
-
-### 3. Invite a volunteer
-
-```bash
-$ curl -X POST "http://localhost:8000/api/v1/invitations?org_id=grace-church" \
-  -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIs..." \
-  -H "Content-Type: application/json" \
-  -d '{
-    "email": "sarah@grace.org",
-    "name": "Sarah Chen",
-    "roles": ["volunteer", "musician", "teacher"]
-  }'
-```
-
-```json
-{
-  "id": "inv_1776368711_0a9cc225",
-  "email": "sarah@grace.org",
-  "status": "pending",
-  "token": "vvNr67Ft_yVLJTGLxAVb..."
-}
-```
-
-### 4. Volunteer accepts invitation
-
-```bash
-$ curl -X POST http://localhost:8000/api/v1/invitations/{token}/accept \
-  -H "Content-Type: application/json" \
-  -d '{"password": "Sarah123!", "timezone": "US/Eastern"}'
-```
-
-```json
-{
-  "person_id": "person_sarah_540dc7d0",
-  "name": "Sarah Chen",
-  "roles": ["volunteer", "musician", "teacher"],
-  "org_id": "grace-church"
-}
-```
-
-### 5. Run the solver
-
-```bash
-$ curl -X POST http://localhost:8000/api/v1/solver/solve \
-  -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIs..." \
-  -H "Content-Type: application/json" \
-  -d '{
-    "org_id": "grace-church",
-    "from_date": "2026-04-25",
-    "to_date": "2026-05-10",
-    "mode": "relaxed",
-    "change_min": false
-  }'
-```
-
-```json
-{
-  "solution_id": 1,
-  "assignment_count": 1,
-  "metrics": {
-    "health_score": 100.0,
-    "hard_violations": 0,
-    "solve_ms": 0.1,
-    "fairness": {"stdev": 0.0, "per_person_counts": {"person_sarah_540dc7d0": 1}}
-  },
-  "violations": []
-}
-```
-
-Interactive API docs: http://localhost:8000/docs
+Existing organizations reject public signup. Every later member joins through an
+administrator-created invitation. The script accepts loopback endpoints only, uses
+synthetic `.example` identities, and contains no real token or provider credential.
+Interactive API docs are at http://127.0.0.1:8000/docs.
 
 ---
 
@@ -297,6 +98,15 @@ not mockups. The complete 44-image phone/desktop set and provenance are in the
 The Church administrator onboards qualified members, reviews a complete six-week
 service/rehearsal roster, follows up on unanswered work, exposes a real qualified-cover
 gap, publishes a holiday service with minimized changes, and rolls the horizon forward.
+The executable scenario catalog covers
+[CH-01](docs/playbooks/church.md#six-week-exercise),
+[CH-02](docs/playbooks/church.md#six-week-exercise),
+[CH-03](docs/playbooks/church.md#six-week-exercise),
+[CH-04](docs/playbooks/church.md#six-week-exercise),
+[CH-05](docs/playbooks/church.md#six-week-exercise),
+[CH-06](docs/playbooks/church.md#six-week-exercise),
+[CH-07](docs/playbooks/church.md#six-week-exercise), and
+[CH-08](docs/playbooks/church.md#six-week-exercise).
 
 | Administrator operations | Member and reserve operations |
 | --- | --- |
@@ -312,6 +122,15 @@ gap, publishes a holiday service with minimized changes, and rolls the horizon f
 The Basketball manager runs the same operating cycle for games and practices, while
 players and staff retain role-specific responses and cover. A postponed game resets the
 affected response, preserves staffing, and moves the same logical calendar entry.
+The executable scenario catalog covers
+[BB-01](docs/playbooks/basketball.md#six-week-exercise),
+[BB-02](docs/playbooks/basketball.md#six-week-exercise),
+[BB-03](docs/playbooks/basketball.md#six-week-exercise),
+[BB-04](docs/playbooks/basketball.md#six-week-exercise),
+[BB-05](docs/playbooks/basketball.md#six-week-exercise),
+[BB-06](docs/playbooks/basketball.md#six-week-exercise),
+[BB-07](docs/playbooks/basketball.md#six-week-exercise), and
+[BB-08](docs/playbooks/basketball.md#six-week-exercise).
 
 | Manager operations | Player, staff, and reserve operations |
 | --- | --- |
@@ -332,7 +151,7 @@ a fixed January 9, 2030 clock, Chromium, an owned temporary database, and no pro
 
 ```
 signupflow init / solve        →  api/cli/main.py      (YAML workspace)
-POST /api/solver/solve         →  api/routers/solver.py (HTTP + DB)
+POST /api/v1/solver/solve      →  api/routers/solver.py (HTTP + DB)
                                       │
                                       ▼
                                api/core/solver/heuristics.py
@@ -365,6 +184,13 @@ POST /api/solver/solve         →  api/routers/solver.py (HTTP + DB)
 /api/v1/calendar       — ICS export
 /api/v1/analytics      — volunteer + event stats
 /api/v1/password-reset — request/confirm password reset
+/api/v1/assignments    — member responses, open-shift claims, swaps
+/api/v1/audit-logs     — tenant-scoped administrative audit history
+/api/v1/recurring-series — recurring-event series and occurrence operations
+/api/v1/resources      — venues and capacity records
+/api/v1/holidays       — organization holiday records
+/api/v1/notifications  — in-app notification inbox and reconciliation
+/api/v1/billing        — disabled by default; deferred commercial surface
 ```
 
 ### Provider-backed Features
@@ -372,7 +198,9 @@ POST /api/solver/solve         →  api/routers/solver.py (HTTP + DB)
 Notification routes are registered under `/api/v1`. Billing routes remain in the
 codebase under `/api/v1`, and SMS routes under `/api/sms`, but both return 404 by
 default behind `BILLING_ENABLED=false` and `SMS_ENABLED=false`. Paid billing and
-SMS are deferred; the complete scheduling workflow does not require them.
+SMS are deferred; the complete scheduling workflow does not require them. Stripe
+and SendGrid webhook handlers exist in `api/routers/webhooks.py` but are intentionally
+not mounted. The SMS webhook paths share the disabled `/api/sms` router.
 
 ---
 
@@ -558,8 +386,8 @@ Run the provider-free local delivery workflow directly with
 
 Single test: `poetry run pytest tests/unit/test_events.py::test_create_event -v`
 
-Tests run locally, not in GitHub Actions. `poetry install` installs the locked
-Playwright Python dependency; before the first browser run, install Chromium with
+Tests run locally. GitHub Actions is not test or code-review evidence.
+`poetry install` installs the locked Playwright Python dependency; before the first browser run, install Chromium with
 `poetry run playwright install chromium` (Linux may also require browser system
 dependencies). `make test-all` runs each tier in a separate process, including
 both church and basketball playbooks.

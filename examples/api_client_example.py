@@ -1,217 +1,157 @@
 #!/usr/bin/env python3
-"""
-Complete API Client Example
+"""Run a provider-free Basketball workflow against a local SignUpFlow API."""
 
-This demonstrates the full workflow of using the Roster API:
-1. Create an organization
-2. Add people, teams, events
-3. Add constraints
-4. Solve the schedule
-5. Retrieve and export the solution
-"""
+from __future__ import annotations
+
+import argparse
+import os
+import uuid
+from datetime import UTC, datetime, timedelta
+from typing import Any, cast
+from urllib.parse import urlparse
 
 import httpx
-from datetime import datetime, date, timedelta
-import json
 
-# API Base URL
-API_URL = "http://localhost:8000"
+ROLES = (
+    "point_guard",
+    "shooting_guard",
+    "small_forward",
+    "power_forward",
+    "center",
+    "coach",
+    "scorekeeper",
+)
 
 
-def main():
-    """Run complete API workflow."""
-    print("\n" + "=" * 70)
-    print("ROSTER API CLIENT EXAMPLE")
-    print("=" * 70)
+def _expect(response: Any, status_code: int) -> dict[str, Any]:
+    if response.status_code != status_code:
+        raise RuntimeError(
+            f"{response.request.method} {response.request.url.path} returned "
+            f"{response.status_code}: {response.text}"
+        )
+    return cast(dict[str, Any], response.json())
 
-    with httpx.Client(base_url=API_URL, timeout=30.0) as client:
-        # 1. Health check
-        print("\n[1/8] Checking API health...")
-        response = client.get("/health")
-        print(f"✓ API Status: {response.json()['status']}")
 
-        # 2. Create organization
-        print("\n[2/8] Creating organization...")
-        org_data = {
-            "id": "demo_cricket_league",
-            "name": "Demo Cricket League",
-            "region": "AU-NSW",
-            "config": {
-                "change_min_weight": 100,
-                "fairness_weight": 50,
-                "cooldown_days": 7,
+def run_workflow(client: Any, *, suffix: str | None = None) -> dict[str, Any]:
+    """Create and publish one complete Basketball event through canonical routes."""
+    suffix = suffix or uuid.uuid4().hex[:8]
+    org_id = f"riverside-basketball-{suffix}"
+    password = "LocalExample123!"
+
+    health = _expect(client.get("/health"), 200)
+    if health.get("status") != "healthy":
+        raise RuntimeError(f"API health is not healthy: {health}")
+
+    owner = _expect(
+        client.post(
+            "/api/v1/auth/signup",
+            json={
+                "org_id": org_id,
+                "org_name": "Riverside Basketball local example",
+                "region": "CA-ON",
+                "name": "Local team manager",
+                "email": f"manager-{suffix}@basketball.example",
+                "password": password,
+                "timezone": "America/Toronto",
             },
-        }
-        response = client.post("/organizations/", json=org_data)
-        if response.status_code == 201:
-            print(f"✓ Created organization: {org_data['name']}")
-        elif response.status_code == 409:
-            print(f"ℹ Organization already exists")
-        else:
-            print(f"✗ Error: {response.text}")
-            return
+        ),
+        201,
+    )
+    headers = {"Authorization": f"Bearer {owner['token']}"}
 
-        # 3. Add people
-        print("\n[3/8] Adding people...")
-        people = [
-            {"id": "player_01", "org_id": org_data["id"], "name": "Alice Smith", "roles": ["batsman", "captain"]},
-            {"id": "player_02", "org_id": org_data["id"], "name": "Bob Johnson", "roles": ["bowler"]},
-            {"id": "player_03", "org_id": org_data["id"], "name": "Charlie Brown", "roles": ["wicketkeeper"]},
-            {"id": "player_04", "org_id": org_data["id"], "name": "Diana Prince", "roles": ["all-rounder"]},
-            {"id": "player_05", "org_id": org_data["id"], "name": "Eve Adams", "roles": ["batsman"]},
-            {"id": "player_06", "org_id": org_data["id"], "name": "Frank Miller", "roles": ["bowler"]},
-        ]
+    for index, role in enumerate(ROLES, start=1):
+        invitation = _expect(
+            client.post(
+                f"/api/v1/invitations?org_id={org_id}",
+                headers=headers,
+                json={
+                    "name": role.replace("_", " ").title(),
+                    "email": f"member-{index}-{suffix}@basketball.example",
+                    "roles": ["volunteer", role],
+                },
+            ),
+            201,
+        )
+        _expect(
+            client.post(
+                f"/api/v1/invitations/{invitation['token']}/accept",
+                json={"password": password, "timezone": "America/Toronto"},
+            ),
+            201,
+        )
 
-        for person in people:
-            response = client.post("/people/", json=person)
-            if response.status_code in [201, 409]:
-                print(f"  ✓ {person['name']}")
-
-        # 4. Create teams
-        print("\n[4/8] Creating teams...")
-        teams = [
-            {
-                "id": "team_lions",
-                "org_id": org_data["id"],
-                "name": "Lions",
-                "description": "Team Lions",
-                "member_ids": ["player_01", "player_02", "player_03"],
+    start = datetime.now(UTC).replace(microsecond=0) + timedelta(days=14)
+    _expect(
+        client.post(
+            "/api/v1/events/",
+            headers=headers,
+            json={
+                "id": f"basketball-game-{suffix}",
+                "org_id": org_id,
+                "type": "Basketball game",
+                "start_time": start.isoformat(),
+                "end_time": (start + timedelta(hours=2)).isoformat(),
+                "extra_data": {"role_counts": {role: 1 for role in ROLES}},
             },
-            {
-                "id": "team_tigers",
-                "org_id": org_data["id"],
-                "name": "Tigers",
-                "description": "Team Tigers",
-                "member_ids": ["player_04", "player_05", "player_06"],
+        ),
+        201,
+    )
+
+    solution = _expect(
+        client.post(
+            "/api/v1/solver/solve",
+            headers=headers,
+            json={
+                "org_id": org_id,
+                "from_date": start.date().isoformat(),
+                "to_date": start.date().isoformat(),
+                "mode": "strict",
+                "change_min": False,
             },
-        ]
+        ),
+        200,
+    )
+    published = _expect(
+        client.post(f"/api/v1/solutions/{solution['solution_id']}/publish", headers=headers),
+        200,
+    )
 
-        for team in teams:
-            response = client.post("/teams/", json=team)
-            if response.status_code in [201, 409]:
-                print(f"  ✓ {team['name']} ({len(team['member_ids'])} members)")
+    return {
+        "org_id": org_id,
+        "solution_id": solution["solution_id"],
+        "assignment_count": solution["assignment_count"],
+        "published": published["is_published"],
+    }
 
-        # 5. Create events
-        print("\n[5/8] Creating events...")
-        base_date = datetime.now() + timedelta(days=7)
-        events = []
 
-        for i in range(4):  # Create 4 matches over 2 weeks
-            event_date = base_date + timedelta(days=i * 3)
-            event = {
-                "id": f"match_{i+1:02d}",
-                "org_id": org_data["id"],
-                "type": "cricket_match",
-                "start_time": event_date.isoformat(),
-                "end_time": (event_date + timedelta(hours=4)).isoformat(),
-                "team_ids": ["team_lions", "team_tigers"] if i % 2 == 0 else ["team_tigers", "team_lions"],
-            }
-            events.append(event)
-            response = client.post("/events/", json=event)
-            if response.status_code in [201, 409]:
-                print(f"  ✓ Match {i+1}: {event_date.strftime('%Y-%m-%d')}")
+def _local_url(value: str) -> str:
+    parsed = urlparse(value)
+    if parsed.scheme not in {"http", "https"} or parsed.hostname not in {
+        "localhost",
+        "127.0.0.1",
+        "::1",
+    }:
+        raise argparse.ArgumentTypeError("Use an owned loopback SignUpFlow server only")
+    return value.rstrip("/")
 
-        # 6. Add constraints
-        print("\n[6/8] Adding constraints...")
-        constraints = [
-            {
-                "org_id": org_data["id"],
-                "key": "min_rest_hours",
-                "type": "hard",
-                "predicate": "enforce_min_gap_hours",
-                "params": {"hours": 24},
-            },
-            {
-                "org_id": org_data["id"],
-                "key": "fairness",
-                "type": "soft",
-                "weight": 50,
-                "predicate": "balance_assignments",
-                "params": {},
-            },
-        ]
 
-        for constraint in constraints:
-            response = client.post("/constraints/", json=constraint)
-            if response.status_code in [201, 409]:
-                print(f"  ✓ {constraint['key']} ({constraint['type']})")
+def main() -> None:
+    """Run the example against an explicitly local API endpoint."""
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument(
+        "--base-url",
+        type=_local_url,
+        default=_local_url(os.getenv("SIGNUPFLOW_API_URL", "http://127.0.0.1:8000")),
+    )
+    args = parser.parse_args()
 
-        # 7. Solve the schedule
-        print("\n[7/8] Solving schedule...")
-        solve_request = {
-            "org_id": org_data["id"],
-            "from_date": base_date.date().isoformat(),
-            "to_date": (base_date + timedelta(days=14)).date().isoformat(),
-            "mode": "strict",
-            "change_min": False,
-        }
+    with httpx.Client(base_url=args.base_url, timeout=30.0) as client:
+        result = run_workflow(client)
 
-        response = client.post("/solver/solve", json=solve_request)
-        if response.status_code == 200:
-            solution = response.json()
-            print(f"\n  ✓ Solution generated!")
-            print(f"    Solution ID: {solution['solution_id']}")
-            print(f"    Assignments: {solution['assignment_count']}")
-            print(f"    Hard violations: {solution['metrics']['hard_violations']}")
-            print(f"    Health score: {solution['metrics']['health_score']:.1f}/100")
-            print(f"    Solve time: {solution['metrics']['solve_ms']:.0f}ms")
-
-            solution_id = solution["solution_id"]
-        else:
-            print(f"  ✗ Error solving: {response.text}")
-            return
-
-        # 8. Get solution details
-        print(f"\n[8/8] Retrieving solution details...")
-
-        # Get assignments
-        response = client.get(f"/solutions/{solution_id}/assignments")
-        if response.status_code == 200:
-            data = response.json()
-            print(f"\n  ✓ Retrieved {data['total']} assignments:")
-            for assignment in data["assignments"][:5]:
-                print(f"    • {assignment['person_name']} → {assignment['event_id']} ({assignment['event_start']})")
-            if data['total'] > 5:
-                print(f"    ... and {data['total'] - 5} more")
-
-        # Export as CSV
-        print(f"\n  Exporting solution...")
-        export_request = {"format": "csv", "scope": "org"}
-        response = client.post(f"/solutions/{solution_id}/export", json=export_request)
-        if response.status_code == 200:
-            csv_content = response.text
-            print(f"  ✓ CSV export ({len(csv_content)} bytes)")
-            # Show first few lines
-            lines = csv_content.split('\n')[:4]
-            for line in lines:
-                print(f"    {line}")
-
-        # Export as JSON
-        export_request = {"format": "json", "scope": "org"}
-        response = client.post(f"/solutions/{solution_id}/export", json=export_request)
-        if response.status_code == 200:
-            json_content = response.json() if response.headers.get('content-type') == 'application/json' else response.text
-            print(f"  ✓ JSON export ready")
-
-        # List all solutions
-        print(f"\n  Solutions for organization:")
-        response = client.get(f"/solutions/?org_id={org_data['id']}")
-        if response.status_code == 200:
-            data = response.json()
-            for sol in data["solutions"]:
-                print(f"    • Solution {sol['id']}: {sol['assignment_count']} assignments, health={sol['health_score']:.0f}")
-
-    print("\n" + "=" * 70)
-    print("COMPLETE! 🎉")
-    print("=" * 70)
-    print(f"\nAPI Documentation: {API_URL}/docs")
-    print(f"Alternative Docs: {API_URL}/redoc")
-    print("\nYou can now:")
-    print(f"  • View all organizations: GET {API_URL}/organizations/")
-    print(f"  • View all people: GET {API_URL}/people/?org_id={org_data['id']}")
-    print(f"  • View all events: GET {API_URL}/events/?org_id={org_data['id']}")
-    print(f"  • View solutions: GET {API_URL}/solutions/?org_id={org_data['id']}")
-    print()
+    print("Published local Basketball example")
+    print(f"Organization: {result['org_id']}")
+    print(f"Solution: {result['solution_id']}")
+    print(f"Event assignments: {result['assignment_count']}")
 
 
 if __name__ == "__main__":
