@@ -50,6 +50,7 @@ make run            # uvicorn --reload on :8000
 make test-unit      # Fast unit tests
 make test-unit-fast # Skip bcrypt slow tests
 make test-all       # All Python tiers, including web + contract + Playwright
+make test-postgres  # Owned PostgreSQL migration/business/race acceptance
 make test-mobile    # Flutter tests (requires Flutter SDK)
 make migrate        # Alembic upgrade head
 ```

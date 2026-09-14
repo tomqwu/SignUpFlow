@@ -54,8 +54,10 @@ evidence with a local mock. Do not deploy or enable providers from a roadmap alo
   that an accepted commitment becomes unanswered after its event time changes.
 - #255: atomic organization/first-admin bootstrap, invitation-only later
   membership, shared role normalization, request-override rejection, and
-  concurrent acceptance protection are implemented with local API/integration
-  evidence. PostgreSQL migration/concurrency acceptance remains under #253/#260.
+  concurrent acceptance protection are implemented. An owned PostgreSQL 16 run
+  proves one bootstrap owner, one invitation winner, and inactive API/browser
+  session rejection. Cancellation preserves an authenticated administrator restore
+  path while hiding the organization from normal listings.
 - #253: organization authorization and audit fixes merged in PR #272; retain
   remaining PostgreSQL cascade/release evidence, not the old unmerged-PR blocker.
 - #254: the scheduling API now has an executable route policy, real-JWT
@@ -111,9 +113,12 @@ evidence with a local mock. Do not deploy or enable providers from a roadmap alo
   memberships, admin-surface access, invitations, publication, foreign-person reads, and
   peer availability writes fail locally. Deployment and infrastructure isolation remain
   separate release evidence.
-- #260: per-run SQLite database isolation exists. PostgreSQL business/concurrency
-  parity is now proven for allocation claims only. Full migration and broader
-  business parity remain unverified release work; run that validation locally.
+- #260: `make test-postgres` owns a loopback-only, tmpfs PostgreSQL 16 container per
+  invocation and refuses unverified cleanup. Alembic alone creates fresh and historical
+  schemas; startup rejects a stale non-SQLite migration head. Local acceptance covers
+  bootstrap, invitation, inactive/cancelled membership, claim, and publication races,
+  and records server version, source SHA, and JUnit counts. Managed infrastructure,
+  backup/restore, and complete release migration/cascade parity remain under #253/#268.
 - #259: repurpose the obsolete AI/CI gate ticket as local validation and evidence
   hygiene. No workflow, secret, provider or required status is needed for review.
 - #191: the Dart client is regenerated from the current OpenAPI snapshot and

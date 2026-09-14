@@ -77,6 +77,7 @@ Before declaring a change done:
 - [ ] Type-check passes for touched modules: `poetry run mypy api`.
 - [ ] Unit tests pass: `make test-unit` (or `make test-unit-fast` during iteration).
 - [ ] Full suite passes when shipping: `make test-all`.
+- [ ] PostgreSQL acceptance passes for database/migration changes: `make test-postgres`.
 - [ ] No secrets in the diff: `git diff --cached | grep -iE 'api[_-]?key|secret|token|password|sk_'` returns nothing meaningful.
 - [ ] If a route was added or moved, the router is registered in `api/main.py` and the path is documented in `CLAUDE.md`.
 - [ ] If a model field was added or changed, an Alembic migration exists in `alembic/versions/`.
@@ -109,6 +110,7 @@ make run              # Dev server on :8000 (uvicorn --reload)
 make migrate          # Run Alembic migrations
 make test             # Comprehensive backend tests
 make test-all         # All Python tiers, including web + contract + Playwright
+make test-postgres    # Owned PostgreSQL migration/business/race acceptance
 make test-mobile      # Flutter tests (requires Flutter SDK)
 make test-unit        # Python unit tests only
 make test-unit-fast   # Unit tests excluding slow bcrypt tests (~7s)

@@ -43,12 +43,12 @@ poetry run pytest tests/web/test_open_shifts.py tests/web/test_swap_marketplace.
 poetry run pytest tests/e2e/test_open_shifts.py tests/e2e/test_swap_marketplace.py -q
 ```
 
-For PostgreSQL, point the concurrency test only at a disposable, owned local
-database. The fixture drops and recreates its schema.
+Run PostgreSQL migration, claim, and publication concurrency acceptance through the
+owned runner. It creates a unique loopback-only container and migration-built databases,
+then verifies ownership before removing that container. Do not pass a shared database URL.
 
 ```bash
-SIGNUPFLOW_CONCURRENCY_DATABASE_URL=postgresql://USER:PASSWORD@127.0.0.1:PORT/OWNED_TEST_DB \
-  poetry run pytest tests/integration/test_assignment_claim_concurrency.py -q
+make test-postgres
 ```
 
 Run `make test-all` before merge. Record the exact tested commit, database

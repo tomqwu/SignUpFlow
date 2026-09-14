@@ -49,6 +49,12 @@ eligibility, live-capacity, idempotency, rollback, and disposable PostgreSQL tes
 boundaries for open shifts, swap coverage/denial, and coordinator roster edits.
 This package changes behavior and conflict copy without changing page layout, so
 the README walkthrough screenshots remain applicable.
+The maintained testing guide, README, contributor/agent commands, roadmap, and tool
+ledger now expose one `make test-postgres` contract. Its owned ephemeral PostgreSQL 16
+runner covers fresh and historical Alembic upgrades, active/cancelled membership,
+bootstrap/invitation races, last-slot claims, and concurrent publication. This backend
+and test-infrastructure package does not change rendered pages; the captured Church and
+Basketball screenshot set remains current.
 The maintained [schedule publication contract](SCHEDULE_PUBLICATION.md) now records
 the strict full-horizon/no-override policy, immutable solve scope, legacy
 regeneration, response carry-forward, transaction rollback, explicit cancellation,

@@ -23,6 +23,7 @@ make test-unit-fast     # Iteration only; excludes slow-marked tests
 make test-unit          # Complete Python unit tier
 make test               # Alias for the complete seven-tier local suite
 make test-all           # All seven Python tiers below, in separate processes
+make test-postgres      # Opt-in PostgreSQL migration/business/race acceptance
 make test-performance   # Opt-in, owned loopback target only
 make test-mobile        # Flutter unit/widget tests; requires Flutter SDK
 ```
@@ -70,6 +71,16 @@ removed comprehensive suite and included assertions that could not fail. The mai
 test server before running `make test-performance`. Missing, malformed, or non-loopback
 targets fail before the first HTTP request. PostgreSQL remains a separate isolated target.
 
+`make test-postgres` creates one uniquely named PostgreSQL 16 Docker container with
+loopback-only networking, an ownership label, ephemeral tmpfs storage, and no host
+mounts or Docker volumes. It builds both databases through Alembic, runs migration,
+upgrade-from-existing-data, authentication, membership, claim, and publication races,
+then removes only the verified owned container. Two invocations can run concurrently.
+Missing Docker or any ownership/cleanup mismatch fails explicitly. Each invocation
+writes JUnit XML and a SHA-bound report with PostgreSQL version and counts under
+`test-artifacts/postgres-validation/`. It never reads provider credentials or targets a
+caller-supplied database.
+
 The [playbook guide](playbooks/README.md) describes automatic discovery, selectors,
 and external definitions. Church and basketball run in API and browser tiers;
 browser cases use phone and desktop widths. Owned local delivery runs in both domains;
@@ -77,8 +88,8 @@ their calendar cases also refresh one stable assignment across publish, move, an
 in `America/Toronto`, with a unit-level DST boundary. The same local-mail journey exercises
 administrator and volunteer password change/recovery, logout/login, stale-session
 revocation, old credentials, replay, and captured recovery screenshots. Manual drills,
-external delivery, and production database/concurrency acceptance are not implied by a
-green local run.
+external delivery, and production infrastructure acceptance are not implied by a green
+local run. Run the separate PostgreSQL target for database-specific acceptance.
 
 BO-12 keeps both bundled organizations alive in one disposable browser server. Each
 administrator sees only its own directory, and every declared Church and Basketball
@@ -119,12 +130,12 @@ virtualenv, when diagnosing type-check discrepancies. Record legacy full-API
 typing failures separately; do not suppress errors to claim success. Require
 changed modules to pass their applicable checks.
 
-For migration/release work, set DATABASE_URL to a disposable local PostgreSQL
-database, then run `poetry run alembic upgrade head` and
-`poetry run alembic check`. Never target customer data. PostgreSQL business,
-concurrency and upgrade-from-existing-data coverage remains tracked in
-[#260](https://github.com/tomqwu/SignUpFlow/issues/260); migration success alone
-does not establish it. Run Flutter analysis and tests locally for mobile work.
+For database or migration work, run `make test-postgres`; do not supply a database URL
+or reuse a developer database. The owned runner proves a fresh migration, upgrade from
+representative existing data, Alembic drift check, business requests, and synchronized
+write races. This is local application acceptance, not deployment, backup/restore,
+managed-service, or production-data evidence. Run Flutter analysis and tests locally
+for mobile work.
 
 Follow [local code review](ai-pr-review.md) and [the roadmap](ROADMAP.md).
 Local results are procedural evidence, not independently attested by GitHub.
@@ -132,7 +143,8 @@ No hosted check, including a static check, is a merge prerequisite.
 
 ## Before Merge
 
-1. Run `make test-all` on the final source; run `make test-mobile` for mobile changes.
+1. Run `make test-all` on the final source; run `make test-postgres` for database or
+   migration changes and `make test-mobile` for mobile changes.
 2. Record the report path, commands, pass/skip/failure counts, date, and pushed head SHA in the PR.
    If tests ran immediately before committing, confirm the committed tree is identical.
 3. Record initial failures and reruns. Do not hide flakes or treat skipped tests as passed.

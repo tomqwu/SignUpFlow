@@ -30,6 +30,7 @@ process. Do not bypass a refusal by copying the old command from historical docs
 | `scripts/restore_database.sh` | Retired | Recovery remains in #268; unowned database replacement is unsupported. | Data platform |
 | `scripts/retired_tool.py` | Internal support | Emits deterministic refusal messages for retired entry points. | Developer tooling |
 | `scripts/run_local_validation.py` | Supported | Run through `make test-all`; owns unique logs/JUnit/report artifacts. | Testing |
+| `scripts/run_postgres_validation.py` | Supported | Run through `make test-postgres`; owns one loopback-only, tmpfs PostgreSQL container and unique report directory. | Testing |
 | `scripts/seed_sms_templates.py` | Retired | Paid SMS remains disabled and tracked in #257. | Messaging |
 | `scripts/test_docker_setup.sh` | Retired | Use documented Docker targets individually against an owned Compose project. | Developer tooling |
 | `scripts/validate_email_system.sh` | Retired | Use local capture tests; live provider acceptance requires explicit authorization. | Messaging |

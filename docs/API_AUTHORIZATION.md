@@ -32,6 +32,12 @@ invalidates the credential. Refresh tokens already carry the same tenant and may
 only an active matching membership. Password changes and resets continue to revoke
 older credentials through `pwd_iat` and refresh-token versioning.
 
+An inactive person cannot log in, refresh, use an API token, or retain a browser
+session. Organization cancellation is a reversible lifecycle state, not automatic
+member deactivation: authenticated administrators retain the restore path during the
+retention period, while cancelled organizations are omitted from normal listings.
+Deletion and any later retention purge are separate operations.
+
 Church and Basketball BO-12 browser acceptance runs both tenants in one application
 process. It checks each administrator's isolated directory and signs in one member for
 every declared scheduling qualification at 360px and 1440px. Those members cannot open
