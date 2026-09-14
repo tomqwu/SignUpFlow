@@ -63,6 +63,15 @@ def signup_admin(
     return email
 
 
+def qualify_only_member(page, base_url, qualification):
+    """Give the sole member a scheduling qualification through the admin UI."""
+    page.goto(f"{base_url}/a/people")
+    form = page.locator("form.qualification-form").first
+    form.locator('input[name="qualifications"]').fill(qualification)
+    form.locator("button:has-text('Save')").click()
+    page.wait_for_selector("#people-list:has-text('Qualifications saved for Admin Dana')")
+
+
 def invite_token(db_path, email):
     """Read the invitation token straight from the DB (email delivery is
     disabled in the sandbox)."""

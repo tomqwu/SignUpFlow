@@ -14,6 +14,7 @@ from tests.e2e._helpers import (
     invite_token,
     next_sunday_iso,
     no_js_errors,
+    qualify_only_member,
     rid,
     signup_admin,
     solver_window_around,
@@ -84,11 +85,13 @@ def test_inbox_mark_all_read_and_save_prefs(live_server, new_context, page, db_p
 def test_manual_assign_and_remove(live_server, page):
     base = live_server
     signup_admin(page, base)  # admin is a person → assignable candidate
-    _new_event(page, base, etype="Midweek Prayer")
+    qualify_only_member(page, base, "greeter")
+    _new_event(page, base, etype="Midweek Prayer", role="greeter")
 
     page.click("a:has-text('Manage')")
     page.wait_for_selector("#event-assignments")
     page.select_option("#ea_person", label="Admin Dana")
+    page.fill("#ea_role", "greeter")
     page.click("button:has-text('Add to event')")
     page.wait_for_selector("#event-assignments:has-text('Admin Dana')")
 

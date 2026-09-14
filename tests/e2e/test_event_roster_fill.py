@@ -27,6 +27,7 @@ def test_admin_fills_roster_gap(live_server, new_context, page, db_path):
     page.fill("#inv_name", "Pat Vol")
     page.fill("#inv_email", vol_email)
     page.select_option("#inv_role", "volunteer")
+    page.fill("#inv_qualifications", "usher")
     page.click("button:has-text('Send invite')")
     page.wait_for_selector("#invite-result:has-text('Invitation sent')")
     vol_page = accept_invitation(new_context(), base, invite_token(db_path, vol_email))
