@@ -13,10 +13,10 @@ part 'resource_create.g.dart';
 /// ResourceCreate
 ///
 /// Properties:
-/// * [capacity] 
-/// * [extraData] 
+/// * [capacity]
+/// * [extraData]
 /// * [id] - Caller-supplied unique id
-/// * [location] 
+/// * [location]
 /// * [orgId] - Owning organization
 /// * [type] - e.g. 'room', 'venue', 'equipment'
 @BuiltValue()

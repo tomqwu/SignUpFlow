@@ -12,6 +12,7 @@ from typing import Any
 
 from pydantic import ValidationError
 
+from api.roles import normalize_roles
 from api.schemas.person import PersonCreate
 
 #: Maximum number of items accepted in a single bulk import request.
@@ -83,6 +84,12 @@ def parse_bulk_people(
             result.errors.append(
                 BulkImportError(index=index, id=raw_id, reason=_summarize_validation(exc))
             )
+            continue
+
+        try:
+            person.roles = normalize_roles(person.roles or [])
+        except ValueError as exc:
+            result.errors.append(BulkImportError(index=index, id=raw_id, reason=str(exc)))
             continue
 
         if person.id in seen_ids:

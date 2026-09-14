@@ -17,14 +17,12 @@ from api.dependencies import (
 from api.models import AuditAction, Organization, Person
 from api.schemas.common import PaginationParams, get_pagination_params
 from api.schemas.organization import (
-    OrganizationCreate,
     OrganizationList,
     OrganizationResponse,
     OrganizationUpdate,
 )
 from api.timeutils import utcnow
 from api.utils.audit_logger import log_audit_event
-from api.utils.rate_limit_middleware import rate_limit
 
 router = APIRouter(prefix="/organizations", tags=["organizations"])
 
@@ -68,40 +66,6 @@ def _commit_organization_change(
     except Exception:
         db.rollback()
         raise
-
-
-@router.post(
-    "/",
-    response_model=OrganizationResponse,
-    status_code=status.HTTP_201_CREATED,
-    dependencies=[Depends(rate_limit("create_org"))],
-)
-def create_organization(org_data: OrganizationCreate, db: Session = Depends(get_db)):
-    """Public onboarding exception: create a new, empty organization.
-
-    Rate limited to 2 requests per hour per IP. Reading or changing an
-    existing organization requires authenticated membership.
-    """
-    # Check if organization already exists
-    existing = db.query(Organization).filter(Organization.id == org_data.id).first()
-    if existing:
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail=f"Organization with ID '{org_data.id}' already exists",
-        )
-
-    # Create organization
-    org = Organization(
-        id=org_data.id,
-        name=org_data.name,
-        region=org_data.region,
-        config=org_data.config or {},
-    )
-    db.add(org)
-    db.commit()
-    db.refresh(org)
-
-    return org
 
 
 @router.get("/", response_model=OrganizationList)

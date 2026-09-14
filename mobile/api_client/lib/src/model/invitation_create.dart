@@ -4,6 +4,7 @@
 
 // ignore_for_file: unused_element
 import 'package:built_collection/built_collection.dart';
+import 'package:built_value/json_object.dart';
 import 'package:built_value/built_value.dart';
 import 'package:built_value/serializer.dart';
 
@@ -14,7 +15,7 @@ part 'invitation_create.g.dart';
 /// Properties:
 /// * [email] - Email address of the invitee
 /// * [name] - Full name of the invitee
-/// * [roles] - Roles to assign (e.g., ['volunteer', 'admin'])
+/// * [roles] - One access role plus scheduling qualifications (e.g., ['volunteer', 'usher'])
 @BuiltValue()
 abstract class InvitationCreate implements Built<InvitationCreate, InvitationCreateBuilder> {
   /// Email address of the invitee
@@ -25,7 +26,7 @@ abstract class InvitationCreate implements Built<InvitationCreate, InvitationCre
   @BuiltValueField(wireName: r'name')
   String get name;
 
-  /// Roles to assign (e.g., ['volunteer', 'admin'])
+  /// One access role plus scheduling qualifications (e.g., ['volunteer', 'usher'])
   @BuiltValueField(wireName: r'roles')
   BuiltList<String> get roles;
 

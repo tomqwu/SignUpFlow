@@ -31,7 +31,7 @@ class PeopleApi {
   ///
   /// Parameters:
   /// * [orgId] - Organization to import people into
-  /// * [requestBody] 
+  /// * [requestBody]
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -41,7 +41,7 @@ class PeopleApi {
   ///
   /// Returns a [Future] containing a [Response] with a [BulkImportResponse] as data
   /// Throws [DioException] if API call or serialization fails
-  Future<Response<BulkImportResponse>> bulkImportPeople({ 
+  Future<Response<BulkImportResponse>> bulkImportPeople({
     required String orgId,
     required BuiltMap<String, JsonObject> requestBody,
     CancelToken? cancelToken,
@@ -139,7 +139,7 @@ class PeopleApi {
   /// Create a new person (admin only).
   ///
   /// Parameters:
-  /// * [personCreate] 
+  /// * [personCreate]
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -149,7 +149,7 @@ class PeopleApi {
   ///
   /// Returns a [Future] containing a [Response] with a [PersonResponse] as data
   /// Throws [DioException] if API call or serialization fails
-  Future<Response<PersonResponse>> createPerson({ 
+  Future<Response<PersonResponse>> createPerson({
     required PersonCreate personCreate,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
@@ -240,7 +240,7 @@ class PeopleApi {
   /// Delete person (admin only).
   ///
   /// Parameters:
-  /// * [personId] 
+  /// * [personId]
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -250,7 +250,7 @@ class PeopleApi {
   ///
   /// Returns a [Future]
   /// Throws [DioException] if API call or serialization fails
-  Future<Response<void>> deletePerson({ 
+  Future<Response<void>> deletePerson({
     required String personId,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
@@ -302,7 +302,7 @@ class PeopleApi {
   ///
   /// Returns a [Future] containing a [Response] with a [PersonResponse] as data
   /// Throws [DioException] if API call or serialization fails
-  Future<Response<PersonResponse>> getCurrentPerson({ 
+  Future<Response<PersonResponse>> getCurrentPerson({
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -372,7 +372,7 @@ class PeopleApi {
   /// Get person by ID. Users can only view people from their own organization.
   ///
   /// Parameters:
-  /// * [personId] 
+  /// * [personId]
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -382,7 +382,7 @@ class PeopleApi {
   ///
   /// Returns a [Future] containing a [Response] with a [PersonResponse] as data
   /// Throws [DioException] if API call or serialization fails
-  Future<Response<PersonResponse>> getPerson({ 
+  Future<Response<PersonResponse>> getPerson({
     required String personId,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
@@ -468,7 +468,7 @@ class PeopleApi {
   ///
   /// Returns a [Future] containing a [Response] with a [ListResponsePersonResponse] as data
   /// Throws [DioException] if API call or serialization fails
-  Future<Response<ListResponsePersonResponse>> listPeople({ 
+  Future<Response<ListResponsePersonResponse>> listPeople({
     String? orgId,
     String? role,
     String? q,
@@ -554,7 +554,7 @@ class PeopleApi {
   /// Update the current authenticated user&#39;s profile.
   ///
   /// Parameters:
-  /// * [personUpdate] 
+  /// * [personUpdate]
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -564,7 +564,7 @@ class PeopleApi {
   ///
   /// Returns a [Future] containing a [Response] with a [PersonResponse] as data
   /// Throws [DioException] if API call or serialization fails
-  Future<Response<PersonResponse>> updateCurrentPerson({ 
+  Future<Response<PersonResponse>> updateCurrentPerson({
     required PersonUpdate personUpdate,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
@@ -655,8 +655,8 @@ class PeopleApi {
   /// Update person. Users can edit themselves, admins can edit anyone in their org.
   ///
   /// Parameters:
-  /// * [personId] 
-  /// * [personUpdate] 
+  /// * [personId]
+  /// * [personUpdate]
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -666,7 +666,7 @@ class PeopleApi {
   ///
   /// Returns a [Future] containing a [Response] with a [PersonResponse] as data
   /// Throws [DioException] if API call or serialization fails
-  Future<Response<PersonResponse>> updatePerson({ 
+  Future<Response<PersonResponse>> updatePerson({
     required String personId,
     required PersonUpdate personUpdate,
     CancelToken? cancelToken,

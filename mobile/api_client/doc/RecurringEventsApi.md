@@ -31,7 +31,7 @@ import 'package:signupflow_api/api.dart';
 
 final api = SignupflowApi().getRecurringEventsApi();
 final String orgId = orgId_example; // String | Organization ID
-final RecurringSeriesCreate recurringSeriesCreate = ; // RecurringSeriesCreate | 
+final RecurringSeriesCreate recurringSeriesCreate = ; // RecurringSeriesCreate |
 
 try {
     final response = api.createRecurringSeries(orgId, recurringSeriesCreate);
@@ -45,8 +45,8 @@ try {
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **orgId** | **String**| Organization ID | 
- **recurringSeriesCreate** | [**RecurringSeriesCreate**](RecurringSeriesCreate.md)|  | 
+ **orgId** | **String**| Organization ID |
+ **recurringSeriesCreate** | [**RecurringSeriesCreate**](RecurringSeriesCreate.md)|  |
 
 ### Return type
 
@@ -75,7 +75,7 @@ Delete a recurring series and all its occurrences.  Requires admin access. Delet
 import 'package:signupflow_api/api.dart';
 
 final api = SignupflowApi().getRecurringEventsApi();
-final String seriesId = seriesId_example; // String | 
+final String seriesId = seriesId_example; // String |
 
 try {
     final response = api.deleteRecurringSeries(seriesId);
@@ -89,7 +89,7 @@ try {
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **seriesId** | **String**|  | 
+ **seriesId** | **String**|  |
 
 ### Return type
 
@@ -118,7 +118,7 @@ Get a specific recurring series by ID.  Returns series details with occurrence c
 import 'package:signupflow_api/api.dart';
 
 final api = SignupflowApi().getRecurringEventsApi();
-final String seriesId = seriesId_example; // String | 
+final String seriesId = seriesId_example; // String |
 
 try {
     final response = api.getRecurringSeries(seriesId);
@@ -132,7 +132,7 @@ try {
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **seriesId** | **String**|  | 
+ **seriesId** | **String**|  |
 
 ### Return type
 
@@ -161,7 +161,7 @@ Get all event occurrences for a recurring series.  Returns list of Event objects
 import 'package:signupflow_api/api.dart';
 
 final api = SignupflowApi().getRecurringEventsApi();
-final String seriesId = seriesId_example; // String | 
+final String seriesId = seriesId_example; // String |
 
 try {
     final response = api.getSeriesOccurrences(seriesId);
@@ -175,7 +175,7 @@ try {
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **seriesId** | **String**|  | 
+ **seriesId** | **String**|  |
 
 ### Return type
 
@@ -221,7 +221,7 @@ try {
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **orgId** | **String**| Organization ID | 
+ **orgId** | **String**| Organization ID |
  **activeOnly** | **bool**| Only return active series | [optional] [default to true]
  **limit** | **int**| Page size, max 200 | [optional] [default to 50]
  **offset** | **int**| Number of rows to skip | [optional] [default to 0]
@@ -254,7 +254,7 @@ import 'package:signupflow_api/api.dart';
 
 final api = SignupflowApi().getRecurringEventsApi();
 final String orgId = orgId_example; // String | Organization ID
-final PreviewRequest previewRequest = ; // PreviewRequest | 
+final PreviewRequest previewRequest = ; // PreviewRequest |
 
 try {
     final response = api.previewOccurrences(orgId, previewRequest);
@@ -268,8 +268,8 @@ try {
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **orgId** | **String**| Organization ID | 
- **previewRequest** | [**PreviewRequest**](PreviewRequest.md)|  | 
+ **orgId** | **String**| Organization ID |
+ **previewRequest** | [**PreviewRequest**](PreviewRequest.md)|  |
 
 ### Return type
 
@@ -298,10 +298,10 @@ Update the series template (affects future occurrences).  Only updates the templ
 import 'package:signupflow_api/api.dart';
 
 final api = SignupflowApi().getRecurringEventsApi();
-final String seriesId = seriesId_example; // String | 
-final String title = title_example; // String | 
-final String location = location_example; // String | 
-final BuiltMap<String, JsonObject> requestBody = Object; // BuiltMap<String, JsonObject> | 
+final String seriesId = seriesId_example; // String |
+final String title = title_example; // String |
+final String location = location_example; // String |
+final BuiltMap<String, JsonObject> requestBody = Object; // BuiltMap<String, JsonObject> |
 
 try {
     final response = api.updateSeriesTemplate(seriesId, title, location, requestBody);
@@ -315,10 +315,10 @@ try {
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **seriesId** | **String**|  | 
- **title** | **String**|  | [optional] 
- **location** | **String**|  | [optional] 
- **requestBody** | [**BuiltMap&lt;String, JsonObject&gt;**](JsonObject.md)|  | [optional] 
+ **seriesId** | **String**|  |
+ **title** | **String**|  | [optional]
+ **location** | **String**|  | [optional]
+ **requestBody** | [**BuiltMap&lt;String, JsonObject&gt;**](JsonObject.md)|  | [optional]
 
 ### Return type
 

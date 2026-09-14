@@ -13,12 +13,12 @@ part 'solution_metrics.g.dart';
 /// Schema for solution metrics.
 ///
 /// Properties:
-/// * [fairness] 
-/// * [hardViolations] 
-/// * [healthScore] 
-/// * [softScore] 
-/// * [solveMs] 
-/// * [stability] 
+/// * [fairness]
+/// * [hardViolations]
+/// * [healthScore]
+/// * [softScore]
+/// * [solveMs]
+/// * [stability]
 @BuiltValue()
 abstract class SolutionMetrics implements Built<SolutionMetrics, SolutionMetricsBuilder> {
   @BuiltValueField(wireName: r'fairness')

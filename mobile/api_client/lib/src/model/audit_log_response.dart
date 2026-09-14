@@ -13,19 +13,19 @@ part 'audit_log_response.g.dart';
 /// One audit log row.
 ///
 /// Properties:
-/// * [action] 
-/// * [details] 
-/// * [errorMessage] 
-/// * [id] 
-/// * [ipAddress] 
-/// * [organizationId] 
-/// * [resourceId] 
-/// * [resourceType] 
-/// * [status] 
-/// * [timestamp] 
-/// * [userAgent] 
-/// * [userEmail] 
-/// * [userId] 
+/// * [action]
+/// * [details]
+/// * [errorMessage]
+/// * [id]
+/// * [ipAddress]
+/// * [organizationId]
+/// * [resourceId]
+/// * [resourceType]
+/// * [status]
+/// * [timestamp]
+/// * [userAgent]
+/// * [userEmail]
+/// * [userId]
 @BuiltValue()
 abstract class AuditLogResponse implements Built<AuditLogResponse, AuditLogResponseBuilder> {
   @BuiltValueField(wireName: r'action')

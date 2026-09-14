@@ -13,7 +13,7 @@ part 'http_validation_error.g.dart';
 /// HTTPValidationError
 ///
 /// Properties:
-/// * [detail] 
+/// * [detail]
 @BuiltValue()
 abstract class HTTPValidationError implements Built<HTTPValidationError, HTTPValidationErrorBuilder> {
   @BuiltValueField(wireName: r'detail')

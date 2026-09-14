@@ -153,30 +153,15 @@ poetry run python -m api.cli.main solve <workspace> --mode strict
 
 Start the server: `make run` (runs on http://localhost:8000)
 
-### 1. Create an organization
+### 1. Create an organization and its first admin atomically
 
 ```bash
-$ curl -X POST http://localhost:8000/api/organizations/ \
-  -H "Content-Type: application/json" \
-  -d '{"id": "grace-church", "name": "Grace Community Church", "region": "US"}'
-```
-
-```json
-{
-  "id": "grace-church",
-  "name": "Grace Community Church",
-  "region": "US",
-  "config": {}
-}
-```
-
-### 2. Sign up (first user becomes admin automatically)
-
-```bash
-$ curl -X POST http://localhost:8000/api/auth/signup \
+$ curl -X POST http://localhost:8000/api/v1/auth/signup \
   -H "Content-Type: application/json" \
   -d '{
     "org_id": "grace-church",
+    "org_name": "Grace Community Church",
+    "region": "US",
     "name": "Pastor Mike",
     "email": "mike@grace.org",
     "password": "Pass123!"
@@ -193,10 +178,13 @@ $ curl -X POST http://localhost:8000/api/auth/signup \
 }
 ```
 
-### 3. Create an event with role requirements
+Existing organizations reject public signup. Add every later member through an
+administrator-created invitation.
+
+### 2. Create an event with role requirements
 
 ```bash
-$ curl -X POST http://localhost:8000/api/events/ \
+$ curl -X POST http://localhost:8000/api/v1/events/ \
   -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIs..." \
   -H "Content-Type: application/json" \
   -d '{
@@ -222,16 +210,16 @@ $ curl -X POST http://localhost:8000/api/events/ \
 }
 ```
 
-### 4. Invite a volunteer
+### 3. Invite a volunteer
 
 ```bash
-$ curl -X POST "http://localhost:8000/api/invitations?org_id=grace-church" \
+$ curl -X POST "http://localhost:8000/api/v1/invitations?org_id=grace-church" \
   -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIs..." \
   -H "Content-Type: application/json" \
   -d '{
     "email": "sarah@grace.org",
     "name": "Sarah Chen",
-    "roles": ["musician", "teacher"]
+    "roles": ["volunteer", "musician", "teacher"]
   }'
 ```
 
@@ -244,10 +232,10 @@ $ curl -X POST "http://localhost:8000/api/invitations?org_id=grace-church" \
 }
 ```
 
-### 5. Volunteer accepts invitation
+### 4. Volunteer accepts invitation
 
 ```bash
-$ curl -X POST http://localhost:8000/api/invitations/{token}/accept \
+$ curl -X POST http://localhost:8000/api/v1/invitations/{token}/accept \
   -H "Content-Type: application/json" \
   -d '{"password": "Sarah123!", "timezone": "US/Eastern"}'
 ```
@@ -256,15 +244,15 @@ $ curl -X POST http://localhost:8000/api/invitations/{token}/accept \
 {
   "person_id": "person_sarah_540dc7d0",
   "name": "Sarah Chen",
-  "roles": ["musician", "teacher"],
+  "roles": ["volunteer", "musician", "teacher"],
   "org_id": "grace-church"
 }
 ```
 
-### 6. Run the solver
+### 5. Run the solver
 
 ```bash
-$ curl -X POST http://localhost:8000/api/solver/solve \
+$ curl -X POST http://localhost:8000/api/v1/solver/solve \
   -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIs..." \
   -H "Content-Type: application/json" \
   -d '{
@@ -345,20 +333,20 @@ POST /api/solver/solve         →  api/routers/solver.py (HTTP + DB)
 ### Active API Endpoints
 
 ```
-/api/auth           — signup, login, email check
-/api/organizations  — CRUD for organizations
-/api/people         — CRUD for people, /me profile
-/api/teams          — CRUD for teams + membership
-/api/events         — CRUD for events + manual assignments
-/api/constraints    — CRUD for scheduling constraints
-/api/solver         — POST /solve to generate schedules
-/api/solutions      — list/view generated solutions
-/api/availability   — time-off / blocked dates
-/api/conflicts      — conflict checking
-/api/invitations    — create/verify/accept invitation tokens
-/api/calendar       — ICS export
-/api/analytics      — volunteer + event stats
-/api/password-reset — request/confirm password reset
+/api/v1/auth           — atomic organization bootstrap, login, refresh, email check
+/api/v1/organizations  — authenticated read/update/lifecycle operations
+/api/v1/people         — CRUD for people, /me profile
+/api/v1/teams          — CRUD for teams + membership
+/api/v1/events         — CRUD for events + manual assignments
+/api/v1/constraints    — CRUD for scheduling constraints
+/api/v1/solver         — POST /solve to generate schedules
+/api/v1/solutions      — list/view generated solutions
+/api/v1/availability   — time-off / blocked dates
+/api/v1/conflicts      — conflict checking
+/api/v1/invitations    — create/verify/accept invitation tokens
+/api/v1/calendar       — ICS export
+/api/v1/analytics      — volunteer + event stats
+/api/v1/password-reset — request/confirm password reset
 ```
 
 ### Provider-backed Features

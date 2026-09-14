@@ -11,8 +11,8 @@ part 'refresh_response.g.dart';
 /// Refresh response — both tokens are rotated on every refresh.
 ///
 /// Properties:
-/// * [refreshToken] 
-/// * [token] 
+/// * [refreshToken]
+/// * [token]
 @BuiltValue()
 abstract class RefreshResponse implements Built<RefreshResponse, RefreshResponseBuilder> {
   @BuiltValueField(wireName: r'refresh_token')

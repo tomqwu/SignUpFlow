@@ -29,8 +29,8 @@ class InvitationsApi {
   /// Accept an invitation and create a new account.  This creates a new Person with the invited roles and marks the invitation as accepted.
   ///
   /// Parameters:
-  /// * [token] 
-  /// * [invitationAccept] 
+  /// * [token]
+  /// * [invitationAccept]
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -40,7 +40,7 @@ class InvitationsApi {
   ///
   /// Returns a [Future] containing a [Response] with a [InvitationAcceptResponse] as data
   /// Throws [DioException] if API call or serialization fails
-  Future<Response<InvitationAcceptResponse>> acceptInvitation({ 
+  Future<Response<InvitationAcceptResponse>> acceptInvitation({
     required String token,
     required InvitationAccept invitationAccept,
     CancelToken? cancelToken,
@@ -126,7 +126,7 @@ class InvitationsApi {
   /// Cancel a pending invitation (admin only).
   ///
   /// Parameters:
-  /// * [invitationId] 
+  /// * [invitationId]
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -136,7 +136,7 @@ class InvitationsApi {
   ///
   /// Returns a [Future]
   /// Throws [DioException] if API call or serialization fails
-  Future<Response<void>> cancelInvitation({ 
+  Future<Response<void>> cancelInvitation({
     required String invitationId,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
@@ -180,7 +180,7 @@ class InvitationsApi {
   ///
   /// Parameters:
   /// * [orgId] - Organization ID
-  /// * [invitationCreate] 
+  /// * [invitationCreate]
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -190,7 +190,7 @@ class InvitationsApi {
   ///
   /// Returns a [Future] containing a [Response] with a [InvitationResponse] as data
   /// Throws [DioException] if API call or serialization fails
-  Future<Response<InvitationResponse>> createInvitation({ 
+  Future<Response<InvitationResponse>> createInvitation({
     required String orgId,
     required InvitationCreate invitationCreate,
     CancelToken? cancelToken,
@@ -300,7 +300,7 @@ class InvitationsApi {
   ///
   /// Returns a [Future] containing a [Response] with a [ListResponseInvitationResponse] as data
   /// Throws [DioException] if API call or serialization fails
-  Future<Response<ListResponseInvitationResponse>> listInvitations({ 
+  Future<Response<ListResponseInvitationResponse>> listInvitations({
     required String orgId,
     String? status,
     String? q,
@@ -380,7 +380,7 @@ class InvitationsApi {
   /// Resend an invitation email (admin only).  Generates a new token and extends the expiry date.
   ///
   /// Parameters:
-  /// * [invitationId] 
+  /// * [invitationId]
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -390,7 +390,7 @@ class InvitationsApi {
   ///
   /// Returns a [Future] containing a [Response] with a [InvitationResponse] as data
   /// Throws [DioException] if API call or serialization fails
-  Future<Response<InvitationResponse>> resendInvitation({ 
+  Future<Response<InvitationResponse>> resendInvitation({
     required String invitationId,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
@@ -461,7 +461,7 @@ class InvitationsApi {
   /// Verify an invitation token. Rate limited to 10 requests per minute per IP.  Checks if the invitation is valid and not expired.
   ///
   /// Parameters:
-  /// * [token] 
+  /// * [token]
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -471,7 +471,7 @@ class InvitationsApi {
   ///
   /// Returns a [Future] containing a [Response] with a [InvitationVerify] as data
   /// Throws [DioException] if API call or serialization fails
-  Future<Response<InvitationVerify>> verifyInvitation({ 
+  Future<Response<InvitationVerify>> verifyInvitation({
     required String token,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,

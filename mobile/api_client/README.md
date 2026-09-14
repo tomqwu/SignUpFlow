@@ -48,7 +48,7 @@ import 'package:signupflow_api/signupflow_api.dart';
 
 
 final api = SignupflowApi().getAnalyticsApi();
-final String orgId = orgId_example; // String | 
+final String orgId = orgId_example; // String |
 final int threshold = 56; // int | Assignments per month threshold
 
 try {
@@ -74,6 +74,7 @@ Class | Method | HTTP request | Description
 [*AssignmentsApi*](doc/AssignmentsApi.md) | [**listMyAssignments**](doc/AssignmentsApi.md#listmyassignments) | **GET** /api/v1/assignments/me | List My Assignments
 [*AssignmentsApi*](doc/AssignmentsApi.md) | [**requestSwap**](doc/AssignmentsApi.md#requestswap) | **POST** /api/v1/assignments/{assignment_id}/swap-request | Request Swap
 [*AuditApi*](doc/AuditApi.md) | [**listAuditLogs**](doc/AuditApi.md#listauditlogs) | **GET** /api/v1/audit-logs | List Audit Logs
+[*AuthApi*](doc/AuthApi.md) | [**changePassword**](doc/AuthApi.md#changepassword) | **POST** /api/v1/auth/change-password | Change Password
 [*AuthApi*](doc/AuthApi.md) | [**checkEmail**](doc/AuthApi.md#checkemail) | **POST** /api/v1/auth/check-email | Check Email
 [*AuthApi*](doc/AuthApi.md) | [**login**](doc/AuthApi.md#login) | **POST** /api/v1/auth/login | Login
 [*AuthApi*](doc/AuthApi.md) | [**refresh**](doc/AuthApi.md#refresh) | **POST** /api/v1/auth/refresh | Refresh
@@ -91,6 +92,21 @@ Class | Method | HTTP request | Description
 [*AvailabilityApi*](doc/AvailabilityApi.md) | [**listExceptions**](doc/AvailabilityApi.md#listexceptions) | **GET** /api/v1/availability/{person_id}/exceptions | List Exceptions
 [*AvailabilityApi*](doc/AvailabilityApi.md) | [**setRrule**](doc/AvailabilityApi.md#setrrule) | **PUT** /api/v1/availability/{person_id}/rrule | Set Rrule
 [*AvailabilityApi*](doc/AvailabilityApi.md) | [**updateTimeoff**](doc/AvailabilityApi.md#updatetimeoff) | **PATCH** /api/v1/availability/{person_id}/timeoff/{timeoff_id} | Update Timeoff
+[*BillingApi*](doc/BillingApi.md) | [**addPaymentMethod**](doc/BillingApi.md#addpaymentmethod) | **POST** /api/v1/billing/payment-methods | Add Payment Method
+[*BillingApi*](doc/BillingApi.md) | [**cancelDowngrade**](doc/BillingApi.md#canceldowngrade) | **POST** /api/v1/billing/subscription/cancel-downgrade | Cancel Downgrade
+[*BillingApi*](doc/BillingApi.md) | [**cancelSubscription**](doc/BillingApi.md#cancelsubscription) | **POST** /api/v1/billing/subscription/cancel | Cancel Subscription
+[*BillingApi*](doc/BillingApi.md) | [**createBillingPortalSession**](doc/BillingApi.md#createbillingportalsession) | **POST** /api/v1/billing/portal | Create Billing Portal Session
+[*BillingApi*](doc/BillingApi.md) | [**downgradeSubscription**](doc/BillingApi.md#downgradesubscription) | **POST** /api/v1/billing/subscription/downgrade | Downgrade Subscription
+[*BillingApi*](doc/BillingApi.md) | [**downloadInvoicePdf**](doc/BillingApi.md#downloadinvoicepdf) | **GET** /api/v1/billing/invoices/{billing_history_id}/pdf | Download Invoice Pdf
+[*BillingApi*](doc/BillingApi.md) | [**getBillingHistory**](doc/BillingApi.md#getbillinghistory) | **GET** /api/v1/billing/history | Get Billing History
+[*BillingApi*](doc/BillingApi.md) | [**getPaymentMethods**](doc/BillingApi.md#getpaymentmethods) | **GET** /api/v1/billing/payment-methods | Get Payment Methods
+[*BillingApi*](doc/BillingApi.md) | [**getSubscription**](doc/BillingApi.md#getsubscription) | **GET** /api/v1/billing/subscription | Get Subscription
+[*BillingApi*](doc/BillingApi.md) | [**handleCheckoutSuccess**](doc/BillingApi.md#handlecheckoutsuccess) | **POST** /api/v1/billing/subscription/checkout-success | Handle Checkout Success
+[*BillingApi*](doc/BillingApi.md) | [**reactivateSubscription**](doc/BillingApi.md#reactivatesubscription) | **POST** /api/v1/billing/subscription/reactivate | Reactivate Subscription
+[*BillingApi*](doc/BillingApi.md) | [**removePaymentMethod**](doc/BillingApi.md#removepaymentmethod) | **DELETE** /api/v1/billing/payment-methods/{payment_method_id} | Remove Payment Method
+[*BillingApi*](doc/BillingApi.md) | [**setPrimaryPaymentMethod**](doc/BillingApi.md#setprimarypaymentmethod) | **PUT** /api/v1/billing/payment-methods/{payment_method_id}/primary | Set Primary Payment Method
+[*BillingApi*](doc/BillingApi.md) | [**startTrial**](doc/BillingApi.md#starttrial) | **POST** /api/v1/billing/subscription/trial | Start Trial
+[*BillingApi*](doc/BillingApi.md) | [**upgradeSubscription**](doc/BillingApi.md#upgradesubscription) | **POST** /api/v1/billing/subscription/upgrade | Upgrade Subscription
 [*CalendarApi*](doc/CalendarApi.md) | [**adminResetCalendarToken**](doc/CalendarApi.md#adminresetcalendartoken) | **POST** /api/v1/calendar/{person_id}/admin-reset | Admin Reset Calendar Token
 [*CalendarApi*](doc/CalendarApi.md) | [**calendarFeed**](doc/CalendarApi.md#calendarfeed) | **GET** /api/v1/calendar/feed/{token} | Calendar Feed
 [*CalendarApi*](doc/CalendarApi.md) | [**exportOrganizationEvents**](doc/CalendarApi.md#exportorganizationevents) | **GET** /api/v1/calendar/org/export | Export Organization Events
@@ -135,7 +151,6 @@ Class | Method | HTTP request | Description
 [*NotificationsApi*](doc/NotificationsApi.md) | [**sendTestNotification**](doc/NotificationsApi.md#sendtestnotification) | **POST** /api/v1/notifications/test/send | Send Test Notification
 [*NotificationsApi*](doc/NotificationsApi.md) | [**updateMyEmailPreferences**](doc/NotificationsApi.md#updatemyemailpreferences) | **PUT** /api/v1/notifications/preferences/me | Update My Email Preferences
 [*OrganizationsApi*](doc/OrganizationsApi.md) | [**cancelOrganization**](doc/OrganizationsApi.md#cancelorganization) | **POST** /api/v1/organizations/{org_id}/cancel | Cancel Organization
-[*OrganizationsApi*](doc/OrganizationsApi.md) | [**createOrganization**](doc/OrganizationsApi.md#createorganization) | **POST** /api/v1/organizations/ | Create Organization
 [*OrganizationsApi*](doc/OrganizationsApi.md) | [**deleteOrganization**](doc/OrganizationsApi.md#deleteorganization) | **DELETE** /api/v1/organizations/{org_id} | Delete Organization
 [*OrganizationsApi*](doc/OrganizationsApi.md) | [**getOrganization**](doc/OrganizationsApi.md#getorganization) | **GET** /api/v1/organizations/{org_id} | Get Organization
 [*OrganizationsApi*](doc/OrganizationsApi.md) | [**listOrganizations**](doc/OrganizationsApi.md#listorganizations) | **GET** /api/v1/organizations/ | List Organizations
@@ -162,6 +177,16 @@ Class | Method | HTTP request | Description
 [*ResourcesApi*](doc/ResourcesApi.md) | [**listResources**](doc/ResourcesApi.md#listresources) | **GET** /api/v1/resources/ | List Resources
 [*ResourcesApi*](doc/ResourcesApi.md) | [**updateResource**](doc/ResourcesApi.md#updateresource) | **PUT** /api/v1/resources/{resource_id} | Update Resource
 [*RootApi*](doc/RootApi.md) | [**apiInfo**](doc/RootApi.md#apiinfo) | **GET** /api/v1 | Api Info
+[*SmsApi*](doc/SmsApi.md) | [**getSmsUsageStats**](doc/SmsApi.md#getsmsusagestats) | **GET** /api/sms/organizations/{org_id}/sms-usage | Get Sms Usage Stats
+[*SmsApi*](doc/SmsApi.md) | [**sendAssignmentNotificationApi**](doc/SmsApi.md#sendassignmentnotificationapi) | **POST** /api/sms/send-assignment-notification | Send Assignment Notification Api
+[*SmsApi*](doc/SmsApi.md) | [**sendBroadcastApi**](doc/SmsApi.md#sendbroadcastapi) | **POST** /api/sms/send-broadcast | Send Broadcast Api
+[*SmsApi*](doc/SmsApi.md) | [**sendEventReminderApi**](doc/SmsApi.md#sendeventreminderapi) | **POST** /api/sms/send-event-reminder | Send Event Reminder Api
+[*SmsApi*](doc/SmsApi.md) | [**sendVerificationCode**](doc/SmsApi.md#sendverificationcode) | **POST** /api/sms/send-verification-code | Send Verification Code
+[*SmsApi*](doc/SmsApi.md) | [**twilioDeliveryStatusWebhook**](doc/SmsApi.md#twiliodeliverystatuswebhook) | **POST** /api/sms/webhook/delivery-status | Twilio Delivery Status Webhook
+[*SmsApi*](doc/SmsApi.md) | [**twilioIncomingSmsWebhook**](doc/SmsApi.md#twilioincomingsmswebhook) | **POST** /api/sms/webhook/incoming-sms | Twilio Incoming Sms Webhook
+[*SmsApi*](doc/SmsApi.md) | [**updateSmsPreferences**](doc/SmsApi.md#updatesmspreferences) | **PUT** /api/sms/people/{person_id}/sms-preferences | Update Sms Preferences
+[*SmsApi*](doc/SmsApi.md) | [**verifyCode**](doc/SmsApi.md#verifycode) | **POST** /api/sms/verify-code | Verify Code
+[*SmsApi*](doc/SmsApi.md) | [**verifyPhoneNumber**](doc/SmsApi.md#verifyphonenumber) | **POST** /api/sms/verify-phone | Verify Phone Number
 [*SolutionsApi*](doc/SolutionsApi.md) | [**compareSolutions**](doc/SolutionsApi.md#comparesolutions) | **GET** /api/v1/solutions/{solution_a_id}/compare/{solution_b_id} | Compare Solutions
 [*SolutionsApi*](doc/SolutionsApi.md) | [**createManualSolution**](doc/SolutionsApi.md#createmanualsolution) | **POST** /api/v1/solutions/ | Create Manual Solution
 [*SolutionsApi*](doc/SolutionsApi.md) | [**deleteSolution**](doc/SolutionsApi.md#deletesolution) | **DELETE** /api/v1/solutions/{solution_id} | Delete Solution
@@ -172,6 +197,7 @@ Class | Method | HTTP request | Description
 [*SolutionsApi*](doc/SolutionsApi.md) | [**listSolutions**](doc/SolutionsApi.md#listsolutions) | **GET** /api/v1/solutions/ | List Solutions
 [*SolutionsApi*](doc/SolutionsApi.md) | [**publishSolution**](doc/SolutionsApi.md#publishsolution) | **POST** /api/v1/solutions/{solution_id}/publish | Publish Solution
 [*SolutionsApi*](doc/SolutionsApi.md) | [**rollbackSolution**](doc/SolutionsApi.md#rollbacksolution) | **POST** /api/v1/solutions/{solution_id}/rollback | Rollback Solution
+[*SolutionsApi*](doc/SolutionsApi.md) | [**streamSolutionAssignments**](doc/SolutionsApi.md#streamsolutionassignments) | **GET** /api/v1/solutions/{solution_id}/assignments/stream | Stream Solution Assignments
 [*SolutionsApi*](doc/SolutionsApi.md) | [**unpublishSolution**](doc/SolutionsApi.md#unpublishsolution) | **POST** /api/v1/solutions/{solution_id}/unpublish | Unpublish Solution
 [*SolverApi*](doc/SolverApi.md) | [**solveSchedule**](doc/SolverApi.md#solveschedule) | **POST** /api/v1/solver/solve | Solve Schedule
 [*TeamsApi*](doc/TeamsApi.md) | [**addTeamMembers**](doc/TeamsApi.md#addteammembers) | **POST** /api/v1/teams/{team_id}/members | Add Team Members
@@ -197,16 +223,20 @@ Class | Method | HTTP request | Description
  - [AvailabilityRruleResponse](doc/AvailabilityRruleResponse.md)
  - [AvailabilityRruleUpdate](doc/AvailabilityRruleUpdate.md)
  - [AvailablePerson](doc/AvailablePerson.md)
+ - [BroadcastResponse](doc/BroadcastResponse.md)
  - [BulkImportItemError](doc/BulkImportItemError.md)
  - [BulkImportResponse](doc/BulkImportResponse.md)
  - [CalendarSubscriptionResponse](doc/CalendarSubscriptionResponse.md)
  - [CalendarTokenResetResponse](doc/CalendarTokenResetResponse.md)
+ - [CancelRequest](doc/CancelRequest.md)
+ - [ChangePasswordRequest](doc/ChangePasswordRequest.md)
  - [ConflictCheckRequest](doc/ConflictCheckRequest.md)
  - [ConflictCheckResponse](doc/ConflictCheckResponse.md)
  - [ConflictType](doc/ConflictType.md)
  - [ConstraintCreate](doc/ConstraintCreate.md)
  - [ConstraintResponse](doc/ConstraintResponse.md)
  - [ConstraintUpdate](doc/ConstraintUpdate.md)
+ - [DowngradeRequest](doc/DowngradeRequest.md)
  - [EmailPreferenceResponse](doc/EmailPreferenceResponse.md)
  - [EmailPreferenceUpdate](doc/EmailPreferenceUpdate.md)
  - [EventCreate](doc/EventCreate.md)
@@ -246,7 +276,6 @@ Class | Method | HTTP request | Description
  - [NotificationResponse](doc/NotificationResponse.md)
  - [NotificationStatsResponse](doc/NotificationStatsResponse.md)
  - [OccurrencePreview](doc/OccurrencePreview.md)
- - [OrganizationCreate](doc/OrganizationCreate.md)
  - [OrganizationResponse](doc/OrganizationResponse.md)
  - [OrganizationUpdate](doc/OrganizationUpdate.md)
  - [PasswordResetConfirm](doc/PasswordResetConfirm.md)
@@ -254,6 +283,8 @@ Class | Method | HTTP request | Description
  - [PersonCreate](doc/PersonCreate.md)
  - [PersonResponse](doc/PersonResponse.md)
  - [PersonUpdate](doc/PersonUpdate.md)
+ - [PhoneVerificationRequest](doc/PhoneVerificationRequest.md)
+ - [PhoneVerificationResponse](doc/PhoneVerificationResponse.md)
  - [PreviewRequest](doc/PreviewRequest.md)
  - [RecurringSeriesCreate](doc/RecurringSeriesCreate.md)
  - [RecurringSeriesResponse](doc/RecurringSeriesResponse.md)
@@ -262,7 +293,11 @@ Class | Method | HTTP request | Description
  - [ResourceCreate](doc/ResourceCreate.md)
  - [ResourceResponse](doc/ResourceResponse.md)
  - [ResourceUpdate](doc/ResourceUpdate.md)
+ - [SendAssignmentNotificationRequest](doc/SendAssignmentNotificationRequest.md)
+ - [SendBroadcastRequest](doc/SendBroadcastRequest.md)
+ - [SendEventReminderRequest](doc/SendEventReminderRequest.md)
  - [SignupRequest](doc/SignupRequest.md)
+ - [SmsUsageStatsResponse](doc/SmsUsageStatsResponse.md)
  - [SolutionAssignmentAssignee](doc/SolutionAssignmentAssignee.md)
  - [SolutionAssignmentEntry](doc/SolutionAssignmentEntry.md)
  - [SolutionAssignmentsResponse](doc/SolutionAssignmentsResponse.md)
@@ -279,8 +314,15 @@ Class | Method | HTTP request | Description
  - [TeamResponse](doc/TeamResponse.md)
  - [TeamUpdate](doc/TeamUpdate.md)
  - [TimeOffCreate](doc/TimeOffCreate.md)
+ - [TrialRequest](doc/TrialRequest.md)
+ - [UpdateSmsPreferencesRequest](doc/UpdateSmsPreferencesRequest.md)
+ - [UpgradeRequest](doc/UpgradeRequest.md)
  - [ValidationError](doc/ValidationError.md)
  - [ValidationErrorLocInner](doc/ValidationErrorLocInner.md)
+ - [VerificationCodeRequest](doc/VerificationCodeRequest.md)
+ - [VerificationCodeResponse](doc/VerificationCodeResponse.md)
+ - [VerifyCodeRequest](doc/VerifyCodeRequest.md)
+ - [VerifyCodeResponse](doc/VerifyCodeResponse.md)
  - [ViolationInfo](doc/ViolationInfo.md)
  - [WorkloadStats](doc/WorkloadStats.md)
 

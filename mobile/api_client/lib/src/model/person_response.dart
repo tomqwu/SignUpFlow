@@ -13,16 +13,16 @@ part 'person_response.g.dart';
 /// Schema for person response.
 ///
 /// Properties:
-/// * [createdAt] 
-/// * [email] 
-/// * [extraData] 
-/// * [id] 
+/// * [createdAt]
+/// * [email]
+/// * [extraData]
+/// * [id]
 /// * [language] - User's language preference (ISO 639-1 code)
 /// * [name] - Person's full name
-/// * [orgId] 
-/// * [roles] 
+/// * [orgId]
+/// * [roles]
 /// * [timezone] - User's timezone preference
-/// * [updatedAt] 
+/// * [updatedAt]
 @BuiltValue()
 abstract class PersonResponse implements Built<PersonResponse, PersonResponseBuilder> {
   @BuiltValueField(wireName: r'created_at')

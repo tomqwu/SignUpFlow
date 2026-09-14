@@ -21,10 +21,10 @@ class AnalyticsApi {
   const AnalyticsApi(this._dio, this._serializers);
 
   /// Get Burnout Risk
-  /// Identify volunteers at risk of burnout (serving too frequently).
+  /// Identify volunteers at risk of burnout (serving too frequently).  Admin-only within &#x60;org_id&#x60;. This endpoint returns other volunteers&#39; names and emails, so peer volunteers can never read it.
   ///
   /// Parameters:
-  /// * [orgId] 
+  /// * [orgId]
   /// * [threshold] - Assignments per month threshold
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
@@ -35,7 +35,7 @@ class AnalyticsApi {
   ///
   /// Returns a [Future] containing a [Response] with a [JsonObject] as data
   /// Throws [DioException] if API call or serialization fails
-  Future<Response<JsonObject>> getBurnoutRisk({ 
+  Future<Response<JsonObject>> getBurnoutRisk({
     required String orgId,
     int? threshold = 4,
     CancelToken? cancelToken,
@@ -52,7 +52,13 @@ class AnalyticsApi {
         ...?headers,
       },
       extra: <String, dynamic>{
-        'secure': <Map<String, String>>[],
+        'secure': <Map<String, String>>[
+          {
+            'type': 'http',
+            'scheme': 'bearer',
+            'name': 'HTTPBearer',
+          },
+        ],
         ...?extra,
       },
       validateStatus: validateStatus,
@@ -103,10 +109,10 @@ class AnalyticsApi {
   }
 
   /// Get Schedule Health
-  /// Get schedule health metrics.
+  /// Get schedule health metrics.  Admin-only within &#x60;org_id&#x60;.
   ///
   /// Parameters:
-  /// * [orgId] 
+  /// * [orgId]
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -116,7 +122,7 @@ class AnalyticsApi {
   ///
   /// Returns a [Future] containing a [Response] with a [JsonObject] as data
   /// Throws [DioException] if API call or serialization fails
-  Future<Response<JsonObject>> getScheduleHealth({ 
+  Future<Response<JsonObject>> getScheduleHealth({
     required String orgId,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
@@ -132,7 +138,13 @@ class AnalyticsApi {
         ...?headers,
       },
       extra: <String, dynamic>{
-        'secure': <Map<String, String>>[],
+        'secure': <Map<String, String>>[
+          {
+            'type': 'http',
+            'scheme': 'bearer',
+            'name': 'HTTPBearer',
+          },
+        ],
         ...?extra,
       },
       validateStatus: validateStatus,
@@ -178,10 +190,10 @@ class AnalyticsApi {
   }
 
   /// Get Volunteer Stats
-  /// Get volunteer participation statistics.
+  /// Get volunteer participation statistics.  Admin-only within &#x60;org_id&#x60;. The caller must be an authenticated admin whose own org matches the requested one.
   ///
   /// Parameters:
-  /// * [orgId] 
+  /// * [orgId]
   /// * [days] - Number of days to analyze
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
@@ -192,7 +204,7 @@ class AnalyticsApi {
   ///
   /// Returns a [Future] containing a [Response] with a [JsonObject] as data
   /// Throws [DioException] if API call or serialization fails
-  Future<Response<JsonObject>> getVolunteerStats({ 
+  Future<Response<JsonObject>> getVolunteerStats({
     required String orgId,
     int? days = 30,
     CancelToken? cancelToken,
@@ -209,7 +221,13 @@ class AnalyticsApi {
         ...?headers,
       },
       extra: <String, dynamic>{
-        'secure': <Map<String, String>>[],
+        'secure': <Map<String, String>>[
+          {
+            'type': 'http',
+            'scheme': 'bearer',
+            'name': 'HTTPBearer',
+          },
+        ],
         ...?extra,
       },
       validateStatus: validateStatus,

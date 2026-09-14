@@ -18,6 +18,8 @@ from datetime import UTC, date, datetime, timedelta
 import httpx
 import pytest
 
+from tests.integration._identity import bootstrap_admin, invite_member
+
 
 def _unique(prefix: str) -> str:
     return f"{prefix}_{int(time.time() * 1000)}_{random.randint(10000, 99999)}"
@@ -43,29 +45,33 @@ def solver_org(api_server, api_base):
 
     bootstrap = httpx.Client()
 
-    for oid in (org1_id, org2_id):
-        r = bootstrap.post(
-            f"{api_base}/organizations/",
-            json={"id": oid, "name": f"Solver Setup {oid}", "region": "US", "config": {}},
-        )
-        assert r.status_code == 201, r.text
-
-    def _signup(org_id: str, name: str, email: str, roles: list[str] | None = None) -> dict:
-        body = {
-            "org_id": org_id,
-            "name": name,
-            "email": email,
-            "password": "TestPass123!",
-        }
-        if roles is not None:
-            body["roles"] = roles
-        r = bootstrap.post(f"{api_base}/auth/signup", json=body)
-        assert r.status_code == 201, r.text
-        return r.json()
-
-    admin1 = _signup(org1_id, "Solver Admin", f"admin_{marker}@t.com")
-    admin2 = _signup(org2_id, "Other Admin", f"admin2_{marker}@t.com")
-    vol1 = _signup(org1_id, "Vol Solver", f"vol_{marker}@t.com", roles=["volunteer"])
+    admin1 = bootstrap_admin(
+        bootstrap,
+        api_base,
+        org_id=org1_id,
+        org_name=f"Solver Setup {org1_id}",
+        name="Solver Admin",
+        email=f"admin_{marker}@t.com",
+        password="TestPass123!",
+    )
+    admin2 = bootstrap_admin(
+        bootstrap,
+        api_base,
+        org_id=org2_id,
+        org_name=f"Solver Setup {org2_id}",
+        name="Other Admin",
+        email=f"admin2_{marker}@t.com",
+        password="TestPass123!",
+    )
+    vol1 = invite_member(
+        bootstrap,
+        api_base,
+        org_id=org1_id,
+        admin_token=admin1["token"],
+        name="Vol Solver",
+        email=f"vol_{marker}@t.com",
+        password="TestPass123!",
+    )
     bootstrap.close()
 
     def _client(token: str) -> httpx.Client:
@@ -221,18 +227,16 @@ class TestSolverHonorsAvailability:
         # still be filled — the interesting assertion is that vol1 (with
         # time off) is not the one assigned.
         bootstrap = httpx.Client()
-        r = bootstrap.post(
-            f"{data['api_base']}/auth/signup",
-            json={
-                "org_id": data["org1_id"],
-                "name": "Vol Present",
-                "email": f"present_{data['marker']}@t.com",
-                "password": "TestPass123!",
-                "roles": ["volunteer"],
-            },
+        present = invite_member(
+            bootstrap,
+            data["api_base"],
+            org_id=data["org1_id"],
+            admin_token=data["admin1_client"].headers["Authorization"].removeprefix("Bearer "),
+            name="Vol Present",
+            email=f"present_{data['marker']}@t.com",
+            password="TestPass123!",
         )
-        assert r.status_code == 201, r.text
-        present_id = r.json()["person_id"]
+        present_id = present["person_id"]
 
         # Block vol1 across the event day. This endpoint is currently
         # anon per its router, hence the bare httpx.Client.

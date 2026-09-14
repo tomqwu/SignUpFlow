@@ -13,10 +13,10 @@ part 'list_response_conflict_type.g.dart';
 /// ListResponseConflictType
 ///
 /// Properties:
-/// * [items] 
-/// * [limit] 
-/// * [offset] 
-/// * [total] 
+/// * [items]
+/// * [limit]
+/// * [offset]
+/// * [total]
 @BuiltValue()
 abstract class ListResponseConflictType implements Built<ListResponseConflictType, ListResponseConflictTypeBuilder> {
   @BuiltValueField(wireName: r'items')

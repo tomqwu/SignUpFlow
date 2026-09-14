@@ -41,7 +41,7 @@ class AuditApi {
   ///
   /// Returns a [Future] containing a [Response] with a [ListResponseAuditLogResponse] as data
   /// Throws [DioException] if API call or serialization fails
-  Future<Response<ListResponseAuditLogResponse>> listAuditLogs({ 
+  Future<Response<ListResponseAuditLogResponse>> listAuditLogs({
     String? userId,
     String? action,
     String? resourceType,

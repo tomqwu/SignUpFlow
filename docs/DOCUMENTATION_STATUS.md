@@ -26,6 +26,10 @@ The Church and Basketball guides now match the browser runner: all fourteen memb
 are invited and accepted through the normal UI with scheduling qualifications kept
 separate from account access. Organization bootstrap and repeated-event setup remain
 explicit API prerequisites rather than hidden browser-coverage claims.
+The maintained API, mobile, agent, and roadmap entry points now describe atomic
+organization/first-admin bootstrap, invitation-only membership for existing
+organizations, one permission role plus scheduling qualifications, and the
+regenerated Dart client. `API_README.md` is explicitly historical.
 Aligned contributor commit/merge rules with the agent baseline. The owner's latest
 clarification supersedes the previous Ollama review setup: code review runs
 locally, no CI checks remain, and Ollama must not review PRs. The later clarification

@@ -34,8 +34,8 @@ Add a single-date exception. Idempotent on (availability_id, date).
 import 'package:signupflow_api/api.dart';
 
 final api = SignupflowApi().getAvailabilityApi();
-final String personId = personId_example; // String | 
-final AvailabilityExceptionCreate availabilityExceptionCreate = ; // AvailabilityExceptionCreate | 
+final String personId = personId_example; // String |
+final AvailabilityExceptionCreate availabilityExceptionCreate = ; // AvailabilityExceptionCreate |
 
 try {
     final response = api.addException(personId, availabilityExceptionCreate);
@@ -49,8 +49,8 @@ try {
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **personId** | **String**|  | 
- **availabilityExceptionCreate** | [**AvailabilityExceptionCreate**](AvailabilityExceptionCreate.md)|  | 
+ **personId** | **String**|  |
+ **availabilityExceptionCreate** | [**AvailabilityExceptionCreate**](AvailabilityExceptionCreate.md)|  |
 
 ### Return type
 
@@ -79,8 +79,8 @@ Add a time-off period for a person.
 import 'package:signupflow_api/api.dart';
 
 final api = SignupflowApi().getAvailabilityApi();
-final String personId = personId_example; // String | 
-final TimeOffCreate timeOffCreate = ; // TimeOffCreate | 
+final String personId = personId_example; // String |
+final TimeOffCreate timeOffCreate = ; // TimeOffCreate |
 
 try {
     final response = api.addTimeoff(personId, timeOffCreate);
@@ -94,8 +94,8 @@ try {
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **personId** | **String**|  | 
- **timeOffCreate** | [**TimeOffCreate**](TimeOffCreate.md)|  | 
+ **personId** | **String**|  |
+ **timeOffCreate** | [**TimeOffCreate**](TimeOffCreate.md)|  |
 
 ### Return type
 
@@ -124,7 +124,7 @@ Clear the rrule string for a person.  Idempotent — succeeds with 204 even if t
 import 'package:signupflow_api/api.dart';
 
 final api = SignupflowApi().getAvailabilityApi();
-final String personId = personId_example; // String | 
+final String personId = personId_example; // String |
 
 try {
     api.clearRrule(personId);
@@ -137,7 +137,7 @@ try {
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **personId** | **String**|  | 
+ **personId** | **String**|  |
 
 ### Return type
 
@@ -166,7 +166,7 @@ Create availability record for a person.
 import 'package:signupflow_api/api.dart';
 
 final api = SignupflowApi().getAvailabilityApi();
-final String personId = personId_example; // String | 
+final String personId = personId_example; // String |
 
 try {
     final response = api.createAvailability(personId);
@@ -180,7 +180,7 @@ try {
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **personId** | **String**|  | 
+ **personId** | **String**|  |
 
 ### Return type
 
@@ -209,8 +209,8 @@ Delete a single-date exception by id.
 import 'package:signupflow_api/api.dart';
 
 final api = SignupflowApi().getAvailabilityApi();
-final String personId = personId_example; // String | 
-final int exceptionId = 56; // int | 
+final String personId = personId_example; // String |
+final int exceptionId = 56; // int |
 
 try {
     api.deleteException(personId, exceptionId);
@@ -223,8 +223,8 @@ try {
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **personId** | **String**|  | 
- **exceptionId** | **int**|  | 
+ **personId** | **String**|  |
+ **exceptionId** | **int**|  |
 
 ### Return type
 
@@ -253,8 +253,8 @@ Delete a time-off period.
 import 'package:signupflow_api/api.dart';
 
 final api = SignupflowApi().getAvailabilityApi();
-final String personId = personId_example; // String | 
-final int timeoffId = 56; // int | 
+final String personId = personId_example; // String |
+final int timeoffId = 56; // int |
 
 try {
     api.deleteTimeoff(personId, timeoffId);
@@ -267,8 +267,8 @@ try {
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **personId** | **String**|  | 
- **timeoffId** | **int**|  | 
+ **personId** | **String**|  |
+ **timeoffId** | **int**|  |
 
 ### Return type
 
@@ -297,7 +297,7 @@ Return the single recurring-availability rrule for a person.  Returns ``rrule: n
 import 'package:signupflow_api/api.dart';
 
 final api = SignupflowApi().getAvailabilityApi();
-final String personId = personId_example; // String | 
+final String personId = personId_example; // String |
 
 try {
     final response = api.getRrule(personId);
@@ -311,7 +311,7 @@ try {
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **personId** | **String**|  | 
+ **personId** | **String**|  |
 
 ### Return type
 
@@ -340,7 +340,7 @@ Get all time-off periods for a person.
 import 'package:signupflow_api/api.dart';
 
 final api = SignupflowApi().getAvailabilityApi();
-final String personId = personId_example; // String | 
+final String personId = personId_example; // String |
 
 try {
     final response = api.getTimeoff(personId);
@@ -354,7 +354,7 @@ try {
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **personId** | **String**|  | 
+ **personId** | **String**|  |
 
 ### Return type
 
@@ -383,7 +383,7 @@ List single-date availability exceptions for a person.
 import 'package:signupflow_api/api.dart';
 
 final api = SignupflowApi().getAvailabilityApi();
-final String personId = personId_example; // String | 
+final String personId = personId_example; // String |
 
 try {
     final response = api.listExceptions(personId);
@@ -397,7 +397,7 @@ try {
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **personId** | **String**|  | 
+ **personId** | **String**|  |
 
 ### Return type
 
@@ -426,8 +426,8 @@ Set (or replace) the rrule string for a person.
 import 'package:signupflow_api/api.dart';
 
 final api = SignupflowApi().getAvailabilityApi();
-final String personId = personId_example; // String | 
-final AvailabilityRruleUpdate availabilityRruleUpdate = ; // AvailabilityRruleUpdate | 
+final String personId = personId_example; // String |
+final AvailabilityRruleUpdate availabilityRruleUpdate = ; // AvailabilityRruleUpdate |
 
 try {
     final response = api.setRrule(personId, availabilityRruleUpdate);
@@ -441,8 +441,8 @@ try {
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **personId** | **String**|  | 
- **availabilityRruleUpdate** | [**AvailabilityRruleUpdate**](AvailabilityRruleUpdate.md)|  | 
+ **personId** | **String**|  |
+ **availabilityRruleUpdate** | [**AvailabilityRruleUpdate**](AvailabilityRruleUpdate.md)|  |
 
 ### Return type
 
@@ -471,9 +471,9 @@ Update a time-off period.
 import 'package:signupflow_api/api.dart';
 
 final api = SignupflowApi().getAvailabilityApi();
-final String personId = personId_example; // String | 
-final int timeoffId = 56; // int | 
-final TimeOffCreate timeOffCreate = ; // TimeOffCreate | 
+final String personId = personId_example; // String |
+final int timeoffId = 56; // int |
+final TimeOffCreate timeOffCreate = ; // TimeOffCreate |
 
 try {
     final response = api.updateTimeoff(personId, timeoffId, timeOffCreate);
@@ -487,9 +487,9 @@ try {
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **personId** | **String**|  | 
- **timeoffId** | **int**|  | 
- **timeOffCreate** | [**TimeOffCreate**](TimeOffCreate.md)|  | 
+ **personId** | **String**|  |
+ **timeoffId** | **int**|  |
+ **timeOffCreate** | [**TimeOffCreate**](TimeOffCreate.md)|  |
 
 ### Return type
 

@@ -11,10 +11,10 @@ part 'calendar_token_reset_response.g.dart';
 /// Calendar token reset response.
 ///
 /// Properties:
-/// * [httpsUrl] 
-/// * [message] 
-/// * [token] 
-/// * [webcalUrl] 
+/// * [httpsUrl]
+/// * [message]
+/// * [token]
+/// * [webcalUrl]
 @BuiltValue()
 abstract class CalendarTokenResetResponse implements Built<CalendarTokenResetResponse, CalendarTokenResetResponseBuilder> {
   @BuiltValueField(wireName: r'https_url')

@@ -13,10 +13,10 @@ part 'notification_list_response.g.dart';
 /// Schema for paginated notification list.
 ///
 /// Properties:
-/// * [limit] 
-/// * [notifications] 
-/// * [offset] 
-/// * [total] 
+/// * [limit]
+/// * [notifications]
+/// * [offset]
+/// * [total]
 @BuiltValue()
 abstract class NotificationListResponse implements Built<NotificationListResponse, NotificationListResponseBuilder> {
   @BuiltValueField(wireName: r'limit')

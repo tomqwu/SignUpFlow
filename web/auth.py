@@ -21,7 +21,6 @@ from api.database import get_db
 from api.models import Person
 from api.routers.auth import SignupRequest, signup as api_signup
 from api.routers.invitations import accept_invitation, verify_invitation
-from api.routers.organizations import create_organization
 from api.routers.password_reset import (
     PasswordResetConfirm,
     PasswordResetRequest,
@@ -29,7 +28,6 @@ from api.routers.password_reset import (
     reset_password,
 )
 from api.schemas.invitation import InvitationAccept
-from api.schemas.organization import OrganizationCreate
 from api.security import create_access_token, verify_password
 from api.timeutils import utcnow
 from web.deps import SESSION_COOKIE, get_optional_session_user
@@ -155,8 +153,7 @@ def signup_submit(
     password: str = Form(...),
     db: Session = Depends(get_db),
 ):
-    """Create an organization and its first user (auto-admin). Reuses the
-    API's create_organization + signup so all validation/limits apply."""
+    """Create an organization and first admin through the atomic API service."""
     from web.app import templates
 
     form = {"org_name": org_name, "name": name, "email": email}
@@ -171,19 +168,18 @@ def signup_submit(
 
     org_id = f"{_slugify(org_name)}-{uuid.uuid4().hex[:6]}"
 
-    # Validate the signup payload BEFORE creating the org, so a bad
-    # password (pydantic min_length) can't leave an orphan organization.
     try:
-        signup_req = SignupRequest(org_id=org_id, name=name, email=email, password=password)
+        signup_req = SignupRequest(
+            org_id=org_id,
+            org_name=org_name,
+            name=name,
+            email=email,
+            password=password,
+        )
     except ValidationError as exc:
         first = exc.errors()[0]
         field = first.get("loc", ["field"])[-1]
         return _err(f"{field}: {first.get('msg', 'invalid value')}", code=400)
-
-    try:
-        create_organization(OrganizationCreate(id=org_id, name=org_name), db)
-    except HTTPException as exc:
-        return _err(f"Could not create organization: {exc.detail}")
 
     try:
         auth = api_signup(signup_req, db)

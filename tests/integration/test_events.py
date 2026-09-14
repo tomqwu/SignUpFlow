@@ -19,6 +19,8 @@ from datetime import UTC, datetime, timedelta
 import httpx
 import pytest
 
+from tests.integration._identity import bootstrap_admin
+
 
 def _unique(prefix: str) -> str:
     """Stable-but-unique suffix; combine ms + randint to avoid same-ms collisions."""
@@ -39,24 +41,17 @@ def setup_admin(api_server, api_base):
     client = httpx.Client()
 
     org_id = _unique("evt_org")
-    org_response = client.post(
-        f"{api_base}/organizations/",
-        json={"id": org_id, "name": f"Events Test Org {org_id}", "region": "US", "config": {}},
-    )
-    assert org_response.status_code == 201, org_response.text
-
     admin_email = f"admin_{org_id}@test.com"
-    signup_response = client.post(
-        f"{api_base}/auth/signup",
-        json={
-            "org_id": org_id,
-            "name": "Admin User",
-            "email": admin_email,
-            "password": "AdminPass123!",
-        },
+    admin_data = bootstrap_admin(
+        client,
+        api_base,
+        org_id=org_id,
+        org_name=f"Events Test Org {org_id}",
+        name="Admin User",
+        email=admin_email,
+        password="AdminPass123!",
+        region="US",
     )
-    assert signup_response.status_code == 201, signup_response.text
-    admin_data = signup_response.json()
     assert "admin" in admin_data["roles"]
 
     client.headers["Authorization"] = f"Bearer {admin_data['token']}"

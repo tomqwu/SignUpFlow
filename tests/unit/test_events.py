@@ -2,6 +2,8 @@
 
 from datetime import datetime, timedelta
 
+from tests.unit._identity import bootstrap_organization
+
 API_BASE = "http://localhost:8000/api/v1"
 
 
@@ -18,7 +20,7 @@ class TestEventCreate:
         resource_id = f"sanctuary_{timestamp}"
         event_id = f"event_{timestamp}"
 
-        client.post(f"{API_BASE}/organizations/", json={"id": org_id, "name": "Event Test Org"})
+        bootstrap_organization(client, json={"id": org_id, "name": "Event Test Org"})
         client.post(
             f"{API_BASE}/resources/",
             json={
@@ -56,7 +58,7 @@ class TestEventCreate:
         org_id = f"event_test_org2_{timestamp}"
         event_id = f"event_002_{timestamp}"
 
-        client.post(f"{API_BASE}/organizations/", json={"id": org_id, "name": "Event Test Org 2"})
+        bootstrap_organization(client, json={"id": org_id, "name": "Event Test Org 2"})
         start = (datetime.now() + timedelta(days=2)).isoformat()
         end = (datetime.now() + timedelta(days=2, hours=1)).isoformat()
         response = client.post(
@@ -89,9 +91,7 @@ class TestEventCreate:
 
     def test_create_event_end_before_start(self, client):
         """Test creating event where end time is before start time."""
-        client.post(
-            f"{API_BASE}/organizations/", json={"id": "event_test_org3", "name": "Event Test Org 3"}
-        )
+        bootstrap_organization(client, json={"id": "event_test_org3", "name": "Event Test Org 3"})
         start = datetime.now().isoformat()
         end = (datetime.now() - timedelta(hours=1)).isoformat()  # Earlier than start
         response = client.post(
@@ -114,9 +114,7 @@ class TestEventRead:
 
     def test_get_event_success(self, client):
         """Test successful event retrieval."""
-        client.post(
-            f"{API_BASE}/organizations/", json={"id": "event_test_org4", "name": "Event Test Org 4"}
-        )
+        bootstrap_organization(client, json={"id": "event_test_org4", "name": "Event Test Org 4"})
         start = (datetime.now() + timedelta(days=3)).isoformat()
         end = (datetime.now() + timedelta(days=3, hours=2)).isoformat()
         client.post(
@@ -141,9 +139,7 @@ class TestEventRead:
 
     def test_list_events_by_org(self, client):
         """Test listing events filtered by organization."""
-        client.post(
-            f"{API_BASE}/organizations/", json={"id": "event_test_org5", "name": "Event Test Org 5"}
-        )
+        bootstrap_organization(client, json={"id": "event_test_org5", "name": "Event Test Org 5"})
         # Create multiple events
         for i in range(6, 9):
             start = (datetime.now() + timedelta(days=i)).isoformat()
@@ -166,9 +162,7 @@ class TestEventRead:
 
     def test_list_events_date_range(self, client):
         """Test listing events within date range."""
-        client.post(
-            f"{API_BASE}/organizations/", json={"id": "event_test_org6", "name": "Event Test Org 6"}
-        )
+        bootstrap_organization(client, json={"id": "event_test_org6", "name": "Event Test Org 6"})
         # Create event
         start = (datetime.now() + timedelta(days=10)).isoformat()
         end = (datetime.now() + timedelta(days=10, hours=2)).isoformat()
@@ -198,9 +192,7 @@ class TestEventUpdate:
 
     def test_update_event_success(self, client):
         """Test successful event update."""
-        client.post(
-            f"{API_BASE}/organizations/", json={"id": "event_test_org7", "name": "Event Test Org 7"}
-        )
+        bootstrap_organization(client, json={"id": "event_test_org7", "name": "Event Test Org 7"})
         start = (datetime.now() + timedelta(days=20)).isoformat()
         end = (datetime.now() + timedelta(days=20, hours=2)).isoformat()
         client.post(
@@ -240,9 +232,7 @@ class TestEventDelete:
 
     def test_delete_event_success(self, client):
         """Test successful event deletion."""
-        client.post(
-            f"{API_BASE}/organizations/", json={"id": "event_test_org8", "name": "Event Test Org 8"}
-        )
+        bootstrap_organization(client, json={"id": "event_test_org8", "name": "Event Test Org 8"})
         start = (datetime.now() + timedelta(days=30)).isoformat()
         end = (datetime.now() + timedelta(days=30, hours=2)).isoformat()
         client.post(
@@ -279,8 +269,8 @@ class TestEventAssignments:
         event_id = f"assign_event_{timestamp}"
 
         # Create organization with roles
-        client.post(
-            f"{API_BASE}/organizations/",
+        bootstrap_organization(
+            client,
             json={
                 "id": org_id,
                 "name": "Assignment Test Org",
@@ -359,7 +349,7 @@ class TestEventAssignments:
         person_id = f"person_alice2_{timestamp}"
 
         # Setup
-        client.post(f"{API_BASE}/organizations/", json={"id": org_id, "name": "Test Org"})
+        bootstrap_organization(client, json={"id": org_id, "name": "Test Org"})
         client.post(
             f"{API_BASE}/people/",
             json={
@@ -406,7 +396,7 @@ class TestEventAssignments:
         person_id = f"person_bob2_{timestamp}"
 
         # Setup
-        client.post(f"{API_BASE}/organizations/", json={"id": org_id, "name": "Test Org"})
+        bootstrap_organization(client, json={"id": org_id, "name": "Test Org"})
         client.post(
             f"{API_BASE}/people/",
             json={
@@ -457,7 +447,7 @@ class TestEventAssignments:
         event_id = f"assign_event4_{timestamp}"
         person_id = f"person_charlie2_{timestamp}"
 
-        client.post(f"{API_BASE}/organizations/", json={"id": org_id, "name": "Test Org"})
+        bootstrap_organization(client, json={"id": org_id, "name": "Test Org"})
         client.post(
             f"{API_BASE}/people/",
             json={
@@ -504,7 +494,7 @@ class TestEventAssignments:
         event_id = f"assign_event5_{timestamp}"
         person_id = f"person_david_{timestamp}"
 
-        client.post(f"{API_BASE}/organizations/", json={"id": org_id, "name": "Test Org"})
+        bootstrap_organization(client, json={"id": org_id, "name": "Test Org"})
         client.post(
             f"{API_BASE}/people/",
             json={
@@ -559,7 +549,7 @@ class TestEventAssignments:
         person_id = f"person_all_{timestamp}"
 
         # Create org, person, and event
-        client.post(f"{API_BASE}/organizations/", json={"id": org_id, "name": "Test Org"})
+        bootstrap_organization(client, json={"id": org_id, "name": "Test Org"})
         client.post(
             f"{API_BASE}/people/",
             json={

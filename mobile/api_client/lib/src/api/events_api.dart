@@ -31,7 +31,7 @@ class EventsApi {
   /// Create a new event (admin only).
   ///
   /// Parameters:
-  /// * [eventCreate] 
+  /// * [eventCreate]
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -41,7 +41,7 @@ class EventsApi {
   ///
   /// Returns a [Future] containing a [Response] with a [EventResponse] as data
   /// Throws [DioException] if API call or serialization fails
-  Future<Response<EventResponse>> createEvent({ 
+  Future<Response<EventResponse>> createEvent({
     required EventCreate eventCreate,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
@@ -132,7 +132,7 @@ class EventsApi {
   /// Delete event (admin only).
   ///
   /// Parameters:
-  /// * [eventId] 
+  /// * [eventId]
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -142,7 +142,7 @@ class EventsApi {
   ///
   /// Returns a [Future]
   /// Throws [DioException] if API call or serialization fails
-  Future<Response<void>> deleteEvent({ 
+  Future<Response<void>> deleteEvent({
     required String eventId,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
@@ -195,7 +195,7 @@ class EventsApi {
   ///
   /// Returns a [Future] containing a [Response] with a [JsonObject] as data
   /// Throws [DioException] if API call or serialization fails
-  Future<Response<JsonObject>> getAllAssignments({ 
+  Future<Response<JsonObject>> getAllAssignments({
     required String orgId,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
@@ -265,7 +265,7 @@ class EventsApi {
   /// Get people available for this event based on roles.  Returns list of people who have matching roles, with flags indicating if they&#39;re already assigned or have blocked the event date.
   ///
   /// Parameters:
-  /// * [eventId] 
+  /// * [eventId]
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -275,7 +275,7 @@ class EventsApi {
   ///
   /// Returns a [Future] containing a [Response] with a [BuiltList<AvailablePerson>] as data
   /// Throws [DioException] if API call or serialization fails
-  Future<Response<BuiltList<AvailablePerson>>> getAvailablePeople({ 
+  Future<Response<BuiltList<AvailablePerson>>> getAvailablePeople({
     required String eventId,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
@@ -340,7 +340,7 @@ class EventsApi {
   /// Get event by ID.
   ///
   /// Parameters:
-  /// * [eventId] 
+  /// * [eventId]
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -350,7 +350,7 @@ class EventsApi {
   ///
   /// Returns a [Future] containing a [Response] with a [EventResponse] as data
   /// Throws [DioException] if API call or serialization fails
-  Future<Response<EventResponse>> getEvent({ 
+  Future<Response<EventResponse>> getEvent({
     required String eventId,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
@@ -432,7 +432,7 @@ class EventsApi {
   ///
   /// Returns a [Future] containing a [Response] with a [ListResponseEventResponse] as data
   /// Throws [DioException] if API call or serialization fails
-  Future<Response<ListResponseEventResponse>> listEvents({ 
+  Future<Response<ListResponseEventResponse>> listEvents({
     String? orgId,
     String? eventType,
     DateTime? startAfter,
@@ -516,8 +516,8 @@ class EventsApi {
   /// Assign or unassign a person to/from an event (admin only).
   ///
   /// Parameters:
-  /// * [eventId] 
-  /// * [assignmentRequest] 
+  /// * [eventId]
+  /// * [assignmentRequest]
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -527,7 +527,7 @@ class EventsApi {
   ///
   /// Returns a [Future] containing a [Response] with a [JsonObject] as data
   /// Throws [DioException] if API call or serialization fails
-  Future<Response<JsonObject>> manageAssignment({ 
+  Future<Response<JsonObject>> manageAssignment({
     required String eventId,
     required AssignmentRequest assignmentRequest,
     CancelToken? cancelToken,
@@ -619,8 +619,8 @@ class EventsApi {
   /// Update event (admin only).
   ///
   /// Parameters:
-  /// * [eventId] 
-  /// * [eventUpdate] 
+  /// * [eventId]
+  /// * [eventUpdate]
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -630,7 +630,7 @@ class EventsApi {
   ///
   /// Returns a [Future] containing a [Response] with a [EventResponse] as data
   /// Throws [DioException] if API call or serialization fails
-  Future<Response<EventResponse>> updateEvent({ 
+  Future<Response<EventResponse>> updateEvent({
     required String eventId,
     required EventUpdate eventUpdate,
     CancelToken? cancelToken,
@@ -722,7 +722,7 @@ class EventsApi {
   /// Validate if event has proper configuration and enough people.  Checks: 1. Event has role requirements configured 2. Enough people available for each role 3. No assigned people are blocked on the event date  Returns:     Dictionary with is_valid flag and list of validation warnings
   ///
   /// Parameters:
-  /// * [eventId] 
+  /// * [eventId]
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -732,7 +732,7 @@ class EventsApi {
   ///
   /// Returns a [Future] containing a [Response] with a [BuiltMap<String, JsonObject>] as data
   /// Throws [DioException] if API call or serialization fails
-  Future<Response<BuiltMap<String, JsonObject>>> validateEvent({ 
+  Future<Response<BuiltMap<String, JsonObject>>> validateEvent({
     required String eventId,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,

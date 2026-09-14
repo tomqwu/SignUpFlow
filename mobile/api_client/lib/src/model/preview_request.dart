@@ -13,17 +13,17 @@ part 'preview_request.g.dart';
 /// Request for previewing occurrences without saving.
 ///
 /// Properties:
-/// * [duration] 
-/// * [endConditionType] 
-/// * [endDate] 
-/// * [frequencyInterval] 
-/// * [occurrenceCount] 
-/// * [patternType] 
-/// * [selectedDays] 
-/// * [startDate] 
-/// * [startTime] 
-/// * [weekdayName] 
-/// * [weekdayPosition] 
+/// * [duration]
+/// * [endConditionType]
+/// * [endDate]
+/// * [frequencyInterval]
+/// * [occurrenceCount]
+/// * [patternType]
+/// * [selectedDays]
+/// * [startDate]
+/// * [startTime]
+/// * [weekdayName]
+/// * [weekdayPosition]
 @BuiltValue()
 abstract class PreviewRequest implements Built<PreviewRequest, PreviewRequestBuilder> {
   @BuiltValueField(wireName: r'duration')

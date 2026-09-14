@@ -307,9 +307,15 @@ mobile-codegen:
 		exit 1; \
 	fi
 	@echo "ℹ️  Using $(JAVA_BIN)"
-	@PATH="$(dir $(JAVA_BIN)):$$PATH" \
+	# Generator 7.14 turns nullable primitives inside this strict request into
+	# uncompilable ModelNull aliases. Relax only its temporary input, not the contract.
+	@tmp_spec="$$(mktemp /tmp/signupflow-openapi.XXXXXX.json)"; \
+	  trap 'rm -f "$$tmp_spec"' EXIT; \
+	  jq 'del(.components.schemas.SignupRequest.additionalProperties)' \
+	    tests/contract/openapi.snapshot.json > "$$tmp_spec"; \
+	  PATH="$(dir $(JAVA_BIN)):$$PATH" \
 	  npx -y @openapitools/openapi-generator-cli@2.20.2 generate \
-	  -i tests/contract/openapi.snapshot.json \
+	  -i "$$tmp_spec" \
 	  -g dart-dio \
 	  -o mobile/api_client \
 	  --additional-properties=pubName=signupflow_api,pubVersion=0.0.1,nullSafe=true,nullableFields=true \

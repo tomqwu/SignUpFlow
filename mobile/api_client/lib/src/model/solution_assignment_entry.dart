@@ -13,11 +13,11 @@ part 'solution_assignment_entry.g.dart';
 /// All assignees for one event in a solution.
 ///
 /// Properties:
-/// * [assignees] 
-/// * [eventEnd] 
-/// * [eventId] 
-/// * [eventStart] 
-/// * [eventType] 
+/// * [assignees]
+/// * [eventEnd]
+/// * [eventId]
+/// * [eventStart]
+/// * [eventType]
 @BuiltValue()
 abstract class SolutionAssignmentEntry implements Built<SolutionAssignmentEntry, SolutionAssignmentEntryBuilder> {
   @BuiltValueField(wireName: r'assignees')

@@ -27,7 +27,7 @@ class AssignmentsApi {
   /// Mark the caller&#39;s assignment as confirmed.
   ///
   /// Parameters:
-  /// * [assignmentId] 
+  /// * [assignmentId]
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -37,7 +37,7 @@ class AssignmentsApi {
   ///
   /// Returns a [Future] containing a [Response] with a [AssignmentResponse] as data
   /// Throws [DioException] if API call or serialization fails
-  Future<Response<AssignmentResponse>> acceptAssignment({ 
+  Future<Response<AssignmentResponse>> acceptAssignment({
     required int assignmentId,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
@@ -108,8 +108,8 @@ class AssignmentsApi {
   /// Decline the caller&#39;s assignment with a reason.
   ///
   /// Parameters:
-  /// * [assignmentId] 
-  /// * [assignmentDeclineRequest] 
+  /// * [assignmentId]
+  /// * [assignmentDeclineRequest]
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -119,7 +119,7 @@ class AssignmentsApi {
   ///
   /// Returns a [Future] containing a [Response] with a [AssignmentResponse] as data
   /// Throws [DioException] if API call or serialization fails
-  Future<Response<AssignmentResponse>> declineAssignment({ 
+  Future<Response<AssignmentResponse>> declineAssignment({
     required int assignmentId,
     required AssignmentDeclineRequest assignmentDeclineRequest,
     CancelToken? cancelToken,
@@ -222,7 +222,7 @@ class AssignmentsApi {
   ///
   /// Returns a [Future] containing a [Response] with a [ListResponseAssignmentResponse] as data
   /// Throws [DioException] if API call or serialization fails
-  Future<Response<ListResponseAssignmentResponse>> listMyAssignments({ 
+  Future<Response<ListResponseAssignmentResponse>> listMyAssignments({
     int? limit = 50,
     int? offset = 0,
     CancelToken? cancelToken,
@@ -300,8 +300,8 @@ class AssignmentsApi {
   /// Flag the caller&#39;s assignment for swap; admin follows up out of band.
   ///
   /// Parameters:
-  /// * [assignmentId] 
-  /// * [assignmentSwapRequest] 
+  /// * [assignmentId]
+  /// * [assignmentSwapRequest]
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -311,7 +311,7 @@ class AssignmentsApi {
   ///
   /// Returns a [Future] containing a [Response] with a [AssignmentResponse] as data
   /// Throws [DioException] if API call or serialization fails
-  Future<Response<AssignmentResponse>> requestSwap({ 
+  Future<Response<AssignmentResponse>> requestSwap({
     required int assignmentId,
     required AssignmentSwapRequest assignmentSwapRequest,
     CancelToken? cancelToken,

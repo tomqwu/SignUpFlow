@@ -11,8 +11,8 @@ part 'stability_metrics.g.dart';
 /// Stability metrics relative to the org's currently-published solution.
 ///
 /// Properties:
-/// * [affectedPersons] 
-/// * [movesFromPublished] 
+/// * [affectedPersons]
+/// * [movesFromPublished]
 @BuiltValue()
 abstract class StabilityMetrics implements Built<StabilityMetrics, StabilityMetricsBuilder> {
   @BuiltValueField(wireName: r'affected_persons')

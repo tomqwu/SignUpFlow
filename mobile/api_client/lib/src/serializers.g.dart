@@ -19,16 +19,20 @@ Serializers _$serializers = (Serializers().toBuilder()
       ..add(AvailabilityRruleResponse.serializer)
       ..add(AvailabilityRruleUpdate.serializer)
       ..add(AvailablePerson.serializer)
+      ..add(BroadcastResponse.serializer)
       ..add(BulkImportItemError.serializer)
       ..add(BulkImportResponse.serializer)
       ..add(CalendarSubscriptionResponse.serializer)
       ..add(CalendarTokenResetResponse.serializer)
+      ..add(CancelRequest.serializer)
+      ..add(ChangePasswordRequest.serializer)
       ..add(ConflictCheckRequest.serializer)
       ..add(ConflictCheckResponse.serializer)
       ..add(ConflictType.serializer)
       ..add(ConstraintCreate.serializer)
       ..add(ConstraintResponse.serializer)
       ..add(ConstraintUpdate.serializer)
+      ..add(DowngradeRequest.serializer)
       ..add(EmailPreferenceResponse.serializer)
       ..add(EmailPreferenceUpdate.serializer)
       ..add(EventCreate.serializer)
@@ -68,7 +72,6 @@ Serializers _$serializers = (Serializers().toBuilder()
       ..add(NotificationResponse.serializer)
       ..add(NotificationStatsResponse.serializer)
       ..add(OccurrencePreview.serializer)
-      ..add(OrganizationCreate.serializer)
       ..add(OrganizationResponse.serializer)
       ..add(OrganizationUpdate.serializer)
       ..add(PasswordResetConfirm.serializer)
@@ -76,6 +79,8 @@ Serializers _$serializers = (Serializers().toBuilder()
       ..add(PersonCreate.serializer)
       ..add(PersonResponse.serializer)
       ..add(PersonUpdate.serializer)
+      ..add(PhoneVerificationRequest.serializer)
+      ..add(PhoneVerificationResponse.serializer)
       ..add(PreviewRequest.serializer)
       ..add(RecurringSeriesCreate.serializer)
       ..add(RecurringSeriesResponse.serializer)
@@ -84,7 +89,11 @@ Serializers _$serializers = (Serializers().toBuilder()
       ..add(ResourceCreate.serializer)
       ..add(ResourceResponse.serializer)
       ..add(ResourceUpdate.serializer)
+      ..add(SendAssignmentNotificationRequest.serializer)
+      ..add(SendBroadcastRequest.serializer)
+      ..add(SendEventReminderRequest.serializer)
       ..add(SignupRequest.serializer)
+      ..add(SmsUsageStatsResponse.serializer)
       ..add(SolutionAssignmentAssignee.serializer)
       ..add(SolutionAssignmentEntry.serializer)
       ..add(SolutionAssignmentsResponse.serializer)
@@ -101,8 +110,15 @@ Serializers _$serializers = (Serializers().toBuilder()
       ..add(TeamResponse.serializer)
       ..add(TeamUpdate.serializer)
       ..add(TimeOffCreate.serializer)
+      ..add(TrialRequest.serializer)
+      ..add(UpdateSmsPreferencesRequest.serializer)
+      ..add(UpgradeRequest.serializer)
       ..add(ValidationError.serializer)
       ..add(ValidationErrorLocInner.serializer)
+      ..add(VerificationCodeRequest.serializer)
+      ..add(VerificationCodeResponse.serializer)
+      ..add(VerifyCodeRequest.serializer)
+      ..add(VerifyCodeResponse.serializer)
       ..add(ViolationInfo.serializer)
       ..add(WorkloadStats.serializer)
       ..addBuilderFactory(
@@ -241,9 +257,8 @@ Serializers _$serializers = (Serializers().toBuilder()
           const FullType(BuiltList, const [const FullType(ViolationInfo)]),
           () => ListBuilder<ViolationInfo>())
       ..addBuilderFactory(
-          const FullType(
-              BuiltMap, const [const FullType(String), const FullType(int)]),
-          () => MapBuilder<String, int>())
+          const FullType(BuiltList, const [const FullType(int)]),
+          () => ListBuilder<int>())
       ..addBuilderFactory(
           const FullType(
               BuiltMap, const [const FullType(String), const FullType(int)]),
@@ -253,11 +268,9 @@ Serializers _$serializers = (Serializers().toBuilder()
               BuiltMap, const [const FullType(String), const FullType(int)]),
           () => MapBuilder<String, int>())
       ..addBuilderFactory(
-          const FullType(BuiltMap, const [
-            const FullType(String),
-            const FullType.nullable(JsonObject)
-          ]),
-          () => MapBuilder<String, JsonObject?>())
+          const FullType(
+              BuiltMap, const [const FullType(String), const FullType(int)]),
+          () => MapBuilder<String, int>())
       ..addBuilderFactory(
           const FullType(BuiltMap, const [
             const FullType(String),

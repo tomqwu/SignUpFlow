@@ -26,7 +26,7 @@ class CalendarApi {
   /// Admin-only force-reset of another user&#39;s calendar token.  Same as &#x60;/calendar/reset-token&#x60; but explicitly an admin override of a target user&#39;s token. Always audited as &#x60;calendar.token.admin_reset&#x60;.
   ///
   /// Parameters:
-  /// * [personId] 
+  /// * [personId]
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -36,7 +36,7 @@ class CalendarApi {
   ///
   /// Returns a [Future] containing a [Response] with a [CalendarTokenResetResponse] as data
   /// Throws [DioException] if API call or serialization fails
-  Future<Response<CalendarTokenResetResponse>> adminResetCalendarToken({ 
+  Future<Response<CalendarTokenResetResponse>> adminResetCalendarToken({
     required String personId,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
@@ -107,7 +107,7 @@ class CalendarApi {
   /// Public calendar feed endpoint for subscriptions.  This endpoint is accessed by calendar applications using the subscription URL. It returns an ICS file that is automatically refreshed by the calendar app.
   ///
   /// Parameters:
-  /// * [token] 
+  /// * [token]
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -117,7 +117,7 @@ class CalendarApi {
   ///
   /// Returns a [Future] containing a [Response] with a [JsonObject] as data
   /// Throws [DioException] if API call or serialization fails
-  Future<Response<JsonObject>> calendarFeed({ 
+  Future<Response<JsonObject>> calendarFeed({
     required String token,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
@@ -179,12 +179,11 @@ class CalendarApi {
   }
 
   /// Export Organization Events
-  /// Export all organization events as ICS file (admin only).  This endpoint is for administrators to export all events in the organization.
+  /// Export all organization events as ICS file (admin only).  Caller must be authenticated and an admin in &#x60;org_id&#x60;. The legacy &#x60;person_id&#x60; query param used as an auth proxy has been removed — the caller is now identified solely by their JWT.
   ///
   /// Parameters:
-  /// * [orgId] 
-  /// * [personId] 
-  /// * [includeAssignments] 
+  /// * [orgId]
+  /// * [includeAssignments]
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -194,9 +193,8 @@ class CalendarApi {
   ///
   /// Returns a [Future] containing a [Response] with a [JsonObject] as data
   /// Throws [DioException] if API call or serialization fails
-  Future<Response<JsonObject>> exportOrganizationEvents({ 
+  Future<Response<JsonObject>> exportOrganizationEvents({
     required String orgId,
-    required String personId,
     bool? includeAssignments = true,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
@@ -212,7 +210,13 @@ class CalendarApi {
         ...?headers,
       },
       extra: <String, dynamic>{
-        'secure': <Map<String, String>>[],
+        'secure': <Map<String, String>>[
+          {
+            'type': 'http',
+            'scheme': 'bearer',
+            'name': 'HTTPBearer',
+          },
+        ],
         ...?extra,
       },
       validateStatus: validateStatus,
@@ -220,7 +224,6 @@ class CalendarApi {
 
     final _queryParameters = <String, dynamic>{
       r'org_id': encodeQueryParameter(_serializers, orgId, const FullType(String)),
-      r'person_id': encodeQueryParameter(_serializers, personId, const FullType(String)),
       if (includeAssignments != null) r'include_assignments': encodeQueryParameter(_serializers, includeAssignments, const FullType(bool)),
     };
 
@@ -265,10 +268,10 @@ class CalendarApi {
   }
 
   /// Export Personal Schedule
-  /// Export personal schedule as ICS file.  This endpoint downloads an ICS file with all assigned events for a person.
+  /// Export personal schedule as ICS file.  This endpoint downloads an ICS file with all assigned events for a person. Caller must be the target person or an admin in the same organization.
   ///
   /// Parameters:
-  /// * [personId] 
+  /// * [personId]
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -278,7 +281,7 @@ class CalendarApi {
   ///
   /// Returns a [Future] containing a [Response] with a [JsonObject] as data
   /// Throws [DioException] if API call or serialization fails
-  Future<Response<JsonObject>> exportPersonalSchedule({ 
+  Future<Response<JsonObject>> exportPersonalSchedule({
     required String personId,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
@@ -294,7 +297,13 @@ class CalendarApi {
         ...?headers,
       },
       extra: <String, dynamic>{
-        'secure': <Map<String, String>>[],
+        'secure': <Map<String, String>>[
+          {
+            'type': 'http',
+            'scheme': 'bearer',
+            'name': 'HTTPBearer',
+          },
+        ],
         ...?extra,
       },
       validateStatus: validateStatus,
@@ -348,7 +357,7 @@ class CalendarApi {
   /// Get calendar subscription URL for a person.  Returns a webcal:// URL that can be used to subscribe to the calendar in Google Calendar, Apple Calendar, Outlook, etc. Caller must be the target person or an admin in the same organization.
   ///
   /// Parameters:
-  /// * [personId] 
+  /// * [personId]
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -358,7 +367,7 @@ class CalendarApi {
   ///
   /// Returns a [Future] containing a [Response] with a [CalendarSubscriptionResponse] as data
   /// Throws [DioException] if API call or serialization fails
-  Future<Response<CalendarSubscriptionResponse>> getSubscriptionUrl({ 
+  Future<Response<CalendarSubscriptionResponse>> getSubscriptionUrl({
     required String personId,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
@@ -434,7 +443,7 @@ class CalendarApi {
   /// Reset calendar subscription token for a person.  This invalidates the old subscription URL and generates a new one. Caller must be the target person or an admin in the same organization. Use &#x60;/calendar/{person_id}/admin-reset&#x60; for the admin-only flow.
   ///
   /// Parameters:
-  /// * [personId] 
+  /// * [personId]
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -444,7 +453,7 @@ class CalendarApi {
   ///
   /// Returns a [Future] containing a [Response] with a [CalendarTokenResetResponse] as data
   /// Throws [DioException] if API call or serialization fails
-  Future<Response<CalendarTokenResetResponse>> resetCalendarToken({ 
+  Future<Response<CalendarTokenResetResponse>> resetCalendarToken({
     required String personId,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,

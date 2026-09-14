@@ -3,28 +3,29 @@
 //
 
 // ignore_for_file: unused_element
-import 'package:built_collection/built_collection.dart';
 import 'package:built_value/built_value.dart';
 import 'package:built_value/serializer.dart';
 
 part 'signup_request.g.dart';
 
-/// Signup request.
+/// Atomic organization and first-administrator bootstrap request.
 ///
 /// Properties:
 /// * [email] - Email address
-/// * [language] 
+/// * [language] - User language
 /// * [name] - Full name
 /// * [orgId] - Organization ID
+/// * [orgName] - Organization name
 /// * [password] - Password (min 6 characters)
-/// * [roles] 
-/// * [timezone] 
+/// * [region]
+/// * [timezone] - User timezone
 @BuiltValue()
 abstract class SignupRequest implements Built<SignupRequest, SignupRequestBuilder> {
   /// Email address
   @BuiltValueField(wireName: r'email')
   String get email;
 
+  /// User language
   @BuiltValueField(wireName: r'language')
   String? get language;
 
@@ -36,13 +37,18 @@ abstract class SignupRequest implements Built<SignupRequest, SignupRequestBuilde
   @BuiltValueField(wireName: r'org_id')
   String get orgId;
 
+  /// Organization name
+  @BuiltValueField(wireName: r'org_name')
+  String get orgName;
+
   /// Password (min 6 characters)
   @BuiltValueField(wireName: r'password')
   String get password;
 
-  @BuiltValueField(wireName: r'roles')
-  BuiltList<String>? get roles;
+  @BuiltValueField(wireName: r'region')
+  String? get region;
 
+  /// User timezone
   @BuiltValueField(wireName: r'timezone')
   String? get timezone;
 
@@ -51,7 +57,9 @@ abstract class SignupRequest implements Built<SignupRequest, SignupRequestBuilde
   factory SignupRequest([void updates(SignupRequestBuilder b)]) = _$SignupRequest;
 
   @BuiltValueHook(initializeBuilder: true)
-  static void _defaults(SignupRequestBuilder b) => b;
+  static void _defaults(SignupRequestBuilder b) => b
+      ..language = 'en'
+      ..timezone = 'UTC';
 
   @BuiltValueSerializer(custom: true)
   static Serializer<SignupRequest> get serializer => _$SignupRequestSerializer();
@@ -78,7 +86,7 @@ class _$SignupRequestSerializer implements PrimitiveSerializer<SignupRequest> {
       yield r'language';
       yield serializers.serialize(
         object.language,
-        specifiedType: const FullType.nullable(String),
+        specifiedType: const FullType(String),
       );
     }
     yield r'name';
@@ -91,23 +99,28 @@ class _$SignupRequestSerializer implements PrimitiveSerializer<SignupRequest> {
       object.orgId,
       specifiedType: const FullType(String),
     );
+    yield r'org_name';
+    yield serializers.serialize(
+      object.orgName,
+      specifiedType: const FullType(String),
+    );
     yield r'password';
     yield serializers.serialize(
       object.password,
       specifiedType: const FullType(String),
     );
-    if (object.roles != null) {
-      yield r'roles';
+    if (object.region != null) {
+      yield r'region';
       yield serializers.serialize(
-        object.roles,
-        specifiedType: const FullType.nullable(BuiltList, [FullType(String)]),
+        object.region,
+        specifiedType: const FullType.nullable(String),
       );
     }
     if (object.timezone != null) {
       yield r'timezone';
       yield serializers.serialize(
         object.timezone,
-        specifiedType: const FullType.nullable(String),
+        specifiedType: const FullType(String),
       );
     }
   }
@@ -143,9 +156,8 @@ class _$SignupRequestSerializer implements PrimitiveSerializer<SignupRequest> {
         case r'language':
           final valueDes = serializers.deserialize(
             value,
-            specifiedType: const FullType.nullable(String),
-          ) as String?;
-          if (valueDes == null) continue;
+            specifiedType: const FullType(String),
+          ) as String;
           result.language = valueDes;
           break;
         case r'name':
@@ -162,6 +174,13 @@ class _$SignupRequestSerializer implements PrimitiveSerializer<SignupRequest> {
           ) as String;
           result.orgId = valueDes;
           break;
+        case r'org_name':
+          final valueDes = serializers.deserialize(
+            value,
+            specifiedType: const FullType(String),
+          ) as String;
+          result.orgName = valueDes;
+          break;
         case r'password':
           final valueDes = serializers.deserialize(
             value,
@@ -169,20 +188,19 @@ class _$SignupRequestSerializer implements PrimitiveSerializer<SignupRequest> {
           ) as String;
           result.password = valueDes;
           break;
-        case r'roles':
-          final valueDes = serializers.deserialize(
-            value,
-            specifiedType: const FullType.nullable(BuiltList, [FullType(String)]),
-          ) as BuiltList<String>?;
-          if (valueDes == null) continue;
-          result.roles.replace(valueDes);
-          break;
-        case r'timezone':
+        case r'region':
           final valueDes = serializers.deserialize(
             value,
             specifiedType: const FullType.nullable(String),
           ) as String?;
           if (valueDes == null) continue;
+          result.region = valueDes;
+          break;
+        case r'timezone':
+          final valueDes = serializers.deserialize(
+            value,
+            specifiedType: const FullType(String),
+          ) as String;
           result.timezone = valueDes;
           break;
         default:

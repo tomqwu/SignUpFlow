@@ -18,6 +18,8 @@ import time
 import httpx
 import pytest
 
+from tests.integration._identity import bootstrap_admin
+
 os.environ.setdefault("DEBUG_RETURN_RESET_TOKEN", "true")
 
 
@@ -34,23 +36,15 @@ def reset_org(api_server, api_base):
     password = "OrigPass123!"
 
     bootstrap = httpx.Client()
-    org_resp = bootstrap.post(
-        f"{api_base}/organizations/",
-        json={"id": org_id, "name": f"Reset Setup {marker}", "region": "US", "config": {}},
+    person = bootstrap_admin(
+        bootstrap,
+        api_base,
+        org_id=org_id,
+        org_name=f"Reset Setup {marker}",
+        name="Reset User",
+        email=email,
+        password=password,
     )
-    assert org_resp.status_code == 201, org_resp.text
-
-    signup = bootstrap.post(
-        f"{api_base}/auth/signup",
-        json={
-            "org_id": org_id,
-            "name": "Reset User",
-            "email": email,
-            "password": password,
-        },
-    )
-    assert signup.status_code == 201, signup.text
-    person = signup.json()
     bootstrap.close()
 
     yield {

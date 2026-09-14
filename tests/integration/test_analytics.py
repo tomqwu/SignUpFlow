@@ -23,6 +23,8 @@ from datetime import UTC, datetime, timedelta
 import httpx
 import pytest
 
+from tests.integration._identity import bootstrap_admin, invite_member
+
 
 def _unique(prefix: str) -> str:
     return f"{prefix}_{int(time.time() * 1000)}_{random.randint(10000, 99999)}"
@@ -52,30 +54,42 @@ def analytics_org(api_server, api_base):
 
     bootstrap = httpx.Client()
 
-    for oid in (org1_id, org2_id):
-        resp = bootstrap.post(
-            f"{api_base}/organizations/",
-            json={"id": oid, "name": f"Analytics Setup {oid}", "region": "US", "config": {}},
-        )
-        assert resp.status_code == 201, resp.text
-
-    def _signup(org_id: str, name: str, email: str, roles: list[str] | None = None) -> dict:
-        body = {
-            "org_id": org_id,
-            "name": name,
-            "email": email,
-            "password": "TestPass123!",
-        }
-        if roles is not None:
-            body["roles"] = roles
-        r = bootstrap.post(f"{api_base}/auth/signup", json=body)
-        assert r.status_code == 201, r.text
-        return r.json()
-
-    admin1 = _signup(org1_id, "Org1 Admin", f"admin1_{marker}@t.com")
-    admin2 = _signup(org2_id, "Org2 Admin", f"admin2_{marker}@t.com")
-    vol1 = _signup(org1_id, "Vol A", f"vola_{marker}@t.com", roles=["volunteer"])
-    vol2 = _signup(org1_id, "Vol B", f"volb_{marker}@t.com", roles=["volunteer"])
+    admin1 = bootstrap_admin(
+        bootstrap,
+        api_base,
+        org_id=org1_id,
+        org_name=f"Analytics Setup {org1_id}",
+        name="Org1 Admin",
+        email=f"admin1_{marker}@t.com",
+        password="TestPass123!",
+    )
+    admin2 = bootstrap_admin(
+        bootstrap,
+        api_base,
+        org_id=org2_id,
+        org_name=f"Analytics Setup {org2_id}",
+        name="Org2 Admin",
+        email=f"admin2_{marker}@t.com",
+        password="TestPass123!",
+    )
+    vol1 = invite_member(
+        bootstrap,
+        api_base,
+        org_id=org1_id,
+        admin_token=admin1["token"],
+        name="Vol A",
+        email=f"vola_{marker}@t.com",
+        password="TestPass123!",
+    )
+    vol2 = invite_member(
+        bootstrap,
+        api_base,
+        org_id=org1_id,
+        admin_token=admin1["token"],
+        name="Vol B",
+        email=f"volb_{marker}@t.com",
+        password="TestPass123!",
+    )
     bootstrap.close()
 
     def _client(token: str) -> httpx.Client:

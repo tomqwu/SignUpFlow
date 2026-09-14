@@ -13,9 +13,9 @@ part 'team_update.g.dart';
 /// Schema for updating a team.
 ///
 /// Properties:
-/// * [description] 
-/// * [extraData] 
-/// * [name] 
+/// * [description]
+/// * [extraData]
+/// * [name]
 @BuiltValue()
 abstract class TeamUpdate implements Built<TeamUpdate, TeamUpdateBuilder> {
   @BuiltValueField(wireName: r'description')

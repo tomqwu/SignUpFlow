@@ -18,6 +18,8 @@ from datetime import UTC, datetime, timedelta
 import httpx
 import pytest
 
+from tests.integration._identity import bootstrap_admin, invite_member
+
 
 def _unique(prefix: str) -> str:
     return f"{prefix}_{int(time.time() * 1000)}_{random.randint(10000, 99999)}"
@@ -32,50 +34,35 @@ def calendar_org(api_server, api_base):
     other_org_id = f"{marker}_other"
 
     bootstrap = httpx.Client()
-    for oid, name in ((org_id, f"Cal Setup {marker}"), (other_org_id, f"Other {marker}")):
-        org_resp = bootstrap.post(
-            f"{api_base}/organizations/",
-            json={"id": oid, "name": name, "region": "US", "config": {}},
-        )
-        assert org_resp.status_code == 201, org_resp.text
-
-    admin_resp = bootstrap.post(
-        f"{api_base}/auth/signup",
-        json={
-            "org_id": org_id,
-            "name": "Cal Admin",
-            "email": admin_email,
-            "password": "AdminPass123!",
-        },
+    admin_data = bootstrap_admin(
+        bootstrap,
+        api_base,
+        org_id=org_id,
+        org_name=f"Cal Setup {marker}",
+        name="Cal Admin",
+        email=admin_email,
+        password="AdminPass123!",
     )
-    assert admin_resp.status_code == 201, admin_resp.text
-    admin_data = admin_resp.json()
-
-    vol_resp = bootstrap.post(
-        f"{api_base}/auth/signup",
-        json={
-            "org_id": org_id,
-            "name": "Cal Volunteer",
-            "email": vol_email,
-            "password": "VolPass123!",
-            "roles": ["volunteer"],
-        },
+    vol_data = invite_member(
+        bootstrap,
+        api_base,
+        org_id=org_id,
+        admin_token=admin_data["token"],
+        name="Cal Volunteer",
+        email=vol_email,
+        password="VolPass123!",
     )
-    assert vol_resp.status_code == 201, vol_resp.text
-    vol_data = vol_resp.json()
 
     # Another org's admin (used for cross-org access checks)
-    other_admin = bootstrap.post(
-        f"{api_base}/auth/signup",
-        json={
-            "org_id": other_org_id,
-            "name": "Other Admin",
-            "email": f"other_admin_{marker}@test.com",
-            "password": "OtherPass123!",
-        },
+    other_admin_data = bootstrap_admin(
+        bootstrap,
+        api_base,
+        org_id=other_org_id,
+        org_name=f"Other {marker}",
+        name="Other Admin",
+        email=f"other_admin_{marker}@test.com",
+        password="OtherPass123!",
     )
-    assert other_admin.status_code == 201, other_admin.text
-    other_admin_data = other_admin.json()
     bootstrap.close()
 
     admin_client = httpx.Client()

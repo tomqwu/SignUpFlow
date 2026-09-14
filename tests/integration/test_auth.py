@@ -27,21 +27,16 @@ class TestAuthSignup:
         client = httpx.Client()
 
         org_id = _unique("test_org")
-        client.post(
-            f"{api_base}/organizations/",
-            json={"id": org_id, "name": "Test Org", "region": "US", "config": {}},
-        )
-
-        # Signup - first user in org becomes admin automatically
+        # Signup creates the organization and exact first admin atomically.
         email = f"{_unique('signup')}@test.com"
         response = client.post(
             f"{api_base}/auth/signup",
             json={
                 "org_id": org_id,
+                "org_name": "Test Org",
                 "name": "Test User",
                 "email": email,
                 "password": "Password123!",
-                "roles": ["volunteer"],  # First user gets admin regardless
             },
         )
 
@@ -58,21 +53,16 @@ class TestAuthSignup:
         client = httpx.Client()
 
         org_id = _unique("dup_org")
-        client.post(
-            f"{api_base}/organizations/",
-            json={"id": org_id, "name": "Test Org", "region": "US", "config": {}},
-        )
-
         email = f"{_unique('duplicate')}@test.com"
 
         first = client.post(
             f"{api_base}/auth/signup",
             json={
                 "org_id": org_id,
+                "org_name": "Test Org",
                 "name": "User 1",
                 "email": email,
                 "password": "Password123!",
-                "roles": [],
             },
         )
         assert first.status_code == 201, first.text
@@ -82,17 +72,17 @@ class TestAuthSignup:
             f"{api_base}/auth/signup",
             json={
                 "org_id": org_id,
+                "org_name": "Test Org",
                 "name": "User 2",
                 "email": email,
                 "password": "Password123!",
-                "roles": [],
             },
         )
 
         assert response.status_code == 409
 
-    def test_signup_invalid_org(self, api_server, api_base):
-        """Test signup fails with nonexistent organization."""
+    def test_signup_requires_organization_name(self, api_server, api_base):
+        """Atomic signup rejects an incomplete organization payload."""
         client = httpx.Client()
 
         response = client.post(
@@ -106,7 +96,7 @@ class TestAuthSignup:
             },
         )
 
-        assert response.status_code == 404
+        assert response.status_code == 422
 
 
 class TestAuthLogin:
@@ -121,15 +111,15 @@ class TestAuthLogin:
         email = f"{unique}@test.com"
         password = "TestPass123!"
 
-        org_response = client.post(
-            f"{api_base}/organizations/",
-            json={"id": org_id, "name": "Login Test Org", "region": "US", "config": {}},
-        )
-        assert org_response.status_code == 201, f"Org creation failed: {org_response.text}"
-
         signup_response = client.post(
             f"{api_base}/auth/signup",
-            json={"org_id": org_id, "name": "Login User", "email": email, "password": password},
+            json={
+                "org_id": org_id,
+                "org_name": "Login Test Org",
+                "name": "Login User",
+                "email": email,
+                "password": password,
+            },
         )
         assert signup_response.status_code == 201, f"Signup failed: {signup_response.text}"
         signup_data = signup_response.json()
@@ -156,18 +146,13 @@ class TestAuthLogin:
         email = f"{unique}@test.com"
 
         client.post(
-            f"{api_base}/organizations/",
-            json={"id": org_id, "name": "Test Org", "region": "US", "config": {}},
-        )
-
-        client.post(
             f"{api_base}/auth/signup",
             json={
                 "org_id": org_id,
+                "org_name": "Test Org",
                 "name": "Test User",
                 "email": email,
                 "password": "CorrectPass123!",
-                "roles": [],
             },
         )
 

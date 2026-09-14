@@ -13,10 +13,10 @@ part 'list_response_event_response.g.dart';
 /// ListResponseEventResponse
 ///
 /// Properties:
-/// * [items] 
-/// * [limit] 
-/// * [offset] 
-/// * [total] 
+/// * [items]
+/// * [limit]
+/// * [offset]
+/// * [total]
 @BuiltValue()
 abstract class ListResponseEventResponse implements Built<ListResponseEventResponse, ListResponseEventResponseBuilder> {
   @BuiltValueField(wireName: r'items')

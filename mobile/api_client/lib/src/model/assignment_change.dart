@@ -11,9 +11,9 @@ part 'assignment_change.g.dart';
 /// One added/removed assignment in a diff.
 ///
 /// Properties:
-/// * [eventId] 
-/// * [personId] 
-/// * [role] 
+/// * [eventId]
+/// * [personId]
+/// * [role]
 @BuiltValue()
 abstract class AssignmentChange implements Built<AssignmentChange, AssignmentChangeBuilder> {
   @BuiltValueField(wireName: r'event_id')

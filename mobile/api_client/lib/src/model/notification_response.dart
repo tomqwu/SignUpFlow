@@ -13,20 +13,20 @@ part 'notification_response.g.dart';
 /// Schema for notification response.
 ///
 /// Properties:
-/// * [clickedAt] 
-/// * [createdAt] 
-/// * [deliveredAt] 
-/// * [errorMessage] 
-/// * [eventId] 
-/// * [id] 
-/// * [openedAt] 
-/// * [orgId] 
-/// * [recipientId] 
-/// * [retryCount] 
-/// * [sendgridMessageId] 
-/// * [sentAt] 
+/// * [clickedAt]
+/// * [createdAt]
+/// * [deliveredAt]
+/// * [errorMessage]
+/// * [eventId]
+/// * [id]
+/// * [openedAt]
+/// * [orgId]
+/// * [recipientId]
+/// * [retryCount]
+/// * [sendgridMessageId]
+/// * [sentAt]
 /// * [status] - Notification status (pending, sent, delivered, etc.)
-/// * [templateData] 
+/// * [templateData]
 /// * [type] - Notification type (assignment, reminder, update, cancellation)
 @BuiltValue()
 abstract class NotificationResponse implements Built<NotificationResponse, NotificationResponseBuilder> {

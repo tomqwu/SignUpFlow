@@ -11,8 +11,8 @@ part 'password_reset_confirm.g.dart';
 /// Confirm password reset with token.
 ///
 /// Properties:
-/// * [newPassword] 
-/// * [token] 
+/// * [newPassword]
+/// * [token]
 @BuiltValue()
 abstract class PasswordResetConfirm implements Built<PasswordResetConfirm, PasswordResetConfirmBuilder> {
   @BuiltValueField(wireName: r'new_password')

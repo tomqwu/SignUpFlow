@@ -30,7 +30,7 @@ class HolidaysApi {
   ///
   /// Parameters:
   /// * [orgId] - Organization to import into
-  /// * [holidayBulkImport] 
+  /// * [holidayBulkImport]
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -40,7 +40,7 @@ class HolidaysApi {
   ///
   /// Returns a [Future] containing a [Response] with a [HolidayBulkImportResponse] as data
   /// Throws [DioException] if API call or serialization fails
-  Future<Response<HolidayBulkImportResponse>> bulkImportHolidays({ 
+  Future<Response<HolidayBulkImportResponse>> bulkImportHolidays({
     required String orgId,
     required HolidayBulkImport holidayBulkImport,
     CancelToken? cancelToken,
@@ -138,7 +138,7 @@ class HolidaysApi {
   /// Create a single holiday (admin only).
   ///
   /// Parameters:
-  /// * [holidayCreate] 
+  /// * [holidayCreate]
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -148,7 +148,7 @@ class HolidaysApi {
   ///
   /// Returns a [Future] containing a [Response] with a [HolidayResponse] as data
   /// Throws [DioException] if API call or serialization fails
-  Future<Response<HolidayResponse>> createHoliday({ 
+  Future<Response<HolidayResponse>> createHoliday({
     required HolidayCreate holidayCreate,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
@@ -236,10 +236,10 @@ class HolidaysApi {
   }
 
   /// Delete Holiday
-  /// 
+  ///
   ///
   /// Parameters:
-  /// * [holidayId] 
+  /// * [holidayId]
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -249,7 +249,7 @@ class HolidaysApi {
   ///
   /// Returns a [Future]
   /// Throws [DioException] if API call or serialization fails
-  Future<Response<void>> deleteHoliday({ 
+  Future<Response<void>> deleteHoliday({
     required int holidayId,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
@@ -289,10 +289,10 @@ class HolidaysApi {
   }
 
   /// Get Holiday
-  /// 
+  ///
   ///
   /// Parameters:
-  /// * [holidayId] 
+  /// * [holidayId]
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -302,7 +302,7 @@ class HolidaysApi {
   ///
   /// Returns a [Future] containing a [Response] with a [HolidayResponse] as data
   /// Throws [DioException] if API call or serialization fails
-  Future<Response<HolidayResponse>> getHoliday({ 
+  Future<Response<HolidayResponse>> getHoliday({
     required int holidayId,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
@@ -385,7 +385,7 @@ class HolidaysApi {
   ///
   /// Returns a [Future] containing a [Response] with a [ListResponseHolidayResponse] as data
   /// Throws [DioException] if API call or serialization fails
-  Future<Response<ListResponseHolidayResponse>> listHolidays({ 
+  Future<Response<ListResponseHolidayResponse>> listHolidays({
     required String orgId,
     int? limit = 50,
     int? offset = 0,
@@ -462,11 +462,11 @@ class HolidaysApi {
   }
 
   /// Update Holiday
-  /// 
+  ///
   ///
   /// Parameters:
-  /// * [holidayId] 
-  /// * [holidayUpdate] 
+  /// * [holidayId]
+  /// * [holidayUpdate]
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -476,7 +476,7 @@ class HolidaysApi {
   ///
   /// Returns a [Future] containing a [Response] with a [HolidayResponse] as data
   /// Throws [DioException] if API call or serialization fails
-  Future<Response<HolidayResponse>> updateHoliday({ 
+  Future<Response<HolidayResponse>> updateHoliday({
     required int holidayId,
     required HolidayUpdate holidayUpdate,
     CancelToken? cancelToken,

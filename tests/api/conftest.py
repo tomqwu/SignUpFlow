@@ -87,14 +87,15 @@ def reset_database_between_tests():
 # Helper functions (reusable by CLI)
 # ---------------------------------------------------------------------------
 
+_pending_organizations: dict[tuple[int, str], dict] = {}
+_organization_admins: dict[tuple[int, str], dict] = {}
+
 
 def seed_org(client: TestClient, org_id: str, name: str = "Test Org", region: str = "US") -> dict:
-    """Create an organization. Returns response JSON."""
-    resp = client.post(
-        "/api/v1/organizations/", json={"id": org_id, "name": name, "region": region}
-    )
-    assert resp.status_code == 201, f"seed_org failed: {resp.status_code} {resp.text}"
-    return resp.json()
+    """Stage an organization for atomic creation with its first admin."""
+    organization = {"id": org_id, "name": name, "region": region}
+    _pending_organizations[(id(client), org_id)] = organization
+    return organization
 
 
 def seed_user(
@@ -105,19 +106,37 @@ def seed_user(
     password: str = "TestPass123!",
     roles: list | None = None,
 ) -> dict:
-    """Sign up a user. First user in org auto-becomes admin. Returns auth response with token."""
-    resp = client.post(
-        "/api/v1/auth/signup",
-        json={
-            "org_id": org_id,
-            "name": name,
-            "email": email,
-            "password": password,
-            "roles": roles or [],
-        },
+    """Bootstrap the first admin; create every later user through an invitation."""
+    key = (id(client), org_id)
+    organization = _pending_organizations.pop(key, None)
+    if organization is not None:
+        resp = client.post(
+            "/api/v1/auth/signup",
+            json={
+                "org_id": org_id,
+                "org_name": organization["name"],
+                "region": organization["region"],
+                "name": name,
+                "email": email,
+                "password": password,
+            },
+        )
+        assert resp.status_code == 201, f"seed_user failed: {resp.status_code} {resp.text}"
+        result = resp.json()
+        _organization_admins[key] = result
+        return result
+
+    admin = _organization_admins.get(key)
+    assert admin is not None, f"seed_user requires seed_org before the first user in {org_id}"
+    invitation = seed_invitation(
+        client,
+        {"Authorization": f"Bearer {admin['token']}"},
+        org_id,
+        email,
+        name,
+        roles or ["volunteer"],
     )
-    assert resp.status_code == 201, f"seed_user failed: {resp.status_code} {resp.text}"
-    return resp.json()
+    return accept_invitation(client, invitation["token"], password)
 
 
 def login(client: TestClient, email: str, password: str) -> dict:
@@ -185,7 +204,7 @@ def seed_invitation(
 
 
 def accept_invitation(client: TestClient, token: str, password: str = "VolPass123!") -> dict:
-    """Accept invitation. NOTE: returned token is NOT a JWT — must call login() after."""
+    """Accept an invitation and return the authenticated member response."""
     resp = client.post(
         f"/api/v1/invitations/{token}/accept",
         json={

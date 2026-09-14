@@ -12,9 +12,9 @@ part 'holiday_create.g.dart';
 /// HolidayCreate
 ///
 /// Properties:
-/// * [date] 
-/// * [isLongWeekend] 
-/// * [label] 
+/// * [date]
+/// * [isLongWeekend]
+/// * [label]
 /// * [orgId] - Organization ID
 @BuiltValue()
 abstract class HolidayCreate implements Built<HolidayCreate, HolidayCreateBuilder> {

@@ -1,5 +1,6 @@
 """Unit tests for team endpoints."""
 
+from tests.unit._identity import bootstrap_organization
 
 API_BASE = "http://localhost:8000/api/v1"
 
@@ -10,8 +11,8 @@ class TestTeamCreate:
     def test_create_team_success(self, client):
         """Test successful team creation."""
         # Create org first
-        client.post(
-            f"{API_BASE}/organizations/",
+        bootstrap_organization(
+            client,
             json={"id": "team_test_org_001", "name": "Team Test Org 001"},
         )
         # Create team
@@ -34,8 +35,8 @@ class TestTeamCreate:
 
     def test_create_team_duplicate_id(self, client):
         """Test creating team with duplicate ID fails."""
-        client.post(
-            f"{API_BASE}/organizations/",
+        bootstrap_organization(
+            client,
             json={"id": "team_test_org_002", "name": "Team Test Org 002"},
         )
         # Create first team
@@ -60,8 +61,8 @@ class TestTeamCreate:
 
     def test_create_team_with_description(self, client):
         """Test creating team with description."""
-        client.post(
-            f"{API_BASE}/organizations/",
+        bootstrap_organization(
+            client,
             json={"id": "team_test_org_003", "name": "Team Test Org 003"},
         )
         response = client.post(
@@ -83,8 +84,8 @@ class TestTeamRead:
 
     def test_get_team_success(self, client):
         """Test successful team retrieval."""
-        client.post(
-            f"{API_BASE}/organizations/",
+        bootstrap_organization(
+            client,
             json={"id": "team_test_org_004", "name": "Team Test Org 004"},
         )
         client.post(
@@ -105,8 +106,8 @@ class TestTeamRead:
 
     def test_list_teams_by_org(self, client):
         """Test listing teams filtered by organization."""
-        client.post(
-            f"{API_BASE}/organizations/",
+        bootstrap_organization(
+            client,
             json={"id": "team_test_org_005", "name": "Team Test Org 005"},
         )
         # Create multiple teams
@@ -131,8 +132,8 @@ class TestTeamUpdate:
 
     def test_update_team_success(self, client):
         """Test successful team update."""
-        client.post(
-            f"{API_BASE}/organizations/",
+        bootstrap_organization(
+            client,
             json={"id": "team_test_org_006", "name": "Team Test Org 006"},
         )
         client.post(
@@ -164,8 +165,8 @@ class TestTeamDelete:
 
     def test_delete_team_success(self, client):
         """Test successful team deletion."""
-        client.post(
-            f"{API_BASE}/organizations/",
+        bootstrap_organization(
+            client,
             json={"id": "team_test_org_007", "name": "Team Test Org 007"},
         )
         client.post(
@@ -190,8 +191,8 @@ class TestTeamMembers:
     def test_add_team_member_success(self, client):
         """Test successfully adding a member to a team."""
         # Setup: create org, person, and team
-        client.post(
-            f"{API_BASE}/organizations/",
+        bootstrap_organization(
+            client,
             json={"id": "team_test_org_008", "name": "Team Test Org 008"},
         )
         client.post(
@@ -220,8 +221,8 @@ class TestTeamMembers:
     def test_add_team_member_duplicate(self, client):
         """Test adding the same member twice (should be idempotent)."""
         # Setup: create org, person, and team
-        client.post(
-            f"{API_BASE}/organizations/",
+        bootstrap_organization(
+            client,
             json={"id": "team_test_org_009", "name": "Team Test Org 009"},
         )
         client.post(

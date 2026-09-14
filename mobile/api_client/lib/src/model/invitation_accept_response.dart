@@ -12,15 +12,15 @@ part 'invitation_accept_response.g.dart';
 /// Schema for invitation acceptance response.  Returns a JWT access token + refresh token pair so the mobile client can use ``token`` as a Bearer immediately and call ``/auth/refresh`` when it expires (mirrors login/signup since Sprint 9 PR 9.3).
 ///
 /// Properties:
-/// * [email] 
-/// * [message] 
-/// * [name] 
-/// * [orgId] 
-/// * [personId] 
+/// * [email]
+/// * [message]
+/// * [name]
+/// * [orgId]
+/// * [personId]
 /// * [refreshToken] - Refresh token (long-lived). Use POST /auth/refresh to exchange for a fresh access+refresh token pair.
-/// * [roles] 
-/// * [timezone] 
-/// * [token] 
+/// * [roles]
+/// * [timezone]
+/// * [token]
 @BuiltValue()
 abstract class InvitationAcceptResponse implements Built<InvitationAcceptResponse, InvitationAcceptResponseBuilder> {
   @BuiltValueField(wireName: r'email')

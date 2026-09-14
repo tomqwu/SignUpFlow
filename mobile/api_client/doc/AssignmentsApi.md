@@ -27,7 +27,7 @@ Mark the caller's assignment as confirmed.
 import 'package:signupflow_api/api.dart';
 
 final api = SignupflowApi().getAssignmentsApi();
-final int assignmentId = 56; // int | 
+final int assignmentId = 56; // int |
 
 try {
     final response = api.acceptAssignment(assignmentId);
@@ -41,7 +41,7 @@ try {
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **assignmentId** | **int**|  | 
+ **assignmentId** | **int**|  |
 
 ### Return type
 
@@ -70,8 +70,8 @@ Decline the caller's assignment with a reason.
 import 'package:signupflow_api/api.dart';
 
 final api = SignupflowApi().getAssignmentsApi();
-final int assignmentId = 56; // int | 
-final AssignmentDeclineRequest assignmentDeclineRequest = ; // AssignmentDeclineRequest | 
+final int assignmentId = 56; // int |
+final AssignmentDeclineRequest assignmentDeclineRequest = ; // AssignmentDeclineRequest |
 
 try {
     final response = api.declineAssignment(assignmentId, assignmentDeclineRequest);
@@ -85,8 +85,8 @@ try {
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **assignmentId** | **int**|  | 
- **assignmentDeclineRequest** | [**AssignmentDeclineRequest**](AssignmentDeclineRequest.md)|  | 
+ **assignmentId** | **int**|  |
+ **assignmentDeclineRequest** | [**AssignmentDeclineRequest**](AssignmentDeclineRequest.md)|  |
 
 ### Return type
 
@@ -160,8 +160,8 @@ Flag the caller's assignment for swap; admin follows up out of band.
 import 'package:signupflow_api/api.dart';
 
 final api = SignupflowApi().getAssignmentsApi();
-final int assignmentId = 56; // int | 
-final AssignmentSwapRequest assignmentSwapRequest = ; // AssignmentSwapRequest | 
+final int assignmentId = 56; // int |
+final AssignmentSwapRequest assignmentSwapRequest = ; // AssignmentSwapRequest |
 
 try {
     final response = api.requestSwap(assignmentId, assignmentSwapRequest);
@@ -175,8 +175,8 @@ try {
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **assignmentId** | **int**|  | 
- **assignmentSwapRequest** | [**AssignmentSwapRequest**](AssignmentSwapRequest.md)|  | 
+ **assignmentId** | **int**|  |
+ **assignmentSwapRequest** | [**AssignmentSwapRequest**](AssignmentSwapRequest.md)|  |
 
 ### Return type
 

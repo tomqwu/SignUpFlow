@@ -13,14 +13,14 @@ part 'resource_response.g.dart';
 /// ResourceResponse
 ///
 /// Properties:
-/// * [capacity] 
-/// * [createdAt] 
-/// * [extraData] 
-/// * [id] 
-/// * [location] 
-/// * [orgId] 
+/// * [capacity]
+/// * [createdAt]
+/// * [extraData]
+/// * [id]
+/// * [location]
+/// * [orgId]
 /// * [type] - e.g. 'room', 'venue', 'equipment'
-/// * [updatedAt] 
+/// * [updatedAt]
 @BuiltValue()
 abstract class ResourceResponse implements Built<ResourceResponse, ResourceResponseBuilder> {
   @BuiltValueField(wireName: r'capacity')

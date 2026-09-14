@@ -2,6 +2,8 @@
 
 from datetime import datetime, timedelta
 
+from tests.unit._identity import bootstrap_organization
+
 API_BASE = "http://localhost:8000/api/v1"
 
 
@@ -11,8 +13,8 @@ class TestAvailabilityCreate:
     def test_add_availability_success(self, client):
         """Test successful availability/timeoff creation with start_date and end_date."""
         # Setup: Create org and person
-        client.post(
-            f"{API_BASE}/organizations/",
+        bootstrap_organization(
+            client,
             json={"id": "avail_test_org1", "name": "Availability Test Org 1"},
         )
         client.post(
@@ -59,9 +61,7 @@ class TestAvailabilityCreate:
         person_id = f"avail_person_{timestamp}"
 
         # Setup: Create org and person
-        client.post(
-            f"{API_BASE}/organizations/", json={"id": org_id, "name": "Availability Test Org"}
-        )
+        bootstrap_organization(client, json={"id": org_id, "name": "Availability Test Org"})
         client.post(
             f"{API_BASE}/people/",
             json={
@@ -95,8 +95,8 @@ class TestAvailabilityCreate:
     def test_add_availability_invalid_date_range(self, client):
         """Test adding availability with end_date before start_date fails."""
         # Setup: Create org and person
-        client.post(
-            f"{API_BASE}/organizations/",
+        bootstrap_organization(
+            client,
             json={"id": "avail_test_org3", "name": "Availability Test Org 3"},
         )
         client.post(
@@ -120,8 +120,8 @@ class TestAvailabilityRead:
     def test_list_availability_by_person(self, client):
         """Test listing availability/timeoff for a specific person."""
         # Setup: Create org and person
-        client.post(
-            f"{API_BASE}/organizations/",
+        bootstrap_organization(
+            client,
             json={"id": "avail_test_org4", "name": "Availability Test Org 4"},
         )
         client.post(
@@ -155,8 +155,8 @@ class TestAvailabilityRead:
     def test_list_availability_empty(self, client):
         """Test listing availability for person with no timeoff."""
         # Setup: Create org and person
-        client.post(
-            f"{API_BASE}/organizations/",
+        bootstrap_organization(
+            client,
             json={"id": "avail_test_org5", "name": "Availability Test Org 5"},
         )
         client.post(
@@ -187,8 +187,8 @@ class TestAvailabilityDelete:
     def test_delete_availability_success(self, client):
         """Test successful deletion of availability/timeoff period."""
         # Setup: Create org and person
-        client.post(
-            f"{API_BASE}/organizations/",
+        bootstrap_organization(
+            client,
             json={"id": "avail_test_org6", "name": "Availability Test Org 6"},
         )
         client.post(
@@ -217,8 +217,8 @@ class TestAvailabilityDelete:
     def test_delete_availability_not_found(self, client):
         """Test deleting non-existent availability/timeoff returns 404."""
         # Setup: Create org and person
-        client.post(
-            f"{API_BASE}/organizations/",
+        bootstrap_organization(
+            client,
             json={"id": "avail_test_org7", "name": "Availability Test Org 7"},
         )
         client.post(
@@ -233,8 +233,8 @@ class TestAvailabilityDelete:
     def test_delete_availability_wrong_person(self, client):
         """Test deleting timeoff for wrong person returns 404."""
         # Setup: Create org and two persons
-        client.post(
-            f"{API_BASE}/organizations/",
+        bootstrap_organization(
+            client,
             json={"id": "avail_test_org8", "name": "Availability Test Org 8"},
         )
         client.post(

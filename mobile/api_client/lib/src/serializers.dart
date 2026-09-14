@@ -26,16 +26,20 @@ import 'package:signupflow_api/src/model/availability_exception_response.dart';
 import 'package:signupflow_api/src/model/availability_rrule_response.dart';
 import 'package:signupflow_api/src/model/availability_rrule_update.dart';
 import 'package:signupflow_api/src/model/available_person.dart';
+import 'package:signupflow_api/src/model/broadcast_response.dart';
 import 'package:signupflow_api/src/model/bulk_import_item_error.dart';
 import 'package:signupflow_api/src/model/bulk_import_response.dart';
 import 'package:signupflow_api/src/model/calendar_subscription_response.dart';
 import 'package:signupflow_api/src/model/calendar_token_reset_response.dart';
+import 'package:signupflow_api/src/model/cancel_request.dart';
+import 'package:signupflow_api/src/model/change_password_request.dart';
 import 'package:signupflow_api/src/model/conflict_check_request.dart';
 import 'package:signupflow_api/src/model/conflict_check_response.dart';
 import 'package:signupflow_api/src/model/conflict_type.dart';
 import 'package:signupflow_api/src/model/constraint_create.dart';
 import 'package:signupflow_api/src/model/constraint_response.dart';
 import 'package:signupflow_api/src/model/constraint_update.dart';
+import 'package:signupflow_api/src/model/downgrade_request.dart';
 import 'package:signupflow_api/src/model/email_preference_response.dart';
 import 'package:signupflow_api/src/model/email_preference_update.dart';
 import 'package:signupflow_api/src/model/event_create.dart';
@@ -75,7 +79,6 @@ import 'package:signupflow_api/src/model/notification_list_response.dart';
 import 'package:signupflow_api/src/model/notification_response.dart';
 import 'package:signupflow_api/src/model/notification_stats_response.dart';
 import 'package:signupflow_api/src/model/occurrence_preview.dart';
-import 'package:signupflow_api/src/model/organization_create.dart';
 import 'package:signupflow_api/src/model/organization_response.dart';
 import 'package:signupflow_api/src/model/organization_update.dart';
 import 'package:signupflow_api/src/model/password_reset_confirm.dart';
@@ -83,6 +86,8 @@ import 'package:signupflow_api/src/model/password_reset_request.dart';
 import 'package:signupflow_api/src/model/person_create.dart';
 import 'package:signupflow_api/src/model/person_response.dart';
 import 'package:signupflow_api/src/model/person_update.dart';
+import 'package:signupflow_api/src/model/phone_verification_request.dart';
+import 'package:signupflow_api/src/model/phone_verification_response.dart';
 import 'package:signupflow_api/src/model/preview_request.dart';
 import 'package:signupflow_api/src/model/recurring_series_create.dart';
 import 'package:signupflow_api/src/model/recurring_series_response.dart';
@@ -91,7 +96,11 @@ import 'package:signupflow_api/src/model/refresh_response.dart';
 import 'package:signupflow_api/src/model/resource_create.dart';
 import 'package:signupflow_api/src/model/resource_response.dart';
 import 'package:signupflow_api/src/model/resource_update.dart';
+import 'package:signupflow_api/src/model/send_assignment_notification_request.dart';
+import 'package:signupflow_api/src/model/send_broadcast_request.dart';
+import 'package:signupflow_api/src/model/send_event_reminder_request.dart';
 import 'package:signupflow_api/src/model/signup_request.dart';
+import 'package:signupflow_api/src/model/sms_usage_stats_response.dart';
 import 'package:signupflow_api/src/model/solution_assignment_assignee.dart';
 import 'package:signupflow_api/src/model/solution_assignment_entry.dart';
 import 'package:signupflow_api/src/model/solution_assignments_response.dart';
@@ -108,8 +117,15 @@ import 'package:signupflow_api/src/model/team_member_remove.dart';
 import 'package:signupflow_api/src/model/team_response.dart';
 import 'package:signupflow_api/src/model/team_update.dart';
 import 'package:signupflow_api/src/model/time_off_create.dart';
+import 'package:signupflow_api/src/model/trial_request.dart';
+import 'package:signupflow_api/src/model/update_sms_preferences_request.dart';
+import 'package:signupflow_api/src/model/upgrade_request.dart';
 import 'package:signupflow_api/src/model/validation_error.dart';
 import 'package:signupflow_api/src/model/validation_error_loc_inner.dart';
+import 'package:signupflow_api/src/model/verification_code_request.dart';
+import 'package:signupflow_api/src/model/verification_code_response.dart';
+import 'package:signupflow_api/src/model/verify_code_request.dart';
+import 'package:signupflow_api/src/model/verify_code_response.dart';
 import 'package:signupflow_api/src/model/violation_info.dart';
 import 'package:signupflow_api/src/model/workload_stats.dart';
 
@@ -128,16 +144,20 @@ part 'serializers.g.dart';
   AvailabilityRruleResponse,
   AvailabilityRruleUpdate,
   AvailablePerson,
+  BroadcastResponse,
   BulkImportItemError,
   BulkImportResponse,
   CalendarSubscriptionResponse,
   CalendarTokenResetResponse,
+  CancelRequest,
+  ChangePasswordRequest,
   ConflictCheckRequest,
   ConflictCheckResponse,
   ConflictType,
   ConstraintCreate,
   ConstraintResponse,
   ConstraintUpdate,
+  DowngradeRequest,
   EmailPreferenceResponse,
   EmailPreferenceUpdate,
   EventCreate,
@@ -177,7 +197,6 @@ part 'serializers.g.dart';
   NotificationResponse,
   NotificationStatsResponse,
   OccurrencePreview,
-  OrganizationCreate,
   OrganizationResponse,
   OrganizationUpdate,
   PasswordResetConfirm,
@@ -185,6 +204,8 @@ part 'serializers.g.dart';
   PersonCreate,
   PersonResponse,
   PersonUpdate,
+  PhoneVerificationRequest,
+  PhoneVerificationResponse,
   PreviewRequest,
   RecurringSeriesCreate,
   RecurringSeriesResponse,
@@ -193,7 +214,11 @@ part 'serializers.g.dart';
   ResourceCreate,
   ResourceResponse,
   ResourceUpdate,
+  SendAssignmentNotificationRequest,
+  SendBroadcastRequest,
+  SendEventReminderRequest,
   SignupRequest,
+  SmsUsageStatsResponse,
   SolutionAssignmentAssignee,
   SolutionAssignmentEntry,
   SolutionAssignmentsResponse,
@@ -210,8 +235,15 @@ part 'serializers.g.dart';
   TeamResponse,
   TeamUpdate,
   TimeOffCreate,
+  TrialRequest,
+  UpdateSmsPreferencesRequest,
+  UpgradeRequest,
   ValidationError,
   ValidationErrorLocInner,
+  VerificationCodeRequest,
+  VerificationCodeResponse,
+  VerifyCodeRequest,
+  VerifyCodeResponse,
   ViolationInfo,
   WorkloadStats,
 ])

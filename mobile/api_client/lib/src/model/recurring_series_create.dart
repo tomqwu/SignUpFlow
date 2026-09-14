@@ -15,19 +15,19 @@ part 'recurring_series_create.g.dart';
 ///
 /// Properties:
 /// * [duration] - Duration in minutes
-/// * [endConditionType] 
-/// * [endDate] 
-/// * [frequencyInterval] 
-/// * [location] 
-/// * [occurrenceCount] 
-/// * [patternType] 
-/// * [roleRequirements] 
-/// * [selectedDays] 
-/// * [startDate] 
-/// * [startTime] 
-/// * [title] 
-/// * [weekdayName] 
-/// * [weekdayPosition] 
+/// * [endConditionType]
+/// * [endDate]
+/// * [frequencyInterval]
+/// * [location]
+/// * [occurrenceCount]
+/// * [patternType]
+/// * [roleRequirements]
+/// * [selectedDays]
+/// * [startDate]
+/// * [startTime]
+/// * [title]
+/// * [weekdayName]
+/// * [weekdayPosition]
 @BuiltValue()
 abstract class RecurringSeriesCreate implements Built<RecurringSeriesCreate, RecurringSeriesCreateBuilder> {
   /// Duration in minutes

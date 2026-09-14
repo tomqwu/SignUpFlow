@@ -23,6 +23,8 @@ import time
 import httpx
 import pytest
 
+from tests.integration._identity import bootstrap_admin, invite_member
+
 
 def _unique(prefix: str) -> str:
     return f"{prefix}_{int(time.time() * 1000)}"
@@ -37,31 +39,35 @@ def solutions_org(api_server, api_base):
 
     bootstrap = httpx.Client()
 
-    for oid in (org_id, stranger_org_id):
-        resp = bootstrap.post(
-            f"{api_base}/organizations/",
-            json={"id": oid, "name": f"Sol {oid}", "region": "US", "config": {}},
-        )
-        assert resp.status_code == 201, resp.text
-
-    def _signup(oid: str, name: str, roles=None) -> dict:
-        body = {
-            "org_id": oid,
-            "name": name,
-            "email": f"{name.lower().replace(' ', '_')}_{_unique('u')}@test.com",
-            "password": "Password123!",
-        }
-        if roles is not None:
-            body["roles"] = roles
-        r = bootstrap.post(f"{api_base}/auth/signup", json=body)
-        assert r.status_code == 201, r.text
-        return r.json()
-
-    admin = _signup(org_id, "Solutions Admin")
+    admin = bootstrap_admin(
+        bootstrap,
+        api_base,
+        org_id=org_id,
+        org_name=f"Sol {org_id}",
+        name="Solutions Admin",
+        email=f"solutions_admin_{_unique('u')}@test.com",
+        password="Password123!",
+    )
     assert "admin" in admin["roles"]
-    volunteer = _signup(org_id, "Solutions Volunteer", roles=["volunteer"])
+    volunteer = invite_member(
+        bootstrap,
+        api_base,
+        org_id=org_id,
+        admin_token=admin["token"],
+        name="Solutions Volunteer",
+        email=f"solutions_volunteer_{_unique('u')}@test.com",
+        password="Password123!",
+    )
     assert "admin" not in volunteer["roles"]
-    stranger = _signup(stranger_org_id, "Stranger Admin")
+    stranger = bootstrap_admin(
+        bootstrap,
+        api_base,
+        org_id=stranger_org_id,
+        org_name=f"Sol {stranger_org_id}",
+        name="Stranger Admin",
+        email=f"stranger_admin_{_unique('u')}@test.com",
+        password="Password123!",
+    )
     assert "admin" in stranger["roles"]
 
     bootstrap.close()

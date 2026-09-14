@@ -29,8 +29,8 @@ class TeamsApi {
   /// Add members to team (admin only).
   ///
   /// Parameters:
-  /// * [teamId] 
-  /// * [teamMemberAdd] 
+  /// * [teamId]
+  /// * [teamMemberAdd]
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -40,7 +40,7 @@ class TeamsApi {
   ///
   /// Returns a [Future]
   /// Throws [DioException] if API call or serialization fails
-  Future<Response<void>> addTeamMembers({ 
+  Future<Response<void>> addTeamMembers({
     required String teamId,
     required TeamMemberAdd teamMemberAdd,
     CancelToken? cancelToken,
@@ -104,7 +104,7 @@ class TeamsApi {
   /// Create a new team (admin only).
   ///
   /// Parameters:
-  /// * [teamCreate] 
+  /// * [teamCreate]
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -114,7 +114,7 @@ class TeamsApi {
   ///
   /// Returns a [Future] containing a [Response] with a [TeamResponse] as data
   /// Throws [DioException] if API call or serialization fails
-  Future<Response<TeamResponse>> createTeam({ 
+  Future<Response<TeamResponse>> createTeam({
     required TeamCreate teamCreate,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
@@ -205,7 +205,7 @@ class TeamsApi {
   /// Delete team (admin only).
   ///
   /// Parameters:
-  /// * [teamId] 
+  /// * [teamId]
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -215,7 +215,7 @@ class TeamsApi {
   ///
   /// Returns a [Future]
   /// Throws [DioException] if API call or serialization fails
-  Future<Response<void>> deleteTeam({ 
+  Future<Response<void>> deleteTeam({
     required String teamId,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
@@ -258,7 +258,7 @@ class TeamsApi {
   /// Get team by ID. Users can only view teams from their own organization.
   ///
   /// Parameters:
-  /// * [teamId] 
+  /// * [teamId]
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -268,7 +268,7 @@ class TeamsApi {
   ///
   /// Returns a [Future] containing a [Response] with a [TeamResponse] as data
   /// Throws [DioException] if API call or serialization fails
-  Future<Response<TeamResponse>> getTeam({ 
+  Future<Response<TeamResponse>> getTeam({
     required String teamId,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
@@ -352,7 +352,7 @@ class TeamsApi {
   ///
   /// Returns a [Future] containing a [Response] with a [ListResponseTeamResponse] as data
   /// Throws [DioException] if API call or serialization fails
-  Future<Response<ListResponseTeamResponse>> listTeams({ 
+  Future<Response<ListResponseTeamResponse>> listTeams({
     String? orgId,
     String? q,
     int? limit = 50,
@@ -434,8 +434,8 @@ class TeamsApi {
   /// Remove members from team (admin only).
   ///
   /// Parameters:
-  /// * [teamId] 
-  /// * [teamMemberRemove] 
+  /// * [teamId]
+  /// * [teamMemberRemove]
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -445,7 +445,7 @@ class TeamsApi {
   ///
   /// Returns a [Future]
   /// Throws [DioException] if API call or serialization fails
-  Future<Response<void>> removeTeamMembers({ 
+  Future<Response<void>> removeTeamMembers({
     required String teamId,
     required TeamMemberRemove teamMemberRemove,
     CancelToken? cancelToken,
@@ -509,8 +509,8 @@ class TeamsApi {
   /// Update team (admin only).
   ///
   /// Parameters:
-  /// * [teamId] 
-  /// * [teamUpdate] 
+  /// * [teamId]
+  /// * [teamUpdate]
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -520,7 +520,7 @@ class TeamsApi {
   ///
   /// Returns a [Future] containing a [Response] with a [TeamResponse] as data
   /// Throws [DioException] if API call or serialization fails
-  Future<Response<TeamResponse>> updateTeam({ 
+  Future<Response<TeamResponse>> updateTeam({
     required String teamId,
     required TeamUpdate teamUpdate,
     CancelToken? cancelToken,

@@ -27,7 +27,7 @@ class ResourcesApi {
   /// Create a new resource (admin only, scoped to admin&#39;s org).
   ///
   /// Parameters:
-  /// * [resourceCreate] 
+  /// * [resourceCreate]
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -37,7 +37,7 @@ class ResourcesApi {
   ///
   /// Returns a [Future] containing a [Response] with a [ResourceResponse] as data
   /// Throws [DioException] if API call or serialization fails
-  Future<Response<ResourceResponse>> createResource({ 
+  Future<Response<ResourceResponse>> createResource({
     required ResourceCreate resourceCreate,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
@@ -128,7 +128,7 @@ class ResourcesApi {
   /// Delete a resource (admin only).  Refuses with 409 if any Event still references the resource — preserves referential integrity without forcing the admin to discover dangling FKs by surprise.
   ///
   /// Parameters:
-  /// * [resourceId] 
+  /// * [resourceId]
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -138,7 +138,7 @@ class ResourcesApi {
   ///
   /// Returns a [Future]
   /// Throws [DioException] if API call or serialization fails
-  Future<Response<void>> deleteResource({ 
+  Future<Response<void>> deleteResource({
     required String resourceId,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
@@ -181,7 +181,7 @@ class ResourcesApi {
   /// Get a single resource by id; tenancy enforced via the row&#39;s org_id.
   ///
   /// Parameters:
-  /// * [resourceId] 
+  /// * [resourceId]
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -191,7 +191,7 @@ class ResourcesApi {
   ///
   /// Returns a [Future] containing a [Response] with a [ResourceResponse] as data
   /// Throws [DioException] if API call or serialization fails
-  Future<Response<ResourceResponse>> getResource({ 
+  Future<Response<ResourceResponse>> getResource({
     required String resourceId,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
@@ -275,7 +275,7 @@ class ResourcesApi {
   ///
   /// Returns a [Future] containing a [Response] with a [ListResponseResourceResponse] as data
   /// Throws [DioException] if API call or serialization fails
-  Future<Response<ListResponseResourceResponse>> listResources({ 
+  Future<Response<ListResponseResourceResponse>> listResources({
     required String orgId,
     String? type,
     int? limit = 50,
@@ -357,8 +357,8 @@ class ResourcesApi {
   /// Update a resource (admin only). org_id is immutable.
   ///
   /// Parameters:
-  /// * [resourceId] 
-  /// * [resourceUpdate] 
+  /// * [resourceId]
+  /// * [resourceUpdate]
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -368,7 +368,7 @@ class ResourcesApi {
   ///
   /// Returns a [Future] containing a [Response] with a [ResourceResponse] as data
   /// Throws [DioException] if API call or serialization fails
-  Future<Response<ResourceResponse>> updateResource({ 
+  Future<Response<ResourceResponse>> updateResource({
     required String resourceId,
     required ResourceUpdate resourceUpdate,
     CancelToken? cancelToken,

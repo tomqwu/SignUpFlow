@@ -13,9 +13,9 @@ part 'holiday_bulk_import_response.g.dart';
 /// HolidayBulkImportResponse
 ///
 /// Properties:
-/// * [created] 
-/// * [errors] 
-/// * [skipped] 
+/// * [created]
+/// * [errors]
+/// * [skipped]
 @BuiltValue()
 abstract class HolidayBulkImportResponse implements Built<HolidayBulkImportResponse, HolidayBulkImportResponseBuilder> {
   @BuiltValueField(wireName: r'created')

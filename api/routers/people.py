@@ -4,6 +4,7 @@
 from fastapi import APIRouter, Body, Depends, HTTPException, Query, Request, status
 from pydantic import BaseModel, Field
 from sqlalchemy import or_
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from api.database import get_db
@@ -15,6 +16,7 @@ from api.dependencies import (
 )
 from api.logging_config import logger
 from api.models import AuditAction, Organization, Person
+from api.roles import normalize_roles
 from api.schemas.common import PaginationParams, get_pagination_params
 from api.schemas.person import PersonCreate, PersonList, PersonResponse, PersonUpdate
 from api.utils.audit_logger import log_audit_event
@@ -93,12 +95,22 @@ def create_person(
     # Verify admin belongs to the organization
     verify_org_member(current_admin, person_data.org_id)
 
+    try:
+        roles = normalize_roles(person_data.roles or [])
+    except ValueError as exc:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
+
     # Check if person already exists
     existing = db.query(Person).filter(Person.id == person_data.id).first()
     if existing:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
             detail=f"Person with ID '{person_data.id}' already exists",
+        )
+    if person_data.email and db.query(Person).filter(Person.email == person_data.email).first():
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="An account with this email already exists",
         )
 
     # Create person
@@ -107,12 +119,19 @@ def create_person(
         org_id=person_data.org_id,
         name=person_data.name,
         email=person_data.email,
-        roles=person_data.roles or [],
+        roles=roles,
         timezone=person_data.timezone,
         extra_data=person_data.extra_data or {},
     )
     db.add(person)
-    db.commit()
+    try:
+        db.commit()
+    except IntegrityError as exc:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="A person ID or email already exists",
+        ) from exc
     db.refresh(person)
     return person
 
@@ -161,6 +180,17 @@ def bulk_import_people(
     parsed = parse_bulk_people(items, expected_org_id=org_id)
     response_errors = [_to_response_error(e) for e in parsed.errors]
 
+    candidate_emails = [person.email for person in parsed.valid if person.email]
+    duplicate_email = len(candidate_emails) != len(set(candidate_emails))
+    existing_email = bool(
+        candidate_emails and db.query(Person.id).filter(Person.email.in_(candidate_emails)).first()
+    )
+    if duplicate_email or existing_email:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Bulk import contains an email that is already in use",
+        )
+
     created = 0
     skipped = len(parsed.duplicate_indexes)
     candidate_ids = [p.id for p in parsed.valid]
@@ -187,7 +217,14 @@ def bulk_import_people(
         db.add(person)
         created += 1
 
-    db.commit()
+    try:
+        db.commit()
+    except IntegrityError as exc:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Bulk import contains a person ID or email that is already in use",
+        ) from exc
 
     log_audit_event(
         db,
@@ -312,13 +349,34 @@ def update_person(
                 status_code=status.HTTP_403_FORBIDDEN, detail="Only admins can modify user roles"
             )
 
+        normalized_roles = None
+        if person_data.roles is not None:
+            try:
+                normalized_roles = normalize_roles(person_data.roles)
+            except ValueError as exc:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)
+                ) from exc
+
+        if person_data.email is not None:
+            email_owner = (
+                db.query(Person)
+                .filter(Person.email == person_data.email, Person.id != person_id)
+                .first()
+            )
+            if email_owner:
+                raise HTTPException(
+                    status_code=status.HTTP_409_CONFLICT,
+                    detail="An account with this email already exists",
+                )
+
         # Update fields
         if person_data.name is not None:
             person.name = person_data.name
         if person_data.email is not None:
             person.email = person_data.email
-        if person_data.roles is not None:
-            person.roles = person_data.roles
+        if normalized_roles is not None:
+            person.roles = normalized_roles
         if person_data.timezone is not None:
             person.timezone = person_data.timezone
         if person_data.language is not None:
@@ -331,6 +389,12 @@ def update_person(
         return person
     except HTTPException:
         raise
+    except IntegrityError as exc:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="An account with this email already exists",
+        ) from exc
     except Exception as e:
         logger.error(f"Error updating person {person_id}: {str(e)}", exc_info=True)
         db.rollback()

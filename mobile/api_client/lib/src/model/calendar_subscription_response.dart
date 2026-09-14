@@ -11,10 +11,10 @@ part 'calendar_subscription_response.g.dart';
 /// Calendar subscription response.
 ///
 /// Properties:
-/// * [httpsUrl] 
-/// * [message] 
-/// * [token] 
-/// * [webcalUrl] 
+/// * [httpsUrl]
+/// * [message]
+/// * [token]
+/// * [webcalUrl]
 @BuiltValue()
 abstract class CalendarSubscriptionResponse implements Built<CalendarSubscriptionResponse, CalendarSubscriptionResponseBuilder> {
   @BuiltValueField(wireName: r'https_url')

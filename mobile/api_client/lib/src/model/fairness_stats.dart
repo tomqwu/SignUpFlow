@@ -12,9 +12,9 @@ part 'fairness_stats.g.dart';
 /// Fairness metrics + histogram of per-person assignment counts.
 ///
 /// Properties:
-/// * [histogram] 
-/// * [perPersonCounts] 
-/// * [stdev] 
+/// * [histogram]
+/// * [perPersonCounts]
+/// * [stdev]
 @BuiltValue()
 abstract class FairnessStats implements Built<FairnessStats, FairnessStatsBuilder> {
   @BuiltValueField(wireName: r'histogram')

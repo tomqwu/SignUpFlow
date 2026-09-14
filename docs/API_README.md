@@ -1,5 +1,10 @@
 # Roster API - Microservice Documentation
 
+> Historical API sketch. Endpoint paths and unauthenticated examples below are
+> not current contracts. Use the root `README.md` and live `/docs` OpenAPI UI.
+> Current organization onboarding is one atomic `POST /api/v1/auth/signup`;
+> existing organizations are invitation-only.
+
 A FastAPI-based microservice for constraint-based roster scheduling. Supports cricket leagues, church volunteers, on-call rotations, and custom scheduling scenarios.
 
 ## 🚀 Quick Start

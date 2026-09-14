@@ -13,15 +13,15 @@ part 'organization_response.g.dart';
 /// Schema for organization response.
 ///
 /// Properties:
-/// * [cancelledAt] 
-/// * [config] 
-/// * [createdAt] 
-/// * [dataRetentionUntil] 
-/// * [deletionScheduledAt] 
-/// * [id] 
+/// * [cancelledAt]
+/// * [config]
+/// * [createdAt]
+/// * [dataRetentionUntil]
+/// * [deletionScheduledAt]
+/// * [id]
 /// * [name] - Organization name
-/// * [region] 
-/// * [updatedAt] 
+/// * [region]
+/// * [updatedAt]
 @BuiltValue()
 abstract class OrganizationResponse implements Built<OrganizationResponse, OrganizationResponseBuilder> {
   @BuiltValueField(wireName: r'cancelled_at')

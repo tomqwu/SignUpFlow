@@ -11,10 +11,10 @@ part 'conflict_type.g.dart';
 /// A detected scheduling conflict.
 ///
 /// Properties:
-/// * [conflictingEventId] 
-/// * [endTime] 
+/// * [conflictingEventId]
+/// * [endTime]
 /// * [message] - Human-readable conflict message
-/// * [startTime] 
+/// * [startTime]
 /// * [type] - Conflict type: already_assigned, time_off, double_booked
 @BuiltValue()
 abstract class ConflictType implements Built<ConflictType, ConflictTypeBuilder> {

@@ -19,6 +19,7 @@ Method | HTTP request | Description
 [**listSolutions**](SolutionsApi.md#listsolutions) | **GET** /api/v1/solutions/ | List Solutions
 [**publishSolution**](SolutionsApi.md#publishsolution) | **POST** /api/v1/solutions/{solution_id}/publish | Publish Solution
 [**rollbackSolution**](SolutionsApi.md#rollbacksolution) | **POST** /api/v1/solutions/{solution_id}/rollback | Rollback Solution
+[**streamSolutionAssignments**](SolutionsApi.md#streamsolutionassignments) | **GET** /api/v1/solutions/{solution_id}/assignments/stream | Stream Solution Assignments
 [**unpublishSolution**](SolutionsApi.md#unpublishsolution) | **POST** /api/v1/solutions/{solution_id}/unpublish | Unpublish Solution
 
 
@@ -34,8 +35,8 @@ Diff two solutions (admin only). Both must belong to the same org as the caller.
 import 'package:signupflow_api/api.dart';
 
 final api = SignupflowApi().getSolutionsApi();
-final int solutionAId = 56; // int | 
-final int solutionBId = 56; // int | 
+final int solutionAId = 56; // int |
+final int solutionBId = 56; // int |
 
 try {
     final response = api.compareSolutions(solutionAId, solutionBId);
@@ -49,8 +50,8 @@ try {
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **solutionAId** | **int**|  | 
- **solutionBId** | **int**|  | 
+ **solutionAId** | **int**|  |
+ **solutionBId** | **int**|  |
 
 ### Return type
 
@@ -79,7 +80,7 @@ Create a manual solution record (for testing or external import). Note: This doe
 import 'package:signupflow_api/api.dart';
 
 final api = SignupflowApi().getSolutionsApi();
-final BuiltMap<String, JsonObject> requestBody = Object; // BuiltMap<String, JsonObject> | 
+final BuiltMap<String, JsonObject> requestBody = Object; // BuiltMap<String, JsonObject> |
 
 try {
     final response = api.createManualSolution(requestBody);
@@ -93,7 +94,7 @@ try {
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **requestBody** | [**BuiltMap&lt;String, JsonObject&gt;**](JsonObject.md)|  | 
+ **requestBody** | [**BuiltMap&lt;String, JsonObject&gt;**](JsonObject.md)|  |
 
 ### Return type
 
@@ -122,7 +123,7 @@ Delete solution and all assignments.
 import 'package:signupflow_api/api.dart';
 
 final api = SignupflowApi().getSolutionsApi();
-final int solutionId = 56; // int | 
+final int solutionId = 56; // int |
 
 try {
     api.deleteSolution(solutionId);
@@ -135,7 +136,7 @@ try {
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **solutionId** | **int**|  | 
+ **solutionId** | **int**|  |
 
 ### Return type
 
@@ -164,8 +165,8 @@ Export solution in various formats (CSV, ICS, JSON).
 import 'package:signupflow_api/api.dart';
 
 final api = SignupflowApi().getSolutionsApi();
-final int solutionId = 56; // int | 
-final ExportFormat exportFormat = ; // ExportFormat | 
+final int solutionId = 56; // int |
+final ExportFormat exportFormat = ; // ExportFormat |
 
 try {
     final response = api.exportSolution(solutionId, exportFormat);
@@ -179,8 +180,8 @@ try {
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **solutionId** | **int**|  | 
- **exportFormat** | [**ExportFormat**](ExportFormat.md)|  | 
+ **solutionId** | **int**|  |
+ **exportFormat** | [**ExportFormat**](ExportFormat.md)|  |
 
 ### Return type
 
@@ -209,7 +210,7 @@ Get solution by ID.
 import 'package:signupflow_api/api.dart';
 
 final api = SignupflowApi().getSolutionsApi();
-final int solutionId = 56; // int | 
+final int solutionId = 56; // int |
 
 try {
     final response = api.getSolution(solutionId);
@@ -223,7 +224,7 @@ try {
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **solutionId** | **int**|  | 
+ **solutionId** | **int**|  |
 
 ### Return type
 
@@ -252,7 +253,7 @@ Get all assignments for a solution, grouped by event.  Mobile Solution Review re
 import 'package:signupflow_api/api.dart';
 
 final api = SignupflowApi().getSolutionsApi();
-final int solutionId = 56; // int | 
+final int solutionId = 56; // int |
 
 try {
     final response = api.getSolutionAssignments(solutionId);
@@ -266,7 +267,7 @@ try {
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **solutionId** | **int**|  | 
+ **solutionId** | **int**|  |
 
 ### Return type
 
@@ -295,7 +296,7 @@ Stats endpoint (admin only): fairness histogram + stability + workload distribut
 import 'package:signupflow_api/api.dart';
 
 final api = SignupflowApi().getSolutionsApi();
-final int solutionId = 56; // int | 
+final int solutionId = 56; // int |
 
 try {
     final response = api.getSolutionStats(solutionId);
@@ -309,7 +310,7 @@ try {
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **solutionId** | **int**|  | 
+ **solutionId** | **int**|  |
 
 ### Return type
 
@@ -354,7 +355,7 @@ try {
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **orgId** | **String**| Filter by organization ID | [optional] 
+ **orgId** | **String**| Filter by organization ID | [optional]
  **limit** | **int**| Page size, max 200 | [optional] [default to 50]
  **offset** | **int**| Number of rows to skip | [optional] [default to 0]
 
@@ -385,7 +386,7 @@ Publish a solution (admin only). Unpublishes any prior published in the same org
 import 'package:signupflow_api/api.dart';
 
 final api = SignupflowApi().getSolutionsApi();
-final int solutionId = 56; // int | 
+final int solutionId = 56; // int |
 
 try {
     final response = api.publishSolution(solutionId);
@@ -399,7 +400,7 @@ try {
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **solutionId** | **int**|  | 
+ **solutionId** | **int**|  |
 
 ### Return type
 
@@ -428,7 +429,7 @@ Rollback to a previously-published solution (admin only).  Republishes the targe
 import 'package:signupflow_api/api.dart';
 
 final api = SignupflowApi().getSolutionsApi();
-final int solutionId = 56; // int | 
+final int solutionId = 56; // int |
 
 try {
     final response = api.rollbackSolution(solutionId);
@@ -442,7 +443,7 @@ try {
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **solutionId** | **int**|  | 
+ **solutionId** | **int**|  |
 
 ### Return type
 
@@ -459,6 +460,49 @@ Name | Type | Description  | Notes
 
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
+# **streamSolutionAssignments**
+> JsonObject streamSolutionAssignments(solutionId)
+
+Stream Solution Assignments
+
+Server-Sent Events stream of assignment-change events for a solution.  Sprint 10 PR 10.4: replaces pull-to-refresh on the admin Solution Review with live updates. Each subscriber gets its own per-process asyncio.Queue (see api/services/event_bus.py); publishers fan-out via `event_bus.publish(\"solution:{id}\", ...)` from assignment-mutation endpoints.  Format: standard `text/event-stream` per W3C SSE. Each event is a JSON object on a single `data:` line. The client reconnects on drop; on reconnect it should re-fetch the snapshot via the non-stream `/assignments` endpoint and resume.  Tenant scoping: tenancy via `get_current_admin_user` + `verify_org_member` below — the stream only emits events for a solution the admin can already read. No org_id is published in the event body because the subscriber is already scoped.
+
+### Example
+```dart
+import 'package:signupflow_api/api.dart';
+
+final api = SignupflowApi().getSolutionsApi();
+final int solutionId = 56; // int |
+
+try {
+    final response = api.streamSolutionAssignments(solutionId);
+    print(response);
+} catch on DioException (e) {
+    print('Exception when calling SolutionsApi->streamSolutionAssignments: $e\n');
+}
+```
+
+### Parameters
+
+Name | Type | Description  | Notes
+------------- | ------------- | ------------- | -------------
+ **solutionId** | **int**|  |
+
+### Return type
+
+[**JsonObject**](JsonObject.md)
+
+### Authorization
+
+[HTTPBearer](../README.md#HTTPBearer)
+
+### HTTP request headers
+
+ - **Content-Type**: Not defined
+ - **Accept**: application/json, text/event-stream
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
 # **unpublishSolution**
 > SolutionResponse unpublishSolution(solutionId)
 
@@ -471,7 +515,7 @@ Unpublish a solution (admin only).
 import 'package:signupflow_api/api.dart';
 
 final api = SignupflowApi().getSolutionsApi();
-final int solutionId = 56; // int | 
+final int solutionId = 56; // int |
 
 try {
     final response = api.unpublishSolution(solutionId);
@@ -485,7 +529,7 @@ try {
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **solutionId** | **int**|  | 
+ **solutionId** | **int**|  |
 
 ### Return type
 

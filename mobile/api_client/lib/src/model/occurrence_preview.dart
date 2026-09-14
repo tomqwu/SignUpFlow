@@ -13,14 +13,14 @@ part 'occurrence_preview.g.dart';
 /// Preview of generated occurrences.
 ///
 /// Properties:
-/// * [endTime] 
-/// * [holidayLabel] 
-/// * [isHolidayConflict] 
-/// * [location] 
-/// * [occurrenceSequence] 
-/// * [roleRequirements] 
-/// * [startTime] 
-/// * [title] 
+/// * [endTime]
+/// * [holidayLabel]
+/// * [isHolidayConflict]
+/// * [location]
+/// * [occurrenceSequence]
+/// * [roleRequirements]
+/// * [startTime]
+/// * [title]
 @BuiltValue()
 abstract class OccurrencePreview implements Built<OccurrencePreview, OccurrencePreviewBuilder> {
   @BuiltValueField(wireName: r'end_time')

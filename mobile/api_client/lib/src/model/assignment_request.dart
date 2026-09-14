@@ -11,9 +11,9 @@ part 'assignment_request.g.dart';
 /// Request to assign/unassign a person.
 ///
 /// Properties:
-/// * [action] 
-/// * [personId] 
-/// * [role] 
+/// * [action]
+/// * [personId]
+/// * [role]
 @BuiltValue()
 abstract class AssignmentRequest implements Built<AssignmentRequest, AssignmentRequestBuilder> {
   @BuiltValueField(wireName: r'action')

@@ -56,7 +56,8 @@ Notification routes are registered under `/api/v1`. Billing and SMS code is regi
 
 - Every database query MUST filter by `org_id`. Use `verify_org_member(person, org_id)` from `api/dependencies.py` to enforce org isolation.
 - Protect routes with `Depends(get_current_user)` or `Depends(get_current_admin_user)`. Never read user state from the request body.
-- Two roles only: `volunteer` and `admin`. Roles are a JSON array on the `Person` model.
+- `/auth/signup` atomically creates a new organization and its first `admin`. Never use it to join an existing organization; all later accounts require an invitation.
+- Grant exactly one permission role: `volunteer` or `admin`. Keep scheduling qualifications such as `usher` or `coach` in the same JSON array without treating them as permissions. Normalize role input with `api.roles.normalize_roles`.
 - A missing `org_id` filter is a cross-tenant data leak. Treat it as a P0 bug.
 
 ## Anti-hallucination

@@ -33,7 +33,8 @@ SignUpFlow is a volunteer scheduling API, CLI, and web app using FastAPI, SQLAlc
 
 - Every database query MUST filter by `org_id`. Use `verify_org_member(person, org_id)` from `api/dependencies.py`.
 - Protect routes with `Depends(get_current_user)` or `Depends(get_current_admin_user)`. Never read user state from the request body.
-- Roles are `volunteer` or `admin`, stored as a JSON array on `Person`.
+- `/auth/signup` atomically creates a new organization and its first `admin`; existing organizations are invitation-only.
+- Grant exactly one permission role, `volunteer` or `admin`. Preserve scheduling qualifications in the role array and validate input with `api.roles.normalize_roles`.
 
 ## Code style
 

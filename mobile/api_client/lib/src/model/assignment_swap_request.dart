@@ -11,7 +11,7 @@ part 'assignment_swap_request.g.dart';
 /// Body for POST /assignments/{id}/swap-request.
 ///
 /// Properties:
-/// * [note] 
+/// * [note]
 @BuiltValue()
 abstract class AssignmentSwapRequest implements Built<AssignmentSwapRequest, AssignmentSwapRequestBuilder> {
   @BuiltValueField(wireName: r'note')

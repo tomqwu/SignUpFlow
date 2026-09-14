@@ -16,9 +16,11 @@ class _$SignupRequest extends SignupRequest {
   @override
   final String orgId;
   @override
+  final String orgName;
+  @override
   final String password;
   @override
-  final BuiltList<String>? roles;
+  final String? region;
   @override
   final String? timezone;
 
@@ -30,8 +32,9 @@ class _$SignupRequest extends SignupRequest {
       this.language,
       required this.name,
       required this.orgId,
+      required this.orgName,
       required this.password,
-      this.roles,
+      this.region,
       this.timezone})
       : super._();
   @override
@@ -49,8 +52,9 @@ class _$SignupRequest extends SignupRequest {
         language == other.language &&
         name == other.name &&
         orgId == other.orgId &&
+        orgName == other.orgName &&
         password == other.password &&
-        roles == other.roles &&
+        region == other.region &&
         timezone == other.timezone;
   }
 
@@ -61,8 +65,9 @@ class _$SignupRequest extends SignupRequest {
     _$hash = $jc(_$hash, language.hashCode);
     _$hash = $jc(_$hash, name.hashCode);
     _$hash = $jc(_$hash, orgId.hashCode);
+    _$hash = $jc(_$hash, orgName.hashCode);
     _$hash = $jc(_$hash, password.hashCode);
-    _$hash = $jc(_$hash, roles.hashCode);
+    _$hash = $jc(_$hash, region.hashCode);
     _$hash = $jc(_$hash, timezone.hashCode);
     _$hash = $jf(_$hash);
     return _$hash;
@@ -75,8 +80,9 @@ class _$SignupRequest extends SignupRequest {
           ..add('language', language)
           ..add('name', name)
           ..add('orgId', orgId)
+          ..add('orgName', orgName)
           ..add('password', password)
-          ..add('roles', roles)
+          ..add('region', region)
           ..add('timezone', timezone))
         .toString();
   }
@@ -102,13 +108,17 @@ class SignupRequestBuilder
   String? get orgId => _$this._orgId;
   set orgId(String? orgId) => _$this._orgId = orgId;
 
+  String? _orgName;
+  String? get orgName => _$this._orgName;
+  set orgName(String? orgName) => _$this._orgName = orgName;
+
   String? _password;
   String? get password => _$this._password;
   set password(String? password) => _$this._password = password;
 
-  ListBuilder<String>? _roles;
-  ListBuilder<String> get roles => _$this._roles ??= ListBuilder<String>();
-  set roles(ListBuilder<String>? roles) => _$this._roles = roles;
+  String? _region;
+  String? get region => _$this._region;
+  set region(String? region) => _$this._region = region;
 
   String? _timezone;
   String? get timezone => _$this._timezone;
@@ -125,8 +135,9 @@ class SignupRequestBuilder
       _language = $v.language;
       _name = $v.name;
       _orgId = $v.orgId;
+      _orgName = $v.orgName;
       _password = $v.password;
-      _roles = $v.roles?.toBuilder();
+      _region = $v.region;
       _timezone = $v.timezone;
       _$v = null;
     }
@@ -147,33 +158,22 @@ class SignupRequestBuilder
   SignupRequest build() => _build();
 
   _$SignupRequest _build() {
-    _$SignupRequest _$result;
-    try {
-      _$result = _$v ??
-          _$SignupRequest._(
-            email: BuiltValueNullFieldError.checkNotNull(
-                email, r'SignupRequest', 'email'),
-            language: language,
-            name: BuiltValueNullFieldError.checkNotNull(
-                name, r'SignupRequest', 'name'),
-            orgId: BuiltValueNullFieldError.checkNotNull(
-                orgId, r'SignupRequest', 'orgId'),
-            password: BuiltValueNullFieldError.checkNotNull(
-                password, r'SignupRequest', 'password'),
-            roles: _roles?.build(),
-            timezone: timezone,
-          );
-    } catch (_) {
-      late String _$failedField;
-      try {
-        _$failedField = 'roles';
-        _roles?.build();
-      } catch (e) {
-        throw BuiltValueNestedFieldError(
-            r'SignupRequest', _$failedField, e.toString());
-      }
-      rethrow;
-    }
+    final _$result = _$v ??
+        _$SignupRequest._(
+          email: BuiltValueNullFieldError.checkNotNull(
+              email, r'SignupRequest', 'email'),
+          language: language,
+          name: BuiltValueNullFieldError.checkNotNull(
+              name, r'SignupRequest', 'name'),
+          orgId: BuiltValueNullFieldError.checkNotNull(
+              orgId, r'SignupRequest', 'orgId'),
+          orgName: BuiltValueNullFieldError.checkNotNull(
+              orgName, r'SignupRequest', 'orgName'),
+          password: BuiltValueNullFieldError.checkNotNull(
+              password, r'SignupRequest', 'password'),
+          region: region,
+          timezone: timezone,
+        );
     replace(_$result);
     return _$result;
   }

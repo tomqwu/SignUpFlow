@@ -14,11 +14,11 @@ part 'solve_response.g.dart';
 /// Schema for solve response.
 ///
 /// Properties:
-/// * [assignmentCount] 
-/// * [message] 
-/// * [metrics] 
+/// * [assignmentCount]
+/// * [message]
+/// * [metrics]
 /// * [solutionId] - Database ID of saved solution
-/// * [violations] 
+/// * [violations]
 @BuiltValue()
 abstract class SolveResponse implements Built<SolveResponse, SolveResponseBuilder> {
   @BuiltValueField(wireName: r'assignment_count')

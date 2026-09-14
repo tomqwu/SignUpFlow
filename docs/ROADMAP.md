@@ -41,7 +41,11 @@ evidence with a local mock. Do not deploy or enable providers from a roadmap alo
   and partial/blocked status; pytest rejects omitted bundled roles or scenarios.
   BO-02 is automated: each domain browser flow invites and accepts fourteen members
   with explicit qualifications and verifies the admin-only qualification editor at
-  360px and 1440px. Atomic organization bootstrap remains separate #255 work.
+  360px and 1440px. Full browser bootstrap remains partial in BO-01.
+- #255: atomic organization/first-admin bootstrap, invitation-only later
+  membership, shared role normalization, request-override rejection, and
+  concurrent acceptance protection are implemented with local API/integration
+  evidence. PostgreSQL migration/concurrency acceptance remains under #253/#260.
 - #253: organization authorization and audit fixes merged in PR #272; retain
   remaining PostgreSQL cascade/release evidence, not the old unmerged-PR blocker.
 - #263: assignment roles now persist; saved constraints remain ignored by the
@@ -50,7 +54,8 @@ evidence with a local mock. Do not deploy or enable providers from a roadmap alo
   and migration parity remain unverified release work; run that validation locally.
 - #259: repurpose the obsolete AI/CI gate ticket as local validation and evidence
   hygiene. No workflow, secret, provider or required status is needed for review.
-- #191: preserve the native-codegen/device work, using a documented local toolchain.
+- #191: the Dart client is regenerated from the current OpenAPI snapshot and
+  Flutter signup uses atomic bootstrap. Native build/device acceptance remains.
 - PR #251 remains separate open export work; do not count it as shipped.
 
 These are verified partial milestones, not blanket closure of their tickets.

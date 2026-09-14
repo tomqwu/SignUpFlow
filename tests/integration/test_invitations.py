@@ -16,6 +16,8 @@ import time
 import httpx
 import pytest
 
+from tests.integration._identity import bootstrap_admin, invite_member
+
 
 @pytest.fixture
 def setup_test_org(api_server, api_base):
@@ -27,33 +29,16 @@ def setup_test_org(api_server, api_base):
     admin_email = f"admin_{timestamp}@test.com"
     admin_password = "AdminPass123!"
 
-    # Create organization
-    org_response = client.post(
-        f"{api_base}/organizations/",
-        json={"id": org_id, "name": "Test Organization", "region": "US", "config": {}},
+    admin_data = bootstrap_admin(
+        client,
+        api_base,
+        org_id=org_id,
+        org_name="Test Organization",
+        name="Admin User",
+        email=admin_email,
+        password=admin_password,
+        region="US",
     )
-
-    if org_response.status_code not in [200, 201]:
-        raise AssertionError(
-            f"Failed to create org (status {org_response.status_code}): {org_response.text}"
-        )
-
-    # Create admin user (first user becomes admin automatically)
-    signup_response = client.post(
-        f"{api_base}/auth/signup",
-        json={
-            "org_id": org_id,
-            "name": "Admin User",
-            "email": admin_email,
-            "password": admin_password,
-            "roles": ["admin"],
-        },
-    )
-
-    if signup_response.status_code != 201:
-        raise AssertionError(f"Failed to signup: {signup_response.text}")
-
-    admin_data = signup_response.json()
 
     # JWT-authed client for admin requests
     jwt_token = admin_data["token"]
@@ -115,19 +100,16 @@ class TestCreateInvitation:
         # Create a volunteer (non-admin) user
         volunteer_email = f"volunteer_{int(time.time() * 1000)}@test.com"
         volunteer_password = "VolPass123!"
-        volunteer_response = httpx.Client().post(
-            f"{api_base}/auth/signup",
-            json={
-                "org_id": data["org_id"],
-                "name": "Volunteer User",
-                "email": volunteer_email,
-                "password": volunteer_password,
-                "roles": ["volunteer"],
-            },
+        volunteer_data = invite_member(
+            data["client"],
+            api_base,
+            org_id=data["org_id"],
+            admin_token=data["client"].headers["Authorization"].removeprefix("Bearer "),
+            name="Volunteer User",
+            email=volunteer_email,
+            password=volunteer_password,
         )
-        assert volunteer_response.status_code == 201, volunteer_response.text
-        volunteer_data = volunteer_response.json()
-        # Org's first user is admin; this second user is volunteer-only.
+        # The invitation grants volunteer access only.
         assert "admin" not in volunteer_data["roles"]
 
         # New client with volunteer's JWT
