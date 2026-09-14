@@ -15,7 +15,7 @@ TEST_API_BASE ?= $(TEST_APP_URL)/api
 TEST_DB_PATH := $(shell mktemp -d /tmp/signupflow-tests.XXXXXX)/signupflow_test.db
 TEST_DB_PATH_STRIPPED := $(patsubst /%,%,$(TEST_DB_PATH))
 TEST_DB_URL := sqlite:////$(TEST_DB_PATH_STRIPPED)
-ifneq ($(filter test% pre-commit prepare-test-data ensure-test-env,$(MAKECMDGOALS)),)
+ifneq ($(filter test% pre-commit prepare-test-data ensure-test-env capture-screenshots validate-screenshots,$(MAKECMDGOALS)),)
 export SIGNUPFLOW_TEST_DATABASE_URL := $(TEST_DB_URL)
 export DATABASE_URL := $(TEST_DB_URL)
 endif
