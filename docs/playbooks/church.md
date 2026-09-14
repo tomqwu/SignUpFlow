@@ -84,6 +84,11 @@ separately runs all five Church qualifications through one-off and recurring ava
 entry at both widths, rejects peer edits, and verifies solver exclusion across twelve
 API-seeded events.
 
+BO-07 creates a weekly Church series in the browser, moves one service occurrence,
+cancels a second, and proves the third is unchanged before deleting the remaining series.
+The published-roster journey also proves that changing an accepted service time returns
+the member commitment to unanswered until the member accepts the new revision.
+
 ## Additional operational drills
 
 Record these separately as manual/extended acceptance, not as passed by CH-01-08:

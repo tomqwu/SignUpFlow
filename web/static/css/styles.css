@@ -186,12 +186,30 @@ a { color: var(--accent); text-decoration: none; }
   flex: 0 0 auto;
   width: auto;
 }
+
+.event-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex: 0 0 150px;
+}
+.event-actions .btn {
+  width: 100%;
+  padding: 6px 10px;
+  white-space: normal;
+}
+.event-edit-form {
+  padding: 14px;
+  border-bottom: 1px solid var(--line-2);
+}
 @media (max-width: 480px) {
   .qualification-form {
     flex-direction: column;
     align-items: stretch;
   }
   .qualification-form > .btn { width: 100%; }
+  .event-row { flex-direction: column; align-items: stretch; }
+  .event-actions { flex-basis: auto; }
 }
 
 /* Onboarding rows pair flexible copy with a compact action. The global button

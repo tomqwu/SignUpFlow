@@ -82,6 +82,11 @@ BO-03 separately runs all seven Basketball qualifications through one-off and re
 availability entry at both widths, rejects peer edits, and verifies solver exclusion
 across twelve API-seeded events.
 
+BO-07 creates a weekly Basketball series in the browser, postpones one game occurrence,
+cancels a second, and proves the third is unchanged before deleting the remaining series.
+The published-roster journey also proves that changing an accepted game time returns the
+player commitment to unanswered until the player accepts the new revision.
+
 ## Additional operational drills
 
 Record these separately as manual/extended acceptance:

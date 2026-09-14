@@ -1,4 +1,4 @@
-"""Domain browser acceptance: setup, availability, scheduling, and response.
+"""Domain browser acceptance: setup, availability, scheduling, change, and response.
 
 The primary browser journey creates the organization, members, and full twelve-event
 six-week plan through the UI before solving and publishing it. The per-role availability
@@ -7,7 +7,7 @@ browser sessions.
 """
 
 from collections import Counter
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 
 import httpx
 import pytest
@@ -29,6 +29,13 @@ def _login(page, base, email, password, landing):
 
 def _fits(page):
     assert page.evaluate("document.documentElement.scrollWidth <= window.innerWidth")
+
+
+def _utc_datetime(value):
+    parsed = datetime.fromisoformat(value)
+    if parsed.tzinfo is None:
+        return parsed.replace(tzinfo=UTC)
+    return parsed.astimezone(UTC)
 
 
 def _onboard_qualified_members(page, new_context, base, db_path, playbook, width):
@@ -114,6 +121,29 @@ def _create_event_in_browser(page, base, playbook, week, label, hour, day_offset
     assert created["extra_data"]["role_counts"] == playbook.spec["roles"]
     playbook.events[created["id"]] = created
     return created
+
+
+def _edit_event_in_browser(page, base, playbook, event_id, start, end):
+    page.goto(f"{base}/a/events")
+    row = page.locator(f'.event-row[data-event-id="{event_id}"]')
+    row.get_by_role("button", name="Edit", exact=False).click()
+    form = page.locator(f'form.event-edit-form[data-event-id="{event_id}"]')
+    expect(form).to_be_visible()
+    form.locator('input[name="event_date"]').fill(start.date().isoformat())
+    form.locator('input[name="start_time"]').fill(start.strftime("%H:%M"))
+    form.locator('input[name="end_time"]').fill(end.strftime("%H:%M"))
+    with page.expect_response(
+        lambda response: response.request.method == "POST"
+        and response.url.endswith(f"/a/events/{event_id}/update")
+    ) as response_info:
+        form.get_by_role("button", name="Save change").click()
+    assert response_info.value.ok
+    expect(form).to_be_hidden()
+    expect(page.locator("#events-list .form-error")).to_have_count(0)
+    updated = playbook.request("GET", f"/events/{event_id}")
+    if event_id in playbook.events:
+        playbook.events[event_id].update(updated)
+    return updated
 
 
 @pytest.mark.parametrize("width", [360, 1440])
@@ -219,6 +249,78 @@ def test_every_domain_role_records_unavailability(
 
 
 @pytest.mark.parametrize("width", [360, 1440])
+def test_recurring_change_and_cancel_scope(live_server, page, tmp_path, playbook_spec, width):
+    base = live_server
+    page.set_viewport_size({"width": width, "height": 900})
+    with httpx.Client(base_url=base, timeout=30) as client:
+        playbook = Playbook(client, playbook_spec, seed_people=False)
+        _login(page, base, playbook.email, playbook.password, "/a/dashboard")
+        title = f"{playbook.spec['event']} change drill"
+        page.goto(f"{base}/a/recurring")
+        page.get_by_role("button", name="New series").click()
+        page.fill("#rs_title", title)
+        page.check('input[name="selected_days"][value="sunday"]')
+        page.fill("#rs_sd", playbook.start.isoformat())
+        page.fill("#rs_st", "14:00")
+        page.fill("#rs_oc", "3")
+        page.fill('input[name="role_name"]', playbook.spec["critical_role"])
+        page.fill('input[name="role_count"]', "1")
+        page.get_by_role("button", name="Create series").click()
+        expect(page.locator("#recurring-list")).to_contain_text(title)
+
+        series = playbook.request("GET", f"/recurring-series?org_id={playbook.org}")["items"]
+        assert len(series) == 1
+        series_id = series[0]["id"]
+        occurrences = playbook.request("GET", f"/recurring-series/{series_id}/occurrences")[
+            "occurrences"
+        ]
+        assert len(occurrences) == 3
+        first, second, third = occurrences
+        original_third_start = _utc_datetime(third["start_time"])
+
+        first_start = _utc_datetime(first["start_time"]) + timedelta(hours=1)
+        first_end = _utc_datetime(first["end_time"]) + timedelta(hours=1)
+        moved = _edit_event_in_browser(
+            page,
+            base,
+            playbook,
+            first["id"],
+            first_start,
+            first_end,
+        )
+        assert _utc_datetime(moved["start_time"]) == first_start
+        assert (
+            _utc_datetime(playbook.request("GET", f"/events/{third['id']}")["start_time"])
+            == original_third_start
+        )
+
+        page.goto(f"{base}/a/events")
+        second_row = page.locator(f'.event-row[data-event-id="{second["id"]}"]')
+        page.once("dialog", lambda dialog: dialog.accept())
+        second_row.get_by_role("button", name="Cancel occurrence").click()
+        expect(page.locator(f'[data-event-id="{second["id"]}"]')).to_have_count(0)
+        playbook.request("GET", f"/events/{second['id']}", 404)
+        assert playbook.request("GET", f"/events/{first['id']}")["id"] == first["id"]
+        assert (
+            _utc_datetime(playbook.request("GET", f"/events/{third['id']}")["start_time"])
+            == original_third_start
+        )
+        _fits(page)
+        page.screenshot(
+            path=str(tmp_path / f"{playbook_spec.id}-{width}-occurrence-scope.png"),
+            full_page=True,
+        )
+
+        page.goto(f"{base}/a/recurring")
+        page.once("dialog", lambda dialog: dialog.accept())
+        page.get_by_role("button", name="Delete entire series").click()
+        expect(page.locator("#recurring-list")).to_contain_text("No recurring series yet")
+        playbook.request("GET", f"/events/{first['id']}", 404)
+        playbook.request("GET", f"/events/{third['id']}", 404)
+        no_js_errors(page)
+
+
+@pytest.mark.parametrize("width", [360, 1440])
 def test_domain_browser_workflow(
     live_server, page, new_context, tmp_path, db_path, playbook_spec, width
 ):
@@ -311,12 +413,7 @@ def test_domain_browser_workflow(
         )
         moved_start = datetime.fromisoformat(created["start_time"]) + timedelta(minutes=15)
         moved_end = datetime.fromisoformat(created["end_time"]) + timedelta(minutes=15)
-        moved_event = {
-            "start_time": moved_start.isoformat(),
-            "end_time": moved_end.isoformat(),
-        }
-        p.request("PUT", f"/events/{created['id']}", data=moved_event)
-        p.events[created["id"]].update(moved_event)
+        _edit_event_in_browser(page, base, p, created["id"], moved_start, moved_end)
         member.get_by_role("button", name="Accept", exact=True).click()
         expect(member.locator("#assignment-card .alert-error")).to_contain_text(
             "Assignment changed from revision 1 to 2"
@@ -326,6 +423,22 @@ def test_domain_browser_workflow(
         member.get_by_role("button", name="Accept", exact=True).click()
         expect(member.locator("#assignment-card .status-text.accepted")).to_contain_text("Accepted")
         _fits(member)
+        accepted_start = datetime.fromisoformat(p.events[created["id"]]["start_time"])
+        accepted_end = datetime.fromisoformat(p.events[created["id"]]["end_time"])
+        _edit_event_in_browser(
+            page,
+            base,
+            p,
+            created["id"],
+            accepted_start + timedelta(minutes=15),
+            accepted_end + timedelta(minutes=15),
+        )
+        member.reload()
+        expect(member.locator("#assignment-card .status-text.pending")).to_contain_text(
+            "Unanswered"
+        )
+        member.get_by_role("button", name="Accept", exact=True).click()
+        expect(member.locator("#assignment-card .status-text.accepted")).to_contain_text("Accepted")
         member.screenshot(path=str(tmp_path / f"{domain}-{width}-accepted.png"), full_page=True)
         member.context.clear_cookies()
         _login(member, base, person["email"], p.password, "/v/schedule")

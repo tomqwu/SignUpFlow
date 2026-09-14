@@ -39,7 +39,13 @@ from api.routers.constraints import (
     delete_constraint,
     update_constraint,
 )
-from api.routers.events import AssignmentRequest, create_event, delete_event, manage_assignment
+from api.routers.events import (
+    AssignmentRequest,
+    create_event,
+    delete_event,
+    manage_assignment,
+    update_event,
+)
 from api.routers.invitations import create_invitation
 from api.routers.organizations import get_organization, update_organization
 from api.routers.people import bulk_import_people, update_current_person
@@ -69,7 +75,7 @@ from api.schemas.availability import (
     TimeOffCreate,
 )
 from api.schemas.constraint import ConstraintCreate, ConstraintUpdate
-from api.schemas.event import EventCreate
+from api.schemas.event import EventCreate, EventUpdate
 from api.schemas.invitation import InvitationCreate
 from api.schemas.organization import OrganizationUpdate
 from api.schemas.person import PersonUpdate
@@ -1366,7 +1372,7 @@ def constraint_delete(
     return _constraints_list(request, person, db)
 
 
-# ── Admin: event create / delete ─────────────────────────────────────
+# ── Admin: event create / update / delete ────────────────────────────
 
 
 def _events_list(request: Request, person: Person, db: Session, *, error=None):
@@ -1442,6 +1448,39 @@ def event_create(
         create_event(payload, person, db)
     except HTTPException as exc:
         return _err(str(exc.detail), exc.status_code or 400)
+    return _events_list(request, person, db)
+
+
+@router.post("/a/events/{event_id}/update", response_class=HTMLResponse)
+def event_update(
+    request: Request,
+    event_id: str,
+    type: str = Form(...),
+    event_date: str = Form(...),
+    start_time: str = Form(...),
+    end_time: str = Form(...),
+    person: Person = Depends(get_session_admin),
+    db: Session = Depends(get_db),
+):
+    from datetime import datetime
+
+    try:
+        start_dt = datetime.fromisoformat(f"{event_date}T{start_time}")
+        end_dt = datetime.fromisoformat(f"{event_date}T{end_time}")
+    except ValueError:
+        return _events_list(request, person, db, error="Enter a valid date and times.")
+    if end_dt <= start_dt:
+        return _events_list(request, person, db, error="End time must be after start time.")
+
+    try:
+        update_event(
+            event_id,
+            EventUpdate(type=type, start_time=start_dt, end_time=end_dt),
+            person,
+            db,
+        )
+    except HTTPException as exc:
+        return _events_list(request, person, db, error=str(exc.detail))
     return _events_list(request, person, db)
 
 

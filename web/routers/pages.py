@@ -988,6 +988,10 @@ def _events(db: Session, org_id: str) -> dict:
         item = {
             "id": e.id,
             "type": e.type,
+            "series_id": e.series_id,
+            "event_date": e.start_time.date().isoformat() if e.start_time else "",
+            "start_value": e.start_time.strftime("%H:%M") if e.start_time else "",
+            "end_value": e.end_time.strftime("%H:%M") if e.end_time else "",
             "date_label": e.start_time.strftime("%a %d %b %Y").upper() if e.start_time else "",
             "time_label": (
                 f"{e.start_time.strftime('%H:%M')}–{e.end_time.strftime('%H:%M')}"
