@@ -421,6 +421,11 @@ The browser playbooks create each organization and first admin through normal si
 then invite and accept fourteen baseline members plus a qualified replacement through
 the UI. They preserve `admin`/`volunteer` account access separately from custom
 scheduling qualifications such as `worship_leader`, `center`, and `scorekeeper`.
+The same admin journey creates all six primary and six rehearsal/practice events through
+the multi-role browser form, solves the 84-slot horizon, and independently verifies exact
+role coverage, distinct qualified assignees, non-overlap, and balanced interchangeable
+loads before publication. API and web safety regressions prove incomplete or stale
+candidates cannot replace the live roster.
 Every Church and Basketball qualification also runs the member availability page at
 360px and 1440px: it records Wednesday time off and recurring Sunday unavailability,
 rejects peer edits without mutation, and verifies exclusion across twelve API-seeded

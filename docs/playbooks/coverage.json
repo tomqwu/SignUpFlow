@@ -45,10 +45,10 @@
       "actor": "administrator",
       "precondition": "Fourteen qualified members and twelve primary or secondary events exist",
       "operation": "Generate and review the complete six-week roster",
-      "expected": "Every event has seven distinct qualified people with no overlaps or hard violations",
+      "expected": "Every event has seven distinct qualified people with fair loads, no overlaps or hard violations, and incomplete or stale publication is rejected",
       "tiers": ["unit", "api", "e2e"],
-      "status": "partial",
-      "evidence": ["tests/playbooks/workflows.py", "tests/e2e/test_domain_playbooks.py", "tests/unit/test_persisted_constraints.py", "tests/api/test_saved_constraint_enforcement.py"]
+      "status": "automated",
+      "evidence": ["tests/playbooks/workflows.py", "tests/e2e/test_domain_playbooks.py", "tests/unit/test_solver_role_slots.py", "tests/api/test_solution_publication_safety.py", "tests/web/test_publish_lifecycle.py"]
     },
     {
       "id": "BO-05",

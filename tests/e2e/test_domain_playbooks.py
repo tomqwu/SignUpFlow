@@ -1,11 +1,12 @@
 """Domain browser acceptance: setup, availability, scheduling, and response.
 
-Five repeated weeks are seeded by API. Member qualification, invitation acceptance,
-organization bootstrap, the first event, solve, review, publish and response use real
-browser interactions. The per-role availability test API-seeds its members and twelve
-events, then exercises every availability action through isolated browser sessions.
+The primary browser journey creates the organization, members, and full twelve-event
+six-week plan through the UI before solving and publishing it. The per-role availability
+test API-seeds its setup, then exercises every availability action through isolated
+browser sessions.
 """
 
+from collections import Counter
 from datetime import datetime, timedelta
 
 import httpx
@@ -88,6 +89,31 @@ def _onboard_qualified_members(page, new_context, base, db_path, playbook, width
         ).bounding_box()
         assert qualification_box is not None and qualification_box["width"] >= 250
     _fits(page)
+
+
+def _create_event_in_browser(page, base, playbook, week, label, hour, day_offset):
+    event_date = playbook.start + timedelta(weeks=week, days=day_offset)
+    title = f"{playbook.spec['event']} W{week + 1} {label}"
+    page.goto(f"{base}/a/events")
+    page.get_by_role("button", name="New event", exact=True).click()
+    page.fill("#ev_type", title)
+    page.fill("#ev_date", event_date.isoformat())
+    page.fill("#ev_start", f"{hour:02d}:00")
+    page.fill("#ev_end", f"{hour + 2:02d}:00")
+    for index, (role, count) in enumerate(playbook.spec["roles"].items()):
+        if index:
+            page.get_by_role("button", name="Add another role").click()
+        page.locator("input[name=role_name]").nth(index).fill(role)
+        page.locator("input[name=role_count]").nth(index).fill(str(count))
+    _fits(page)
+    page.get_by_role("button", name="Create event", exact=True).click()
+    expect(page.locator("#events-list")).to_contain_text(title)
+
+    events = playbook.request("GET", f"/events/?org_id={playbook.org}")["items"]
+    created = next(event for event in events if event["type"] == title)
+    assert created["extra_data"]["role_counts"] == playbook.spec["roles"]
+    playbook.events[created["id"]] = created
+    return created
 
 
 @pytest.mark.parametrize("width", [360, 1440])
@@ -222,27 +248,22 @@ def test_domain_browser_workflow(
         _onboard_qualified_members(page, new_context, base, db_path, p, width)
         page.screenshot(path=str(tmp_path / f"{domain}-{width}-qualified.png"), full_page=True)
 
-        for week in range(1, 6):
-            p.event(week)
-        title = f"{p.spec['event']} W1 main"
-        page.goto(f"{base}/a/events")
-        page.get_by_role("button", name="New event", exact=True).click()
-        page.fill("#ev_type", title)
-        page.fill("#ev_date", p.start.isoformat())
-        page.fill("#ev_start", "10:00")
-        page.fill("#ev_end", "12:00")
-        for index, (role, count) in enumerate(p.spec["roles"].items()):
-            if index:
-                page.get_by_role("button", name="Add another role").click()
-            page.locator("input[name=role_name]").nth(index).fill(role)
-            page.locator("input[name=role_count]").nth(index).fill(str(count))
-        _fits(page)
-        page.get_by_role("button", name="Create event", exact=True).click()
-        expect(page.locator("#events-list")).to_contain_text(title)
+        for week in range(6):
+            _create_event_in_browser(page, base, p, week, "main", 10, 0)
+            _create_event_in_browser(
+                page,
+                base,
+                p,
+                week,
+                p.spec["secondary_event"],
+                18,
+                3,
+            )
         events = p.request("GET", f"/events/?org_id={p.org}")["items"]
+        assert len(events) == 12
+        assert {event["id"] for event in events} == set(p.events)
+        title = f"{p.spec['event']} W1 main"
         created = next(event for event in events if event["type"] == title)
-        assert created["extra_data"]["role_counts"] == p.spec["roles"]
-        p.events[created["id"]] = created
 
         page.goto(f"{base}/a/solver")
         page.fill("#from_date", p.start.isoformat())
@@ -252,7 +273,24 @@ def test_domain_browser_workflow(
         page.wait_for_url("**/a/solution/**")
         solution_id = int(page.url.rstrip("/").rsplit("/", 1)[1])
         p.assert_complete(solution_id)
+        expect(page.locator(".kpi").filter(has_text="Assignments")).to_contain_text("84")
+        expect(page.locator(".kpi").filter(has_text="Hard violations")).to_contain_text("0")
+        assignments = p.assignments(solution_id)
+        counts = Counter(
+            assignment["person_id"] for event in assignments for assignment in event["assignees"]
+        )
+        for role in p.spec["roles"]:
+            loads = [
+                counts[person_id]
+                for person_id, person in p.people.items()
+                if role in person["roles"]
+            ]
+            assert max(loads) - min(loads) <= 1
         _fits(page)
+        page.screenshot(
+            path=str(tmp_path / f"{domain}-{width}-six-week-solution.png"),
+            full_page=True,
+        )
 
         # The draft is invisible to its assignee until the administrator publishes.
         first = next(e for e in p.assignments(solution_id) if e["event_id"] == created["id"])

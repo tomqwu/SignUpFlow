@@ -76,11 +76,13 @@ and service execution remain human responsibilities, not inferred from a green s
 | CH-07 | Member acknowledgement | Open draft as assigned member, then publish and accept | Draft absent; published assignment is unanswered; explicit acceptance records the current revision in member and coordinator views |
 | CH-08 | Qualified swap | Request a swap and have a reserve with the same qualification cover | Original member loses the shift; reserve gains it; every role remains filled |
 
-CH-01 through CH-06 are one automated API lifecycle with assertions after each
-state change. CH-07/08 and multi-role event entry run in Chromium at phone and desktop
-sizes. BO-03 separately runs all five Church qualifications through one-off and recurring
-availability entry at both widths, rejects peer edits, and verifies solver exclusion
-across twelve API-seeded events.
+CH-01 through CH-06 are one automated API lifecycle with assertions after each state
+change. The browser journey creates all twelve CH-01 events through the multi-role form,
+then independently verifies all 84 qualified, distinct, non-overlapping assignments and
+balanced loads at phone and desktop sizes. CH-07/08 run in that same journey. BO-03
+separately runs all five Church qualifications through one-off and recurring availability
+entry at both widths, rejects peer edits, and verifies solver exclusion across twelve
+API-seeded events.
 
 ## Additional operational drills
 
