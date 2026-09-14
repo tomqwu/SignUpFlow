@@ -155,7 +155,8 @@ def _require_scope(solution: Solution) -> tuple[date, date, list[str], str]:
 def _current_scope_events(
     db: Session, *, org_id: str, range_start: date, range_end: date
 ) -> list[Event]:
-    return (
+    return cast(
+        list[Event],
         db.query(Event)
         .filter(
             Event.org_id == org_id,
@@ -163,7 +164,7 @@ def _current_scope_events(
             Event.start_time <= datetime.combine(range_end, time.max),
         )
         .order_by(Event.id)
-        .all()
+        .all(),
     )
 
 
@@ -220,11 +221,12 @@ def _require_preserved_horizon(
 
 
 def _solution_assignments(db: Session, solution: Solution) -> list[Assignment]:
-    return (
+    return cast(
+        list[Assignment],
         db.query(Assignment)
         .filter(Assignment.solution_id == solution.id)
         .order_by(Assignment.id)
-        .all()
+        .all(),
     )
 
 
