@@ -131,6 +131,18 @@
       "evidence": ["tests/api/test_access_token_tenancy.py", "tests/api/test_multi_tenant.py", "tests/web/test_login_flow.py", "tests/e2e/test_domain_playbooks.py"]
     }
   ],
+  "shared_extensions": [
+    {
+      "id": "BO-DUAL",
+      "actor": "member",
+      "precondition": "A member has multiple qualifications and events may overlap or touch",
+      "operation": "Solve role slots across one event and overlapping or adjacent events",
+      "expected": "The member fills at most one slot per event, cannot overlap, and may serve in a legal adjacent session",
+      "tiers": ["unit", "api"],
+      "status": "automated",
+      "evidence": ["tests/unit/test_solver_role_slots.py", "tests/playbooks/workflows.py"]
+    }
+  ],
   "domains": {
     "church": {
       "scenario_prefix": "CH",
@@ -154,6 +166,11 @@
         {"id": "CH-06", "actor": "administrator", "precondition": "The week-six service time changes", "operation": "Move the event, regenerate, and publish", "expected": "The new time is live and stale assignments are hidden and rejected", "tiers": ["api"], "status": "automated", "evidence": ["tests/playbooks/workflows.py"]},
         {"id": "CH-07", "actor": "member", "precondition": "An assigned member has a draft and then published shift", "operation": "Open the schedule and explicitly accept", "expected": "The draft is hidden, publication remains unanswered, and explicit acceptance records the current response revision in member and coordinator views", "tiers": ["api", "web", "e2e"], "status": "automated", "evidence": ["tests/api/test_assignment_response_truth.py", "tests/web/test_all_assignments.py", "tests/e2e/test_domain_playbooks.py"]},
         {"id": "CH-08", "actor": "reserve", "precondition": "A member requests a swap for a published role", "operation": "A reserve with the same qualification covers the shift", "expected": "The reserve gains one assignment and the original member loses it without a role gap", "tiers": ["e2e"], "status": "automated", "evidence": ["tests/e2e/test_domain_playbooks.py"]}
+      ],
+      "extensions": [
+        {"id": "CH-D01", "actor": ["sound_operator", "children_leader", "reserve", "administrator"], "precondition": "A published sound or children's-ministry assignment loses its member at short notice", "operation": "Expose the gap and let an available reserve with the exact qualification cover it", "expected": "The role remains visibly uncovered until one eligible reserve explicitly accepts it", "tiers": ["web", "e2e"], "status": "partial", "evidence": ["tests/web/test_swap_marketplace.py", "tests/e2e/test_domain_playbooks.py"]},
+        {"id": "CH-D02", "actor": ["administrator", "children_leader", "human_approver"], "precondition": "An external ministry decision revokes a future assignee's qualification", "operation": "Remove the scheduling qualification and repair affected future work", "expected": "Future candidate or live work is flagged and repaired while completed history and human approval boundaries remain intact", "tiers": ["api", "web", "manual"], "status": "partial", "evidence": ["tests/web/test_people.py", "tests/api/test_solution_publication_safety.py", "docs/playbooks/church.md"]},
+        {"id": "CH-D03", "actor": ["administrator", "member"], "precondition": "A holiday or additional service changes one occurrence or its role count", "operation": "Edit the intended occurrence, compare, publish, notify, and collect new responses", "expected": "Only intended work changes and every other future week remains current", "tiers": ["api", "e2e"], "status": "partial", "evidence": ["tests/api/test_assignment_response_truth.py", "tests/e2e/test_domain_playbooks.py"]}
       ]
     },
     "basketball": {
@@ -180,6 +197,11 @@
         {"id": "BB-06", "actor": "administrator", "precondition": "The week-six game time changes", "operation": "Move the event, regenerate, and publish", "expected": "The new time is live and stale assignments are hidden and rejected", "tiers": ["api"], "status": "automated", "evidence": ["tests/playbooks/workflows.py"]},
         {"id": "BB-07", "actor": "member", "precondition": "An assigned member has a draft and then published shift", "operation": "Open the schedule and explicitly accept", "expected": "The draft is hidden, publication remains unanswered, and explicit acceptance records the current response revision in player and coach views", "tiers": ["api", "web", "e2e"], "status": "automated", "evidence": ["tests/api/test_assignment_response_truth.py", "tests/web/test_all_assignments.py", "tests/e2e/test_domain_playbooks.py"]},
         {"id": "BB-08", "actor": "reserve", "precondition": "A player or staff member requests a swap for a published role", "operation": "A reserve with the same qualification covers the shift", "expected": "The reserve gains one assignment and the original member loses it without a role gap", "tiers": ["e2e"], "status": "automated", "evidence": ["tests/e2e/test_domain_playbooks.py"]}
+      ],
+      "extensions": [
+        {"id": "BB-D01", "actor": ["point_guard", "administrator", "human_approver"], "precondition": "A player records a multiweek injury absence", "operation": "Solve during the recorded interval, then deliberately clear or update availability for return", "expected": "The player is excluded only for the recorded interval and no medical clearance is inferred", "tiers": ["api", "e2e", "manual"], "status": "partial", "evidence": ["tests/api/test_scheduling_workflow.py", "tests/e2e/test_domain_playbooks.py", "docs/playbooks/basketball.md"]},
+        {"id": "BB-D02", "actor": ["coach", "scorekeeper", "reserve", "administrator"], "precondition": "A coach or scorekeeper withdraws from separate published sessions", "operation": "Expose each gap and let a role-qualified reserve cover it", "expected": "The correct staff role is restored without changing complete player positions", "tiers": ["web", "e2e"], "status": "partial", "evidence": ["tests/web/test_swap_marketplace.py", "tests/e2e/test_domain_playbooks.py"]},
+        {"id": "BB-D03", "actor": ["administrator", "member", "human_approver"], "precondition": "A venue change postpones one future game", "operation": "Move the game, republish its schedule and calendar, and request fresh responses", "expected": "The new commitment replaces the old one while venue and opponent negotiation remains a human checkpoint", "tiers": ["api", "e2e", "manual"], "status": "partial", "evidence": ["tests/api/test_assignment_response_truth.py", "tests/e2e/test_calendar_subscription.py", "docs/playbooks/basketball.md"]}
       ]
     }
   }

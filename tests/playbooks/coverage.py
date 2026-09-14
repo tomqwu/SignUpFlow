@@ -11,7 +11,7 @@ from pydantic import BaseModel, ConfigDict, Field, model_validator
 from tests.playbooks.registry import BUILTIN_DIRECTORY, Identifier, Label, PlaybookSpec, Role
 
 COVERAGE_MANIFEST_PATH = BUILTIN_DIRECTORY / "coverage.json"
-ScenarioId = Annotated[str, Field(pattern=r"^[A-Z]{2}-[0-9]{2}$")]
+ScenarioId = Annotated[str, Field(pattern=r"^(?:[A-Z]{2}-[0-9]{2}|[A-Z]{2}-D[0-9]{2}|BO-DUAL)$")]
 ScenarioPrefix = Annotated[str, Field(pattern=r"^[A-Z]{2}$")]
 Detail = Annotated[str, Field(min_length=1, max_length=300, pattern=r"\S")]
 Tier = Literal["unit", "api", "integration", "web", "e2e", "manual"]
@@ -74,6 +74,7 @@ class DomainCoverage(BaseModel):
     scenario_prefix: ScenarioPrefix
     actors: list[ActorCoverage] = Field(min_length=1)
     scenarios: list[ScenarioCoverage] = Field(min_length=1)
+    extensions: list[ScenarioCoverage] = Field(min_length=1)
 
     @model_validator(mode="after")
     def validate_unique_rows(self) -> Self:
@@ -86,8 +87,16 @@ class DomainCoverage(BaseModel):
         expected = {f"{self.scenario_prefix}-{index:02d}" for index in range(1, 9)}
         if set(scenario_ids) != expected:
             raise ValueError(f"domain scenario IDs must be exactly {sorted(expected)}")
+        extension_ids = [scenario.id for scenario in self.extensions]
+        if len(extension_ids) != len(set(extension_ids)):
+            raise ValueError("domain extension IDs must be unique")
+        expected_extensions = {f"{self.scenario_prefix}-D{index:02d}" for index in range(1, 4)}
+        if set(extension_ids) != expected_extensions:
+            raise ValueError(f"domain extension IDs must be exactly {sorted(expected_extensions)}")
         scenario_actor_ids = {
-            actor_id for scenario in self.scenarios for actor_id in scenario.actor_ids
+            actor_id
+            for scenario in [*self.scenarios, *self.extensions]
+            for actor_id in scenario.actor_ids
         }
         if scenario_actor_ids - set(actor_ids):
             raise ValueError("domain scenarios must reference declared actors")
@@ -101,6 +110,7 @@ class CoverageManifest(BaseModel):
 
     version: Literal[1]
     shared_scenarios: list[ScenarioCoverage] = Field(min_length=1)
+    shared_extensions: list[ScenarioCoverage]
     domains: dict[Identifier, DomainCoverage] = Field(min_length=1)
 
     @model_validator(mode="after")
@@ -109,6 +119,13 @@ class CoverageManifest(BaseModel):
         actual = [scenario.id for scenario in self.shared_scenarios]
         if len(actual) != len(set(actual)) or set(actual) != expected:
             raise ValueError(f"shared scenario IDs must be exactly {sorted(expected)}")
+        expected_extensions = {"BO-DUAL"}
+        actual_extensions = [scenario.id for scenario in self.shared_extensions]
+        if (
+            len(actual_extensions) != len(set(actual_extensions))
+            or set(actual_extensions) != expected_extensions
+        ):
+            raise ValueError(f"shared extension IDs must be exactly {sorted(expected_extensions)}")
         return self
 
     def validate_against(self, specs: Iterable[PlaybookSpec]) -> Self:
@@ -117,7 +134,9 @@ class CoverageManifest(BaseModel):
         if set(self.domains) != set(by_id):
             raise ValueError("coverage domains must match bundled playbook IDs")
         shared_actor_ids = {
-            actor_id for scenario in self.shared_scenarios for actor_id in scenario.actor_ids
+            actor_id
+            for scenario in [*self.shared_scenarios, *self.shared_extensions]
+            for actor_id in scenario.actor_ids
         }
         for domain_id, domain in self.domains.items():
             spec = by_id[domain_id]
