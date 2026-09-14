@@ -11,10 +11,14 @@ and leaked anyone's personal schedule as ICS. It now requires the same
 "self or admin in same org" rule as `/subscribe` and `/reset-token`.
 """
 
-import pytest
+from datetime import UTC, datetime, timedelta
+from zoneinfo import ZoneInfo
 
-from api.models import AuditAction, AuditLog
-from tests.api.conftest import auth_headers, seed_org, seed_user
+import pytest
+from icalendar import Calendar
+
+from api.models import Assignment, AuditAction, AuditLog, Person
+from tests.api.conftest import auth_headers, seed_event, seed_org, seed_user
 
 
 def _admin_for(client, org_id: str, suffix: str):
@@ -300,6 +304,138 @@ class TestExportAuth:
         resp = client.get(f"/api/v1/calendar/export?person_id={other_id}", headers=admin_hdrs)
         assert resp.status_code == 404, resp.text
         assert "No assignments found" in resp.json()["detail"]
+
+    def test_feed_and_download_share_current_tenant_scoped_schedule(self, client, db):
+        seed_org(client, "cal-current-a")
+        seed_org(client, "cal-current-b")
+        admin_a = _admin_for(client, "cal-current-a", "current-a")
+        admin_b = _admin_for(client, "cal-current-b", "current-b")
+        seed_user(
+            client,
+            "cal-current-a",
+            email="calendar-member@o.org",
+            name="Calendar Member",
+            password="MemberPass1!",
+            roles=["volunteer"],
+        )
+        member_headers = auth_headers(
+            client,
+            email="calendar-member@o.org",
+            password="MemberPass1!",
+        )
+        member_id = _person_id_for_email(
+            client,
+            member_headers,
+            "calendar-member@o.org",
+        )
+        profile = client.put(
+            "/api/v1/people/me",
+            json={"timezone": "America/Toronto"},
+            headers=member_headers,
+        )
+        assert profile.status_code == 200, profile.text
+
+        current = seed_event(
+            client,
+            admin_a,
+            "cal-current-a",
+            "calendar-current",
+            event_type="Current Service",
+        )
+        declined = seed_event(
+            client,
+            admin_a,
+            "cal-current-a",
+            "calendar-declined",
+            event_type="Declined Service",
+            days_from_now=15,
+        )
+        foreign = seed_event(
+            client,
+            admin_b,
+            "cal-current-b",
+            "calendar-foreign",
+            event_type="Foreign Practice",
+        )
+        person = db.query(Person).filter(Person.id == member_id).one()
+        db.add_all(
+            [
+                Assignment(
+                    event_id=current["id"],
+                    person_id=person.id,
+                    role="sound",
+                    response_status="accepted",
+                ),
+                Assignment(
+                    event_id=declined["id"],
+                    person_id=person.id,
+                    role="sound",
+                    response_status="declined",
+                ),
+                Assignment(
+                    event_id=foreign["id"],
+                    person_id=person.id,
+                    role="coach",
+                    response_status="accepted",
+                ),
+            ]
+        )
+        db.commit()
+
+        subscription = client.get(
+            f"/api/v1/calendar/subscribe?person_id={member_id}",
+            headers=member_headers,
+        )
+        assert subscription.status_code == 200, subscription.text
+        token = subscription.json()["token"]
+
+        feed = client.get(f"/api/v1/calendar/feed/{token}")
+        download = client.get(
+            f"/api/v1/calendar/export?person_id={member_id}",
+            headers=member_headers,
+        )
+        assert feed.status_code == download.status_code == 200
+        for response in (feed, download):
+            assert "Current Service" in response.text
+            assert "Declined Service" not in response.text
+            assert "Foreign Practice" not in response.text
+            assert len(Calendar.from_ical(response.content).walk("VEVENT")) == 1
+
+        first_calendar = Calendar.from_ical(feed.content)
+        first_event = first_calendar.walk("VEVENT")[0]
+        uid = str(first_event["UID"])
+        moved_start = datetime(2026, 3, 8, 7, 30, tzinfo=UTC)
+        moved_end = moved_start + timedelta(hours=2)
+        moved = client.put(
+            f"/api/v1/events/{current['id']}",
+            json={
+                "start_time": moved_start.isoformat(),
+                "end_time": moved_end.isoformat(),
+            },
+            headers=admin_a,
+        )
+        assert moved.status_code == 200, moved.text
+
+        refreshed = Calendar.from_ical(client.get(f"/api/v1/calendar/feed/{token}").content)
+        refreshed_events = refreshed.walk("VEVENT")
+        assert len(refreshed_events) == 1
+        assert str(refreshed_events[0]["UID"]) == uid
+        refreshed_start = refreshed_events[0].decoded("DTSTART")
+        assert getattr(refreshed_start.tzinfo, "key", None) == "America/Toronto"
+        assert (refreshed_start.hour, refreshed_start.minute) == (3, 30)
+        assert refreshed_start == datetime(
+            2026,
+            3,
+            8,
+            3,
+            30,
+            tzinfo=ZoneInfo("America/Toronto"),
+        )
+
+        deleted = client.delete(f"/api/v1/events/{current['id']}", headers=admin_a)
+        assert deleted.status_code == 204, deleted.text
+        cancelled = Calendar.from_ical(client.get(f"/api/v1/calendar/feed/{token}").content)
+        assert cancelled.walk("VEVENT") == []
 
 
 @pytest.mark.no_mock_auth

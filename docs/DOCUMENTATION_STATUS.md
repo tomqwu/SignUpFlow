@@ -66,6 +66,13 @@ at both browser widths. The application no longer labels disabled delivery as se
 template links target real member pages. These changes affect transient status copy and
 email content, not the README walkthrough layout, so existing screenshots remain
 applicable. External provider delivery remains unverified and explicitly deferred.
+The maintained README, roadmap, testing guide, and both domain playbooks now describe
+BO-10's executable calendar contract. Personal download and token feeds share current,
+non-declined, tenant-scoped rows; moved entries retain one UID; cancellations disappear;
+and `America/Toronto` output crosses DST correctly. The browser case runs both domains
+at phone and desktop widths and saves a current profile/calendar screenshot in pytest's
+owned temporary directory. This changes generated ICS rather than the walkthrough UI,
+so the existing committed README screenshots remain applicable.
 The maintained [API authorization matrix](API_AUTHORIZATION.md) now binds every
 mounted operation to an executable policy and records scheduling tenant/export
 semantics. This package changes API authorization and generated contracts, not

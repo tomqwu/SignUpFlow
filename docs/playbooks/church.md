@@ -104,6 +104,12 @@ captured schedule, availability, profile/calendar, and notification-preference l
 the same local server. Ministry approval and external inbox delivery remain human or
 provider acceptance work.
 
+BO-10 runs a qualified Church member's personal calendar at 360px and 1440px. A draft
+service is absent; publication adds exactly one entry in `America/Toronto`; moving the
+service updates the same UID and local time; cancelling it removes the entry on refresh.
+The authenticated download and public token feed share the same published, non-declined,
+tenant-scoped assignment policy. A separate unit case crosses the spring DST boundary.
+
 ## Additional operational drills
 
 Record these separately as manual/extended acceptance, not as passed by CH-01-08:
@@ -127,4 +133,5 @@ Record these separately as manual/extended acceptance, not as passed by CH-01-08
 Require exact role counts, no double-booking, no assignments during recorded
 absence, no unpublished drafts exposed in member schedules, and successful member
 acceptance. Recheck every future week after republishing. Keep human safeguarding,
-delivery, timezone and tenant-security blockers visible in the release record.
+external calendar-client polling, delivery, and broader tenant-security blockers visible
+in the release record.

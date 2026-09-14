@@ -64,7 +64,8 @@ isolated targets.
 The [playbook guide](playbooks/README.md) describes automatic discovery, selectors,
 and external definitions. Church and basketball run in API and browser tiers;
 browser cases use phone and desktop widths. Owned local delivery runs in both domains;
-manual drills, external delivery, and
+their calendar cases also refresh one stable assignment across publish, move, and cancel
+in `America/Toronto`, with a unit-level DST boundary. Manual drills, external delivery, and
 production database/concurrency acceptance are not implied by a green local run.
 
 ## Local Validation Only
