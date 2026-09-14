@@ -8,5 +8,6 @@
   "secondary_event": "rehearsal",
   "critical_role": "worship_leader",
   "late_cover_roles": ["sound", "children_leader"],
-  "qualification_review_role": "children_leader"
+  "qualification_review_role": "children_leader",
+  "additional_event_role": "usher"
 }

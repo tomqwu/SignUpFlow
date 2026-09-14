@@ -484,6 +484,14 @@ absence, proves solver exclusion inside the interval, and requires a deliberate 
 update before the player becomes schedulable again. Safeguarding and medical clearance
 remain explicit human decisions; the application does not infer either one.
 
+Schedule-change operations are fixture-driven at both browser widths as well. Church adds
+an usher-only holiday service, minimizes roster changes, compares one added and zero removed
+commitments, republishes, reminds the new assignee, and preserves an existing acceptance.
+Basketball postpones a point-guard game, resets the affected acceptance, minimizes roster
+changes, republishes and reminds, and moves the logical calendar entry under the same UID
+even when publication creates a new assignment row. Ministry approval and venue/opponent
+coordination remain human decisions outside the application.
+
 Saved REST scheduling rules support hard assignment caps, hard minimum rest gaps,
 and a weighted soft cooldown preference. They execute in API solves instead of
 being stored as inert text. See the

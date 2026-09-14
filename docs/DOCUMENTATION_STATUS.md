@@ -97,6 +97,14 @@ lists the three executable REST rule mappings, their CLI equivalents, validation
 failures, built-in invariants, and unsupported policy. The constraints editor now
 offers only those rule names; it is not part of the README screenshot walkthrough,
 so the existing walkthrough image set remains applicable.
+The maintained README, plugin guide, coverage manifest, and both domain playbooks now
+describe CH-D03 and BB-D03 as fixture-driven browser operations. Church adds a holiday
+service while preserving prior staffing and acceptance; Basketball postpones one game,
+requires a fresh response, and keeps one logical calendar UID across publication rows.
+Both run at phone and desktop widths and save administrator/member schedule-change
+screenshots in pytest's temporary directory. They reuse the maintained event, comparison,
+solution, inbox, schedule, and calendar surfaces, so the committed walkthrough images
+remain applicable. Ministry approval and venue/opponent coordination remain human work.
 Aligned contributor commit/merge rules with the agent baseline. The owner's latest
 clarification supersedes the previous Ollama review setup: code review runs
 locally, no CI checks remain, and Ollama must not review PRs. The later clarification

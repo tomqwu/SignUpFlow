@@ -113,7 +113,7 @@ class TestCalendarUtils:
             )
         )
         before_event = before.walk("VEVENT")[0]
-        assert before_event["UID"] == "rostio-assignment-42@rostio.app"
+        assert str(before_event["UID"]).startswith("rostio-shift-")
         before_start = before_event.decoded("DTSTART")
         before_end = before_event.decoded("DTEND")
         assert getattr(before_start.tzinfo, "key", None) == "America/Toronto"
@@ -157,6 +157,12 @@ class TestCalendarUtils:
             30,
             tzinfo=ZoneInfo("America/Toronto"),
         )
+
+        republished = {**assignment, "id": 99}
+        republished_event = Calendar.from_ical(
+            generate_ics_from_assignments([republished], timezone="America/Toronto")
+        ).walk("VEVENT")[0]
+        assert republished_event["UID"] == before_event["UID"]
 
     def test_invalid_calendar_timezone_falls_back_to_utc(self, client):
         events = [

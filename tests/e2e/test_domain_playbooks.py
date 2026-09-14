@@ -6,11 +6,13 @@ rolling-horizon tests API-seed their preconditions, then exercise each claimed o
 through isolated browser sessions.
 """
 
+import re
 from collections import Counter
 from datetime import UTC, date, datetime, timedelta
 
 import httpx
 import pytest
+from icalendar import Calendar
 from playwright.sync_api import expect
 
 from tests.e2e._helpers import invite_token, no_js_errors, signup_admin
@@ -39,16 +41,23 @@ def _utc_datetime(value):
     return parsed.astimezone(UTC)
 
 
-def _solve_and_publish_in_browser(page, base, start_date, end_date):
+def _solve_in_browser(page, base, start_date, end_date, *, change_min=False):
     page.goto(f"{base}/a/solver")
     page.fill("#from_date", start_date.isoformat())
     page.fill("#to_date", end_date.isoformat())
+    if change_min:
+        page.check('input[name="change_min"]')
     page.get_by_role("button", name="Run solver").click()
     page.locator("#solver-result").get_by_role("link", name="Review solution").click()
     page.wait_for_url("**/a/solution/**")
-    solution_id = int(page.url.rstrip("/").rsplit("/", 1)[1])
+    return int(page.url.rstrip("/").rsplit("/", 1)[1])
+
+
+def _solve_and_publish_in_browser(page, base, start_date, end_date):
+    solution_id = _solve_in_browser(page, base, start_date, end_date)
     page.get_by_role("button", name="Publish this solution").click()
     expect(page.locator("#publish-state")).to_contain_text("Unpublish")
+    page.wait_for_selector("#publish-state:not(.htmx-added)")
     return solution_id
 
 
@@ -90,7 +99,8 @@ def _onboard_qualified_members(page, new_context, base, db_path, playbook, width
 
     critical_role = playbook.spec["critical_role"]
     invite_member(critical_role, f"{critical_role} replacement")
-    assert len(playbook.people) == 15
+    expected_people = sum(count * 2 for count in playbook.spec["roles"].values()) + 1
+    assert len(playbook.people) == expected_people
     page.reload()
     first_id, first_member = next(iter(playbook.people.items()))
     qualifications_form = page.locator(f'form[action="/a/people/{first_id}/qualifications"]')
@@ -112,7 +122,7 @@ def _onboard_qualified_members(page, new_context, base, db_path, playbook, width
     _fits(page)
 
 
-def _create_event_in_browser(page, base, playbook, week, label, hour, day_offset):
+def _create_event_in_browser(page, base, playbook, week, label, hour, day_offset, roles=None):
     event_date = playbook.start + timedelta(weeks=week, days=day_offset)
     title = f"{playbook.spec['event']} W{week + 1} {label}"
     page.goto(f"{base}/a/events")
@@ -121,7 +131,8 @@ def _create_event_in_browser(page, base, playbook, week, label, hour, day_offset
     page.fill("#ev_date", event_date.isoformat())
     page.fill("#ev_start", f"{hour:02d}:00")
     page.fill("#ev_end", f"{hour + 2:02d}:00")
-    for index, (role, count) in enumerate(playbook.spec["roles"].items()):
+    role_counts = roles or playbook.spec["roles"]
+    for index, (role, count) in enumerate(role_counts.items()):
         if index:
             page.get_by_role("button", name="Add another role").click()
         page.locator("input[name=role_name]").nth(index).fill(role)
@@ -132,7 +143,7 @@ def _create_event_in_browser(page, base, playbook, week, label, hour, day_offset
 
     events = playbook.request("GET", f"/events/?org_id={playbook.org}")["items"]
     created = next(event for event in events if event["type"] == title)
-    assert created["extra_data"]["role_counts"] == playbook.spec["roles"]
+    assert created["extra_data"]["role_counts"] == role_counts
     playbook.events[created["id"]] = created
     return created
 
@@ -158,6 +169,38 @@ def _edit_event_in_browser(page, base, playbook, event_id, start, end):
     if event_id in playbook.events:
         playbook.events[event_id].update(updated)
     return updated
+
+
+def _assignment_map(playbook, solution_id):
+    return {
+        (entry["event_id"], assignee["role"]): assignee["person_id"]
+        for entry in playbook.assignments(solution_id)
+        for assignee in entry["assignees"]
+    }
+
+
+def _compare_in_browser(page, base, prior_id, candidate_id):
+    page.goto(f"{base}/a/compare")
+    page.select_option("#solution_a", str(prior_id))
+    page.select_option("#solution_b", str(candidate_id))
+    page.get_by_role("button", name="Compare", exact=True).click()
+    result = page.locator("#compare-result")
+    expect(result).to_contain_text(f"#{prior_id} → #{candidate_id}")
+    return result
+
+
+def _calendar_feed_url(member, base):
+    member.goto(f"{base}/v/profile")
+    match = re.search(r"/api/v1/calendar/feed/([A-Za-z0-9_\-]+)", member.content())
+    assert match is not None
+    return f"{base}/api/v1/calendar/feed/{match.group(1)}"
+
+
+def _calendar_event(member, feed_url, title):
+    response = member.request.get(feed_url)
+    assert response.status == 200
+    events = Calendar.from_ical(response.body()).walk("VEVENT")
+    return next(event for event in events if str(event["SUMMARY"]).startswith(title))
 
 
 @pytest.mark.parametrize("width", [360, 1440])
@@ -267,11 +310,13 @@ def test_domain_late_withdrawals_require_exact_available_cover(
     live_server, page, new_context, tmp_path, playbook_spec, width
 ):
     """Exercise CH-D01 and BB-D02 from roles declared by each plugin fixture."""
+    if not playbook_spec.late_cover_roles:
+        pytest.skip("playbook does not configure late-cover roles")
+
     base = live_server
     page.set_viewport_size({"width": width, "height": 900})
     with httpx.Client(base_url=base, timeout=30) as client:
         playbook = Playbook(client, playbook_spec)
-        assert playbook_spec.late_cover_roles
         event_ids = [
             playbook.event(index, f"{role}-late-cover")
             for index, role in enumerate(playbook_spec.late_cover_roles)
@@ -282,7 +327,8 @@ def test_domain_late_withdrawals_require_exact_available_cover(
         playbook.request("POST", f"/solutions/{solution_id}/publish")
 
         wrong_role = next(
-            role for role in playbook.spec["roles"] if role not in playbook_spec.late_cover_roles
+            (role for role in playbook.spec["roles"] if role not in playbook_spec.late_cover_roles),
+            "unrelated_qualification",
         )
         wrong_id = playbook.invite("Wrong-role reserve", [wrong_role])
         wrong = playbook.people[wrong_id]
@@ -399,6 +445,12 @@ def test_domain_eligibility_and_extended_availability_changes(
     live_server, page, tmp_path, playbook_spec, width
 ):
     """Exercise CH-D02 or BB-D01 from the extension declared by each fixture."""
+    if (
+        playbook_spec.qualification_review_role is None
+        and playbook_spec.extended_absence_role is None
+    ):
+        pytest.skip("playbook does not configure an eligibility or absence extension")
+
     base = live_server
     page.set_viewport_size({"width": width, "height": 900})
     with httpx.Client(base_url=base, timeout=30) as client:
@@ -498,6 +550,205 @@ def test_domain_eligibility_and_extended_availability_changes(
                 full_page=True,
             )
 
+        no_js_errors(page)
+
+
+@pytest.mark.parametrize("width", [360, 1440])
+def test_domain_requirement_and_postponement_changes(
+    live_server, new_context, page, tmp_path, playbook_spec, width
+):
+    """Exercise CH-D03 or BB-D03 from the change declared by each fixture."""
+    if playbook_spec.additional_event_role is None and playbook_spec.postponed_event_role is None:
+        pytest.skip("playbook does not configure an additional-event or postponement extension")
+
+    base = live_server
+    page.set_viewport_size({"width": width, "height": 900})
+    with httpx.Client(base_url=base, timeout=30) as client:
+        playbook = Playbook(client, playbook_spec)
+        role = playbook_spec.additional_event_role or playbook_spec.postponed_event_role
+        assert role is not None
+        event_ids = [playbook.event(week, "change", roles={role: 1}) for week in range(3)]
+        unchanged_times = {
+            event_id: (
+                _utc_datetime(playbook.events[event_id]["start_time"]),
+                _utc_datetime(playbook.events[event_id]["end_time"]),
+            )
+            for event_id in (event_ids[0], event_ids[2])
+        }
+        prior = playbook.solve()
+        prior_id = prior["solution_id"]
+        playbook.assert_complete(prior_id)
+        playbook.request("POST", f"/solutions/{prior_id}/publish")
+        prior_assignments = _assignment_map(playbook, prior_id)
+        target_id = event_ids[1]
+        target_title = playbook.events[target_id]["type"]
+        target_person_id = prior_assignments[(target_id, role)]
+        target_person = playbook.people[target_person_id]
+
+        _login(page, base, playbook.email, playbook.password, "/a/dashboard")
+        member = new_context().new_page()
+        member.set_viewport_size({"width": width, "height": 900})
+        _login(member, base, target_person["email"], playbook.password, "/v/schedule")
+        member.get_by_role("link", name=target_title, exact=False).click()
+        member.get_by_role("button", name="Accept", exact=True).click()
+        expect(member.locator("#assignment-card .status-text.accepted")).to_contain_text("Accepted")
+
+        if playbook_spec.additional_event_role is not None:
+            added = _create_event_in_browser(
+                page,
+                base,
+                playbook,
+                1,
+                "holiday-extra",
+                14,
+                1,
+                roles={role: 1},
+            )
+            candidate_id = _solve_in_browser(
+                page,
+                base,
+                playbook.start,
+                playbook.start + timedelta(weeks=3),
+                change_min=True,
+            )
+            playbook.assert_complete(candidate_id)
+            candidate_assignments = _assignment_map(playbook, candidate_id)
+            assert set(prior_assignments.items()) <= set(candidate_assignments.items())
+            assert (added["id"], role) in candidate_assignments
+
+            comparison = _compare_in_browser(page, base, prior_id, candidate_id)
+            expect(comparison.locator(".kpi", has_text="Added").locator(".kpi-value")).to_have_text(
+                "1"
+            )
+            expect(
+                comparison.locator(".kpi", has_text="Removed").locator(".kpi-value")
+            ).to_have_text("0")
+            expect(
+                comparison.locator(".kpi", has_text="Unchanged").locator(".kpi-value")
+            ).to_have_text("3")
+
+            page.goto(f"{base}/a/solution/{candidate_id}")
+            page.get_by_role("button", name="Publish this solution").click()
+            expect(page.locator("#publish-state")).to_contain_text("Unpublish")
+            page.wait_for_selector("#publish-state:not(.htmx-added)")
+            page.get_by_role("button", name="Notify assignees").click()
+            expect(page.locator("#notify-result")).to_contain_text("Reminder added")
+
+            member.goto(f"{base}/v/schedule")
+            member.get_by_role("link", name=target_title, exact=False).click()
+            expect(member.locator("#assignment-card .status-text.accepted")).to_contain_text(
+                "Accepted"
+            )
+
+            added_person_id = candidate_assignments[(added["id"], role)]
+            added_person = playbook.people[added_person_id]
+            added_member = new_context().new_page()
+            added_member.set_viewport_size({"width": width, "height": 900})
+            _login(added_member, base, added_person["email"], playbook.password, "/v/schedule")
+            added_member.goto(f"{base}/v/inbox")
+            expect(added_member.locator("#inbox-list")).to_contain_text("New assignment")
+            expect(added_member.locator("#inbox-list")).to_contain_text("Reminder")
+            added_member.goto(f"{base}/v/schedule")
+            added_member.get_by_role("link", name=added["type"], exact=False).click()
+            expect(added_member.locator("#assignment-card .status-text.pending")).to_contain_text(
+                "Unanswered"
+            )
+            added_member.get_by_role("button", name="Accept", exact=True).click()
+            expect(added_member.locator("#assignment-card .status-text.accepted")).to_contain_text(
+                "Accepted"
+            )
+            _fits(added_member)
+            no_js_errors(added_member)
+        else:
+            feed_url = _calendar_feed_url(member, base)
+            published_event = _calendar_event(member, feed_url, target_title)
+            published_uid = str(published_event["UID"])
+            published_start = published_event.decoded("DTSTART")
+            target_start = _utc_datetime(playbook.events[target_id]["start_time"])
+            target_end = _utc_datetime(playbook.events[target_id]["end_time"])
+            moved = _edit_event_in_browser(
+                page,
+                base,
+                playbook,
+                target_id,
+                target_start + timedelta(days=1, hours=1),
+                target_end + timedelta(days=1, hours=1),
+            )
+            assert _utc_datetime(moved["start_time"]) == target_start + timedelta(days=1, hours=1)
+
+            member.goto(f"{base}/v/inbox")
+            expect(member.locator("#inbox-list")).to_contain_text("Schedule update")
+            member.goto(f"{base}/v/schedule")
+            member.get_by_role("link", name=target_title, exact=False).click()
+            expect(member.locator("#assignment-card .status-text.pending")).to_contain_text(
+                "Unanswered"
+            )
+
+            candidate_id = _solve_in_browser(
+                page,
+                base,
+                playbook.start,
+                playbook.start + timedelta(weeks=3, days=2),
+                change_min=True,
+            )
+            playbook.assert_complete(candidate_id)
+            candidate_assignments = _assignment_map(playbook, candidate_id)
+            assert candidate_assignments == prior_assignments
+            comparison = _compare_in_browser(page, base, prior_id, candidate_id)
+            expect(comparison.locator(".kpi", has_text="Added").locator(".kpi-value")).to_have_text(
+                "0"
+            )
+            expect(
+                comparison.locator(".kpi", has_text="Removed").locator(".kpi-value")
+            ).to_have_text("0")
+            expect(
+                comparison.locator(".kpi", has_text="Unchanged").locator(".kpi-value")
+            ).to_have_text("3")
+
+            page.goto(f"{base}/a/solution/{candidate_id}")
+            page.get_by_role("button", name="Publish this solution").click()
+            expect(page.locator("#publish-state")).to_contain_text("Unpublish")
+            page.wait_for_selector("#publish-state:not(.htmx-added)")
+            page.get_by_role("button", name="Notify assignees").click()
+            expect(page.locator("#notify-result")).to_contain_text("Reminder added")
+
+            moved_event = _calendar_event(member, feed_url, target_title)
+            assert str(moved_event["UID"]) == published_uid
+            assert moved_event.decoded("DTSTART") - published_start == timedelta(days=1, hours=1)
+            member.goto(f"{base}/v/inbox")
+            expect(member.locator("#inbox-list")).to_contain_text("Reminder")
+            member.goto(f"{base}/v/schedule")
+            member.get_by_role("link", name=target_title, exact=False).click()
+            expect(member.locator("#assignment-card .status-text.pending")).to_contain_text(
+                "Unanswered"
+            )
+            member.get_by_role("button", name="Accept", exact=True).click()
+            expect(member.locator("#assignment-card .status-text.accepted")).to_contain_text(
+                "Accepted"
+            )
+
+        solutions = playbook.request("GET", f"/solutions/?org_id={playbook.org}")["items"]
+        assert [item["id"] for item in solutions if item["is_published"]] == [candidate_id]
+        current_assignments = _assignment_map(playbook, candidate_id)
+        for event_id in event_ids:
+            assert current_assignments[(event_id, role)] == prior_assignments[(event_id, role)]
+        for event_id, times in unchanged_times.items():
+            event = playbook.request("GET", f"/events/{event_id}")
+            assert (
+                _utc_datetime(event["start_time"]),
+                _utc_datetime(event["end_time"]),
+            ) == times
+        _fits(page)
+        _fits(member)
+        page.screenshot(
+            path=str(tmp_path / f"{playbook_spec.id}-{width}-schedule-change-admin.png"),
+            full_page=True,
+        )
+        member.screenshot(
+            path=str(tmp_path / f"{playbook_spec.id}-{width}-schedule-change-member.png"),
+            full_page=True,
+        )
+        no_js_errors(member)
         no_js_errors(page)
 
 
@@ -736,7 +987,10 @@ def test_domain_browser_workflow(
         page.wait_for_url("**/a/solution/**")
         solution_id = int(page.url.rstrip("/").rsplit("/", 1)[1])
         p.assert_complete(solution_id)
-        expect(page.locator(".kpi").filter(has_text="Assignments")).to_contain_text("84")
+        expected_assignments = sum(p.spec["roles"].values()) * 12
+        expect(page.locator(".kpi").filter(has_text="Assignments")).to_contain_text(
+            str(expected_assignments)
+        )
         expect(page.locator(".kpi").filter(has_text="Hard violations")).to_contain_text("0")
         assignments = p.assignments(solution_id)
         counts = Counter(

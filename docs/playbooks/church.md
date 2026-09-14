@@ -138,16 +138,24 @@ retains its audit trail but fails publication because the member is no longer qu
 The app records the scheduling decision; the ministry approver still owns suitability and
 safeguarding approval outside SignUpFlow.
 
+CH-D03 uses the `additional_event_role` declared by the Church fixture. Starting from an
+accepted three-week usher roster, the administrator creates one usher-only holiday service
+through the event form, solves with change minimization, and compares the candidate against
+the live roster. At 360px and 1440px the comparison reports one added, zero removed, and
+three unchanged commitments. Republishing and notifying preserves the prior acceptance,
+gives the new assignee both assignment and reminder notices, and requires that assignee to
+accept the new commitment. The ministry approver still owns the holiday-service and
+headcount decision outside SignUpFlow.
+
 ## Additional operational drills
 
 Record these remaining items separately as manual/extended acceptance:
 
-1. A holiday changes service times or headcounts. Change only the intended events;
-   verify recurrence exceptions and avoid changing already completed services.
-2. A member never responds. Contact them through an approved channel and arrange
+1. A member never responds. Contact them through an approved channel and arrange
    confirmed cover; do not treat an assignment's default status as delivery evidence.
-3. The venue is unavailable. Arrange a venue/time manually; the current playbook
+2. The venue is unavailable. Arrange a venue/time manually; the current playbook
    does not establish automated room conflict prevention.
+
 ## Release sign-off
 
 Require exact role counts, no double-booking, no assignments during recorded
