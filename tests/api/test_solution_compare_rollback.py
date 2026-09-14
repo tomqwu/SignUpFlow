@@ -16,6 +16,7 @@ from datetime import datetime, timedelta
 import pytest
 
 from api.models import Assignment, AuditAction, AuditLog, Event, Person, Solution
+from api.services.publication_service import capture_solution_scope
 from api.timeutils import utcnow
 from tests.api.conftest import auth_headers, seed_org, seed_user
 
@@ -31,7 +32,39 @@ def _admin_for(client, org_id: str, suffix: str):
     return auth_headers(client, email=f"admin-{suffix}@o.org", password="AdminPass1!")
 
 
-def _seed_solution(db, org_id: str, *, published: bool = False) -> Solution:
+def _seed_solution(
+    db, org_id: str, *, published: bool = False, publication_ready: bool = False
+) -> Solution:
+    event = db.get(Event, f"publish-event-{org_id}")
+    if event is None:
+        start = utcnow() + timedelta(days=14)
+        event = Event(
+            id=f"publish-event-{org_id}",
+            org_id=org_id,
+            type="Service",
+            start_time=start,
+            end_time=start + timedelta(hours=1),
+            extra_data={"role_counts": {"publisher": 1}},
+        )
+        db.add(event)
+    member = db.get(Person, f"publish-member-{org_id}")
+    if member is None:
+        member = Person(
+            id=f"publish-member-{org_id}",
+            org_id=org_id,
+            name="Publish Member",
+            roles=["publisher"],
+            status="active",
+        )
+        db.add(member)
+    db.flush()
+    scope = (
+        capture_solution_scope(
+            [event], range_start=event.start_time.date(), range_end=event.start_time.date()
+        )
+        if publication_ready
+        else None
+    )
     sol = Solution(
         org_id=org_id,
         solve_ms=10.0,
@@ -39,11 +72,25 @@ def _seed_solution(db, org_id: str, *, published: bool = False) -> Solution:
         soft_score=1.0,
         health_score=1.0,
         metrics={},
+        scope_start=scope.range_start if scope else None,
+        scope_end=scope.range_end if scope else None,
+        scope_event_ids=scope.event_ids if scope else None,
+        scope_fingerprint=scope.fingerprint if scope else None,
     )
     if published:
         sol.is_published = True
         sol.published_at = utcnow()
     db.add(sol)
+    db.flush()
+    if publication_ready:
+        db.add(
+            Assignment(
+                solution_id=sol.id,
+                event_id=event.id,
+                person_id=member.id,
+                role="publisher",
+            )
+        )
     db.commit()
     db.refresh(sol)
     return sol
@@ -207,8 +254,8 @@ class TestRollbackSolution:
         org_id = "rb-ok"
         seed_org(client, org_id)
         hdrs = _admin_for(client, org_id, "rb-ok")
-        sol_a = _seed_solution(db, org_id)
-        sol_b = _seed_solution(db, org_id)
+        sol_a = _seed_solution(db, org_id, publication_ready=True)
+        sol_b = _seed_solution(db, org_id, publication_ready=True)
 
         # Publish a, then b (which unpublishes a). a now has published_at != None
         # but is_published = False — eligible for rollback.
@@ -248,7 +295,7 @@ class TestRollbackSolution:
             roles=["volunteer"],
         )
         vol_hdrs = auth_headers(client, email="vol@o.org", password="VolPass1!")
-        sol = _seed_solution(db, org_id)
+        sol = _seed_solution(db, org_id, publication_ready=True)
         client.post(f"/api/v1/solutions/{sol.id}/publish", headers=admin_hdrs)
 
         resp = client.post(f"/api/v1/solutions/{sol.id}/rollback", headers=vol_hdrs)
@@ -259,7 +306,7 @@ class TestRollbackSolution:
         seed_org(client, "rb-b")
         a_hdrs = _admin_for(client, "rb-a", "rb-a")
         b_hdrs = _admin_for(client, "rb-b", "rb-b")
-        sol_b = _seed_solution(db, "rb-b")
+        sol_b = _seed_solution(db, "rb-b", publication_ready=True)
         client.post(f"/api/v1/solutions/{sol_b.id}/publish", headers=b_hdrs)
 
         resp = client.post(f"/api/v1/solutions/{sol_b.id}/rollback", headers=a_hdrs)
@@ -269,8 +316,8 @@ class TestRollbackSolution:
         org_id = "rb-audit"
         seed_org(client, org_id)
         hdrs = _admin_for(client, org_id, "rb-audit")
-        sol_a = _seed_solution(db, org_id)
-        sol_b = _seed_solution(db, org_id)
+        sol_a = _seed_solution(db, org_id, publication_ready=True)
+        sol_b = _seed_solution(db, org_id, publication_ready=True)
         client.post(f"/api/v1/solutions/{sol_a.id}/publish", headers=hdrs)
         client.post(f"/api/v1/solutions/{sol_b.id}/publish", headers=hdrs)
 

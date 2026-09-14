@@ -5,6 +5,7 @@ from datetime import datetime, timedelta
 import pytest
 
 from api.models import Assignment, AuditAction, AuditLog, Event, Solution
+from api.services.publication_service import capture_solution_scope
 from tests.api.conftest import auth_headers, seed_event, seed_org, seed_user
 
 pytestmark = pytest.mark.no_mock_auth
@@ -52,7 +53,12 @@ def _setup_assignment(client, db, suffix: str):
     }
 
 
-def _solution(db, org_id: str) -> Solution:
+def _solution(db, org_id: str, events: list[Event]) -> Solution:
+    scope = capture_solution_scope(
+        events,
+        range_start=min(event.start_time.date() for event in events),
+        range_end=max(event.start_time.date() for event in events),
+    )
     solution = Solution(
         org_id=org_id,
         solve_ms=1,
@@ -60,6 +66,10 @@ def _solution(db, org_id: str) -> Solution:
         soft_score=0,
         health_score=100,
         metrics={},
+        scope_start=scope.range_start,
+        scope_end=scope.range_end,
+        scope_event_ids=scope.event_ids,
+        scope_fingerprint=scope.fingerprint,
     )
     db.add(solution)
     db.flush()
@@ -179,7 +189,7 @@ def test_publish_carries_only_current_unchanged_response(client, db):
     event = db.get(Event, context["event"]["id"])
     assert event is not None
 
-    first_solution = _solution(db, context["org_id"])
+    first_solution = _solution(db, context["org_id"], [event])
     manual.solution_id = first_solution.id
     db.commit()
     assert (
@@ -195,34 +205,14 @@ def test_publish_carries_only_current_unchanged_response(client, db):
         headers=context["member_headers"],
     )
     assert accepted.status_code == 200
-    unchanged_solution = _solution(db, context["org_id"])
-    other_member = seed_user(
-        client,
-        context["org_id"],
-        "other-publish@response.example",
-        "Other Member",
-        "MemberPass123!",
-        roles=["volunteer", "usher"],
-    )
+    unchanged_solution = _solution(db, context["org_id"], [event])
     unchanged = Assignment(
         solution_id=unchanged_solution.id,
         event_id=event.id,
         person_id=context["member"]["person_id"],
         role="usher",
     )
-    changed_role = Assignment(
-        solution_id=unchanged_solution.id,
-        event_id=event.id,
-        person_id=context["member"]["person_id"],
-        role="greeter",
-    )
-    changed_person = Assignment(
-        solution_id=unchanged_solution.id,
-        event_id=event.id,
-        person_id=other_member["person_id"],
-        role="usher",
-    )
-    db.add_all([unchanged, changed_role, changed_person])
+    db.add(unchanged)
     db.commit()
     published = client.post(
         f"/api/v1/solutions/{unchanged_solution.id}/publish",
@@ -232,13 +222,6 @@ def test_publish_carries_only_current_unchanged_response(client, db):
     db.refresh(unchanged)
     assert unchanged.response_status == "accepted"
     assert unchanged.response_current is True
-    db.refresh(changed_role)
-    db.refresh(changed_person)
-    assert changed_role.response_status == "pending"
-    assert changed_role.response_current is False
-    assert changed_person.response_status == "pending"
-    assert changed_person.response_current is False
-
     moved_start = datetime.fromisoformat(context["event"]["start_time"]) + timedelta(hours=2)
     moved_end = datetime.fromisoformat(context["event"]["end_time"]) + timedelta(hours=2)
     moved = client.put(

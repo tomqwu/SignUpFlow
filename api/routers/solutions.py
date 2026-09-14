@@ -23,7 +23,6 @@ from api.dependencies import get_current_admin_user, verify_org_member
 from api.models import (
     Assignment,
     AuditAction,
-    AuditLog,
     Event,
     Organization,
     Person,
@@ -47,9 +46,12 @@ from api.schemas.solver import (
     WorkloadStats,
 )
 from api.services import event_bus
-from api.services.assignment_response import carry_forward_current_responses
+from api.services.publication_service import (
+    PublicationConflictError,
+    publish_solution_transaction,
+    unpublish_solution_transaction,
+)
 from api.timeutils import utcnow
-from api.utils.audit_logger import log_audit_event
 from api.utils.pdf_export import generate_schedule_pdf
 
 router = APIRouter(prefix="/solutions", tags=["solutions"])
@@ -586,43 +588,25 @@ def publish_solution(
     current_admin: Person = Depends(get_current_admin_user),
     db: Session = Depends(get_db),
 ):
-    """Publish a solution (admin only). Unpublishes any prior published in the same org."""
+    """Publish a complete, current full-horizon solution (admin only)."""
     solution = _get_admin_solution(solution_id, current_admin, db)
-
-    # Unpublish any prior in the same org.
-    prior = (
-        db.query(Solution)
-        .filter(
-            Solution.org_id == solution.org_id,
-            Solution.is_published.is_(True),
-            Solution.id != solution.id,
+    try:
+        solution = publish_solution_transaction(
+            db,
+            solution_id=solution_id,
+            org_id=solution.org_id,
+            actor=current_admin,
+            ip_address=http_request.client.host if http_request.client else None,
+            user_agent=http_request.headers.get("user-agent"),
         )
-        .all()
-    )
-    carry_forward_current_responses(db, solution=solution, prior_solutions=prior)
-    for s in prior:
-        s.is_published = False
-        s.published_at = None
-
-    now = utcnow()
-    solution.is_published = True
-    solution.published_at = now
-    db.commit()
-    db.refresh(solution)
-
-    log_audit_event(
-        db,
-        action=AuditAction.SOLUTION_PUBLISHED,
-        user_id=current_admin.id,
-        user_email=current_admin.email,
-        organization_id=solution.org_id,
-        resource_type="solution",
-        resource_id=str(solution.id),
-        details={"unpublished_prior_ids": [s.id for s in prior]},
-        ip_address=http_request.client.host if http_request.client else None,
-        user_agent=http_request.headers.get("user-agent"),
-    )
-
+        db.commit()
+        db.refresh(solution)
+    except PublicationConflictError as exc:
+        db.rollback()
+        raise HTTPException(status_code=exc.status_code, detail=str(exc)) from exc
+    except Exception:
+        db.rollback()
+        raise
     return _solution_response(solution, db)
 
 
@@ -636,23 +620,23 @@ def unpublish_solution(
     """Unpublish a solution (admin only)."""
     solution = _get_admin_solution(solution_id, current_admin, db)
 
-    solution.is_published = False
-    solution.published_at = None
-    db.commit()
-    db.refresh(solution)
-
-    log_audit_event(
-        db,
-        action=AuditAction.SOLUTION_UNPUBLISHED,
-        user_id=current_admin.id,
-        user_email=current_admin.email,
-        organization_id=solution.org_id,
-        resource_type="solution",
-        resource_id=str(solution.id),
-        ip_address=http_request.client.host if http_request.client else None,
-        user_agent=http_request.headers.get("user-agent"),
-    )
-
+    try:
+        solution = unpublish_solution_transaction(
+            db,
+            solution_id=solution_id,
+            org_id=solution.org_id,
+            actor=current_admin,
+            ip_address=http_request.client.host if http_request.client else None,
+            user_agent=http_request.headers.get("user-agent"),
+        )
+        db.commit()
+        db.refresh(solution)
+    except PublicationConflictError as exc:
+        db.rollback()
+        raise HTTPException(status_code=exc.status_code, detail=str(exc)) from exc
+    except Exception:
+        db.rollback()
+        raise
     return _solution_response(solution, db)
 
 
@@ -725,57 +709,25 @@ def rollback_solution(
     """
     solution = _get_admin_solution(solution_id, current_admin, db)
 
-    # Eligibility: existing publish_solution nulls published_at on the prior
-    # when it replaces, so published_at is unreliable. Use the audit trail.
-    was_ever_published = (
-        db.query(AuditLog)
-        .filter(
-            AuditLog.action.in_([AuditAction.SOLUTION_PUBLISHED, AuditAction.SOLUTION_ROLLED_BACK]),
-            AuditLog.organization_id == solution.org_id,
-            AuditLog.resource_id == str(solution.id),
+    try:
+        solution = publish_solution_transaction(
+            db,
+            solution_id=solution_id,
+            org_id=solution.org_id,
+            actor=current_admin,
+            action=AuditAction.SOLUTION_ROLLED_BACK,
+            require_previously_published=True,
+            ip_address=http_request.client.host if http_request.client else None,
+            user_agent=http_request.headers.get("user-agent"),
         )
-        .count()
-        > 0
-    )
-    if not was_ever_published:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Cannot roll back to a solution that has never been published",
-        )
-
-    prior = (
-        db.query(Solution)
-        .filter(
-            Solution.org_id == solution.org_id,
-            Solution.is_published.is_(True),
-            Solution.id != solution.id,
-        )
-        .all()
-    )
-    carry_forward_current_responses(db, solution=solution, prior_solutions=prior)
-    for s in prior:
-        s.is_published = False
-        s.published_at = None
-
-    now = utcnow()
-    solution.is_published = True
-    solution.published_at = now
-    db.commit()
-    db.refresh(solution)
-
-    log_audit_event(
-        db,
-        action=AuditAction.SOLUTION_ROLLED_BACK,
-        user_id=current_admin.id,
-        user_email=current_admin.email,
-        organization_id=solution.org_id,
-        resource_type="solution",
-        resource_id=str(solution.id),
-        details={"unpublished_prior_ids": [s.id for s in prior]},
-        ip_address=http_request.client.host if http_request.client else None,
-        user_agent=http_request.headers.get("user-agent"),
-    )
-
+        db.commit()
+        db.refresh(solution)
+    except PublicationConflictError as exc:
+        db.rollback()
+        raise HTTPException(status_code=exc.status_code, detail=str(exc)) from exc
+    except Exception:
+        db.rollback()
+        raise
     return _solution_response(solution, db)
 
 

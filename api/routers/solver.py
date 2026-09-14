@@ -73,6 +73,7 @@ from api.schemas.solver import (
     StabilityMetrics,
     ViolationInfo,
 )
+from api.services.publication_service import capture_solution_scope
 from api.utils.solver_stability import (
     compute_stability_metrics,
     load_prior_published_loose_keys,
@@ -295,6 +296,12 @@ def solve_schedule(
     stability = compute_stability_metrics(db, org_id=org.id, new_assignments=solution.assignments)
 
     # Save solution to database
+    scope = capture_solution_scope(
+        events_db,
+        range_start=solve_request.from_date,
+        range_end=solve_request.to_date,
+        constraints=constraints_db,
+    )
     db_solution = DBSolution(
         org_id=org.id,
         solve_ms=solution.metrics.solve_ms,
@@ -311,6 +318,10 @@ def solve_schedule(
                 "affected_persons": stability.affected_persons,
             },
         },
+        scope_start=scope.range_start,
+        scope_end=scope.range_end,
+        scope_event_ids=scope.event_ids,
+        scope_fingerprint=scope.fingerprint,
     )
     db.add(db_solution)
     db.flush()

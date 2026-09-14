@@ -100,8 +100,9 @@ Coverage statuses have precise meanings: `automated` has executable local test
 evidence; `partial` has useful automated evidence but not the complete manifest
 oracle; `manual` is an accepted human operation; `blocked` names missing product
 behavior or evidence and includes the manual tier so it cannot look automated.
-The manifest currently marks week-seven rollover and owned-mail delivery blocked,
-and keeps incomplete all-role/browser journeys partial.
+The manifest records week-seven rollover and shortage publication as automated API
+evidence. Owned-mail delivery remains blocked, and incomplete all-role/browser
+journeys remain partial.
 
 This is a domain-definition plugin for the six-week lifecycle, not an arbitrary
 workflow language. Adding a different lifecycle requires implementing and testing
@@ -120,7 +121,11 @@ unknown workflow IDs or silently skip unsupported scenarios.
 | Qualified replacement repairs shortage | API week 5 |
 | Changed event time reaches regenerated roster | API week 6 |
 | Old published roster survives draft generation | API journey |
+| Incomplete roster is rejected and identifies the missing role | API journey in both domains; API and web safety regressions |
 | Repaired publication replaces old publication | API journey |
+| Narrower replacement cannot remove a future published event | API safety regression |
+| Explicit cancellation and week-seven rollover preserve the remaining horizon | API safety regression |
+| Changed event snapshot or member qualification blocks stale publication | API safety regressions |
 | Volunteer, anonymous user, foreign admin cannot publish | API journey |
 | Draft invisible; newly published shift unanswered; member can accept | Browser journey, both domains |
 | Coordinator filters unanswered, accepted, and replacement-needed work | Browser journey, both domains, 360 and 1440 pixels |
@@ -142,10 +147,12 @@ overflow assertion alone is not a comprehensive visual/accessibility audit.
 
 ## Known boundaries and release blockers
 
-- Only one solution per organization is published at a time. Regenerate the full
-  remaining horizon, not one isolated week, or future published shifts disappear.
-- Publication currently allows incomplete rosters. The playbooks require an admin
-  to resolve shortages first; the application does not enforce that policy yet.
+- Only one solution per organization is published at a time. Publication now
+  rejects an incomplete, stale, or narrower replacement before changing the live
+  roster. Regenerate the full remaining horizon after an explicit cancellation or
+  week-seven addition. See [SCHEDULE_PUBLICATION.md](../SCHEDULE_PUBLICATION.md).
+- Legacy solutions without immutable solve-scope metadata require regeneration
+  before publication or rollback.
 - Persisted assignment caps, minimum rest gaps, and cooldown preferences execute
   in API solves under the validated contract in
   [SCHEDULING_CONSTRAINTS.md](../SCHEDULING_CONSTRAINTS.md). Do not promise venue

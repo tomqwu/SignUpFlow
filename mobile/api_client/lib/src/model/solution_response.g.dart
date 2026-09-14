@@ -26,6 +26,14 @@ class _$SolutionResponse extends SolutionResponse {
   @override
   final DateTime? publishedAt;
   @override
+  final Date? scopeEnd;
+  @override
+  final BuiltList<String>? scopeEventIds;
+  @override
+  final String? scopeFingerprint;
+  @override
+  final Date? scopeStart;
+  @override
   final num softScore;
   @override
   final num solveMs;
@@ -44,6 +52,10 @@ class _$SolutionResponse extends SolutionResponse {
       this.metrics,
       required this.orgId,
       this.publishedAt,
+      this.scopeEnd,
+      this.scopeEventIds,
+      this.scopeFingerprint,
+      this.scopeStart,
       required this.softScore,
       required this.solveMs})
       : super._();
@@ -68,6 +80,10 @@ class _$SolutionResponse extends SolutionResponse {
         metrics == other.metrics &&
         orgId == other.orgId &&
         publishedAt == other.publishedAt &&
+        scopeEnd == other.scopeEnd &&
+        scopeEventIds == other.scopeEventIds &&
+        scopeFingerprint == other.scopeFingerprint &&
+        scopeStart == other.scopeStart &&
         softScore == other.softScore &&
         solveMs == other.solveMs;
   }
@@ -84,6 +100,10 @@ class _$SolutionResponse extends SolutionResponse {
     _$hash = $jc(_$hash, metrics.hashCode);
     _$hash = $jc(_$hash, orgId.hashCode);
     _$hash = $jc(_$hash, publishedAt.hashCode);
+    _$hash = $jc(_$hash, scopeEnd.hashCode);
+    _$hash = $jc(_$hash, scopeEventIds.hashCode);
+    _$hash = $jc(_$hash, scopeFingerprint.hashCode);
+    _$hash = $jc(_$hash, scopeStart.hashCode);
     _$hash = $jc(_$hash, softScore.hashCode);
     _$hash = $jc(_$hash, solveMs.hashCode);
     _$hash = $jf(_$hash);
@@ -102,6 +122,10 @@ class _$SolutionResponse extends SolutionResponse {
           ..add('metrics', metrics)
           ..add('orgId', orgId)
           ..add('publishedAt', publishedAt)
+          ..add('scopeEnd', scopeEnd)
+          ..add('scopeEventIds', scopeEventIds)
+          ..add('scopeFingerprint', scopeFingerprint)
+          ..add('scopeStart', scopeStart)
           ..add('softScore', softScore)
           ..add('solveMs', solveMs))
         .toString();
@@ -152,6 +176,25 @@ class SolutionResponseBuilder
   DateTime? get publishedAt => _$this._publishedAt;
   set publishedAt(DateTime? publishedAt) => _$this._publishedAt = publishedAt;
 
+  Date? _scopeEnd;
+  Date? get scopeEnd => _$this._scopeEnd;
+  set scopeEnd(Date? scopeEnd) => _$this._scopeEnd = scopeEnd;
+
+  ListBuilder<String>? _scopeEventIds;
+  ListBuilder<String> get scopeEventIds =>
+      _$this._scopeEventIds ??= ListBuilder<String>();
+  set scopeEventIds(ListBuilder<String>? scopeEventIds) =>
+      _$this._scopeEventIds = scopeEventIds;
+
+  String? _scopeFingerprint;
+  String? get scopeFingerprint => _$this._scopeFingerprint;
+  set scopeFingerprint(String? scopeFingerprint) =>
+      _$this._scopeFingerprint = scopeFingerprint;
+
+  Date? _scopeStart;
+  Date? get scopeStart => _$this._scopeStart;
+  set scopeStart(Date? scopeStart) => _$this._scopeStart = scopeStart;
+
   num? _softScore;
   num? get softScore => _$this._softScore;
   set softScore(num? softScore) => _$this._softScore = softScore;
@@ -176,6 +219,10 @@ class SolutionResponseBuilder
       _metrics = $v.metrics?.toBuilder();
       _orgId = $v.orgId;
       _publishedAt = $v.publishedAt;
+      _scopeEnd = $v.scopeEnd;
+      _scopeEventIds = $v.scopeEventIds?.toBuilder();
+      _scopeFingerprint = $v.scopeFingerprint;
+      _scopeStart = $v.scopeStart;
       _softScore = $v.softScore;
       _solveMs = $v.solveMs;
       _$v = null;
@@ -215,6 +262,10 @@ class SolutionResponseBuilder
             orgId: BuiltValueNullFieldError.checkNotNull(
                 orgId, r'SolutionResponse', 'orgId'),
             publishedAt: publishedAt,
+            scopeEnd: scopeEnd,
+            scopeEventIds: _scopeEventIds?.build(),
+            scopeFingerprint: scopeFingerprint,
+            scopeStart: scopeStart,
             softScore: BuiltValueNullFieldError.checkNotNull(
                 softScore, r'SolutionResponse', 'softScore'),
             solveMs: BuiltValueNullFieldError.checkNotNull(
@@ -225,6 +276,9 @@ class SolutionResponseBuilder
       try {
         _$failedField = 'metrics';
         _metrics?.build();
+
+        _$failedField = 'scopeEventIds';
+        _scopeEventIds?.build();
       } catch (e) {
         throw BuiltValueNestedFieldError(
             r'SolutionResponse', _$failedField, e.toString());

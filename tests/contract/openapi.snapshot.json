@@ -4386,6 +4386,55 @@
             ],
             "title": "Published At"
           },
+          "scope_end": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scope End"
+          },
+          "scope_event_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scope Event Ids"
+          },
+          "scope_fingerprint": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scope Fingerprint"
+          },
+          "scope_start": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scope Start"
+          },
           "soft_score": {
             "title": "Soft Score",
             "type": "number"
@@ -12136,7 +12185,7 @@
     },
     "/api/v1/solutions/{solution_id}/publish": {
       "post": {
-        "description": "Publish a solution (admin only). Unpublishes any prior published in the same org.",
+        "description": "Publish a complete, current full-horizon solution (admin only).",
         "operationId": "publishSolution",
         "parameters": [
           {

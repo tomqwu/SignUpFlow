@@ -14,6 +14,7 @@ from sqlalchemy.orm import sessionmaker
 
 from api.models import (
     Assignment,
+    AuditAction,
     AuditLog,
     Availability,
     Base,
@@ -28,6 +29,11 @@ from api.services.allocation_service import (
     AllocationConflictError,
     claim_open_shift,
     cover_swap,
+)
+from api.services.publication_service import (
+    PublicationConflictError,
+    capture_solution_scope,
+    publish_solution_transaction,
 )
 from api.timeutils import utcnow
 
@@ -107,6 +113,67 @@ def _claim(factory, barrier: Barrier, org_id: str, event_id: str, person_id: str
         except AllocationConflictError as exc:
             db.rollback()
             return exc.code, None, False
+
+
+def _scoped_solution(factory, *, org_id: str, person_id: str, event_id: str) -> int:
+    with factory() as db:
+        event = db.query(Event).filter(Event.org_id == org_id, Event.id == event_id).one()
+        scope = capture_solution_scope(
+            [event],
+            range_start=event.start_time.date(),
+            range_end=event.start_time.date(),
+        )
+        solution = Solution(
+            org_id=org_id,
+            hard_violations=0,
+            soft_score=0.0,
+            health_score=100.0,
+            scope_start=scope.range_start,
+            scope_end=scope.range_end,
+            scope_event_ids=scope.event_ids,
+            scope_fingerprint=scope.fingerprint,
+        )
+        db.add(solution)
+        db.flush()
+        db.add(
+            Assignment(
+                solution_id=solution.id,
+                event_id=event_id,
+                person_id=person_id,
+                role="usher",
+            )
+        )
+        db.commit()
+        return solution.id
+
+
+def _publish(
+    factory,
+    barrier: Barrier | None,
+    *,
+    org_id: str,
+    solution_id: int,
+    action: str = AuditAction.SOLUTION_PUBLISHED,
+    rollback: bool = False,
+) -> str:
+    with factory() as db:
+        actor = db.query(Person).filter(Person.org_id == org_id, Person.id == "admin").one()
+        if barrier is not None:
+            barrier.wait()
+        try:
+            publish_solution_transaction(
+                db,
+                solution_id=solution_id,
+                org_id=org_id,
+                actor=actor,
+                action=action,
+                require_previously_published=rollback,
+            )
+            db.commit()
+            return "published"
+        except PublicationConflictError:
+            db.rollback()
+            return "rejected"
 
 
 @pytest.mark.integration
@@ -401,3 +468,211 @@ def test_draft_solution_history_does_not_consume_live_capacity(claim_database):
         rows = db.query(Assignment).filter(Assignment.event_id == "service").all()
         assert len(rows) == 2
         assert any(row.solution_id == solution_id for row in rows)
+
+
+@pytest.mark.integration
+def test_concurrent_publishes_leave_exactly_one_coherent_roster(claim_database):
+    factory = claim_database
+    _seed(
+        factory,
+        org_id="publish-race",
+        people={
+            "admin": ["admin"],
+            "first": ["volunteer", "usher"],
+            "second": ["volunteer", "usher"],
+        },
+        events={"service": (0, {"usher": 1})},
+    )
+    solution_ids = [
+        _scoped_solution(
+            factory,
+            org_id="publish-race",
+            person_id=person_id,
+            event_id="service",
+        )
+        for person_id in ("first", "second")
+    ]
+    barrier = Barrier(2, timeout=10)
+
+    with ThreadPoolExecutor(max_workers=2) as executor:
+        results = list(
+            executor.map(
+                lambda solution_id: _publish(
+                    factory,
+                    barrier,
+                    org_id="publish-race",
+                    solution_id=solution_id,
+                ),
+                solution_ids,
+            )
+        )
+
+    assert results == ["published", "published"]
+    with factory() as db:
+        active = (
+            db.query(Solution)
+            .filter(Solution.org_id == "publish-race", Solution.is_published.is_(True))
+            .all()
+        )
+        assert len(active) == 1
+        assert active[0].id in solution_ids
+        assert db.query(AuditLog).filter(AuditLog.organization_id == "publish-race").count() == 2
+        assert db.query(Notification).filter(Notification.org_id == "publish-race").count() == 2
+
+
+@pytest.mark.integration
+def test_publish_racing_last_slot_claim_has_one_valid_winner(claim_database):
+    factory = claim_database
+    _seed(
+        factory,
+        org_id="publish-claim-race",
+        people={
+            "admin": ["admin"],
+            "scheduled": ["volunteer", "usher"],
+            "claimant": ["volunteer", "usher"],
+        },
+        events={"service": (0, {"usher": 1})},
+    )
+    solution_id = _scoped_solution(
+        factory,
+        org_id="publish-claim-race",
+        person_id="scheduled",
+        event_id="service",
+    )
+    barrier = Barrier(2, timeout=10)
+
+    def publish_attempt():
+        return _publish(
+            factory,
+            barrier,
+            org_id="publish-claim-race",
+            solution_id=solution_id,
+        )
+
+    def claim_attempt():
+        return _claim(
+            factory,
+            barrier,
+            "publish-claim-race",
+            "service",
+            "claimant",
+            "usher",
+        )[0]
+
+    with ThreadPoolExecutor(max_workers=2) as executor:
+        publish_result = executor.submit(publish_attempt)
+        claim_result = executor.submit(claim_attempt)
+        outcomes = {publish_result.result(), claim_result.result()}
+
+    assert outcomes in ({"published", "role_full"}, {"rejected", "won"})
+    with factory() as db:
+        active_solution = (
+            db.query(Solution)
+            .filter(
+                Solution.org_id == "publish-claim-race",
+                Solution.is_published.is_(True),
+            )
+            .first()
+        )
+        manual = (
+            db.query(Assignment)
+            .join(Event, Assignment.event_id == Event.id)
+            .filter(
+                Event.org_id == "publish-claim-race",
+                Assignment.solution_id.is_(None),
+            )
+            .first()
+        )
+        assert (active_solution is not None) != (manual is not None)
+        assert (
+            db.query(AuditLog).filter(AuditLog.organization_id == "publish-claim-race").count() == 1
+        )
+
+
+@pytest.mark.integration
+def test_concurrent_publish_and_rollback_serialize_to_one_active_solution(claim_database):
+    factory = claim_database
+    _seed(
+        factory,
+        org_id="publish-rollback-race",
+        people={
+            "admin": ["admin"],
+            "first": ["volunteer", "usher"],
+            "second": ["volunteer", "usher"],
+            "third": ["volunteer", "usher"],
+        },
+        events={"service": (0, {"usher": 1})},
+    )
+    old_id = _scoped_solution(
+        factory,
+        org_id="publish-rollback-race",
+        person_id="first",
+        event_id="service",
+    )
+    current_id = _scoped_solution(
+        factory,
+        org_id="publish-rollback-race",
+        person_id="second",
+        event_id="service",
+    )
+    candidate_id = _scoped_solution(
+        factory,
+        org_id="publish-rollback-race",
+        person_id="third",
+        event_id="service",
+    )
+    assert (
+        _publish(
+            factory,
+            None,
+            org_id="publish-rollback-race",
+            solution_id=old_id,
+        )
+        == "published"
+    )
+    assert (
+        _publish(
+            factory,
+            None,
+            org_id="publish-rollback-race",
+            solution_id=current_id,
+        )
+        == "published"
+    )
+    barrier = Barrier(2, timeout=10)
+
+    with ThreadPoolExecutor(max_workers=2) as executor:
+        publish_future = executor.submit(
+            _publish,
+            factory,
+            barrier,
+            org_id="publish-rollback-race",
+            solution_id=candidate_id,
+        )
+        rollback_future = executor.submit(
+            _publish,
+            factory,
+            barrier,
+            org_id="publish-rollback-race",
+            solution_id=old_id,
+            action=AuditAction.SOLUTION_ROLLED_BACK,
+            rollback=True,
+        )
+        assert publish_future.result() == "published"
+        assert rollback_future.result() == "published"
+
+    with factory() as db:
+        active = (
+            db.query(Solution)
+            .filter(
+                Solution.org_id == "publish-rollback-race",
+                Solution.is_published.is_(True),
+            )
+            .all()
+        )
+        assert len(active) == 1
+        assert active[0].id in {old_id, candidate_id}
+        assert (
+            db.query(AuditLog).filter(AuditLog.organization_id == "publish-rollback-race").count()
+            == 4
+        )

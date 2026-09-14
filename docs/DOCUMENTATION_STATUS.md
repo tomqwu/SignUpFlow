@@ -41,6 +41,13 @@ eligibility, live-capacity, idempotency, rollback, and disposable PostgreSQL tes
 boundaries for open shifts, swap coverage/denial, and coordinator roster edits.
 This package changes behavior and conflict copy without changing page layout, so
 the README walkthrough screenshots remain applicable.
+The maintained [schedule publication contract](SCHEDULE_PUBLICATION.md) now records
+the strict full-horizon/no-override policy, immutable solve scope, legacy
+regeneration, response carry-forward, transaction rollback, explicit cancellation,
+and week-seven rollover. The README and playbook coverage no longer claim that an
+incomplete roster can publish or that rollover is blocked. Successful publication
+keeps the same layout shown in the walkthrough; rejection adds text to the existing
+alert component, so the current screenshots remain applicable to this package.
 The maintained [API authorization matrix](API_AUTHORIZATION.md) now binds every
 mounted operation to an executable policy and records scheduling tenant/export
 semantics. This package changes API authorization and generated contracts, not
