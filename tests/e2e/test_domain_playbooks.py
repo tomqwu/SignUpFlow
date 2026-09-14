@@ -1,8 +1,9 @@
-"""Domain browser acceptance: signup, roles, six weeks, publication and response.
+"""Domain browser acceptance: setup, availability, scheduling, and response.
 
 Five repeated weeks are seeded by API. Member qualification, invitation acceptance,
 organization bootstrap, the first event, solve, review, publish and response use real
-browser interactions.
+browser interactions. The per-role availability test API-seeds its members and twelve
+events, then exercises every availability action through isolated browser sessions.
 """
 
 from datetime import datetime, timedelta
@@ -87,6 +88,108 @@ def _onboard_qualified_members(page, new_context, base, db_path, playbook, width
         ).bounding_box()
         assert qualification_box is not None and qualification_box["width"] >= 250
     _fits(page)
+
+
+@pytest.mark.parametrize("width", [360, 1440])
+def test_every_domain_role_records_unavailability(
+    live_server, new_context, tmp_path, playbook_spec, width
+):
+    base = live_server
+    domain = playbook_spec.id
+    with httpx.Client(base_url=base, timeout=30) as client:
+        playbook = Playbook(client, playbook_spec)
+        for week in range(6):
+            playbook.event(week)
+            playbook.event(
+                week,
+                playbook.spec["secondary_event"],
+                hour=18,
+                day_offset=3,
+            )
+
+        one_off = playbook.start + timedelta(days=3)
+        unavailable_by_role = {}
+        for role in playbook.spec["roles"]:
+            person_id, person = next(
+                (person_id, person)
+                for person_id, person in playbook.people.items()
+                if role in person["roles"]
+            )
+            unavailable_by_role[role] = person_id
+            actor = new_context().new_page()
+            actor.set_viewport_size({"width": width, "height": 900})
+            _login(actor, base, person["email"], playbook.password, "/v/schedule")
+            actor.goto(f"{base}/v/availability")
+            actor.fill("#start_date", one_off.isoformat())
+            actor.fill("#end_date", one_off.isoformat())
+            actor.fill("#reason", f"{role} unavailable")
+            actor.get_by_role("button", name="Add time-off").click()
+            expect(actor.locator("#timeoff-list")).to_contain_text(f"{role} unavailable")
+            actor.locator("#rrule-section").get_by_role("button", name="Every Sunday").click()
+            expect(actor.locator("#rrule-section .mono-data")).to_have_text("FREQ=WEEKLY;BYDAY=SU")
+            _fits(actor)
+            actor.screenshot(
+                path=str(tmp_path / f"{domain}-{width}-{role}-availability.png"),
+                full_page=True,
+            )
+            no_js_errors(actor)
+            playbook.blocked.add((person_id, one_off.isoformat()))
+
+            target_headers = playbook.member_headers(person_id)
+            peer_id, _ = next(
+                (candidate_id, candidate)
+                for candidate_id, candidate in playbook.people.items()
+                if candidate_id != person_id and role in candidate["roles"]
+            )
+            peer_headers = playbook.member_headers(peer_id)
+            timeoff_before = playbook.request(
+                "GET", f"/availability/{person_id}/timeoff", headers=target_headers
+            )
+            rrule_before = playbook.request(
+                "GET", f"/availability/{person_id}/rrule", headers=target_headers
+            )
+            rejected_date = (one_off + timedelta(days=1)).isoformat()
+            playbook.request(
+                "POST",
+                f"/availability/{person_id}/timeoff",
+                403,
+                {
+                    "start_date": rejected_date,
+                    "end_date": rejected_date,
+                    "reason": "Peer edit must fail",
+                },
+                headers=peer_headers,
+            )
+            playbook.request(
+                "PUT",
+                f"/availability/{person_id}/rrule",
+                403,
+                {"rrule": "FREQ=WEEKLY;BYDAY=MO"},
+                headers=peer_headers,
+            )
+            assert (
+                playbook.request(
+                    "GET", f"/availability/{person_id}/timeoff", headers=target_headers
+                )
+                == timeoff_before
+            )
+            assert (
+                playbook.request("GET", f"/availability/{person_id}/rrule", headers=target_headers)
+                == rrule_before
+            )
+
+        solution = playbook.solve()
+        assert solution["metrics"]["hard_violations"] == 0
+        playbook.assert_complete(solution["solution_id"])
+        assignments = playbook.assignments(solution["solution_id"])
+        unavailable_ids = set(unavailable_by_role.values())
+        for event in assignments:
+            assigned_ids = {assignment["person_id"] for assignment in event["assignees"]}
+            event_date = datetime.fromisoformat(event["event_start"]).date()
+            if event_date.weekday() == 6:
+                assert assigned_ids.isdisjoint(unavailable_ids)
+            if event_date == one_off:
+                assert assigned_ids.isdisjoint(unavailable_ids)
 
 
 @pytest.mark.parametrize("width", [360, 1440])

@@ -77,7 +77,10 @@ and service execution remain human responsibilities, not inferred from a green s
 | CH-08 | Qualified swap | Request a swap and have a reserve with the same qualification cover | Original member loses the shift; reserve gains it; every role remains filled |
 
 CH-01 through CH-06 are one automated API lifecycle with assertions after each
-state change. CH-07/08 and multi-role event entry run in Chromium at phone and desktop sizes.
+state change. CH-07/08 and multi-role event entry run in Chromium at phone and desktop
+sizes. BO-03 separately runs all five Church qualifications through one-off and recurring
+availability entry at both widths, rejects peer edits, and verifies solver exclusion
+across twelve API-seeded events.
 
 ## Additional operational drills
 

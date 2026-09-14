@@ -34,6 +34,14 @@ are then created by API before the browser creates the remaining event, solves, 
 publishes, and records member response. The repeated-event setup remains explicitly
 API-seeded until its separate browser slice is complete.
 
+The BO-03 browser variants API-seed fourteen qualified members and all twelve events so
+they can focus on self-service behavior. One member for every Church and Basketball
+qualification logs in at 360px and 1440px, records Wednesday time off and recurring
+Sunday unavailability, and remains excluded from those events in a complete solve.
+Another same-organization volunteer receives `403` when attempting either edit, and
+the test compares both records before and after to prove that the denial did not mutate
+the target member. Those setup calls are not claimed as browser event/onboarding steps.
+
 `church.json` and `basketball.json` are the executable role/headcount fixtures.
 `tests/playbooks/` validates and discovers them for both test tiers. Each run creates new
 organizations and invitations with fictional `.example` addresses. Dates start
