@@ -8,6 +8,12 @@
       "error": ["tests/e2e/test_web_recovery.py::test_invalid_htmx_submission_preserves_input_and_shows_error"],
       "permission": ["tests/e2e/test_web_recovery.py::test_expired_session_navigates_instead_of_swapping_login_fragment"]
     },
+    "request-integrity": {
+      "title": "Signed browser writes and exact same-origin enforcement",
+      "happy": ["tests/e2e/test_request_integrity.py::test_browser_propagates_csrf_and_rejects_foreign_origin"],
+      "error": ["tests/web/test_request_integrity.py::test_missing_csrf_rejects_authenticated_mutation_without_write"],
+      "permission": ["tests/web/test_request_integrity.py::test_foreign_origin_rejects_valid_token_without_write"]
+    },
     "login-session": {
       "title": "Login, root routing, logout, and tenant-bound browser session",
       "happy": ["tests/e2e/test_auth_flows.py::test_signup_logout_login_cycle"],

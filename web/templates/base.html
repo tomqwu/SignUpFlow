@@ -3,6 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="csrf-token" content="{{ request.state.csrf_token }}">
   <title>{% block title %}SignUpFlow{% endblock %}</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -26,6 +27,7 @@
   <script src="/web/static/js/sse.js" defer></script>
   <script src="/web/static/js/alpine.min.js" defer></script>
   <script src="/web/static/js/recovery.js?v=20260914" defer></script>
+  <script src="/web/static/js/request-integrity.js?v=20260914" defer></script>
 </head>
 <body>
   <div class="app">

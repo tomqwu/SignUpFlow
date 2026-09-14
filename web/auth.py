@@ -31,6 +31,7 @@ from api.routers.password_reset import (
 from api.schemas.invitation import InvitationAccept
 from api.security import create_access_token, verify_password
 from api.timeutils import utcnow
+from api.utils.rate_limit_middleware import rate_limit
 from web.deps import SESSION_COOKIE, get_optional_session_user
 
 router = APIRouter(tags=["web-auth"])
@@ -104,7 +105,7 @@ def login_form(
     )
 
 
-@router.post("/auth/login")
+@router.post("/auth/login", dependencies=[Depends(rate_limit("login"))])
 def login_submit(
     request: Request,
     email: str = Form(...),
@@ -148,7 +149,7 @@ def signup_form(
     return templates.TemplateResponse(request, "auth/signup.html", {"error": None, "form": {}})
 
 
-@router.post("/auth/signup")
+@router.post("/auth/signup", dependencies=[Depends(rate_limit("signup"))])
 def signup_submit(
     request: Request,
     org_name: str = Form(...),
@@ -202,7 +203,7 @@ def forgot_form(request: Request):
     return templates.TemplateResponse(request, "auth/forgot.html", {"sent": False, "error": None})
 
 
-@router.post("/auth/forgot")
+@router.post("/auth/forgot", dependencies=[Depends(rate_limit("password_reset"))])
 def forgot_submit(
     request: Request,
     background_tasks: BackgroundTasks,
@@ -238,7 +239,7 @@ def reset_form(request: Request, token: str):
     return templates.TemplateResponse(request, "auth/reset.html", {"token": token, "error": None})
 
 
-@router.post("/auth/reset/{token}")
+@router.post("/auth/reset/{token}", dependencies=[Depends(rate_limit("password_reset_confirm"))])
 def reset_submit(
     request: Request,
     token: str,
@@ -268,7 +269,11 @@ def reset_submit(
     return RedirectResponse(url="/auth/login?reset=1", status_code=303)
 
 
-@router.get("/auth/invitation/{token}", response_class=HTMLResponse)
+@router.get(
+    "/auth/invitation/{token}",
+    response_class=HTMLResponse,
+    dependencies=[Depends(rate_limit("verify_invitation"))],
+)
 def invitation_form(request: Request, token: str, db: Session = Depends(get_db)):
     from web.app import templates
 
@@ -287,7 +292,10 @@ def invitation_form(request: Request, token: str, db: Session = Depends(get_db))
     )
 
 
-@router.post("/auth/invitation/{token}")
+@router.post(
+    "/auth/invitation/{token}",
+    dependencies=[Depends(rate_limit("verify_invitation"))],
+)
 def invitation_submit(
     request: Request,
     token: str,

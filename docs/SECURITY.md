@@ -1,13 +1,27 @@
 # SignUpFlow Security Guide
 
-> Historical security guide. Its production-ready and compliance statements are
-> not current certification. Use [API_AUTHORIZATION.md](API_AUTHORIZATION.md) for
-> the maintained route policy and [ROADMAP.md](ROADMAP.md) for unresolved release
-> evidence.
+> Historical security guide. Its production-ready and compliance statements below are
+> not current certification. Use [API_AUTHORIZATION.md](API_AUTHORIZATION.md) for the
+> maintained route and browser request-integrity policy, [TESTING.md](TESTING.md) for
+> local evidence, and [ROADMAP.md](ROADMAP.md) for unresolved release evidence.
 
 **Last Updated:** 2024-10-24
 **Version:** 1.0.0
-**Status:** Production-Ready
+**Status:** Historical snapshot, not production certification
+
+## Current Maintained Browser Controls
+
+Unsafe requests under `/auth/`, `/a/`, and `/v/` require an exact same-origin `Origin`
+header and a valid signed double-submit CSRF token. The shared middleware injects the
+token into standard forms and HTMX requests and returns `403` before route execution for
+missing, foreign, mismatched, or forged input. SameSite cookies remain defense in depth.
+
+Browser login, signup, invitation, and password-reset routes use the same operation-specific
+rate-limit dependencies as their API counterparts. Limits are thread-safe but process-local.
+Forwarded client addresses are trusted only when the direct peer is listed in
+`TRUSTED_PROXY_IPS`; otherwise the peer address is used for both limits and audit logs.
+Distributed storage, multi-worker quota enforcement, proxy/TLS deployment verification,
+and limiter-outage behavior remain unresolved under #261.
 
 ---
 
@@ -123,26 +137,33 @@ verify_org_member(user, org_id)
 
 **Implementation:** `api/utils/rate_limit_middleware.py`, `api/utils/rate_limiter.py`
 
-**Purpose:** Prevent brute force attacks, API abuse, and DDoS
+**Purpose:** Bound repeated authentication operations in one application process. This is
+not a distributed DDoS control.
 
 ### Default Rate Limits
 
-| Endpoint | Limit | Window | Lockout |
-|----------|-------|--------|---------|
-| `/api/auth/login` | 5 attempts | 5 minutes | 15 minutes |
-| `/api/auth/signup` | 3 signups | 1 hour | 1 hour |
-| `/api/auth/password-reset` | 5 requests | 1 hour | N/A |
-| `/api/invitations` | 10 invites | 5 minutes | N/A |
-| `/api/*` (GET) | 100 requests | 1 minute | N/A |
-| `/api/*` (POST) | 50 requests | 1 minute | N/A |
+| Operation | Default limit | Window |
+|----------|-------|--------|
+| Login | 5 attempts | 5 minutes |
+| Signup | 3 attempts | 1 hour |
+| Create organization | 2 attempts | 1 hour |
+| Create invitation | 10 attempts | 5 minutes |
+| Verify invitation | 10 attempts | 1 minute |
+| Request password reset | 3 attempts | 1 hour |
+| Confirm password reset | 5 attempts | 5 minutes |
+| Refresh token | 60 attempts | 1 hour |
 
 ### Configuration
 
-**Environment Variables:**
+**Environment Variables:** see `.env.example` for every per-operation maximum/window.
 ```bash
-RATE_LIMITING_ENABLED=true
-REDIS_URL=redis://:password@localhost:6379/0
+RATE_LIMIT_LOGIN_MAX=5
+RATE_LIMIT_LOGIN_WINDOW=300
+TRUSTED_PROXY_IPS=10.0.0.0/8
 ```
+
+There is no Redis-backed limiter in the current application. Do not configure a Redis URL
+or run multiple workers expecting a shared quota until #261's distributed work is complete.
 
 ### Rate Limit Response
 
@@ -153,20 +174,6 @@ REDIS_URL=redis://:password@localhost:6379/0
   "retry_after": 840
 }
 ```
-
-### Implementation Example
-
-```python
-from api.utils.rate_limit_middleware import rate_limit
-
-@router.post("/api/auth/login")
-@rate_limit(max_requests=5, window_seconds=300)
-def login(request: LoginRequest):
-    # Login logic
-    pass
-```
-
----
 
 ## Security Headers
 
@@ -181,7 +188,7 @@ Strict-Transport-Security: max-age=31536000; includeSubDomains
 Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline'; ...
 X-Frame-Options: DENY
 X-Content-Type-Options: nosniff
-Referrer-Policy: no-referrer
+Referrer-Policy: same-origin
 Permissions-Policy: geolocation=(), microphone=(), camera=()
 X-XSS-Protection: 1; mode=block
 ```

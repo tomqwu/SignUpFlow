@@ -109,6 +109,14 @@ separate and keyboard reachable at phone width and zoom, and an SSE reconnect re
 authoritative solution state. These are local Chromium results; they do not establish
 cross-browser, assistive-technology, or production-network acceptance.
 
+`tests/web/test_request_integrity.py` inventories every unsafe `/auth/`, `/a/`, and `/v/`
+route and verifies signed double-submit CSRF, exact-origin rejection, no-write failures,
+browser authentication rate-limit wiring, and trusted-proxy boundaries.
+`tests/e2e/test_request_integrity.py` proves that normal forms receive a token, a foreign
+origin cannot change a member profile, and a same-origin HTMX save succeeds in Chromium.
+The limiter remains process-local; shared quotas, Redis outage behavior, and multi-worker
+acceptance remain deferred under #261.
+
 ## Local Validation Only
 
 No CI checks. Run code review, formatting, lint, type checks, migration

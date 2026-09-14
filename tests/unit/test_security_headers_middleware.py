@@ -55,7 +55,7 @@ class TestSecurityHeadersMiddleware:
         assert response.headers["X-Frame-Options"] == "DENY"
 
         assert "Referrer-Policy" in response.headers
-        assert response.headers["Referrer-Policy"] == "no-referrer"
+        assert response.headers["Referrer-Policy"] == "same-origin"
 
         assert "Permissions-Policy" in response.headers
 

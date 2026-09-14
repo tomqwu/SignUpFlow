@@ -22,6 +22,7 @@ templates.env.globals["billing_enabled"] = billing_enabled
 # elsewhere to avoid circular imports with `templates`.
 from web import auth as _auth  # noqa: E402
 from web.deps import _RedirectToLoginError  # noqa: E402
+from web.request_integrity import BrowserRequestIntegrityMiddleware  # noqa: E402
 from web.routers import pages as _pages  # noqa: E402
 from web.routers import partials as _partials  # noqa: E402
 
@@ -33,6 +34,7 @@ router.include_router(_partials.router)
 
 def mount_web(app: FastAPI) -> None:
     """Wire the web app into the main FastAPI instance."""
+    app.add_middleware(BrowserRequestIntegrityMiddleware)
     app.mount(
         "/web/static",
         StaticFiles(directory=str(_WEB_DIR / "static")),

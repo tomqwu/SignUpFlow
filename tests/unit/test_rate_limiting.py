@@ -6,7 +6,7 @@ import pytest
 from fastapi import HTTPException
 
 from api.utils.rate_limit_middleware import get_client_ip, rate_limit
-from api.utils.rate_limiter import RateLimiter, rate_limiter
+from api.utils.rate_limiter import RATE_LIMITS, RateLimiter, rate_limiter
 
 
 class TestRateLimiter:
@@ -133,17 +133,33 @@ class TestRateLimitMiddleware:
         ip = get_client_ip(request)
         assert ip == "192.168.1.100"
 
-    def test_get_client_ip_from_forwarded_header(self):
-        """Test extracting IP from X-Forwarded-For header."""
+    def test_untrusted_forwarded_header_is_ignored(self, monkeypatch):
+        """Attacker-supplied forwarding headers cannot select the quota key."""
+
+        monkeypatch.delenv("TRUSTED_PROXY_IPS", raising=False)
+
+        class MockClient:
+            host = "198.51.100.44"
 
         class MockRequest:
-            client = None
-            headers = {"X-Forwarded-For": "203.0.113.1, 198.51.100.1"}
+            client = MockClient()
+            headers = {"X-Forwarded-For": "127.0.0.1"}
 
         request = MockRequest()
         ip = get_client_ip(request)
-        # Should get the first IP in the chain
-        assert ip == "203.0.113.1"
+        assert ip == "198.51.100.44"
+
+    def test_trusted_proxy_uses_first_untrusted_forwarded_address(self, monkeypatch):
+        monkeypatch.setenv("TRUSTED_PROXY_IPS", "10.0.0.0/8,192.0.2.10")
+
+        class MockClient:
+            host = "10.0.0.5"
+
+        class MockRequest:
+            client = MockClient()
+            headers = {"X-Forwarded-For": "203.0.113.1, 10.0.0.8"}
+
+        assert get_client_ip(MockRequest()) == "203.0.113.1"
 
     def test_rate_limit_disabled_during_tests(self):
         """Test that rate limiting is disabled when TESTING=true."""
@@ -221,6 +237,31 @@ class TestRateLimitProduction:
                 os.environ["DISABLE_RATE_LIMITS"] = original_disable
             else:
                 os.environ.pop("DISABLE_RATE_LIMITS", None)
+
+    def test_forged_loopback_forwarding_header_does_not_bypass(self, monkeypatch):
+        monkeypatch.delenv("TESTING", raising=False)
+        monkeypatch.delenv("DISABLE_RATE_LIMITS", raising=False)
+        monkeypatch.delenv("TRUSTED_PROXY_IPS", raising=False)
+        monkeypatch.setenv("ENVIRONMENT", "production")
+
+        class MockClient:
+            host = "198.51.100.77"
+
+        class MockRequest:
+            client = MockClient()
+            headers = {"X-Forwarded-For": "127.0.0.1"}
+
+        key = "signup:198.51.100.77"
+        rate_limiter.reset(key)
+        check_fn = rate_limit("signup")
+        try:
+            for _ in range(RATE_LIMITS["signup"]["max_requests"]):
+                assert check_fn(MockRequest()) is True
+            with pytest.raises(HTTPException) as exc_info:
+                check_fn(MockRequest())
+            assert exc_info.value.status_code == 429
+        finally:
+            rate_limiter.reset(key)
 
 
 if __name__ == "__main__":

@@ -219,8 +219,8 @@ class TestLogAuditFromRequest:
         created_log = mock_db.add.call_args[0][0]
         assert created_log.user_agent == "Mozilla/5.0 (Test Browser)"
 
-    def test_extract_ip_from_x_forwarded_for(self, mock_db, mock_request_with_proxy):
-        """Test that client IP is extracted from X-Forwarded-For header."""
+    def test_untrusted_proxy_headers_are_ignored(self, mock_db, mock_request_with_proxy):
+        """Test that untrusted peers cannot forge the audit client IP."""
         log_audit_from_request(
             db=mock_db,
             request=mock_request_with_proxy,
@@ -229,28 +229,23 @@ class TestLogAuditFromRequest:
         )
 
         created_log = mock_db.add.call_args[0][0]
-        # Should use first IP in X-Forwarded-For (client IP)
-        assert created_log.ip_address == "203.0.113.42"
+        assert created_log.ip_address == "10.0.0.1"
 
-    def test_extract_ip_from_x_real_ip(self, mock_db):
-        """Test that client IP is extracted from X-Real-IP header."""
-        request = Mock(spec=Request)
-        request.client = Mock()
-        request.client.host = "10.0.0.1"
-        request.headers = {
-            "user-agent": "Mozilla/5.0",
-            "x-real-ip": "203.0.113.99",
-        }
+    def test_trusted_proxy_chain_supplies_client_ip(
+        self, mock_db, mock_request_with_proxy, monkeypatch
+    ):
+        """Test that an explicitly trusted peer can supply a forwarded chain."""
+        monkeypatch.setenv("TRUSTED_PROXY_IPS", "10.0.0.0/8")
 
         log_audit_from_request(
             db=mock_db,
-            request=request,
+            request=mock_request_with_proxy,
             action=AuditAction.DATA_EXPORTED,
             user_id="user_123",
         )
 
         created_log = mock_db.add.call_args[0][0]
-        assert created_log.ip_address == "203.0.113.99"
+        assert created_log.ip_address == "203.0.113.42"
 
     def test_handle_missing_client_ip(self, mock_db):
         """Test handling when request has no client IP."""

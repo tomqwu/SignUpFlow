@@ -1,6 +1,6 @@
 {
   "browser": "Chromium 151.0.7922.34",
-  "captured_at": "2026-09-14T17:23:09.015286Z",
+  "captured_at": "2026-09-14T22:59:07.626160Z",
   "entries": [
     {
       "actor": "member",
@@ -19,7 +19,7 @@
       "scenario": "BO-05",
       "source_files": {
         "web/static/css/styles.css": "1175a75fb2f9d24fb29d75d968f69ac2037015678044e6dcec23c0b979799368",
-        "web/templates/base.html": "7cb53eb1ba0bf623c1fb775ab8cfdb68eeaea4fc645a121f2346660da1730b6f",
+        "web/templates/base.html": "ad841003489fa8279c1a6c4ecc792fe78118434eb6752bce79d934028ec85e9c",
         "web/templates/partials/assignment_detail_card.html": "167de6e1f135d669350baba1aad2160aeb1db0b8a46027f225d40dbc6ba44e98",
         "web/templates/volunteer/assignment_detail.html": "ee8247161c465e71f4459a066a693c625bc474d7ab82cc74f50604a8d8acf6aa"
       },
@@ -46,7 +46,7 @@
       "source_files": {
         "web/static/css/styles.css": "1175a75fb2f9d24fb29d75d968f69ac2037015678044e6dcec23c0b979799368",
         "web/templates/admin/dashboard.html": "35f7e4393047852ef4543811c3952100d3324fafe12cf70ed2d06245c687e137",
-        "web/templates/base.html": "7cb53eb1ba0bf623c1fb775ab8cfdb68eeaea4fc645a121f2346660da1730b6f"
+        "web/templates/base.html": "ad841003489fa8279c1a6c4ecc792fe78118434eb6752bce79d934028ec85e9c"
       },
       "viewport": {
         "height": 900,
@@ -71,7 +71,7 @@
       "source_files": {
         "web/static/css/styles.css": "1175a75fb2f9d24fb29d75d968f69ac2037015678044e6dcec23c0b979799368",
         "web/templates/admin/onboarding.html": "98989bf974b84ddef561da2f085f3202f6ac6fae39f0366101316760c75340e1",
-        "web/templates/base.html": "7cb53eb1ba0bf623c1fb775ab8cfdb68eeaea4fc645a121f2346660da1730b6f"
+        "web/templates/base.html": "ad841003489fa8279c1a6c4ecc792fe78118434eb6752bce79d934028ec85e9c"
       },
       "viewport": {
         "height": 900,
@@ -96,7 +96,7 @@
       "source_files": {
         "web/static/css/styles.css": "1175a75fb2f9d24fb29d75d968f69ac2037015678044e6dcec23c0b979799368",
         "web/templates/admin/people.html": "6ad11518aa423be13eec571db78dcc735ade7614fc83ddc4be281c3c3a19a004",
-        "web/templates/base.html": "7cb53eb1ba0bf623c1fb775ab8cfdb68eeaea4fc645a121f2346660da1730b6f",
+        "web/templates/base.html": "ad841003489fa8279c1a6c4ecc792fe78118434eb6752bce79d934028ec85e9c",
         "web/templates/partials/people_list.html": "dbb878e714eedbd1e7b1e14960d5ff6763002269ada948763f38d98f8a4f869f"
       },
       "viewport": {
@@ -121,7 +121,7 @@
       "scenario": "BB-D02",
       "source_files": {
         "web/static/css/styles.css": "1175a75fb2f9d24fb29d75d968f69ac2037015678044e6dcec23c0b979799368",
-        "web/templates/base.html": "7cb53eb1ba0bf623c1fb775ab8cfdb68eeaea4fc645a121f2346660da1730b6f",
+        "web/templates/base.html": "ad841003489fa8279c1a6c4ecc792fe78118434eb6752bce79d934028ec85e9c",
         "web/templates/partials/assignment_detail_card.html": "167de6e1f135d669350baba1aad2160aeb1db0b8a46027f225d40dbc6ba44e98",
         "web/templates/volunteer/assignment_detail.html": "ee8247161c465e71f4459a066a693c625bc474d7ab82cc74f50604a8d8acf6aa",
         "web/templates/volunteer/schedule.html": "78b25425d16bcad0a49728182a119a011c1d5adc4208e9a5d3320f58ccdeb1ae"
@@ -149,7 +149,7 @@
       "source_files": {
         "web/static/css/styles.css": "1175a75fb2f9d24fb29d75d968f69ac2037015678044e6dcec23c0b979799368",
         "web/templates/admin/swaps.html": "747d4d99f979199f2be8578a922e2e267cf0756ab74ac2e8fef1dae7c3774650",
-        "web/templates/base.html": "7cb53eb1ba0bf623c1fb775ab8cfdb68eeaea4fc645a121f2346660da1730b6f",
+        "web/templates/base.html": "ad841003489fa8279c1a6c4ecc792fe78118434eb6752bce79d934028ec85e9c",
         "web/templates/partials/swaps_list.html": "e2d3688bf894efc541ac510c97ddeddc0d4a848ee767773e9179ea15bf1a34f0"
       },
       "viewport": {
@@ -175,7 +175,7 @@
       "source_files": {
         "web/static/css/styles.css": "1175a75fb2f9d24fb29d75d968f69ac2037015678044e6dcec23c0b979799368",
         "web/templates/admin/solution_review.html": "364a57407bcd67cddf0687fad9f22ed4895af3cf8e96a728493aa1d0b57502e3",
-        "web/templates/base.html": "7cb53eb1ba0bf623c1fb775ab8cfdb68eeaea4fc645a121f2346660da1730b6f",
+        "web/templates/base.html": "ad841003489fa8279c1a6c4ecc792fe78118434eb6752bce79d934028ec85e9c",
         "web/templates/partials/publish_state.html": "416154d21a14f14bce7d5a12b786769ae28992b2d5745d4782c702cc417d4048"
       },
       "viewport": {
@@ -200,7 +200,7 @@
       "scenario": "BB-D03",
       "source_files": {
         "web/static/css/styles.css": "1175a75fb2f9d24fb29d75d968f69ac2037015678044e6dcec23c0b979799368",
-        "web/templates/base.html": "7cb53eb1ba0bf623c1fb775ab8cfdb68eeaea4fc645a121f2346660da1730b6f",
+        "web/templates/base.html": "ad841003489fa8279c1a6c4ecc792fe78118434eb6752bce79d934028ec85e9c",
         "web/templates/partials/assignment_detail_card.html": "167de6e1f135d669350baba1aad2160aeb1db0b8a46027f225d40dbc6ba44e98",
         "web/templates/volunteer/assignment_detail.html": "ee8247161c465e71f4459a066a693c625bc474d7ab82cc74f50604a8d8acf6aa"
       },
@@ -227,7 +227,7 @@
       "source_files": {
         "web/static/css/styles.css": "1175a75fb2f9d24fb29d75d968f69ac2037015678044e6dcec23c0b979799368",
         "web/templates/admin/solution_review.html": "364a57407bcd67cddf0687fad9f22ed4895af3cf8e96a728493aa1d0b57502e3",
-        "web/templates/base.html": "7cb53eb1ba0bf623c1fb775ab8cfdb68eeaea4fc645a121f2346660da1730b6f",
+        "web/templates/base.html": "ad841003489fa8279c1a6c4ecc792fe78118434eb6752bce79d934028ec85e9c",
         "web/templates/partials/solution_assignments.html": "b1dc136d126e7bff9c7a6d871e40ed6b9e97d61a8044d6d24a9eb2bb69d751f3"
       },
       "viewport": {
@@ -252,7 +252,7 @@
       "scenario": "BO-05",
       "source_files": {
         "web/static/css/styles.css": "1175a75fb2f9d24fb29d75d968f69ac2037015678044e6dcec23c0b979799368",
-        "web/templates/base.html": "7cb53eb1ba0bf623c1fb775ab8cfdb68eeaea4fc645a121f2346660da1730b6f",
+        "web/templates/base.html": "ad841003489fa8279c1a6c4ecc792fe78118434eb6752bce79d934028ec85e9c",
         "web/templates/volunteer/schedule.html": "78b25425d16bcad0a49728182a119a011c1d5adc4208e9a5d3320f58ccdeb1ae"
       },
       "viewport": {
@@ -278,7 +278,7 @@
       "source_files": {
         "web/static/css/styles.css": "1175a75fb2f9d24fb29d75d968f69ac2037015678044e6dcec23c0b979799368",
         "web/templates/admin/events.html": "1ccc8b63ac5d645ceb6db1059b6f2bcf77c45793c332b50842878933c39e974f",
-        "web/templates/base.html": "7cb53eb1ba0bf623c1fb775ab8cfdb68eeaea4fc645a121f2346660da1730b6f",
+        "web/templates/base.html": "ad841003489fa8279c1a6c4ecc792fe78118434eb6752bce79d934028ec85e9c",
         "web/templates/partials/events_list.html": "8988f1c93cc7a0f45aaade4051fbdb03cd3dd7579b0d35100090b00ff3b5039a"
       },
       "viewport": {
@@ -303,7 +303,7 @@
       "scenario": "BO-05",
       "source_files": {
         "web/static/css/styles.css": "1175a75fb2f9d24fb29d75d968f69ac2037015678044e6dcec23c0b979799368",
-        "web/templates/base.html": "7cb53eb1ba0bf623c1fb775ab8cfdb68eeaea4fc645a121f2346660da1730b6f",
+        "web/templates/base.html": "ad841003489fa8279c1a6c4ecc792fe78118434eb6752bce79d934028ec85e9c",
         "web/templates/partials/assignment_detail_card.html": "167de6e1f135d669350baba1aad2160aeb1db0b8a46027f225d40dbc6ba44e98",
         "web/templates/volunteer/assignment_detail.html": "ee8247161c465e71f4459a066a693c625bc474d7ab82cc74f50604a8d8acf6aa"
       },
@@ -330,7 +330,7 @@
       "source_files": {
         "web/static/css/styles.css": "1175a75fb2f9d24fb29d75d968f69ac2037015678044e6dcec23c0b979799368",
         "web/templates/admin/dashboard.html": "35f7e4393047852ef4543811c3952100d3324fafe12cf70ed2d06245c687e137",
-        "web/templates/base.html": "7cb53eb1ba0bf623c1fb775ab8cfdb68eeaea4fc645a121f2346660da1730b6f"
+        "web/templates/base.html": "ad841003489fa8279c1a6c4ecc792fe78118434eb6752bce79d934028ec85e9c"
       },
       "viewport": {
         "height": 900,
@@ -355,7 +355,7 @@
       "source_files": {
         "web/static/css/styles.css": "1175a75fb2f9d24fb29d75d968f69ac2037015678044e6dcec23c0b979799368",
         "web/templates/admin/onboarding.html": "98989bf974b84ddef561da2f085f3202f6ac6fae39f0366101316760c75340e1",
-        "web/templates/base.html": "7cb53eb1ba0bf623c1fb775ab8cfdb68eeaea4fc645a121f2346660da1730b6f"
+        "web/templates/base.html": "ad841003489fa8279c1a6c4ecc792fe78118434eb6752bce79d934028ec85e9c"
       },
       "viewport": {
         "height": 900,
@@ -380,7 +380,7 @@
       "source_files": {
         "web/static/css/styles.css": "1175a75fb2f9d24fb29d75d968f69ac2037015678044e6dcec23c0b979799368",
         "web/templates/admin/people.html": "6ad11518aa423be13eec571db78dcc735ade7614fc83ddc4be281c3c3a19a004",
-        "web/templates/base.html": "7cb53eb1ba0bf623c1fb775ab8cfdb68eeaea4fc645a121f2346660da1730b6f",
+        "web/templates/base.html": "ad841003489fa8279c1a6c4ecc792fe78118434eb6752bce79d934028ec85e9c",
         "web/templates/partials/people_list.html": "dbb878e714eedbd1e7b1e14960d5ff6763002269ada948763f38d98f8a4f869f"
       },
       "viewport": {
@@ -405,7 +405,7 @@
       "scenario": "BB-D02",
       "source_files": {
         "web/static/css/styles.css": "1175a75fb2f9d24fb29d75d968f69ac2037015678044e6dcec23c0b979799368",
-        "web/templates/base.html": "7cb53eb1ba0bf623c1fb775ab8cfdb68eeaea4fc645a121f2346660da1730b6f",
+        "web/templates/base.html": "ad841003489fa8279c1a6c4ecc792fe78118434eb6752bce79d934028ec85e9c",
         "web/templates/partials/assignment_detail_card.html": "167de6e1f135d669350baba1aad2160aeb1db0b8a46027f225d40dbc6ba44e98",
         "web/templates/volunteer/assignment_detail.html": "ee8247161c465e71f4459a066a693c625bc474d7ab82cc74f50604a8d8acf6aa",
         "web/templates/volunteer/schedule.html": "78b25425d16bcad0a49728182a119a011c1d5adc4208e9a5d3320f58ccdeb1ae"
@@ -433,7 +433,7 @@
       "source_files": {
         "web/static/css/styles.css": "1175a75fb2f9d24fb29d75d968f69ac2037015678044e6dcec23c0b979799368",
         "web/templates/admin/swaps.html": "747d4d99f979199f2be8578a922e2e267cf0756ab74ac2e8fef1dae7c3774650",
-        "web/templates/base.html": "7cb53eb1ba0bf623c1fb775ab8cfdb68eeaea4fc645a121f2346660da1730b6f",
+        "web/templates/base.html": "ad841003489fa8279c1a6c4ecc792fe78118434eb6752bce79d934028ec85e9c",
         "web/templates/partials/swaps_list.html": "e2d3688bf894efc541ac510c97ddeddc0d4a848ee767773e9179ea15bf1a34f0"
       },
       "viewport": {
@@ -459,7 +459,7 @@
       "source_files": {
         "web/static/css/styles.css": "1175a75fb2f9d24fb29d75d968f69ac2037015678044e6dcec23c0b979799368",
         "web/templates/admin/solution_review.html": "364a57407bcd67cddf0687fad9f22ed4895af3cf8e96a728493aa1d0b57502e3",
-        "web/templates/base.html": "7cb53eb1ba0bf623c1fb775ab8cfdb68eeaea4fc645a121f2346660da1730b6f",
+        "web/templates/base.html": "ad841003489fa8279c1a6c4ecc792fe78118434eb6752bce79d934028ec85e9c",
         "web/templates/partials/publish_state.html": "416154d21a14f14bce7d5a12b786769ae28992b2d5745d4782c702cc417d4048"
       },
       "viewport": {
@@ -484,7 +484,7 @@
       "scenario": "BB-D03",
       "source_files": {
         "web/static/css/styles.css": "1175a75fb2f9d24fb29d75d968f69ac2037015678044e6dcec23c0b979799368",
-        "web/templates/base.html": "7cb53eb1ba0bf623c1fb775ab8cfdb68eeaea4fc645a121f2346660da1730b6f",
+        "web/templates/base.html": "ad841003489fa8279c1a6c4ecc792fe78118434eb6752bce79d934028ec85e9c",
         "web/templates/partials/assignment_detail_card.html": "167de6e1f135d669350baba1aad2160aeb1db0b8a46027f225d40dbc6ba44e98",
         "web/templates/volunteer/assignment_detail.html": "ee8247161c465e71f4459a066a693c625bc474d7ab82cc74f50604a8d8acf6aa"
       },
@@ -511,7 +511,7 @@
       "source_files": {
         "web/static/css/styles.css": "1175a75fb2f9d24fb29d75d968f69ac2037015678044e6dcec23c0b979799368",
         "web/templates/admin/solution_review.html": "364a57407bcd67cddf0687fad9f22ed4895af3cf8e96a728493aa1d0b57502e3",
-        "web/templates/base.html": "7cb53eb1ba0bf623c1fb775ab8cfdb68eeaea4fc645a121f2346660da1730b6f",
+        "web/templates/base.html": "ad841003489fa8279c1a6c4ecc792fe78118434eb6752bce79d934028ec85e9c",
         "web/templates/partials/solution_assignments.html": "b1dc136d126e7bff9c7a6d871e40ed6b9e97d61a8044d6d24a9eb2bb69d751f3"
       },
       "viewport": {
@@ -536,7 +536,7 @@
       "scenario": "BO-05",
       "source_files": {
         "web/static/css/styles.css": "1175a75fb2f9d24fb29d75d968f69ac2037015678044e6dcec23c0b979799368",
-        "web/templates/base.html": "7cb53eb1ba0bf623c1fb775ab8cfdb68eeaea4fc645a121f2346660da1730b6f",
+        "web/templates/base.html": "ad841003489fa8279c1a6c4ecc792fe78118434eb6752bce79d934028ec85e9c",
         "web/templates/volunteer/schedule.html": "78b25425d16bcad0a49728182a119a011c1d5adc4208e9a5d3320f58ccdeb1ae"
       },
       "viewport": {
@@ -562,7 +562,7 @@
       "source_files": {
         "web/static/css/styles.css": "1175a75fb2f9d24fb29d75d968f69ac2037015678044e6dcec23c0b979799368",
         "web/templates/admin/events.html": "1ccc8b63ac5d645ceb6db1059b6f2bcf77c45793c332b50842878933c39e974f",
-        "web/templates/base.html": "7cb53eb1ba0bf623c1fb775ab8cfdb68eeaea4fc645a121f2346660da1730b6f",
+        "web/templates/base.html": "ad841003489fa8279c1a6c4ecc792fe78118434eb6752bce79d934028ec85e9c",
         "web/templates/partials/events_list.html": "8988f1c93cc7a0f45aaade4051fbdb03cd3dd7579b0d35100090b00ff3b5039a"
       },
       "viewport": {
@@ -587,7 +587,7 @@
       "scenario": "BO-05",
       "source_files": {
         "web/static/css/styles.css": "1175a75fb2f9d24fb29d75d968f69ac2037015678044e6dcec23c0b979799368",
-        "web/templates/base.html": "7cb53eb1ba0bf623c1fb775ab8cfdb68eeaea4fc645a121f2346660da1730b6f",
+        "web/templates/base.html": "ad841003489fa8279c1a6c4ecc792fe78118434eb6752bce79d934028ec85e9c",
         "web/templates/partials/assignment_detail_card.html": "167de6e1f135d669350baba1aad2160aeb1db0b8a46027f225d40dbc6ba44e98",
         "web/templates/volunteer/assignment_detail.html": "ee8247161c465e71f4459a066a693c625bc474d7ab82cc74f50604a8d8acf6aa"
       },
@@ -614,7 +614,7 @@
       "source_files": {
         "web/static/css/styles.css": "1175a75fb2f9d24fb29d75d968f69ac2037015678044e6dcec23c0b979799368",
         "web/templates/admin/dashboard.html": "35f7e4393047852ef4543811c3952100d3324fafe12cf70ed2d06245c687e137",
-        "web/templates/base.html": "7cb53eb1ba0bf623c1fb775ab8cfdb68eeaea4fc645a121f2346660da1730b6f"
+        "web/templates/base.html": "ad841003489fa8279c1a6c4ecc792fe78118434eb6752bce79d934028ec85e9c"
       },
       "viewport": {
         "height": 900,
@@ -639,7 +639,7 @@
       "source_files": {
         "web/static/css/styles.css": "1175a75fb2f9d24fb29d75d968f69ac2037015678044e6dcec23c0b979799368",
         "web/templates/admin/onboarding.html": "98989bf974b84ddef561da2f085f3202f6ac6fae39f0366101316760c75340e1",
-        "web/templates/base.html": "7cb53eb1ba0bf623c1fb775ab8cfdb68eeaea4fc645a121f2346660da1730b6f"
+        "web/templates/base.html": "ad841003489fa8279c1a6c4ecc792fe78118434eb6752bce79d934028ec85e9c"
       },
       "viewport": {
         "height": 900,
@@ -664,7 +664,7 @@
       "source_files": {
         "web/static/css/styles.css": "1175a75fb2f9d24fb29d75d968f69ac2037015678044e6dcec23c0b979799368",
         "web/templates/admin/people.html": "6ad11518aa423be13eec571db78dcc735ade7614fc83ddc4be281c3c3a19a004",
-        "web/templates/base.html": "7cb53eb1ba0bf623c1fb775ab8cfdb68eeaea4fc645a121f2346660da1730b6f",
+        "web/templates/base.html": "ad841003489fa8279c1a6c4ecc792fe78118434eb6752bce79d934028ec85e9c",
         "web/templates/partials/people_list.html": "dbb878e714eedbd1e7b1e14960d5ff6763002269ada948763f38d98f8a4f869f"
       },
       "viewport": {
@@ -689,7 +689,7 @@
       "scenario": "CH-D01",
       "source_files": {
         "web/static/css/styles.css": "1175a75fb2f9d24fb29d75d968f69ac2037015678044e6dcec23c0b979799368",
-        "web/templates/base.html": "7cb53eb1ba0bf623c1fb775ab8cfdb68eeaea4fc645a121f2346660da1730b6f",
+        "web/templates/base.html": "ad841003489fa8279c1a6c4ecc792fe78118434eb6752bce79d934028ec85e9c",
         "web/templates/partials/assignment_detail_card.html": "167de6e1f135d669350baba1aad2160aeb1db0b8a46027f225d40dbc6ba44e98",
         "web/templates/volunteer/assignment_detail.html": "ee8247161c465e71f4459a066a693c625bc474d7ab82cc74f50604a8d8acf6aa",
         "web/templates/volunteer/schedule.html": "78b25425d16bcad0a49728182a119a011c1d5adc4208e9a5d3320f58ccdeb1ae"
@@ -717,7 +717,7 @@
       "source_files": {
         "web/static/css/styles.css": "1175a75fb2f9d24fb29d75d968f69ac2037015678044e6dcec23c0b979799368",
         "web/templates/admin/swaps.html": "747d4d99f979199f2be8578a922e2e267cf0756ab74ac2e8fef1dae7c3774650",
-        "web/templates/base.html": "7cb53eb1ba0bf623c1fb775ab8cfdb68eeaea4fc645a121f2346660da1730b6f",
+        "web/templates/base.html": "ad841003489fa8279c1a6c4ecc792fe78118434eb6752bce79d934028ec85e9c",
         "web/templates/partials/swaps_list.html": "e2d3688bf894efc541ac510c97ddeddc0d4a848ee767773e9179ea15bf1a34f0"
       },
       "viewport": {
@@ -743,7 +743,7 @@
       "source_files": {
         "web/static/css/styles.css": "1175a75fb2f9d24fb29d75d968f69ac2037015678044e6dcec23c0b979799368",
         "web/templates/admin/solution_review.html": "364a57407bcd67cddf0687fad9f22ed4895af3cf8e96a728493aa1d0b57502e3",
-        "web/templates/base.html": "7cb53eb1ba0bf623c1fb775ab8cfdb68eeaea4fc645a121f2346660da1730b6f",
+        "web/templates/base.html": "ad841003489fa8279c1a6c4ecc792fe78118434eb6752bce79d934028ec85e9c",
         "web/templates/partials/publish_state.html": "416154d21a14f14bce7d5a12b786769ae28992b2d5745d4782c702cc417d4048"
       },
       "viewport": {
@@ -768,7 +768,7 @@
       "scenario": "CH-D03",
       "source_files": {
         "web/static/css/styles.css": "1175a75fb2f9d24fb29d75d968f69ac2037015678044e6dcec23c0b979799368",
-        "web/templates/base.html": "7cb53eb1ba0bf623c1fb775ab8cfdb68eeaea4fc645a121f2346660da1730b6f",
+        "web/templates/base.html": "ad841003489fa8279c1a6c4ecc792fe78118434eb6752bce79d934028ec85e9c",
         "web/templates/partials/assignment_detail_card.html": "167de6e1f135d669350baba1aad2160aeb1db0b8a46027f225d40dbc6ba44e98",
         "web/templates/volunteer/assignment_detail.html": "ee8247161c465e71f4459a066a693c625bc474d7ab82cc74f50604a8d8acf6aa"
       },
@@ -795,7 +795,7 @@
       "source_files": {
         "web/static/css/styles.css": "1175a75fb2f9d24fb29d75d968f69ac2037015678044e6dcec23c0b979799368",
         "web/templates/admin/solution_review.html": "364a57407bcd67cddf0687fad9f22ed4895af3cf8e96a728493aa1d0b57502e3",
-        "web/templates/base.html": "7cb53eb1ba0bf623c1fb775ab8cfdb68eeaea4fc645a121f2346660da1730b6f",
+        "web/templates/base.html": "ad841003489fa8279c1a6c4ecc792fe78118434eb6752bce79d934028ec85e9c",
         "web/templates/partials/solution_assignments.html": "b1dc136d126e7bff9c7a6d871e40ed6b9e97d61a8044d6d24a9eb2bb69d751f3"
       },
       "viewport": {
@@ -820,7 +820,7 @@
       "scenario": "BO-05",
       "source_files": {
         "web/static/css/styles.css": "1175a75fb2f9d24fb29d75d968f69ac2037015678044e6dcec23c0b979799368",
-        "web/templates/base.html": "7cb53eb1ba0bf623c1fb775ab8cfdb68eeaea4fc645a121f2346660da1730b6f",
+        "web/templates/base.html": "ad841003489fa8279c1a6c4ecc792fe78118434eb6752bce79d934028ec85e9c",
         "web/templates/volunteer/schedule.html": "78b25425d16bcad0a49728182a119a011c1d5adc4208e9a5d3320f58ccdeb1ae"
       },
       "viewport": {
@@ -846,7 +846,7 @@
       "source_files": {
         "web/static/css/styles.css": "1175a75fb2f9d24fb29d75d968f69ac2037015678044e6dcec23c0b979799368",
         "web/templates/admin/events.html": "1ccc8b63ac5d645ceb6db1059b6f2bcf77c45793c332b50842878933c39e974f",
-        "web/templates/base.html": "7cb53eb1ba0bf623c1fb775ab8cfdb68eeaea4fc645a121f2346660da1730b6f",
+        "web/templates/base.html": "ad841003489fa8279c1a6c4ecc792fe78118434eb6752bce79d934028ec85e9c",
         "web/templates/partials/events_list.html": "8988f1c93cc7a0f45aaade4051fbdb03cd3dd7579b0d35100090b00ff3b5039a"
       },
       "viewport": {
@@ -871,7 +871,7 @@
       "scenario": "BO-05",
       "source_files": {
         "web/static/css/styles.css": "1175a75fb2f9d24fb29d75d968f69ac2037015678044e6dcec23c0b979799368",
-        "web/templates/base.html": "7cb53eb1ba0bf623c1fb775ab8cfdb68eeaea4fc645a121f2346660da1730b6f",
+        "web/templates/base.html": "ad841003489fa8279c1a6c4ecc792fe78118434eb6752bce79d934028ec85e9c",
         "web/templates/partials/assignment_detail_card.html": "167de6e1f135d669350baba1aad2160aeb1db0b8a46027f225d40dbc6ba44e98",
         "web/templates/volunteer/assignment_detail.html": "ee8247161c465e71f4459a066a693c625bc474d7ab82cc74f50604a8d8acf6aa"
       },
@@ -898,7 +898,7 @@
       "source_files": {
         "web/static/css/styles.css": "1175a75fb2f9d24fb29d75d968f69ac2037015678044e6dcec23c0b979799368",
         "web/templates/admin/dashboard.html": "35f7e4393047852ef4543811c3952100d3324fafe12cf70ed2d06245c687e137",
-        "web/templates/base.html": "7cb53eb1ba0bf623c1fb775ab8cfdb68eeaea4fc645a121f2346660da1730b6f"
+        "web/templates/base.html": "ad841003489fa8279c1a6c4ecc792fe78118434eb6752bce79d934028ec85e9c"
       },
       "viewport": {
         "height": 900,
@@ -923,7 +923,7 @@
       "source_files": {
         "web/static/css/styles.css": "1175a75fb2f9d24fb29d75d968f69ac2037015678044e6dcec23c0b979799368",
         "web/templates/admin/onboarding.html": "98989bf974b84ddef561da2f085f3202f6ac6fae39f0366101316760c75340e1",
-        "web/templates/base.html": "7cb53eb1ba0bf623c1fb775ab8cfdb68eeaea4fc645a121f2346660da1730b6f"
+        "web/templates/base.html": "ad841003489fa8279c1a6c4ecc792fe78118434eb6752bce79d934028ec85e9c"
       },
       "viewport": {
         "height": 900,
@@ -948,7 +948,7 @@
       "source_files": {
         "web/static/css/styles.css": "1175a75fb2f9d24fb29d75d968f69ac2037015678044e6dcec23c0b979799368",
         "web/templates/admin/people.html": "6ad11518aa423be13eec571db78dcc735ade7614fc83ddc4be281c3c3a19a004",
-        "web/templates/base.html": "7cb53eb1ba0bf623c1fb775ab8cfdb68eeaea4fc645a121f2346660da1730b6f",
+        "web/templates/base.html": "ad841003489fa8279c1a6c4ecc792fe78118434eb6752bce79d934028ec85e9c",
         "web/templates/partials/people_list.html": "dbb878e714eedbd1e7b1e14960d5ff6763002269ada948763f38d98f8a4f869f"
       },
       "viewport": {
@@ -973,7 +973,7 @@
       "scenario": "CH-D01",
       "source_files": {
         "web/static/css/styles.css": "1175a75fb2f9d24fb29d75d968f69ac2037015678044e6dcec23c0b979799368",
-        "web/templates/base.html": "7cb53eb1ba0bf623c1fb775ab8cfdb68eeaea4fc645a121f2346660da1730b6f",
+        "web/templates/base.html": "ad841003489fa8279c1a6c4ecc792fe78118434eb6752bce79d934028ec85e9c",
         "web/templates/partials/assignment_detail_card.html": "167de6e1f135d669350baba1aad2160aeb1db0b8a46027f225d40dbc6ba44e98",
         "web/templates/volunteer/assignment_detail.html": "ee8247161c465e71f4459a066a693c625bc474d7ab82cc74f50604a8d8acf6aa",
         "web/templates/volunteer/schedule.html": "78b25425d16bcad0a49728182a119a011c1d5adc4208e9a5d3320f58ccdeb1ae"
@@ -1001,7 +1001,7 @@
       "source_files": {
         "web/static/css/styles.css": "1175a75fb2f9d24fb29d75d968f69ac2037015678044e6dcec23c0b979799368",
         "web/templates/admin/swaps.html": "747d4d99f979199f2be8578a922e2e267cf0756ab74ac2e8fef1dae7c3774650",
-        "web/templates/base.html": "7cb53eb1ba0bf623c1fb775ab8cfdb68eeaea4fc645a121f2346660da1730b6f",
+        "web/templates/base.html": "ad841003489fa8279c1a6c4ecc792fe78118434eb6752bce79d934028ec85e9c",
         "web/templates/partials/swaps_list.html": "e2d3688bf894efc541ac510c97ddeddc0d4a848ee767773e9179ea15bf1a34f0"
       },
       "viewport": {
@@ -1027,7 +1027,7 @@
       "source_files": {
         "web/static/css/styles.css": "1175a75fb2f9d24fb29d75d968f69ac2037015678044e6dcec23c0b979799368",
         "web/templates/admin/solution_review.html": "364a57407bcd67cddf0687fad9f22ed4895af3cf8e96a728493aa1d0b57502e3",
-        "web/templates/base.html": "7cb53eb1ba0bf623c1fb775ab8cfdb68eeaea4fc645a121f2346660da1730b6f",
+        "web/templates/base.html": "ad841003489fa8279c1a6c4ecc792fe78118434eb6752bce79d934028ec85e9c",
         "web/templates/partials/publish_state.html": "416154d21a14f14bce7d5a12b786769ae28992b2d5745d4782c702cc417d4048"
       },
       "viewport": {
@@ -1052,7 +1052,7 @@
       "scenario": "CH-D03",
       "source_files": {
         "web/static/css/styles.css": "1175a75fb2f9d24fb29d75d968f69ac2037015678044e6dcec23c0b979799368",
-        "web/templates/base.html": "7cb53eb1ba0bf623c1fb775ab8cfdb68eeaea4fc645a121f2346660da1730b6f",
+        "web/templates/base.html": "ad841003489fa8279c1a6c4ecc792fe78118434eb6752bce79d934028ec85e9c",
         "web/templates/partials/assignment_detail_card.html": "167de6e1f135d669350baba1aad2160aeb1db0b8a46027f225d40dbc6ba44e98",
         "web/templates/volunteer/assignment_detail.html": "ee8247161c465e71f4459a066a693c625bc474d7ab82cc74f50604a8d8acf6aa"
       },
@@ -1079,7 +1079,7 @@
       "source_files": {
         "web/static/css/styles.css": "1175a75fb2f9d24fb29d75d968f69ac2037015678044e6dcec23c0b979799368",
         "web/templates/admin/solution_review.html": "364a57407bcd67cddf0687fad9f22ed4895af3cf8e96a728493aa1d0b57502e3",
-        "web/templates/base.html": "7cb53eb1ba0bf623c1fb775ab8cfdb68eeaea4fc645a121f2346660da1730b6f",
+        "web/templates/base.html": "ad841003489fa8279c1a6c4ecc792fe78118434eb6752bce79d934028ec85e9c",
         "web/templates/partials/solution_assignments.html": "b1dc136d126e7bff9c7a6d871e40ed6b9e97d61a8044d6d24a9eb2bb69d751f3"
       },
       "viewport": {
@@ -1104,7 +1104,7 @@
       "scenario": "BO-05",
       "source_files": {
         "web/static/css/styles.css": "1175a75fb2f9d24fb29d75d968f69ac2037015678044e6dcec23c0b979799368",
-        "web/templates/base.html": "7cb53eb1ba0bf623c1fb775ab8cfdb68eeaea4fc645a121f2346660da1730b6f",
+        "web/templates/base.html": "ad841003489fa8279c1a6c4ecc792fe78118434eb6752bce79d934028ec85e9c",
         "web/templates/volunteer/schedule.html": "78b25425d16bcad0a49728182a119a011c1d5adc4208e9a5d3320f58ccdeb1ae"
       },
       "viewport": {
@@ -1130,7 +1130,7 @@
       "source_files": {
         "web/static/css/styles.css": "1175a75fb2f9d24fb29d75d968f69ac2037015678044e6dcec23c0b979799368",
         "web/templates/admin/events.html": "1ccc8b63ac5d645ceb6db1059b6f2bcf77c45793c332b50842878933c39e974f",
-        "web/templates/base.html": "7cb53eb1ba0bf623c1fb775ab8cfdb68eeaea4fc645a121f2346660da1730b6f",
+        "web/templates/base.html": "ad841003489fa8279c1a6c4ecc792fe78118434eb6752bce79d934028ec85e9c",
         "web/templates/partials/events_list.html": "8988f1c93cc7a0f45aaade4051fbdb03cd3dd7579b0d35100090b00ff3b5039a"
       },
       "viewport": {
@@ -1141,5 +1141,5 @@
   ],
   "scenario_date": "2030-01-09",
   "schema_version": 1,
-  "source_ref": "dc76cf27e797a9402bcc7abfa10667798e0e0f47"
+  "source_ref": "4409b36dd4afc6a4d1827a822c5f388183e8351e"
 }

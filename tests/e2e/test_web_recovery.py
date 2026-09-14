@@ -8,6 +8,7 @@ import pytest
 from playwright.sync_api import expect
 
 from tests.e2e._helpers import next_sunday_iso, no_js_errors, rid, signup_admin
+from web.deps import SESSION_COOKIE
 
 pytestmark = pytest.mark.e2e
 
@@ -145,7 +146,7 @@ def test_expired_session_navigates_instead_of_swapping_login_fragment(live_serve
     signup_admin(page, live_server)
     _open_import(page, live_server)
     page.fill("#csv_text", "Expired Session,expired@example.com,volunteer")
-    page.context.clear_cookies()
+    page.context.clear_cookies(name=SESSION_COOKIE)
     page.get_by_role("button", name="Import", exact=True).click()
 
     page.wait_for_url("**/auth/login")
