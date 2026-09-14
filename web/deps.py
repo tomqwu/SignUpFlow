@@ -9,6 +9,8 @@ same password-rotation revocation check — only the transport differs.
 
 from __future__ import annotations
 
+from typing import cast
+
 from fastapi import Depends, Request
 from fastapi.responses import RedirectResponse
 from sqlalchemy.orm import Session
@@ -39,9 +41,18 @@ def _resolve_person(request: Request, db: Session) -> Person | None:
     except Exception:
         return None
     person_id = payload.get("sub")
-    if not person_id:
+    token_org_id = payload.get("org_id")
+    if not person_id or not token_org_id:
         return None
-    person = db.query(Person).filter(Person.id == person_id).first()
+    person = (
+        db.query(Person)
+        .filter(
+            Person.id == person_id,
+            Person.org_id == token_org_id,
+            Person.status == "active",
+        )
+        .first()
+    )
     if person is None:
         return None
     # Session-invalidation-on-password-change, identical to the API dep.
@@ -66,7 +77,7 @@ def get_session_admin(
 ) -> Person:
     """Require an authenticated admin. Non-admins are bounced to their
     volunteer landing rather than shown a raw 403."""
-    roles = person.roles or []
+    roles = cast(list[str] | None, person.roles) or []
     if "admin" not in roles:
         raise _RedirectToLogin()
     return person

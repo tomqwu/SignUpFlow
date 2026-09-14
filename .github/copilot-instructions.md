@@ -68,7 +68,7 @@ make migrate        # Alembic upgrade head
 ## Testing rules
 
 - Write tests first (TDD).
-- `tests/unit/` mocks auth via `conftest.py`. `tests/api/` uses real JWT. `tests/cli/` runs the CLI as a subprocess. `tests/integration/` hits a real DB.
+- `tests/unit/` mocks auth via `conftest.py`. `tests/api/` and `tests/security/` use real JWT against an isolated test DB. `tests/cli/` runs the CLI as a subprocess. `tests/integration/` hits a real DB.
 - Mark tests with `@pytest.mark.unit`, `@pytest.mark.integration`, `@pytest.mark.slow`, `@pytest.mark.no_mock_auth`.
 - Add negative-path assertions (unauthorized, missing org_id, malformed input).
 

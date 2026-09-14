@@ -94,7 +94,7 @@ Before declaring a change done:
 - Write tests first (TDD): write the failing test, implement to make it pass, run `make test-unit` to confirm no regressions.
 - Use the right tier:
   - `tests/unit/` — fast, auto-mocked auth via `conftest.py`.
-  - `tests/api/` — real HTTP + JWT against in-memory DB.
+  - `tests/api/` and `tests/security/` — real HTTP + JWT against an isolated DB.
   - `tests/cli/` — subprocess CLI: YAML in, JSON out.
   - `tests/integration/` — real DB.
 - Mark tests with `@pytest.mark.unit`, `@pytest.mark.integration`, `@pytest.mark.slow`, `@pytest.mark.no_mock_auth`.

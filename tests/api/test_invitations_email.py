@@ -31,7 +31,7 @@ def _seed_admin(db, *, org_id="invite_email_org", admin_name="Admin Person"):
     )
     db.add(admin)
     db.commit()
-    jwt = create_access_token({"sub": admin.id})
+    jwt = create_access_token({"sub": admin.id, "org_id": admin.org_id})
     return admin, jwt
 
 

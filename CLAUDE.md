@@ -93,7 +93,7 @@ api/schemas/             # Pydantic request/response models per domain
 ```
 tests/conftest.py              # Fixtures: auto-mocks auth for unit, real auth for integration
 tests/unit/                    # Fast, mocked auth
-tests/api/                     # Real HTTP + JWT against in-memory DB
+tests/api/, tests/security/    # Real HTTP + JWT against isolated test DB
 tests/cli/                     # Subprocess CLI: YAML in, JSON out
 tests/integration/             # Real DB tests
 tests/comprehensive_test_suite.py  # Full API workflow tests

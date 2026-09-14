@@ -60,6 +60,13 @@ reminder operations produce captured mail and matching in-app notifications. Eve
 notification HTTP link is opened against that same server. No provider credential,
 non-loopback connection, or debug token is used.
 
+BO-12 starts Church and Basketball together in one disposable live server. Each
+administrator's people directory contains only its own members. One member for every
+declared scheduling qualification signs in at 360px and 1440px, remains on the volunteer
+surface when attempting an administrator route, and receives denials for invitations,
+publication, foreign-person reads, and peer availability changes. Separate API and web
+regressions bind access credentials to an active person and the tenant encoded at login.
+
 `church.json` and `basketball.json` are the executable role/headcount fixtures.
 `tests/playbooks/` validates and discovers them for both test tiers. Each run creates new
 organizations and invitations with fictional `.example` addresses. Dates start
@@ -171,6 +178,9 @@ unknown workflow IDs or silently skip unsupported scenarios.
 | Published calendar entry moves under one UID and disappears after cancellation | Browser journey, both domains and widths |
 | Non-UTC output crosses a DST boundary correctly | Unit regression; browser journey uses `America/Toronto` |
 | Declined and foreign-tenant child rows stay out of personal calendars | Real-JWT two-tenant API regression |
+| Access and browser session credentials require the active account tenant | API and web real-auth regressions |
+| Both live organizations expose only their own people to administrators | BO-12 browser journey, both domains and widths |
+| Every declared scheduling qualification remains volunteer-only across tenants | BO-12 browser journey, both domains and widths |
 | Competing qualified claims produce one winner without overfill | SQLite and PostgreSQL integration race tests |
 | Ineligible, unavailable, overlapping, or stale claims preserve the roster | Web and integration regressions |
 | Unpublished solution history neither appears nor consumes live capacity | Web and integration regressions |
@@ -188,10 +198,10 @@ fixture construction as the rollover operation under test.
 
 Browser runs save onboarding, complete six-week solution, unanswered-schedule,
 accepted-assignment, occurrence-scope, calendar-current, administrator/member account
-recovery, local-mail admin status, and member-inbox screenshots in pytest's temporary
-test directory, plus dashboard and qualification captures. Inspect them as well as
-assertion results. A horizontal overflow assertion alone is not a comprehensive
-visual/accessibility audit.
+recovery, local-mail admin status, member-inbox, tenant administrator directory, and
+every-role tenant-boundary screenshots in pytest's temporary test directory, plus
+dashboard and qualification captures. Inspect them as well as assertion results. A
+horizontal overflow assertion alone is not a comprehensive visual/accessibility audit.
 
 ## Known boundaries and release blockers
 
@@ -210,9 +220,10 @@ visual/accessibility audit.
 - Scheduling qualifications are stored beside, but are not, permission records.
   Every account has exactly one permission role (`admin` or `volunteer`); use
   `volunteer` plus scheduling qualifications for members.
-- The route-policy and two-tenant regressions in
+- The route-policy, tenant-bound credentials, and two-tenant regressions in
   [API_AUTHORIZATION.md](../API_AUTHORIZATION.md) cover scheduling route
-  authentication, resource hiding, and export filtering. This does not replace
+  authentication, active membership, resource hiding, role separation, and export
+  filtering. This does not replace
   PostgreSQL, provider, deployment, or whole-application security acceptance.
 - Role-based solver assignments now retain their selected role. Old solutions
   with null roles need regeneration; no existing data is silently rewritten.

@@ -122,13 +122,13 @@
     },
     {
       "id": "BO-12",
-      "actor": "member",
+      "actor": ["administrator", "member"],
       "precondition": "Church and Basketball organizations coexist with separate identities",
-      "operation": "Perform member and administrator operations in both organizations",
-      "expected": "Every read and mutation remains tenant-scoped and volunteers cannot administer",
-      "tiers": ["api", "integration", "e2e"],
-      "status": "partial",
-      "evidence": ["tests/api/test_multi_tenant.py", "tests/playbooks/workflows.py"]
+      "operation": "Exercise administrator and every declared scheduling qualification across both live organizations",
+      "expected": "Sessions bind to one active tenant, directories stay isolated, and volunteers cannot administer, publish, inspect foreign people, or mutate peers",
+      "tiers": ["api", "web", "integration", "e2e"],
+      "status": "automated",
+      "evidence": ["tests/api/test_access_token_tenancy.py", "tests/api/test_multi_tenant.py", "tests/web/test_login_flow.py", "tests/e2e/test_domain_playbooks.py"]
     }
   ],
   "domains": {

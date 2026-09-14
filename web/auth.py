@@ -19,7 +19,8 @@ from sqlalchemy.orm import Session
 
 from api.database import get_db
 from api.models import Person
-from api.routers.auth import SignupRequest, signup as api_signup
+from api.routers.auth import SignupRequest
+from api.routers.auth import signup as api_signup
 from api.routers.invitations import accept_invitation, verify_invitation
 from api.routers.password_reset import (
     PasswordResetConfirm,
@@ -67,7 +68,9 @@ def _set_cookie(response, token: str) -> None:
 def set_session_cookie(response, person: Person) -> None:
     _set_cookie(
         response,
-        create_access_token(data={"sub": person.id, "pwd_iat": _pwd_iat_for(person)}),
+        create_access_token(
+            data={"sub": person.id, "org_id": person.org_id, "pwd_iat": _pwd_iat_for(person)}
+        ),
     )
 
 
@@ -113,6 +116,7 @@ def login_submit(
     person = db.query(Person).filter(Person.email == email).first()
     invalid = (
         person is None
+        or person.status != "active"
         or not person.password_hash
         or not verify_password(password, person.password_hash)
     )

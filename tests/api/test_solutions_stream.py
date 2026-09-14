@@ -48,7 +48,7 @@ def _seed_admin_and_solution(db, *, org_id="sse_org", solution_id=987):
 def test_stream_404_for_unknown_solution(db):
     _seed_admin_and_solution(db, org_id="sse_404")
     admin = db.query(Person).filter(Person.id == "sse_404_admin").first()
-    jwt = create_access_token({"sub": admin.id})
+    jwt = create_access_token({"sub": admin.id, "org_id": admin.org_id})
 
     client = TestClient(app)
     resp = client.get(

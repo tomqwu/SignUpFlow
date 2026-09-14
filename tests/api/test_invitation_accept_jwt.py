@@ -65,6 +65,7 @@ class TestInvitationAcceptReturnsJwts:
         payload = jwt.decode(body["token"], SECRET_KEY, algorithms=[ALGORITHM])
         assert payload["type"] == TOKEN_TYPE_ACCESS
         assert payload["sub"].startswith("person_invitee1_")
+        assert payload["org_id"] == "inv_jwt_org_1"
         assert "pwd_iat" in payload
         assert "exp" in payload
 

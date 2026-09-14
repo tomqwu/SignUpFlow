@@ -85,6 +85,13 @@ mounted operation to an executable policy and records scheduling tenant/export
 semantics. This package changes API authorization and generated contracts, not
 the web layout; the README walkthrough screenshots therefore remain applicable
 and were not recaptured as new visual evidence.
+BO-12 now adds active-tenant binding to every API access token and browser session.
+Church and Basketball run together in one local application; their administrator
+directories remain isolated, and each declared scheduling qualification proves volunteer
+boundaries at phone and desktop widths. The browser run saves new tenant-directory and
+every-role screenshots in pytest's temporary directory. The committed walkthrough images
+remain current because the package changes authentication and acceptance coverage, not
+the rendered pages or their layout.
 The maintained [scheduling constraint contract](SCHEDULING_CONSTRAINTS.md) now
 lists the three executable REST rule mappings, their CLI equivalents, validation
 failures, built-in invariants, and unsupported policy. The constraints editor now

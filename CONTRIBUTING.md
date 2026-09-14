@@ -16,7 +16,7 @@
 
 ### 2. Write the Test FIRST
 - [ ] **Unit-level**: add to `tests/unit/test_<module>.py`
-- [ ] **HTTP-level**: add to `tests/api/test_<feature>.py` (real JWT, in-memory DB)
+- [ ] **HTTP-level**: add to `tests/api/test_<feature>.py` (real JWT, isolated DB)
 - [ ] **CLI-level**: add to `tests/cli/test_<feature>.py` (subprocess, YAML in / JSON out)
 - [ ] Run the new test — it should FAIL (test-first)
 
@@ -47,7 +47,7 @@
 | Suite | Location | What it covers |
 |-------|----------|----------------|
 | Unit | `tests/unit/` | Individual functions, mocked auth, fast |
-| API | `tests/api/` | Full HTTP workflows with real JWT + in-memory DB |
+| API | `tests/api/`, `tests/security/` | Full HTTP and authentication workflows with real JWT + isolated DB |
 | CLI | `tests/cli/` | Subprocess CLI: YAML in, JSON out, real solver |
 | Integration | `tests/integration/` | Real DB + real auth |
 | Web | `tests/web/` | Cookie and HTMX routes |
