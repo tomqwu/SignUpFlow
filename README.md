@@ -378,6 +378,14 @@ SMS are deferred; the complete scheduling workflow does not require them.
 
 ## Testing
 
+Run all review and validation locally. `make test-all` executes the maintained
+unit, API/security, CLI, integration, web, contract, and Playwright tiers; GitHub
+Actions is not test or code-review evidence. See [Testing](docs/TESTING.md).
+
+Delegated agent runs use a finite, versioned work-item contract with guarded
+Git/GitHub access. See [Agent runner](docs/AGENT_RUNNER.md) for Claude/Gemini
+commands, local evidence, ownership rules, and failure behavior.
+
 Use the [church and basketball operational playbooks](docs/playbooks/README.md)
 for six-week acceptance scenarios, reproducible API/browser tests, and explicit
 manual release checks.
@@ -582,9 +590,9 @@ my-workspace/
 ## Contributing
 
 1. Fork the repository
-2. Create a feature branch: `git checkout -b feature/my-feature`
+2. After explicit branch authorization, create it: `git switch -c codex/my-feature`
 3. Write tests first (TDD), implement, verify with `make test-unit`
-4. Commit and push
+4. Stage only owned files, then commit and push
 5. Open a Pull Request
 
 ---

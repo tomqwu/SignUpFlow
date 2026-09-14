@@ -23,8 +23,10 @@ process. Do not bypass a refusal by copying the old command from historical docs
 | `scripts/migrate_passwords_to_bcrypt.py` | Retired | Use password reset; bulk default-password replacement is forbidden. | Security |
 | `scripts/migrate_timezone.py` | Retired | Current Alembic initial revision already owns the field. | Data platform |
 | `scripts/migrate_vacation_reason.py` | Retired | Current Alembic initial revision already owns the field. | Data platform |
-| `scripts/ralph-loop-gemini.sh` | Delegated | Agent-runner behavior is owned by #282; do not use as validation evidence. | Agent tooling |
-| `scripts/ralph-loop.sh` | Delegated | Agent-runner behavior is owned by #282; do not use as validation evidence. | Agent tooling |
+| `scripts/agent_runner.py` | Supported | Finite plan/review/build runner; requires an explicit versioned work item and current local evidence for builders. | Agent tooling |
+| `scripts/agent_tool_guard.py` | Internal support | Enforces mode-specific Git/GitHub commands and owned-path staging. | Agent tooling |
+| `scripts/ralph-loop-gemini.sh` | Supported | Gemini adapter for `agent_runner.py`; no auto-approval or model switching. | Agent tooling |
+| `scripts/ralph-loop.sh` | Supported | Claude adapter for `agent_runner.py`; no auto-approval or model switching. | Agent tooling |
 | `scripts/restore_database.sh` | Retired | Recovery remains in #268; unowned database replacement is unsupported. | Data platform |
 | `scripts/retired_tool.py` | Internal support | Emits deterministic refusal messages for retired entry points. | Developer tooling |
 | `scripts/run_local_validation.py` | Supported | Run through `make test-all`; owns unique logs/JUnit/report artifacts. | Testing |

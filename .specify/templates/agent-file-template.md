@@ -20,6 +20,9 @@ Auto-generated from all feature plans. Last updated: [DATE]
 - **Integration Tests**: API workflows with real database
 - **Unit Tests**: Business logic, isolated, fast (<10s)
 - **Pre-commit Hook**: Must pass before merge
+- **Local Delivery**: Run review and all applicable tests locally for the exact pushed SHA
+- **Hosted Policy**: No CI checks or Ollama code review
+- **Merge Ownership**: Reviewer agents never merge; builders require current local evidence and GitHub mergeability
 
 ### Security Requirements:
 - JWT Bearer tokens (24h expiration)

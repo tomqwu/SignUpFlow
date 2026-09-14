@@ -21,7 +21,7 @@
 **Status**: [COMPLETE | IN_PROGRESS | PENDING]
 **Duration**: [Time spent]
 
-- [ ] Create feature branch
+- [ ] Record explicit user authorization before creating a branch
 - [ ] Run `/speckit.specify "[description]"`
 - [ ] Complete User Scenarios (min 3, independent E2E tests)
 - [ ] Complete Edge Cases (min 3)
@@ -98,9 +98,12 @@
 
 - [ ] Branch up to date with main
 - [ ] All conflicts resolved
-- [ ] Final test run passing
-- [ ] Merge to main
-- [ ] Delete feature branch
+- [ ] Final local test and review evidence matches the pushed head/base SHAs
+- [ ] GitHub reports the PR mergeable and clean
+- [ ] Builder merges through the normal PR path; reviewer does not merge
+
+No CI checks or Ollama code review are used. Branch deletion requires separate
+explicit user authorization and is not part of this generated workflow.
 
 ---
 

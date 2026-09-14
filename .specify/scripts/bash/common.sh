@@ -22,7 +22,9 @@ get_current_branch() {
 
     # Then check git if available
     if git rev-parse --abbrev-ref HEAD >/dev/null 2>&1; then
-        git rev-parse --abbrev-ref HEAD
+        local branch
+        branch=$(git rev-parse --abbrev-ref HEAD)
+        echo "${branch#codex/}"
         return
     fi
 
@@ -74,7 +76,7 @@ check_feature_branch() {
 
     if [[ ! "$branch" =~ ^[0-9]{3}- ]]; then
         echo "ERROR: Not on a feature branch. Current branch: $branch" >&2
-        echo "Feature branches should be named like: 001-feature-name" >&2
+        echo "Set SPECIFY_FEATURE=001-feature-name or use a codex/001-feature-name branch." >&2
         return 1
     fi
 
@@ -153,4 +155,3 @@ EOF
 
 check_file() { [[ -f "$1" ]] && echo "  ✓ $2" || echo "  ✗ $2"; }
 check_dir() { [[ -d "$1" && -n $(ls -A "$1" 2>/dev/null) ]] && echo "  ✓ $2" || echo "  ✗ $2"; }
-

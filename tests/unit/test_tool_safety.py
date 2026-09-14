@@ -35,6 +35,8 @@ INVENTORIED_TOOLS = (
     "scripts/QUICK_DEMO.sh",
     "scripts/backup_database.sh",
     "scripts/build-binary.sh",
+    "scripts/agent_runner.py",
+    "scripts/agent_tool_guard.py",
     "scripts/capture_playbook_screenshots.py",
     "scripts/check_test_docstrings.py",
     "scripts/check_test_status.sh",
@@ -234,7 +236,7 @@ def test_tool_ledger_classifies_every_entry_point():
         assert f"`{relative}`" in ledger
     assert "supported" in ledger.lower()
     assert "retired" in ledger.lower()
-    assert "delegated" in ledger.lower()
+    assert "internal support" in ledger.lower()
 
 
 def test_every_shell_tool_has_valid_bash_syntax():

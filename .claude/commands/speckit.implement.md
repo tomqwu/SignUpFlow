@@ -12,6 +12,13 @@ You **MUST** consider the user input before proceeding (if not empty).
 
 ## Outline
 
+Apply the current user request and `docs/ROADMAP.md` before historical spec
+priority. Write the failing regression before implementation. Run code review
+and every applicable test tier locally for the exact head/base revision. No CI
+checks or Ollama code review are used. Touch and stage only files owned by the
+selected work item. Reviewer agents never merge; builders merge only through a
+PR after current local evidence and GitHub mergeability are verified.
+
 1. Run `.specify/scripts/bash/check-prerequisites.sh --json --require-tasks --include-tasks` from repo root and parse FEATURE_DIR and AVAILABLE_DOCS list. All paths must be absolute. For single quotes in args like "I'm Groot", use escape syntax: e.g 'I'\''m Groot' (or double-quote if possible: "I'm Groot").
 
 2. **Check checklists status** (if FEATURE_DIR/checklists/ exists):
@@ -105,7 +112,7 @@ You **MUST** consider the user input before proceeding (if not empty).
 
 7. Implementation execution rules:
    - **Setup first**: Initialize project structure, dependencies, configuration
-   - **Tests before code**: If you need to write tests for contracts, entities, and integration scenarios
+   - **Tests before code**: Write required tests for contracts, entities, and integration scenarios
    - **Core development**: Implement models, services, CLI commands, endpoints
    - **Integration work**: Database connections, middleware, logging, external services
    - **Polish and validation**: Unit tests, performance optimization, documentation

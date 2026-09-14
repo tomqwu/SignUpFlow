@@ -1,0 +1,15 @@
+{
+  "schema_version": 1,
+  "source_sha": "40-character-tested-head-sha",
+  "base_sha": "40-character-reviewed-base-sha",
+  "tests": {
+    "status": "passed",
+    "command": "make test-all",
+    "report_path": "test-artifacts/local-validation/<run-id>/report.json"
+  },
+  "review": {
+    "status": "passed",
+    "reviewed_head_sha": "40-character-tested-head-sha",
+    "reviewed_base_sha": "40-character-reviewed-base-sha"
+  }
+}

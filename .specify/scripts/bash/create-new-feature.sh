@@ -3,6 +3,7 @@
 set -e
 
 JSON_MODE=false
+CREATE_BRANCH=false
 SHORT_NAME=""
 ARGS=()
 i=1
@@ -11,6 +12,9 @@ while [ $i -le $# ]; do
     case "$arg" in
         --json) 
             JSON_MODE=true 
+            ;;
+        --create-branch)
+            CREATE_BRANCH=true
             ;;
         --short-name)
             if [ $((i + 1)) -gt $# ]; then
@@ -27,10 +31,11 @@ while [ $i -le $# ]; do
             SHORT_NAME="$next_arg"
             ;;
         --help|-h) 
-            echo "Usage: $0 [--json] [--short-name <name>] <feature_description>"
+            echo "Usage: $0 [--json] [--create-branch] [--short-name <name>] <feature_description>"
             echo ""
             echo "Options:"
             echo "  --json              Output in JSON format"
+            echo "  --create-branch     Create and switch to an explicit codex/ feature branch"
             echo "  --short-name <name> Provide a custom short name (2-4 words) for the branch"
             echo "  --help, -h          Show this help message"
             echo ""
@@ -48,7 +53,7 @@ done
 
 FEATURE_DESCRIPTION="${ARGS[*]}"
 if [ -z "$FEATURE_DESCRIPTION" ]; then
-    echo "Usage: $0 [--json] [--short-name <name>] <feature_description>" >&2
+    echo "Usage: $0 [--json] [--create-branch] [--short-name <name>] <feature_description>" >&2
     exit 1
 fi
 
@@ -157,15 +162,15 @@ else
     BRANCH_SUFFIX=$(generate_branch_name "$FEATURE_DESCRIPTION")
 fi
 
-BRANCH_NAME="${FEATURE_NUM}-${BRANCH_SUFFIX}"
+FEATURE_ID="${FEATURE_NUM}-${BRANCH_SUFFIX}"
+BRANCH_NAME="codex/${FEATURE_ID}"
 
 # GitHub enforces a 244-byte limit on branch names
 # Validate and truncate if necessary
 MAX_BRANCH_LENGTH=244
 if [ ${#BRANCH_NAME} -gt $MAX_BRANCH_LENGTH ]; then
-    # Calculate how much we need to trim from suffix
-    # Account for: feature number (3) + hyphen (1) = 4 chars
-    MAX_SUFFIX_LENGTH=$((MAX_BRANCH_LENGTH - 4))
+    # Account for codex/, feature number, and the separating hyphen.
+    MAX_SUFFIX_LENGTH=$((MAX_BRANCH_LENGTH - 6 - ${#FEATURE_NUM} - 1))
     
     # Truncate suffix at word boundary if possible
     TRUNCATED_SUFFIX=$(echo "$BRANCH_SUFFIX" | cut -c1-$MAX_SUFFIX_LENGTH)
@@ -173,20 +178,26 @@ if [ ${#BRANCH_NAME} -gt $MAX_BRANCH_LENGTH ]; then
     TRUNCATED_SUFFIX=$(echo "$TRUNCATED_SUFFIX" | sed 's/-$//')
     
     ORIGINAL_BRANCH_NAME="$BRANCH_NAME"
-    BRANCH_NAME="${FEATURE_NUM}-${TRUNCATED_SUFFIX}"
+    FEATURE_ID="${FEATURE_NUM}-${TRUNCATED_SUFFIX}"
+    BRANCH_NAME="codex/${FEATURE_ID}"
     
     >&2 echo "[specify] Warning: Branch name exceeded GitHub's 244-byte limit"
     >&2 echo "[specify] Original: $ORIGINAL_BRANCH_NAME (${#ORIGINAL_BRANCH_NAME} bytes)"
     >&2 echo "[specify] Truncated to: $BRANCH_NAME (${#BRANCH_NAME} bytes)"
 fi
 
-if [ "$HAS_GIT" = true ]; then
-    git checkout -b "$BRANCH_NAME"
-else
-    >&2 echo "[specify] Warning: Git repository not detected; skipped branch creation for $BRANCH_NAME"
+BRANCH_CREATED=false
+if $CREATE_BRANCH; then
+    if [ "$HAS_GIT" = true ]; then
+        git switch -c "$BRANCH_NAME"
+        BRANCH_CREATED=true
+    else
+        >&2 echo "[specify] Error: --create-branch requires a Git repository"
+        exit 1
+    fi
 fi
 
-FEATURE_DIR="$SPECS_DIR/$BRANCH_NAME"
+FEATURE_DIR="$SPECS_DIR/$FEATURE_ID"
 mkdir -p "$FEATURE_DIR"
 
 TEMPLATE="$REPO_ROOT/.specify/templates/spec-template.md"
@@ -194,13 +205,16 @@ SPEC_FILE="$FEATURE_DIR/spec.md"
 if [ -f "$TEMPLATE" ]; then cp "$TEMPLATE" "$SPEC_FILE"; else touch "$SPEC_FILE"; fi
 
 # Set the SPECIFY_FEATURE environment variable for the current session
-export SPECIFY_FEATURE="$BRANCH_NAME"
+export SPECIFY_FEATURE="$FEATURE_ID"
 
 if $JSON_MODE; then
-    printf '{"BRANCH_NAME":"%s","SPEC_FILE":"%s","FEATURE_NUM":"%s"}\n' "$BRANCH_NAME" "$SPEC_FILE" "$FEATURE_NUM"
+    printf '{"FEATURE_ID":"%s","BRANCH_NAME":"%s","BRANCH_CREATED":%s,"SPEC_FILE":"%s","FEATURE_NUM":"%s"}\n' \
+        "$FEATURE_ID" "$BRANCH_NAME" "$BRANCH_CREATED" "$SPEC_FILE" "$FEATURE_NUM"
 else
+    echo "FEATURE_ID: $FEATURE_ID"
     echo "BRANCH_NAME: $BRANCH_NAME"
+    echo "BRANCH_CREATED: $BRANCH_CREATED"
     echo "SPEC_FILE: $SPEC_FILE"
     echo "FEATURE_NUM: $FEATURE_NUM"
-    echo "SPECIFY_FEATURE environment variable set to: $BRANCH_NAME"
+    echo "For later SpecKit commands, run: export SPECIFY_FEATURE=$FEATURE_ID"
 fi
