@@ -211,13 +211,13 @@ oracle requires exactly twelve weeks-two-through-seven events, one live solution
 completed event records, and every original future event. This boundary avoids counting
 fixture construction as the rollover operation under test.
 
-Browser runs save onboarding, complete six-week solution, unanswered-schedule,
-accepted-assignment, occurrence-scope, calendar-current, administrator/member account
-recovery, local-mail admin status, member-inbox, tenant administrator directory,
-every-role tenant-boundary, and schedule-change administrator/member screenshots in
-pytest's temporary test directory, plus dashboard and qualification captures. Inspect
-them as well as assertion results. A
-horizontal overflow assertion alone is not a comprehensive visual/accessibility audit.
+Ordinary browser runs save detailed workflow screenshots in pytest's temporary directory.
+The public evidence pipeline additionally captures the same eleven asserted states for
+both domains at 360px and 1440px under `docs/screenshots/current/`. Run
+`make capture-screenshots`, inspect every PNG, then run `make validate-screenshots`.
+The [capture guide](../screenshots/README.md) and machine-readable manifest record source,
+fixture, browser, viewport, state, caption, and relevant UI hashes. A horizontal overflow
+assertion or valid manifest alone is not a comprehensive visual/accessibility audit.
 
 ## Known boundaries and release blockers
 
