@@ -10,6 +10,7 @@ import pytest
 
 from tests.playbooks.plugin import playbook_spec
 from tests.playbooks.registry import PlaybookSpec, discover_playbooks
+from tests.playbooks.runtime import Playbook
 
 pytestmark = pytest.mark.unit
 ROOT = Path(__file__).resolve().parents[2]
@@ -69,6 +70,12 @@ def test_fixture_does_not_share_mutable_roles():
     copied = playbook_spec.__wrapped__(SimpleNamespace(param=original))
     copied.roles["helper"] = 9
     assert original.roles["helper"] == 2
+
+
+def test_unbootstrapped_runtime_cannot_seed_members():
+    definition = PlaybookSpec.model_validate(_definition())
+    with pytest.raises(ValueError, match="administrator"):
+        Playbook(object(), definition, seed_people=True, bootstrap_admin=False)
 
 
 @pytest.mark.parametrize("missing", [False, True])
