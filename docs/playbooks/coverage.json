@@ -9,7 +9,12 @@
       "expected": "No subscription, provider credential, or foreign organization access is required",
       "tiers": ["api", "e2e"],
       "status": "partial",
-      "evidence": ["tests/playbooks/runtime.py", "tests/e2e/test_domain_playbooks.py"]
+      "evidence": [
+        "tests/playbooks/runtime.py",
+        "tests/api/test_auth_bootstrap.py",
+        "tests/web/test_signup.py",
+        "tests/e2e/test_domain_playbooks.py"
+      ]
     },
     {
       "id": "BO-02",

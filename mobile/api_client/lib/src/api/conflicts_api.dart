@@ -26,7 +26,7 @@ class ConflictsApi {
   /// Check for scheduling conflicts before assigning a person to an event.  Detects: - Already assigned to this event - Time-off periods overlapping with event - Double-booked (assigned to another event at the same time)
   ///
   /// Parameters:
-  /// * [conflictCheckRequest] 
+  /// * [conflictCheckRequest]
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -36,7 +36,7 @@ class ConflictsApi {
   ///
   /// Returns a [Future] containing a [Response] with a [ConflictCheckResponse] as data
   /// Throws [DioException] if API call or serialization fails
-  Future<Response<ConflictCheckResponse>> checkConflicts({ 
+  Future<Response<ConflictCheckResponse>> checkConflicts({
     required ConflictCheckRequest conflictCheckRequest,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
@@ -134,7 +134,7 @@ class ConflictsApi {
   ///
   /// Returns a [Future] containing a [Response] with a [ListResponseConflictType] as data
   /// Throws [DioException] if API call or serialization fails
-  Future<Response<ListResponseConflictType>> listConflicts({ 
+  Future<Response<ListResponseConflictType>> listConflicts({
     required String orgId,
     String? personId,
     int? limit = 50,

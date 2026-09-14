@@ -13,11 +13,11 @@ part 'event_update.g.dart';
 /// Schema for updating an event.
 ///
 /// Properties:
-/// * [endTime] 
-/// * [extraData] 
-/// * [resourceId] 
-/// * [startTime] 
-/// * [type] 
+/// * [endTime]
+/// * [extraData]
+/// * [resourceId]
+/// * [startTime]
+/// * [type]
 @BuiltValue()
 abstract class EventUpdate implements Built<EventUpdate, EventUpdateBuilder> {
   @BuiltValueField(wireName: r'end_time')

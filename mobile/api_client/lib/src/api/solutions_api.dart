@@ -31,8 +31,8 @@ class SolutionsApi {
   /// Diff two solutions (admin only). Both must belong to the same org as the caller.
   ///
   /// Parameters:
-  /// * [solutionAId] 
-  /// * [solutionBId] 
+  /// * [solutionAId]
+  /// * [solutionBId]
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -42,7 +42,7 @@ class SolutionsApi {
   ///
   /// Returns a [Future] containing a [Response] with a [SolutionDiffResponse] as data
   /// Throws [DioException] if API call or serialization fails
-  Future<Response<SolutionDiffResponse>> compareSolutions({ 
+  Future<Response<SolutionDiffResponse>> compareSolutions({
     required int solutionAId,
     required int solutionBId,
     CancelToken? cancelToken,
@@ -114,7 +114,7 @@ class SolutionsApi {
   /// Create a manual solution record (for testing or external import). Note: This does not create assignments, just the solution metadata.
   ///
   /// Parameters:
-  /// * [requestBody] 
+  /// * [requestBody]
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -124,7 +124,7 @@ class SolutionsApi {
   ///
   /// Returns a [Future] containing a [Response] with a [SolutionResponse] as data
   /// Throws [DioException] if API call or serialization fails
-  Future<Response<SolutionResponse>> createManualSolution({ 
+  Future<Response<SolutionResponse>> createManualSolution({
     required BuiltMap<String, JsonObject> requestBody,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
@@ -209,7 +209,7 @@ class SolutionsApi {
   /// Delete solution and all assignments.
   ///
   /// Parameters:
-  /// * [solutionId] 
+  /// * [solutionId]
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -219,7 +219,7 @@ class SolutionsApi {
   ///
   /// Returns a [Future]
   /// Throws [DioException] if API call or serialization fails
-  Future<Response<void>> deleteSolution({ 
+  Future<Response<void>> deleteSolution({
     required int solutionId,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
@@ -256,8 +256,8 @@ class SolutionsApi {
   /// Export solution in various formats (CSV, ICS, JSON).
   ///
   /// Parameters:
-  /// * [solutionId] 
-  /// * [exportFormat] 
+  /// * [solutionId]
+  /// * [exportFormat]
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -267,7 +267,7 @@ class SolutionsApi {
   ///
   /// Returns a [Future] containing a [Response] with a [JsonObject] as data
   /// Throws [DioException] if API call or serialization fails
-  Future<Response<JsonObject>> exportSolution({ 
+  Future<Response<JsonObject>> exportSolution({
     required int solutionId,
     required ExportFormat exportFormat,
     CancelToken? cancelToken,
@@ -353,7 +353,7 @@ class SolutionsApi {
   /// Get solution by ID.
   ///
   /// Parameters:
-  /// * [solutionId] 
+  /// * [solutionId]
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -363,7 +363,7 @@ class SolutionsApi {
   ///
   /// Returns a [Future] containing a [Response] with a [SolutionResponse] as data
   /// Throws [DioException] if API call or serialization fails
-  Future<Response<SolutionResponse>> getSolution({ 
+  Future<Response<SolutionResponse>> getSolution({
     required int solutionId,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
@@ -428,7 +428,7 @@ class SolutionsApi {
   /// Get all assignments for a solution, grouped by event.  Mobile Solution Review renders an event-grouped list, so we group server-side rather than forcing the client to do O(n²) regrouping every render.
   ///
   /// Parameters:
-  /// * [solutionId] 
+  /// * [solutionId]
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -438,7 +438,7 @@ class SolutionsApi {
   ///
   /// Returns a [Future] containing a [Response] with a [SolutionAssignmentsResponse] as data
   /// Throws [DioException] if API call or serialization fails
-  Future<Response<SolutionAssignmentsResponse>> getSolutionAssignments({ 
+  Future<Response<SolutionAssignmentsResponse>> getSolutionAssignments({
     required int solutionId,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
@@ -503,7 +503,7 @@ class SolutionsApi {
   /// Stats endpoint (admin only): fairness histogram + stability + workload distribution.
   ///
   /// Parameters:
-  /// * [solutionId] 
+  /// * [solutionId]
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -513,7 +513,7 @@ class SolutionsApi {
   ///
   /// Returns a [Future] containing a [Response] with a [SolutionStatsResponse] as data
   /// Throws [DioException] if API call or serialization fails
-  Future<Response<SolutionStatsResponse>> getSolutionStats({ 
+  Future<Response<SolutionStatsResponse>> getSolutionStats({
     required int solutionId,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
@@ -596,7 +596,7 @@ class SolutionsApi {
   ///
   /// Returns a [Future] containing a [Response] with a [ListResponseSolutionResponse] as data
   /// Throws [DioException] if API call or serialization fails
-  Future<Response<ListResponseSolutionResponse>> listSolutions({ 
+  Future<Response<ListResponseSolutionResponse>> listSolutions({
     String? orgId,
     int? limit = 50,
     int? offset = 0,
@@ -670,7 +670,7 @@ class SolutionsApi {
   /// Publish a solution (admin only). Unpublishes any prior published in the same org.
   ///
   /// Parameters:
-  /// * [solutionId] 
+  /// * [solutionId]
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -680,7 +680,7 @@ class SolutionsApi {
   ///
   /// Returns a [Future] containing a [Response] with a [SolutionResponse] as data
   /// Throws [DioException] if API call or serialization fails
-  Future<Response<SolutionResponse>> publishSolution({ 
+  Future<Response<SolutionResponse>> publishSolution({
     required int solutionId,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
@@ -751,7 +751,7 @@ class SolutionsApi {
   /// Rollback to a previously-published solution (admin only).  Republishes the target and unpublishes whatever is currently published in the same org. The target must have been published at some point before (i.e. an audit row recording its publish/rollback exists); otherwise 400.
   ///
   /// Parameters:
-  /// * [solutionId] 
+  /// * [solutionId]
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -761,7 +761,7 @@ class SolutionsApi {
   ///
   /// Returns a [Future] containing a [Response] with a [SolutionResponse] as data
   /// Throws [DioException] if API call or serialization fails
-  Future<Response<SolutionResponse>> rollbackSolution({ 
+  Future<Response<SolutionResponse>> rollbackSolution({
     required int solutionId,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
@@ -828,11 +828,92 @@ class SolutionsApi {
     );
   }
 
+  /// Stream Solution Assignments
+  /// Server-Sent Events stream of assignment-change events for a solution.  Sprint 10 PR 10.4: replaces pull-to-refresh on the admin Solution Review with live updates. Each subscriber gets its own per-process asyncio.Queue (see api/services/event_bus.py); publishers fan-out via &#x60;event_bus.publish(\&quot;solution:{id}\&quot;, ...)&#x60; from assignment-mutation endpoints.  Format: standard &#x60;text/event-stream&#x60; per W3C SSE. Each event is a JSON object on a single &#x60;data:&#x60; line. The client reconnects on drop; on reconnect it should re-fetch the snapshot via the non-stream &#x60;/assignments&#x60; endpoint and resume.  Tenant scoping: tenancy via &#x60;get_current_admin_user&#x60; + &#x60;verify_org_member&#x60; below — the stream only emits events for a solution the admin can already read. No org_id is published in the event body because the subscriber is already scoped.
+  ///
+  /// Parameters:
+  /// * [solutionId]
+  /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
+  /// * [headers] - Can be used to add additional headers to the request
+  /// * [extras] - Can be used to add flags to the request
+  /// * [validateStatus] - A [ValidateStatus] callback that can be used to determine request success based on the HTTP status of the response
+  /// * [onSendProgress] - A [ProgressCallback] that can be used to get the send progress
+  /// * [onReceiveProgress] - A [ProgressCallback] that can be used to get the receive progress
+  ///
+  /// Returns a [Future] containing a [Response] with a [JsonObject] as data
+  /// Throws [DioException] if API call or serialization fails
+  Future<Response<JsonObject>> streamSolutionAssignments({
+    required int solutionId,
+    CancelToken? cancelToken,
+    Map<String, dynamic>? headers,
+    Map<String, dynamic>? extra,
+    ValidateStatus? validateStatus,
+    ProgressCallback? onSendProgress,
+    ProgressCallback? onReceiveProgress,
+  }) async {
+    final _path = r'/api/v1/solutions/{solution_id}/assignments/stream'.replaceAll('{' r'solution_id' '}', encodeQueryParameter(_serializers, solutionId, const FullType(int)).toString());
+    final _options = Options(
+      method: r'GET',
+      headers: <String, dynamic>{
+        ...?headers,
+      },
+      extra: <String, dynamic>{
+        'secure': <Map<String, String>>[
+          {
+            'type': 'http',
+            'scheme': 'bearer',
+            'name': 'HTTPBearer',
+          },
+        ],
+        ...?extra,
+      },
+      validateStatus: validateStatus,
+    );
+
+    final _response = await _dio.request<Object>(
+      _path,
+      options: _options,
+      cancelToken: cancelToken,
+      onSendProgress: onSendProgress,
+      onReceiveProgress: onReceiveProgress,
+    );
+
+    JsonObject? _responseData;
+
+    try {
+      final rawResponse = _response.data;
+      _responseData = rawResponse == null ? null : _serializers.deserialize(
+        rawResponse,
+        specifiedType: const FullType(JsonObject),
+      ) as JsonObject;
+
+    } catch (error, stackTrace) {
+      throw DioException(
+        requestOptions: _response.requestOptions,
+        response: _response,
+        type: DioExceptionType.unknown,
+        error: error,
+        stackTrace: stackTrace,
+      );
+    }
+
+    return Response<JsonObject>(
+      data: _responseData,
+      headers: _response.headers,
+      isRedirect: _response.isRedirect,
+      requestOptions: _response.requestOptions,
+      redirects: _response.redirects,
+      statusCode: _response.statusCode,
+      statusMessage: _response.statusMessage,
+      extra: _response.extra,
+    );
+  }
+
   /// Unpublish Solution
   /// Unpublish a solution (admin only).
   ///
   /// Parameters:
-  /// * [solutionId] 
+  /// * [solutionId]
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -842,7 +923,7 @@ class SolutionsApi {
   ///
   /// Returns a [Future] containing a [Response] with a [SolutionResponse] as data
   /// Throws [DioException] if API call or serialization fails
-  Future<Response<SolutionResponse>> unpublishSolution({ 
+  Future<Response<SolutionResponse>> unpublishSolution({
     required int solutionId,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,

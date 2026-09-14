@@ -13,13 +13,13 @@ part 'solution_diff_response.g.dart';
 /// Diff between two solutions in the same org.
 ///
 /// Properties:
-/// * [added] 
-/// * [affectedPersons] 
-/// * [moves] 
-/// * [removed] 
-/// * [solutionAId] 
-/// * [solutionBId] 
-/// * [unchangedCount] 
+/// * [added]
+/// * [affectedPersons]
+/// * [moves]
+/// * [removed]
+/// * [solutionAId]
+/// * [solutionBId]
+/// * [unchangedCount]
 @BuiltValue()
 abstract class SolutionDiffResponse implements Built<SolutionDiffResponse, SolutionDiffResponseBuilder> {
   @BuiltValueField(wireName: r'added')

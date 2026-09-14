@@ -1,5 +1,5 @@
-// SignupRepository — chains POST /organizations + POST /auth/signup. The
-// first user in a new org is automatically admin (see api/routers/auth.py).
+// SignupRepository — atomically creates an organization and its first admin
+// through POST /auth/signup (see api/routers/auth.py).
 
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -14,7 +14,7 @@ class SignupRepository {
   final api.SignupflowApi _client;
   final SecureTokenStorage _storage;
 
-  /// Create a fresh organization, then sign up the admin account inside it.
+  /// Atomically create a fresh organization and its first admin account.
   /// Returns the resulting auth state on success; throws [SignupFailure].
   Future<AuthState> createOrgAndSignUp({
     required String orgId,
@@ -24,27 +24,9 @@ class SignupRepository {
     required String password,
   }) async {
     try {
-      final orgReq = (api.OrganizationCreateBuilder()
-            ..id = orgId
-            ..name = orgName)
-          .build();
-      await _client.getOrganizationsApi().createOrganization(
-            organizationCreate: orgReq,
-          );
-    } on DioException catch (e) {
-      final code = e.response?.statusCode;
-      if (code == 409) {
-        throw const SignupFailure('That organization ID is already taken.');
-      }
-      if (code == 422) {
-        throw const SignupFailure('Organization details are invalid.');
-      }
-      throw SignupFailure('Network error: ${e.message ?? code}');
-    }
-
-    try {
       final signupReq = (api.SignupRequestBuilder()
             ..orgId = orgId
+            ..orgName = orgName
             ..name = adminName
             ..email = email
             ..password = password)
@@ -75,10 +57,12 @@ class SignupRepository {
     } on DioException catch (e) {
       final code = e.response?.statusCode;
       if (code == 409) {
-        throw const SignupFailure('An account with that email already exists.');
+        throw const SignupFailure(
+          'That organization ID or email is already in use.',
+        );
       }
       if (code == 422) {
-        throw const SignupFailure('Email or password did not pass validation.');
+        throw const SignupFailure('Organization or account details are invalid.');
       }
       throw SignupFailure('Network error: ${e.message ?? code}');
     }

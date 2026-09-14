@@ -31,7 +31,7 @@ class RecurringEventsApi {
   ///
   /// Parameters:
   /// * [orgId] - Organization ID
-  /// * [recurringSeriesCreate] 
+  /// * [recurringSeriesCreate]
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -41,7 +41,7 @@ class RecurringEventsApi {
   ///
   /// Returns a [Future] containing a [Response] with a [RecurringSeriesResponse] as data
   /// Throws [DioException] if API call or serialization fails
-  Future<Response<RecurringSeriesResponse>> createRecurringSeries({ 
+  Future<Response<RecurringSeriesResponse>> createRecurringSeries({
     required String orgId,
     required RecurringSeriesCreate recurringSeriesCreate,
     CancelToken? cancelToken,
@@ -139,7 +139,7 @@ class RecurringEventsApi {
   /// Delete a recurring series and all its occurrences.  Requires admin access. Deletes: 1. All event occurrences linked to series 2. All exceptions for those occurrences 3. The series itself  Warning: This is irreversible!
   ///
   /// Parameters:
-  /// * [seriesId] 
+  /// * [seriesId]
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -149,7 +149,7 @@ class RecurringEventsApi {
   ///
   /// Returns a [Future] containing a [Response] with a [JsonObject] as data
   /// Throws [DioException] if API call or serialization fails
-  Future<Response<JsonObject>> deleteRecurringSeries({ 
+  Future<Response<JsonObject>> deleteRecurringSeries({
     required String seriesId,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
@@ -220,7 +220,7 @@ class RecurringEventsApi {
   /// Get a specific recurring series by ID.  Returns series details with occurrence count.
   ///
   /// Parameters:
-  /// * [seriesId] 
+  /// * [seriesId]
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -230,7 +230,7 @@ class RecurringEventsApi {
   ///
   /// Returns a [Future] containing a [Response] with a [RecurringSeriesResponse] as data
   /// Throws [DioException] if API call or serialization fails
-  Future<Response<RecurringSeriesResponse>> getRecurringSeries({ 
+  Future<Response<RecurringSeriesResponse>> getRecurringSeries({
     required String seriesId,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
@@ -301,7 +301,7 @@ class RecurringEventsApi {
   /// Get all event occurrences for a recurring series.  Returns list of Event objects with exception indicators.
   ///
   /// Parameters:
-  /// * [seriesId] 
+  /// * [seriesId]
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -311,7 +311,7 @@ class RecurringEventsApi {
   ///
   /// Returns a [Future] containing a [Response] with a [JsonObject] as data
   /// Throws [DioException] if API call or serialization fails
-  Future<Response<JsonObject>> getSeriesOccurrences({ 
+  Future<Response<JsonObject>> getSeriesOccurrences({
     required String seriesId,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
@@ -395,7 +395,7 @@ class RecurringEventsApi {
   ///
   /// Returns a [Future] containing a [Response] with a [ListResponseRecurringSeriesResponse] as data
   /// Throws [DioException] if API call or serialization fails
-  Future<Response<ListResponseRecurringSeriesResponse>> listRecurringSeries({ 
+  Future<Response<ListResponseRecurringSeriesResponse>> listRecurringSeries({
     required String orgId,
     bool? activeOnly = true,
     int? limit = 50,
@@ -478,7 +478,7 @@ class RecurringEventsApi {
   ///
   /// Parameters:
   /// * [orgId] - Organization ID
-  /// * [previewRequest] 
+  /// * [previewRequest]
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -488,7 +488,7 @@ class RecurringEventsApi {
   ///
   /// Returns a [Future] containing a [Response] with a [BuiltList<OccurrencePreview>] as data
   /// Throws [DioException] if API call or serialization fails
-  Future<Response<BuiltList<OccurrencePreview>>> previewOccurrences({ 
+  Future<Response<BuiltList<OccurrencePreview>>> previewOccurrences({
     required String orgId,
     required PreviewRequest previewRequest,
     CancelToken? cancelToken,
@@ -586,10 +586,10 @@ class RecurringEventsApi {
   /// Update the series template (affects future occurrences).  Only updates the template - existing occurrences are NOT changed. Use this to modify what future occurrences will look like.  Note: To modify recurrence pattern, delete and recreate the series.
   ///
   /// Parameters:
-  /// * [seriesId] 
-  /// * [title] 
-  /// * [location] 
-  /// * [requestBody] 
+  /// * [seriesId]
+  /// * [title]
+  /// * [location]
+  /// * [requestBody]
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -599,7 +599,7 @@ class RecurringEventsApi {
   ///
   /// Returns a [Future] containing a [Response] with a [JsonObject] as data
   /// Throws [DioException] if API call or serialization fails
-  Future<Response<JsonObject>> updateSeriesTemplate({ 
+  Future<Response<JsonObject>> updateSeriesTemplate({
     required String seriesId,
     String? title,
     String? location,

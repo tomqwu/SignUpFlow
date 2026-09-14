@@ -19,14 +19,14 @@ Method | HTTP request | Description
 
 Get Burnout Risk
 
-Identify volunteers at risk of burnout (serving too frequently).
+Identify volunteers at risk of burnout (serving too frequently).  Admin-only within `org_id`. This endpoint returns other volunteers' names and emails, so peer volunteers can never read it.
 
 ### Example
 ```dart
 import 'package:signupflow_api/api.dart';
 
 final api = SignupflowApi().getAnalyticsApi();
-final String orgId = orgId_example; // String | 
+final String orgId = orgId_example; // String |
 final int threshold = 56; // int | Assignments per month threshold
 
 try {
@@ -41,7 +41,7 @@ try {
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **orgId** | **String**|  | 
+ **orgId** | **String**|  |
  **threshold** | **int**| Assignments per month threshold | [optional] [default to 4]
 
 ### Return type
@@ -50,7 +50,7 @@ Name | Type | Description  | Notes
 
 ### Authorization
 
-No authorization required
+[HTTPBearer](../README.md#HTTPBearer)
 
 ### HTTP request headers
 
@@ -64,14 +64,14 @@ No authorization required
 
 Get Schedule Health
 
-Get schedule health metrics.
+Get schedule health metrics.  Admin-only within `org_id`.
 
 ### Example
 ```dart
 import 'package:signupflow_api/api.dart';
 
 final api = SignupflowApi().getAnalyticsApi();
-final String orgId = orgId_example; // String | 
+final String orgId = orgId_example; // String |
 
 try {
     final response = api.getScheduleHealth(orgId);
@@ -85,7 +85,7 @@ try {
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **orgId** | **String**|  | 
+ **orgId** | **String**|  |
 
 ### Return type
 
@@ -93,7 +93,7 @@ Name | Type | Description  | Notes
 
 ### Authorization
 
-No authorization required
+[HTTPBearer](../README.md#HTTPBearer)
 
 ### HTTP request headers
 
@@ -107,14 +107,14 @@ No authorization required
 
 Get Volunteer Stats
 
-Get volunteer participation statistics.
+Get volunteer participation statistics.  Admin-only within `org_id`. The caller must be an authenticated admin whose own org matches the requested one.
 
 ### Example
 ```dart
 import 'package:signupflow_api/api.dart';
 
 final api = SignupflowApi().getAnalyticsApi();
-final String orgId = orgId_example; // String | 
+final String orgId = orgId_example; // String |
 final int days = 56; // int | Number of days to analyze
 
 try {
@@ -129,7 +129,7 @@ try {
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **orgId** | **String**|  | 
+ **orgId** | **String**|  |
  **days** | **int**| Number of days to analyze | [optional] [default to 30]
 
 ### Return type
@@ -138,7 +138,7 @@ Name | Type | Description  | Notes
 
 ### Authorization
 
-No authorization required
+[HTTPBearer](../README.md#HTTPBearer)
 
 ### HTTP request headers
 

@@ -13,10 +13,10 @@ part 'team_create.g.dart';
 /// Schema for creating a team.
 ///
 /// Properties:
-/// * [description] 
-/// * [extraData] 
+/// * [description]
+/// * [extraData]
 /// * [id] - Unique team ID
-/// * [memberIds] 
+/// * [memberIds]
 /// * [name] - Team name
 /// * [orgId] - Organization ID
 @BuiltValue()

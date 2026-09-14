@@ -27,7 +27,7 @@ class ConstraintsApi {
   /// Create a new constraint (admin only, scoped to admin&#39;s org).
   ///
   /// Parameters:
-  /// * [constraintCreate] 
+  /// * [constraintCreate]
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -37,7 +37,7 @@ class ConstraintsApi {
   ///
   /// Returns a [Future] containing a [Response] with a [ConstraintResponse] as data
   /// Throws [DioException] if API call or serialization fails
-  Future<Response<ConstraintResponse>> createConstraint({ 
+  Future<Response<ConstraintResponse>> createConstraint({
     required ConstraintCreate constraintCreate,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
@@ -128,7 +128,7 @@ class ConstraintsApi {
   /// Delete constraint (admin only, scoped to admin&#39;s org).
   ///
   /// Parameters:
-  /// * [constraintId] 
+  /// * [constraintId]
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -138,7 +138,7 @@ class ConstraintsApi {
   ///
   /// Returns a [Future]
   /// Throws [DioException] if API call or serialization fails
-  Future<Response<void>> deleteConstraint({ 
+  Future<Response<void>> deleteConstraint({
     required int constraintId,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
@@ -181,7 +181,7 @@ class ConstraintsApi {
   /// Get constraint by ID; org isolation enforced.
   ///
   /// Parameters:
-  /// * [constraintId] 
+  /// * [constraintId]
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -191,7 +191,7 @@ class ConstraintsApi {
   ///
   /// Returns a [Future] containing a [Response] with a [ConstraintResponse] as data
   /// Throws [DioException] if API call or serialization fails
-  Future<Response<ConstraintResponse>> getConstraint({ 
+  Future<Response<ConstraintResponse>> getConstraint({
     required int constraintId,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
@@ -275,7 +275,7 @@ class ConstraintsApi {
   ///
   /// Returns a [Future] containing a [Response] with a [ListResponseConstraintResponse] as data
   /// Throws [DioException] if API call or serialization fails
-  Future<Response<ListResponseConstraintResponse>> listConstraints({ 
+  Future<Response<ListResponseConstraintResponse>> listConstraints({
     String? orgId,
     String? constraintType,
     int? limit = 50,
@@ -357,8 +357,8 @@ class ConstraintsApi {
   /// Update constraint (admin only, scoped to admin&#39;s org).
   ///
   /// Parameters:
-  /// * [constraintId] 
-  /// * [constraintUpdate] 
+  /// * [constraintId]
+  /// * [constraintUpdate]
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -368,7 +368,7 @@ class ConstraintsApi {
   ///
   /// Returns a [Future] containing a [Response] with a [ConstraintResponse] as data
   /// Throws [DioException] if API call or serialization fails
-  Future<Response<ConstraintResponse>> updateConstraint({ 
+  Future<Response<ConstraintResponse>> updateConstraint({
     required int constraintId,
     required ConstraintUpdate constraintUpdate,
     CancelToken? cancelToken,

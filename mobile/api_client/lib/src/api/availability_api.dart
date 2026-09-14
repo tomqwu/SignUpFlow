@@ -30,8 +30,8 @@ class AvailabilityApi {
   /// Add a single-date exception. Idempotent on (availability_id, date).
   ///
   /// Parameters:
-  /// * [personId] 
-  /// * [availabilityExceptionCreate] 
+  /// * [personId]
+  /// * [availabilityExceptionCreate]
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -41,7 +41,7 @@ class AvailabilityApi {
   ///
   /// Returns a [Future] containing a [Response] with a [AvailabilityExceptionResponse] as data
   /// Throws [DioException] if API call or serialization fails
-  Future<Response<AvailabilityExceptionResponse>> addException({ 
+  Future<Response<AvailabilityExceptionResponse>> addException({
     required String personId,
     required AvailabilityExceptionCreate availabilityExceptionCreate,
     CancelToken? cancelToken,
@@ -127,8 +127,8 @@ class AvailabilityApi {
   /// Add a time-off period for a person.
   ///
   /// Parameters:
-  /// * [personId] 
-  /// * [timeOffCreate] 
+  /// * [personId]
+  /// * [timeOffCreate]
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -138,7 +138,7 @@ class AvailabilityApi {
   ///
   /// Returns a [Future] containing a [Response] with a [JsonObject] as data
   /// Throws [DioException] if API call or serialization fails
-  Future<Response<JsonObject>> addTimeoff({ 
+  Future<Response<JsonObject>> addTimeoff({
     required String personId,
     required TimeOffCreate timeOffCreate,
     CancelToken? cancelToken,
@@ -224,7 +224,7 @@ class AvailabilityApi {
   /// Clear the rrule string for a person.  Idempotent — succeeds with 204 even if the row never had an rrule, or even if the Availability row doesn&#39;t exist yet.
   ///
   /// Parameters:
-  /// * [personId] 
+  /// * [personId]
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -234,7 +234,7 @@ class AvailabilityApi {
   ///
   /// Returns a [Future]
   /// Throws [DioException] if API call or serialization fails
-  Future<Response<void>> clearRrule({ 
+  Future<Response<void>> clearRrule({
     required String personId,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
@@ -271,7 +271,7 @@ class AvailabilityApi {
   /// Create availability record for a person.
   ///
   /// Parameters:
-  /// * [personId] 
+  /// * [personId]
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -281,7 +281,7 @@ class AvailabilityApi {
   ///
   /// Returns a [Future] containing a [Response] with a [JsonObject] as data
   /// Throws [DioException] if API call or serialization fails
-  Future<Response<JsonObject>> createAvailability({ 
+  Future<Response<JsonObject>> createAvailability({
     required String personId,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
@@ -351,8 +351,8 @@ class AvailabilityApi {
   /// Delete a single-date exception by id.
   ///
   /// Parameters:
-  /// * [personId] 
-  /// * [exceptionId] 
+  /// * [personId]
+  /// * [exceptionId]
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -362,7 +362,7 @@ class AvailabilityApi {
   ///
   /// Returns a [Future]
   /// Throws [DioException] if API call or serialization fails
-  Future<Response<void>> deleteException({ 
+  Future<Response<void>> deleteException({
     required String personId,
     required int exceptionId,
     CancelToken? cancelToken,
@@ -400,8 +400,8 @@ class AvailabilityApi {
   /// Delete a time-off period.
   ///
   /// Parameters:
-  /// * [personId] 
-  /// * [timeoffId] 
+  /// * [personId]
+  /// * [timeoffId]
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -411,7 +411,7 @@ class AvailabilityApi {
   ///
   /// Returns a [Future]
   /// Throws [DioException] if API call or serialization fails
-  Future<Response<void>> deleteTimeoff({ 
+  Future<Response<void>> deleteTimeoff({
     required String personId,
     required int timeoffId,
     CancelToken? cancelToken,
@@ -449,7 +449,7 @@ class AvailabilityApi {
   /// Return the single recurring-availability rrule for a person.  Returns &#x60;&#x60;rrule: null&#x60;&#x60; when the person has no Availability row or has not set an rrule. Mobile renders this as \&quot;no recurring rule yet.\&quot;
   ///
   /// Parameters:
-  /// * [personId] 
+  /// * [personId]
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -459,7 +459,7 @@ class AvailabilityApi {
   ///
   /// Returns a [Future] containing a [Response] with a [AvailabilityRruleResponse] as data
   /// Throws [DioException] if API call or serialization fails
-  Future<Response<AvailabilityRruleResponse>> getRrule({ 
+  Future<Response<AvailabilityRruleResponse>> getRrule({
     required String personId,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
@@ -524,7 +524,7 @@ class AvailabilityApi {
   /// Get all time-off periods for a person.
   ///
   /// Parameters:
-  /// * [personId] 
+  /// * [personId]
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -534,7 +534,7 @@ class AvailabilityApi {
   ///
   /// Returns a [Future] containing a [Response] with a [JsonObject] as data
   /// Throws [DioException] if API call or serialization fails
-  Future<Response<JsonObject>> getTimeoff({ 
+  Future<Response<JsonObject>> getTimeoff({
     required String personId,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
@@ -599,7 +599,7 @@ class AvailabilityApi {
   /// List single-date availability exceptions for a person.
   ///
   /// Parameters:
-  /// * [personId] 
+  /// * [personId]
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -609,7 +609,7 @@ class AvailabilityApi {
   ///
   /// Returns a [Future] containing a [Response] with a [BuiltList<AvailabilityExceptionResponse>] as data
   /// Throws [DioException] if API call or serialization fails
-  Future<Response<BuiltList<AvailabilityExceptionResponse>>> listExceptions({ 
+  Future<Response<BuiltList<AvailabilityExceptionResponse>>> listExceptions({
     required String personId,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
@@ -674,8 +674,8 @@ class AvailabilityApi {
   /// Set (or replace) the rrule string for a person.
   ///
   /// Parameters:
-  /// * [personId] 
-  /// * [availabilityRruleUpdate] 
+  /// * [personId]
+  /// * [availabilityRruleUpdate]
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -685,7 +685,7 @@ class AvailabilityApi {
   ///
   /// Returns a [Future] containing a [Response] with a [AvailabilityRruleResponse] as data
   /// Throws [DioException] if API call or serialization fails
-  Future<Response<AvailabilityRruleResponse>> setRrule({ 
+  Future<Response<AvailabilityRruleResponse>> setRrule({
     required String personId,
     required AvailabilityRruleUpdate availabilityRruleUpdate,
     CancelToken? cancelToken,
@@ -771,9 +771,9 @@ class AvailabilityApi {
   /// Update a time-off period.
   ///
   /// Parameters:
-  /// * [personId] 
-  /// * [timeoffId] 
-  /// * [timeOffCreate] 
+  /// * [personId]
+  /// * [timeoffId]
+  /// * [timeOffCreate]
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -783,7 +783,7 @@ class AvailabilityApi {
   ///
   /// Returns a [Future] containing a [Response] with a [JsonObject] as data
   /// Throws [DioException] if API call or serialization fails
-  Future<Response<JsonObject>> updateTimeoff({ 
+  Future<Response<JsonObject>> updateTimeoff({
     required String personId,
     required int timeoffId,
     required TimeOffCreate timeOffCreate,

@@ -13,10 +13,10 @@ part 'list_response_constraint_response.g.dart';
 /// ListResponseConstraintResponse
 ///
 /// Properties:
-/// * [items] 
-/// * [limit] 
-/// * [offset] 
-/// * [total] 
+/// * [items]
+/// * [limit]
+/// * [offset]
+/// * [total]
 @BuiltValue()
 abstract class ListResponseConstraintResponse implements Built<ListResponseConstraintResponse, ListResponseConstraintResponseBuilder> {
   @BuiltValueField(wireName: r'items')

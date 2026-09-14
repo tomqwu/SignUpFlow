@@ -7,6 +7,7 @@ from datetime import timedelta
 
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query, status
 from sqlalchemy import or_
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from api.database import get_db
@@ -17,6 +18,7 @@ from api.dependencies import (
 )
 from api.logging_config import logger
 from api.models import Invitation, Person
+from api.roles import normalize_roles
 from api.schemas.invitation import (
     InvitationAccept,
     InvitationAcceptResponse,
@@ -88,6 +90,11 @@ def create_invitation(
     # Verify inviter belongs to the organization
     verify_org_member(inviter, org_id)
 
+    try:
+        roles = normalize_roles(request.roles)
+    except ValueError as exc:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
+
     # Check if email already exists
     if check_email_exists(db, request.email, org_id):
         raise HTTPException(
@@ -121,7 +128,7 @@ def create_invitation(
         org_id=org_id,
         email=request.email,
         name=request.name,
-        roles=request.roles,
+        roles=roles,
         invited_by=inviter.id,
         token=token,
         status="pending",
@@ -263,6 +270,14 @@ def accept_invitation(
             status_code=status.HTTP_400_BAD_REQUEST, detail="Invitation has expired"
         )
 
+    try:
+        roles = normalize_roles(invitation.roles or [])
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Invitation has invalid roles: {exc}",
+        ) from exc
+
     # Check if email already exists (race condition check)
     existing_person = (
         db.query(Person)
@@ -286,7 +301,7 @@ def accept_invitation(
         name=invitation.name,
         email=invitation.email,
         password_hash=password_hash,
-        roles=invitation.roles,
+        roles=roles,
         timezone=request.timezone,
         status="active",
         invited_by=invitation.invited_by,
@@ -300,7 +315,14 @@ def accept_invitation(
     invitation.status = "accepted"
     invitation.accepted_at = utcnow()
 
-    db.commit()
+    try:
+        db.commit()
+    except IntegrityError as exc:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="An account with this email already exists",
+        ) from exc
     db.refresh(person)
 
     # Mint real JWT access + refresh tokens (same shape as /auth/login

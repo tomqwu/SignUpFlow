@@ -15,13 +15,13 @@ part 'email_preference_response.g.dart';
 /// * [digestHour] - Hour to send digests (0-23)
 /// * [enabledTypes] - List of enabled notification types
 /// * [frequency] - Email frequency (immediate, daily, weekly, disabled)
-/// * [id] 
+/// * [id]
 /// * [language] - Email language preference (ISO 639-1 code)
-/// * [orgId] 
-/// * [personId] 
+/// * [orgId]
+/// * [personId]
 /// * [timezone] - Timezone for digest scheduling
-/// * [unsubscribeToken] 
-/// * [updatedAt] 
+/// * [unsubscribeToken]
+/// * [updatedAt]
 @BuiltValue()
 abstract class EmailPreferenceResponse implements Built<EmailPreferenceResponse, EmailPreferenceResponseBuilder> {
   /// Hour to send digests (0-23)

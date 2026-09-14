@@ -28,7 +28,7 @@ Create a new resource (admin only, scoped to admin's org).
 import 'package:signupflow_api/api.dart';
 
 final api = SignupflowApi().getResourcesApi();
-final ResourceCreate resourceCreate = ; // ResourceCreate | 
+final ResourceCreate resourceCreate = ; // ResourceCreate |
 
 try {
     final response = api.createResource(resourceCreate);
@@ -42,7 +42,7 @@ try {
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **resourceCreate** | [**ResourceCreate**](ResourceCreate.md)|  | 
+ **resourceCreate** | [**ResourceCreate**](ResourceCreate.md)|  |
 
 ### Return type
 
@@ -71,7 +71,7 @@ Delete a resource (admin only).  Refuses with 409 if any Event still references 
 import 'package:signupflow_api/api.dart';
 
 final api = SignupflowApi().getResourcesApi();
-final String resourceId = resourceId_example; // String | 
+final String resourceId = resourceId_example; // String |
 
 try {
     api.deleteResource(resourceId);
@@ -84,7 +84,7 @@ try {
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **resourceId** | **String**|  | 
+ **resourceId** | **String**|  |
 
 ### Return type
 
@@ -113,7 +113,7 @@ Get a single resource by id; tenancy enforced via the row's org_id.
 import 'package:signupflow_api/api.dart';
 
 final api = SignupflowApi().getResourcesApi();
-final String resourceId = resourceId_example; // String | 
+final String resourceId = resourceId_example; // String |
 
 try {
     final response = api.getResource(resourceId);
@@ -127,7 +127,7 @@ try {
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **resourceId** | **String**|  | 
+ **resourceId** | **String**|  |
 
 ### Return type
 
@@ -173,8 +173,8 @@ try {
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **orgId** | **String**| Organization ID — required (single-tenant scope) | 
- **type** | **String**| Filter by resource type | [optional] 
+ **orgId** | **String**| Organization ID — required (single-tenant scope) |
+ **type** | **String**| Filter by resource type | [optional]
  **limit** | **int**| Page size, max 200 | [optional] [default to 50]
  **offset** | **int**| Number of rows to skip | [optional] [default to 0]
 
@@ -205,8 +205,8 @@ Update a resource (admin only). org_id is immutable.
 import 'package:signupflow_api/api.dart';
 
 final api = SignupflowApi().getResourcesApi();
-final String resourceId = resourceId_example; // String | 
-final ResourceUpdate resourceUpdate = ; // ResourceUpdate | 
+final String resourceId = resourceId_example; // String |
+final ResourceUpdate resourceUpdate = ; // ResourceUpdate |
 
 try {
     final response = api.updateResource(resourceId, resourceUpdate);
@@ -220,8 +220,8 @@ try {
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **resourceId** | **String**|  | 
- **resourceUpdate** | [**ResourceUpdate**](ResourceUpdate.md)|  | 
+ **resourceId** | **String**|  |
+ **resourceUpdate** | [**ResourceUpdate**](ResourceUpdate.md)|  |
 
 ### Return type
 

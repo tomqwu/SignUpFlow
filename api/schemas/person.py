@@ -13,7 +13,10 @@ class PersonBase(BaseModel):
 
     name: str = Field(..., description="Person's full name")
     email: EmailStr | None = Field(None, description="Email address")
-    roles: list[str] | None = Field(default_factory=list, description="List of roles")
+    roles: list[str] | None = Field(
+        default_factory=list,
+        description="One access role plus zero or more scheduling qualifications",
+    )
     timezone: str = Field(default="UTC", description="User's timezone preference")
     language: str = Field(default="en", description="User's language preference (ISO 639-1 code)")
     extra_data: dict[str, Any] | None = Field(None, description="Additional data")

@@ -45,12 +45,12 @@ try {
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **userId** | **String**| Filter by user_id | [optional] 
- **action** | **String**| Filter by action (e.g., auth.login.success) | [optional] 
- **resourceType** | **String**| Filter by resource_type | [optional] 
- **startDate** | **DateTime**| Inclusive lower bound on timestamp | [optional] 
- **endDate** | **DateTime**| Inclusive upper bound on timestamp | [optional] 
- **status** | **String**| success / failure / denied | [optional] 
+ **userId** | **String**| Filter by user_id | [optional]
+ **action** | **String**| Filter by action (e.g., auth.login.success) | [optional]
+ **resourceType** | **String**| Filter by resource_type | [optional]
+ **startDate** | **DateTime**| Inclusive lower bound on timestamp | [optional]
+ **endDate** | **DateTime**| Inclusive upper bound on timestamp | [optional]
+ **status** | **String**| success / failure / denied | [optional]
  **limit** | **int**| Page size, max 200 | [optional] [default to 50]
  **offset** | **int**| Number of rows to skip | [optional] [default to 0]
 

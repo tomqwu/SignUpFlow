@@ -12,17 +12,17 @@ part 'invitation_response.g.dart';
 /// Schema for invitation response.
 ///
 /// Properties:
-/// * [acceptedAt] 
-/// * [createdAt] 
-/// * [email] 
-/// * [expiresAt] 
-/// * [id] 
-/// * [invitedBy] 
-/// * [name] 
-/// * [orgId] 
-/// * [roles] 
-/// * [status] 
-/// * [token] 
+/// * [acceptedAt]
+/// * [createdAt]
+/// * [email]
+/// * [expiresAt]
+/// * [id]
+/// * [invitedBy]
+/// * [name]
+/// * [orgId]
+/// * [roles]
+/// * [status]
+/// * [token]
 @BuiltValue()
 abstract class InvitationResponse implements Built<InvitationResponse, InvitationResponseBuilder> {
   @BuiltValueField(wireName: r'accepted_at')

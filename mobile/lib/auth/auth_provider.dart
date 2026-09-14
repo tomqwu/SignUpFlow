@@ -65,9 +65,8 @@ class AuthController extends Notifier<AuthState> {
     }
   }
 
-  /// Create-org admin signup: chains POST /organizations + POST /auth/signup,
-  /// stores the JWT, and applies the auth state. Returns null on success;
-  /// returns a user-facing message on failure.
+  /// Atomically creates an organization and first admin through /auth/signup,
+  /// stores the JWT, and applies the auth state. Returns null on success.
   Future<String?> createOrgAndSignUp({
     required String orgId,
     required String orgName,

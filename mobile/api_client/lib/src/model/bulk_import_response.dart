@@ -13,9 +13,9 @@ part 'bulk_import_response.g.dart';
 /// Result of a bulk people import request.
 ///
 /// Properties:
-/// * [created] 
-/// * [errors] 
-/// * [skipped] 
+/// * [created]
+/// * [errors]
+/// * [skipped]
 @BuiltValue()
 abstract class BulkImportResponse implements Built<BulkImportResponse, BulkImportResponseBuilder> {
   @BuiltValueField(wireName: r'created')

@@ -23,6 +23,8 @@ from datetime import date, timedelta
 import httpx
 import pytest
 
+from tests.integration._identity import bootstrap_admin
+
 
 def _unique(prefix: str) -> str:
     return f"{prefix}_{int(time.time() * 1000)}_{random.randint(10000, 99999)}"
@@ -34,24 +36,17 @@ def setup_person(api_server, api_base):
     client = httpx.Client()
 
     org_id = _unique("avail_org")
-    org_response = client.post(
-        f"{api_base}/organizations/",
-        json={"id": org_id, "name": f"Availability Org {org_id}", "region": "US", "config": {}},
-    )
-    assert org_response.status_code == 201, org_response.text
-
     email = f"person_{org_id}@test.com"
-    signup_response = client.post(
-        f"{api_base}/auth/signup",
-        json={
-            "org_id": org_id,
-            "name": "Availability User",
-            "email": email,
-            "password": "AvailPass123!",
-        },
+    admin_data = bootstrap_admin(
+        client,
+        api_base,
+        org_id=org_id,
+        org_name=f"Availability Org {org_id}",
+        name="Availability User",
+        email=email,
+        password="AvailPass123!",
+        region="US",
     )
-    assert signup_response.status_code == 201, signup_response.text
-    admin_data = signup_response.json()
 
     client.headers["Authorization"] = f"Bearer {admin_data['token']}"
     return {

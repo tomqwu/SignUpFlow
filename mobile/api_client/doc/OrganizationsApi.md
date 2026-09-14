@@ -10,7 +10,6 @@ All URIs are relative to *http://localhost*
 Method | HTTP request | Description
 ------------- | ------------- | -------------
 [**cancelOrganization**](OrganizationsApi.md#cancelorganization) | **POST** /api/v1/organizations/{org_id}/cancel | Cancel Organization
-[**createOrganization**](OrganizationsApi.md#createorganization) | **POST** /api/v1/organizations/ | Create Organization
 [**deleteOrganization**](OrganizationsApi.md#deleteorganization) | **DELETE** /api/v1/organizations/{org_id} | Delete Organization
 [**getOrganization**](OrganizationsApi.md#getorganization) | **GET** /api/v1/organizations/{org_id} | Get Organization
 [**listOrganizations**](OrganizationsApi.md#listorganizations) | **GET** /api/v1/organizations/ | List Organizations
@@ -30,7 +29,7 @@ Soft-cancel the organization (admin only).  Sets `cancelled_at` to now and sched
 import 'package:signupflow_api/api.dart';
 
 final api = SignupflowApi().getOrganizationsApi();
-final String orgId = orgId_example; // String | 
+final String orgId = orgId_example; // String |
 
 try {
     final response = api.cancelOrganization(orgId);
@@ -44,7 +43,7 @@ try {
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **orgId** | **String**|  | 
+ **orgId** | **String**|  |
 
 ### Return type
 
@@ -61,62 +60,19 @@ Name | Type | Description  | Notes
 
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
-# **createOrganization**
-> OrganizationResponse createOrganization(organizationCreate)
-
-Create Organization
-
-Create a new organization. Rate limited to 2 requests per hour per IP.  Automatically creates Free plan subscription with 10 volunteer limit.
-
-### Example
-```dart
-import 'package:signupflow_api/api.dart';
-
-final api = SignupflowApi().getOrganizationsApi();
-final OrganizationCreate organizationCreate = ; // OrganizationCreate | 
-
-try {
-    final response = api.createOrganization(organizationCreate);
-    print(response);
-} catch on DioException (e) {
-    print('Exception when calling OrganizationsApi->createOrganization: $e\n');
-}
-```
-
-### Parameters
-
-Name | Type | Description  | Notes
-------------- | ------------- | ------------- | -------------
- **organizationCreate** | [**OrganizationCreate**](OrganizationCreate.md)|  | 
-
-### Return type
-
-[**OrganizationResponse**](OrganizationResponse.md)
-
-### Authorization
-
-No authorization required
-
-### HTTP request headers
-
- - **Content-Type**: application/json
- - **Accept**: application/json
-
-[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
-
 # **deleteOrganization**
 > deleteOrganization(orgId)
 
 Delete Organization
 
-Delete organization and all related data.
+Hard-delete the authenticated admin's organization and related data.
 
 ### Example
 ```dart
 import 'package:signupflow_api/api.dart';
 
 final api = SignupflowApi().getOrganizationsApi();
-final String orgId = orgId_example; // String | 
+final String orgId = orgId_example; // String |
 
 try {
     api.deleteOrganization(orgId);
@@ -129,7 +85,7 @@ try {
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **orgId** | **String**|  | 
+ **orgId** | **String**|  |
 
 ### Return type
 
@@ -137,7 +93,7 @@ void (empty response body)
 
 ### Authorization
 
-No authorization required
+[HTTPBearer](../README.md#HTTPBearer)
 
 ### HTTP request headers
 
@@ -151,14 +107,14 @@ No authorization required
 
 Get Organization
 
-Get organization by ID.
+Read the authenticated member's organization only.
 
 ### Example
 ```dart
 import 'package:signupflow_api/api.dart';
 
 final api = SignupflowApi().getOrganizationsApi();
-final String orgId = orgId_example; // String | 
+final String orgId = orgId_example; // String |
 
 try {
     final response = api.getOrganization(orgId);
@@ -172,7 +128,7 @@ try {
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **orgId** | **String**|  | 
+ **orgId** | **String**|  |
 
 ### Return type
 
@@ -180,7 +136,7 @@ Name | Type | Description  | Notes
 
 ### Authorization
 
-No authorization required
+[HTTPBearer](../README.md#HTTPBearer)
 
 ### HTTP request headers
 
@@ -194,14 +150,14 @@ No authorization required
 
 List Organizations
 
-List all organizations. Excludes cancelled by default.
+List only the caller's organization. Excludes cancelled by default.
 
 ### Example
 ```dart
 import 'package:signupflow_api/api.dart';
 
 final api = SignupflowApi().getOrganizationsApi();
-final bool includeCancelled = true; // bool | Include organizations that have been cancelled (admin view)
+final bool includeCancelled = true; // bool | Include the caller's organization when cancelled
 final String q = q_example; // String | Case-insensitive search on organization name
 final int limit = 56; // int | Page size, max 200
 final int offset = 56; // int | Number of rows to skip
@@ -218,8 +174,8 @@ try {
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **includeCancelled** | **bool**| Include organizations that have been cancelled (admin view) | [optional] [default to false]
- **q** | **String**| Case-insensitive search on organization name | [optional] 
+ **includeCancelled** | **bool**| Include the caller's organization when cancelled | [optional] [default to false]
+ **q** | **String**| Case-insensitive search on organization name | [optional]
  **limit** | **int**| Page size, max 200 | [optional] [default to 50]
  **offset** | **int**| Number of rows to skip | [optional] [default to 0]
 
@@ -229,7 +185,7 @@ Name | Type | Description  | Notes
 
 ### Authorization
 
-No authorization required
+[HTTPBearer](../README.md#HTTPBearer)
 
 ### HTTP request headers
 
@@ -250,7 +206,7 @@ Restore a cancelled organization (admin only). Clears cancellation fields.
 import 'package:signupflow_api/api.dart';
 
 final api = SignupflowApi().getOrganizationsApi();
-final String orgId = orgId_example; // String | 
+final String orgId = orgId_example; // String |
 
 try {
     final response = api.restoreOrganization(orgId);
@@ -264,7 +220,7 @@ try {
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **orgId** | **String**|  | 
+ **orgId** | **String**|  |
 
 ### Return type
 
@@ -286,15 +242,15 @@ Name | Type | Description  | Notes
 
 Update Organization
 
-Update organization.
+Update the authenticated admin's organization and record the actor.
 
 ### Example
 ```dart
 import 'package:signupflow_api/api.dart';
 
 final api = SignupflowApi().getOrganizationsApi();
-final String orgId = orgId_example; // String | 
-final OrganizationUpdate organizationUpdate = ; // OrganizationUpdate | 
+final String orgId = orgId_example; // String |
+final OrganizationUpdate organizationUpdate = ; // OrganizationUpdate |
 
 try {
     final response = api.updateOrganization(orgId, organizationUpdate);
@@ -308,8 +264,8 @@ try {
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **orgId** | **String**|  | 
- **organizationUpdate** | [**OrganizationUpdate**](OrganizationUpdate.md)|  | 
+ **orgId** | **String**|  |
+ **organizationUpdate** | [**OrganizationUpdate**](OrganizationUpdate.md)|  |
 
 ### Return type
 
@@ -317,7 +273,7 @@ Name | Type | Description  | Notes
 
 ### Authorization
 
-No authorization required
+[HTTPBearer](../README.md#HTTPBearer)
 
 ### HTTP request headers
 

@@ -24,7 +24,7 @@ Generate a schedule for the organization (admin only).  This endpoint: 1. Loads 
 import 'package:signupflow_api/api.dart';
 
 final api = SignupflowApi().getSolverApi();
-final SolveRequest solveRequest = ; // SolveRequest | 
+final SolveRequest solveRequest = ; // SolveRequest |
 
 try {
     final response = api.solveSchedule(solveRequest);
@@ -38,7 +38,7 @@ try {
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **solveRequest** | [**SolveRequest**](SolveRequest.md)|  | 
+ **solveRequest** | [**SolveRequest**](SolveRequest.md)|  |
 
 ### Return type
 

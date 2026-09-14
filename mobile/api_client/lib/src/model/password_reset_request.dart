@@ -11,7 +11,7 @@ part 'password_reset_request.g.dart';
 /// Request password reset.
 ///
 /// Properties:
-/// * [email] 
+/// * [email]
 @BuiltValue()
 abstract class PasswordResetRequest implements Built<PasswordResetRequest, PasswordResetRequestBuilder> {
   @BuiltValueField(wireName: r'email')

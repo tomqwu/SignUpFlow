@@ -13,7 +13,7 @@ part 'time_off_create.g.dart';
 ///
 /// Properties:
 /// * [endDate] - End date of time-off
-/// * [reason] 
+/// * [reason]
 /// * [startDate] - Start date of time-off
 @BuiltValue()
 abstract class TimeOffCreate implements Built<TimeOffCreate, TimeOffCreateBuilder> {

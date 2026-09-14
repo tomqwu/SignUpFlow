@@ -13,9 +13,9 @@ part 'validation_error.g.dart';
 /// ValidationError
 ///
 /// Properties:
-/// * [loc] 
-/// * [msg] 
-/// * [type] 
+/// * [loc]
+/// * [msg]
+/// * [type]
 @BuiltValue()
 abstract class ValidationError implements Built<ValidationError, ValidationErrorBuilder> {
   @BuiltValueField(wireName: r'loc')

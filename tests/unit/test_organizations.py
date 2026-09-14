@@ -9,21 +9,23 @@ API_BASE = "http://localhost:8000/api/v1"
 
 
 def create_organization(client, url, **kwargs):
-    response = client.post(url, **kwargs)
-    if response.status_code == 201:
-        org_id = response.json()["id"]
-        signup = client.post(
-            f"{API_BASE}/auth/signup",
-            json={
-                "org_id": org_id,
-                "name": "Owner",
-                "email": f"{org_id}@example.com",
-                "password": "TestPass123!",
-            },
-        )
-        assert signup.status_code == 201, signup.text
-        client.headers["Authorization"] = f"Bearer {signup.json()['token']}"
-    return response
+    organization = kwargs["json"]
+    org_id = organization.get("id", "")
+    signup = client.post(
+        f"{API_BASE}/auth/signup",
+        json={
+            "org_id": org_id,
+            "org_name": organization.get("name"),
+            "region": organization.get("region"),
+            "name": "Owner",
+            "email": f"{org_id or 'invalid'}@example.com",
+            "password": "TestPass123!",
+        },
+    )
+    if signup.status_code != 201:
+        return signup
+    client.headers["Authorization"] = f"Bearer {signup.json()['token']}"
+    return client.get(f"{API_BASE}/organizations/{org_id}")
 
 
 class TestOrganizationCreate:
@@ -41,7 +43,7 @@ class TestOrganizationCreate:
                 "config": {"location": "Test City"},
             },
         )
-        assert response.status_code in [200, 201]
+        assert response.status_code == 200
         data = response.json()
         assert data["id"] == "test_org_001_v2"
         assert data["name"] == "Test Organization"
@@ -69,8 +71,15 @@ class TestOrganizationCreate:
 
     def test_create_org_empty_id(self, client):
         """Test creating org with empty ID fails."""
-        response = create_organization(
-            client, f"{API_BASE}/organizations/", json={"id": "", "name": "Empty ID Org"}
+        response = client.post(
+            f"{API_BASE}/auth/signup",
+            json={
+                "org_id": "",
+                "org_name": "Empty ID Org",
+                "name": "Owner",
+                "email": "invalid@example.com",
+                "password": "TestPass123!",
+            },
         )
         assert response.status_code == 422
 

@@ -130,7 +130,7 @@ class Person(Base):
     id = Column(String, primary_key=True)
     org_id = Column(String, ForeignKey("organizations.id"), nullable=False)
     name = Column(String, nullable=False)
-    email = Column(String, nullable=True)
+    email = Column(String, unique=True, nullable=True)
     password_hash = Column(String, nullable=True)  # Hashed password for login
     roles = Column(JSONType, nullable=True)  # Array of role strings
     timezone = Column(String, default="UTC", nullable=False)  # User's timezone preference

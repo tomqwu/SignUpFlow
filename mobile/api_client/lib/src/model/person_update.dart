@@ -13,12 +13,12 @@ part 'person_update.g.dart';
 /// Schema for updating a person.
 ///
 /// Properties:
-/// * [email] 
-/// * [extraData] 
-/// * [language] 
-/// * [name] 
-/// * [roles] 
-/// * [timezone] 
+/// * [email]
+/// * [extraData]
+/// * [language]
+/// * [name]
+/// * [roles]
+/// * [timezone]
 @BuiltValue()
 abstract class PersonUpdate implements Built<PersonUpdate, PersonUpdateBuilder> {
   @BuiltValueField(wireName: r'email')

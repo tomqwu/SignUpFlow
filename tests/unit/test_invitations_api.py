@@ -5,6 +5,8 @@ Following TDD/BDD - test before fixing.
 
 import pytest
 
+from tests.unit._identity import bootstrap_organization
+
 API_BASE = "http://localhost:8000/api/v1"
 
 
@@ -25,8 +27,8 @@ class TestInvitationsAPI:
     def test_list_invitations_requires_authentication_with_org(self, client):
         """Test that listing invitations requires authentication (with org_id)."""
         # Create test org
-        org_response = client.post(
-            f"{API_BASE}/organizations/",
+        org_response = bootstrap_organization(
+            client,
             json={
                 "id": "test_org_invitations",
                 "name": "Test Invitations Org",
@@ -45,8 +47,8 @@ class TestInvitationsAPI:
     def test_list_invitations_with_valid_admin(self, client):
         """Test that admin can list invitations for their org."""
         # Create test org
-        org_response = client.post(
-            f"{API_BASE}/organizations/",
+        org_response = bootstrap_organization(
+            client,
             json={
                 "id": "test_org_inv_list",
                 "name": "Test Invitations List Org",

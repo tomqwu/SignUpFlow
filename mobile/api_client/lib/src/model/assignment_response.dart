@@ -11,13 +11,13 @@ part 'assignment_response.g.dart';
 /// Single-assignment response shape returned by self-service mutations.
 ///
 /// Properties:
-/// * [assignedAt] 
-/// * [declineReason] 
-/// * [eventId] 
-/// * [id] 
-/// * [personId] 
-/// * [role] 
-/// * [status] 
+/// * [assignedAt]
+/// * [declineReason]
+/// * [eventId]
+/// * [id]
+/// * [personId]
+/// * [role]
+/// * [status]
 @BuiltValue()
 abstract class AssignmentResponse implements Built<AssignmentResponse, AssignmentResponseBuilder> {
   @BuiltValueField(wireName: r'assigned_at')

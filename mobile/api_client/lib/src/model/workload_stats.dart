@@ -11,11 +11,11 @@ part 'workload_stats.g.dart';
 /// Aggregate workload distribution stats.
 ///
 /// Properties:
-/// * [distinctPersonsAssigned] 
-/// * [maxEventsPerPerson] 
-/// * [medianEventsPerPerson] 
-/// * [minEventsPerPerson] 
-/// * [totalEventsAssigned] 
+/// * [distinctPersonsAssigned]
+/// * [maxEventsPerPerson]
+/// * [medianEventsPerPerson]
+/// * [minEventsPerPerson]
+/// * [totalEventsAssigned]
 @BuiltValue()
 abstract class WorkloadStats implements Built<WorkloadStats, WorkloadStatsBuilder> {
   @BuiltValueField(wireName: r'distinct_persons_assigned')

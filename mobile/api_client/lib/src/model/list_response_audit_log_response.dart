@@ -13,10 +13,10 @@ part 'list_response_audit_log_response.g.dart';
 /// ListResponseAuditLogResponse
 ///
 /// Properties:
-/// * [items] 
-/// * [limit] 
-/// * [offset] 
-/// * [total] 
+/// * [items]
+/// * [limit]
+/// * [offset]
+/// * [total]
 @BuiltValue()
 abstract class ListResponseAuditLogResponse implements Built<ListResponseAuditLogResponse, ListResponseAuditLogResponseBuilder> {
   @BuiltValueField(wireName: r'items')

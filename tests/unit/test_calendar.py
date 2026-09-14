@@ -11,6 +11,7 @@ from api.utils.calendar_utils import (
     generate_webcal_url,
 )
 from api.utils.security import generate_calendar_token
+from tests.unit._identity import bootstrap_organization
 
 API_BASE = "http://localhost:8000/api/v1"
 
@@ -118,8 +119,8 @@ class TestCalendarExportAPI:
     def setup_test_data(self, client):
         """Create test organization, person, events, and assignments."""
         # Create organization
-        client.post(
-            f"{API_BASE}/organizations/",
+        bootstrap_organization(
+            client,
             json={"id": "test_org", "name": "Calendar Test Org"},
         )
 
@@ -258,9 +259,7 @@ class TestOrganizationExport:
     def setup_test_data(self, client):
         """Create test organization with admin and events."""
         # Create organization
-        client.post(
-            f"{API_BASE}/organizations/", json={"id": "org_export_test", "name": "Org Export Test"}
-        )
+        bootstrap_organization(client, json={"id": "org_export_test", "name": "Org Export Test"})
 
         # Create admin
         client.post(
@@ -328,7 +327,7 @@ class TestOrganizationExport:
     def test_org_export_no_events(self, client):
         """Test organization export when no events exist."""
         # Create new org with no events
-        client.post(f"{API_BASE}/organizations/", json={"id": "empty_org", "name": "Empty Org"})
+        bootstrap_organization(client, json={"id": "empty_org", "name": "Empty Org"})
 
         response = client.get(f"{API_BASE}/calendar/org/export?org_id=empty_org")
 
@@ -342,9 +341,7 @@ class TestCalendarIntegration:
     def test_complete_subscription_workflow(self, client):
         """Test complete workflow: create person -> subscribe -> feed."""
         # 1. Create organization (use mocked admin's org for auth)
-        client.post(
-            f"{API_BASE}/organizations/", json={"id": "test_org", "name": "Workflow Test Org"}
-        )
+        bootstrap_organization(client, json={"id": "test_org", "name": "Workflow Test Org"})
 
         # 2. Create person
         client.post(

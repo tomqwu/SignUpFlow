@@ -106,9 +106,9 @@ tests/setup_test_data.py       # Seed data for test DB
 
 **Multi-tenancy:** Every query MUST filter by `org_id`. Use `verify_org_member(person, org_id)` from `api/dependencies.py` to enforce org isolation.
 
-**Organizations:** Keep `POST /api/v1/organizations/` public only for creating an empty onboarding organization. Require membership for organization reads/listing and same-tenant admin access for update/delete/cancel/restore. Commit each lifecycle mutation and its audit record together. Public signup membership hardening remains tracked in #255.
+**Organizations:** `POST /api/v1/auth/signup` atomically creates one organization and its first admin. It rejects an existing organization ID; all later accounts join through administrator-created invitations. There is no public empty-organization endpoint. Require membership for organization reads/listing and same-tenant admin access for update/delete/cancel/restore. Commit each lifecycle mutation and its audit record together.
 
-**RBAC:** Two roles: `volunteer` (view own data, manage availability) and `admin` (full CRUD, solver, invitations). Roles stored as JSON array on Person model.
+**RBAC:** Grant exactly one permission role: `volunteer` (view own data, manage availability) or `admin` (full CRUD, solver, invitations). Store scheduling qualifications such as `usher` or `coach` in the same Person JSON array, but never interpret them as permissions. Normalize request input with `api.roles.normalize_roles`.
 
 **Test auth mocking:** Unit tests auto-mock authentication via `conftest.py` (returns a test admin user). Integration tests use real auth. Mark tests with `@pytest.mark.no_mock_auth` to opt out of mocking.
 

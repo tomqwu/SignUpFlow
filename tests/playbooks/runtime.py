@@ -22,18 +22,14 @@ class Playbook:
         self.start = today + timedelta(days=(6 - today.weekday()) % 7 + 14)
         self.email = f"admin@{self.org}.example"
         self.headers = {}
-        self.request(
-            "POST",
-            "/organizations/",
-            201,
-            {"id": self.org, "name": self.spec["name"], "region": "US"},
-        )
         admin = self.request(
             "POST",
             "/auth/signup",
             201,
             {
                 "org_id": self.org,
+                "org_name": self.spec["name"],
+                "region": "US",
                 "name": "Scheduling administrator",
                 "email": self.email,
                 "password": self.password,

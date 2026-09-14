@@ -16,3 +16,11 @@ def test_mobile_validation_is_local():
     assert "flutter test" in txt
     assert "$(FLUTTER) test" in (WF.parents[2] / "Makefile").read_text()
     assert "no CI checks" in txt
+
+
+def test_mobile_codegen_preserves_strict_contract_without_broken_aliases():
+    makefile = (WF.parents[2] / "Makefile").read_text()
+
+    assert "tmp_spec=" in makefile
+    assert "del(.components.schemas.SignupRequest.additionalProperties)" in makefile
+    assert '-i "$$tmp_spec"' in makefile

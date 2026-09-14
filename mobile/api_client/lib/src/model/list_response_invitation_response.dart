@@ -13,10 +13,10 @@ part 'list_response_invitation_response.g.dart';
 /// ListResponseInvitationResponse
 ///
 /// Properties:
-/// * [items] 
-/// * [limit] 
-/// * [offset] 
-/// * [total] 
+/// * [items]
+/// * [limit]
+/// * [offset]
+/// * [total]
 @BuiltValue()
 abstract class ListResponseInvitationResponse implements Built<ListResponseInvitationResponse, ListResponseInvitationResponseBuilder> {
   @BuiltValueField(wireName: r'items')

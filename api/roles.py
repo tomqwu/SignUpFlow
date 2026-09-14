@@ -35,6 +35,24 @@ def build_roles(access_role: str, qualifications: Iterable[str]) -> list[str]:
     return [access_role, *parsed]
 
 
+def normalize_roles(roles: Iterable[str]) -> list[str]:
+    """Validate an admin-selected role array and make account access explicit."""
+    values = list(roles)
+    permission_roles: list[str] = []
+    qualifications: list[str] = []
+    for value in values:
+        if value in PERMISSION_ROLES:
+            if value not in permission_roles:
+                permission_roles.append(value)
+            continue
+        if value.casefold() in PERMISSION_ROLES:
+            raise ValueError(f"{value!r} is an ambiguous permission role")
+        qualifications.append(value)
+    if len(permission_roles) > 1:
+        raise ValueError("Select exactly one account access role")
+    return build_roles(permission_roles[0] if permission_roles else "volunteer", qualifications)
+
+
 def replace_qualifications(
     existing_roles: Iterable[str], qualifications: Iterable[str]
 ) -> list[str]:

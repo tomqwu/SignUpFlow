@@ -30,8 +30,8 @@ Add members to team (admin only).
 import 'package:signupflow_api/api.dart';
 
 final api = SignupflowApi().getTeamsApi();
-final String teamId = teamId_example; // String | 
-final TeamMemberAdd teamMemberAdd = ; // TeamMemberAdd | 
+final String teamId = teamId_example; // String |
+final TeamMemberAdd teamMemberAdd = ; // TeamMemberAdd |
 
 try {
     api.addTeamMembers(teamId, teamMemberAdd);
@@ -44,8 +44,8 @@ try {
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **teamId** | **String**|  | 
- **teamMemberAdd** | [**TeamMemberAdd**](TeamMemberAdd.md)|  | 
+ **teamId** | **String**|  |
+ **teamMemberAdd** | [**TeamMemberAdd**](TeamMemberAdd.md)|  |
 
 ### Return type
 
@@ -74,7 +74,7 @@ Create a new team (admin only).
 import 'package:signupflow_api/api.dart';
 
 final api = SignupflowApi().getTeamsApi();
-final TeamCreate teamCreate = ; // TeamCreate | 
+final TeamCreate teamCreate = ; // TeamCreate |
 
 try {
     final response = api.createTeam(teamCreate);
@@ -88,7 +88,7 @@ try {
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **teamCreate** | [**TeamCreate**](TeamCreate.md)|  | 
+ **teamCreate** | [**TeamCreate**](TeamCreate.md)|  |
 
 ### Return type
 
@@ -117,7 +117,7 @@ Delete team (admin only).
 import 'package:signupflow_api/api.dart';
 
 final api = SignupflowApi().getTeamsApi();
-final String teamId = teamId_example; // String | 
+final String teamId = teamId_example; // String |
 
 try {
     api.deleteTeam(teamId);
@@ -130,7 +130,7 @@ try {
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **teamId** | **String**|  | 
+ **teamId** | **String**|  |
 
 ### Return type
 
@@ -159,7 +159,7 @@ Get team by ID. Users can only view teams from their own organization.
 import 'package:signupflow_api/api.dart';
 
 final api = SignupflowApi().getTeamsApi();
-final String teamId = teamId_example; // String | 
+final String teamId = teamId_example; // String |
 
 try {
     final response = api.getTeam(teamId);
@@ -173,7 +173,7 @@ try {
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **teamId** | **String**|  | 
+ **teamId** | **String**|  |
 
 ### Return type
 
@@ -219,8 +219,8 @@ try {
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **orgId** | **String**| Filter by organization ID | [optional] 
- **q** | **String**| Case-insensitive search on name and description | [optional] 
+ **orgId** | **String**| Filter by organization ID | [optional]
+ **q** | **String**| Case-insensitive search on name and description | [optional]
  **limit** | **int**| Page size, max 200 | [optional] [default to 50]
  **offset** | **int**| Number of rows to skip | [optional] [default to 0]
 
@@ -251,8 +251,8 @@ Remove members from team (admin only).
 import 'package:signupflow_api/api.dart';
 
 final api = SignupflowApi().getTeamsApi();
-final String teamId = teamId_example; // String | 
-final TeamMemberRemove teamMemberRemove = ; // TeamMemberRemove | 
+final String teamId = teamId_example; // String |
+final TeamMemberRemove teamMemberRemove = ; // TeamMemberRemove |
 
 try {
     api.removeTeamMembers(teamId, teamMemberRemove);
@@ -265,8 +265,8 @@ try {
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **teamId** | **String**|  | 
- **teamMemberRemove** | [**TeamMemberRemove**](TeamMemberRemove.md)|  | 
+ **teamId** | **String**|  |
+ **teamMemberRemove** | [**TeamMemberRemove**](TeamMemberRemove.md)|  |
 
 ### Return type
 
@@ -295,8 +295,8 @@ Update team (admin only).
 import 'package:signupflow_api/api.dart';
 
 final api = SignupflowApi().getTeamsApi();
-final String teamId = teamId_example; // String | 
-final TeamUpdate teamUpdate = ; // TeamUpdate | 
+final String teamId = teamId_example; // String |
+final TeamUpdate teamUpdate = ; // TeamUpdate |
 
 try {
     final response = api.updateTeam(teamId, teamUpdate);
@@ -310,8 +310,8 @@ try {
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **teamId** | **String**|  | 
- **teamUpdate** | [**TeamUpdate**](TeamUpdate.md)|  | 
+ **teamId** | **String**|  |
+ **teamUpdate** | [**TeamUpdate**](TeamUpdate.md)|  |
 
 ### Return type
 

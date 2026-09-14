@@ -15,6 +15,8 @@ class _$SolutionAssignmentAssignee extends SolutionAssignmentAssignee {
   final String personId;
   @override
   final String? personName;
+  @override
+  final String? role;
 
   factory _$SolutionAssignmentAssignee(
           [void Function(SolutionAssignmentAssigneeBuilder)? updates]) =>
@@ -24,7 +26,8 @@ class _$SolutionAssignmentAssignee extends SolutionAssignmentAssignee {
       {this.assignedAt,
       required this.assignmentId,
       required this.personId,
-      this.personName})
+      this.personName,
+      this.role})
       : super._();
   @override
   SolutionAssignmentAssignee rebuild(
@@ -42,7 +45,8 @@ class _$SolutionAssignmentAssignee extends SolutionAssignmentAssignee {
         assignedAt == other.assignedAt &&
         assignmentId == other.assignmentId &&
         personId == other.personId &&
-        personName == other.personName;
+        personName == other.personName &&
+        role == other.role;
   }
 
   @override
@@ -52,6 +56,7 @@ class _$SolutionAssignmentAssignee extends SolutionAssignmentAssignee {
     _$hash = $jc(_$hash, assignmentId.hashCode);
     _$hash = $jc(_$hash, personId.hashCode);
     _$hash = $jc(_$hash, personName.hashCode);
+    _$hash = $jc(_$hash, role.hashCode);
     _$hash = $jf(_$hash);
     return _$hash;
   }
@@ -62,7 +67,8 @@ class _$SolutionAssignmentAssignee extends SolutionAssignmentAssignee {
           ..add('assignedAt', assignedAt)
           ..add('assignmentId', assignmentId)
           ..add('personId', personId)
-          ..add('personName', personName))
+          ..add('personName', personName)
+          ..add('role', role))
         .toString();
   }
 }
@@ -88,6 +94,10 @@ class SolutionAssignmentAssigneeBuilder
   String? get personName => _$this._personName;
   set personName(String? personName) => _$this._personName = personName;
 
+  String? _role;
+  String? get role => _$this._role;
+  set role(String? role) => _$this._role = role;
+
   SolutionAssignmentAssigneeBuilder() {
     SolutionAssignmentAssignee._defaults(this);
   }
@@ -99,6 +109,7 @@ class SolutionAssignmentAssigneeBuilder
       _assignmentId = $v.assignmentId;
       _personId = $v.personId;
       _personName = $v.personName;
+      _role = $v.role;
       _$v = null;
     }
     return this;
@@ -126,6 +137,7 @@ class SolutionAssignmentAssigneeBuilder
           personId: BuiltValueNullFieldError.checkNotNull(
               personId, r'SolutionAssignmentAssignee', 'personId'),
           personName: personName,
+          role: role,
         );
     replace(_$result);
     return _$result;

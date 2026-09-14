@@ -12,9 +12,9 @@ part 'holiday_update.g.dart';
 /// HolidayUpdate
 ///
 /// Properties:
-/// * [date] 
-/// * [isLongWeekend] 
-/// * [label] 
+/// * [date]
+/// * [isLongWeekend]
+/// * [label]
 @BuiltValue()
 abstract class HolidayUpdate implements Built<HolidayUpdate, HolidayUpdateBuilder> {
   @BuiltValueField(wireName: r'date')

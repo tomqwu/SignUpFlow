@@ -13,10 +13,10 @@ part 'list_response_organization_response.g.dart';
 /// ListResponseOrganizationResponse
 ///
 /// Properties:
-/// * [items] 
-/// * [limit] 
-/// * [offset] 
-/// * [total] 
+/// * [items]
+/// * [limit]
+/// * [offset]
+/// * [total]
 @BuiltValue()
 abstract class ListResponseOrganizationResponse implements Built<ListResponseOrganizationResponse, ListResponseOrganizationResponseBuilder> {
   @BuiltValueField(wireName: r'items')

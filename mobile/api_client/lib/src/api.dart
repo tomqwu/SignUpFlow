@@ -14,6 +14,7 @@ import 'package:signupflow_api/src/api/assignments_api.dart';
 import 'package:signupflow_api/src/api/audit_api.dart';
 import 'package:signupflow_api/src/api/auth_api.dart';
 import 'package:signupflow_api/src/api/availability_api.dart';
+import 'package:signupflow_api/src/api/billing_api.dart';
 import 'package:signupflow_api/src/api/calendar_api.dart';
 import 'package:signupflow_api/src/api/conflicts_api.dart';
 import 'package:signupflow_api/src/api/constraints_api.dart';
@@ -27,6 +28,7 @@ import 'package:signupflow_api/src/api/people_api.dart';
 import 'package:signupflow_api/src/api/recurring_events_api.dart';
 import 'package:signupflow_api/src/api/resources_api.dart';
 import 'package:signupflow_api/src/api/root_api.dart';
+import 'package:signupflow_api/src/api/sms_api.dart';
 import 'package:signupflow_api/src/api/solutions_api.dart';
 import 'package:signupflow_api/src/api/solver_api.dart';
 import 'package:signupflow_api/src/api/teams_api.dart';
@@ -115,6 +117,12 @@ class SignupflowApi {
     return AvailabilityApi(dio, serializers);
   }
 
+  /// Get BillingApi instance, base route and serializer can be overridden by a given but be careful,
+  /// by doing that all interceptors will not be executed
+  BillingApi getBillingApi() {
+    return BillingApi(dio, serializers);
+  }
+
   /// Get CalendarApi instance, base route and serializer can be overridden by a given but be careful,
   /// by doing that all interceptors will not be executed
   CalendarApi getCalendarApi() {
@@ -191,6 +199,12 @@ class SignupflowApi {
   /// by doing that all interceptors will not be executed
   RootApi getRootApi() {
     return RootApi(dio, serializers);
+  }
+
+  /// Get SmsApi instance, base route and serializer can be overridden by a given but be careful,
+  /// by doing that all interceptors will not be executed
+  SmsApi getSmsApi() {
+    return SmsApi(dio, serializers);
   }
 
   /// Get SolutionsApi instance, base route and serializer can be overridden by a given but be careful,

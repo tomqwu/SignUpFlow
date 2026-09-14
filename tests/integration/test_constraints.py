@@ -15,6 +15,8 @@ import time
 import httpx
 import pytest
 
+from tests.integration._identity import bootstrap_admin, invite_member
+
 
 def _unique(prefix: str) -> str:
     return f"{prefix}_{int(time.time() * 1000)}"
@@ -30,37 +32,26 @@ def constraints_org(api_server, api_base):
 
     bootstrap = httpx.Client()
 
-    org_resp = bootstrap.post(
-        f"{api_base}/organizations/",
-        json={"id": org_id, "name": f"Constraints Setup {marker}", "region": "US", "config": {}},
+    admin_data = bootstrap_admin(
+        bootstrap,
+        api_base,
+        org_id=org_id,
+        org_name=f"Constraints Setup {marker}",
+        name="Constraint Admin",
+        email=admin_email,
+        password="AdminPass123!",
     )
-    assert org_resp.status_code == 201, org_resp.text
-
-    admin_resp = bootstrap.post(
-        f"{api_base}/auth/signup",
-        json={
-            "org_id": org_id,
-            "name": "Constraint Admin",
-            "email": admin_email,
-            "password": "AdminPass123!",
-        },
-    )
-    assert admin_resp.status_code == 201, admin_resp.text
-    admin_data = admin_resp.json()
     assert "admin" in admin_data["roles"]
 
-    vol_resp = bootstrap.post(
-        f"{api_base}/auth/signup",
-        json={
-            "org_id": org_id,
-            "name": "Constraint Volunteer",
-            "email": vol_email,
-            "password": "VolPass123!",
-            "roles": ["volunteer"],
-        },
+    vol_data = invite_member(
+        bootstrap,
+        api_base,
+        org_id=org_id,
+        admin_token=admin_data["token"],
+        name="Constraint Volunteer",
+        email=vol_email,
+        password="VolPass123!",
     )
-    assert vol_resp.status_code == 201, vol_resp.text
-    vol_data = vol_resp.json()
     assert "admin" not in vol_data["roles"]
 
     bootstrap.close()

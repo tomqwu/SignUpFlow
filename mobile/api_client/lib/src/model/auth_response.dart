@@ -12,15 +12,15 @@ part 'auth_response.g.dart';
 /// Authentication response.
 ///
 /// Properties:
-/// * [email] 
-/// * [language] 
-/// * [name] 
-/// * [orgId] 
-/// * [personId] 
+/// * [email]
+/// * [language]
+/// * [name]
+/// * [orgId]
+/// * [personId]
 /// * [refreshToken] - Refresh token (long-lived). Use POST /auth/refresh to exchange for a fresh access+refresh token pair.
-/// * [roles] 
-/// * [timezone] 
-/// * [token] 
+/// * [roles]
+/// * [timezone]
+/// * [token]
 @BuiltValue()
 abstract class AuthResponse implements Built<AuthResponse, AuthResponseBuilder> {
   @BuiltValueField(wireName: r'email')

@@ -3,12 +3,13 @@
 import uuid
 
 from fastapi import APIRouter, Depends, HTTPException, status
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel, ConfigDict, EmailStr, Field
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from api.database import get_db
-from api.dependencies import get_current_user, get_organization_by_id
-from api.models import Person
+from api.dependencies import get_current_user
+from api.models import Organization, Person
 from api.security import (
     create_access_token,
     create_refresh_token,
@@ -32,15 +33,17 @@ router = APIRouter(prefix="/auth", tags=["auth"])
 
 # Schemas
 class SignupRequest(BaseModel):
-    """Signup request."""
+    """Atomic organization and first-administrator bootstrap request."""
 
-    org_id: str = Field(..., description="Organization ID")
+    org_id: str = Field(..., min_length=1, description="Organization ID")
+    org_name: str = Field(..., min_length=1, description="Organization name")
+    region: str | None = Field(None, description="Region code (e.g., CA-ON, US-CA)")
     name: str = Field(..., description="Full name")
     email: EmailStr = Field(..., description="Email address")
     password: str = Field(..., min_length=6, description="Password (min 6 characters)")
-    roles: list[str] | None = Field(default_factory=list, description="User roles")
-    timezone: str | None = Field(default="UTC", description="User timezone")
-    language: str | None = Field(default="en", description="User language")
+    timezone: str = Field(default="UTC", description="User timezone")
+    language: str = Field(default="en", description="User language")
+    model_config = ConfigDict(extra="forbid")
 
 
 class LoginRequest(BaseModel):
@@ -96,55 +99,49 @@ class ChangePasswordRequest(BaseModel):
     dependencies=[Depends(rate_limit("signup"))],
 )
 def signup(request: SignupRequest, db: Session = Depends(get_db)):
-    """Create a new user account. Rate limited to 3 requests per hour per IP."""
+    """Create one organization and its first admin in a single transaction."""
 
-    # Check if email already exists
     existing = db.query(Person).filter(Person.email == request.email).first()
     if existing:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Email already registered")
 
-    # Verify organization exists
-    get_organization_by_id(request.org_id, db)
+    existing_org = db.query(Organization).filter(Organization.id == request.org_id).first()
+    if existing_org:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Organization already exists; join it through an invitation",
+        )
 
-    # Check if this is the first user in the organization
-    existing_users_count = db.query(Person).filter(Person.org_id == request.org_id).count()
-    is_first_user = existing_users_count == 0
-
-    # Create person ID from email
     person_id = f"person_{request.email.split('@')[0]}_{uuid.uuid4().hex[:8]}"
-
-    # Hash password
     password_hash = hash_password(request.password)
-
-    # Determine roles: first user gets admin, others cannot self-assign admin
-    if is_first_user:
-        # First user in the organization automatically becomes admin
-        roles = ["admin"]
-    else:
-        # Non-first users cannot self-assign admin role during signup
-        # Admin role can only be granted by existing admins via invitation or role management
-        requested_roles = request.roles if request.roles else []
-        # Filter out admin role from requested roles (security: users can't make themselves admin)
-        safe_roles = [role for role in requested_roles if role != "admin"]
-        # Default to volunteer if no valid roles requested
-        roles = safe_roles if safe_roles else ["volunteer"]
-
-    # Create person
+    organization = Organization(
+        id=request.org_id,
+        name=request.org_name,
+        region=request.region,
+        config={},
+    )
     person = Person(
         id=person_id,
         org_id=request.org_id,
         name=request.name,
         email=request.email,
         password_hash=password_hash,
-        roles=roles,
+        roles=["admin"],
         timezone=request.timezone,
         language=request.language,
         password_changed_at=utcnow(),
         extra_data={},
     )
 
-    db.add(person)
-    db.commit()
+    db.add_all([organization, person])
+    try:
+        db.commit()
+    except IntegrityError as exc:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Organization or owner account already exists",
+        ) from exc
     db.refresh(person)
 
     # Generate access + refresh tokens (pwd_iat allows revocation on password change;

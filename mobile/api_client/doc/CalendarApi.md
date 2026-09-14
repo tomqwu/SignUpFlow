@@ -29,7 +29,7 @@ Admin-only force-reset of another user's calendar token.  Same as `/calendar/res
 import 'package:signupflow_api/api.dart';
 
 final api = SignupflowApi().getCalendarApi();
-final String personId = personId_example; // String | 
+final String personId = personId_example; // String |
 
 try {
     final response = api.adminResetCalendarToken(personId);
@@ -43,7 +43,7 @@ try {
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **personId** | **String**|  | 
+ **personId** | **String**|  |
 
 ### Return type
 
@@ -72,7 +72,7 @@ Public calendar feed endpoint for subscriptions.  This endpoint is accessed by c
 import 'package:signupflow_api/api.dart';
 
 final api = SignupflowApi().getCalendarApi();
-final String token = token_example; // String | 
+final String token = token_example; // String |
 
 try {
     final response = api.calendarFeed(token);
@@ -86,7 +86,7 @@ try {
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **token** | **String**|  | 
+ **token** | **String**|  |
 
 ### Return type
 
@@ -104,23 +104,22 @@ No authorization required
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
 # **exportOrganizationEvents**
-> JsonObject exportOrganizationEvents(orgId, personId, includeAssignments)
+> JsonObject exportOrganizationEvents(orgId, includeAssignments)
 
 Export Organization Events
 
-Export all organization events as ICS file (admin only).  This endpoint is for administrators to export all events in the organization.
+Export all organization events as ICS file (admin only).  Caller must be authenticated and an admin in `org_id`. The legacy `person_id` query param used as an auth proxy has been removed — the caller is now identified solely by their JWT.
 
 ### Example
 ```dart
 import 'package:signupflow_api/api.dart';
 
 final api = SignupflowApi().getCalendarApi();
-final String orgId = orgId_example; // String | 
-final String personId = personId_example; // String | 
-final bool includeAssignments = true; // bool | 
+final String orgId = orgId_example; // String |
+final bool includeAssignments = true; // bool |
 
 try {
-    final response = api.exportOrganizationEvents(orgId, personId, includeAssignments);
+    final response = api.exportOrganizationEvents(orgId, includeAssignments);
     print(response);
 } catch on DioException (e) {
     print('Exception when calling CalendarApi->exportOrganizationEvents: $e\n');
@@ -131,8 +130,7 @@ try {
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **orgId** | **String**|  | 
- **personId** | **String**|  | 
+ **orgId** | **String**|  |
  **includeAssignments** | **bool**|  | [optional] [default to true]
 
 ### Return type
@@ -141,7 +139,7 @@ Name | Type | Description  | Notes
 
 ### Authorization
 
-No authorization required
+[HTTPBearer](../README.md#HTTPBearer)
 
 ### HTTP request headers
 
@@ -155,14 +153,14 @@ No authorization required
 
 Export Personal Schedule
 
-Export personal schedule as ICS file.  This endpoint downloads an ICS file with all assigned events for a person.
+Export personal schedule as ICS file.  This endpoint downloads an ICS file with all assigned events for a person. Caller must be the target person or an admin in the same organization.
 
 ### Example
 ```dart
 import 'package:signupflow_api/api.dart';
 
 final api = SignupflowApi().getCalendarApi();
-final String personId = personId_example; // String | 
+final String personId = personId_example; // String |
 
 try {
     final response = api.exportPersonalSchedule(personId);
@@ -176,7 +174,7 @@ try {
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **personId** | **String**|  | 
+ **personId** | **String**|  |
 
 ### Return type
 
@@ -184,7 +182,7 @@ Name | Type | Description  | Notes
 
 ### Authorization
 
-No authorization required
+[HTTPBearer](../README.md#HTTPBearer)
 
 ### HTTP request headers
 
@@ -205,7 +203,7 @@ Get calendar subscription URL for a person.  Returns a webcal:// URL that can be
 import 'package:signupflow_api/api.dart';
 
 final api = SignupflowApi().getCalendarApi();
-final String personId = personId_example; // String | 
+final String personId = personId_example; // String |
 
 try {
     final response = api.getSubscriptionUrl(personId);
@@ -219,7 +217,7 @@ try {
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **personId** | **String**|  | 
+ **personId** | **String**|  |
 
 ### Return type
 
@@ -248,7 +246,7 @@ Reset calendar subscription token for a person.  This invalidates the old subscr
 import 'package:signupflow_api/api.dart';
 
 final api = SignupflowApi().getCalendarApi();
-final String personId = personId_example; // String | 
+final String personId = personId_example; // String |
 
 try {
     final response = api.resetCalendarToken(personId);
@@ -262,7 +260,7 @@ try {
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **personId** | **String**|  | 
+ **personId** | **String**|  |
 
 ### Return type
 

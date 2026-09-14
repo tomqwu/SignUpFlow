@@ -25,7 +25,7 @@ Check for scheduling conflicts before assigning a person to an event.  Detects: 
 import 'package:signupflow_api/api.dart';
 
 final api = SignupflowApi().getConflictsApi();
-final ConflictCheckRequest conflictCheckRequest = ; // ConflictCheckRequest | 
+final ConflictCheckRequest conflictCheckRequest = ; // ConflictCheckRequest |
 
 try {
     final response = api.checkConflicts(conflictCheckRequest);
@@ -39,7 +39,7 @@ try {
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **conflictCheckRequest** | [**ConflictCheckRequest**](ConflictCheckRequest.md)|  | 
+ **conflictCheckRequest** | [**ConflictCheckRequest**](ConflictCheckRequest.md)|  |
 
 ### Return type
 
@@ -85,8 +85,8 @@ try {
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **orgId** | **String**| Organization ID | 
- **personId** | **String**| Optional filter to a single person | [optional] 
+ **orgId** | **String**| Organization ID |
+ **personId** | **String**| Optional filter to a single person | [optional]
  **limit** | **int**| Page size, max 200 | [optional] [default to 50]
  **offset** | **int**| Number of rows to skip | [optional] [default to 0]
 

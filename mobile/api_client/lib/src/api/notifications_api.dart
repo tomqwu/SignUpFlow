@@ -38,7 +38,7 @@ class NotificationsApi {
   ///
   /// Returns a [Future] containing a [Response] with a [EmailPreferenceResponse] as data
   /// Throws [DioException] if API call or serialization fails
-  Future<Response<EmailPreferenceResponse>> getMyEmailPreferences({ 
+  Future<Response<EmailPreferenceResponse>> getMyEmailPreferences({
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -108,7 +108,7 @@ class NotificationsApi {
   /// Get single notification details.  Users can only view their own notifications.  **RBAC**: Authenticated user (must be notification recipient) **Multi-tenant**: Verified by recipient_id
   ///
   /// Parameters:
-  /// * [notificationId] 
+  /// * [notificationId]
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -118,7 +118,7 @@ class NotificationsApi {
   ///
   /// Returns a [Future] containing a [Response] with a [NotificationResponse] as data
   /// Throws [DioException] if API call or serialization fails
-  Future<Response<NotificationResponse>> getNotification({ 
+  Future<Response<NotificationResponse>> getNotification({
     required int notificationId,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
@@ -200,7 +200,7 @@ class NotificationsApi {
   ///
   /// Returns a [Future] containing a [Response] with a [NotificationStatsResponse] as data
   /// Throws [DioException] if API call or serialization fails
-  Future<Response<NotificationStatsResponse>> getOrganizationNotificationStats({ 
+  Future<Response<NotificationStatsResponse>> getOrganizationNotificationStats({
     required String orgId,
     int? days = 7,
     CancelToken? cancelToken,
@@ -287,7 +287,7 @@ class NotificationsApi {
   ///
   /// Returns a [Future] containing a [Response] with a [JsonObject] as data
   /// Throws [DioException] if API call or serialization fails
-  Future<Response<JsonObject>> getUnreadCount({ 
+  Future<Response<JsonObject>> getUnreadCount({
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -371,7 +371,7 @@ class NotificationsApi {
   ///
   /// Returns a [Future] containing a [Response] with a [NotificationListResponse] as data
   /// Throws [DioException] if API call or serialization fails
-  Future<Response<NotificationListResponse>> listNotifications({ 
+  Future<Response<NotificationListResponse>> listNotifications({
     required String orgId,
     String? status,
     String? type,
@@ -455,7 +455,7 @@ class NotificationsApi {
   /// Mark a notification as read by the recipient.  Sets &#x60;&#x60;opened_at&#x60;&#x60; to now (idempotent — does nothing if already set). The mobile Inbox calls this when the user taps a row.
   ///
   /// Parameters:
-  /// * [notificationId] 
+  /// * [notificationId]
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -465,7 +465,7 @@ class NotificationsApi {
   ///
   /// Returns a [Future] containing a [Response] with a [NotificationResponse] as data
   /// Throws [DioException] if API call or serialization fails
-  Future<Response<NotificationResponse>> markNotificationRead({ 
+  Future<Response<NotificationResponse>> markNotificationRead({
     required int notificationId,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
@@ -547,7 +547,7 @@ class NotificationsApi {
   ///
   /// Returns a [Future] containing a [Response] with a [JsonObject] as data
   /// Throws [DioException] if API call or serialization fails
-  Future<Response<JsonObject>> sendTestNotification({ 
+  Future<Response<JsonObject>> sendTestNotification({
     required String recipientEmail,
     required String orgId,
     CancelToken? cancelToken,
@@ -625,7 +625,7 @@ class NotificationsApi {
   /// Update current user&#39;s email notification preferences.  Allows users to: - Change notification frequency (immediate, daily, weekly, disabled) - Enable/disable specific notification types - Set language and timezone for emails - Set preferred digest delivery hour  **RBAC**: Authenticated user
   ///
   /// Parameters:
-  /// * [emailPreferenceUpdate] 
+  /// * [emailPreferenceUpdate]
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -635,7 +635,7 @@ class NotificationsApi {
   ///
   /// Returns a [Future] containing a [Response] with a [EmailPreferenceResponse] as data
   /// Throws [DioException] if API call or serialization fails
-  Future<Response<EmailPreferenceResponse>> updateMyEmailPreferences({ 
+  Future<Response<EmailPreferenceResponse>> updateMyEmailPreferences({
     required EmailPreferenceUpdate emailPreferenceUpdate,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,

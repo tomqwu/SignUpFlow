@@ -13,15 +13,15 @@ part 'constraint_response.g.dart';
 /// Schema for constraint response.
 ///
 /// Properties:
-/// * [createdAt] 
-/// * [id] 
+/// * [createdAt]
+/// * [id]
 /// * [key] - Constraint key/identifier
-/// * [orgId] 
-/// * [params] 
+/// * [orgId]
+/// * [params]
 /// * [predicate] - Constraint predicate/rule
 /// * [type] - Constraint type: hard or soft
-/// * [updatedAt] 
-/// * [weight] 
+/// * [updatedAt]
+/// * [weight]
 @BuiltValue()
 abstract class ConstraintResponse implements Built<ConstraintResponse, ConstraintResponseBuilder> {
   @BuiltValueField(wireName: r'created_at')

@@ -3,7 +3,6 @@
 
 Tests the /api/v1/organizations endpoints over real HTTP against the
 session-scoped uvicorn api_server:
-- POST   /organizations/                 - Create
 - GET    /organizations/                 - List (search, include_cancelled)
 - GET    /organizations/{org_id}         - Get one
 - PUT    /organizations/{org_id}         - Update
@@ -16,6 +15,8 @@ import time
 
 import httpx
 import pytest
+
+from tests.integration._identity import bootstrap_admin
 
 
 def _unique(prefix: str) -> str:
@@ -30,24 +31,17 @@ def setup_admin(api_server, api_base):
     org_id = _unique("org_admin_setup")
     # Bake org_id into name so we can filter by q= even when other tests
     # create many orgs concurrently.
-    org_response = client.post(
-        f"{api_base}/organizations/",
-        json={"id": org_id, "name": f"Admin Setup Org {org_id}", "region": "US", "config": {}},
-    )
-    assert org_response.status_code == 201, org_response.text
-
     admin_email = f"admin_{org_id}@test.com"
-    signup_response = client.post(
-        f"{api_base}/auth/signup",
-        json={
-            "org_id": org_id,
-            "name": "Admin User",
-            "email": admin_email,
-            "password": "AdminPass123!",
-        },
+    admin_data = bootstrap_admin(
+        client,
+        api_base,
+        org_id=org_id,
+        org_name=f"Admin Setup Org {org_id}",
+        name="Admin User",
+        email=admin_email,
+        password="AdminPass123!",
+        region="US",
     )
-    assert signup_response.status_code == 201, signup_response.text
-    admin_data = signup_response.json()
     assert "admin" in admin_data["roles"]
 
     client.headers["Authorization"] = f"Bearer {admin_data['token']}"
@@ -60,40 +54,15 @@ def setup_admin(api_server, api_base):
 
 
 class TestCreateOrganization:
-    """POST /organizations/."""
+    """Organization creation is part of atomic signup, never an empty public write."""
 
-    def test_create_success(self, api_server, api_base):
-        client = httpx.Client()
-        org_id = _unique("create_org")
-
-        response = client.post(
+    def test_public_empty_organization_creation_is_unavailable(self, api_server, api_base):
+        response = httpx.post(
             f"{api_base}/organizations/",
-            json={"id": org_id, "name": "Create Test", "region": "US", "config": {"tz": "UTC"}},
+            json={"id": _unique("empty_org"), "name": "Empty Org"},
         )
 
-        assert response.status_code == 201, response.text
-        body = response.json()
-        assert body["id"] == org_id
-        assert body["name"] == "Create Test"
-        assert body["region"] == "US"
-        assert body["config"] == {"tz": "UTC"}
-
-    def test_create_duplicate_id_rejected(self, api_server, api_base):
-        client = httpx.Client()
-        org_id = _unique("dup_create_org")
-
-        first = client.post(
-            f"{api_base}/organizations/",
-            json={"id": org_id, "name": "Original", "region": "US", "config": {}},
-        )
-        assert first.status_code == 201, first.text
-
-        second = client.post(
-            f"{api_base}/organizations/",
-            json={"id": org_id, "name": "Duplicate", "region": "US", "config": {}},
-        )
-        assert second.status_code == 409
-        assert "already exists" in second.json()["detail"]
+        assert response.status_code == 405
 
 
 class TestGetOrganization:
@@ -132,10 +101,16 @@ class TestListOrganizations:
         data = setup_admin
         client, api_base = data["client"], data["api_base"]
         other = _unique("foreign")
-        created = client.post(
-            f"{api_base}/organizations/", json={"id": other, "name": data["org_id"]}
-        )
-        assert created.status_code == 201
+        with httpx.Client() as bootstrap:
+            bootstrap_admin(
+                bootstrap,
+                api_base,
+                org_id=other,
+                org_name=data["org_id"],
+                name="Foreign Admin",
+                email=f"admin_{other}@test.com",
+                password="AdminPass123!",
+            )
         response = client.get(f"{api_base}/organizations/", params={"q": data["org_id"]})
         assert response.status_code == 200
         assert [row["id"] for row in response.json()["items"]] == [data["org_id"]]
@@ -186,11 +161,6 @@ class TestCancelRestoreOrganization:
     def test_cancel_requires_auth(self, api_server, api_base):
         client = httpx.Client()
         org_id = _unique("cancel_auth_org")
-        client.post(
-            f"{api_base}/organizations/",
-            json={"id": org_id, "name": "Auth Guard", "region": "US", "config": {}},
-        )
-
         response = client.post(f"{api_base}/organizations/{org_id}/cancel")
 
         # FastAPI HTTPBearer returns 403 when the Authorization header is missing.

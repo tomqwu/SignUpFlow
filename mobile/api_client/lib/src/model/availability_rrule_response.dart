@@ -11,7 +11,7 @@ part 'availability_rrule_response.g.dart';
 /// Schema for the single rrule string per person.
 ///
 /// Properties:
-/// * [rrule] 
+/// * [rrule]
 @BuiltValue()
 abstract class AvailabilityRruleResponse implements Built<AvailabilityRruleResponse, AvailabilityRruleResponseBuilder> {
   @BuiltValueField(wireName: r'rrule')

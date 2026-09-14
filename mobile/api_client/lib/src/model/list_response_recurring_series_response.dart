@@ -13,10 +13,10 @@ part 'list_response_recurring_series_response.g.dart';
 /// ListResponseRecurringSeriesResponse
 ///
 /// Properties:
-/// * [items] 
-/// * [limit] 
-/// * [offset] 
-/// * [total] 
+/// * [items]
+/// * [limit]
+/// * [offset]
+/// * [total]
 @BuiltValue()
 abstract class ListResponseRecurringSeriesResponse implements Built<ListResponseRecurringSeriesResponse, ListResponseRecurringSeriesResponseBuilder> {
   @BuiltValueField(wireName: r'items')

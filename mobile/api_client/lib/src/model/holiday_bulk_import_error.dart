@@ -11,9 +11,9 @@ part 'holiday_bulk_import_error.g.dart';
 /// HolidayBulkImportError
 ///
 /// Properties:
-/// * [label] 
-/// * [message] 
-/// * [row] 
+/// * [label]
+/// * [message]
+/// * [row]
 @BuiltValue()
 abstract class HolidayBulkImportError implements Built<HolidayBulkImportError, HolidayBulkImportErrorBuilder> {
   @BuiltValueField(wireName: r'label')

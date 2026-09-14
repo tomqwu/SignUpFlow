@@ -31,8 +31,8 @@ the administrator invites all fourteen members with their scheduling qualificati
 each member accepts through the invitation page, and the administrator verifies the
 qualification editor. Five repeated weeks are then created by API before the browser
 creates the remaining event, solves, reviews, publishes, and records member response.
-Organization bootstrap and the five repeated events remain API setup in this test;
-their normal-UI coverage is tracked separately.
+Organization bootstrap is atomic and the five repeated events remain API setup in
+this browser test; normal browser signup has separate web coverage.
 
 `church.json` and `basketball.json` are the executable role/headcount fixtures.
 `tests/playbooks/` validates and discovers them for both test tiers. Each run creates new
@@ -143,9 +143,9 @@ overflow assertion alone is not a comprehensive visual/accessibility audit.
   maximum weekly load, rest/travel gaps, family grouping, or skill certification.
 - Team membership is not a proven eligibility boundary for role-based solving.
   These fixtures use one scheduling organization and explicit role qualifications.
-- Scheduling role strings are not separate permission records. Use `admin` only
-  for administrators, `volunteer` plus scheduling roles for members. Browser
-  invitation controls do not expose the complete custom-role setup used here.
+- Scheduling qualifications are stored beside, but are not, permission records.
+  Every account has exactly one permission role (`admin` or `volunteer`); use
+  `volunteer` plus scheduling qualifications for members.
 - These tests prove publish authorization, not complete tenant security. Several
   solution-read and availability routes still need authentication/isolation work.
 - Role-based solver assignments now retain their selected role. Old solutions

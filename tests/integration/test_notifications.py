@@ -27,6 +27,7 @@ import pytest
 from api.database import SessionLocal
 from api.models import Notification, NotificationStatus, NotificationType
 from api.timeutils import utcnow
+from tests.integration._identity import bootstrap_admin, invite_member
 
 
 def _unique(prefix: str) -> str:
@@ -70,49 +71,33 @@ def notifications_org(api_server, api_base):
     vol2_email = f"vol2_{marker}@test.com"
 
     bootstrap = httpx.Client()
-    org_resp = bootstrap.post(
-        f"{api_base}/organizations/",
-        json={"id": org_id, "name": f"Notif Setup {marker}", "region": "US", "config": {}},
+    admin_data = bootstrap_admin(
+        bootstrap,
+        api_base,
+        org_id=org_id,
+        org_name=f"Notif Setup {marker}",
+        name="Notif Admin",
+        email=admin_email,
+        password="AdminPass123!",
     )
-    assert org_resp.status_code == 201, org_resp.text
-
-    admin_resp = bootstrap.post(
-        f"{api_base}/auth/signup",
-        json={
-            "org_id": org_id,
-            "name": "Notif Admin",
-            "email": admin_email,
-            "password": "AdminPass123!",
-        },
+    vol1_data = invite_member(
+        bootstrap,
+        api_base,
+        org_id=org_id,
+        admin_token=admin_data["token"],
+        name="Notif Vol One",
+        email=vol1_email,
+        password="VolPass123!",
     )
-    assert admin_resp.status_code == 201, admin_resp.text
-    admin_data = admin_resp.json()
-
-    vol1_resp = bootstrap.post(
-        f"{api_base}/auth/signup",
-        json={
-            "org_id": org_id,
-            "name": "Notif Vol One",
-            "email": vol1_email,
-            "password": "VolPass123!",
-            "roles": ["volunteer"],
-        },
+    vol2_data = invite_member(
+        bootstrap,
+        api_base,
+        org_id=org_id,
+        admin_token=admin_data["token"],
+        name="Notif Vol Two",
+        email=vol2_email,
+        password="VolPass123!",
     )
-    assert vol1_resp.status_code == 201, vol1_resp.text
-    vol1_data = vol1_resp.json()
-
-    vol2_resp = bootstrap.post(
-        f"{api_base}/auth/signup",
-        json={
-            "org_id": org_id,
-            "name": "Notif Vol Two",
-            "email": vol2_email,
-            "password": "VolPass123!",
-            "roles": ["volunteer"],
-        },
-    )
-    assert vol2_resp.status_code == 201, vol2_resp.text
-    vol2_data = vol2_resp.json()
 
     bootstrap.close()
 
@@ -150,23 +135,15 @@ def second_org(api_server, api_base):
     admin_email = f"admin_{marker}@test.com"
 
     bootstrap = httpx.Client()
-    org_resp = bootstrap.post(
-        f"{api_base}/organizations/",
-        json={"id": org_id, "name": f"Second Org {marker}", "region": "US", "config": {}},
+    admin_data = bootstrap_admin(
+        bootstrap,
+        api_base,
+        org_id=org_id,
+        org_name=f"Second Org {marker}",
+        name="Second Admin",
+        email=admin_email,
+        password="AdminPass123!",
     )
-    assert org_resp.status_code == 201, org_resp.text
-
-    admin_resp = bootstrap.post(
-        f"{api_base}/auth/signup",
-        json={
-            "org_id": org_id,
-            "name": "Second Admin",
-            "email": admin_email,
-            "password": "AdminPass123!",
-        },
-    )
-    assert admin_resp.status_code == 201, admin_resp.text
-    admin_data = admin_resp.json()
     bootstrap.close()
 
     admin_client = httpx.Client()

@@ -70,7 +70,7 @@ Get single notification details.  Users can only view their own notifications.  
 import 'package:signupflow_api/api.dart';
 
 final api = SignupflowApi().getNotificationsApi();
-final int notificationId = 56; // int | 
+final int notificationId = 56; // int |
 
 try {
     final response = api.getNotification(notificationId);
@@ -84,7 +84,7 @@ try {
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **notificationId** | **int**|  | 
+ **notificationId** | **int**|  |
 
 ### Return type
 
@@ -128,7 +128,7 @@ try {
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **orgId** | **String**| Organization ID | 
+ **orgId** | **String**| Organization ID |
  **days** | **int**| Number of days to analyze | [optional] [default to 7]
 
 ### Return type
@@ -215,9 +215,9 @@ try {
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **orgId** | **String**| Organization ID | 
- **status** | **String**| Filter by status (pending, sent, delivered, etc.) | [optional] 
- **type** | **String**| Filter by type (assignment, reminder, update, cancellation) | [optional] 
+ **orgId** | **String**| Organization ID |
+ **status** | **String**| Filter by status (pending, sent, delivered, etc.) | [optional]
+ **type** | **String**| Filter by type (assignment, reminder, update, cancellation) | [optional]
  **limit** | **int**| Number of notifications to return | [optional] [default to 50]
  **offset** | **int**| Pagination offset | [optional] [default to 0]
 
@@ -248,7 +248,7 @@ Mark a notification as read by the recipient.  Sets ``opened_at`` to now (idempo
 import 'package:signupflow_api/api.dart';
 
 final api = SignupflowApi().getNotificationsApi();
-final int notificationId = 56; // int | 
+final int notificationId = 56; // int |
 
 try {
     final response = api.markNotificationRead(notificationId);
@@ -262,7 +262,7 @@ try {
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **notificationId** | **int**|  | 
+ **notificationId** | **int**|  |
 
 ### Return type
 
@@ -306,8 +306,8 @@ try {
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **recipientEmail** | **String**| Email address to send test notification | 
- **orgId** | **String**| Organization ID | 
+ **recipientEmail** | **String**| Email address to send test notification |
+ **orgId** | **String**| Organization ID |
 
 ### Return type
 
@@ -336,7 +336,7 @@ Update current user's email notification preferences.  Allows users to: - Change
 import 'package:signupflow_api/api.dart';
 
 final api = SignupflowApi().getNotificationsApi();
-final EmailPreferenceUpdate emailPreferenceUpdate = ; // EmailPreferenceUpdate | 
+final EmailPreferenceUpdate emailPreferenceUpdate = ; // EmailPreferenceUpdate |
 
 try {
     final response = api.updateMyEmailPreferences(emailPreferenceUpdate);
@@ -350,7 +350,7 @@ try {
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **emailPreferenceUpdate** | [**EmailPreferenceUpdate**](EmailPreferenceUpdate.md)|  | 
+ **emailPreferenceUpdate** | [**EmailPreferenceUpdate**](EmailPreferenceUpdate.md)|  |
 
 ### Return type
 

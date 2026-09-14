@@ -14,10 +14,10 @@ part 'solution_stats_response.g.dart';
 /// Stats response for ``GET /solutions/{id}/stats`` (admin only).
 ///
 /// Properties:
-/// * [fairness] 
-/// * [solutionId] 
-/// * [stability] 
-/// * [workload] 
+/// * [fairness]
+/// * [solutionId]
+/// * [stability]
+/// * [workload]
 @BuiltValue()
 abstract class SolutionStatsResponse implements Built<SolutionStatsResponse, SolutionStatsResponseBuilder> {
   @BuiltValueField(wireName: r'fairness')

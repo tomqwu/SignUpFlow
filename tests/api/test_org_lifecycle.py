@@ -1,9 +1,8 @@
 """
 Organization lifecycle: creation, RBAC, teams, events.
 
-Tests the real-world flow of setting up an organization with proper
-role enforcement — first user gets admin, subsequent users are volunteers,
-and volunteers can't perform admin actions.
+Tests the real-world flow of atomically setting up an organization, inviting
+later members, and enforcing administrator-only actions.
 """
 
 from datetime import datetime, timedelta
@@ -33,13 +32,11 @@ class TestOrgLifecycle:
         user = seed_user(client, self.ORG, self.ADMIN_EMAIL, "Admin User", self.ADMIN_PW)
         assert "admin" in user["roles"]
 
-    def test_second_user_becomes_volunteer(self, client):
-        """Second user can't self-assign admin, defaults to volunteer."""
+    def test_later_user_joins_as_invited_volunteer(self, client):
+        """Later membership follows the invitation's volunteer access."""
         seed_org(client, self.ORG)
         seed_user(client, self.ORG, self.ADMIN_EMAIL, "Admin", self.ADMIN_PW)
-        vol = seed_user(
-            client, self.ORG, self.VOL_EMAIL, "Volunteer", self.VOL_PW, roles=["admin"]
-        )  # Tries to request admin!
+        vol = seed_user(client, self.ORG, self.VOL_EMAIL, "Volunteer", self.VOL_PW)
         assert "admin" not in vol["roles"]
         assert "volunteer" in vol["roles"]
 
@@ -51,6 +48,7 @@ class TestOrgLifecycle:
             "/api/v1/auth/signup",
             json={
                 "org_id": self.ORG,
+                "org_name": "Duplicate Org",
                 "name": "Duplicate",
                 "email": self.ADMIN_EMAIL,
                 "password": "AnyPass123!",

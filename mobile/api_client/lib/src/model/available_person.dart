@@ -12,12 +12,12 @@ part 'available_person.g.dart';
 /// Person available for an event.
 ///
 /// Properties:
-/// * [email] 
-/// * [id] 
-/// * [isAssigned] 
-/// * [isBlocked] 
-/// * [name] 
-/// * [roles] 
+/// * [email]
+/// * [id]
+/// * [isAssigned]
+/// * [isBlocked]
+/// * [name]
+/// * [roles]
 @BuiltValue()
 abstract class AvailablePerson implements Built<AvailablePerson, AvailablePersonBuilder> {
   @BuiltValueField(wireName: r'email')

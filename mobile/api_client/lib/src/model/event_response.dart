@@ -13,15 +13,15 @@ part 'event_response.g.dart';
 /// Schema for event response.
 ///
 /// Properties:
-/// * [createdAt] 
+/// * [createdAt]
 /// * [endTime] - Event end time
-/// * [extraData] 
-/// * [id] 
-/// * [orgId] 
-/// * [resourceId] 
+/// * [extraData]
+/// * [id]
+/// * [orgId]
+/// * [resourceId]
 /// * [startTime] - Event start time
 /// * [type] - Event type (match, shift, meeting)
-/// * [updatedAt] 
+/// * [updatedAt]
 @BuiltValue()
 abstract class EventResponse implements Built<EventResponse, EventResponseBuilder> {
   @BuiltValueField(wireName: r'created_at')

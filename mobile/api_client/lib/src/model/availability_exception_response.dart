@@ -12,8 +12,8 @@ part 'availability_exception_response.g.dart';
 /// Schema for an availability exception row.
 ///
 /// Properties:
-/// * [exceptionDate] 
-/// * [id] 
+/// * [exceptionDate]
+/// * [id]
 @BuiltValue()
 abstract class AvailabilityExceptionResponse implements Built<AvailabilityExceptionResponse, AvailabilityExceptionResponseBuilder> {
   @BuiltValueField(wireName: r'exception_date')

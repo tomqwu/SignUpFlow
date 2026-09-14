@@ -13,10 +13,10 @@ part 'constraint_update.g.dart';
 /// Schema for updating a constraint.
 ///
 /// Properties:
-/// * [params] 
-/// * [predicate] 
-/// * [type] 
-/// * [weight] 
+/// * [params]
+/// * [predicate]
+/// * [type]
+/// * [weight]
 @BuiltValue()
 abstract class ConstraintUpdate implements Built<ConstraintUpdate, ConstraintUpdateBuilder> {
   @BuiltValueField(wireName: r'params')

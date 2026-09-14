@@ -12,9 +12,9 @@ part 'holiday_bulk_import_item.g.dart';
 /// One item in a holiday bulk-import payload (no `id`; assigned by DB).
 ///
 /// Properties:
-/// * [date] 
-/// * [isLongWeekend] 
-/// * [label] 
+/// * [date]
+/// * [isLongWeekend]
+/// * [label]
 @BuiltValue()
 abstract class HolidayBulkImportItem implements Built<HolidayBulkImportItem, HolidayBulkImportItemBuilder> {
   @BuiltValueField(wireName: r'date')

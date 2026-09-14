@@ -7,6 +7,8 @@ Tests the ability to assign people to events with specific roles
 
 import time
 
+from tests.unit._identity import bootstrap_organization
+
 API_BASE = "/api/v1"
 
 
@@ -21,9 +23,7 @@ class TestEventRoleAssignment:
         event_id = f"role_event_{timestamp}"
 
         # Create org
-        client.post(
-            f"{API_BASE}/organizations/", json={"id": org_id, "name": "Test Org", "region": "Test"}
-        )
+        bootstrap_organization(client, json={"id": org_id, "name": "Test Org", "region": "Test"})
 
         # Create person
         client.post(
@@ -71,9 +71,7 @@ class TestEventRoleAssignment:
         event2_id = f"event2_{timestamp}"
 
         # Create org
-        client.post(
-            f"{API_BASE}/organizations/", json={"id": org_id, "name": "Test Org", "region": "Test"}
-        )
+        bootstrap_organization(client, json={"id": org_id, "name": "Test Org", "region": "Test"})
 
         # Create person
         client.post(
@@ -149,9 +147,7 @@ class TestEventRoleAssignment:
         event_id = f"no_role_event_{timestamp}"
 
         # Create org, person, and event
-        client.post(
-            f"{API_BASE}/organizations/", json={"id": org_id, "name": "Test Org", "region": "Test"}
-        )
+        bootstrap_organization(client, json={"id": org_id, "name": "Test Org", "region": "Test"})
         client.post(
             f"{API_BASE}/people/",
             json={
@@ -191,9 +187,7 @@ class TestEventRoleAssignment:
         event_id = f"get_role_event_{timestamp}"
 
         # Create org, person, and event
-        client.post(
-            f"{API_BASE}/organizations/", json={"id": org_id, "name": "Test Org", "region": "Test"}
-        )
+        bootstrap_organization(client, json={"id": org_id, "name": "Test Org", "region": "Test"})
         client.post(
             f"{API_BASE}/people/",
             json={
@@ -245,9 +239,7 @@ class TestEventRoleValidation:
         event_id = f"custom_role_event_{timestamp}"
 
         # Setup
-        client.post(
-            f"{API_BASE}/organizations/", json={"id": org_id, "name": "Test Org", "region": "Test"}
-        )
+        bootstrap_organization(client, json={"id": org_id, "name": "Test Org", "region": "Test"})
         client.post(
             f"{API_BASE}/people/",
             json={
@@ -290,9 +282,7 @@ class TestEventRoleValidation:
         event_id = f"persist_role_event_{timestamp}"
 
         # Setup
-        client.post(
-            f"{API_BASE}/organizations/", json={"id": org_id, "name": "Test Org", "region": "Test"}
-        )
+        bootstrap_organization(client, json={"id": org_id, "name": "Test Org", "region": "Test"})
         client.post(
             f"{API_BASE}/people/",
             json={
@@ -337,9 +327,7 @@ class TestEventRoleValidation:
         event_id = f"empty_role_event_{timestamp}"
 
         # Setup
-        client.post(
-            f"{API_BASE}/organizations/", json={"id": org_id, "name": "Test Org", "region": "Test"}
-        )
+        bootstrap_organization(client, json={"id": org_id, "name": "Test Org", "region": "Test"})
         client.post(
             f"{API_BASE}/people/",
             json={

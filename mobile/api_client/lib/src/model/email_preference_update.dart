@@ -12,11 +12,11 @@ part 'email_preference_update.g.dart';
 /// Schema for updating email preferences.
 ///
 /// Properties:
-/// * [digestHour] 
-/// * [enabledTypes] 
-/// * [frequency] 
-/// * [language] 
-/// * [timezone] 
+/// * [digestHour]
+/// * [enabledTypes]
+/// * [frequency]
+/// * [language]
+/// * [timezone]
 @BuiltValue()
 abstract class EmailPreferenceUpdate implements Built<EmailPreferenceUpdate, EmailPreferenceUpdateBuilder> {
   @BuiltValueField(wireName: r'digest_hour')

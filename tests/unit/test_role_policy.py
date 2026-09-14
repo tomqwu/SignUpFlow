@@ -2,7 +2,7 @@
 
 import pytest
 
-from api.roles import build_roles, parse_qualifications, replace_qualifications
+from api.roles import build_roles, normalize_roles, parse_qualifications, replace_qualifications
 
 pytestmark = pytest.mark.unit
 
@@ -43,3 +43,26 @@ def test_replace_qualifications_preserves_access_without_escalation():
         "volunteer",
         "scorekeeper",
     ]
+
+
+def test_normalize_roles_defaults_custom_qualifications_to_volunteer_access():
+    assert normalize_roles(["usher", "sound"]) == ["volunteer", "usher", "sound"]
+
+
+def test_normalize_roles_allows_one_exact_permission_role():
+    assert normalize_roles(["admin", "coach"]) == ["admin", "coach"]
+    assert normalize_roles(["volunteer", "center"]) == ["volunteer", "center"]
+
+
+@pytest.mark.parametrize(
+    "roles",
+    [
+        ["Admin", "usher"],
+        ["VOLUNTEER", "center"],
+        ["admin", "volunteer"],
+        ["volunteer", "lead pastor"],
+    ],
+)
+def test_normalize_roles_rejects_ambiguous_or_invalid_access(roles):
+    with pytest.raises(ValueError):
+        normalize_roles(roles)

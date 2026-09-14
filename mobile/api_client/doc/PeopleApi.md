@@ -32,7 +32,7 @@ import 'package:signupflow_api/api.dart';
 
 final api = SignupflowApi().getPeopleApi();
 final String orgId = orgId_example; // String | Organization to import people into
-final BuiltMap<String, JsonObject> requestBody = Object; // BuiltMap<String, JsonObject> | 
+final BuiltMap<String, JsonObject> requestBody = Object; // BuiltMap<String, JsonObject> |
 
 try {
     final response = api.bulkImportPeople(orgId, requestBody);
@@ -46,8 +46,8 @@ try {
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **orgId** | **String**| Organization to import people into | 
- **requestBody** | [**BuiltMap&lt;String, JsonObject&gt;**](JsonObject.md)|  | 
+ **orgId** | **String**| Organization to import people into |
+ **requestBody** | [**BuiltMap&lt;String, JsonObject&gt;**](JsonObject.md)|  |
 
 ### Return type
 
@@ -76,7 +76,7 @@ Create a new person (admin only).
 import 'package:signupflow_api/api.dart';
 
 final api = SignupflowApi().getPeopleApi();
-final PersonCreate personCreate = ; // PersonCreate | 
+final PersonCreate personCreate = ; // PersonCreate |
 
 try {
     final response = api.createPerson(personCreate);
@@ -90,7 +90,7 @@ try {
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **personCreate** | [**PersonCreate**](PersonCreate.md)|  | 
+ **personCreate** | [**PersonCreate**](PersonCreate.md)|  |
 
 ### Return type
 
@@ -119,7 +119,7 @@ Delete person (admin only).
 import 'package:signupflow_api/api.dart';
 
 final api = SignupflowApi().getPeopleApi();
-final String personId = personId_example; // String | 
+final String personId = personId_example; // String |
 
 try {
     api.deletePerson(personId);
@@ -132,7 +132,7 @@ try {
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **personId** | **String**|  | 
+ **personId** | **String**|  |
 
 ### Return type
 
@@ -200,7 +200,7 @@ Get person by ID. Users can only view people from their own organization.
 import 'package:signupflow_api/api.dart';
 
 final api = SignupflowApi().getPeopleApi();
-final String personId = personId_example; // String | 
+final String personId = personId_example; // String |
 
 try {
     final response = api.getPerson(personId);
@@ -214,7 +214,7 @@ try {
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **personId** | **String**|  | 
+ **personId** | **String**|  |
 
 ### Return type
 
@@ -262,10 +262,10 @@ try {
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **orgId** | **String**| Filter by organization ID | [optional] 
- **role** | **String**| Filter by role | [optional] 
- **q** | **String**| Case-insensitive search across name and email | [optional] 
- **status** | **String**| Filter by Person.status (active/inactive/invited) | [optional] 
+ **orgId** | **String**| Filter by organization ID | [optional]
+ **role** | **String**| Filter by role | [optional]
+ **q** | **String**| Case-insensitive search across name and email | [optional]
+ **status** | **String**| Filter by Person.status (active/inactive/invited) | [optional]
  **limit** | **int**| Page size, max 200 | [optional] [default to 50]
  **offset** | **int**| Number of rows to skip | [optional] [default to 0]
 
@@ -296,7 +296,7 @@ Update the current authenticated user's profile.
 import 'package:signupflow_api/api.dart';
 
 final api = SignupflowApi().getPeopleApi();
-final PersonUpdate personUpdate = ; // PersonUpdate | 
+final PersonUpdate personUpdate = ; // PersonUpdate |
 
 try {
     final response = api.updateCurrentPerson(personUpdate);
@@ -310,7 +310,7 @@ try {
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **personUpdate** | [**PersonUpdate**](PersonUpdate.md)|  | 
+ **personUpdate** | [**PersonUpdate**](PersonUpdate.md)|  |
 
 ### Return type
 
@@ -339,8 +339,8 @@ Update person. Users can edit themselves, admins can edit anyone in their org.
 import 'package:signupflow_api/api.dart';
 
 final api = SignupflowApi().getPeopleApi();
-final String personId = personId_example; // String | 
-final PersonUpdate personUpdate = ; // PersonUpdate | 
+final String personId = personId_example; // String |
+final PersonUpdate personUpdate = ; // PersonUpdate |
 
 try {
     final response = api.updatePerson(personId, personUpdate);
@@ -354,8 +354,8 @@ try {
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **personId** | **String**|  | 
- **personUpdate** | [**PersonUpdate**](PersonUpdate.md)|  | 
+ **personId** | **String**|  |
+ **personUpdate** | [**PersonUpdate**](PersonUpdate.md)|  |
 
 ### Return type
 

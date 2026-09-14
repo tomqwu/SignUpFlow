@@ -18,7 +18,58 @@ from datetime import datetime, timedelta
 import pytest
 import requests
 
-API_BASE_URL = "http://localhost:8000/api"
+API_BASE_URL = "http://localhost:8000/api/v1"
+
+
+def _bootstrap_admin(org_id: str, org_name: str, email: str, name: str) -> dict[str, str]:
+    response = requests.post(
+        f"{API_BASE_URL}/auth/signup",
+        json={
+            "org_id": org_id,
+            "org_name": org_name,
+            "email": email,
+            "password": "Test123!",
+            "name": name,
+        },
+    )
+    assert response.status_code == 201, response.text
+    return {"Authorization": f"Bearer {response.json()['token']}"}
+
+
+def _create_people(headers: dict[str, str], org_id: str, prefix: str, count: int) -> None:
+    response = requests.post(
+        f"{API_BASE_URL}/people/bulk?org_id={org_id}",
+        headers=headers,
+        json={
+            "items": [
+                {
+                    "id": f"{prefix}-{index}",
+                    "name": f"Person {index}",
+                    "email": f"{prefix}-{index}@example.com",
+                    "roles": ["volunteer"],
+                }
+                for index in range(count)
+            ]
+        },
+    )
+    assert response.status_code == 200, response.text
+    assert response.json()["created"] == count
+
+
+def _invite_member(
+    headers: dict[str, str], org_id: str, email: str, name: str, password: str
+) -> None:
+    invitation = requests.post(
+        f"{API_BASE_URL}/invitations?org_id={org_id}",
+        headers=headers,
+        json={"email": email, "name": name, "roles": ["volunteer"]},
+    )
+    assert invitation.status_code == 201, invitation.text
+    acceptance = requests.post(
+        f"{API_BASE_URL}/invitations/{invitation.json()['token']}/accept",
+        json={"password": password, "timezone": "UTC"},
+    )
+    assert acceptance.status_code == 201, acceptance.text
 
 
 class TestResponseTimePerformance:
@@ -34,19 +85,7 @@ class TestResponseTimePerformance:
         org_id = f"org_perf_login_{int(time.time())}"
         user_email = f"perf_login_{int(time.time())}@test.com"
 
-        requests.post(
-            f"{API_BASE_URL}/organizations/", json={"id": org_id, "name": "Perf Login Org"}
-        )
-
-        requests.post(
-            f"{API_BASE_URL}/auth/signup",
-            json={
-                "email": user_email,
-                "password": "Test123!",
-                "name": "Perf User",
-                "org_id": org_id,
-            },
-        )
+        _bootstrap_admin(org_id, "Perf Login Org", user_email, "Perf User")
 
         # Measure login response time
         start_time = time.time()
@@ -73,35 +112,10 @@ class TestResponseTimePerformance:
         org_id = f"org_perf_people_{int(time.time())}"
         user_email = f"perf_people_{int(time.time())}@test.com"
 
-        requests.post(
-            f"{API_BASE_URL}/organizations/", json={"id": org_id, "name": "Perf People Org"}
-        )
-
-        signup_response = requests.post(
-            f"{API_BASE_URL}/auth/signup",
-            json={
-                "email": user_email,
-                "password": "Test123!",
-                "name": "Perf User",
-                "org_id": org_id,
-                "roles": ["admin"],
-            },
-        )
-        token = signup_response.json()["token"]
-
-        headers = {"Authorization": f"Bearer {token}"}
+        headers = _bootstrap_admin(org_id, "Perf People Org", user_email, "Perf User")
 
         # Add 10 people to org
-        for i in range(10):
-            requests.post(
-                f"{API_BASE_URL}/auth/signup",
-                json={
-                    "email": f"person{i}_{int(time.time())}@test.com",
-                    "password": "Test123!",
-                    "name": f"Person {i}",
-                    "org_id": org_id,
-                },
-            )
+        _create_people(headers, org_id, f"perf-people-{int(time.time())}", 10)
 
         # Measure GET /people response time
         start_time = time.time()
@@ -126,23 +140,7 @@ class TestResponseTimePerformance:
         org_id = f"org_perf_events_{int(time.time())}"
         user_email = f"perf_events_{int(time.time())}@test.com"
 
-        requests.post(
-            f"{API_BASE_URL}/organizations/", json={"id": org_id, "name": "Perf Events Org"}
-        )
-
-        signup_response = requests.post(
-            f"{API_BASE_URL}/auth/signup",
-            json={
-                "email": user_email,
-                "password": "Test123!",
-                "name": "Perf User",
-                "org_id": org_id,
-                "roles": ["admin"],
-            },
-        )
-        token = signup_response.json()["token"]
-
-        headers = {"Authorization": f"Bearer {token}"}
+        headers = _bootstrap_admin(org_id, "Perf Events Org", user_email, "Perf User")
 
         # Create 20 events
         for i in range(20):
@@ -185,26 +183,15 @@ class TestConcurrentUsers:
         # Create test org and users
         org_id = f"org_perf_concurrent_{int(time.time())}"
 
-        requests.post(
-            f"{API_BASE_URL}/organizations/", json={"id": org_id, "name": "Perf Concurrent Org"}
-        )
+        owner_email = f"concurrent-owner-{int(time.time())}@example.com"
+        headers = _bootstrap_admin(org_id, "Perf Concurrent Org", owner_email, "Concurrent Owner")
 
-        # Create 10 test users
-        user_credentials = []
-        for i in range(10):
+        # Create nine invited members in addition to the owner.
+        user_credentials = [(owner_email, "Test123!")]
+        for i in range(9):
             email = f"concurrent{i}_{int(time.time())}@test.com"
             password = "Test123!"
-
-            requests.post(
-                f"{API_BASE_URL}/auth/signup",
-                json={
-                    "email": email,
-                    "password": password,
-                    "name": f"Concurrent User {i}",
-                    "org_id": org_id,
-                },
-            )
-
+            _invite_member(headers, org_id, email, f"Concurrent User {i}", password)
             user_credentials.append((email, password))
 
         # Login all users concurrently
@@ -252,22 +239,7 @@ class TestConcurrentUsers:
         org_id = f"org_perf_reads_{int(time.time())}"
         user_email = f"perf_reads_{int(time.time())}@test.com"
 
-        requests.post(
-            f"{API_BASE_URL}/organizations/", json={"id": org_id, "name": "Perf Reads Org"}
-        )
-
-        signup_response = requests.post(
-            f"{API_BASE_URL}/auth/signup",
-            json={
-                "email": user_email,
-                "password": "Test123!",
-                "name": "Perf User",
-                "org_id": org_id,
-            },
-        )
-        token = signup_response.json()["token"]
-
-        headers = {"Authorization": f"Bearer {token}"}
+        headers = _bootstrap_admin(org_id, "Perf Reads Org", user_email, "Perf User")
 
         # Make 20 concurrent GET /people requests
         def get_people():
@@ -313,35 +285,10 @@ class TestSolverPerformance:
         org_id = f"org_solver_small_{int(time.time())}"
         admin_email = f"solver_small_{int(time.time())}@test.com"
 
-        requests.post(
-            f"{API_BASE_URL}/organizations/", json={"id": org_id, "name": "Solver Small Org"}
-        )
-
-        signup_response = requests.post(
-            f"{API_BASE_URL}/auth/signup",
-            json={
-                "email": admin_email,
-                "password": "Test123!",
-                "name": "Solver Admin",
-                "org_id": org_id,
-                "roles": ["admin"],
-            },
-        )
-        token = signup_response.json()["token"]
-
-        headers = {"Authorization": f"Bearer {token}"}
+        headers = _bootstrap_admin(org_id, "Solver Small Org", admin_email, "Solver Admin")
 
         # Create 5 people
-        for i in range(5):
-            requests.post(
-                f"{API_BASE_URL}/auth/signup",
-                json={
-                    "email": f"solver_person{i}_{int(time.time())}@test.com",
-                    "password": "Test123!",
-                    "name": f"Person {i}",
-                    "org_id": org_id,
-                },
-            )
+        _create_people(headers, org_id, f"solver-small-{int(time.time())}", 5)
 
         # Create 2 events
         for i in range(2):
@@ -385,35 +332,10 @@ class TestSolverPerformance:
         org_id = f"org_solver_medium_{int(time.time())}"
         admin_email = f"solver_medium_{int(time.time())}@test.com"
 
-        requests.post(
-            f"{API_BASE_URL}/organizations/", json={"id": org_id, "name": "Solver Medium Org"}
-        )
-
-        signup_response = requests.post(
-            f"{API_BASE_URL}/auth/signup",
-            json={
-                "email": admin_email,
-                "password": "Test123!",
-                "name": "Solver Admin",
-                "org_id": org_id,
-                "roles": ["admin"],
-            },
-        )
-        token = signup_response.json()["token"]
-
-        headers = {"Authorization": f"Bearer {token}"}
+        headers = _bootstrap_admin(org_id, "Solver Medium Org", admin_email, "Solver Admin")
 
         # Create 20 people
-        for i in range(20):
-            requests.post(
-                f"{API_BASE_URL}/auth/signup",
-                json={
-                    "email": f"solver_person{i}_{int(time.time())}@test.com",
-                    "password": "Test123!",
-                    "name": f"Person {i}",
-                    "org_id": org_id,
-                },
-            )
+        _create_people(headers, org_id, f"solver-medium-{int(time.time())}", 20)
 
         # Create 10 events
         for i in range(10):
@@ -460,36 +382,11 @@ class TestSolverPerformance:
         org_id = f"org_solver_large_{int(time.time())}"
         admin_email = f"solver_large_{int(time.time())}@test.com"
 
-        requests.post(
-            f"{API_BASE_URL}/organizations/", json={"id": org_id, "name": "Solver Large Org"}
-        )
-
-        signup_response = requests.post(
-            f"{API_BASE_URL}/auth/signup",
-            json={
-                "email": admin_email,
-                "password": "Test123!",
-                "name": "Solver Admin",
-                "org_id": org_id,
-                "roles": ["admin"],
-            },
-        )
-        token = signup_response.json()["token"]
-
-        headers = {"Authorization": f"Bearer {token}"}
+        headers = _bootstrap_admin(org_id, "Solver Large Org", admin_email, "Solver Admin")
 
         # Create 100 people (this will take a while)
         print("\n📊 Creating 100 people...")
-        for i in range(100):
-            requests.post(
-                f"{API_BASE_URL}/auth/signup",
-                json={
-                    "email": f"solver_person{i}_{int(time.time())}@test.com",
-                    "password": "Test123!",
-                    "name": f"Person {i}",
-                    "org_id": org_id,
-                },
-            )
+        _create_people(headers, org_id, f"solver-large-{int(time.time())}", 100)
 
         # Create 50 events
         print("📊 Creating 50 events...")
@@ -540,23 +437,13 @@ class TestDatabasePerformance:
         """
         org_id = f"org_bulk_{int(time.time())}"
 
-        requests.post(
-            f"{API_BASE_URL}/organizations/", json={"id": org_id, "name": "Bulk Insert Org"}
-        )
+        admin_email = f"bulk-owner-{int(time.time())}@example.com"
+        headers = _bootstrap_admin(org_id, "Bulk Insert Org", admin_email, "Bulk Owner")
 
         # Insert 100 people
         start_time = time.time()
 
-        for i in range(100):
-            requests.post(
-                f"{API_BASE_URL}/auth/signup",
-                json={
-                    "email": f"bulk_person{i}_{int(time.time())}@test.com",
-                    "password": "Test123!",
-                    "name": f"Person {i}",
-                    "org_id": org_id,
-                },
-            )
+        _create_people(headers, org_id, f"bulk-{int(time.time())}", 100)
 
         end_time = time.time()
 
@@ -580,22 +467,7 @@ class TestAPIThroughput:
         org_id = f"org_throughput_{int(time.time())}"
         user_email = f"throughput_{int(time.time())}@test.com"
 
-        requests.post(
-            f"{API_BASE_URL}/organizations/", json={"id": org_id, "name": "Throughput Org"}
-        )
-
-        signup_response = requests.post(
-            f"{API_BASE_URL}/auth/signup",
-            json={
-                "email": user_email,
-                "password": "Test123!",
-                "name": "Throughput User",
-                "org_id": org_id,
-            },
-        )
-        token = signup_response.json()["token"]
-
-        headers = {"Authorization": f"Bearer {token}"}
+        headers = _bootstrap_admin(org_id, "Throughput Org", user_email, "Throughput User")
 
         # Make 100 GET requests
         def get_people():

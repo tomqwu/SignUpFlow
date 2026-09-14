@@ -12,8 +12,8 @@ part 'fairness_metrics.g.dart';
 /// Schema for fairness metrics.
 ///
 /// Properties:
-/// * [perPersonCounts] 
-/// * [stdev] 
+/// * [perPersonCounts]
+/// * [stdev]
 @BuiltValue()
 abstract class FairnessMetrics implements Built<FairnessMetrics, FairnessMetricsBuilder> {
   @BuiltValueField(wireName: r'per_person_counts')

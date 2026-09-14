@@ -15,10 +15,10 @@ part 'constraint_create.g.dart';
 /// Properties:
 /// * [key] - Constraint key/identifier
 /// * [orgId] - Organization ID
-/// * [params] 
+/// * [params]
 /// * [predicate] - Constraint predicate/rule
 /// * [type] - Constraint type: hard or soft
-/// * [weight] 
+/// * [weight]
 @BuiltValue()
 abstract class ConstraintCreate implements Built<ConstraintCreate, ConstraintCreateBuilder> {
   /// Constraint key/identifier

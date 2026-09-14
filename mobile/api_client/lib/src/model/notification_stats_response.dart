@@ -13,13 +13,13 @@ part 'notification_stats_response.g.dart';
 /// Schema for organization notification statistics.
 ///
 /// Properties:
-/// * [daysAnalyzed] 
-/// * [deliveredNotifications] 
-/// * [orgId] 
+/// * [daysAnalyzed]
+/// * [deliveredNotifications]
+/// * [orgId]
 /// * [recentFailures] - Recent failed notifications
 /// * [statusBreakdown] - Count of notifications by status
 /// * [successRate] - Delivery success rate percentage
-/// * [totalNotifications] 
+/// * [totalNotifications]
 /// * [typeBreakdown] - Count of notifications by type
 @BuiltValue()
 abstract class NotificationStatsResponse implements Built<NotificationStatsResponse, NotificationStatsResponseBuilder> {

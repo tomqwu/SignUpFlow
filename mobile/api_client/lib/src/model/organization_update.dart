@@ -13,9 +13,9 @@ part 'organization_update.g.dart';
 /// Schema for updating an organization.
 ///
 /// Properties:
-/// * [config] 
-/// * [name] 
-/// * [region] 
+/// * [config]
+/// * [name]
+/// * [region]
 @BuiltValue()
 abstract class OrganizationUpdate implements Built<OrganizationUpdate, OrganizationUpdateBuilder> {
   @BuiltValueField(wireName: r'config')

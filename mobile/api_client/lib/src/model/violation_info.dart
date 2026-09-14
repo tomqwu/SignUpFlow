@@ -12,10 +12,10 @@ part 'violation_info.g.dart';
 /// Schema for constraint violation.
 ///
 /// Properties:
-/// * [constraintKey] 
-/// * [entities] 
-/// * [message] 
-/// * [severity] 
+/// * [constraintKey]
+/// * [entities]
+/// * [message]
+/// * [severity]
 @BuiltValue()
 abstract class ViolationInfo implements Built<ViolationInfo, ViolationInfoBuilder> {
   @BuiltValueField(wireName: r'constraint_key')

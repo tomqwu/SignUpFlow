@@ -13,9 +13,9 @@ part 'solution_assignments_response.g.dart';
 /// Typed response for ``GET /solutions/{id}/assignments`` — events grouped.
 ///
 /// Properties:
-/// * [events] 
-/// * [solutionId] 
-/// * [totalAssignments] 
+/// * [events]
+/// * [solutionId]
+/// * [totalAssignments]
 @BuiltValue()
 abstract class SolutionAssignmentsResponse implements Built<SolutionAssignmentsResponse, SolutionAssignmentsResponseBuilder> {
   @BuiltValueField(wireName: r'events')

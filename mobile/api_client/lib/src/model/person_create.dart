@@ -13,13 +13,13 @@ part 'person_create.g.dart';
 /// Schema for creating a person.
 ///
 /// Properties:
-/// * [email] 
-/// * [extraData] 
+/// * [email]
+/// * [extraData]
 /// * [id] - Unique person ID
 /// * [language] - User's language preference (ISO 639-1 code)
 /// * [name] - Person's full name
 /// * [orgId] - Organization ID
-/// * [roles] 
+/// * [roles]
 /// * [timezone] - User's timezone preference
 @BuiltValue()
 abstract class PersonCreate implements Built<PersonCreate, PersonCreateBuilder> {

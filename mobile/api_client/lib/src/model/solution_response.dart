@@ -13,17 +13,17 @@ part 'solution_response.g.dart';
 /// Schema for solution response.
 ///
 /// Properties:
-/// * [assignmentCount] 
-/// * [createdAt] 
-/// * [hardViolations] 
-/// * [healthScore] 
-/// * [id] 
-/// * [isPublished] 
-/// * [metrics] 
-/// * [orgId] 
-/// * [publishedAt] 
-/// * [softScore] 
-/// * [solveMs] 
+/// * [assignmentCount]
+/// * [createdAt]
+/// * [hardViolations]
+/// * [healthScore]
+/// * [id]
+/// * [isPublished]
+/// * [metrics]
+/// * [orgId]
+/// * [publishedAt]
+/// * [softScore]
+/// * [solveMs]
 @BuiltValue()
 abstract class SolutionResponse implements Built<SolutionResponse, SolutionResponseBuilder> {
   @BuiltValueField(wireName: r'assignment_count')

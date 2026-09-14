@@ -1,5 +1,6 @@
 """Unit tests for people endpoints."""
 
+from tests.unit._identity import bootstrap_organization
 
 API_BASE = "http://localhost:8000/api/v1"
 
@@ -10,9 +11,7 @@ class TestPersonCreate:
     def test_create_person_success(self, client):
         """Test successful person creation."""
         # Create org first
-        client.post(
-            f"{API_BASE}/organizations/", json={"id": "people_test_org", "name": "People Test Org"}
-        )
+        bootstrap_organization(client, json={"id": "people_test_org", "name": "People Test Org"})
         # Create person
         response = client.post(
             f"{API_BASE}/people/",
@@ -32,8 +31,8 @@ class TestPersonCreate:
 
     def test_create_person_duplicate_id(self, client):
         """Test creating person with duplicate ID fails."""
-        client.post(
-            f"{API_BASE}/organizations/",
+        bootstrap_organization(
+            client,
             json={"id": "people_test_org2", "name": "People Test Org 2"},
         )
         # Create first person
@@ -56,10 +55,10 @@ class TestPersonCreate:
         )
         assert response.status_code == 404
 
-    def test_create_person_with_roles(self, client):
-        """Test creating person with multiple roles."""
-        client.post(
-            f"{API_BASE}/organizations/",
+    def test_create_person_with_access_role_and_qualifications(self, client):
+        """Test creating a person with one access role and qualifications."""
+        bootstrap_organization(
+            client,
             json={"id": "people_test_org3", "name": "People Test Org 3"},
         )
         response = client.post(
@@ -68,13 +67,12 @@ class TestPersonCreate:
                 "id": "person_004",
                 "org_id": "people_test_org3",
                 "name": "Multi Role Person",
-                "roles": ["volunteer", "admin", "leader"],
+                "roles": ["admin", "leader"],
             },
         )
         assert response.status_code in [200, 201]
         data = response.json()
-        assert len(data["roles"]) == 3
-        assert "admin" in data["roles"]
+        assert data["roles"] == ["admin", "leader"]
 
 
 class TestPersonRead:
@@ -82,8 +80,8 @@ class TestPersonRead:
 
     def test_get_person_success(self, client):
         """Test successful person retrieval."""
-        client.post(
-            f"{API_BASE}/organizations/",
+        bootstrap_organization(
+            client,
             json={"id": "people_test_org4", "name": "People Test Org 4"},
         )
         client.post(
@@ -103,8 +101,8 @@ class TestPersonRead:
 
     def test_list_people_by_org(self, client):
         """Test listing people filtered by organization."""
-        client.post(
-            f"{API_BASE}/organizations/",
+        bootstrap_organization(
+            client,
             json={"id": "people_test_org5", "name": "People Test Org 5"},
         )
         # Create multiple people
@@ -129,8 +127,8 @@ class TestPersonUpdate:
 
     def test_update_person_success(self, client):
         """Test successful person update."""
-        client.post(
-            f"{API_BASE}/organizations/",
+        bootstrap_organization(
+            client,
             json={"id": "people_test_org6", "name": "People Test Org 6"},
         )
         client.post(
@@ -148,8 +146,8 @@ class TestPersonUpdate:
 
     def test_update_person_roles(self, client):
         """Test updating person roles."""
-        client.post(
-            f"{API_BASE}/organizations/",
+        bootstrap_organization(
+            client,
             json={"id": "people_test_org7", "name": "People Test Org 7"},
         )
         client.post(
@@ -161,9 +159,7 @@ class TestPersonUpdate:
                 "roles": ["volunteer"],
             },
         )
-        response = client.put(
-            f"{API_BASE}/people/person_010", json={"roles": ["volunteer", "admin"]}
-        )
+        response = client.put(f"{API_BASE}/people/person_010", json={"roles": ["admin", "leader"]})
         assert response.status_code == 200
         data = response.json()
         assert len(data["roles"]) == 2
@@ -178,8 +174,8 @@ class TestPersonUpdate:
 
     def test_update_person_remove_role(self, client):
         """Test removing a role from person."""
-        client.post(
-            f"{API_BASE}/organizations/",
+        bootstrap_organization(
+            client,
             json={"id": "people_test_org_remove", "name": "People Test Org Remove"},
         )
         client.post(
@@ -188,7 +184,7 @@ class TestPersonUpdate:
                 "id": "person_012",
                 "org_id": "people_test_org_remove",
                 "name": "Role Remove Person",
-                "roles": ["volunteer", "admin", "leader"],
+                "roles": ["admin", "leader"],
             },
         )
         # Remove one role
@@ -202,10 +198,10 @@ class TestPersonUpdate:
         assert "volunteer" in data["roles"]
         assert "leader" in data["roles"]
 
-    def test_update_person_clear_all_roles(self, client):
-        """Test clearing all roles from person."""
-        client.post(
-            f"{API_BASE}/organizations/",
+    def test_update_person_empty_roles_defaults_to_volunteer(self, client):
+        """Test preserving account access when all explicit roles are cleared."""
+        bootstrap_organization(
+            client,
             json={"id": "people_test_org_clear", "name": "People Test Org Clear"},
         )
         client.post(
@@ -214,19 +210,19 @@ class TestPersonUpdate:
                 "id": "person_013",
                 "org_id": "people_test_org_clear",
                 "name": "Clear Roles Person",
-                "roles": ["volunteer", "admin"],
+                "roles": ["admin"],
             },
         )
         # Clear all roles
         response = client.put(f"{API_BASE}/people/person_013", json={"roles": []})
         assert response.status_code == 200
         data = response.json()
-        assert len(data["roles"]) == 0
+        assert data["roles"] == ["volunteer"]
 
     def test_update_person_add_multiple_roles(self, client):
         """Test adding multiple roles at once."""
-        client.post(
-            f"{API_BASE}/organizations/",
+        bootstrap_organization(
+            client,
             json={"id": "people_test_org_multi", "name": "People Test Org Multi"},
         )
         client.post(
@@ -241,18 +237,18 @@ class TestPersonUpdate:
         # Add multiple roles
         response = client.put(
             f"{API_BASE}/people/person_014",
-            json={"roles": ["volunteer", "admin", "leader", "super_admin"]},
+            json={"roles": ["admin", "leader", "super_admin"]},
         )
         assert response.status_code == 200
         data = response.json()
-        assert len(data["roles"]) == 4
+        assert len(data["roles"]) == 3
         assert "super_admin" in data["roles"]
-        assert "volunteer" in data["roles"]
+        assert "admin" in data["roles"]
 
     def test_update_person_roles_persisted(self, client):
         """Test that role updates persist across GET requests."""
-        client.post(
-            f"{API_BASE}/organizations/",
+        bootstrap_organization(
+            client,
             json={"id": "people_test_org_persist", "name": "People Test Org Persist"},
         )
         client.post(
@@ -281,8 +277,8 @@ class TestPersonDelete:
 
     def test_delete_person_success(self, client):
         """Test successful person deletion."""
-        client.post(
-            f"{API_BASE}/organizations/",
+        bootstrap_organization(
+            client,
             json={"id": "people_test_org8", "name": "People Test Org 8"},
         )
         client.post(

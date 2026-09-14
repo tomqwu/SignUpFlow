@@ -14,12 +14,12 @@ part 'event_create.g.dart';
 ///
 /// Properties:
 /// * [endTime] - Event end time
-/// * [extraData] 
+/// * [extraData]
 /// * [id] - Unique event ID
 /// * [orgId] - Organization ID
-/// * [resourceId] 
+/// * [resourceId]
 /// * [startTime] - Event start time
-/// * [teamIds] 
+/// * [teamIds]
 /// * [type] - Event type (match, shift, meeting)
 @BuiltValue()
 abstract class EventCreate implements Built<EventCreate, EventCreateBuilder> {

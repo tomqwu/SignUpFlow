@@ -13,10 +13,10 @@ part 'list_response_holiday_response.g.dart';
 /// ListResponseHolidayResponse
 ///
 /// Properties:
-/// * [items] 
-/// * [limit] 
-/// * [offset] 
-/// * [total] 
+/// * [items]
+/// * [limit]
+/// * [offset]
+/// * [total]
 @BuiltValue()
 abstract class ListResponseHolidayResponse implements Built<ListResponseHolidayResponse, ListResponseHolidayResponseBuilder> {
   @BuiltValueField(wireName: r'items')

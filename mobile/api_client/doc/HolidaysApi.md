@@ -30,7 +30,7 @@ import 'package:signupflow_api/api.dart';
 
 final api = SignupflowApi().getHolidaysApi();
 final String orgId = orgId_example; // String | Organization to import into
-final HolidayBulkImport holidayBulkImport = ; // HolidayBulkImport | 
+final HolidayBulkImport holidayBulkImport = ; // HolidayBulkImport |
 
 try {
     final response = api.bulkImportHolidays(orgId, holidayBulkImport);
@@ -44,8 +44,8 @@ try {
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **orgId** | **String**| Organization to import into | 
- **holidayBulkImport** | [**HolidayBulkImport**](HolidayBulkImport.md)|  | 
+ **orgId** | **String**| Organization to import into |
+ **holidayBulkImport** | [**HolidayBulkImport**](HolidayBulkImport.md)|  |
 
 ### Return type
 
@@ -74,7 +74,7 @@ Create a single holiday (admin only).
 import 'package:signupflow_api/api.dart';
 
 final api = SignupflowApi().getHolidaysApi();
-final HolidayCreate holidayCreate = ; // HolidayCreate | 
+final HolidayCreate holidayCreate = ; // HolidayCreate |
 
 try {
     final response = api.createHoliday(holidayCreate);
@@ -88,7 +88,7 @@ try {
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **holidayCreate** | [**HolidayCreate**](HolidayCreate.md)|  | 
+ **holidayCreate** | [**HolidayCreate**](HolidayCreate.md)|  |
 
 ### Return type
 
@@ -115,7 +115,7 @@ Delete Holiday
 import 'package:signupflow_api/api.dart';
 
 final api = SignupflowApi().getHolidaysApi();
-final int holidayId = 56; // int | 
+final int holidayId = 56; // int |
 
 try {
     api.deleteHoliday(holidayId);
@@ -128,7 +128,7 @@ try {
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **holidayId** | **int**|  | 
+ **holidayId** | **int**|  |
 
 ### Return type
 
@@ -155,7 +155,7 @@ Get Holiday
 import 'package:signupflow_api/api.dart';
 
 final api = SignupflowApi().getHolidaysApi();
-final int holidayId = 56; // int | 
+final int holidayId = 56; // int |
 
 try {
     final response = api.getHoliday(holidayId);
@@ -169,7 +169,7 @@ try {
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **holidayId** | **int**|  | 
+ **holidayId** | **int**|  |
 
 ### Return type
 
@@ -214,7 +214,7 @@ try {
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **orgId** | **String**| Organization ID | 
+ **orgId** | **String**| Organization ID |
  **limit** | **int**| Page size, max 200 | [optional] [default to 50]
  **offset** | **int**| Number of rows to skip | [optional] [default to 0]
 
@@ -243,8 +243,8 @@ Update Holiday
 import 'package:signupflow_api/api.dart';
 
 final api = SignupflowApi().getHolidaysApi();
-final int holidayId = 56; // int | 
-final HolidayUpdate holidayUpdate = ; // HolidayUpdate | 
+final int holidayId = 56; // int |
+final HolidayUpdate holidayUpdate = ; // HolidayUpdate |
 
 try {
     final response = api.updateHoliday(holidayId, holidayUpdate);
@@ -258,8 +258,8 @@ try {
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **holidayId** | **int**|  | 
- **holidayUpdate** | [**HolidayUpdate**](HolidayUpdate.md)|  | 
+ **holidayId** | **int**|  |
+ **holidayUpdate** | [**HolidayUpdate**](HolidayUpdate.md)|  |
 
 ### Return type
 

@@ -29,8 +29,8 @@ Accept an invitation and create a new account.  This creates a new Person with t
 import 'package:signupflow_api/api.dart';
 
 final api = SignupflowApi().getInvitationsApi();
-final String token = token_example; // String | 
-final InvitationAccept invitationAccept = ; // InvitationAccept | 
+final String token = token_example; // String |
+final InvitationAccept invitationAccept = ; // InvitationAccept |
 
 try {
     final response = api.acceptInvitation(token, invitationAccept);
@@ -44,8 +44,8 @@ try {
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **token** | **String**|  | 
- **invitationAccept** | [**InvitationAccept**](InvitationAccept.md)|  | 
+ **token** | **String**|  |
+ **invitationAccept** | [**InvitationAccept**](InvitationAccept.md)|  |
 
 ### Return type
 
@@ -74,7 +74,7 @@ Cancel a pending invitation (admin only).
 import 'package:signupflow_api/api.dart';
 
 final api = SignupflowApi().getInvitationsApi();
-final String invitationId = invitationId_example; // String | 
+final String invitationId = invitationId_example; // String |
 
 try {
     api.cancelInvitation(invitationId);
@@ -87,7 +87,7 @@ try {
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **invitationId** | **String**|  | 
+ **invitationId** | **String**|  |
 
 ### Return type
 
@@ -117,7 +117,7 @@ import 'package:signupflow_api/api.dart';
 
 final api = SignupflowApi().getInvitationsApi();
 final String orgId = orgId_example; // String | Organization ID
-final InvitationCreate invitationCreate = ; // InvitationCreate | 
+final InvitationCreate invitationCreate = ; // InvitationCreate |
 
 try {
     final response = api.createInvitation(orgId, invitationCreate);
@@ -131,8 +131,8 @@ try {
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **orgId** | **String**| Organization ID | 
- **invitationCreate** | [**InvitationCreate**](InvitationCreate.md)|  | 
+ **orgId** | **String**| Organization ID |
+ **invitationCreate** | [**InvitationCreate**](InvitationCreate.md)|  |
 
 ### Return type
 
@@ -177,9 +177,9 @@ try {
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **orgId** | **String**| Organization ID | 
- **status** | **String**| Filter by status (pending, accepted, expired, cancelled) | [optional] 
- **q** | **String**| Case-insensitive search on email and name | [optional] 
+ **orgId** | **String**| Organization ID |
+ **status** | **String**| Filter by status (pending, accepted, expired, cancelled) | [optional]
+ **q** | **String**| Case-insensitive search on email and name | [optional]
 
 ### Return type
 
@@ -208,7 +208,7 @@ Resend an invitation email (admin only).  Generates a new token and extends the 
 import 'package:signupflow_api/api.dart';
 
 final api = SignupflowApi().getInvitationsApi();
-final String invitationId = invitationId_example; // String | 
+final String invitationId = invitationId_example; // String |
 
 try {
     final response = api.resendInvitation(invitationId);
@@ -222,7 +222,7 @@ try {
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **invitationId** | **String**|  | 
+ **invitationId** | **String**|  |
 
 ### Return type
 
@@ -251,7 +251,7 @@ Verify an invitation token. Rate limited to 10 requests per minute per IP.  Chec
 import 'package:signupflow_api/api.dart';
 
 final api = SignupflowApi().getInvitationsApi();
-final String token = token_example; // String | 
+final String token = token_example; // String |
 
 try {
     final response = api.verifyInvitation(token);
@@ -265,7 +265,7 @@ try {
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **token** | **String**|  | 
+ **token** | **String**|  |
 
 ### Return type
 

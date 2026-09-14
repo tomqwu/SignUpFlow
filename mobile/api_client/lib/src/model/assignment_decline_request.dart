@@ -11,7 +11,7 @@ part 'assignment_decline_request.g.dart';
 /// Body for POST /assignments/{id}/decline.
 ///
 /// Properties:
-/// * [declineReason] 
+/// * [declineReason]
 @BuiltValue()
 abstract class AssignmentDeclineRequest implements Built<AssignmentDeclineRequest, AssignmentDeclineRequestBuilder> {
   @BuiltValueField(wireName: r'decline_reason')

@@ -32,7 +32,7 @@ Create a new event (admin only).
 import 'package:signupflow_api/api.dart';
 
 final api = SignupflowApi().getEventsApi();
-final EventCreate eventCreate = ; // EventCreate | 
+final EventCreate eventCreate = ; // EventCreate |
 
 try {
     final response = api.createEvent(eventCreate);
@@ -46,7 +46,7 @@ try {
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **eventCreate** | [**EventCreate**](EventCreate.md)|  | 
+ **eventCreate** | [**EventCreate**](EventCreate.md)|  |
 
 ### Return type
 
@@ -75,7 +75,7 @@ Delete event (admin only).
 import 'package:signupflow_api/api.dart';
 
 final api = SignupflowApi().getEventsApi();
-final String eventId = eventId_example; // String | 
+final String eventId = eventId_example; // String |
 
 try {
     api.deleteEvent(eventId);
@@ -88,7 +88,7 @@ try {
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **eventId** | **String**|  | 
+ **eventId** | **String**|  |
 
 ### Return type
 
@@ -131,7 +131,7 @@ try {
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **orgId** | **String**| Organization ID | 
+ **orgId** | **String**| Organization ID |
 
 ### Return type
 
@@ -160,7 +160,7 @@ Get people available for this event based on roles.  Returns list of people who 
 import 'package:signupflow_api/api.dart';
 
 final api = SignupflowApi().getEventsApi();
-final String eventId = eventId_example; // String | 
+final String eventId = eventId_example; // String |
 
 try {
     final response = api.getAvailablePeople(eventId);
@@ -174,7 +174,7 @@ try {
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **eventId** | **String**|  | 
+ **eventId** | **String**|  |
 
 ### Return type
 
@@ -203,7 +203,7 @@ Get event by ID.
 import 'package:signupflow_api/api.dart';
 
 final api = SignupflowApi().getEventsApi();
-final String eventId = eventId_example; // String | 
+final String eventId = eventId_example; // String |
 
 try {
     final response = api.getEvent(eventId);
@@ -217,7 +217,7 @@ try {
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **eventId** | **String**|  | 
+ **eventId** | **String**|  |
 
 ### Return type
 
@@ -267,12 +267,12 @@ try {
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **orgId** | **String**| Filter by organization ID | [optional] 
- **eventType** | **String**| Filter by event type | [optional] 
- **startAfter** | **DateTime**| Filter events starting after this time | [optional] 
- **startBefore** | **DateTime**| Filter events starting before this time | [optional] 
- **q** | **String**| Case-insensitive search on event type and id | [optional] 
- **status** | **String**| Filter by computed status: 'upcoming', 'past', or 'ongoing' | [optional] 
+ **orgId** | **String**| Filter by organization ID | [optional]
+ **eventType** | **String**| Filter by event type | [optional]
+ **startAfter** | **DateTime**| Filter events starting after this time | [optional]
+ **startBefore** | **DateTime**| Filter events starting before this time | [optional]
+ **q** | **String**| Case-insensitive search on event type and id | [optional]
+ **status** | **String**| Filter by computed status: 'upcoming', 'past', or 'ongoing' | [optional]
  **limit** | **int**| Page size, max 200 | [optional] [default to 50]
  **offset** | **int**| Number of rows to skip | [optional] [default to 0]
 
@@ -303,8 +303,8 @@ Assign or unassign a person to/from an event (admin only).
 import 'package:signupflow_api/api.dart';
 
 final api = SignupflowApi().getEventsApi();
-final String eventId = eventId_example; // String | 
-final AssignmentRequest assignmentRequest = ; // AssignmentRequest | 
+final String eventId = eventId_example; // String |
+final AssignmentRequest assignmentRequest = ; // AssignmentRequest |
 
 try {
     final response = api.manageAssignment(eventId, assignmentRequest);
@@ -318,8 +318,8 @@ try {
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **eventId** | **String**|  | 
- **assignmentRequest** | [**AssignmentRequest**](AssignmentRequest.md)|  | 
+ **eventId** | **String**|  |
+ **assignmentRequest** | [**AssignmentRequest**](AssignmentRequest.md)|  |
 
 ### Return type
 
@@ -348,8 +348,8 @@ Update event (admin only).
 import 'package:signupflow_api/api.dart';
 
 final api = SignupflowApi().getEventsApi();
-final String eventId = eventId_example; // String | 
-final EventUpdate eventUpdate = ; // EventUpdate | 
+final String eventId = eventId_example; // String |
+final EventUpdate eventUpdate = ; // EventUpdate |
 
 try {
     final response = api.updateEvent(eventId, eventUpdate);
@@ -363,8 +363,8 @@ try {
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **eventId** | **String**|  | 
- **eventUpdate** | [**EventUpdate**](EventUpdate.md)|  | 
+ **eventId** | **String**|  |
+ **eventUpdate** | [**EventUpdate**](EventUpdate.md)|  |
 
 ### Return type
 
@@ -393,7 +393,7 @@ Validate if event has proper configuration and enough people.  Checks: 1. Event 
 import 'package:signupflow_api/api.dart';
 
 final api = SignupflowApi().getEventsApi();
-final String eventId = eventId_example; // String | 
+final String eventId = eventId_example; // String |
 
 try {
     final response = api.validateEvent(eventId);
@@ -407,7 +407,7 @@ try {
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **eventId** | **String**|  | 
+ **eventId** | **String**|  |
 
 ### Return type
 

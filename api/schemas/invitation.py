@@ -10,7 +10,11 @@ class InvitationCreate(BaseModel):
 
     email: EmailStr = Field(..., description="Email address of the invitee")
     name: str = Field(..., description="Full name of the invitee", min_length=1)
-    roles: list[str] = Field(..., description="Roles to assign (e.g., ['volunteer', 'admin'])")
+    roles: list[str] = Field(
+        ...,
+        description="One access role plus scheduling qualifications (e.g., ['volunteer', 'usher'])",
+    )
+    model_config = ConfigDict(extra="forbid")
 
 
 class InvitationResponse(BaseModel):
@@ -51,6 +55,7 @@ class InvitationAccept(BaseModel):
         ..., min_length=6, description="Password for the new account (min 6 characters)"
     )
     timezone: str = Field(default="UTC", description="User's timezone preference")
+    model_config = ConfigDict(extra="forbid")
 
 
 class InvitationAcceptResponse(BaseModel):

@@ -8,10 +8,10 @@ import 'package:signupflow_api/api.dart';
 ## Properties
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
-**items** | [**BuiltList&lt;AssignmentResponse&gt;**](AssignmentResponse.md) |  | 
-**limit** | **int** |  | 
-**offset** | **int** |  | 
-**total** | **int** |  | 
+**items** | [**BuiltList&lt;AssignmentResponse&gt;**](AssignmentResponse.md) |  |
+**limit** | **int** |  |
+**offset** | **int** |  |
+**total** | **int** |  |
 
 [[Back to Model list]](../README.md#documentation-for-models) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to README]](../README.md)
 

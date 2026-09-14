@@ -11,10 +11,11 @@ part 'solution_assignment_assignee.g.dart';
 /// One assignee inside a per-event assignment group.
 ///
 /// Properties:
-/// * [assignedAt] 
-/// * [assignmentId] 
-/// * [personId] 
-/// * [personName] 
+/// * [assignedAt]
+/// * [assignmentId]
+/// * [personId]
+/// * [personName]
+/// * [role]
 @BuiltValue()
 abstract class SolutionAssignmentAssignee implements Built<SolutionAssignmentAssignee, SolutionAssignmentAssigneeBuilder> {
   @BuiltValueField(wireName: r'assigned_at')
@@ -28,6 +29,9 @@ abstract class SolutionAssignmentAssignee implements Built<SolutionAssignmentAss
 
   @BuiltValueField(wireName: r'person_name')
   String? get personName;
+
+  @BuiltValueField(wireName: r'role')
+  String? get role;
 
   SolutionAssignmentAssignee._();
 
@@ -73,6 +77,13 @@ class _$SolutionAssignmentAssigneeSerializer implements PrimitiveSerializer<Solu
       yield r'person_name';
       yield serializers.serialize(
         object.personName,
+        specifiedType: const FullType.nullable(String),
+      );
+    }
+    if (object.role != null) {
+      yield r'role';
+      yield serializers.serialize(
+        object.role,
         specifiedType: const FullType.nullable(String),
       );
     }
@@ -128,6 +139,14 @@ class _$SolutionAssignmentAssigneeSerializer implements PrimitiveSerializer<Solu
           ) as String?;
           if (valueDes == null) continue;
           result.personName = valueDes;
+          break;
+        case r'role':
+          final valueDes = serializers.deserialize(
+            value,
+            specifiedType: const FullType.nullable(String),
+          ) as String?;
+          if (valueDes == null) continue;
+          result.role = valueDes;
           break;
         default:
           unhandled.add(key);

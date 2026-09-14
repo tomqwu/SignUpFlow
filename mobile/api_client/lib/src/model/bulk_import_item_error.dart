@@ -11,7 +11,7 @@ part 'bulk_import_item_error.g.dart';
 /// One row that the bulk importer rejected.
 ///
 /// Properties:
-/// * [id] 
+/// * [id]
 /// * [index] - Position in the original payload (0-based)
 /// * [reason] - Why this row was rejected
 @BuiltValue()

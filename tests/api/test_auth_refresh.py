@@ -267,13 +267,11 @@ class TestAuthRefreshRejection:
 class TestSignupReturnsRefreshToken:
     def test_signup_returns_refresh_token(self, client, db):
         org_id = "refresh_signup_org"
-        if not db.query(Organization).filter(Organization.id == org_id).first():
-            db.add(Organization(id=org_id, name="Signup Org", region="Test"))
-            db.commit()
         resp = client.post(
             "/api/v1/auth/signup",
             json={
                 "org_id": org_id,
+                "org_name": "Signup Org",
                 "name": "New Admin",
                 "email": "refresh-signup@example.com",
                 "password": "SignupPass1!",

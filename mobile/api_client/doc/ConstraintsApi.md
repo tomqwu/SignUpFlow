@@ -28,7 +28,7 @@ Create a new constraint (admin only, scoped to admin's org).
 import 'package:signupflow_api/api.dart';
 
 final api = SignupflowApi().getConstraintsApi();
-final ConstraintCreate constraintCreate = ; // ConstraintCreate | 
+final ConstraintCreate constraintCreate = ; // ConstraintCreate |
 
 try {
     final response = api.createConstraint(constraintCreate);
@@ -42,7 +42,7 @@ try {
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **constraintCreate** | [**ConstraintCreate**](ConstraintCreate.md)|  | 
+ **constraintCreate** | [**ConstraintCreate**](ConstraintCreate.md)|  |
 
 ### Return type
 
@@ -71,7 +71,7 @@ Delete constraint (admin only, scoped to admin's org).
 import 'package:signupflow_api/api.dart';
 
 final api = SignupflowApi().getConstraintsApi();
-final int constraintId = 56; // int | 
+final int constraintId = 56; // int |
 
 try {
     api.deleteConstraint(constraintId);
@@ -84,7 +84,7 @@ try {
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **constraintId** | **int**|  | 
+ **constraintId** | **int**|  |
 
 ### Return type
 
@@ -113,7 +113,7 @@ Get constraint by ID; org isolation enforced.
 import 'package:signupflow_api/api.dart';
 
 final api = SignupflowApi().getConstraintsApi();
-final int constraintId = 56; // int | 
+final int constraintId = 56; // int |
 
 try {
     final response = api.getConstraint(constraintId);
@@ -127,7 +127,7 @@ try {
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **constraintId** | **int**|  | 
+ **constraintId** | **int**|  |
 
 ### Return type
 
@@ -173,8 +173,8 @@ try {
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **orgId** | **String**| Filter by organization ID | [optional] 
- **constraintType** | **String**| Filter by type (hard/soft) | [optional] 
+ **orgId** | **String**| Filter by organization ID | [optional]
+ **constraintType** | **String**| Filter by type (hard/soft) | [optional]
  **limit** | **int**| Page size, max 200 | [optional] [default to 50]
  **offset** | **int**| Number of rows to skip | [optional] [default to 0]
 
@@ -205,8 +205,8 @@ Update constraint (admin only, scoped to admin's org).
 import 'package:signupflow_api/api.dart';
 
 final api = SignupflowApi().getConstraintsApi();
-final int constraintId = 56; // int | 
-final ConstraintUpdate constraintUpdate = ; // ConstraintUpdate | 
+final int constraintId = 56; // int |
+final ConstraintUpdate constraintUpdate = ; // ConstraintUpdate |
 
 try {
     final response = api.updateConstraint(constraintId, constraintUpdate);
@@ -220,8 +220,8 @@ try {
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **constraintId** | **int**|  | 
- **constraintUpdate** | [**ConstraintUpdate**](ConstraintUpdate.md)|  | 
+ **constraintId** | **int**|  |
+ **constraintUpdate** | [**ConstraintUpdate**](ConstraintUpdate.md)|  |
 
 ### Return type
 

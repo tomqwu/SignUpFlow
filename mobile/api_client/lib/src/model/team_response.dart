@@ -13,14 +13,14 @@ part 'team_response.g.dart';
 /// Schema for team response.
 ///
 /// Properties:
-/// * [createdAt] 
-/// * [description] 
-/// * [extraData] 
-/// * [id] 
+/// * [createdAt]
+/// * [description]
+/// * [extraData]
+/// * [id]
 /// * [memberCount] - Number of members
 /// * [name] - Team name
-/// * [orgId] 
-/// * [updatedAt] 
+/// * [orgId]
+/// * [updatedAt]
 @BuiltValue()
 abstract class TeamResponse implements Built<TeamResponse, TeamResponseBuilder> {
   @BuiltValueField(wireName: r'created_at')

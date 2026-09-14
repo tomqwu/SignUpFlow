@@ -13,10 +13,10 @@ part 'resource_update.g.dart';
 /// All fields optional (PATCH-style update).
 ///
 /// Properties:
-/// * [capacity] 
-/// * [extraData] 
-/// * [location] 
-/// * [type] 
+/// * [capacity]
+/// * [extraData]
+/// * [location]
+/// * [type]
 @BuiltValue()
 abstract class ResourceUpdate implements Built<ResourceUpdate, ResourceUpdateBuilder> {
   @BuiltValueField(wireName: r'capacity')

@@ -12,9 +12,9 @@ part 'invitation_verify.g.dart';
 /// Schema for verifying an invitation token.
 ///
 /// Properties:
-/// * [invitation] 
-/// * [message] 
-/// * [valid] 
+/// * [invitation]
+/// * [message]
+/// * [valid]
 @BuiltValue()
 abstract class InvitationVerify implements Built<InvitationVerify, InvitationVerifyBuilder> {
   @BuiltValueField(wireName: r'invitation')

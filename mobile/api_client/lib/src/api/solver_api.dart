@@ -24,7 +24,7 @@ class SolverApi {
   /// Generate a schedule for the organization (admin only).  This endpoint: 1. Loads all org data from database 2. Runs the constraint solver 3. Saves the solution to database 4. Returns solution metrics and violations
   ///
   /// Parameters:
-  /// * [solveRequest] 
+  /// * [solveRequest]
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -34,7 +34,7 @@ class SolverApi {
   ///
   /// Returns a [Future] containing a [Response] with a [SolveResponse] as data
   /// Throws [DioException] if API call or serialization fails
-  Future<Response<SolveResponse>> solveSchedule({ 
+  Future<Response<SolveResponse>> solveSchedule({
     required SolveRequest solveRequest,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,

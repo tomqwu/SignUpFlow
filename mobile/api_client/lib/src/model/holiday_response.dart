@@ -12,12 +12,12 @@ part 'holiday_response.g.dart';
 /// HolidayResponse
 ///
 /// Properties:
-/// * [createdAt] 
-/// * [date] 
-/// * [id] 
-/// * [isLongWeekend] 
-/// * [label] 
-/// * [orgId] 
+/// * [createdAt]
+/// * [date]
+/// * [id]
+/// * [isLongWeekend]
+/// * [label]
+/// * [orgId]
 @BuiltValue()
 abstract class HolidayResponse implements Built<HolidayResponse, HolidayResponseBuilder> {
   @BuiltValueField(wireName: r'created_at')
