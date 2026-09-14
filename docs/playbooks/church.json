@@ -7,5 +7,6 @@
   "roles": {"worship_leader": 1, "musician": 2, "sound": 1, "usher": 2, "children_leader": 1},
   "secondary_event": "rehearsal",
   "critical_role": "worship_leader",
-  "late_cover_roles": ["sound", "children_leader"]
+  "late_cover_roles": ["sound", "children_leader"],
+  "qualification_review_role": "children_leader"
 }

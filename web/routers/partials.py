@@ -89,6 +89,7 @@ from api.services.allocation_service import (
 )
 from api.services.email_service import email_service
 from api.services.notification_service import dispatch_notification_ids
+from api.services.qualification_service import replace_person_roles
 from api.timeutils import utcnow
 from web.deps import get_session_admin, get_session_user
 from web.routers.pages import (
@@ -560,11 +561,16 @@ def people_qualifications(
         return _render(error="Person not found.", code=404)
     try:
         parsed = parse_qualifications(qualifications)
-        member.roles = replace_qualifications(member.roles or [], parsed)
+        roles = replace_qualifications(member.roles or [], parsed)
+        reopened = replace_person_roles(db, member, roles)
     except ValueError as exc:
         return _render(error=str(exc), code=400)
     db.commit()
-    return _render(notice=f"Qualifications saved for {member.name}.")
+    notice = f"Qualifications saved for {member.name}."
+    if reopened:
+        noun = "assignment" if reopened == 1 else "assignments"
+        notice += f" {reopened} future {noun} reopened."
+    return _render(notice=notice)
 
 
 @router.post("/a/people/import", response_class=HTMLResponse)

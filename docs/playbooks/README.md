@@ -69,6 +69,8 @@ regressions bind access credentials to an active person and the tenant encoded a
 
 `church.json` and `basketball.json` are the executable role/headcount fixtures. Their
 `late_cover_roles` fields plug domain-specific withdrawal roles into the shared browser drill.
+The optional `qualification_review_role` and `extended_absence_role` fields select the
+qualification-revocation and multiweek-absence drills without hard-coding a domain list.
 `tests/playbooks/` validates and discovers them for both test tiers. Each run creates new
 organizations and invitations with fictional `.example` addresses. Dates start
 on a Sunday at least two weeks ahead, avoiding expired-date tests.
@@ -123,8 +125,9 @@ digits, underscores or hyphens; role codes use lowercase letters, digits or
 underscores. Both start with a letter. Role counts are positive integers, not
 booleans or numeric strings. The critical role must require exactly one person,
 matching the absence/shortage/replacement drill. Optional `late_cover_roles` entries must
-be unique declared roles; an empty list leaves that extension drill unconfigured for an
-external plugin. Definitions contain no passwords,
+be unique declared roles. Optional `qualification_review_role` and
+`extended_absence_role` values must each name a declared role. Missing optional values
+leave those extension drills unconfigured for an external plugin. Definitions contain no passwords,
 API keys, executable code or production endpoint settings.
 
 The runtime creates fresh organizations and a deep-copied definition per test.
@@ -185,6 +188,8 @@ unknown workflow IDs or silently skip unsupported scenarios.
 | Access and browser session credentials require the active account tenant | API and web real-auth regressions |
 | Both live organizations expose only their own people to administrators | BO-12 browser journey, both domains and widths |
 | Every declared scheduling qualification remains volunteer-only across tenants | BO-12 browser journey, both domains and widths |
+| Removed qualification reopens only future live work and preserves completed history | CH-D02 API, web, and browser regressions |
+| Multiweek absence excludes a player until deliberate removal | BB-D01 browser journey at both widths |
 | Competing qualified claims produce one winner without overfill | SQLite and PostgreSQL integration race tests |
 | Ineligible, unavailable, overlapping, or stale claims preserve the roster | Web and integration regressions |
 | Unpublished solution history neither appears nor consumes live capacity | Web and integration regressions |

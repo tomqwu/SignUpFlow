@@ -477,6 +477,13 @@ and scorekeeper withdrawals. At both browser widths, the coordinator sees the re
 wrong-role and unavailable reserves cannot see it, and one exact qualified available reserve
 covers it without changing any other player, ministry, or staff slot.
 
+Domain eligibility changes are fixture-driven too. Church removes a future children's
+ministry qualification, reopens only affected live work, preserves completed history, and
+shows the exact gap at both browser widths. Basketball records a point guard's multiweek
+absence, proves solver exclusion inside the interval, and requires a deliberate member
+update before the player becomes schedulable again. Safeguarding and medical clearance
+remain explicit human decisions; the application does not infer either one.
+
 Saved REST scheduling rules support hard assignment caps, hard minimum rest gaps,
 and a weighted soft cooldown preference. They execute in API solves instead of
 being stored as inert text. See the

@@ -19,6 +19,7 @@ from api.models import AuditAction, Organization, Person
 from api.roles import normalize_roles
 from api.schemas.common import PaginationParams, get_pagination_params
 from api.schemas.person import PersonCreate, PersonList, PersonResponse, PersonUpdate
+from api.services.qualification_service import replace_person_roles
 from api.utils.audit_logger import log_audit_event
 from api.utils.bulk_import import (
     MAX_BULK_IMPORT_ITEMS,
@@ -376,7 +377,7 @@ def update_person(
         if person_data.email is not None:
             person.email = person_data.email
         if normalized_roles is not None:
-            person.roles = normalized_roles
+            replace_person_roles(db, person, normalized_roles)
         if person_data.timezone is not None:
             person.timezone = person_data.timezone
         if person_data.language is not None:

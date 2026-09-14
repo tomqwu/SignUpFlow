@@ -395,6 +395,113 @@ def test_domain_late_withdrawals_require_exact_available_cover(
 
 
 @pytest.mark.parametrize("width", [360, 1440])
+def test_domain_eligibility_and_extended_availability_changes(
+    live_server, page, tmp_path, playbook_spec, width
+):
+    """Exercise CH-D02 or BB-D01 from the extension declared by each fixture."""
+    base = live_server
+    page.set_viewport_size({"width": width, "height": 900})
+    with httpx.Client(base_url=base, timeout=30) as client:
+        playbook = Playbook(client, playbook_spec)
+
+        if playbook_spec.qualification_review_role is not None:
+            role = playbook_spec.qualification_review_role
+            event_id = playbook.event(0, "qualification-review", roles={role: 1})
+            solution = playbook.solve()
+            playbook.assert_complete(solution["solution_id"])
+            playbook.request("POST", f"/solutions/{solution['solution_id']}/publish")
+            assigned = playbook.assignments(solution["solution_id"])[0]["assignees"][0]
+            member_id = assigned["person_id"]
+            member_name = playbook.people[member_id]["name"]
+
+            _login(page, base, playbook.email, playbook.password, "/a/dashboard")
+            page.goto(f"{base}/a/people")
+            form = page.locator(f'form[action="/a/people/{member_id}/qualifications"]')
+            form.locator('input[name="qualifications"]').fill("")
+            form.get_by_role("button", name="Save").click()
+            expect(page.locator("#people-list")).to_contain_text(
+                f"Qualifications saved for {member_name}. 1 future assignment reopened."
+            )
+
+            page.goto(f"{base}/a/events/{event_id}/assignments")
+            coverage = page.locator(f'.cov-row[data-role="{role}"]')
+            expect(coverage).to_have_attribute("data-gap", "1")
+            expect(coverage).to_contain_text("1 needed")
+            _fits(page)
+            page.screenshot(
+                path=str(tmp_path / f"{playbook_spec.id}-{width}-qualification-gap.png"),
+                full_page=True,
+            )
+        else:
+            role = playbook_spec.extended_absence_role
+            assert role is not None
+            event_ids = [
+                playbook.event(week, "injury-availability", roles={role: 1}) for week in range(4)
+            ]
+            qualified_ids = [
+                person_id
+                for person_id, person in playbook.people.items()
+                if role in person["roles"]
+            ]
+            assert len(qualified_ids) == 2
+            player_id, reserve_id = qualified_ids
+            player = playbook.people[player_id]
+
+            for week in (0, 3):
+                playbook.timeoff(reserve_id, week)
+
+            _login(page, base, player["email"], playbook.password, "/v/schedule")
+            page.goto(f"{base}/v/availability")
+            absence_start = playbook.start + timedelta(weeks=1)
+            absence_end = playbook.start + timedelta(weeks=2)
+            page.fill("#start_date", absence_start.isoformat())
+            page.fill("#end_date", absence_end.isoformat())
+            page.fill("#reason", "Recorded injury absence")
+            page.get_by_role("button", name="Add time-off").click()
+            expect(page.locator("#timeoff-list")).to_contain_text("Recorded injury absence")
+            for week in (1, 2):
+                playbook.blocked.add(
+                    (player_id, (playbook.start + timedelta(weeks=week)).isoformat())
+                )
+
+            absent_solution = playbook.solve()
+            playbook.assert_complete(absent_solution["solution_id"])
+            absent_assignments = {
+                entry["event_id"]: entry["assignees"][0]["person_id"]
+                for entry in playbook.assignments(absent_solution["solution_id"])
+            }
+            assert absent_assignments[event_ids[0]] == player_id
+            assert absent_assignments[event_ids[1]] == reserve_id
+            assert absent_assignments[event_ids[2]] == reserve_id
+            assert absent_assignments[event_ids[3]] == player_id
+
+            page.once("dialog", lambda dialog: dialog.accept())
+            page.get_by_role("button", name="Remove").click()
+            expect(page.locator("#timeoff-list")).to_contain_text("No time-off booked")
+            for week in (1, 2):
+                playbook.blocked.discard(
+                    (player_id, (playbook.start + timedelta(weeks=week)).isoformat())
+                )
+            playbook.timeoff(reserve_id, 1)
+
+            return_solution = playbook.solve()
+            playbook.assert_complete(return_solution["solution_id"])
+            returned = next(
+                entry
+                for entry in playbook.assignments(return_solution["solution_id"])
+                if entry["event_id"] == event_ids[1]
+            )
+            assert returned["assignees"][0]["person_id"] == player_id
+            _fits(page)
+            page.screenshot(
+                path=str(tmp_path / f"{playbook_spec.id}-{width}-availability-return.png"),
+                full_page=True,
+            )
+
+        no_js_errors(page)
+
+
+@pytest.mark.parametrize("width", [360, 1440])
 def test_two_org_every_role_respects_tenant_and_admin_boundaries(
     live_server, new_context, tmp_path, width
 ):

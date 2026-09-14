@@ -51,6 +51,7 @@ def _solve_and_publish(page, base):
     page.wait_for_selector("#publish-state")
     page.click("button:has-text('Publish this solution')")
     page.wait_for_selector("#publish-state:has-text('Unpublish')")
+    page.wait_for_selector("#publish-state:not(.htmx-added)")
 
 
 def test_inbox_mark_all_read_and_save_prefs(live_server, new_context, page, db_path):
