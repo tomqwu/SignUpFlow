@@ -15,7 +15,7 @@ def _login(client, db, email):
 
 
 def _seed(
-    db, person, *, eid="ev_d", etype="Sunday Service", role="usher", status="confirmed", reason=None
+    db, person, *, eid="ev_d", etype="Sunday Service", role="usher", status="pending", reason=None
 ):
     db.add(
         Event(
@@ -48,7 +48,8 @@ def test_detail_renders_for_owned_assignment(client, db):
     assert "Sunday Service" in resp.text
     assert "10:00" in resp.text and "11:30" in resp.text
     assert "usher" in resp.text
-    assert "confirmed" in resp.text
+    assert "Unanswered" in resp.text
+    assert "confirmed" not in resp.text
     assert 'href="/v/schedule"' in resp.text  # back nav
 
 

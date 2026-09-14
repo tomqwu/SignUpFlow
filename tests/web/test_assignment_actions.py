@@ -38,9 +38,11 @@ def test_accept_updates_status_and_returns_card(client, db):
     resp = client.post(f"/v/schedule/{a.id}/accept", cookies={SESSION_COOKIE: token})
     assert resp.status_code == 200
     assert 'id="assignment-card"' in resp.text
-    assert "confirmed" in resp.text
+    assert "Accepted" in resp.text
     db.refresh(a)
     assert a.status == "confirmed"
+    assert a.response_status == "accepted"
+    assert a.response_current is True
 
 
 def test_decline_requires_reason_and_persists_it(client, db):
