@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "id": "example-business-package",
+  "title": "Complete one accepted business-flow package",
+  "phase": "business-flow",
+  "state": "ready",
+  "priority": 10,
+  "hard_dependencies": [],
+  "acceptance": [
+    "The failing regression passes after implementation",
+    "Affected documentation and assets match the behavior"
+  ],
+  "owned_paths": [
+    "api/example.py",
+    "tests/unit/test_example.py",
+    "docs/example.md"
+  ]
+}

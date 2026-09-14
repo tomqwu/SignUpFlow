@@ -9,6 +9,8 @@ Reconciled 2026-09-13 for testing, CI, and merge policy:
 - [Repository README](../README.md): application entry point and commands.
 - [Testing and merge policy](TESTING.md): current local test tiers, prerequisites,
   local checks, and commit-bound evidence. Use this instead of old test reports.
+- [Agent runner](AGENT_RUNNER.md): finite Claude/Gemini execution, owned paths,
+  local evidence, and merge boundaries.
 - [Contributor workflow](../CONTRIBUTING.md) and [agent rules](../AGENTS.md).
 - [Local code review policy](ai-pr-review.md): local review evidence and merge rules.
 - [API authorization matrix](API_AUTHORIZATION.md): executable route classes,
@@ -261,10 +263,11 @@ Outdated or superseded documentation (kept for historical reference).
 |----------|------|--------|
 | TEST_SUMMARY_OLD_2025-10-05.md (historical file unavailable) | Old version | Historical/unavailable |
 
-### SpecKit (Future Enhancement)
+### SpecKit and Agent Tooling
 | Document | Description | Status |
 |----------|-------------|--------|
-| [SPEC_KIT_SETUP.md](SPEC_KIT_SETUP.md) | SpecKit setup guide | 🔮 Future feature |
+| [SPEC_KIT_SETUP.md](SPEC_KIT_SETUP.md) | Current SpecKit setup guide | Active |
+| [AGENT_RUNNER.md](AGENT_RUNNER.md) | Guarded local agent workflow | Active |
 | [SPEC_KIT_PROGRESS.md](archive/SPEC_KIT_PROGRESS.md) | SpecKit progress tracking | 📦 Archived 2026-05-14 (superseded by per-sprint `specs/0XX-sprint-N-completion/`) |
 
 ### Archive Folder

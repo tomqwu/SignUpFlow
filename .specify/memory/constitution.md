@@ -42,7 +42,8 @@ must not merge; builders require complete local evidence and GitHub mergeability
 Prefer native Poetry + SQLite setup over Docker for local development.
 
 ### II. Test-Driven Implementation
-Always verify changes with existing tests in `tests/`. Add new tests if acceptance criteria require it.
+Write the smallest failing regression before implementation. Verify every
+change with applicable tests in `tests/`, then run `make test-all` before a PR.
 
 ### III. Simplicity & YAGNI
 Build exactly what's needed, nothing more.
@@ -56,16 +57,21 @@ Build exactly what's needed, nothing more.
 ## Autonomy Configuration
 
 ### YOLO Mode: DISABLED
-### Git Autonomy: ENABLED (Commit changes when done)
+### Git Autonomy: SCOPED (Only explicit owned paths; reviewer never merges)
 
 ---
 
 ## Ralph Loop Scripts
 
 ```bash
-./scripts/ralph-loop.sh           # Build mode
-./scripts/ralph-loop.sh 20        # Max 20 iterations
+./scripts/ralph-loop.sh --mode plan --prompt prompt.md --work-item work-item.json
+./scripts/ralph-loop.sh --mode build --prompt prompt.md \
+  --work-item work-item.json --evidence local-evidence.json
 ```
+
+Both Claude and Gemini entry points use the same finite runner. One iteration
+is the default; the maximum is 20. Auto-approval and automatic model changes are
+disabled. See `docs/AGENT_RUNNER.md`.
 
 ---
 
