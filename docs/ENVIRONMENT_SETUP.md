@@ -1,5 +1,12 @@
 # Environment Setup Guide
 
+> Historical YAML-profile proposal. The application does not load
+> `config/env.*.yaml` as runtime configuration; those files are reference
+> checklists. Use [PRODUCTION_CONFIGURATION.md](PRODUCTION_CONFIGURATION.md)
+> for the environment variables actually read and validated, and use the root
+> [README](../README.md) for local setup. Do not run the deployment examples
+> below as a current production procedure.
+
 **Last Updated:** 2025-10-27
 **Status:** Production-Ready YAML Profile System
 

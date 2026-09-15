@@ -52,6 +52,16 @@ The maintained API, mobile, agent, and roadmap entry points now describe atomic
 organization/first-admin bootstrap, invitation-only membership for existing
 organizations, one permission role plus scheduling qualifications, and the
 regenerated Dart client. `API_README.md` is explicitly historical.
+The older `API.md` and `API_QUICKSTART.md` Python-library examples are now also
+explicitly historical because they import the removed `roster_cli` package. Current
+REST discovery uses the live `/docs` schema and `API_AUTHORIZATION.md`; current CLI
+examples live in the root README. The mobile smoke guide now matches create/resend
+invitation delivery: owned local mail capture is available, external provider receipt
+requires authorization, and the response-token fallback proves only deep-link plumbing.
+The older date/time, Docker-development, and YAML-environment guides are also
+explicitly historical. They reference removed source paths or a profile loader the
+application does not use. Current startup follows the root README, while effective
+production settings and fail-closed validation live in `PRODUCTION_CONFIGURATION.md`.
 The maintained API authorization matrix now records the complete organization
 lifecycle actor contract. Local real-JWT tests cover anonymous, owning-member,
 owning-admin, and foreign-admin reads and mutations plus transactional audit rollback.

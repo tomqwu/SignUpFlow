@@ -1,5 +1,11 @@
 # Rostio Date/Time Architecture
 
+> Historical implementation proposal. Its `frontend/`, `roster_cli/`, schema,
+> and local-storage examples do not describe the current application. Use the
+> root [README](../README.md), the executable Church/Basketball calendar cases
+> in [the playbook guide](playbooks/README.md), and the live `/docs` schema for
+> current behavior. Retain the material below only as design history.
+
 ## Principles
 
 ### 1. **Storage: Always UTC**

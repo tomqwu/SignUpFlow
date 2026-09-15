@@ -1,5 +1,11 @@
 # Roster API Quick Start
 
+> Historical Python-library quickstart. The `roster_cli` imports and template paths
+> below were removed and are not a supported interface. Use the root
+> [README](../README.md) for the current `signupflow` CLI, run `make run` for the
+> FastAPI application, and inspect `/docs` plus the maintained
+> [authorization matrix](API_AUTHORIZATION.md) for the REST contract.
+
 ## 1. Basic Solve (5 lines)
 
 ```python

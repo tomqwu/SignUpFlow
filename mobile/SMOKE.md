@@ -150,9 +150,18 @@ Steps:
 
 ### 3. Invitation accept JWT pair (#84)
 
-> The backend's `create_invitation` endpoint returns the invitation token in the response body — **it doesn't send an email yet** (`resend_invitation` still has a TODO for SMTP dispatch). Until that lands, the smoke walks the token through manually.
+Create and resend now queue the same invitation-email path. The default local gate
+writes a parseable message to an explicitly owned `LOCAL_EMAIL_CAPTURE_DIR`; an
+authorized release environment may use its configured external email backend. The
+API response also carries the raw invitation token for deterministic local testing.
+Using that response directly proves deep-link handling only; it does not prove that
+an external provider delivered a message.
 
-1. As admin, create an invitation via the **API** — the response body carries the raw invitation token. The mobile admin UI currently discards that response and only shows "Invitation sent", so it can't surface the token until invitation-email dispatch lands.
+1. As admin, create an invitation. For release acceptance, open the invitation link
+   from the message actually received by the test account. If external email is not
+   authorized, create it through the **API**, record provider delivery as not run,
+   and use the returned token only for the device deep-link check. The mobile admin
+   UI does not expose the raw token.
 
    ```bash
    curl -X POST 'https://api.signupflow.io/api/v1/invitations?org_id=<your-org-id>' \
@@ -161,13 +170,17 @@ Steps:
      -d '{"email":"newvolunteer@example.com","name":"New Volunteer","roles":["volunteer"]}'
    ```
 
-   `org_id` is a required query param; `email` / `name` / `roles` are required body fields per `api/schemas/invitation.py:InvitationCreate`. Pluck `token` out of the JSON response.
+   `org_id` is a required query param; `email` / `name` / `roles` are required body
+   fields per `api/schemas/invitation.py:InvitationCreate`. For the local fallback,
+   read `token` from the JSON response. Never paste a real token into issue or PR
+   evidence.
 2. On the test device, open `signupflow://invitation?token=<captured-token>` (paste into Safari address bar on iOS; use `adb shell am start` on Android — see `ANDROID_RELEASE.md:130-140`).
 3. App launches at the accept screen.
 4. Enter a password, confirm.
 5. Expected: lands directly on the volunteer dashboard (no re-login). Secure storage now has both access and refresh tokens.
 
-(When invitation-email dispatch ships, this section will simplify to "open the invitation email on the device → tap the link" — same as the password-reset section.)
+External-provider receipt, link opening, and account completion must be recorded
+separately from the local-capture or direct-token fallback.
 
 ### 4. Deep-link verification
 

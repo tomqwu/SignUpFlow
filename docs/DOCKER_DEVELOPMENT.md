@@ -1,5 +1,12 @@
 # Docker Development Guide
 
+> Historical development-compose guide. Its mounted `frontend/` and `locales/`
+> paths, YAML-profile loading claims, provider defaults, and test commands are
+> not the maintained local workflow. Use the root [README](../README.md) and
+> [testing guide](TESTING.md) for development, and use
+> [PRODUCTION_CONFIGURATION.md](PRODUCTION_CONFIGURATION.md) for effective
+> runtime settings. Do not infer production parity from this document.
+
 **SignUpFlow Development with Docker Compose**
 
 This guide explains how to use Docker Compose for local SignUpFlow development. Docker Compose provides a consistent development environment with PostgreSQL, Redis, and the API running in containers with hot-reload support.
