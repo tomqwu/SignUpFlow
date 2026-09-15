@@ -1164,6 +1164,8 @@ class Subscription(Base):
     pending_downgrade = Column(
         JSONType, nullable=True
     )  # Scheduled downgrade: {"new_plan": "starter", "effective_date": "2025-11-01"}
+    provider_state_updated_at = Column(DateTime, nullable=True)
+    last_provider_event_id = Column(String(255), nullable=True)
     created_at = Column(DateTime, nullable=False, default=utcnow)
     updated_at = Column(DateTime, nullable=False, default=utcnow, onupdate=utcnow)
 
@@ -1283,6 +1285,70 @@ class SubscriptionEvent(Base):
     __table_args__ = (
         Index("idx_subscription_events_org_timestamp", "org_id", "event_timestamp"),
         Index("idx_subscription_events_type", "event_type"),
+    )
+
+
+class ProviderEvent(Base):
+    """Durable receipt and outcome for an external provider event."""
+
+    __tablename__ = "provider_events"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    provider = Column(String(20), nullable=False)
+    provider_event_id = Column(String(255), nullable=False)
+    org_id = Column(String, ForeignKey("organizations.id", ondelete="CASCADE"), nullable=True)
+    event_type = Column(String(100), nullable=False)
+    provider_created_at = Column(DateTime, nullable=False)
+    payload_hash = Column(String(64), nullable=False)
+    status = Column(String(32), nullable=False)
+    attempts = Column(Integer, nullable=False, default=1)
+    outcome = Column(JSONType, nullable=True)
+    error = Column(Text, nullable=True)
+    processed_at = Column(DateTime, nullable=True)
+    created_at = Column(DateTime, nullable=False, default=utcnow)
+    updated_at = Column(DateTime, nullable=False, default=utcnow, onupdate=utcnow)
+
+    __table_args__ = (
+        Index(
+            "idx_provider_events_provider_event_id",
+            "provider",
+            "provider_event_id",
+            unique=True,
+        ),
+        Index("idx_provider_events_org_created", "org_id", "provider_created_at"),
+        Index("idx_provider_events_status", "status"),
+    )
+
+
+class ProviderOperation(Base):
+    """Durable state for an outbound provider request with uncertain outcomes."""
+
+    __tablename__ = "provider_operations"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    provider = Column(String(20), nullable=False)
+    operation_key = Column(String(255), nullable=False)
+    org_id = Column(String, ForeignKey("organizations.id", ondelete="CASCADE"), nullable=False)
+    operation_type = Column(String(100), nullable=False)
+    request_fingerprint = Column(String(64), nullable=False)
+    status = Column(String(32), nullable=False)
+    provider_object_id = Column(String(255), nullable=True)
+    response_data = Column(JSONType, nullable=True)
+    attempts = Column(Integer, nullable=False, default=0)
+    last_error = Column(Text, nullable=True)
+    completed_at = Column(DateTime, nullable=True)
+    created_at = Column(DateTime, nullable=False, default=utcnow)
+    updated_at = Column(DateTime, nullable=False, default=utcnow, onupdate=utcnow)
+
+    __table_args__ = (
+        Index(
+            "idx_provider_operations_key",
+            "provider",
+            "operation_key",
+            unique=True,
+        ),
+        Index("idx_provider_operations_org_created", "org_id", "created_at"),
+        Index("idx_provider_operations_status", "status"),
     )
 
 

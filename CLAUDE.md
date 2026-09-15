@@ -27,7 +27,7 @@ SignUpFlow is a headless volunteer scheduling and sign-up management API + CLI (
 
 ### Provider-backed Features
 
-Notification routes are registered under `/api/v1`. Billing and SMS code is registered but feature-gated off by default with `BILLING_ENABLED=false` and `SMS_ENABLED=false`; core scheduling must not require either paid integration. See `docs/TESTING.md` for current validation scope.
+Notification routes are registered under `/api/v1`. Billing, its signed Stripe callback, and SMS code are registered but feature-gated off by default with `BILLING_ENABLED=false` and `SMS_ENABLED=false`; core scheduling must not require either paid integration. The SendGrid event callback remains unregistered. See `docs/TESTING.md` for current validation scope.
 
 ## Commands
 
@@ -70,6 +70,9 @@ make migrate              # Run Alembic migrations
 /api/v1/analytics      — volunteer stats, event stats
 /api/v1/password-reset — request/confirm password reset
 /api/v1/notifications  — list / read / unread-count, email preferences (mobile Inbox)
+/api/v1/billing        — default-off commercial subscription and invoice surface
+/api/v1/webhooks/stripe — default-off signed Stripe state callback
+/api/sms               — default-off SMS and signed Twilio callbacks
 
 Bare `/api` is a 308 redirect to `/api/v1` for one release.
 ```

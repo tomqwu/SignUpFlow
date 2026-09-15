@@ -52,9 +52,9 @@ void main() {
       // TODO
     });
 
-    // Download Invoice Pdf
+    // Download invoice as HTML or text
     //
-    // Generate and download invoice PDF for billing history record.  Returns PDF file for download or HTML preview.  Requires:     - User must be an authenticated admin of the organization  Path Parameters:     billing_history_id: Billing history record ID  Query Parameters:     format: Output format - \"pdf\" (text-based) or \"html\" (styled template)  Returns:     PDF file download or HTML response
+    // Generate an invoice export for an authenticated organization administrator.
     //
     //Future<JsonObject> downloadInvoicePdf(String billingHistoryId, { String format }) async
     test('test downloadInvoicePdf', () async {

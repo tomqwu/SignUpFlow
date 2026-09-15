@@ -26,16 +26,20 @@ The retained Stripe plan is now explicitly historical and no longer presents its
 prices or launch sequence as current decisions. The mounted, default-off billing surface
 requires authenticated tenant administrators; checkout return verifies provider customer
 and organization ownership without changing entitlement, and payment-method attachment
-checks ownership before provider mutation. Sandbox callbacks, pricing, and enablement
-remain unverified work under #270.
+checks ownership before provider mutation. The default-off Stripe callback is mounted
+behind `BILLING_ENABLED`, fails closed without a signing secret, and accepts no
+cross-tenant identity inference. Durable event receipts, monotonic subscription/invoice
+transitions, uncertain checkout reconciliation, trial expiry, and truthful HTML/text
+invoice exports are covered with provider fakes. Pricing, refunds, quotas, provider
+sandbox delivery, support ownership, and live enablement remain the separately
+authorized #270.4 boundary.
 The mounted, default-off SMS surface now uses canonical string identifiers and checks
 tenant ownership plus assignment/event/person consistency before queue or provider work.
 Twilio callbacks require signatures over the configured external URLs, process incoming
 message IDs once, and reject delivery-state regressions. OpenAPI and the generated Dart
 request models carry the corrected string-ID contract. Provider delivery remains deferred
-to #270. This package changes disabled integration behavior and generated contracts, not
-the Church or Basketball browser layout, so the committed walkthrough screenshots remain
-current.
+to #270. These provider-safety packages change no Church or Basketball template or layout,
+so the committed walkthrough screenshots remain current and were not recaptured.
 The maintained playbook guides now link a validated machine-readable coverage
 manifest; its partial and blocked rows prevent baseline tests from being described
 as complete role-by-role business acceptance.

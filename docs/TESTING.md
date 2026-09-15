@@ -38,6 +38,10 @@ Keep the
 flags explicit for focused manual runs:
 `EMAIL_ENABLED=false SMS_ENABLED=false BILLING_ENABLED=false make test-all`.
 Default Python tests also reject non-loopback socket connections before transport.
+Billing and SMS policy tests use provider fakes only. They cover signed-callback gating,
+tenant identity, duplicate/out-of-order events, failed-payment recovery, uncertain
+checkout reconciliation, trial expiry, invoice exports, and consent/quiet-hours no-send
+behavior. They do not make a Stripe or Twilio request and are not sandbox acceptance.
 
 | Tier | Location | Purpose |
 | --- | --- | --- |

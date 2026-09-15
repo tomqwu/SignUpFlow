@@ -68,7 +68,7 @@ notified.
 | `ACCESS_TOKEN_EXPIRE_HOURS` | JWT and browser-session lifetime | One canonical positive value; default 24. |
 | `EMAIL_ENABLED` + `SENDGRID_API_KEY` | Transactional email | default `false`; provider acceptance is not complete |
 | `SMS_ENABLED` + `TWILIO_ACCOUNT_SID`/`_AUTH_TOKEN`/`_PHONE_NUMBER` + callback URLs | Deferred paid SMS | default `false`; production callback URLs must be exact external HTTPS URLs; enable only for an authorized sandbox validation |
-| `BILLING_ENABLED` + `STRIPE_SECRET_KEY` | Deferred billing | default `false`; enable only for an authorized Stripe sandbox validation |
+| `BILLING_ENABLED` + `STRIPE_SECRET_KEY` + `STRIPE_WEBHOOK_SECRET` | Deferred billing | default `false`; enable only for an authorized Stripe sandbox validation |
 | `READINESS_FAILURE_ALERT_THRESHOLD` | Consecutive DB readiness failures before a local trigger | default `3`; must be a positive integer |
 | `SENTRY_DSN` | Optional Sentry error reporting | absent means explicitly disabled; a configured sink initializes with PII and tracing off; invalid initialization stops startup |
 
@@ -81,6 +81,16 @@ as `TWILIO_INCOMING_SMS_URL` and delivery callback as
 `TWILIO_STATUS_CALLBACK_URL`. The application validates signatures against
 those configured URLs instead of trusting request or forwarded-host headers.
 Missing or invalid signatures return 403 before callback state changes.
+
+When an authorized Stripe sandbox is used, configure the signed callback as
+`/api/v1/webhooks/stripe`. Subscription and invoice events must carry `org_id` in
+provider metadata. The handler records `provider_events` receipts and applies only
+newer state for the matched tenant. Checkout creation records `provider_operations`;
+`reconciliation_required` means the provider outcome was uncertain and the same
+operation must not be retried until an operator compares it with Stripe. There is no
+approved automated refund, credit, pricing, quota, or live-mode policy. Do not infer
+one from historical specifications, and do not edit entitlement to make a sandbox
+journey appear successful.
 
 ## Backups
 

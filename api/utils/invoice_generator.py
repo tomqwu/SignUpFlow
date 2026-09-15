@@ -6,6 +6,7 @@ Simple text-based invoices without complex styling.
 """
 
 from datetime import datetime
+from html import escape
 from io import BytesIO
 
 
@@ -108,8 +109,12 @@ def generate_invoice_pdf_html(
     Returns:
         str: HTML invoice template
     """
-    invoice_num = invoice_number or f"INV-{billing_history_id[:8].upper()}"
+    invoice_num = escape(invoice_number or f"INV-{billing_history_id[:8].upper()}")
     amount_usd = amount_cents / 100
+    safe_org_name = escape(org_name)
+    safe_org_address = escape(org_address) if org_address else None
+    safe_description = escape(description or event_type.replace("_", " ").title())
+    safe_plan_tier = escape(plan_tier.title())
 
     html = f"""
 <!DOCTYPE html>
@@ -207,8 +212,8 @@ def generate_invoice_pdf_html(
 
     <div class="bill-to">
         <div class="info-label" style="margin-bottom: 10px;">BILL TO:</div>
-        <div style="font-size: 16px; font-weight: bold;">{org_name}</div>
-        {f'<div style="margin-top: 5px; color: #666;">{org_address}</div>' if org_address else ''}
+        <div style="font-size: 16px; font-weight: bold;">{safe_org_name}</div>
+        {f'<div style="margin-top: 5px; color: #666;">{safe_org_address}</div>' if safe_org_address else ''}
     </div>
 
     <table>
@@ -221,8 +226,8 @@ def generate_invoice_pdf_html(
         </thead>
         <tbody>
             <tr>
-                <td>{description or event_type.replace('_', ' ').title()}</td>
-                <td>{plan_tier.title()}</td>
+                <td>{safe_description}</td>
+                <td>{safe_plan_tier}</td>
                 <td style="text-align: right;">${amount_usd:.2f}</td>
             </tr>
             <tr class="total-row">

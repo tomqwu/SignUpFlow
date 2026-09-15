@@ -276,14 +276,18 @@ def process_cancelled_subscriptions(self) -> dict[str, Any]:
         now = utcnow()
         cancelled_orgs = []
 
-        # Find all subscriptions marked for cancellation at period end
-        subscriptions = (
-            db.query(Subscription)
-            .filter(
-                Subscription.cancel_at_period_end is True, Subscription.current_period_end <= now
+        subscriptions = []
+        organization_ids = [str(row[0]) for row in db.query(Organization.id).all()]
+        for org_id in organization_ids:
+            subscriptions.extend(
+                db.query(Subscription)
+                .filter(
+                    Subscription.org_id == org_id,
+                    Subscription.cancel_at_period_end.is_(True),
+                    Subscription.current_period_end <= now,
+                )
+                .all()
             )
-            .all()
-        )
 
         logger.info(f"Found {len(subscriptions)} subscriptions to process")
 

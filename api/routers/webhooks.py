@@ -17,6 +17,7 @@ from cryptography.hazmat.primitives.serialization import load_der_public_key
 from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy.orm import Session
 
+from api.core.features import require_billing_enabled
 from api.database import get_db
 from api.logging_config import logger
 from api.models import DeliveryLog, Notification, NotificationStatus
@@ -28,7 +29,7 @@ from api.services.webhook_service import WebhookService
 # it would accept forged events in deployments where STRIPE_WEBHOOK_SECRET
 # isn't set. The split keeps `router` (SendGrid + future signed handlers)
 # mountable while `stripe_router` stays parked until billing is re-enabled.
-stripe_router = APIRouter(tags=["webhooks"])
+stripe_router = APIRouter(tags=["webhooks"], dependencies=[Depends(require_billing_enabled)])
 router = APIRouter(tags=["webhooks"])
 
 # SendGrid event types we care about. Anything else is ignored (200 OK,
@@ -64,7 +65,7 @@ _STATUS_RANK = {
 }
 
 
-@stripe_router.post("/webhooks/stripe")
+@stripe_router.post("/webhooks/stripe", include_in_schema=False)
 async def stripe_webhook(request: Request, db: Session = Depends(get_db)) -> dict[str, Any]:
     """
     Handle incoming Stripe webhook events.
@@ -114,20 +115,13 @@ async def stripe_webhook(request: Request, db: Session = Depends(get_db)) -> dic
     # Log event receipt
     logger.info(f"Received Stripe webhook: {event['type']} (id: {event['id']})")
 
-    # Process event
-    try:
-        result = webhook_service.process_event(event)
-
-        if result["success"]:
-            logger.info(f"Successfully processed webhook {event['type']}")
-            return {"success": True, "message": "Webhook processed"}
-        else:
-            logger.error(f"Failed to process webhook {event['type']}: {result['message']}")
-            raise HTTPException(status_code=400, detail=result["message"])
-
-    except Exception as e:
-        logger.error(f"Error processing webhook {event['type']}: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail="Internal error processing webhook")
+    result = webhook_service.process_event(event)
+    if result["success"]:
+        logger.info("Processed Stripe webhook %s with status %s", event["id"], result["status"])
+        return result
+    if result["status"] == "reconciliation_required":
+        raise HTTPException(status_code=409, detail=result["message"])
+    raise HTTPException(status_code=400, detail=result["message"])
 
 
 def _verify_sendgrid_signature(payload: bytes, signature_b64: str, timestamp: str) -> bool:

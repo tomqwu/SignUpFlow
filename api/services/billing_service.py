@@ -20,7 +20,6 @@ from api.logging_config import logger
 from api.models import (
     BillingHistory,
     Organization,
-    PaymentMethod,
     Subscription,
     SubscriptionEvent,
     UsageMetrics,
@@ -71,6 +70,10 @@ class BillingService:
         except Exception as e:
             logger.error(f"Error retrieving subscription for org {org_id}: {e}")
             return None
+
+    def _organization_ids(self) -> list[str]:
+        """Return organization IDs so batch work can scope every tenant model query."""
+        return [str(row[0]) for row in self.db.query(Organization.id).all()]
 
     def create_free_subscription(self, org_id: str) -> Subscription | None:
         """
@@ -578,7 +581,7 @@ class BillingService:
         Downgrades all subscriptions where:
         - status is "trialing"
         - trial_end_date < now()
-        - no payment method on file
+        - no verified provider transition has activated the subscription
 
         Returns:
             dict: Result with downgraded organization count
@@ -597,37 +600,23 @@ class BillingService:
         try:
             now = utcnow()
 
-            # Find all expired trials
-            expired_trials = (
-                self.db.query(Subscription)
-                .filter(Subscription.status == "trialing", Subscription.trial_end_date <= now)
-                .all()
-            )
+            expired_trials = []
+            for org_id in self._organization_ids():
+                expired_trials.extend(
+                    self.db.query(Subscription)
+                    .filter(
+                        Subscription.org_id == org_id,
+                        Subscription.status == "trialing",
+                        Subscription.trial_end_date <= now,
+                    )
+                    .all()
+                )
 
             downgraded_orgs = []
 
             for subscription in expired_trials:
-                # Check if payment method on file
-                payment_method = (
-                    self.db.query(PaymentMethod)
-                    .filter(
-                        PaymentMethod.org_id == subscription.org_id,
-                        PaymentMethod.is_primary is True,
-                        PaymentMethod.is_active is True,
-                    )
-                    .first()
-                )
-
-                if payment_method:
-                    # Has payment method - convert to paid subscription
-                    # This will be handled by Stripe webhook when trial converts
-                    logger.info(
-                        f"Trial expired for org {subscription.org_id} but has payment method - "
-                        f"will convert to paid"
-                    )
-                    continue
-
-                # No payment method - downgrade to free
+                # A saved card is not evidence of payment. Only a verified provider
+                # event can move the subscription out of trialing before this task.
                 previous_plan = subscription.plan_tier
 
                 subscription.plan_tier = "free"
@@ -1123,10 +1112,16 @@ class BillingService:
             now = utcnow()
             applied_downgrades = []
 
-            # Find all subscriptions with pending downgrades
-            subscriptions = (
-                self.db.query(Subscription).filter(Subscription.pending_downgrade.isnot(None)).all()
-            )
+            subscriptions = []
+            for org_id in self._organization_ids():
+                subscriptions.extend(
+                    self.db.query(Subscription)
+                    .filter(
+                        Subscription.org_id == org_id,
+                        Subscription.pending_downgrade.isnot(None),
+                    )
+                    .all()
+                )
 
             logger.info(f"Found {len(subscriptions)} subscriptions with pending downgrades")
 
@@ -1160,26 +1155,9 @@ class BillingService:
                     # Apply the downgrade
                     subscription.plan_tier = new_plan_tier
 
-                    # Apply credit to Stripe customer balance (T080)
-                    if credit_amount_cents > 0 and subscription.stripe_customer_id:
-                        try:
-                            from api.services.stripe_service import StripeService
-
-                            stripe_service = StripeService(self.db)
-                            stripe_service.apply_customer_credit(
-                                customer_id=subscription.stripe_customer_id,
-                                amount_cents=credit_amount_cents,
-                                description=f"Credit for downgrade from {previous_plan} to {new_plan_tier}",
-                            )
-                            logger.info(
-                                f"Applied ${credit_amount_cents/100:.2f} credit to "
-                                f"Stripe customer {subscription.stripe_customer_id}"
-                            )
-                        except Exception as e:
-                            logger.error(
-                                f"Failed to apply Stripe credit for org {subscription.org_id}: {e}"
-                            )
-                            # Continue anyway - don't block downgrade
+                    credit_status = (
+                        "policy_pending" if credit_amount_cents > 0 else "not_applicable"
+                    )
 
                     # Clear pending_downgrade field
                     subscription.pending_downgrade = None
@@ -1195,7 +1173,10 @@ class BillingService:
                         new_plan=new_plan_tier,
                         previous_plan=previous_plan,
                         reason=reason,
-                        notes=f"Scheduled downgrade applied: {previous_plan} → {new_plan_tier}, credit ${credit_amount_cents/100:.2f}",
+                        notes=(
+                            f"Scheduled downgrade applied: {previous_plan} → {new_plan_tier}; "
+                            f"credit status {credit_status}"
+                        ),
                     )
 
                     applied_downgrades.append(
@@ -1204,6 +1185,7 @@ class BillingService:
                             "previous_plan": previous_plan,
                             "new_plan": new_plan_tier,
                             "credit_amount_cents": credit_amount_cents,
+                            "credit_status": credit_status,
                             "effective_date": effective_date_str,
                         }
                     )

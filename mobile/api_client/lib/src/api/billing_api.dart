@@ -488,12 +488,12 @@ class BillingApi {
     );
   }
 
-  /// Download Invoice Pdf
-  /// Generate and download invoice PDF for billing history record.  Returns PDF file for download or HTML preview.  Requires:     - User must be an authenticated admin of the organization  Path Parameters:     billing_history_id: Billing history record ID  Query Parameters:     format: Output format - \&quot;pdf\&quot; (text-based) or \&quot;html\&quot; (styled template)  Returns:     PDF file download or HTML response
+  /// Download invoice as HTML or text.
+  /// Generate an invoice export for an authenticated organization administrator.
   ///
   /// Parameters:
   /// * [billingHistoryId]
-  /// * [format] - Output format (pdf or html)
+  /// * [format] - Output format (text or html)
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
