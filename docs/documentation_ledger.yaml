@@ -1,0 +1,240 @@
+schema_version: 1
+review:
+  date: "2026-09-15"
+  source_sha: "21010c59d31e991b8992407c546469a42dce9738"
+  issue: "#277"
+  scope: "Every tracked Markdown file; generated mobile documents remain owned by #191."
+
+record_templates:
+  agent: &agent
+    status: current
+    owner: "#277"
+    sources: [AGENTS.md, Makefile, docs/TESTING.md]
+    outcome: "Reviewed current instruction; repository and no-CI policy take precedence."
+  current: &current
+    status: current
+    owner: "#277"
+    sources: [README.md, Makefile, api/main.py, docs/TESTING.md]
+    outcome: "Reviewed current documentation against executable source and current policy."
+  business: &business
+    status: current
+    owner: "#289"
+    sources: [README.md, tests/playbooks/coverage.py, tests/e2e/test_domain_playbooks.py]
+    outcome: "Reviewed current Church and Basketball business-flow guidance and limitations."
+  platform: &platform
+    status: current
+    owner: "#284"
+    sources: [docker-compose.yml, docs/ROADMAP.md, docs/TESTING.md]
+    outcome: "Reviewed current local platform evidence; external release acceptance remains open."
+  mobile: &mobile
+    status: current
+    owner: "#191"
+    sources: [mobile/pubspec.yaml, Makefile, tests/contract/openapi.snapshot.json]
+    outcome: "Reviewed maintained native guidance; codegen, device, signing, and store evidence remain blocked under #191."
+  historical: &historical
+    status: historical
+    owner: "#277"
+    sources: [docs/DOCUMENTATION_STATUS.md, docs/INDEX.md]
+    outcome: "Retained as historical context with a file-level historical-link exception; current docs control."
+  specification: &specification
+    status: historical
+    owner: "#277"
+    sources: [docs/ROADMAP.md, docs/DOCUMENTATION_STATUS.md]
+    outcome: "Retained historical specification, not implementation or release evidence; historical-link exception applies."
+
+generated_cohorts:
+  - pattern: "mobile/api_client/**"
+    status: generated
+    owner: "#191"
+    canonical: tests/contract/openapi.snapshot.json
+    outcome: "All generated Markdown is inventoried by pattern and must be repaired only through deterministic code generation."
+
+files:
+  .claude/commands/speckit.analyze.md: {<<: *agent, canonical: .claude/commands/speckit.analyze.md}
+  .claude/commands/speckit.checklist.md: {<<: *agent, canonical: .claude/commands/speckit.checklist.md}
+  .claude/commands/speckit.clarify.md: {<<: *agent, canonical: .claude/commands/speckit.clarify.md}
+  .claude/commands/speckit.constitution.md: {<<: *agent, canonical: .claude/commands/speckit.constitution.md}
+  .claude/commands/speckit.implement.md: {<<: *agent, canonical: .claude/commands/speckit.implement.md}
+  .claude/commands/speckit.plan.md: {<<: *agent, canonical: .claude/commands/speckit.plan.md}
+  .claude/commands/speckit.specify.md: {<<: *agent, canonical: .claude/commands/speckit.specify.md}
+  .claude/commands/speckit.tasks.md: {<<: *agent, canonical: .claude/commands/speckit.tasks.md}
+  .github/copilot-instructions.md: {<<: *agent, canonical: .github/copilot-instructions.md}
+  .specify/memory/constitution.md: {<<: *agent, canonical: .specify/memory/constitution.md}
+  .specify/templates/agent-file-template.md: {<<: *agent, canonical: .specify/templates/agent-file-template.md}
+  .specify/templates/checklist-template.md: {<<: *agent, canonical: .specify/templates/checklist-template.md}
+  .specify/templates/feature-progress-template.md: {<<: *agent, canonical: .specify/templates/feature-progress-template.md}
+  .specify/templates/plan-template.md: {<<: *agent, canonical: .specify/templates/plan-template.md}
+  .specify/templates/project-progress-template.md: {<<: *agent, canonical: .specify/templates/project-progress-template.md}
+  .specify/templates/spec-template.md: {<<: *agent, canonical: .specify/templates/spec-template.md}
+  .specify/templates/tasks-template.md: {<<: *agent, canonical: .specify/templates/tasks-template.md}
+  AGENTS.md: {<<: *agent, canonical: AGENTS.md}
+  CLAUDE.md: {<<: *agent, canonical: CLAUDE.md}
+  CONTRIBUTING.md: {<<: *agent, canonical: CONTRIBUTING.md}
+  README.md: {<<: *business, canonical: README.md}
+  docs/AGENT_RUNNER.md: {<<: *agent, canonical: docs/AGENT_RUNNER.md}
+  docs/ALLOCATION_TRANSACTIONS.md: {<<: *business, canonical: docs/ALLOCATION_TRANSACTIONS.md}
+  docs/API.md: {<<: *current, canonical: docs/API.md}
+  docs/API_AUTHORIZATION.md: {<<: *current, canonical: docs/API_AUTHORIZATION.md}
+  docs/API_QUICKSTART.md: {<<: *current, canonical: docs/API_QUICKSTART.md}
+  docs/API_README.md: {<<: *historical, canonical: docs/API.md}
+  docs/ASSIGNMENT_RESPONSES.md: {<<: *business, canonical: docs/ASSIGNMENT_RESPONSES.md}
+  docs/BACKEND_DEBUG.md: {<<: *current, canonical: docs/BACKEND_DEBUG.md}
+  docs/COMPREHENSIVE_TEST_SUITE.md: {<<: *historical, canonical: docs/TESTING.md}
+  docs/DATETIME_ARCHITECTURE.md: {<<: *current, canonical: docs/DATETIME_ARCHITECTURE.md}
+  docs/DEBUG_REFACTORING.md: {<<: *historical, canonical: docs/BACKEND_DEBUG.md}
+  docs/DEPLOYMENT_GUIDE.md: {<<: *historical, canonical: docs/RUNBOOK.md}
+  docs/DOCKER_DEVELOPMENT.md: {<<: *current, canonical: docs/DOCKER_DEVELOPMENT.md}
+  docs/DOCUMENTATION_STATUS.md: {<<: *current, canonical: docs/DOCUMENTATION_STATUS.md}
+  docs/ENVIRONMENT_SETUP.md: {<<: *current, canonical: docs/ENVIRONMENT_SETUP.md}
+  docs/EVENT_ROLES_FEATURE.md: {<<: *historical, canonical: docs/playbooks/README.md}
+  docs/FINAL_STATUS.md: {<<: *historical, canonical: docs/ROADMAP.md}
+  docs/IMPLEMENTATION_COMPLETE.md: {<<: *historical, canonical: docs/ROADMAP.md}
+  docs/IMPLEMENTATION_PLAN.md: {<<: *historical, canonical: docs/ROADMAP.md}
+  docs/INDEX.md: {<<: *current, canonical: docs/INDEX.md}
+  docs/LAUNCH_ROADMAP.md: {<<: *historical, canonical: docs/ROADMAP.md}
+  docs/LOCAL_EMAIL_CAPTURE.md: {<<: *business, canonical: docs/LOCAL_EMAIL_CAPTURE.md}
+  docs/MULTI_ORG_LIMITATIONS.md: {<<: *historical, canonical: docs/API_AUTHORIZATION.md}
+  docs/NEXT_STEPS.md: {<<: *historical, canonical: docs/ROADMAP.md}
+  docs/PRODUCTION_CONFIGURATION.md: {<<: *platform, canonical: docs/PRODUCTION_CONFIGURATION.md}
+  docs/QUICK_START.md: {<<: *historical, canonical: README.md}
+  docs/RATE_LIMITING.md: {<<: *current, canonical: docs/RATE_LIMITING.md}
+  docs/RBAC_AUDIT.md: {<<: *historical, canonical: docs/API_AUTHORIZATION.md}
+  docs/RBAC_IMPLEMENTATION_COMPLETE.md: {<<: *historical, canonical: docs/API_AUTHORIZATION.md}
+  docs/README.md: {<<: *historical, canonical: docs/INDEX.md}
+  docs/REFACTORING.md: {<<: *historical, canonical: docs/INDEX.md}
+  docs/ROADMAP.md: {<<: *current, canonical: docs/ROADMAP.md}
+  docs/RUNBOOK.md: {<<: *platform, canonical: docs/RUNBOOK.md}
+  docs/SAAS_DESIGN.md: {<<: *historical, canonical: docs/ROADMAP.md}
+  docs/SCHEDULE_PUBLICATION.md: {<<: *business, canonical: docs/SCHEDULE_PUBLICATION.md}
+  docs/SCHEDULING_CONSTRAINTS.md: {<<: *business, canonical: docs/SCHEDULING_CONSTRAINTS.md}
+  docs/SECURITY.md: {<<: *platform, canonical: docs/SECURITY.md}
+  docs/SECURITY_MIGRATION.md: {<<: *historical, canonical: docs/SECURITY.md}
+  docs/SECURITY_VALIDATION.md: {<<: *platform, canonical: docs/SECURITY_VALIDATION.md}
+  docs/SPEC_KIT_SETUP.md: {<<: *historical, canonical: docs/INDEX.md}
+  docs/TESTING.md: {<<: *current, canonical: docs/TESTING.md}
+  docs/TESTING_ACTION_PLAN.md: {<<: *historical, canonical: docs/TESTING.md}
+  docs/TEST_PERFORMANCE.md: {<<: *historical, canonical: docs/TESTING.md}
+  docs/TEST_STRATEGY.md: {<<: *historical, canonical: docs/TESTING.md}
+  docs/TEST_SUMMARY.md: {<<: *historical, canonical: docs/TESTING.md}
+  docs/TOOLS.md: {<<: *current, canonical: docs/TOOLS.md}
+  docs/USER_STORIES.md: {<<: *historical, canonical: docs/playbooks/README.md}
+  docs/WORKSPACE_ORGANIZATION.md: {<<: *historical, canonical: docs/INDEX.md}
+  docs/ai-agent-coding-strategy.md: {<<: *agent, canonical: docs/ai-agent-coding-strategy.md}
+  docs/ai-pr-review.md: {<<: *agent, canonical: docs/ai-pr-review.md}
+  docs/archive/SPEC_KIT_PROGRESS.md: {<<: *historical, canonical: docs/INDEX.md}
+  docs/archive/TECHNICAL_DEBT.md: {<<: *historical, canonical: docs/ROADMAP.md}
+  docs/examples/agent-rendered-prompt.md: {<<: *agent, canonical: docs/examples/agent-rendered-prompt.md}
+  docs/features/e2e-invitation-workflow.md: {<<: *business, canonical: docs/features/e2e-invitation-workflow.md}
+  docs/features/password-reset.md: {<<: *business, canonical: docs/features/password-reset.md}
+  docs/playbooks/README.md: {<<: *business, canonical: docs/playbooks/README.md}
+  docs/playbooks/basketball.md: {<<: *business, canonical: docs/playbooks/basketball.md}
+  docs/playbooks/church.md: {<<: *business, canonical: docs/playbooks/church.md}
+  docs/playbooks/validation.md: {<<: *historical, canonical: docs/playbooks/README.md}
+  docs/research-log.md: {<<: *historical, canonical: docs/ai-agent-coding-strategy.md}
+  docs/research/legacy-migrations/README.md: {<<: *historical, canonical: docs/ROADMAP.md}
+  docs/saas/CODEX_PROVIDER_FALLBACK.md: {<<: *historical, canonical: docs/ROADMAP.md}
+  docs/saas/EMAIL_INTEGRATION_PLAN.md: {<<: *historical, canonical: docs/LOCAL_EMAIL_CAPTURE.md}
+  docs/saas/SMOKE_TESTING_EMAIL.md: {<<: *historical, canonical: docs/LOCAL_EMAIL_CAPTURE.md}
+  docs/saas/STRIPE_INTEGRATION_PLAN.md: {<<: *historical, canonical: docs/ROADMAP.md}
+  docs/screenshots/README.md: {<<: *business, canonical: docs/screenshots/README.md}
+  docs/source-repos.md: {<<: *historical, canonical: docs/ai-agent-coding-strategy.md}
+  examples/README.md: {<<: *current, canonical: examples/README.md}
+  mobile/ANDROID_RELEASE.md: {<<: *mobile, canonical: mobile/ANDROID_RELEASE.md}
+  mobile/README.md: {<<: *mobile, canonical: mobile/README.md}
+  mobile/SMOKE.md: {<<: *mobile, canonical: mobile/SMOKE.md}
+  mobile/TESTFLIGHT.md: {<<: *mobile, canonical: mobile/TESTFLIGHT.md}
+  mobile/fastlane/README.md: {<<: *mobile, canonical: mobile/fastlane/README.md}
+  mobile/ios/Runner/Assets.xcassets/LaunchImage.imageset/README.md: {<<: *mobile, canonical: mobile/ios/Runner/Assets.xcassets/LaunchImage.imageset/README.md}
+  mobile/prototype/brand-spec.md: {<<: *mobile, canonical: mobile/prototype/brand-spec.md}
+  specs/000-user-onboarding/checklists/requirements.md: {<<: *specification, canonical: docs/ROADMAP.md}
+  specs/000-user-onboarding/contracts/analytics-api.md: {<<: *specification, canonical: docs/API.md}
+  specs/000-user-onboarding/contracts/checklist-api.md: {<<: *specification, canonical: docs/API.md}
+  specs/000-user-onboarding/contracts/sample-data-api.md: {<<: *specification, canonical: docs/API.md}
+  specs/000-user-onboarding/contracts/wizard-api.md: {<<: *specification, canonical: docs/API.md}
+  specs/000-user-onboarding/data-model.md: {<<: *specification, canonical: docs/ROADMAP.md}
+  specs/000-user-onboarding/plan.md: {<<: *specification, canonical: docs/ROADMAP.md}
+  specs/000-user-onboarding/quickstart.md: {<<: *specification, canonical: docs/ROADMAP.md}
+  specs/000-user-onboarding/research.md: {<<: *specification, canonical: docs/ROADMAP.md}
+  specs/000-user-onboarding/spec.md: {<<: *specification, canonical: docs/ROADMAP.md}
+  specs/000-user-onboarding/tasks.md: {<<: *specification, canonical: docs/ROADMAP.md}
+  specs/001-email-notifications/checklists/requirements.md: {<<: *specification, canonical: docs/ROADMAP.md}
+  specs/001-email-notifications/contracts/sendgrid-webhooks.md: {<<: *specification, canonical: docs/ROADMAP.md}
+  specs/001-email-notifications/data-model.md: {<<: *specification, canonical: docs/ROADMAP.md}
+  specs/001-email-notifications/plan.md: {<<: *specification, canonical: docs/ROADMAP.md}
+  specs/001-email-notifications/quickstart.md: {<<: *specification, canonical: docs/ROADMAP.md}
+  specs/001-email-notifications/research.md: {<<: *specification, canonical: docs/ROADMAP.md}
+  specs/001-email-notifications/spec.md: {<<: *specification, canonical: docs/ROADMAP.md}
+  specs/001-email-notifications/tasks.md: {<<: *specification, canonical: docs/ROADMAP.md}
+  specs/011-billing-subscription-system/checklists/requirements.md: {<<: *specification, canonical: docs/ROADMAP.md}
+  specs/011-billing-subscription-system/contracts/billing-api.md: {<<: *specification, canonical: docs/ROADMAP.md}
+  specs/011-billing-subscription-system/contracts/webhook-api.md: {<<: *specification, canonical: docs/ROADMAP.md}
+  specs/011-billing-subscription-system/data-model.md: {<<: *specification, canonical: docs/ROADMAP.md}
+  specs/011-billing-subscription-system/plan.md: {<<: *specification, canonical: docs/ROADMAP.md}
+  specs/011-billing-subscription-system/progress.md: {<<: *specification, canonical: docs/ROADMAP.md}
+  specs/011-billing-subscription-system/quickstart.md: {<<: *specification, canonical: docs/ROADMAP.md}
+  specs/011-billing-subscription-system/research.md: {<<: *specification, canonical: docs/ROADMAP.md}
+  specs/011-billing-subscription-system/spec.md: {<<: *specification, canonical: docs/ROADMAP.md}
+  specs/011-billing-subscription-system/tasks.md: {<<: *specification, canonical: docs/ROADMAP.md}
+  specs/012-i18n-system/spec.md: {<<: *specification, canonical: docs/ROADMAP.md}
+  specs/013-production-infrastructure/checklists/requirements.md: {<<: *specification, canonical: docs/RUNBOOK.md}
+  specs/013-production-infrastructure/contracts/backup-restore.md: {<<: *specification, canonical: docs/RUNBOOK.md}
+  specs/013-production-infrastructure/contracts/deployment-api.md: {<<: *specification, canonical: docs/RUNBOOK.md}
+  specs/013-production-infrastructure/contracts/health-check.md: {<<: *specification, canonical: docs/RUNBOOK.md}
+  specs/013-production-infrastructure/plan.md: {<<: *specification, canonical: docs/RUNBOOK.md}
+  specs/013-production-infrastructure/quickstart.md: {<<: *specification, canonical: docs/RUNBOOK.md}
+  specs/013-production-infrastructure/research.md: {<<: *specification, canonical: docs/RUNBOOK.md}
+  specs/013-production-infrastructure/spec.md: {<<: *specification, canonical: docs/RUNBOOK.md}
+  specs/014-security-hardening/checklists/requirements.md: {<<: *specification, canonical: docs/SECURITY.md}
+  specs/014-security-hardening/contracts/2fa-api.md: {<<: *specification, canonical: docs/SECURITY.md}
+  specs/014-security-hardening/contracts/audit-logging.md: {<<: *specification, canonical: docs/SECURITY.md}
+  specs/014-security-hardening/contracts/csrf-protection.md: {<<: *specification, canonical: docs/SECURITY.md}
+  specs/014-security-hardening/contracts/password-reset.md: {<<: *specification, canonical: docs/SECURITY.md}
+  specs/014-security-hardening/contracts/rate-limiting.md: {<<: *specification, canonical: docs/SECURITY.md}
+  specs/014-security-hardening/contracts/session-management.md: {<<: *specification, canonical: docs/SECURITY.md}
+  specs/014-security-hardening/plan.md: {<<: *specification, canonical: docs/SECURITY.md}
+  specs/014-security-hardening/quickstart.md: {<<: *specification, canonical: docs/SECURITY.md}
+  specs/014-security-hardening/research.md: {<<: *specification, canonical: docs/SECURITY.md}
+  specs/014-security-hardening/spec.md: {<<: *specification, canonical: docs/SECURITY.md}
+  specs/015-monitoring-observability/checklists/requirements.md: {<<: *specification, canonical: docs/RUNBOOK.md}
+  specs/015-monitoring-observability/contracts/alert-configuration-api.md: {<<: *specification, canonical: docs/RUNBOOK.md}
+  specs/015-monitoring-observability/contracts/error-tracking-integration.md: {<<: *specification, canonical: docs/RUNBOOK.md}
+  specs/015-monitoring-observability/contracts/health-check-api.md: {<<: *specification, canonical: docs/RUNBOOK.md}
+  specs/015-monitoring-observability/contracts/log-search-api.md: {<<: *specification, canonical: docs/RUNBOOK.md}
+  specs/015-monitoring-observability/contracts/metrics-api.md: {<<: *specification, canonical: docs/RUNBOOK.md}
+  specs/015-monitoring-observability/contracts/status-page-api.md: {<<: *specification, canonical: docs/RUNBOOK.md}
+  specs/015-monitoring-observability/data-model.md: {<<: *specification, canonical: docs/RUNBOOK.md}
+  specs/015-monitoring-observability/plan.md: {<<: *specification, canonical: docs/RUNBOOK.md}
+  specs/015-monitoring-observability/quickstart.md: {<<: *specification, canonical: docs/RUNBOOK.md}
+  specs/015-monitoring-observability/research.md: {<<: *specification, canonical: docs/RUNBOOK.md}
+  specs/015-monitoring-observability/spec.md: {<<: *specification, canonical: docs/RUNBOOK.md}
+  specs/016-recurring-events-ui/checklists/requirements.md: {<<: *specification, canonical: docs/playbooks/README.md}
+  specs/016-recurring-events-ui/contracts/bulk-edit-api.md: {<<: *specification, canonical: docs/API.md}
+  specs/016-recurring-events-ui/contracts/calendar-preview-api.md: {<<: *specification, canonical: docs/API.md}
+  specs/016-recurring-events-ui/contracts/recurrence-exceptions-api.md: {<<: *specification, canonical: docs/API.md}
+  specs/016-recurring-events-ui/contracts/recurring-series-api.md: {<<: *specification, canonical: docs/API.md}
+  specs/016-recurring-events-ui/data-model.md: {<<: *specification, canonical: docs/playbooks/README.md}
+  specs/016-recurring-events-ui/plan.md: {<<: *specification, canonical: docs/playbooks/README.md}
+  specs/016-recurring-events-ui/quickstart.md: {<<: *specification, canonical: docs/playbooks/README.md}
+  specs/016-recurring-events-ui/research.md: {<<: *specification, canonical: docs/playbooks/README.md}
+  specs/016-recurring-events-ui/spec.md: {<<: *specification, canonical: docs/playbooks/README.md}
+  specs/017-manual-schedule-editing/checklists/requirements.md: {<<: *specification, canonical: docs/playbooks/README.md}
+  specs/017-manual-schedule-editing/spec.md: {<<: *specification, canonical: docs/playbooks/README.md}
+  specs/018-mobile-responsive-design/checklists/requirements.md: {<<: *specification, canonical: docs/screenshots/README.md}
+  specs/018-mobile-responsive-design/spec.md: {<<: *specification, canonical: docs/screenshots/README.md}
+  specs/019-sms-notifications/checklists/requirements.md: {<<: *specification, canonical: docs/ROADMAP.md}
+  specs/019-sms-notifications/contracts/preferences-api.md: {<<: *specification, canonical: docs/ROADMAP.md}
+  specs/019-sms-notifications/contracts/sms-api.md: {<<: *specification, canonical: docs/ROADMAP.md}
+  specs/019-sms-notifications/contracts/templates-api.md: {<<: *specification, canonical: docs/ROADMAP.md}
+  specs/019-sms-notifications/contracts/webhooks-api.md: {<<: *specification, canonical: docs/ROADMAP.md}
+  specs/019-sms-notifications/data-model.md: {<<: *specification, canonical: docs/ROADMAP.md}
+  specs/019-sms-notifications/plan.md: {<<: *specification, canonical: docs/ROADMAP.md}
+  specs/019-sms-notifications/quickstart.md: {<<: *specification, canonical: docs/ROADMAP.md}
+  specs/019-sms-notifications/research.md: {<<: *specification, canonical: docs/ROADMAP.md}
+  specs/019-sms-notifications/spec.md: {<<: *specification, canonical: docs/ROADMAP.md}
+  specs/019-sms-notifications/tasks.md: {<<: *specification, canonical: docs/ROADMAP.md}
+  specs/020-solver-quality-changemin/spec.md: {<<: *specification, canonical: docs/SCHEDULING_CONSTRAINTS.md}
+  specs/021-sendgrid-integration/spec.md.disabled: {<<: *specification, canonical: docs/LOCAL_EMAIL_CAPTURE.md}
+  specs/022-flutter-mobile-app/spec.md: {<<: *specification, canonical: mobile/README.md}
+  specs/023-sprint-8-completion/spec.md: {<<: *specification, canonical: docs/ROADMAP.md}
+  specs/024-sprint-9-completion/spec.md: {<<: *specification, canonical: docs/ROADMAP.md}
+  specs/COMPLETED-000-safety-verification/spec.md: {<<: *specification, canonical: docs/SECURITY.md}

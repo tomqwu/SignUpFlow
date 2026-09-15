@@ -35,6 +35,7 @@
 - [ ] Run `make test-postgres` for database or migration changes
 - [ ] Run `make test-redis` for rate-limit, event-bus, or notification-broker changes
 - [ ] Run `make test-artifact` and then `make test-security` for release-image or dependency changes
+- [ ] Run `make test-docs` for documentation, command, or navigation changes
 - [ ] Run `make test-mobile` for mobile changes
 
 ### 5. Before Submitting

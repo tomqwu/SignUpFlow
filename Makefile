@@ -2,7 +2,7 @@
 
 export SKIP_TEST_DB_FIXTURES ?= false
 
-.PHONY: test-web test-contract test-e2e test-mobile test-performance test-recovery test-security capture-screenshots validate-screenshots
+.PHONY: test-web test-contract test-e2e test-mobile test-performance test-recovery test-security test-docs capture-screenshots validate-screenshots
 FLUTTER ?= flutter
 
 TEST_SERVER_HOST ?= 0.0.0.0
@@ -209,6 +209,10 @@ test-recovery: check-poetry
 test-security: check-poetry check-docker
 	@echo "🧪 Scanning the committed source and exact retained production image..."
 	@poetry run python scripts/run_security_validation.py
+
+test-docs: check-poetry
+	@echo "🧪 Validating the tracked documentation inventory and current local links..."
+	@poetry run python scripts/validate_documentation.py
 
 test-web: check-poetry
 	@poetry run pytest tests/web/ -v --tb=short
@@ -487,6 +491,9 @@ help:
 	@echo "  make test-postgres    - Run owned PostgreSQL migration/business/race acceptance"
 	@echo "  make test-redis       - Run owned Redis quota, event-bus, and broker acceptance"
 	@echo "  make test-artifact    - Build and exercise an owned production image locally"
+	@echo "  make test-security    - Scan the exact committed source and retained image locally"
+	@echo "  make test-recovery    - Run the owned encrypted SQLite restore drill"
+	@echo "  make test-docs        - Validate documentation dispositions and current local links"
 	@echo "  make test-performance - Run load tests against an explicit owned loopback server"
 	@echo "  make test-mobile      - Run Flutter tests locally (requires Flutter SDK)"
 	@echo "  make test-e2e         - Run Playwright browser tests locally"

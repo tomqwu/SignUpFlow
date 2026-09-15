@@ -212,6 +212,13 @@ The manifest binds each image to its captured source commit, browser, fixture, a
 scenario, caption, viewport, image hash, and relevant UI hashes; local unit validation
 rejects missing or stale evidence. The former ten README images are explicitly retired
 under `docs/screenshots/legacy/`, and README now shows both complete operating scenarios.
+The documentation-control package replaces the stale 176-manual/120-generated inventory with
+Git-derived counts: 188 manual records and 139 generated mobile documents at the reviewed source.
+Every manual file has a current or historical disposition, canonical destination, owner, verified
+source set, and outcome. `make test-docs` checks current Markdown and HTML local paths and anchors;
+historical files carry an explicit file-level link exception, and generated documents remain under
+#191 so the validator cannot legitimize hand edits. The first run repaired two maintained setup links
+and the README workflow anchor.
 The maintained README, testing guide, and documentation index now link the machine-checked
 web journey matrix. It covers every current HTML/HTMX route and Jinja template with named
 happy, error, and permission evidence or an explicit product limitation. Shared browser

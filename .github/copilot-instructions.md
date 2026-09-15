@@ -54,6 +54,7 @@ make test-postgres  # Owned PostgreSQL migration/business/race acceptance
 make test-redis     # Owned Redis quota, event-bus, and broker acceptance
 make test-artifact  # Owned production image acceptance
 make test-security  # Same-SHA source/image security and SBOM evidence
+make test-docs      # Documentation ledger plus current local paths and anchors
 make test-mobile    # Flutter tests (requires Flutter SDK)
 make migrate        # Alembic upgrade head
 ```
