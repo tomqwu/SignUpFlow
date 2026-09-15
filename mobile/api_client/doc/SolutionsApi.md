@@ -68,6 +68,7 @@ Name | Type | Description  | Notes
 
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
+
 # **createManualSolution**
 > SolutionResponse createManualSolution(requestBody)
 
@@ -465,7 +466,7 @@ Name | Type | Description  | Notes
 
 Stream Solution Assignments
 
-Server-Sent Events stream of assignment-change events for a solution.  Sprint 10 PR 10.4: replaces pull-to-refresh on the admin Solution Review with live updates. Each subscriber gets its own per-process asyncio.Queue (see api/services/event_bus.py); publishers fan-out via `event_bus.publish(\"solution:{id}\", ...)` from assignment-mutation endpoints.  Format: standard `text/event-stream` per W3C SSE. Each event is a JSON object on a single `data:` line. The client reconnects on drop; on reconnect it should re-fetch the snapshot via the non-stream `/assignments` endpoint and resume.  Tenant scoping: tenancy via `get_current_admin_user` + `verify_org_member` below — the stream only emits events for a solution the admin can already read. No org_id is published in the event body because the subscriber is already scoped.
+Server-Sent Events stream of assignment-change events for a solution.  Sprint 10 PR 10.4: replaces pull-to-refresh on the admin Solution Review with live updates. Development uses bounded per-process queues; production uses tenant-scoped Redis pub/sub (see api/services/event_bus.py). Assignment-mutation endpoints publish refresh hints after commit.  Format: standard `text/event-stream` per W3C SSE. Each event is a JSON object on a single `data:` line. The client reconnects on drop; on reconnect it should re-fetch the snapshot via the non-stream `/assignments` endpoint and resume.  Tenant scoping: tenancy via `get_current_admin_user` + `verify_org_member` below — the stream only emits events for a solution the admin can already read. No org_id is published in the event body because the subscriber is already scoped.
 
 ### Example
 ```dart
@@ -545,4 +546,3 @@ Name | Type | Description  | Notes
  - **Accept**: application/json
 
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
-
