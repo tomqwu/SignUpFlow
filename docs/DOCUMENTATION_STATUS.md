@@ -22,6 +22,12 @@ total, obsolete tier counts/timings, and false unregistered-router statements.
 Playwright is now locked, `make test` aliases the seven-tier suite, and maintained
 guides describe billing/paid SMS as default-off deferred integrations rather than
 active setup requirements.
+The retained Stripe plan is now explicitly historical and no longer presents its old
+prices or launch sequence as current decisions. The mounted, default-off billing surface
+requires authenticated tenant administrators; checkout return verifies provider customer
+and organization ownership without changing entitlement, and payment-method attachment
+checks ownership before provider mutation. Sandbox callbacks, pricing, and enablement
+remain unverified work under #270.
 The maintained playbook guides now link a validated machine-readable coverage
 manifest; its partial and blocked rows prevent baseline tests from being described
 as complete role-by-role business acceptance.

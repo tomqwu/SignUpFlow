@@ -170,13 +170,12 @@ def handle_checkout_success(
     Returns:
         dict: Updated subscription details
     """
-    # In production, we would verify the session_id with Stripe
-    # and ensure it matches the user's organization
-    # For now, just return the current subscription
+    org_id = str(admin.org_id)
 
-    # Get organization from session (this would come from Stripe session metadata)
-    # For now, use admin's org_id
-    org_id = admin.org_id
+    stripe_service = StripeService(db)
+    checkout = stripe_service.retrieve_checkout_session(org_id, session_id)
+    if not checkout["success"]:
+        raise HTTPException(status_code=400, detail=checkout["message"])
 
     billing_service = BillingService(db)
     subscription = billing_service.get_subscription(org_id)
@@ -187,11 +186,19 @@ def handle_checkout_success(
     usage_service = UsageService(db)
     usage_summary = usage_service.get_usage_summary(org_id)
 
+    complete = checkout["checkout_status"] == "complete"
+
     return {
-        "success": True,
+        "success": complete,
+        "checkout_status": checkout["checkout_status"],
+        "entitlement_updated": False,
         "subscription": SubscriptionResponse.from_orm(subscription),
         "usage": usage_summary,
-        "message": "Subscription updated successfully",
+        "message": (
+            "Checkout completed; subscription entitlement awaits verified provider processing"
+            if complete
+            else "Checkout is pending; subscription entitlement is unchanged"
+        ),
     }
 
 

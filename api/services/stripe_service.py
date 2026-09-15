@@ -476,6 +476,63 @@ class StripeService:
             logger.error(f"Error creating checkout session for org {org_id}: {e}")
             return {"success": False, "message": f"Failed to create checkout session: {str(e)}"}
 
+    def retrieve_checkout_session(self, org_id: str, session_id: str) -> dict[str, Any]:
+        """Read and verify a checkout session without changing local entitlement."""
+        try:
+            import stripe
+
+            subscription = self.db.query(Subscription).filter(Subscription.org_id == org_id).first()
+            if not subscription or not subscription.stripe_customer_id:
+                return {
+                    "success": False,
+                    "message": "Checkout session not found for organization",
+                }
+
+            checkout_session = stripe.checkout.Session.retrieve(session_id)
+            customer = self._provider_value(checkout_session, "customer")
+            customer_id = (
+                customer if isinstance(customer, str) else self._provider_value(customer, "id")
+            )
+            metadata = self._provider_value(checkout_session, "metadata") or {}
+            metadata_org_id = self._provider_value(metadata, "org_id")
+            if (
+                customer_id != subscription.stripe_customer_id
+                or metadata_org_id != subscription.org_id
+            ):
+                return {
+                    "success": False,
+                    "message": "Checkout session not found for organization",
+                }
+
+            provider_status = str(self._provider_value(checkout_session, "status") or "open")
+            payment_status = str(
+                self._provider_value(checkout_session, "payment_status") or "unpaid"
+            )
+            complete = provider_status == "complete" and payment_status in {
+                "paid",
+                "no_payment_required",
+            }
+            return {
+                "success": True,
+                "checkout_status": "complete" if complete else "pending",
+                "provider_status": provider_status,
+                "payment_status": payment_status,
+            }
+        except Exception:
+            logger.warning("Could not verify checkout session for org %s", org_id)
+            return {
+                "success": False,
+                "message": "Checkout session not found for organization",
+            }
+
+    @staticmethod
+    def _provider_value(record: Any, key: str) -> Any:
+        """Read a field from a Stripe object or a plain test mapping."""
+        getter = getattr(record, "get", None)
+        if callable(getter):
+            return getter(key)
+        return getattr(record, key, None)
+
     def _get_tier_from_price_id(self, price_id: str) -> str:
         """
         Extract plan tier from Stripe price ID.
@@ -649,15 +706,26 @@ class StripeService:
             if not subscription:
                 return {"success": False, "message": "No subscription found for organization"}
 
+            payment_method = stripe.PaymentMethod.retrieve(payment_method_id)
+            attached_customer = self._provider_value(payment_method, "customer")
+            if not isinstance(attached_customer, str):
+                attached_customer = self._provider_value(attached_customer, "id")
+            if attached_customer and attached_customer != subscription.stripe_customer_id:
+                return {
+                    "success": False,
+                    "message": "Payment method not available for organization",
+                }
+
             # Create customer if doesn't exist
             if not subscription.stripe_customer_id:
                 customer = stripe.Customer.create(metadata={"org_id": org_id})
-                subscription.stripe_customer_id = customer.id
+                setattr(subscription, "stripe_customer_id", customer.id)
                 self.db.commit()
                 logger.info(f"Created Stripe customer {customer.id} for org {org_id}")
 
-            # Attach payment method to customer
-            stripe.PaymentMethod.attach(payment_method_id, customer=subscription.stripe_customer_id)
+            customer_id = str(subscription.stripe_customer_id)
+            if not attached_customer:
+                stripe.PaymentMethod.attach(payment_method_id, customer=customer_id)
 
             logger.info(
                 f"Attached payment method {payment_method_id} to customer "
@@ -665,10 +733,10 @@ class StripeService:
             )
 
             # If this is the first payment method, set it as default
-            customer = stripe.Customer.retrieve(subscription.stripe_customer_id)
+            customer = stripe.Customer.retrieve(customer_id)
             if not customer.invoice_settings.default_payment_method:
                 stripe.Customer.modify(
-                    subscription.stripe_customer_id,
+                    customer_id,
                     invoice_settings={"default_payment_method": payment_method_id},
                 )
                 logger.info(f"Set {payment_method_id} as default payment method")
