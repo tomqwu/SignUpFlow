@@ -45,7 +45,7 @@ void main() {
 
     // Get Event
     //
-    // Get event by ID.
+    // Get an event within the authenticated member's tenant.
     //
     //Future<EventResponse> getEvent(String eventId) async
     test('test getEvent', () async {
@@ -54,7 +54,7 @@ void main() {
 
     // List Events
     //
-    // List events with optional filters.
+    // List events within the authenticated member's tenant.
     //
     //Future<ListResponseEventResponse> listEvents({ String orgId, String eventType, DateTime startAfter, DateTime startBefore, String q, String status, int limit, int offset }) async
     test('test listEvents', () async {
@@ -63,7 +63,7 @@ void main() {
 
     // Manage Assignment
     //
-    // Assign or unassign a person to/from an event (admin only).
+    // Assign or unassign a person through the serialized allocation boundary.
     //
     //Future<JsonObject> manageAssignment(String eventId, AssignmentRequest assignmentRequest) async
     test('test manageAssignment', () async {

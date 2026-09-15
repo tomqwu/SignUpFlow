@@ -242,4 +242,3 @@ class _$ConstraintResponseSerializer implements PrimitiveSerializer<ConstraintRe
     return result.build();
   }
 }
-

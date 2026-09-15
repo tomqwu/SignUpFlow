@@ -231,4 +231,3 @@ class _$EventCreateSerializer implements PrimitiveSerializer<EventCreate> {
     return result.build();
   }
 }
-

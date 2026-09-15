@@ -30,6 +30,8 @@ make test-security      # Opt-in exact-source/image scan and CycloneDX evidence
 make test-docs          # Tracked documentation dispositions and current local links
 make test-performance   # Opt-in, owned loopback target only
 make test-mobile        # Flutter unit/widget tests; requires Flutter SDK
+make test-mobile-generated # Generated Dart analysis (warnings visible) and tests
+make mobile-codegen-check # Deterministic Dart client drift check
 ```
 
 Set `FLUTTER=/absolute/path/to/flutter` when the SDK is not on PATH.
@@ -68,8 +70,11 @@ explicitly unrun scope.
 Use `make test-web`, `make test-contract`, or `make test-e2e` for focused runs.
 Do not combine API and browser tiers in one pytest process: their event-loop
 fixtures differ. `make test-all` keeps them separate and stops on failure.
-It does not include Flutter tests or device-dependent mobile integration tests;
-follow [mobile smoke checks](../mobile/SMOKE.md) for the latter. `make test` and
+It does not include Flutter tests, generated Dart-package tests, native builds,
+or device-dependent mobile integration tests. For mobile changes, also run
+`make mobile-codegen-check`, `make test-mobile-generated`, maintained-app
+analysis, `make test-mobile`, and the
+[mobile smoke checks](../mobile/SMOKE.md). `make test` and
 `make test-all` are the same supported complete Python entry point.
 
 The obsolete `tests/test_test_data_setup.py` file was retired because it imported the
@@ -219,8 +224,11 @@ migrated fictional WAL database, encrypts and restores it under a marker-bound w
 measures the local operation, and runs recovery unit plus Church/Basketball restored-app
 acceptance. Its report, JUnit, and log live under `test-artifacts/recovery-drill/`. It does
 not test scheduled PostgreSQL backups, off-site storage, production keys, retention,
-cutover, provider replay, or approved RPO/RTO. Run Flutter analysis and tests locally for
-mobile work.
+cutover, provider replay, or approved RPO/RTO. Run Flutter analysis, deterministic
+client generation, generated-package tests, maintained app tests, applicable
+simulator/device integration, and native builds locally for mobile work. Record
+physical-device, signing, store, and authorized environment scopes separately
+when they are not run.
 
 Follow [local code review](ai-pr-review.md) and [the roadmap](ROADMAP.md).
 Local results are procedural evidence, not independently attested by GitHub.
@@ -231,8 +239,8 @@ No hosted check, including a static check, is a merge prerequisite.
 1. Run `make test-all` on the final source; run `make test-postgres` for database or
    migration changes, `make test-redis` for rate-limit/event-bus/broker changes, `make test-artifact`
    and then `make test-security` for release-image changes,
-   `make test-recovery` for backup/restore changes, and `make test-mobile` for mobile
-   changes.
+   `make test-recovery` for backup/restore changes, and `make mobile-codegen-check`
+   plus the mobile checks above for mobile changes.
 2. Record the report path, commands, pass/skip/failure counts, date, and pushed head SHA in the PR.
    If tests ran immediately before committing, confirm the committed tree is identical.
 3. Record initial failures and reruns. Do not hide flakes or treat skipped tests as passed.

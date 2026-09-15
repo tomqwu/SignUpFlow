@@ -224,4 +224,3 @@ class _$ResourceResponseSerializer implements PrimitiveSerializer<ResourceRespon
     return result.build();
   }
 }
-

@@ -228,4 +228,3 @@ class _$TeamResponseSerializer implements PrimitiveSerializer<TeamResponse> {
     return result.build();
   }
 }
-

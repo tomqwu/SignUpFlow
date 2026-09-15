@@ -267,4 +267,3 @@ class _$PersonResponseSerializer implements PrimitiveSerializer<PersonResponse> 
     return result.build();
   }
 }
-

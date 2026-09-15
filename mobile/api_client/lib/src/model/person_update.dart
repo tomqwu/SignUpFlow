@@ -203,4 +203,3 @@ class _$PersonUpdateSerializer implements PrimitiveSerializer<PersonUpdate> {
     return result.build();
   }
 }
-

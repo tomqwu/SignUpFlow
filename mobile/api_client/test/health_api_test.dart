@@ -9,7 +9,7 @@ void main() {
   group(HealthApi, () {
     // Health Check
     //
-    // Health check endpoint with database connectivity check.  Returns:     200 OK: Service and database are healthy     503 Service Unavailable: Database connection failed
+    // Return process liveness without opening a dependency connection.
     //
     //Future<JsonObject> healthCheck() async
     test('test healthCheck', () async {

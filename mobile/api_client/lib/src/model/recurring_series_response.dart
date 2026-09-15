@@ -421,4 +421,3 @@ class _$RecurringSeriesResponseSerializer implements PrimitiveSerializer<Recurri
     return result.build();
   }
 }
-

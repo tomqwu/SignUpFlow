@@ -137,4 +137,3 @@ class _$BulkImportResponseSerializer implements PrimitiveSerializer<BulkImportRe
     return result.build();
   }
 }
-

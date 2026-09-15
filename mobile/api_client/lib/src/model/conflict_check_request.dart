@@ -121,4 +121,3 @@ class _$ConflictCheckRequestSerializer implements PrimitiveSerializer<ConflictCh
     return result.build();
   }
 }
-

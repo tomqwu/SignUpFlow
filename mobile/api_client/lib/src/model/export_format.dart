@@ -124,4 +124,3 @@ class _$ExportFormatSerializer implements PrimitiveSerializer<ExportFormat> {
     return result.build();
   }
 }
-

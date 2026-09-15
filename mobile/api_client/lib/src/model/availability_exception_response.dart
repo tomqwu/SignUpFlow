@@ -120,4 +120,3 @@ class _$AvailabilityExceptionResponseSerializer implements PrimitiveSerializer<A
     return result.build();
   }
 }
-

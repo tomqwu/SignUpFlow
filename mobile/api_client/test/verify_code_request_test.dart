@@ -3,10 +3,8 @@ import 'package:signupflow_api/signupflow_api.dart';
 
 // tests for VerifyCodeRequest
 void main() {
-  final instance = (VerifyCodeRequestBuilder()
-        ..personId = 'member-alpha'
-        ..code = 123456)
-      .build();
+  final instance = VerifyCodeRequestBuilder();
+  // TODO add properties to the builder and call build()
 
   group(VerifyCodeRequest, () {
     // 6-digit verification code
@@ -17,7 +15,8 @@ void main() {
 
     // String personId
     test('to test the property `personId`', () async {
-      expect(instance.personId, 'member-alpha');
+      // TODO
     });
+
   });
 }

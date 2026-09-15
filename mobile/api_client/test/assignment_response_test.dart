@@ -12,6 +12,11 @@ void main() {
       // TODO
     });
 
+    // int commitmentRevision
+    test('to test the property `commitmentRevision`', () async {
+      // TODO
+    });
+
     // String declineReason
     test('to test the property `declineReason`', () async {
       // TODO
@@ -29,6 +34,31 @@ void main() {
 
     // String personId
     test('to test the property `personId`', () async {
+      // TODO
+    });
+
+    // DateTime respondedAt
+    test('to test the property `respondedAt`', () async {
+      // TODO
+    });
+
+    // String respondedByPersonId
+    test('to test the property `respondedByPersonId`', () async {
+      // TODO
+    });
+
+    // bool responseCurrent
+    test('to test the property `responseCurrent`', () async {
+      // TODO
+    });
+
+    // int responseRevision
+    test('to test the property `responseRevision`', () async {
+      // TODO
+    });
+
+    // String responseStatus
+    test('to test the property `responseStatus`', () async {
       // TODO
     });
 

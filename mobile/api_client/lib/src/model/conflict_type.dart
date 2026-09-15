@@ -178,4 +178,3 @@ class _$ConflictTypeSerializer implements PrimitiveSerializer<ConflictType> {
     return result.build();
   }
 }
-

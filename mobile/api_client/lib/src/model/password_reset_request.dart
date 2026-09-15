@@ -103,4 +103,3 @@ class _$PasswordResetRequestSerializer implements PrimitiveSerializer<PasswordRe
     return result.build();
   }
 }
-

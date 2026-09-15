@@ -236,4 +236,3 @@ class _$InvitationAcceptResponseSerializer implements PrimitiveSerializer<Invita
     return result.build();
   }
 }
-

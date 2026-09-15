@@ -146,4 +146,3 @@ class _$OrganizationUpdateSerializer implements PrimitiveSerializer<Organization
     return result.build();
   }
 }
-

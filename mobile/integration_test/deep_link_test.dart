@@ -10,6 +10,7 @@
 // and operator-side smoke against a real device can pick the same
 // failures up via `flutter test integration_test/deep_link_test.dart`.
 
+import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
@@ -51,6 +52,10 @@ void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
 
   Future<void> launchApp(WidgetTester tester) async {
+    addTearDown(() async {
+      await tester.pumpWidget(const SizedBox.shrink());
+      await tester.pump();
+    });
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
@@ -60,7 +65,9 @@ void main() {
         child: const SignUpFlowApp(),
       ),
     );
-    await tester.pumpAndSettle();
+    await tester.pump();
+    await tester.pump();
+    expect(find.byType(LoginScreen), findsOneWidget);
   }
 
   GoRouter routerOf(WidgetTester tester) {
@@ -77,52 +84,54 @@ void main() {
     return router.routeInformationProvider.value.uri.toString();
   }
 
-  testWidgets('signupflow://invitation?token=... routes to /invitation',
-      (tester) async {
-    await launchApp(tester);
-    final router = routerOf(tester);
+  Future<void> pumpRoute(WidgetTester tester) async {
+    await tester.pump();
+    await tester.pump();
+  }
 
-    // Host-form URL — the OLD production format (pre-10.3). The
-    // _hostRouteRemap in router.dart handles warm-start remap so any
-    // email in flight with the host-form URL still routes.
-    router.go('signupflow://invitation?token=integration_test_token');
-    await tester.pumpAndSettle();
-
+  Future<void> expectRoute(
+    WidgetTester tester,
+    GoRouter router,
+    String uri,
+    String expectedPath,
+  ) async {
+    router.go(uri);
+    await pumpRoute(tester);
     final current = currentLocation(router);
     expect(
-      current.contains('/invitation'),
+      current.contains(expectedPath),
       isTrue,
-      reason: 'Expected to land on /invitation, got: $current',
+      reason: 'Expected to land on $expectedPath, got: $current',
     );
     expect(current.contains('token=integration_test_token'), isTrue);
-  });
+  }
 
-  testWidgets('signupflow:///invitation?token=... (path form) routes to /invitation',
-      (tester) async {
-    await launchApp(tester);
-    final router = routerOf(tester);
+  testWidgets(
+    'custom-scheme invitation and reset links route in one app lifecycle',
+    (tester) async {
+      await launchApp(tester);
+      final router = routerOf(tester);
 
-    // Triple-slash form — the NEW production format (10.3+). Empty
-    // authority, path="/invitation". This is what cold-start emails
-    // use; routes via go_router's standard path matching.
-    router.go('signupflow:///invitation?token=integration_test_token');
-    await tester.pumpAndSettle();
-
-    final current = currentLocation(router);
-    expect(current.contains('/invitation'), isTrue);
-    expect(current.contains('token=integration_test_token'), isTrue);
-  });
-
-  testWidgets('signupflow://reset-password?token=... routes to /reset-password',
-      (tester) async {
-    await launchApp(tester);
-    final router = routerOf(tester);
-
-    router.go('signupflow://reset-password?token=integration_test_token');
-    await tester.pumpAndSettle();
-
-    final current = currentLocation(router);
-    expect(current.contains('/reset-password'), isTrue);
-    expect(current.contains('token=integration_test_token'), isTrue);
-  });
+      // Preserve old host-form invitation links already in circulation.
+      await expectRoute(
+        tester,
+        router,
+        'signupflow://invitation?token=integration_test_token',
+        '/invitation',
+      );
+      // Current path-form links use an empty authority and standard route path.
+      await expectRoute(
+        tester,
+        router,
+        'signupflow:///invitation?token=integration_test_token',
+        '/invitation',
+      );
+      await expectRoute(
+        tester,
+        router,
+        'signupflow://reset-password?token=integration_test_token',
+        '/reset-password',
+      );
+    },
+  );
 }

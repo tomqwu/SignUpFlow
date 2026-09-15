@@ -188,4 +188,3 @@ class _$AvailablePersonSerializer implements PrimitiveSerializer<AvailablePerson
     return result.build();
   }
 }
-

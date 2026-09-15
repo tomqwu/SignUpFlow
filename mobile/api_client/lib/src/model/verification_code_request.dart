@@ -14,8 +14,7 @@ part 'verification_code_request.g.dart';
 /// * [personId]
 /// * [phoneNumber] - Phone number in E.164 format
 @BuiltValue()
-abstract class VerificationCodeRequest
-    implements Built<VerificationCodeRequest, VerificationCodeRequestBuilder> {
+abstract class VerificationCodeRequest implements Built<VerificationCodeRequest, VerificationCodeRequestBuilder> {
   @BuiltValueField(wireName: r'person_id')
   String get personId;
 
@@ -25,25 +24,18 @@ abstract class VerificationCodeRequest
 
   VerificationCodeRequest._();
 
-  factory VerificationCodeRequest(
-          [void updates(VerificationCodeRequestBuilder b)]) =
-      _$VerificationCodeRequest;
+  factory VerificationCodeRequest([void updates(VerificationCodeRequestBuilder b)]) = _$VerificationCodeRequest;
 
   @BuiltValueHook(initializeBuilder: true)
   static void _defaults(VerificationCodeRequestBuilder b) => b;
 
   @BuiltValueSerializer(custom: true)
-  static Serializer<VerificationCodeRequest> get serializer =>
-      _$VerificationCodeRequestSerializer();
+  static Serializer<VerificationCodeRequest> get serializer => _$VerificationCodeRequestSerializer();
 }
 
-class _$VerificationCodeRequestSerializer
-    implements PrimitiveSerializer<VerificationCodeRequest> {
+class _$VerificationCodeRequestSerializer implements PrimitiveSerializer<VerificationCodeRequest> {
   @override
-  final Iterable<Type> types = const [
-    VerificationCodeRequest,
-    _$VerificationCodeRequest
-  ];
+  final Iterable<Type> types = const [VerificationCodeRequest, _$VerificationCodeRequest];
 
   @override
   final String wireName = r'VerificationCodeRequest';
@@ -71,9 +63,7 @@ class _$VerificationCodeRequestSerializer
     VerificationCodeRequest object, {
     FullType specifiedType = FullType.unspecified,
   }) {
-    return _serializeProperties(serializers, object,
-            specifiedType: specifiedType)
-        .toList();
+    return _serializeProperties(serializers, object, specifiedType: specifiedType).toList();
   }
 
   void _deserializeProperties(

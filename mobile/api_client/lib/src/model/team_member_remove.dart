@@ -105,4 +105,3 @@ class _$TeamMemberRemoveSerializer implements PrimitiveSerializer<TeamMemberRemo
     return result.build();
   }
 }
-

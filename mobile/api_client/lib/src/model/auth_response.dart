@@ -236,4 +236,3 @@ class _$AuthResponseSerializer implements PrimitiveSerializer<AuthResponse> {
     return result.build();
   }
 }
-

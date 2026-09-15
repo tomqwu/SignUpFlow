@@ -9,9 +9,9 @@ void main() {
   group(AssignmentsApi, () {
     // Accept Assignment
     //
-    // Mark the caller's assignment as confirmed.
+    // Record the caller's explicit acceptance of the current commitment.
     //
-    //Future<AssignmentResponse> acceptAssignment(int assignmentId) async
+    //Future<AssignmentResponse> acceptAssignment(int assignmentId, { int expectedRevision }) async
     test('test acceptAssignment', () async {
       // TODO
     });
@@ -36,7 +36,7 @@ void main() {
 
     // Request Swap
     //
-    // Flag the caller's assignment for swap; admin follows up out of band.
+    // Record that the caller needs a replacement for the current commitment.
     //
     //Future<AssignmentResponse> requestSwap(int assignmentId, AssignmentSwapRequest assignmentSwapRequest) async
     test('test requestSwap', () async {

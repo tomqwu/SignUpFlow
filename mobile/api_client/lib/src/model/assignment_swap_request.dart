@@ -125,4 +125,3 @@ class _$AssignmentSwapRequestSerializer implements PrimitiveSerializer<Assignmen
     return result.build();
   }
 }
-

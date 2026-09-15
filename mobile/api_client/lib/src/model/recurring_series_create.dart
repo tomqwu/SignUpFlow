@@ -339,4 +339,3 @@ class _$RecurringSeriesCreateSerializer implements PrimitiveSerializer<Recurring
     return result.build();
   }
 }
-

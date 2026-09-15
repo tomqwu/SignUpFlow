@@ -104,4 +104,3 @@ class _$AvailabilityRruleResponseSerializer implements PrimitiveSerializer<Avail
     return result.build();
   }
 }
-

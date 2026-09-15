@@ -194,4 +194,3 @@ class _$ResourceCreateSerializer implements PrimitiveSerializer<ResourceCreate> 
     return result.build();
   }
 }
-

@@ -105,4 +105,3 @@ class _$AvailabilityExceptionCreateSerializer implements PrimitiveSerializer<Ava
     return result.build();
   }
 }
-

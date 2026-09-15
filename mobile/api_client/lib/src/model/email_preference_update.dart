@@ -183,4 +183,3 @@ class _$EmailPreferenceUpdateSerializer implements PrimitiveSerializer<EmailPref
     return result.build();
   }
 }
-

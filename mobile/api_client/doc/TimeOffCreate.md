@@ -13,5 +13,3 @@ Name | Type | Description | Notes
 **startDate** | [**Date**](Date.md) | Start date of time-off |
 
 [[Back to Model list]](../README.md#documentation-for-models) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to README]](../README.md)
-
-

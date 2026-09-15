@@ -237,4 +237,3 @@ class _$PersonCreateSerializer implements PrimitiveSerializer<PersonCreate> {
     return result.build();
   }
 }
-

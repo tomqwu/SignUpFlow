@@ -136,4 +136,3 @@ class _$HolidayBulkImportErrorSerializer implements PrimitiveSerializer<HolidayB
     return result.build();
   }
 }
-

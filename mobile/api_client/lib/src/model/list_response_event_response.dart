@@ -153,4 +153,3 @@ class _$ListResponseEventResponseSerializer implements PrimitiveSerializer<ListR
     return result.build();
   }
 }
-

@@ -153,4 +153,3 @@ class _$ListResponseTeamResponseSerializer implements PrimitiveSerializer<ListRe
     return result.build();
   }
 }
-

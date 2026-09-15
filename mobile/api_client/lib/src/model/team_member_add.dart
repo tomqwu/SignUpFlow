@@ -105,4 +105,3 @@ class _$TeamMemberAddSerializer implements PrimitiveSerializer<TeamMemberAdd> {
     return result.build();
   }
 }
-

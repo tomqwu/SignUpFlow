@@ -152,4 +152,3 @@ class _$ViolationInfoSerializer implements PrimitiveSerializer<ViolationInfo> {
     return result.build();
   }
 }
-

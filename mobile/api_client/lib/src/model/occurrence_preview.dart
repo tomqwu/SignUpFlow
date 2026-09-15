@@ -225,4 +225,3 @@ class _$OccurrencePreviewSerializer implements PrimitiveSerializer<OccurrencePre
     return result.build();
   }
 }
-

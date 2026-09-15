@@ -197,4 +197,3 @@ class _$TeamCreateSerializer implements PrimitiveSerializer<TeamCreate> {
     return result.build();
   }
 }
-

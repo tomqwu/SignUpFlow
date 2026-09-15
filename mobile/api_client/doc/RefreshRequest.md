@@ -11,5 +11,3 @@ Name | Type | Description | Notes
 **refreshToken** | **String** | The refresh_token from the prior auth response |
 
 [[Back to Model list]](../README.md#documentation-for-models) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to README]](../README.md)
-
-

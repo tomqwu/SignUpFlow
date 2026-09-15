@@ -30,7 +30,7 @@ record_templates:
     status: current
     owner: "#191"
     sources: [mobile/pubspec.yaml, Makefile, tests/contract/openapi.snapshot.json]
-    outcome: "Reviewed maintained native guidance; codegen, device, signing, and store evidence remain blocked under #191."
+    outcome: "Reviewed maintained native guidance; reproducible codegen, generated-package checks, iOS simulator integration, and Android debug build are local evidence. Physical-device, signing, and store evidence remain open under #191."
   historical: &historical
     status: historical
     owner: "#277"

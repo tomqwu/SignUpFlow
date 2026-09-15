@@ -8,6 +8,10 @@ part of 'validation_error.dart';
 
 class _$ValidationError extends ValidationError {
   @override
+  final JsonObject? ctx;
+  @override
+  final JsonObject? input;
+  @override
   final BuiltList<ValidationErrorLocInner> loc;
   @override
   final String msg;
@@ -18,7 +22,11 @@ class _$ValidationError extends ValidationError {
       (ValidationErrorBuilder()..update(updates))._build();
 
   _$ValidationError._(
-      {required this.loc, required this.msg, required this.type})
+      {this.ctx,
+      this.input,
+      required this.loc,
+      required this.msg,
+      required this.type})
       : super._();
   @override
   ValidationError rebuild(void Function(ValidationErrorBuilder) updates) =>
@@ -31,6 +39,8 @@ class _$ValidationError extends ValidationError {
   bool operator ==(Object other) {
     if (identical(other, this)) return true;
     return other is ValidationError &&
+        ctx == other.ctx &&
+        input == other.input &&
         loc == other.loc &&
         msg == other.msg &&
         type == other.type;
@@ -39,6 +49,8 @@ class _$ValidationError extends ValidationError {
   @override
   int get hashCode {
     var _$hash = 0;
+    _$hash = $jc(_$hash, ctx.hashCode);
+    _$hash = $jc(_$hash, input.hashCode);
     _$hash = $jc(_$hash, loc.hashCode);
     _$hash = $jc(_$hash, msg.hashCode);
     _$hash = $jc(_$hash, type.hashCode);
@@ -49,6 +61,8 @@ class _$ValidationError extends ValidationError {
   @override
   String toString() {
     return (newBuiltValueToStringHelper(r'ValidationError')
+          ..add('ctx', ctx)
+          ..add('input', input)
           ..add('loc', loc)
           ..add('msg', msg)
           ..add('type', type))
@@ -59,6 +73,14 @@ class _$ValidationError extends ValidationError {
 class ValidationErrorBuilder
     implements Builder<ValidationError, ValidationErrorBuilder> {
   _$ValidationError? _$v;
+
+  JsonObject? _ctx;
+  JsonObject? get ctx => _$this._ctx;
+  set ctx(JsonObject? ctx) => _$this._ctx = ctx;
+
+  JsonObject? _input;
+  JsonObject? get input => _$this._input;
+  set input(JsonObject? input) => _$this._input = input;
 
   ListBuilder<ValidationErrorLocInner>? _loc;
   ListBuilder<ValidationErrorLocInner> get loc =>
@@ -80,6 +102,8 @@ class ValidationErrorBuilder
   ValidationErrorBuilder get _$this {
     final $v = _$v;
     if ($v != null) {
+      _ctx = $v.ctx;
+      _input = $v.input;
       _loc = $v.loc.toBuilder();
       _msg = $v.msg;
       _type = $v.type;
@@ -106,6 +130,8 @@ class ValidationErrorBuilder
     try {
       _$result = _$v ??
           _$ValidationError._(
+            ctx: ctx,
+            input: input,
             loc: loc.build(),
             msg: BuiltValueNullFieldError.checkNotNull(
                 msg, r'ValidationError', 'msg'),

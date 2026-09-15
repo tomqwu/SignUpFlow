@@ -249,4 +249,3 @@ class _$OrganizationResponseSerializer implements PrimitiveSerializer<Organizati
     return result.build();
   }
 }
-

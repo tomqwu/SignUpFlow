@@ -205,8 +205,11 @@ evidence with a local mock. Do not deploy or enable providers from a roadmap alo
   acceptance; rerun it for each candidate because advisory data changes.
 - #259: repurpose the obsolete AI/CI gate ticket as local validation and evidence
   hygiene. No workflow, secret, provider or required status is needed for review.
-- #191: the Dart client is regenerated from the current OpenAPI snapshot and
-  Flutter signup uses atomic bootstrap. Native build/device acceptance remains.
+- #191: the Dart client is reproducibly regenerated from the current OpenAPI
+  snapshot, generated-package checks pass, Flutter signup uses atomic bootstrap,
+  iOS simulator integration passes, and an Android debug APK builds locally.
+  Physical-device, signed release, store, and authorized environment acceptance
+  remain open.
 - ICS solution export remains explicitly unsupported with `501`; calendar ICS
   export is separate. Do not represent unsupported solution ICS as shipped.
 

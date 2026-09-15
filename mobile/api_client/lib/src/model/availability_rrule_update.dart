@@ -104,4 +104,3 @@ class _$AvailabilityRruleUpdateSerializer implements PrimitiveSerializer<Availab
     return result.build();
   }
 }
-

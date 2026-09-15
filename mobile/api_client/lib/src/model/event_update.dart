@@ -184,4 +184,3 @@ class _$EventUpdateSerializer implements PrimitiveSerializer<EventUpdate> {
     return result.build();
   }
 }
-

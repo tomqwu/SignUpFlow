@@ -138,4 +138,3 @@ class _$AssignmentChangeSerializer implements PrimitiveSerializer<AssignmentChan
     return result.build();
   }
 }
-

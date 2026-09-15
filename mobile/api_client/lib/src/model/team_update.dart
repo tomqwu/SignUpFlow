@@ -146,4 +146,3 @@ class _$TeamUpdateSerializer implements PrimitiveSerializer<TeamUpdate> {
     return result.build();
   }
 }
-

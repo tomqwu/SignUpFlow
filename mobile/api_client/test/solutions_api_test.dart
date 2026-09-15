@@ -36,7 +36,7 @@ void main() {
 
     // Export Solution
     //
-    // Export solution in various formats (CSV, ICS, JSON).
+    // Export a tenant-scoped solution in JSON, CSV, or PDF.
     //
     //Future<JsonObject> exportSolution(int solutionId, ExportFormat exportFormat) async
     test('test exportSolution', () async {
@@ -45,7 +45,7 @@ void main() {
 
     // Get Solution
     //
-    // Get solution by ID.
+    // Get a solution inside the authenticated admin's tenant.
     //
     //Future<SolutionResponse> getSolution(int solutionId) async
     test('test getSolution', () async {
@@ -54,9 +54,9 @@ void main() {
 
     // Get Solution Assignments
     //
-    // Get all assignments for a solution.
+    // Get all assignments for a solution, grouped by event.  Mobile Solution Review renders an event-grouped list, so we group server-side rather than forcing the client to do O(n²) regrouping every render.
     //
-    //Future<JsonObject> getSolutionAssignments(int solutionId) async
+    //Future<SolutionAssignmentsResponse> getSolutionAssignments(int solutionId) async
     test('test getSolutionAssignments', () async {
       // TODO
     });
@@ -72,7 +72,7 @@ void main() {
 
     // List Solutions
     //
-    // List solutions with optional filters.
+    // List solutions inside the authenticated admin's tenant.
     //
     //Future<ListResponseSolutionResponse> listSolutions({ String orgId, int limit, int offset }) async
     test('test listSolutions', () async {
@@ -81,7 +81,7 @@ void main() {
 
     // Publish Solution
     //
-    // Publish a solution (admin only). Unpublishes any prior published in the same org.
+    // Publish a complete, current full-horizon solution (admin only).
     //
     //Future<SolutionResponse> publishSolution(int solutionId) async
     test('test publishSolution', () async {
@@ -94,6 +94,15 @@ void main() {
     //
     //Future<SolutionResponse> rollbackSolution(int solutionId) async
     test('test rollbackSolution', () async {
+      // TODO
+    });
+
+    // Stream Solution Assignments
+    //
+    // Server-Sent Events stream of assignment-change events for a solution.  Sprint 10 PR 10.4: replaces pull-to-refresh on the admin Solution Review with live updates. Each subscriber gets its own per-process asyncio.Queue (see api/services/event_bus.py); publishers fan-out via `event_bus.publish(\"solution:{id}\", ...)` from assignment-mutation endpoints.  Format: standard `text/event-stream` per W3C SSE. Each event is a JSON object on a single `data:` line. The client reconnects on drop; on reconnect it should re-fetch the snapshot via the non-stream `/assignments` endpoint and resume.  Tenant scoping: tenancy via `get_current_admin_user` + `verify_org_member` below — the stream only emits events for a solution the admin can already read. No org_id is published in the event body because the subscriber is already scoped.
+    //
+    //Future<JsonObject> streamSolutionAssignments(int solutionId) async
+    test('test streamSolutionAssignments', () async {
       // TODO
     });
 

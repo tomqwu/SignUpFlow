@@ -32,6 +32,12 @@ void main() {
       // TODO
     });
 
+    // Refresh token (long-lived). Use POST /auth/refresh to exchange for a fresh access+refresh token pair.
+    // String refreshToken (default value: '')
+    test('to test the property `refreshToken`', () async {
+      // TODO
+    });
+
     // BuiltList<String> roles
     test('to test the property `roles`', () async {
       // TODO

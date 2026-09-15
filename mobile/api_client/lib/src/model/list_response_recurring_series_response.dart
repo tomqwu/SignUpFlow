@@ -153,4 +153,3 @@ class _$ListResponseRecurringSeriesResponseSerializer implements PrimitiveSerial
     return result.build();
   }
 }
-

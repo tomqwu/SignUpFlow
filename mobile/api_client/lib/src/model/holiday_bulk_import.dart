@@ -106,4 +106,3 @@ class _$HolidayBulkImportSerializer implements PrimitiveSerializer<HolidayBulkIm
     return result.build();
   }
 }
-

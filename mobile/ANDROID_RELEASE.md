@@ -1,6 +1,9 @@
 # Android Release Runbook
 
-> Sprint 9 PR 9.5+ — first Android internal release.
+> No Play upload, signed Android release, or physical-device smoke is evidenced
+> by the current issue #191 work. This is an owner-side future release procedure.
+> A local debug APK build is useful engineering evidence but is not release
+> acceptance.
 >
 > Counterpart to `mobile/TESTFLIGHT.md` (iOS). The Flutter codebase ships
 > the same Dart UI on both platforms; only the build / signing /
@@ -98,6 +101,9 @@ falls back to `~/play-store-key.json`.
 
 ## Per-release flow
 
+Do not run an upload lane without explicit release authorization and the
+owner-managed Play account and signing material.
+
 ### Recommended: Fastlane internal lane
 
 ```bash
@@ -147,6 +153,8 @@ adb shell am start -a android.intent.action.VIEW \
 
 ## Build history
 
+This table is a placeholder, not proof that an internal release exists.
+
 | Version code | Sprint | Track | Date | Changelog |
 |--------------|--------|-------|------|-----------|
 | #_TBD_       | 9      | internal | _TBD_ | Token refresh + real password-reset email + Android target (first internal build) |
@@ -168,8 +176,8 @@ adb shell am start -a android.intent.action.VIEW \
 
 **The agent can:**
 - Edit `build.gradle.kts`, `AndroidManifest.xml`, `key.properties.example`.
-- Run `flutter build appbundle --release` (no human input needed).
-- Run `bundle exec fastlane android internal` (Sprint 9 PR 9.6+).
+- Run local unsigned/debug artifacts and tests.
+- Prepare a release build only when signing access and release scope are explicitly authorized.
 
 **You do:**
 - Generate + back up the keystore (step 2).
@@ -177,3 +185,7 @@ adb shell am start -a android.intent.action.VIEW \
 - Create the Play Console listing + add testers (Sprint 9 PR 9.6).
 - Generate the Google Cloud service-account JSON key for the Fastlane upload (PR 9.6).
 - Copy the `app-release.aab` to a real device for smoke testing.
+
+GitHub Actions does not build, upload, or attest Android artifacts. Record the
+local source SHA, tool versions, artifact type, signing state, and unrun
+real-device/store scopes in the PR.

@@ -47,7 +47,7 @@ class SmsApi {
   /// Returns a [Future] containing a [Response] with a [SmsUsageStatsResponse] as data
   /// Throws [DioException] if API call or serialization fails
   Future<Response<SmsUsageStatsResponse>> getSmsUsageStats({
-    required int orgId,
+    required String orgId,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -55,7 +55,7 @@ class SmsApi {
     ProgressCallback? onSendProgress,
     ProgressCallback? onReceiveProgress,
   }) async {
-    final _path = r'/api/sms/organizations/{org_id}/sms-usage'.replaceAll('{' r'org_id' '}', encodeQueryParameter(_serializers, orgId, const FullType(int)).toString());
+    final _path = r'/api/sms/organizations/{org_id}/sms-usage'.replaceAll('{' r'org_id' '}', encodeQueryParameter(_serializers, orgId, const FullType(String)).toString());
     final _options = Options(
       method: r'GET',
       headers: <String, dynamic>{

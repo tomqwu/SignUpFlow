@@ -125,4 +125,3 @@ class _$StabilityMetricsSerializer implements PrimitiveSerializer<StabilityMetri
     return result.build();
   }
 }
-

@@ -165,4 +165,3 @@ class _$ConstraintUpdateSerializer implements PrimitiveSerializer<ConstraintUpda
     return result.build();
   }
 }
-

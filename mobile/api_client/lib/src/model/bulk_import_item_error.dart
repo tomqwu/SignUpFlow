@@ -140,4 +140,3 @@ class _$BulkImportItemErrorSerializer implements PrimitiveSerializer<BulkImportI
     return result.build();
   }
 }
-

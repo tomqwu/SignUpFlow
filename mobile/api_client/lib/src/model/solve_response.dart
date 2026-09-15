@@ -171,4 +171,3 @@ class _$SolveResponseSerializer implements PrimitiveSerializer<SolveResponse> {
     return result.build();
   }
 }
-

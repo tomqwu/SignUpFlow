@@ -119,4 +119,3 @@ class _$PasswordResetConfirmSerializer implements PrimitiveSerializer<PasswordRe
     return result.build();
   }
 }
-

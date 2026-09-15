@@ -19,7 +19,7 @@ void main() {
       // TODO
     });
 
-    // Roles to assign (e.g., ['volunteer', 'admin'])
+    // One access role plus scheduling qualifications (e.g., ['volunteer', 'usher'])
     // BuiltList<String> roles
     test('to test the property `roles`', () async {
       // TODO

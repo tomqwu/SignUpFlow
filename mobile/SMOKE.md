@@ -1,15 +1,36 @@
 # Cross-platform mobile smoke
 
-End-to-end manual verification that a Sprint-release Flutter build
-behaves correctly on both iOS (TestFlight) and Android (Play internal
-track) against the deployed backend. Run before opening a sprint
-closeout PR — surfaced regressions become `<sprint>-fix-<what>` PRs.
+This is the release-owner runbook for proving a candidate Flutter build on
+real iOS and Android devices against an explicitly authorized environment.
+It is not evidence that a deployment, TestFlight build, Play build, external
+provider, or real-device smoke has already occurred.
 
 This document is the **single runbook** for cross-platform smoke. The
 platform-specific upload + signing details remain in
 `mobile/TESTFLIGHT.md` (iOS) and `mobile/ANDROID_RELEASE.md` (Android).
-This file assumes both builds already exist and are installable on
-your devices.
+Only use the release sections after both signed builds exist and are
+installable on owned test devices. Until then, use the local gate below.
+
+## Current local gate
+
+Run these checks from the repository root for every mobile PR:
+
+```bash
+make mobile-codegen-check
+make test-mobile-generated
+(cd mobile && flutter analyze --no-fatal-infos)
+make test-mobile
+(cd mobile && ./scripts/run_integration_tests.sh)
+(cd mobile && flutter build apk --debug \
+  --dart-define=API_BASE_URL=http://10.0.2.2:8000)
+```
+
+The integration runner discovers each `mobile/integration_test/*_test.dart`
+file and runs it sequentially on one selected device. Its current automated
+scope is login and invitation/reset deep-link routing on an iOS simulator.
+It does not prove secure-storage persistence on physical hardware, external
+email delivery, a signed release artifact, Android-device behavior, or either
+store. Record each unrun scope in the PR and keep release acceptance open.
 
 > **Why a consolidated runbook?** Before Sprint 9, the iOS smoke
 > checklist lived in `TESTFLIGHT.md:127-137` and the Android version
@@ -31,7 +52,7 @@ internal build #N reference the same source.
 | iOS      | `.ipa` (TestFlight)    | `bundle exec fastlane beta`                | `mobile/TESTFLIGHT.md`    |
 | Android  | `.aab` (Play internal) | `bundle exec fastlane android internal`    | `mobile/ANDROID_RELEASE.md` |
 
-Before walking the runbook below: confirm with `flutter --version`,
+Before walking the release runbook below: confirm with `flutter --version`,
 `bundle exec fastlane --version`, that both lanes have run cleanly
 for the SHA you're smoking, and that the deployed backend
 (`api.signupflow.io` or staging) is on the same Sprint's main.
@@ -213,16 +234,10 @@ Issues filed:
 
 ## Automated subset
 
-Portions of this runbook are starting to land as Flutter integration
-tests under `mobile/integration_test/` (run via
-`mobile/scripts/run_integration_tests.sh`). The first one is the
-cold-launch → login → authenticated landing flow. Future PRs (10.3
-mobile-concurrency) add deep-link routing verification. Everything
-else here remains manual until the integration_test/ harness grows
-to cover it.
-
-CI does NOT run integration tests (device-dependent); operator
-invokes them locally before/after the manual smoke walk.
+`mobile/scripts/run_integration_tests.sh` currently runs the login flow and
+the invitation/reset deep-link flow. All other checklist entries remain
+manual. GitHub Actions runs no mobile validation; the operator records local
+results and the exact source SHA before merge.
 
 ## Related
 
