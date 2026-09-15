@@ -401,7 +401,7 @@ def _wait_for_http(port: int) -> dict[str, Any]:
     raise RuntimeError(f"Artifact API did not become ready: {last_error}")
 
 
-def _image_scan(target: ArtifactTarget) -> dict[str, Any]:
+def _image_scan(target: ArtifactTarget, run_dir: Path) -> dict[str, Any]:
     scan_code = """
 import importlib
 import json
@@ -449,11 +449,17 @@ print(json.dumps(payload, sort_keys=True))
             "python",
             "--env",
             "SIGNUPFLOW_LOAD_DOTENV=false",
+            "--env",
+            "ENVIRONMENT=production",
             target.image_tag,
             "-c",
             scan_code,
-        ]
+        ],
+        check=False,
     )
+    (run_dir / "image-scan.log").write_text(result.stdout + result.stderr, encoding="utf-8")
+    if result.returncode != 0:
+        raise RuntimeError("Artifact image scan failed; inspect image-scan.log")
     try:
         payload = cast(dict[str, Any], json.loads(result.stdout.splitlines()[-1]))
     except (IndexError, json.JSONDecodeError) as exc:
@@ -821,7 +827,7 @@ def main() -> int:
         if build.returncode != 0:
             raise RuntimeError(f"Artifact image build failed; inspect {build_log}")
         report["image"] = _inspect_image(target)
-        report["image_scan"] = _image_scan(target)
+        report["image_scan"] = _image_scan(target, run_dir)
         report["layer_scan"] = _scan_image_layers(target, run_dir, build_log=build_log)
 
         _run(target.network_command())
