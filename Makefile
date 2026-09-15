@@ -2,7 +2,7 @@
 
 export SKIP_TEST_DB_FIXTURES ?= false
 
-.PHONY: test-web test-contract test-e2e test-mobile test-mobile-generated test-performance test-recovery test-security test-docs mobile-codegen-preflight mobile-codegen mobile-codegen-check capture-screenshots validate-screenshots
+.PHONY: test-web test-contract test-e2e test-mobile test-mobile-generated test-performance test-load test-recovery test-security test-docs mobile-codegen-preflight mobile-codegen mobile-codegen-check capture-screenshots validate-screenshots
 FLUTTER ?= flutter
 DART ?= dart
 JAVA_BIN ?=
@@ -240,6 +240,12 @@ test-mobile-generated:
 
 test-performance: ensure-test-env
 	@poetry run pytest tests/performance/ -v --tb=short
+
+test-load: check-poetry
+	@echo "Running bounded source-identified load validation..."
+	@poetry run python scripts/run_load_validation.py \
+		--start-local \
+		--profile tests/performance/profiles/local-smoke.json
 
 test-coverage: check-poetry
 	@echo "📊 Generating test coverage reports..."
@@ -485,6 +491,7 @@ help:
 	@echo "  make test-recovery    - Run the owned encrypted SQLite restore drill"
 	@echo "  make test-docs        - Validate documentation dispositions and current local links"
 	@echo "  make test-performance - Run load tests against an explicit owned loopback server"
+	@echo "  make test-load        - Run bounded source-identified load validation locally"
 	@echo "  make test-mobile      - Run Flutter tests locally (requires Flutter SDK)"
 	@echo "  make test-mobile-generated - Analyze and test the generated Dart client"
 	@echo "  make mobile-codegen-preflight - Validate pinned tools and the OpenAPI snapshot"

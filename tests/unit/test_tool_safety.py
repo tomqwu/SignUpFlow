@@ -53,6 +53,7 @@ INVENTORIED_TOOLS = (
     "scripts/restore_database.sh",
     "scripts/retired_tool.py",
     "scripts/run_local_validation.py",
+    "scripts/run_load_validation.py",
     "scripts/run_postgres_validation.py",
     "scripts/run_redis_validation.py",
     "scripts/run_security_validation.py",

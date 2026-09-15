@@ -122,12 +122,16 @@ make test-mobile
 make test-mobile-generated
 make test-docs
 make validate-screenshots
+make test-load
 ```
 
-`make test-performance` is currently a loopback-only smoke suite with fixed assertions.
-It is not the sustained, representative, owner-approved load evidence required by #271.
-Set `SIGNUPFLOW_PERFORMANCE_BASE_URL` only to an owned local target; the suite refuses
-non-loopback hosts. Repair and extend the runner before using it for release capacity.
+`make test-load` runs the checked-in bounded local-smoke profile against an owned source
+server, verifies the exact commit through `X-Release-SHA`, and retains raw request results.
+That run is `PASS_LOCAL` engineering evidence only. It is not the sustained,
+representative, owner-approved load evidence required by #271. Release-candidate capacity
+requires a separately approved profile and target, an immutable artifact, exact target SHA,
+and explicit remote authorization. The legacy `make test-performance` endpoint assertions
+remain compatibility checks and do not satisfy the capacity row.
 
 ## Decision Rules
 
