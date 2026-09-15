@@ -316,7 +316,7 @@ class TestListConflicts:
             )
         finally:
             anon.close()
-        assert resp.status_code in (401, 403)
+        assert resp.status_code == 401
 
     def test_list_cross_org_rejected(self, conflicts_org):
         data = conflicts_org

@@ -157,6 +157,16 @@ evidence with a local mock. Do not deploy or enable providers from a roadmap alo
   tenant, publication/response, inbox, and completed-notification replay checks. Scheduled
   PostgreSQL/PITR, off-site storage, production key custody, backup freshness delivery,
   approved RPO/RTO, retention/holds/purge, and cutover remain unproven.
+- #269: local release security validation uses an immutable Trivy container without a
+  host install or Docker-socket mount. It hashes the Python, Flutter, Ruby/CocoaPods,
+  Gradle, vendored JavaScript, image, and Pages inputs; scans a committed archive and
+  same-SHA retained image; writes source/image CycloneDX and license inventory; and
+  rejects missing advisory data, undetected harmless fixtures, expired exceptions, and
+  unaccepted image findings. The release image uses a digest-pinned upgraded Alpine base,
+  hash-locked application environment, no runtime package manager/build toolchain, direct
+  PyJWT, and remediated Python and Fastlane/Rubyzip locks. This is exact local artifact
+  evidence, not a hosted check, deployment scan, native artifact scan, or production risk
+  acceptance; rerun it for each candidate because advisory data changes.
 - #259: repurpose the obsolete AI/CI gate ticket as local validation and evidence
   hygiene. No workflow, secret, provider or required status is needed for review.
 - #191: the Dart client is regenerated from the current OpenAPI snapshot and

@@ -66,8 +66,8 @@ async def test_unauthenticated_request_to_protected_endpoint():
         # Try to access protected endpoint without token
         response = await ac.get("/api/v1/people/me")
 
-        # Should return 403 Forbidden (no auth header provided)
-        assert response.status_code == 403
+        # Missing credentials are an authentication failure, not an authorization denial.
+        assert response.status_code == 401
 
 
 @pytest.mark.asyncio

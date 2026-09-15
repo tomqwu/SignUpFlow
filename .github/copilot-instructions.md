@@ -51,6 +51,8 @@ make test-unit      # Fast unit tests
 make test-unit-fast # Skip bcrypt slow tests
 make test-all       # All Python tiers, including web + contract + Playwright
 make test-postgres  # Owned PostgreSQL migration/business/race acceptance
+make test-artifact  # Owned production image acceptance
+make test-security  # Same-SHA source/image security and SBOM evidence
 make test-mobile    # Flutter tests (requires Flutter SDK)
 make migrate        # Alembic upgrade head
 ```

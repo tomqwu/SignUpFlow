@@ -2,10 +2,12 @@
 
 import os
 from datetime import timedelta
+from typing import Any
 
 import bcrypt
+import jwt
 from fastapi import HTTPException, status
-from jose import JWTError, jwt
+from jwt import PyJWTError
 from passlib.context import CryptContext
 
 from api.core import runtime_config
@@ -20,7 +22,7 @@ if not hasattr(bcrypt, "__about__"):
     class _BcryptAbout:
         __version__ = getattr(bcrypt, "__version__", "0")
 
-    bcrypt.__about__ = _BcryptAbout()
+    setattr(bcrypt, "__about__", _BcryptAbout())
 
 # JWT Configuration
 SECRET_KEY = os.getenv("SECRET_KEY", _DEFAULT_SECRET_KEY)
@@ -88,7 +90,7 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
     return pwd_context.verify(plain_password, hashed_password)
 
 
-def create_access_token(data: dict, expires_delta: timedelta | None = None) -> str:
+def create_access_token(data: dict[str, Any], expires_delta: timedelta | None = None) -> str:
     """
     Create a JWT access token.
 
@@ -115,7 +117,7 @@ def create_access_token(data: dict, expires_delta: timedelta | None = None) -> s
     return encoded_jwt
 
 
-def create_refresh_token(data: dict, expires_delta: timedelta | None = None) -> str:
+def create_refresh_token(data: dict[str, Any], expires_delta: timedelta | None = None) -> str:
     """
     Create a JWT refresh token.
 
@@ -145,7 +147,7 @@ def create_refresh_token(data: dict, expires_delta: timedelta | None = None) -> 
     return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
 
 
-def verify_token(token: str) -> dict:
+def verify_token(token: str) -> dict[str, Any]:
     """
     Verify and decode a JWT access token.
 
@@ -165,7 +167,7 @@ def verify_token(token: str) -> dict:
     """
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-    except JWTError:
+    except PyJWTError:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Could not validate credentials",
@@ -183,7 +185,7 @@ def verify_token(token: str) -> dict:
     return payload
 
 
-def decode_refresh_token(token: str) -> dict:
+def decode_refresh_token(token: str) -> dict[str, Any]:
     """
     Decode and validate a refresh token. Used by /auth/refresh.
 
@@ -201,7 +203,7 @@ def decode_refresh_token(token: str) -> dict:
     """
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-    except JWTError:
+    except PyJWTError:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid or expired refresh token",

@@ -212,7 +212,7 @@ class TestVolunteerStats:
         data = analytics_org
         with httpx.Client() as anon:
             resp = anon.get(f"{data['api_base']}/analytics/{data['org1_id']}/volunteer-stats")
-        assert resp.status_code in (401, 403)
+        assert resp.status_code == 401
 
 
 class TestScheduleHealth:

@@ -96,4 +96,4 @@ def run_six_week_roster(client, playbook_spec):
     p.request("POST", f"/solutions/{repaired['solution_id']}/publish", 403, headers=volunteer)
     other = Playbook(client, playbook_spec)
     p.request("POST", f"/solutions/{repaired['solution_id']}/publish", 404, headers=other.headers)
-    p.request("POST", f"/solutions/{repaired['solution_id']}/publish", 403, headers={})
+    p.request("POST", f"/solutions/{repaired['solution_id']}/publish", 401, headers={})

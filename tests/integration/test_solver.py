@@ -173,7 +173,7 @@ class TestSolverAuth:
                 f"{data['api_base']}/solver/solve",
                 json={"org_id": data["org1_id"], **_solve_window(2, 2)},
             )
-        assert resp.status_code in (401, 403)
+        assert resp.status_code == 401
 
 
 class TestSolverErrors:

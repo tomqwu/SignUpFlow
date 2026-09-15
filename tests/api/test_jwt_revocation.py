@@ -119,7 +119,7 @@ class TestPasswordChangedAt:
         assert client.get("/api/v1/people/me", headers=new_hdrs).status_code == 200
 
     def test_login_includes_pwd_iat_claim(self, client, db):
-        from jose import jwt
+        import jwt
 
         from api.security import ALGORITHM, SECRET_KEY
 

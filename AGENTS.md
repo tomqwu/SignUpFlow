@@ -78,6 +78,7 @@ Before declaring a change done:
 - [ ] Unit tests pass: `make test-unit` (or `make test-unit-fast` during iteration).
 - [ ] Full suite passes when shipping: `make test-all`.
 - [ ] PostgreSQL acceptance passes for database/migration changes: `make test-postgres`.
+- [ ] Release-image changes pass `make test-artifact` and then `make test-security` for the same committed SHA.
 - [ ] No secrets in the diff: `git diff --cached | grep -iE 'api[_-]?key|secret|token|password|sk_'` returns nothing meaningful.
 - [ ] If a route was added or moved, the router is registered in `api/main.py` and the path is documented in `CLAUDE.md`.
 - [ ] If a model field was added or changed, an Alembic migration exists in `alembic/versions/`.

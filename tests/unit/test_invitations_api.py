@@ -19,9 +19,7 @@ class TestInvitationsAPI:
         # Try to list invitations without auth
         response = client.get(f"{API_BASE}/invitations")
 
-        # Should return 403 (no authentication) or 422 (validation error due to mock auth)
-        # Note: In unit tests, auth is mocked so validation may happen first
-        assert response.status_code in [403, 422]
+        assert response.status_code == 401
 
     @pytest.mark.no_mock_auth
     def test_list_invitations_requires_authentication_with_org(self, client):

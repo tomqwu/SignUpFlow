@@ -10,8 +10,8 @@ mobile app can sign the user in directly after accepting.
 
 import time
 
+import jwt
 import pytest
-from jose import jwt
 
 from api.models import Invitation, Organization
 from api.security import (

@@ -154,7 +154,7 @@ class TestCreateConstraint:
             )
         finally:
             anon.close()
-        assert resp.status_code in (401, 403)
+        assert resp.status_code == 401
 
     def test_create_invalid_type_rejected(self, constraints_org):
         data = constraints_org

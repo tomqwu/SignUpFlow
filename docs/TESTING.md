@@ -25,6 +25,7 @@ make test               # Alias for the complete seven-tier local suite
 make test-all           # All seven Python tiers below, in separate processes
 make test-postgres      # Opt-in PostgreSQL migration/business/race acceptance
 make test-artifact      # Opt-in production image and private-stack acceptance
+make test-security      # Opt-in exact-source/image scan and CycloneDX evidence
 make test-performance   # Opt-in, owned loopback target only
 make test-mobile        # Flutter unit/widget tests; requires Flutter SDK
 ```
@@ -85,6 +86,16 @@ migration, failure, shutdown, image identity, and result evidence under
 `test-artifacts/artifact-validation/`. It disables external providers. A pass is local
 artifact evidence, not staging, TLS/proxy, managed-service, backup/restore, or release
 authorization.
+
+Run `make test-security` only after `make test-artifact` passes for the same clean
+revision. It requires the immutable Trivy image documented in
+[SECURITY_VALIDATION.md](SECURITY_VALIDATION.md), fetches a fresh advisory database into
+an owned temporary cache, scans a committed source archive and the exact retained image,
+and writes sanitized findings plus source/image CycloneDX documents under
+`test-artifacts/security-validation/`. It persists no raw secret match, mounts no Docker
+socket, and fails on missing tools/databases, an expired exception, stale artifact
+identity, or an unaccepted blocking finding. This is local artifact evidence, not hosted
+attestation or a deployed-environment scan.
 
 Monitoring regressions run without an external reporting sink:
 
@@ -153,12 +164,13 @@ synthetic success statuses. The Pages workflow only publishes the static site;
 it is not a validation or merge gate.
 
 ```bash
-poetry run black --check api web tests scripts/run_local_validation.py scripts/validate_production_artifact.py
-poetry run ruff check api web tests scripts/run_local_validation.py scripts/validate_production_artifact.py
+poetry run black --check api web tests scripts/run_local_validation.py scripts/validate_production_artifact.py scripts/run_security_validation.py
+poetry run ruff check api web tests scripts/run_local_validation.py scripts/validate_production_artifact.py scripts/run_security_validation.py
 poetry run mypy --no-incremental api/utils api/core api/schemas
 poetry run mypy api
 make test-all
 make test-recovery
+make test-security
 ```
 
 Use a clean environment installed from the lockfile, not another worktree's
@@ -187,7 +199,7 @@ No hosted check, including a static check, is a merge prerequisite.
 ## Before Merge
 
 1. Run `make test-all` on the final source; run `make test-postgres` for database or
-   migration changes, `make test-artifact` for release-image changes,
+   migration changes, `make test-artifact` and then `make test-security` for release-image changes,
    `make test-recovery` for backup/restore changes, and `make test-mobile` for mobile
    changes.
 2. Record the report path, commands, pass/skip/failure counts, date, and pushed head SHA in the PR.

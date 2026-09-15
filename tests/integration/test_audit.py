@@ -90,7 +90,7 @@ class TestAuditListAuthGate:
             resp = anon.get(f"{data['api_base']}/audit-logs")
         finally:
             anon.close()
-        assert resp.status_code in (401, 403)
+        assert resp.status_code == 401
 
 
 class TestAuditSelfRecording:

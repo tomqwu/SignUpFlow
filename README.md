@@ -229,6 +229,7 @@ manual release checks.
 make test-all                        # All seven Python tiers, including Playwright
 make test-postgres                   # Opt-in owned PostgreSQL migration/business/race checks
 make test-artifact                   # Opt-in owned production image/private-stack checks
+make test-security                   # Opt-in committed-source/image scan and SBOM evidence
 make test-performance               # Opt-in; requires an owned loopback test server
 make test-mobile                     # Flutter unit/widget tests
 make capture-screenshots             # Regenerate asserted Church/Basketball UI evidence
@@ -386,6 +387,7 @@ make test-unit-fast       # Skip slow bcrypt tests (~7s)
 make test-all             # All Python tiers, including web + contract + Playwright
 make test-postgres        # Owned ephemeral PostgreSQL acceptance (requires Docker)
 make test-artifact        # Build and exercise the committed production image locally
+make test-security        # Scan that exact image and committed dependency inputs locally
 make test-recovery        # Owned encrypted SQLite backup and restored-app acceptance
 make test-mobile          # Flutter tests (requires Flutter SDK)
 make capture-screenshots  # Recreate public Church/Basketball screenshots locally
@@ -411,6 +413,13 @@ Run `make test-artifact` for production-image changes after committing the track
 It retains the SHA-labeled image and report, uses private disposable PostgreSQL/Redis,
 runs one migration job before two read-only replicas, and contacts no external provider.
 It is not staging or release approval.
+Then run `make test-security`. The pinned scanner reads a committed archive and the exact
+retained image without Docker-socket access, records advisory database and input hashes,
+exercises secret/database failure fixtures, and writes sanitized findings, license
+inventory, and source/image CycloneDX documents. The release image uses a digest-pinned
+upgraded Alpine base and excludes package managers and build tools. See the
+[local release security guide](docs/SECURITY_VALIDATION.md). A passing local scan is not a
+GitHub status, deployment scan, or independent attestation.
 Run `make test-recovery` for SQLite recovery changes. It creates only fictional data,
 uses SQLite's backup API so committed WAL data is included, restores an AES-GCM bundle
 to a new owned destination, exercises Church/Basketball auth and state, and writes a

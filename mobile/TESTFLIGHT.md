@@ -165,7 +165,7 @@ If anything's off, file an issue against `specs/022-flutter-mobile-app/spec.md` 
 ## What this agent did vs. what you'll do
 
 **Already in the repo (this PR):**
-- `Gemfile` pinned to fastlane 2.227.
+- `Gemfile` permits the Fastlane 2.x line from 2.227; `Gemfile.lock` selects 2.240.0.
 - `fastlane/Appfile` with bundle ID, Team ID, ASC App ID.
 - `fastlane/Fastfile` with `beta` (build + upload) and `build_only` (build, no upload) lanes.
 - This runbook.

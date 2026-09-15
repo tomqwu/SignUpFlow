@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from jose import jwt
+import jwt
 
 from api.security import ALGORITHM, SECRET_KEY, create_access_token
 from tests.web.conftest import seed_person

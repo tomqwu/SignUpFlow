@@ -244,7 +244,7 @@ class TestListNotifications:
             )
         finally:
             anon.close()
-        assert resp.status_code in (401, 403)
+        assert resp.status_code == 401
 
     def test_cross_org_forbidden(self, notifications_org, second_org):
         # A caller from `notifications_org` should not be able to read the
@@ -449,7 +449,7 @@ class TestEmailPreferences:
             resp = anon.get(f"{data['api_base']}/notifications/preferences/me")
         finally:
             anon.close()
-        assert resp.status_code in (401, 403)
+        assert resp.status_code == 401
 
 
 class TestOrganizationStats:
