@@ -25,6 +25,7 @@ PUBLIC_TOKEN_OPERATIONS = {
 }
 
 PUBLIC_CALLBACK_OPERATIONS = {
+    "sendgrid_webhook",
     "stripe_webhook",
     "twilio_delivery_status_webhook",
     "twilio_incoming_sms_webhook",

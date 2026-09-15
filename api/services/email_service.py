@@ -66,7 +66,7 @@ _NOTIFICATION_SUBJECTS = {
 # Try to import SendGrid (optional dependency)
 try:
     from sendgrid import SendGridAPIClient
-    from sendgrid.helpers.mail import Content, Email, Mail, To
+    from sendgrid.helpers.mail import Content, CustomArg, Email, Mail, To
 
     SENDGRID_AVAILABLE = True
 except ImportError:
@@ -268,7 +268,12 @@ class EmailService:
                 if self.capture_dir:
                     message_id = self._capture_email(to_email, subject, html_content, plain_content)
                 elif self.use_sendgrid and self.sendgrid_client:
-                    message_id = self._send_via_sendgrid(to_email, subject, html_content)
+                    message_id = self._send_via_sendgrid(
+                        to_email,
+                        subject,
+                        html_content,
+                        notification=notification,
+                    )
                 else:
                     message_id = self._send_via_smtp(to_email, subject, html_content, plain_content)
 
@@ -353,7 +358,14 @@ class EmailService:
         temporary.replace(destination)
         return message_id
 
-    def _send_via_sendgrid(self, to_email: str, subject: str, html_content: str) -> str:
+    def _send_via_sendgrid(
+        self,
+        to_email: str,
+        subject: str,
+        html_content: str,
+        *,
+        notification: Any | None = None,
+    ) -> str:
         """
         Send email via SendGrid API.
 
@@ -361,6 +373,7 @@ class EmailService:
             to_email: Recipient email
             subject: Email subject
             html_content: HTML content
+            notification: Optional tenant-scoped notification for SendGrid custom arguments
 
         Returns:
             SendGrid message ID
@@ -374,6 +387,11 @@ class EmailService:
             subject=subject,
             html_content=Content("text/html", html_content),
         )
+        notification_id = getattr(notification, "id", None)
+        org_id = getattr(notification, "org_id", None)
+        if notification_id is not None and isinstance(org_id, str) and org_id:
+            message.add_custom_arg(CustomArg("signupflow_notification_id", str(notification_id)))
+            message.add_custom_arg(CustomArg("signupflow_org_id", org_id))
 
         if self.sendgrid_client is None:
             raise RuntimeError("SendGrid client is not configured")

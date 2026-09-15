@@ -393,6 +393,61 @@ def test_task_revalidates_tenant_and_sends_each_intent_once(outbox_db, monkeypat
         assert persisted.sendgrid_message_id == "local-message-1"
 
 
+@pytest.mark.parametrize(
+    ("helper_name", "service_method"),
+    [
+        ("_send_assignment_notification", "send_assignment_email"),
+        ("_send_reminder_notification", "send_reminder_email"),
+        ("_send_update_notification", "send_update_email"),
+        ("_send_cancellation_notification", "send_cancellation_email"),
+    ],
+)
+def test_scheduling_delivery_forwards_notification_tracking_context(
+    outbox_db, monkeypatch, helper_name, service_method
+) -> None:
+    notification = _deliverable_intent(outbox_db)
+    captured: dict[str, object] = {}
+
+    def send_assignment_email(**kwargs):
+        captured.update(kwargs)
+        return "sg-message-1"
+
+    monkeypatch.setattr(
+        notification_tasks.email_service,
+        service_method,
+        send_assignment_email,
+    )
+    recipient = (
+        outbox_db.query(Person)
+        .filter(
+            Person.id == "outbox-person",
+            Person.org_id == "outbox-org",
+        )
+        .one()
+    )
+    preference = (
+        outbox_db.query(EmailPreference)
+        .filter(
+            EmailPreference.person_id == "outbox-person",
+            EmailPreference.org_id == "outbox-org",
+        )
+        .one()
+    )
+
+    assert (
+        getattr(notification_tasks, helper_name)(
+            notification,
+            recipient,
+            preference,
+            "en",
+            outbox_db,
+        )
+        == "sg-message-1"
+    )
+    assert captured["notification"] is notification
+    assert captured["db"] is None
+
+
 def test_task_rechecks_preferences_before_retry(outbox_db, monkeypatch) -> None:
     notification = _deliverable_intent(outbox_db)
     factory = _task_database(outbox_db, monkeypatch)

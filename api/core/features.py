@@ -15,6 +15,11 @@ def sms_enabled() -> bool:
     return settings.SMS_ENABLED
 
 
+def email_enabled() -> bool:
+    """Return whether external transactional email surfaces may be used."""
+    return settings.EMAIL_ENABLED
+
+
 def require_billing_enabled() -> None:
     """Fail before auth, database, or provider work when billing is deferred."""
     if not billing_enabled():
@@ -25,6 +30,12 @@ def require_sms_enabled() -> None:
     """Fail before auth, database, or provider work when SMS is deferred."""
     if not sms_enabled():
         raise HTTPException(status_code=404, detail="SMS is not enabled")
+
+
+def require_email_enabled() -> None:
+    """Fail before callback parsing or database work when email is disabled."""
+    if not email_enabled():
+        raise HTTPException(status_code=404, detail="Email is not enabled")
 
 
 def disabled_billing_task_result() -> dict[str, bool | str]:

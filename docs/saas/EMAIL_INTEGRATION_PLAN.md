@@ -1,7 +1,8 @@
 # Email Integration Plan - SignUpFlow
 
 **Created:** 2025-10-20
-**Status:** Planning Phase
+**Status:** Historical plan; current implementation is documented in
+[`SMOKE_TESTING_EMAIL.md`](./SMOKE_TESTING_EMAIL.md) and the repository README.
 **Target:** Week 3 of SaaS MVP Launch
 
 ---
@@ -394,6 +395,11 @@ class EmailService:
 ```
 
 ### Phase 4: Email Webhooks (Day 5)
+
+> Historical sketch only. The current callback is
+> `POST /api/v1/webhooks/sendgrid`, requires SendGrid's ECDSA signature, tenant and
+> notification custom arguments, and a matching provider message ID, and persists
+> idempotent provider receipts. Do not implement or operate from the pseudocode below.
 
 ```python
 # api/routers/webhooks.py
