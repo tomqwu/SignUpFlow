@@ -7,19 +7,22 @@ and [release roadmap](ROADMAP.md) first.
 
 ## Stack
 
-`docker-compose.yml` runs four services on `signupflow-network`:
+`docker-compose.yml` runs six services on `signupflow-network`:
 
 - **db** — `postgres:16-alpine`, private-only, volume `postgres_data`, and a
   `pg_isready` healthcheck.
-- **redis** — `redis:7-alpine` for configured task/broker consumers and shared
-  rate limits. SSE and notification fan-out remain process-local. Redis is
-  authenticated and private-only.
+- **redis** — `redis:7-alpine` for shared rate limits, tenant-scoped solution-refresh
+  pub/sub, and the notification broker/result backend. It is authenticated and private-only.
 - **migrate** — one-shot `alembic upgrade head`; starts after PostgreSQL is
   healthy and must exit successfully before API replicas start.
 - **api** — built from `Dockerfile`; depends on the completed migration and
   healthy Redis; serves the API and same-origin web UI on `:8000` with one worker.
   It runs non-root with read-only source, no bind mounts, no capabilities, and
   `no-new-privileges`.
+- **celery-worker** — consumes committed notification references with late acknowledgement,
+  one-at-a-time prefetch, database leases, bounded retry, and dead-letter states.
+- **celery-beat** — the single scheduler instance; re-enqueues due intents and starts
+  reminder/digest jobs without activating a paid provider.
 
 ## Local Artifact Exercise
 
@@ -171,10 +174,22 @@ configured or proven.
 
 ## Notification queue
 
-The bounded `notification.queue` rule triggers after three consecutive failures
-and emits one recovery after success. No production worker currently records
-this signal and no external recipient is configured; #266 owns queue wiring and
-delivery acceptance.
+Committed scheduling-notification intents survive broker loss. A worker atomically claims
+each tenant-scoped row, recovers expired leases, backs off transient failures, and stops
+automatic retries in `dead_letter` or `uncertain`; administrators can see those states in
+notification statistics. Celery beat scans due rows once per minute. Investigate worker,
+broker, and database health before manually reconciling either terminal state.
+
+With delivery disabled, the scheduler leaves committed intents pending and does not contact
+the broker. Daily and weekly preferences also remain pending for their digest job instead of
+being sent immediately; the digest tasks are still placeholders. A provider can accept a
+message immediately before a worker dies or its completion commit fails. The observable
+commit-failure path becomes `uncertain`, but external exactly-once delivery still requires
+provider idempotency or reconciliation and is not claimed by this local implementation.
+
+The bounded `notification.queue` operational rule is not yet wired to these worker states,
+and no external recipient is configured. #267 retains external alert delivery and operator
+receipt acceptance; do not call local database visibility an alert.
 
 ## Backup freshness
 

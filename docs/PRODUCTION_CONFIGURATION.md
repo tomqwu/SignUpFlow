@@ -20,6 +20,9 @@ names and reasons only; secret values are not included in the error.
 | `DATABASE_URL` | `api.database` | local SQLite | Use a PostgreSQL URL with a host and database; known sample credentials fail. |
 | `RATE_LIMIT_STORAGE` | `api.utils.rate_limiter` | process-local memory | Set to `redis`; any other production value fails. |
 | `REDIS_URL` or `RATE_LIMIT_REDIS_URL` | shared request limiter | localhost Redis | Supply an authenticated `redis://` or `rediss://` URL; missing, malformed, or sample credentials fail. |
+| `EVENT_BUS_STORAGE` | `api.services.event_bus` | process-local memory | Set to `redis`; any other production value fails. |
+| `EVENT_BUS_REDIS_URL` or `REDIS_URL` | solution-review refresh bus | localhost Redis | Supply the private authenticated Redis endpoint used for tenant-scoped cross-worker refresh hints. |
+| `CELERY_BROKER_URL` / `CELERY_RESULT_BACKEND` | notification worker and beat | localhost Redis | Supply private authenticated Redis endpoints; Compose derives both from `REDIS_URL`. |
 | `ACCESS_TOKEN_EXPIRE_HOURS` | `api.core.runtime_config` | `24` | Use a positive finite value of at least one minute. Browser session `Max-Age` uses the same value. |
 | `APP_URL` | message-link generation and browser-origin fallback | localhost | Supply one HTTPS origin with no path, query, or credentials. |
 | `FRONTEND_URL` | browser-origin enforcement and message links | APP_URL/localhost fallback | Supply the exact public HTTPS browser origin. |
@@ -61,8 +64,15 @@ multi-key rotation is not implemented.
 `docker-compose.yml` requires database, Redis, signing-key, and HTTPS-origin
 inputs instead of supplying sample production credentials. It passes the
 canonical access-token setting and defaults every provider off. Production rate limits
-use shared Redis and fail protected operations closed during an outage. The image still
-runs one Uvicorn worker because SSE fan-out and notification dispatch remain process-local.
+use shared Redis and fail protected operations closed during an outage. Tenant-scoped
+solution refresh hints use Redis pub/sub, while committed notification intents use one
+Celery worker plus one beat scheduler with leases, retry backoff, and dead-letter states.
+Keep delivery disabled until the provider is separately authorized and accepted. In that
+state the beat scheduler leaves committed intents pending without contacting the broker.
+External exactly-once delivery is not guaranteed across provider acceptance and worker death;
+reconcile `uncertain` rows before retrying them. Daily and weekly digest tasks remain placeholders.
+The reference API service retains one Uvicorn worker as a conservative default; local
+acceptance proves the event bus across independent clients and the artifact across two API replicas.
 Compose does not publish PostgreSQL or Redis host ports and uses an authenticated
 Redis health check. The API image has no source bind mounts and runs non-root,
 read-only, capability-free, and with `no-new-privileges`.
@@ -70,8 +80,8 @@ Production logs are JSON records on stdout with request ID, environment, release
 SHA, and bounded event fields. Credential-shaped assignments and PostgreSQL/Redis
 URL userinfo are redacted. `/health` is dependency-free process liveness;
 container health uses sanitized database readiness from `/ready`.
-Do not increase the worker count until #266 has cross-worker notification acceptance
-evidence.
+Size API and Celery workers only after authorized staging load and restart drills; local
+cross-worker correctness does not establish production capacity.
 
 The entrypoint never runs migrations. Compose uses one `migrate` service and API
 replicas start only after it exits successfully; deployment operators must preserve

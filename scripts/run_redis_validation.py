@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Run Redis rate-limit acceptance in an owned local Docker container."""
+"""Run Redis quota, event-bus, and broker acceptance in an owned container."""
 
 from __future__ import annotations
 

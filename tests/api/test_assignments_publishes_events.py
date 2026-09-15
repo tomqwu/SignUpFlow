@@ -1,7 +1,7 @@
 """Sprint 10 PR 10.4b — publisher wiring for assignment mutations.
 
 Each mutation endpoint that touches an Assignment with a non-null
-solution_id must publish to event_bus topic ``"solution:{solution_id}"``
+solution_id must publish to its tenant-scoped solution event-bus topic
 after the DB commit. Manual (admin-created) assignments without a
 solution_id are silent — they don't belong to any Solution Review
 stream.
@@ -31,6 +31,7 @@ from api.main import app
 from api.models import Assignment, Event, Organization, Person, Solution
 from api.security import create_access_token
 from api.services import event_bus
+from api.services.event_bus import solution_topic
 
 
 def _seed(
@@ -145,7 +146,7 @@ async def test_accept_publishes_event(db):
         event_id="evt_accept",
         solution_id=501,
     )
-    task, received = await _spawn_listener(f"solution:{501}")
+    task, received = await _spawn_listener(solution_topic("pub_accept", 501))
 
     async with AsyncClient(app=app, base_url="http://test") as client:
         resp = await client.post(
@@ -174,7 +175,7 @@ async def test_decline_publishes_event(db):
         event_id="evt_decline",
         solution_id=502,
     )
-    task, received = await _spawn_listener(f"solution:{502}")
+    task, received = await _spawn_listener(solution_topic("pub_decline", 502))
 
     async with AsyncClient(app=app, base_url="http://test") as client:
         resp = await client.post(
@@ -204,7 +205,7 @@ async def test_swap_request_publishes_event(db):
         event_id="evt_swap",
         solution_id=503,
     )
-    task, received = await _spawn_listener(f"solution:{503}")
+    task, received = await _spawn_listener(solution_topic("pub_swap", 503))
 
     async with AsyncClient(app=app, base_url="http://test") as client:
         resp = await client.post(
@@ -237,8 +238,8 @@ async def test_volunteer_self_service_silent_for_manual_assignment(db):
         solution_id=None,
     )
 
-    # The naive bug would format as "solution:None" — subscribe there to
-    # catch any regression.
+    # A naive implementation could publish a topic for a missing solution; subscribe
+    # there to catch any regression.
     async def hit():
         async with AsyncClient(app=app, base_url="http://test") as client:
             resp = await client.post(
@@ -249,7 +250,7 @@ async def test_volunteer_self_service_silent_for_manual_assignment(db):
 
     # Run the HTTP call concurrently with a brief subscriber wait.
     hit_task = asyncio.create_task(hit())
-    await _assert_silent("solution:None", settle=0.1)
+    await _assert_silent(solution_topic("pub_manual", None), settle=0.1)
     await hit_task
 
 
@@ -264,7 +265,7 @@ async def test_admin_unassign_publishes_when_from_solution(db):
         event_id="evt_unassign",
         solution_id=504,
     )
-    task, received = await _spawn_listener(f"solution:{504}")
+    task, received = await _spawn_listener(solution_topic("pub_unassign", 504))
 
     async with AsyncClient(app=app, base_url="http://test") as client:
         resp = await client.post(
@@ -326,5 +327,5 @@ async def test_admin_assign_does_not_publish(db):
         assert resp.status_code == 200, resp.text
 
     hit_task = asyncio.create_task(hit())
-    await _assert_silent("solution:None", settle=0.1)
+    await _assert_silent(solution_topic("pub_assign", None), settle=0.1)
     await hit_task

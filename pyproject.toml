@@ -82,7 +82,16 @@ ignore_missing_imports = true
 
 # Third-party libs without published type stubs.
 [[tool.mypy.overrides]]
-module = ["icalendar.*", "reportlab.*", "redis.*", "stripe.*", "twilio.*", "sendgrid.*"]
+module = [
+    "celery",
+    "celery.*",
+    "icalendar.*",
+    "reportlab.*",
+    "redis.*",
+    "stripe.*",
+    "twilio.*",
+    "sendgrid.*",
+]
 ignore_missing_imports = true
 
 # Disabled feature stacks (Stripe billing, SMS) are out-of-scope for the

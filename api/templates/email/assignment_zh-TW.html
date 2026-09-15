@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <title>New Assignment</title>
+    <title>新的任務安排</title>
     <style>
         body {
             margin: 0;
@@ -167,17 +167,17 @@
     <div class="email-container">
         <!-- Header -->
         <div class="header">
-            <h1>✨ New Assignment</h1>
+            <h1>✨ 新的任務安排</h1>
         </div>
 
         <!-- Content -->
         <div class="content">
             <div class="greeting">
-                Hi {{ volunteer_name }},
+                你好，{{ volunteer_name }},
             </div>
 
             <div class="message">
-                You've been assigned to:
+                你已被安排參加：
             </div>
 
             <!-- Event Card -->
@@ -186,27 +186,27 @@
 
                 <div class="event-details">
                     <div class="detail-row">
-                        <div class="detail-label">Your Role:</div>
+                        <div class="detail-label">你的崗位：</div>
                         <div class="detail-value">
                             <span class="role-highlight">{{ role }}</span>
                         </div>
                     </div>
 
                     <div class="detail-row">
-                        <div class="detail-label">Date & Time:</div>
+                        <div class="detail-label">日期和時間：</div>
                         <div class="detail-value">{{ event_datetime }}</div>
                     </div>
 
                     {% if event_location %}
                     <div class="detail-row">
-                        <div class="detail-label">Location:</div>
+                        <div class="detail-label">地點：</div>
                         <div class="detail-value">{{ event_location }}</div>
                     </div>
                     {% endif %}
 
                     {% if event_duration %}
                     <div class="detail-row">
-                        <div class="detail-label">Duration:</div>
+                        <div class="detail-label">時長：</div>
                         <div class="detail-value">{{ event_duration }}</div>
                     </div>
                     {% endif %}
@@ -215,34 +215,34 @@
 
             {% if additional_info %}
             <div class="event-details">
-                <strong>Additional Information:</strong>
+                <strong>補充資訊：</strong>
                 <p>{{ additional_info }}</p>
             </div>
             {% endif %}
 
             <!-- Actions -->
             <div class="actions">
-                <a href="{{ calendar_url }}" class="button">📅 Add to Calendar</a>
-                <a href="{{ schedule_url }}" class="button button-secondary">View Schedule</a>
+                <a href="{{ calendar_url }}" class="button">📅 加入行事曆</a>
+                <a href="{{ schedule_url }}" class="button button-secondary">查看排班</a>
             </div>
 
             <!-- Cannot Attend Info -->
             <div class="info-box">
-                <p><strong>Can't attend?</strong> Please <a href="{{ availability_url }}" class="footer-link">update your availability</a> as soon as possible so we can reassign this role.</p>
+                <p><strong>無法參加？</strong> 請<a href="{{ availability_url }}" class="footer-link">更新你的可用時間</a>，以便我們儘快重新安排此崗位。</p>
             </div>
 
             <div class="message" style="margin-top: 30px;">
-                Thank you for serving! 🙏
+                感謝你的參與！ 🙏
             </div>
         </div>
 
         <!-- Footer -->
         <div class="footer">
             <div class="footer-text">
-                <a href="{{ unsubscribe_url }}" class="footer-link">Unsubscribe from assignment notifications</a>
+                <a href="{{ unsubscribe_url }}" class="footer-link">取消訂閱任務安排通知</a>
             </div>
             <div class="footer-text" style="margin-top: 15px;">
-                Powered by <a href="https://signupflow.io" class="footer-link">SignUpFlow</a>
+                技術支援：<a href="https://signupflow.io" class="footer-link">SignUpFlow</a>
             </div>
         </div>
     </div>

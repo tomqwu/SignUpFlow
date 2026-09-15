@@ -132,6 +132,7 @@ def _record_and_commit_response(
 def _publish_assignment_change(
     background_tasks: BackgroundTasks,
     assignment: Assignment,
+    org_id: str,
 ) -> None:
     # Manual/admin-created assignments have solution_id=None and don't
     # belong to a Solution Review stream. Skip them to avoid publishing
@@ -140,7 +141,7 @@ def _publish_assignment_change(
         return
     background_tasks.add_task(
         event_bus.publish,
-        f"solution:{assignment.solution_id}",
+        event_bus.solution_topic(org_id, assignment.solution_id),
         {
             "type": "assignment.changed",
             "assignment_id": assignment.id,
@@ -172,7 +173,7 @@ def accept_assignment(
         expected_revision=expected_revision,
     )
     if changed:
-        _publish_assignment_change(background_tasks, assignment)
+        _publish_assignment_change(background_tasks, assignment, current_user.org_id)
     return assignment
 
 
@@ -200,7 +201,7 @@ def decline_assignment(
         details={"decline_reason": body.decline_reason},
     )
     if changed:
-        _publish_assignment_change(background_tasks, assignment)
+        _publish_assignment_change(background_tasks, assignment, current_user.org_id)
     return assignment
 
 
@@ -229,7 +230,7 @@ def request_swap(
         details=details,
     )
     if changed:
-        _publish_assignment_change(background_tasks, assignment)
+        _publish_assignment_change(background_tasks, assignment, current_user.org_id)
     return assignment
 
 

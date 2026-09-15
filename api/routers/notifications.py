@@ -6,7 +6,7 @@ Volunteers can view their own notifications, admins can view organization-wide s
 """
 
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query
 from sqlalchemy import desc, func
 from sqlalchemy.orm import Session
 
@@ -333,7 +333,14 @@ async def get_organization_notification_stats(
         db.query(Notification)
         .filter(
             Notification.org_id == org_id,
-            Notification.status.in_([NotificationStatus.FAILED, NotificationStatus.BOUNCED]),
+            Notification.status.in_(
+                [
+                    NotificationStatus.FAILED,
+                    NotificationStatus.BOUNCED,
+                    NotificationStatus.DEAD_LETTER,
+                    NotificationStatus.UNCERTAIN,
+                ]
+            ),
             Notification.created_at >= cutoff_date,
         )
         .order_by(desc(Notification.created_at))
@@ -355,6 +362,7 @@ async def get_organization_notification_stats(
 
 @router.post("/notifications/test/send")
 async def send_test_notification(
+    background_tasks: BackgroundTasks,
     recipient_email: str = Query(..., description="Email address to send test notification"),
     org_id: str = Query(..., description="Organization ID"),
     admin: Person = Depends(get_current_admin_user),
@@ -372,7 +380,7 @@ async def send_test_notification(
     # Verify admin belongs to organization
     verify_org_member(admin, org_id)
 
-    from api.services.notification_service import create_notification
+    from api.services.notification_service import create_notification, dispatch_notification_ids
 
     # Create test notification
     test_notification = create_notification(
@@ -386,6 +394,8 @@ async def send_test_notification(
 
     if not test_notification:
         raise HTTPException(status_code=500, detail="Failed to create test notification")
+    db.commit()
+    dispatch_notification_ids(background_tasks, [(test_notification.id, org_id)])
 
     return {
         "message": f"Test notification sent to {recipient_email}",

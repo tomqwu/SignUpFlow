@@ -8,7 +8,7 @@ triggering Celery tasks for sending emails.
 import logging
 import os
 import secrets
-from typing import Any
+from typing import Any, cast
 
 from fastapi import BackgroundTasks
 from sqlalchemy.orm import Session
@@ -18,6 +18,7 @@ from api.models import (
     Assignment,
     EmailFrequency,
     EmailPreference,
+    Event,
     Notification,
     NotificationStatus,
     NotificationType,
@@ -52,27 +53,41 @@ def _should_queue_email(send_immediately: bool) -> bool:
 
 def dispatch_notification_ids(
     background_tasks: BackgroundTasks,
-    notification_ids: list[int],
+    notification_refs: list[tuple[int, str]],
 ) -> str:
     """Dispatch committed intents through the configured backend."""
-    if not notification_ids or email_service.delivery_mode == "disabled":
+    if not notification_refs or email_service.delivery_mode == "disabled":
         return "disabled"
-    for notification_id in notification_ids:
+    for notification_id, org_id in notification_refs:
         if email_service.delivery_mode == "local_capture":
-            background_tasks.add_task(send_email_task.run, notification_id)
+            background_tasks.add_task(send_email_task.run, notification_id, org_id)
         else:
-            background_tasks.add_task(send_email_task.delay, notification_id)
+            background_tasks.add_task(enqueue_notification_ref, notification_id, org_id)
     return email_service.delivery_mode
 
 
+def enqueue_notification_ref(notification_id: int, org_id: str) -> bool:
+    """Try to enqueue one committed intent without changing durable state."""
+    try:
+        send_email_task.delay(notification_id, org_id)
+    except Exception:
+        logger.exception(
+            "Notification enqueue failed; committed intent remains due",
+            extra={"notification_id": notification_id, "org_id": org_id},
+        )
+        return False
+    return True
+
+
 def create_assignment_notifications(
-    assignment_ids: list[int], db: Session, send_immediately: bool = True
+    assignment_ids: list[int], org_id: str, db: Session, send_immediately: bool = True
 ) -> dict[str, Any]:
     """
     Create notification records for new assignments and optionally send emails.
 
     Args:
         assignment_ids: List of Assignment IDs to create notifications for
+        org_id: Organization owning every assignment
         db: Database session
         send_immediately: If True, queue emails for immediate sending (default: True)
 
@@ -80,12 +95,13 @@ def create_assignment_notifications(
         Dictionary with counts of notifications created and queued
 
     Example:
-        >>> create_assignment_notifications([1, 2, 3], db)
+        >>> create_assignment_notifications([1, 2, 3], "org_456", db)
         {'created': 3, 'queued': 2, 'skipped': 1}
     """
     created_count = 0
     queued_count = 0
     skipped_count = 0
+    notification_refs: list[tuple[int, str]] = []
 
     queue_emails = (
         _should_queue_email(send_immediately) and settings.EMAIL_SEND_ASSIGNMENT_NOTIFICATIONS
@@ -98,7 +114,12 @@ def create_assignment_notifications(
 
     for assignment_id in assignment_ids:
         # Get assignment details
-        assignment = db.query(Assignment).filter(Assignment.id == assignment_id).first()
+        assignment = (
+            db.query(Assignment)
+            .join(Event, Event.id == Assignment.event_id)
+            .filter(Assignment.id == assignment_id, Event.org_id == org_id)
+            .first()
+        )
 
         if not assignment:
             logger.warning(f"Assignment {assignment_id} not found")
@@ -106,7 +127,11 @@ def create_assignment_notifications(
             continue
 
         # Get person
-        person = db.query(Person).filter(Person.id == assignment.person_id).first()
+        person = (
+            db.query(Person)
+            .filter(Person.id == assignment.person_id, Person.org_id == org_id)
+            .first()
+        )
 
         if not person:
             logger.warning(f"Person {assignment.person_id} not found")
@@ -115,7 +140,9 @@ def create_assignment_notifications(
 
         # Get or create email preferences
         email_pref = (
-            db.query(EmailPreference).filter(EmailPreference.person_id == person.id).first()
+            db.query(EmailPreference)
+            .filter(EmailPreference.person_id == person.id, EmailPreference.org_id == org_id)
+            .first()
         )
 
         if not email_pref:
@@ -141,18 +168,16 @@ def create_assignment_notifications(
             db.add(email_pref)
             db.flush()
 
-        # Check if assignment notifications are enabled
-        if NotificationType.ASSIGNMENT not in (email_pref.enabled_types or []):
-            logger.info(f"Assignment notifications disabled for person {person.id}")
-            skipped_count += 1
-            continue
+        email_requested = NotificationType.ASSIGNMENT in (email_pref.enabled_types or [])
 
         # Create notification record
         notification = Notification(
-            org_id=person.org_id,
+            org_id=org_id,
             recipient_id=person.id,
             type=NotificationType.ASSIGNMENT,
-            status=NotificationStatus.PENDING,
+            status=(
+                NotificationStatus.PENDING if email_requested else NotificationStatus.SUPPRESSED
+            ),
             event_id=assignment.event_id,
             template_data={
                 "assignment_id": assignment.id,
@@ -165,17 +190,14 @@ def create_assignment_notifications(
 
         created_count += 1
 
-        # Queue email if immediate frequency
-        if queue_emails and email_pref.frequency == EmailFrequency.IMMEDIATE:
-            try:
-                send_email_task.delay(notification.id)
-                queued_count += 1
-                logger.info(f"Queued email for notification {notification.id}")
-            except Exception as e:
-                logger.error(f"Failed to queue email for notification {notification.id}: {e}")
+        if email_requested and queue_emails and email_pref.frequency == EmailFrequency.IMMEDIATE:
+            notification_refs.append((cast(int, notification.id), org_id))
 
     # Commit all changes
     db.commit()
+    for notification_id, org_id in notification_refs:
+        if enqueue_notification_ref(notification_id, org_id):
+            queued_count += 1
 
     logger.info(
         f"Assignment notifications: {created_count} created, "
@@ -232,19 +254,20 @@ def create_notification(
             return existing
 
     # Get email preferences
-    email_pref = db.query(EmailPreference).filter(EmailPreference.person_id == recipient_id).first()
+    email_pref = (
+        db.query(EmailPreference)
+        .filter(EmailPreference.person_id == recipient_id, EmailPreference.org_id == org_id)
+        .first()
+    )
 
-    # Check if notification type is enabled
-    if email_pref and notification_type not in (email_pref.enabled_types or []):
-        logger.info(f"{notification_type} notifications disabled for person {recipient_id}")
-        return None
+    email_requested = not email_pref or notification_type in (email_pref.enabled_types or [])
 
     # Create notification
     notification = Notification(
         org_id=org_id,
         recipient_id=recipient_id,
         type=notification_type,
-        status=NotificationStatus.PENDING,
+        status=NotificationStatus.PENDING if email_requested else NotificationStatus.SUPPRESSED,
         event_id=event_id,
         template_data=template_data or {},
         delivery_key=delivery_key,
@@ -253,23 +276,11 @@ def create_notification(
     db.add(notification)
     db.flush()
 
-    queue_emails = (
-        _should_queue_email(send_immediately) and settings.EMAIL_SEND_UPDATE_NOTIFICATIONS
-    )
-
-    # Queue email if immediate frequency
-    if queue_emails and (not email_pref or email_pref.frequency == EmailFrequency.IMMEDIATE):
-        try:
-            send_email_task.delay(notification.id)
-            logger.info(f"Queued email for notification {notification.id}")
-        except Exception as e:
-            logger.error(f"Failed to queue email for notification {notification.id}: {e}")
-
     return notification
 
 
 def get_pending_notifications_for_digest(
-    person_id: str, frequency: str, db: Session
+    person_id: str, org_id: str, frequency: str, db: Session
 ) -> list[Notification]:
     """
     Get pending notifications for daily/weekly digest.
@@ -285,6 +296,7 @@ def get_pending_notifications_for_digest(
     Example:
         >>> notifications = get_pending_notifications_for_digest(
         ...     person_id="person_123",
+        ...     org_id="org_456",
         ...     frequency=EmailFrequency.DAILY,
         ...     db=db
         ... )
@@ -293,6 +305,7 @@ def get_pending_notifications_for_digest(
         db.query(Notification)
         .filter(
             Notification.recipient_id == person_id,
+            Notification.org_id == org_id,
             Notification.status == NotificationStatus.PENDING,
             Notification.type.in_(
                 [

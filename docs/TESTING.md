@@ -24,7 +24,7 @@ make test-unit          # Complete Python unit tier
 make test               # Alias for the complete seven-tier local suite
 make test-all           # All seven Python tiers below, in separate processes
 make test-postgres      # Opt-in PostgreSQL migration/business/race acceptance
-make test-redis         # Opt-in Redis shared-worker rate-limit acceptance
+make test-redis         # Opt-in Redis quota, event-bus, and broker acceptance
 make test-artifact      # Opt-in production image and private-stack acceptance
 make test-security      # Opt-in exact-source/image scan and CycloneDX evidence
 make test-performance   # Opt-in, owned loopback target only
@@ -129,11 +129,14 @@ caller-supplied database.
 `make test-redis` creates one uniquely named, authenticated Redis 7 container with a
 loopback-only random port, ownership label, and ephemeral tmpfs storage. It proves two
 independent limiter instances consume one atomic quota, verifies expiring hashed keys,
-and removes only the verified owned container. Unit tests separately prove a protected
-production request returns retryable 503 during storage failure and succeeds after the
-same backend object recovers. Reports are SHA-bound under
-`test-artifacts/redis-validation/`. This does not exercise an internet edge or claim
-volumetric DDoS protection.
+carries a tenant-scoped refresh event between independent event-bus clients without
+cross-tenant delivery, and verifies a Celery broker outage followed by a persisted
+re-enqueue. Unit tests separately cover fail-closed request limiting and durable
+notification recovery. Reports are SHA-bound under `test-artifacts/redis-validation/`.
+This does not exercise an internet edge, external delivery provider, or deployed Redis.
+Provider-disabled tests prove that committed intents remain pending without broker access;
+preference tests prove disabled messages become suppressed and digest messages are deferred.
+They do not prove provider-side exactly-once delivery or completed digest generation.
 
 The [playbook guide](playbooks/README.md) describes automatic discovery, selectors,
 and external definitions. Church and basketball run in API and browser tiers;
@@ -144,6 +147,9 @@ administrator and volunteer password change/recovery, logout/login, stale-sessio
 revocation, old credentials, replay, and captured recovery screenshots. Manual drills,
 external delivery, and production infrastructure acceptance are not implied by a green
 local run. Run the separate PostgreSQL target for database-specific acceptance.
+`tests/unit/test_email_template_contract.py` inventories and renders all four scheduling
+message types in all six supported languages, including matching HTML language metadata,
+localized subjects, resolved variables, and owned application links.
 
 BO-12 keeps both bundled organizations alive in one disposable browser server. Each
 administrator sees only its own directory, and every declared Church and Basketball
@@ -168,8 +174,9 @@ route and verifies signed double-submit CSRF, exact-origin rejection, no-write f
 browser authentication rate-limit wiring, and trusted-proxy boundaries.
 `tests/e2e/test_request_integrity.py` proves that normal forms receive a token, a foreign
 origin cannot change a member profile, and a same-origin HTMX save succeeds in Chromium.
-The limiter remains process-local; shared quotas, Redis outage behavior, and multi-worker
-acceptance remain deferred under #261.
+Development uses a process-local limiter. Production requires shared Redis, fails closed
+during limiter storage loss, and has owned two-worker quota acceptance. Deployed
+edge/proxy/TLS behavior remains release evidence rather than a local test claim.
 
 ## Local Validation Only
 
@@ -215,7 +222,7 @@ No hosted check, including a static check, is a merge prerequisite.
 ## Before Merge
 
 1. Run `make test-all` on the final source; run `make test-postgres` for database or
-   migration changes, `make test-redis` for rate-limit changes, `make test-artifact`
+   migration changes, `make test-redis` for rate-limit/event-bus/broker changes, `make test-artifact`
    and then `make test-security` for release-image changes,
    `make test-recovery` for backup/restore changes, and `make test-mobile` for mobile
    changes.

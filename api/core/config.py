@@ -77,6 +77,7 @@ class Settings(BaseSettings):
     CELERY_RESULT_BACKEND: str = "redis://localhost:6379/0"
     REDIS_URL: str = "redis://localhost:6379/0"
     RATE_LIMIT_STORAGE: str = "memory"
+    EVENT_BUS_STORAGE: str = "memory"
 
     # Email Notification Features
     EMAIL_SEND_ASSIGNMENT_NOTIFICATIONS: bool = True

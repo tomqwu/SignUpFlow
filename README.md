@@ -346,6 +346,9 @@ captured single-use reset links. Copied pre-change and pre-reset browser session
 passwords, replayed links, and expired API tokens fail safely. The same run delivers
 assignment, schedule-change, and reminder messages from the published roster, reconciles
 the member inbox, and opens every notification HTTP link against the owned local server.
+An executable inventory renders assignment, reminder, update, and cancellation HTML plus
+localized subjects in English, Spanish, French, Portuguese, Simplified Chinese, and
+Traditional Chinese.
 This is local business-flow evidence, not proof of external inbox placement or provider
 reliability.
 
@@ -402,6 +405,7 @@ make test-unit            # Python unit tests only
 make test-unit-fast       # Skip slow bcrypt tests (~7s)
 make test-all             # All Python tiers, including web + contract + Playwright
 make test-postgres        # Owned ephemeral PostgreSQL acceptance (requires Docker)
+make test-redis           # Owned Redis quota, event-bus, and broker acceptance
 make test-artifact        # Build and exercise the committed production image locally
 make test-security        # Scan that exact image and committed dependency inputs locally
 make test-recovery        # Owned encrypted SQLite backup and restored-app acceptance
@@ -425,11 +429,13 @@ both church and basketball playbooks.
 Run `make test-postgres` for database or migration changes. It creates and removes its
 own loopback-only PostgreSQL 16 container and writes versioned JUnit/report evidence;
 never substitute a shared or customer database.
-Run `make test-redis` for rate-limit changes. It creates an authenticated,
-loopback-only Redis container with ephemeral storage and proves two limiter instances
-share one atomic quota. Production fails protected requests with a retryable 503 when
-shared quota storage is unavailable; development keeps an explicit process-local
-fallback. This is application abuse-control evidence, not network DDoS protection.
+Run `make test-redis` for rate-limit, cross-worker refresh, or notification-broker
+changes. It creates an authenticated, loopback-only Redis container with ephemeral
+storage; proves two limiter instances share one atomic quota; carries tenant-scoped
+events between independent bus clients; and verifies broker outage followed by durable
+re-enqueue. Production fails protected requests with a retryable 503 when shared quota
+storage is unavailable; development keeps explicit process-local fallbacks. This is
+local application evidence, not network DDoS or deployed infrastructure acceptance.
 Run `make test-artifact` for production-image changes after committing the tracked tree.
 It retains the SHA-labeled image and report, uses private disposable PostgreSQL/Redis,
 runs one migration job before two read-only replicas, and contacts no external provider.

@@ -25,6 +25,7 @@ from api.models import (
     Event,
     Invitation,
     Notification,
+    NotificationStatus,
     Organization,
     Person,
     Solution,
@@ -34,6 +35,7 @@ from api.routers.invitations import accept_invitation
 from api.schemas.invitation import InvitationAccept
 from api.security import hash_password
 from api.services.allocation_service import AllocationConflictError, claim_open_shift
+from api.services.notification_outbox import claim_notification
 from api.services.publication_service import capture_solution_scope, publish_solution_transaction
 from api.timeutils import utcnow
 
@@ -113,7 +115,7 @@ def test_migration_only_schema_is_current_and_matches_critical_contracts(postgre
             assert connection.dialect.name == "postgresql"
             assert connection.scalar(text("SELECT version()"))
             assert (
-                connection.scalar(text("SELECT version_num FROM alembic_version")) == "a9c2e4f6b8d0"
+                connection.scalar(text("SELECT version_num FROM alembic_version")) == "b0d3f6a8c1e2"
             )
 
         people_columns = {column["name"]: column for column in inspector.get_columns("people")}
@@ -207,7 +209,7 @@ def test_upgrade_from_existing_data_preserves_identity_and_assignment_truth() ->
             command.check(config)
         with engine.connect() as connection:
             assert (
-                connection.scalar(text("SELECT version_num FROM alembic_version")) == "a9c2e4f6b8d0"
+                connection.scalar(text("SELECT version_num FROM alembic_version")) == "b0d3f6a8c1e2"
             )
             assert (
                 connection.scalar(text("SELECT roles FROM people WHERE id='upgrade-person'"))
@@ -521,6 +523,53 @@ def test_postgres_last_slot_claim_has_one_winner(sessions) -> None:
         results = sorted(executor.map(attempt, ("postgres-first", "postgres-second")))
 
     assert results == ["role_full", "won"]
+
+
+def test_postgres_notification_lease_has_one_worker(sessions) -> None:
+    with sessions() as db:
+        db.add(Organization(id="postgres-outbox-org", name="PostgreSQL Outbox Org"))
+        db.add(
+            Person(
+                id="postgres-outbox-person",
+                org_id="postgres-outbox-org",
+                name="Outbox Person",
+                email="postgres-outbox@example.test",
+                roles=["volunteer"],
+            )
+        )
+        notification = Notification(
+            org_id="postgres-outbox-org",
+            recipient_id="postgres-outbox-person",
+            type="assignment",
+            status=NotificationStatus.PENDING,
+            delivery_key="postgres-concurrent-delivery",
+        )
+        db.add(notification)
+        db.commit()
+        notification_id = notification.id
+
+    barrier = Barrier(2, timeout=15)
+
+    def attempt(worker: str) -> str:
+        with sessions() as db:
+            barrier.wait()
+            claimed = claim_notification(
+                db,
+                notification_id=notification_id,
+                org_id="postgres-outbox-org",
+                lease_token=worker,
+            )
+            return "won" if claimed is not None else "not_due"
+
+    with ThreadPoolExecutor(max_workers=2) as executor:
+        results = sorted(executor.map(attempt, ("worker-a", "worker-b")))
+
+    assert results == ["not_due", "won"]
+    with sessions() as db:
+        persisted = db.query(Notification).filter_by(id=notification_id).one()
+        assert persisted.status == NotificationStatus.SENDING
+        assert persisted.delivery_attempts == 1
+        assert persisted.delivery_lease_token in {"worker-a", "worker-b"}
 
 
 def test_postgres_concurrent_publish_leaves_one_active_solution(sessions) -> None:

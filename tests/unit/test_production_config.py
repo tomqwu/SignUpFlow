@@ -93,6 +93,7 @@ def test_production_requires_exact_git_release_sha(release_sha):
         ),
         ("REDIS_URL", ""),
         ("REDIS_URL", "http://redis:6379/0"),
+        ("EVENT_BUS_STORAGE", "memory"),
         ("APP_URL", "http://app.example.test"),
         ("FRONTEND_URL", "https://app.example.test/path"),
         ("CORS_ALLOWED_ORIGINS", "*"),
@@ -287,6 +288,7 @@ def test_production_compose_passes_canonical_fail_closed_settings():
     assert environment["SMS_ENABLED"] == "${SMS_ENABLED:-false}"
     assert environment["BILLING_ENABLED"] == "${BILLING_ENABLED:-false}"
     assert environment["RATE_LIMIT_STORAGE"] == "redis"
+    assert environment["EVENT_BUS_STORAGE"] == "redis"
     assert "JWT_EXPIRE_HOURS" not in environment
     assert "RATE_LIMITING_ENABLED" not in environment
     assert "changeme_in_production" not in (REPO_ROOT / "docker-compose.yml").read_text()
@@ -308,7 +310,57 @@ def test_production_compose_passes_canonical_fail_closed_settings():
     assert "$${REDIS_PASSWORD}" in " ".join(redis["healthcheck"]["test"])
 
 
-def test_production_artifact_enforces_single_worker_until_shared_state_exists():
+def test_production_compose_runs_one_worker_and_one_scheduler():
+    compose = yaml.safe_load((REPO_ROOT / "docker-compose.yml").read_text())
+    services = compose["services"]
+
+    assert services["celery-worker"]["command"][:4] == [
+        "celery",
+        "-A",
+        "api.celery_app",
+        "worker",
+    ]
+    beat_services = [
+        service for service in services.values() if "beat" in " ".join(service.get("command", []))
+    ]
+    assert len(beat_services) == 1
+    assert "--schedule=/tmp/celerybeat-schedule" in beat_services[0]["command"]
+    for service_name in ("celery-worker", "celery-beat"):
+        environment = services[service_name]["environment"]
+        assert environment["ENVIRONMENT"] == "production"
+        assert environment["RELEASE_SHA"] == (
+            "${RELEASE_SHA:?Set RELEASE_SHA to the deployed commit}"
+        )
+        assert environment["SECRET_KEY"] == "${SECRET_KEY:?Set SECRET_KEY}"
+        assert environment["EVENT_BUS_STORAGE"] == "redis"
+        assert environment["EMAIL_ENABLED"] == "${EMAIL_ENABLED:-false}"
+        assert environment["SMS_ENABLED"] == "false"
+        assert environment["BILLING_ENABLED"] == "false"
+
+
+def test_celery_startup_runs_the_production_validator():
+    result = subprocess.run(
+        [
+            sys.executable,
+            "-c",
+            (
+                "from api.celery_app import validate_celery_production_environment; "
+                "validate_celery_production_environment()"
+            ),
+        ],
+        cwd=REPO_ROOT,
+        env=_subprocess_env(SECRET_KEY="known-bad-worker-key"),
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+
+    assert result.returncode != 0
+    assert "SECRET_KEY" in result.stdout + result.stderr
+    assert "known-bad-worker-key" not in result.stdout + result.stderr
+
+
+def test_production_artifact_keeps_conservative_single_api_worker_default():
     dockerfile = (REPO_ROOT / "Dockerfile").read_text()
     example = (REPO_ROOT / ".env.example").read_text()
 

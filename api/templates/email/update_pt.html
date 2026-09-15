@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="pt">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <title>Schedule Update: {{ event_title }}</title>
+    <title>Atualização da escala: {{ event_title }}</title>
     <style>
         body {
             margin: 0;
@@ -214,33 +214,33 @@
     <div class="email-container">
         <!-- Header -->
         <div class="header">
-            <h1>🔄 Schedule Update</h1>
+            <h1>🔄 Atualização da escala</h1>
         </div>
 
         <!-- Content -->
         <div class="content">
             <div class="greeting">
-                Hi {{ volunteer_name }},
+                Olá {{ volunteer_name }},
             </div>
 
             <div class="message">
-                There's been a change to your assignment:
+                Houve uma alteração na sua atribuição:
             </div>
 
-            <!-- What Changed -->
+            <!-- O que mudou -->
             <div class="update-badge">
-                <h3>⚠️ What Changed</h3>
+                <h3>⚠️ O que mudou</h3>
 
                 {% if time_changed %}
                 <div class="change-row">
-                    <div class="change-label">Date & Time</div>
+                    <div class="change-label">Data e hora</div>
                     <div class="change-values">
                         <div class="old-value">
-                            <div class="value-label">Previous</div>
+                            <div class="value-label">Anterior</div>
                             {{ old_datetime }}
                         </div>
                         <div class="new-value">
-                            <div class="value-label">Updated</div>
+                            <div class="value-label">Atualizado</div>
                             {{ new_datetime }}
                         </div>
                     </div>
@@ -249,14 +249,14 @@
 
                 {% if location_changed %}
                 <div class="change-row">
-                    <div class="change-label">Location</div>
+                    <div class="change-label">Local</div>
                     <div class="change-values">
                         <div class="old-value">
-                            <div class="value-label">Previous</div>
+                            <div class="value-label">Anterior</div>
                             {{ old_location }}
                         </div>
                         <div class="new-value">
-                            <div class="value-label">Updated</div>
+                            <div class="value-label">Atualizado</div>
                             {{ new_location }}
                         </div>
                     </div>
@@ -265,7 +265,7 @@
 
                 {% if other_changes %}
                 <div class="change-row">
-                    <div class="change-label">Other Changes</div>
+                    <div class="change-label">Outras alterações</div>
                     <p style="margin: 5px 0; color: #555555;">{{ other_changes }}</p>
                 </div>
                 {% endif %}
@@ -277,27 +277,27 @@
 
                 <div class="event-details">
                     <div class="detail-row">
-                        <div class="detail-label">Your Role:</div>
+                        <div class="detail-label">Sua função:</div>
                         <div class="detail-value">
                             <span class="role-highlight">{{ role }}</span>
                         </div>
                     </div>
 
                     <div class="detail-row">
-                        <div class="detail-label">Date & Time:</div>
+                        <div class="detail-label">Data e hora:</div>
                         <div class="detail-value">{{ new_datetime }}</div>
                     </div>
 
                     {% if new_location %}
                     <div class="detail-row">
-                        <div class="detail-label">Location:</div>
+                        <div class="detail-label">Local:</div>
                         <div class="detail-value">{{ new_location }}</div>
                     </div>
                     {% endif %}
 
                     {% if event_duration %}
                     <div class="detail-row">
-                        <div class="detail-label">Duration:</div>
+                        <div class="detail-label">Duração:</div>
                         <div class="detail-value">{{ event_duration }}</div>
                     </div>
                     {% endif %}
@@ -306,21 +306,21 @@
 
             <!-- Actions -->
             <div class="actions">
-                <a href="{{ schedule_url }}" class="button">📅 View Updated Schedule</a>
+                <a href="{{ schedule_url }}" class="button">📅 Ver escala atualizada</a>
             </div>
 
             <div class="message" style="margin-top: 30px;">
-                Thank you for your flexibility! 🙏
+                Obrigado pela flexibilidade! 🙏
             </div>
         </div>
 
         <!-- Footer -->
         <div class="footer">
             <div class="footer-text">
-                <a href="{{ unsubscribe_url }}" class="footer-link">Unsubscribe from update notifications</a>
+                <a href="{{ unsubscribe_url }}" class="footer-link">Cancelar notificações de alteração</a>
             </div>
             <div class="footer-text" style="margin-top: 15px;">
-                Powered by <a href="https://signupflow.io" class="footer-link">SignUpFlow</a>
+                Desenvolvido por <a href="https://signupflow.io" class="footer-link">SignUpFlow</a>
             </div>
         </div>
     </div>

@@ -100,6 +100,7 @@ services:
       # Redis/Celery Configuration
       REDIS_URL: "redis://:${REDIS_PASSWORD:?Set REDIS_PASSWORD}@redis:6379/0"
       RATE_LIMIT_STORAGE: "redis"
+      EVENT_BUS_STORAGE: "redis"
       CELERY_BROKER_URL: "redis://:${REDIS_PASSWORD:?Set REDIS_PASSWORD}@redis:6379/0"
       CELERY_RESULT_BACKEND: "redis://:${REDIS_PASSWORD:?Set REDIS_PASSWORD}@redis:6379/0"
 
@@ -171,23 +172,112 @@ services:
       - signupflow-network
 
   # ============================================================================
-  # Celery Worker (for background tasks - optional, future use)
+  # Celery Worker (committed notification intents and scheduled reminders)
   # ============================================================================
-  # celery:
-  #   build:
-  #     context: .
-  #     dockerfile: Dockerfile
-  #   container_name: signupflow-celery
-  #   restart: unless-stopped
-  #   command: celery -A api.celery_app worker --loglevel=info
-  #   depends_on:
-  #     - redis
-  #     - db
-  #   environment:
-  #     DATABASE_URL: postgresql://${POSTGRES_USER:-signupflow}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-signupflow}
-  #     REDIS_URL: redis://:${REDIS_PASSWORD}@redis:6379/0
-  #   networks:
-  #     - signupflow-network
+  celery-worker:
+    image: "${SIGNUPFLOW_IMAGE:-signupflow:local}"
+    restart: unless-stopped
+    command: ["celery", "-A", "api.celery_app", "worker", "--loglevel=info"]
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+      redis:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: "postgresql://${POSTGRES_USER:-signupflow}:${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-signupflow}"
+      REDIS_URL: "redis://:${REDIS_PASSWORD:?Set REDIS_PASSWORD}@redis:6379/0"
+      CELERY_BROKER_URL: "redis://:${REDIS_PASSWORD:?Set REDIS_PASSWORD}@redis:6379/0"
+      CELERY_RESULT_BACKEND: "redis://:${REDIS_PASSWORD:?Set REDIS_PASSWORD}@redis:6379/0"
+      RATE_LIMIT_STORAGE: "redis"
+      EVENT_BUS_STORAGE: "redis"
+      ENVIRONMENT: "production"
+      RELEASE_SHA: "${RELEASE_SHA:?Set RELEASE_SHA to the deployed commit}"
+      SIGNUPFLOW_LOAD_DOTENV: "false"
+      SECRET_KEY: "${SECRET_KEY:?Set SECRET_KEY}"
+      ACCESS_TOKEN_EXPIRE_HOURS: "${ACCESS_TOKEN_EXPIRE_HOURS:-24}"
+      APP_URL: "${APP_URL:?Set APP_URL to the public HTTPS browser origin}"
+      API_BASE_URL: "${API_BASE_URL:?Set API_BASE_URL to the public HTTPS API origin}"
+      FRONTEND_URL: "${FRONTEND_URL:?Set FRONTEND_URL to the public HTTPS browser origin}"
+      CORS_ALLOWED_ORIGINS: "${CORS_ALLOWED_ORIGINS:?Set CORS_ALLOWED_ORIGINS}"
+      TESTING: "false"
+      DEBUG: "false"
+      DEBUG_RETURN_RESET_TOKEN: "false"
+      DISABLE_RATE_LIMITS: "false"
+      DISABLE_USAGE_LIMITS: "false"
+      SIGNUPFLOW_ALLOW_TEST_CLOCK: "false"
+      SECURITY_HSTS_ENABLED: "true"
+      SECURITY_CSP_ENABLED: "true"
+      EMAIL_ENABLED: ${EMAIL_ENABLED:-false}
+      SMS_ENABLED: "false"
+      BILLING_ENABLED: "false"
+      SENDGRID_API_KEY: "${SENDGRID_API_KEY:-}"
+      EMAIL_FROM: ${EMAIL_FROM:-noreply@signupflow.io}
+    read_only: true
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=64m
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    networks:
+      - signupflow-network
+
+  # Exactly one scheduler owns periodic intent recovery and reminders.
+  celery-beat:
+    image: "${SIGNUPFLOW_IMAGE:-signupflow:local}"
+    restart: unless-stopped
+    command:
+      [
+        "celery",
+        "-A",
+        "api.celery_app",
+        "beat",
+        "--loglevel=info",
+        "--schedule=/tmp/celerybeat-schedule",
+      ]
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+      redis:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: "postgresql://${POSTGRES_USER:-signupflow}:${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-signupflow}"
+      REDIS_URL: "redis://:${REDIS_PASSWORD:?Set REDIS_PASSWORD}@redis:6379/0"
+      CELERY_BROKER_URL: "redis://:${REDIS_PASSWORD:?Set REDIS_PASSWORD}@redis:6379/0"
+      CELERY_RESULT_BACKEND: "redis://:${REDIS_PASSWORD:?Set REDIS_PASSWORD}@redis:6379/0"
+      RATE_LIMIT_STORAGE: "redis"
+      EVENT_BUS_STORAGE: "redis"
+      ENVIRONMENT: "production"
+      RELEASE_SHA: "${RELEASE_SHA:?Set RELEASE_SHA to the deployed commit}"
+      SIGNUPFLOW_LOAD_DOTENV: "false"
+      SECRET_KEY: "${SECRET_KEY:?Set SECRET_KEY}"
+      ACCESS_TOKEN_EXPIRE_HOURS: "${ACCESS_TOKEN_EXPIRE_HOURS:-24}"
+      APP_URL: "${APP_URL:?Set APP_URL to the public HTTPS browser origin}"
+      API_BASE_URL: "${API_BASE_URL:?Set API_BASE_URL to the public HTTPS API origin}"
+      FRONTEND_URL: "${FRONTEND_URL:?Set FRONTEND_URL to the public HTTPS browser origin}"
+      CORS_ALLOWED_ORIGINS: "${CORS_ALLOWED_ORIGINS:?Set CORS_ALLOWED_ORIGINS}"
+      TESTING: "false"
+      DEBUG: "false"
+      DEBUG_RETURN_RESET_TOKEN: "false"
+      DISABLE_RATE_LIMITS: "false"
+      DISABLE_USAGE_LIMITS: "false"
+      SIGNUPFLOW_ALLOW_TEST_CLOCK: "false"
+      SECURITY_HSTS_ENABLED: "true"
+      SECURITY_CSP_ENABLED: "true"
+      EMAIL_ENABLED: ${EMAIL_ENABLED:-false}
+      SMS_ENABLED: "false"
+      BILLING_ENABLED: "false"
+      SENDGRID_API_KEY: "${SENDGRID_API_KEY:-}"
+      EMAIL_FROM: ${EMAIL_FROM:-noreply@signupflow.io}
+    read_only: true
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=64m
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    networks:
+      - signupflow-network
 
 # ============================================================================
 # Volumes (persistent data storage)

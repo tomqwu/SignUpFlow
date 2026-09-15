@@ -89,7 +89,7 @@ def test_sent_notification_task_is_idempotent(monkeypatch):
     send = Mock()
     monkeypatch.setattr(notification_tasks.email_service, "send_email", send)
 
-    result = notification_tasks.send_email_task.run(notification_id)
+    result = notification_tasks.send_email_task.run(notification_id, "mail-org")
 
     assert result == {"status": "already_sent", "message_id": "local-existing"}
     send.assert_not_called()

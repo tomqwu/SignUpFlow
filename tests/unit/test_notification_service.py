@@ -76,7 +76,9 @@ class TestCreateAssignmentNotifications:
         mock_db.query.side_effect = query_side_effect
 
         # Act
-        result = create_assignment_notifications([assignment_id], mock_db, send_immediately=True)
+        result = create_assignment_notifications(
+            [assignment_id], "org_123", mock_db, send_immediately=True
+        )
 
         # Assert
         assert result["created"] >= 1
@@ -122,7 +124,9 @@ class TestCreateAssignmentNotifications:
         mock_db.query.side_effect = query_side_effect
 
         # Act
-        result = create_assignment_notifications([assignment_id], mock_db, send_immediately=True)
+        result = create_assignment_notifications(
+            [assignment_id], "org_123", mock_db, send_immediately=True
+        )
 
         # Assert - should be skipped
         assert result["skipped"] >= 1
@@ -141,7 +145,9 @@ class TestCreateAssignmentNotifications:
         mock_db.query.side_effect = query_side_effect
 
         # Act
-        result = create_assignment_notifications([assignment_id], mock_db, send_immediately=True)
+        result = create_assignment_notifications(
+            [assignment_id], "org_123", mock_db, send_immediately=True
+        )
 
         # Assert
         assert result["skipped"] >= 1
@@ -179,7 +185,9 @@ class TestCreateAssignmentNotifications:
 
         mock_db.query.side_effect = query_side_effect
 
-        result = create_assignment_notifications([assignment_id], mock_db, send_immediately=True)
+        result = create_assignment_notifications(
+            [assignment_id], "org_123", mock_db, send_immediately=True
+        )
 
         assert result["queued"] == 0
         mock_task.delay.assert_not_called()
@@ -217,7 +225,9 @@ class TestCreateAssignmentNotifications:
 
         mock_db.query.side_effect = query_side_effect
 
-        result = create_assignment_notifications([assignment_id], mock_db, send_immediately=True)
+        result = create_assignment_notifications(
+            [assignment_id], "org_123", mock_db, send_immediately=True
+        )
 
         assert result["queued"] == 0
         mock_task.delay.assert_not_called()
@@ -314,7 +324,7 @@ class TestGetPendingNotificationsForDigest:
 
         # Act
         result = get_pending_notifications_for_digest(
-            person_id=person_id, frequency=frequency, db=mock_db
+            person_id=person_id, org_id="org_123", frequency=frequency, db=mock_db
         )
 
         # Assert

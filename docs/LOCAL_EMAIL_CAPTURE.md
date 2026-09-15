@@ -48,9 +48,12 @@ delivery runbook instead.
   reminder, or event-update operation does not deliver the same intent twice.
 - Invitation and reset endpoints keep transport failures out of the response path.
   Password-recovery confirmation remains neutral for known and unknown addresses.
-- External provider acceptance, inbox placement, bounce/webhook processing,
-  multi-worker queue resilience, and production retry operations are not established
-  by local capture.
+- Local capture alone does not establish external provider acceptance, inbox placement,
+  bounce/webhook processing, or production retry operations.
+- Separate PostgreSQL and Redis acceptance proves scheduling-notification transaction
+  rollback, one-worker lease ownership, stale-lease recovery, broker outage/re-enqueue,
+  and cross-worker refresh hints. It does not make invitation/reset transport durable or
+  validate a deployed broker/provider.
 
 The provider smoke process remains documented in
 [the external email runbook](saas/SMOKE_TESTING_EMAIL.md). Run it only with explicit
