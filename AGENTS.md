@@ -15,7 +15,7 @@ SignUpFlow is a headless volunteer scheduling and sign-up management API + CLI f
 - Database: SQLite (dev), PostgreSQL (prod)
 - Auth: JWT (HS256, 24h expiry) + bcrypt
 
-Notification routes are registered under `/api/v1`. Billing, its signed Stripe callback, and SMS code are registered but feature-gated off by default with `BILLING_ENABLED=false` and `SMS_ENABLED=false`; the SendGrid event callback remains unregistered. Core scheduling must not require either paid integration. See `docs/TESTING.md` for current validation scope.
+Notification routes and the signed SendGrid callback are registered under `/api/v1` and feature-gated off by default with `EMAIL_ENABLED=false`. Billing, its signed Stripe callback, and SMS code are also registered but default off behind `BILLING_ENABLED=false` and `SMS_ENABLED=false`. Core scheduling must not require an external provider. See `docs/TESTING.md` for current validation scope.
 
 ## Operating loop
 

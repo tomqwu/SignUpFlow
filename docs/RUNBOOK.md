@@ -70,7 +70,7 @@ notified.
 | `APP_URL`, `API_BASE_URL`, `FRONTEND_URL` | Public origins | Production requires explicit HTTPS origins. |
 | `CORS_ALLOWED_ORIGINS` | API browser origins | Must explicitly include `FRONTEND_URL`; wildcard fails. |
 | `ACCESS_TOKEN_EXPIRE_HOURS` | JWT and browser-session lifetime | One canonical positive value; default 24. |
-| `EMAIL_ENABLED` + `SENDGRID_API_KEY` | Transactional email | default `false`; provider acceptance is not complete |
+| `EMAIL_ENABLED` + `SENDGRID_API_KEY` + `SENDGRID_WEBHOOK_PUBLIC_KEY` | Transactional email and signed delivery callback | default `false`; provider acceptance is not complete |
 | `SMS_ENABLED` + `TWILIO_ACCOUNT_SID`/`_AUTH_TOKEN`/`_PHONE_NUMBER` + callback URLs | Deferred paid SMS | default `false`; production callback URLs must be exact external HTTPS URLs; enable only for an authorized sandbox validation |
 | `BILLING_ENABLED` + `STRIPE_SECRET_KEY` + `STRIPE_WEBHOOK_SECRET` | Deferred billing | default `false`; enable only for an authorized Stripe sandbox validation |
 | `READINESS_FAILURE_ALERT_THRESHOLD` | Consecutive DB readiness failures before a local trigger | default `3`; must be a positive integer |

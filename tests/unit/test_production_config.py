@@ -138,6 +138,27 @@ def test_disabled_providers_ignore_inherited_credentials():
     assert result.stdout.strip() == "VALID"
 
 
+def test_enabled_email_requires_signed_sendgrid_callback_configuration():
+    missing_public_key = _validate_in_subprocess(
+        EMAIL_ENABLED="true",
+        SENDGRID_API_KEY="synthetic-sendgrid-key",
+    )
+
+    assert missing_public_key.returncode != 0
+    assert "EMAIL_ENABLED requires SENDGRID_API_KEY, SENDGRID_WEBHOOK_PUBLIC_KEY" in (
+        missing_public_key.stdout + missing_public_key.stderr
+    )
+
+    complete = _validate_in_subprocess(
+        EMAIL_ENABLED="true",
+        SENDGRID_API_KEY="synthetic-sendgrid-key",
+        SENDGRID_WEBHOOK_PUBLIC_KEY="synthetic-public-verification-key",
+    )
+
+    assert complete.returncode == 0, complete.stderr
+    assert complete.stdout.strip() == "VALID"
+
+
 def test_enabled_sms_requires_external_https_callback_urls():
     result = _validate_in_subprocess(
         SMS_ENABLED="true",
@@ -285,6 +306,7 @@ def test_production_compose_passes_canonical_fail_closed_settings():
     assert environment["ACCESS_TOKEN_EXPIRE_HOURS"] == "${ACCESS_TOKEN_EXPIRE_HOURS:-24}"
     assert environment["SECURITY_HSTS_MAX_AGE"] == "${SECURITY_HSTS_MAX_AGE:-31536000}"
     assert environment["EMAIL_ENABLED"] == "${EMAIL_ENABLED:-false}"
+    assert environment["SENDGRID_WEBHOOK_PUBLIC_KEY"] == "${SENDGRID_WEBHOOK_PUBLIC_KEY:-}"
     assert environment["SMS_ENABLED"] == "${SMS_ENABLED:-false}"
     assert environment["BILLING_ENABLED"] == "${BILLING_ENABLED:-false}"
     assert environment["RATE_LIMIT_STORAGE"] == "redis"
@@ -334,6 +356,7 @@ def test_production_compose_runs_one_worker_and_one_scheduler():
         assert environment["SECRET_KEY"] == "${SECRET_KEY:?Set SECRET_KEY}"
         assert environment["EVENT_BUS_STORAGE"] == "redis"
         assert environment["EMAIL_ENABLED"] == "${EMAIL_ENABLED:-false}"
+        assert environment["SENDGRID_WEBHOOK_PUBLIC_KEY"] == ("${SENDGRID_WEBHOOK_PUBLIC_KEY:-}")
         assert environment["SMS_ENABLED"] == "false"
         assert environment["BILLING_ENABLED"] == "false"
 

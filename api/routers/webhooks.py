@@ -2,10 +2,11 @@
 
 import base64
 import binascii
+import hashlib
 import json
 import os
 from datetime import UTC, datetime
-from typing import Any
+from typing import Any, cast
 
 from cryptography.exceptions import InvalidSignature
 from cryptography.hazmat.primitives.asymmetric.ec import (
@@ -17,20 +18,21 @@ from cryptography.hazmat.primitives.serialization import load_der_public_key
 from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy.orm import Session
 
-from api.core.features import require_billing_enabled
+from api.core.features import require_billing_enabled, require_email_enabled
 from api.database import get_db
 from api.logging_config import logger
-from api.models import DeliveryLog, Notification, NotificationStatus
+from api.models import (
+    DeliveryLog,
+    Notification,
+    NotificationStatus,
+    Organization,
+    ProviderEvent,
+)
 from api.services.webhook_service import WebhookService
 
-# Two separate routers so the Sprint 10 SendGrid handler can be wired up
-# without also re-exposing the legacy Stripe handler. The Stripe handler
-# has been intentionally unregistered since billing was disabled; mounting
-# it would accept forged events in deployments where STRIPE_WEBHOOK_SECRET
-# isn't set. The split keeps `router` (SendGrid + future signed handlers)
-# mountable while `stripe_router` stays parked until billing is re-enabled.
+# Separate routers keep each public callback behind its own feature gate.
 stripe_router = APIRouter(tags=["webhooks"], dependencies=[Depends(require_billing_enabled)])
-router = APIRouter(tags=["webhooks"])
+router = APIRouter(tags=["webhooks"], dependencies=[Depends(require_email_enabled)])
 
 # SendGrid event types we care about. Anything else is ignored (200 OK,
 # no DB write) so SendGrid doesn't retry but we don't pollute DeliveryLog
@@ -151,36 +153,101 @@ def _verify_sendgrid_signature(payload: bytes, signature_b64: str, timestamp: st
         return False
 
 
+def _sendgrid_payload_hash(event: dict[str, Any]) -> str:
+    encoded = json.dumps(event, sort_keys=True, separators=(",", ":"), default=str).encode()
+    return hashlib.sha256(encoded).hexdigest()
+
+
+def _sendgrid_event_time(event: dict[str, Any]) -> datetime:
+    timestamp = event.get("timestamp")
+    if isinstance(timestamp, int | float):
+        try:
+            return datetime.fromtimestamp(timestamp, tz=UTC)
+        except (OverflowError, OSError, ValueError):
+            pass
+    return datetime.now(UTC)
+
+
 def _apply_sendgrid_event(db: Session, event: dict[str, Any]) -> None:
-    """Apply a single SendGrid event to its matching Notification +
-    append a DeliveryLog row. Idempotent: rerunning the same event is
-    safe (status updates are monotonic in event order; DeliveryLog is
-    append-only and the unique index on (notification_id, event_type,
-    timestamp) would dedupe if we add one later).
-    """
+    """Apply one tenant-bound SendGrid event exactly once."""
     sg_message_id = event.get("sg_message_id") or event.get("smtp-id")
     event_type = event.get("event")
-    if not sg_message_id or not event_type:
+    event_id = event.get("sg_event_id")
+    org_id = event.get("signupflow_org_id")
+    notification_id = event.get("signupflow_notification_id")
+    if event_type not in _SENDGRID_EVENT_TO_STATUS:
         return
-    # SendGrid sometimes appends ".filter###.### .###" to sg_message_id;
-    # the leading part before the first dot is the actual message ID.
+    if not isinstance(sg_message_id, str) or not sg_message_id:
+        logger.info("Ignoring SendGrid event without a provider message identity")
+        return
+    if not isinstance(event_id, str) or not event_id:
+        logger.info("Ignoring SendGrid event without a provider event identity")
+        return
+    if not isinstance(org_id, str) or not org_id:
+        logger.info("Ignoring SendGrid event without complete tenant tracking metadata")
+        return
+    if not isinstance(notification_id, str) or not notification_id:
+        logger.info("Ignoring SendGrid event without a notification identity")
+        return
+    try:
+        notification_id_int = int(notification_id)
+    except (TypeError, ValueError):
+        logger.info("Ignoring SendGrid event with invalid notification identity")
+        return
+    if notification_id_int <= 0:
+        return
+
     sg_id_base = sg_message_id.split(".", 1)[0]
-
-    notification = (
-        db.query(Notification).filter(Notification.sendgrid_message_id == sg_id_base).first()
+    payload_hash = _sendgrid_payload_hash(event)
+    existing = cast(
+        Any,
+        db.query(ProviderEvent)
+        .filter(
+            ProviderEvent.provider == "sendgrid",
+            ProviderEvent.provider_event_id == event_id,
+            ProviderEvent.org_id == org_id,
+        )
+        .first(),
     )
-    if not notification:
-        # Event for a message we don't know about (e.g. test send from
-        # the dashboard). Log + drop — don't 500 the webhook.
-        logger.info("SendGrid event %s for unknown sg_message_id=%s", event_type, sg_id_base)
+    if existing:
+        existing.attempts += 1
+        if existing.payload_hash != payload_hash:
+            existing.status = "rejected"
+            existing.error = "Duplicate event ID carried a different payload"
         return
 
-    ts_unix = event.get("timestamp")
-    ts_dt = (
-        datetime.fromtimestamp(ts_unix, tz=UTC)
-        if isinstance(ts_unix, int | float)
-        else datetime.now(UTC)
+    if not db.query(Organization.id).filter(Organization.id == org_id).first():
+        logger.info("Ignoring SendGrid event for unknown organization")
+        return
+
+    notification = cast(
+        Any,
+        db.query(Notification)
+        .filter(
+            Notification.id == notification_id_int,
+            Notification.org_id == org_id,
+            Notification.sendgrid_message_id == sg_id_base,
+        )
+        .first(),
     )
+    event_time = _sendgrid_event_time(event)
+    receipt: Any = ProviderEvent(
+        provider="sendgrid",
+        provider_event_id=event_id,
+        org_id=org_id,
+        event_type=event_type,
+        provider_created_at=event_time,
+        payload_hash=payload_hash,
+        status="received",
+        attempts=1,
+    )
+    db.add(receipt)
+    if not notification:
+        receipt.status = "reconciliation_required"
+        receipt.error = "Tenant, notification, and provider message identity did not match"
+        receipt.outcome = {"applied": False, "reason": "identity_mismatch"}
+        receipt.processed_at = datetime.now(UTC)
+        return
 
     new_status = _SENDGRID_EVENT_TO_STATUS.get(event_type)
     if new_status:
@@ -191,11 +258,11 @@ def _apply_sendgrid_event(db: Session, event: dict[str, Any]) -> None:
         if new_rank >= current_rank:
             notification.status = new_status
     if event_type == "delivered":
-        notification.delivered_at = ts_dt
+        notification.delivered_at = event_time
     elif event_type == "open":
-        notification.opened_at = ts_dt
+        notification.opened_at = event_time
     elif event_type == "click":
-        notification.clicked_at = ts_dt
+        notification.clicked_at = event_time
     elif event_type in {"bounce", "dropped"}:
         notification.error_message = event.get("reason") or event.get("response") or event_type
 
@@ -204,14 +271,17 @@ def _apply_sendgrid_event(db: Session, event: dict[str, Any]) -> None:
             notification_id=notification.id,
             event_type=event_type,
             sendgrid_message_id=sg_id_base,
-            timestamp=ts_dt,
+            timestamp=event_time,
             reason=event.get("reason") or event.get("response"),
             raw_event=event,
         )
     )
+    receipt.status = "processed"
+    receipt.outcome = {"applied": True, "notification_id": notification_id_int}
+    receipt.processed_at = datetime.now(UTC)
 
 
-@router.post("/webhooks/sendgrid")
+@router.post("/webhooks/sendgrid", include_in_schema=False)
 async def sendgrid_webhook(
     request: Request,
     db: Session = Depends(get_db),
@@ -219,9 +289,9 @@ async def sendgrid_webhook(
     """Consume SendGrid Event Webhook payloads, update Notification +
     append DeliveryLog rows.
 
-    Signature verification is mandatory when SENDGRID_WEBHOOK_PUBLIC_KEY
-    is set; if unset the endpoint rejects all requests (fail closed —
-    don't accept unsigned events in any environment).
+    Signature verification is mandatory. If SENDGRID_WEBHOOK_PUBLIC_KEY
+    is unset, the endpoint rejects every request rather than accepting
+    unsigned events.
 
     Event processing runs synchronously on the request-scoped session.
     SendGrid retries on 5xx (not on slow), so the slightly-elevated p99
@@ -258,8 +328,6 @@ async def sendgrid_webhook(
     except Exception as exc:
         db.rollback()
         logger.error("SendGrid event batch processing failed: %s", exc, exc_info=True)
-        # Return 200 anyway — re-delivering won't help if our code
-        # raised. Log + drop is the safer choice than asking SendGrid
-        # to retry a broken event forever.
+        raise HTTPException(status_code=503, detail="SendGrid event processing failed") from exc
 
     return {"received": len(events)}

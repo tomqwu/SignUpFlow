@@ -6,7 +6,7 @@ The universal baseline is in `AGENTS.md`. This file restates the parts that matt
 
 ## Repository purpose
 
-SignUpFlow is a volunteer scheduling API, CLI, and web app using FastAPI, SQLAlchemy 2.0, and Pydantic 2.x on Python 3.11+. Billing, its signed Stripe callback, and SMS code are registered but feature-gated off by default with `BILLING_ENABLED=false` and `SMS_ENABLED=false`; the SendGrid event callback remains unregistered. Core scheduling must not require either paid integration. Do not enable external provider delivery without an explicit task. See `docs/TESTING.md` for current validation scope.
+SignUpFlow is a volunteer scheduling API, CLI, and web app using FastAPI, SQLAlchemy 2.0, and Pydantic 2.x on Python 3.11+. Email and its signed SendGrid callback, billing and its signed Stripe callback, and SMS code are registered but feature-gated off by default. Core scheduling must not require an external provider. Do not enable external provider delivery without an explicit task. See `docs/TESTING.md` for current validation scope.
 
 ## House style
 
@@ -109,7 +109,7 @@ PR titles under 70 characters. Detail goes in the body.
 
 - If the request is ambiguous, ask a clarifying question or offer 2-3 differentiated options.
 - If the change touches the solver, constraint DSL, or auth, link the relevant section in `CLAUDE.md`.
-- If the change enables external provider delivery or mounts a currently unregistered router, confirm the requested scope first.
+- If the change enables external provider delivery or mounts a provider router, confirm the requested scope first.
 
 ## Anti-patterns
 

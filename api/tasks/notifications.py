@@ -297,7 +297,7 @@ def _send_assignment_notification(
         else None,
         additional_info=template_data.get("additional_info"),
         unsubscribe_token=unsubscribe_token,
-        notification=None,
+        notification=notification,
         db=None,
         language=language,
     )
@@ -365,7 +365,7 @@ def _send_reminder_notification(
         what_to_bring=template_data.get("what_to_bring"),
         additional_info=template_data.get("additional_info"),
         unsubscribe_token=unsubscribe_token,
-        notification=None,
+        notification=notification,
         db=None,
         language=language,
     )
@@ -432,7 +432,7 @@ def _send_update_notification(
         else None,
         other_changes=other_changes,
         unsubscribe_token=unsubscribe_token,
-        notification=None,
+        notification=notification,
         db=None,
         language=language,
     )
@@ -479,7 +479,7 @@ def _send_cancellation_notification(
         cancellation_reason=cancellation_reason,
         apology_message=apology_message,
         unsubscribe_token=unsubscribe_token,
-        notification=None,
+        notification=notification,
         db=None,
         language=language,
     )

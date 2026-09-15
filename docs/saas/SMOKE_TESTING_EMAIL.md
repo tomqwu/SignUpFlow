@@ -15,7 +15,7 @@ The pipeline has two backends:
 |----------|---------------------|-----------------------------------------|
 | Local capture | local acceptance | `LOCAL_EMAIL_CAPTURE_DIR` (no provider) |
 | SMTP     | authorized sandbox  | `MAILTRAP_SMTP_*` (Mailtrap sandbox)    |
-| SendGrid | production          | `SENDGRID_API_KEY` (auto-selects)       |
+| SendGrid | production          | `SENDGRID_API_KEY` + `SENDGRID_WEBHOOK_PUBLIC_KEY` |
 
 Selection is automatic in `EmailService.__init__`: local capture takes precedence;
 otherwise a configured `SENDGRID_API_KEY` selects SendGrid and SMTP is the fallback.
@@ -138,10 +138,18 @@ with SendGrid (SPF + DKIM). Sending from an unverified domain triggers a
 EMAIL_ENABLED=true
 EMAIL_FROM=noreply@yourdomain.com  # must match an authenticated domain
 SENDGRID_API_KEY=SG.xxxxxxxxxxxxxxxxxxxx
+SENDGRID_WEBHOOK_PUBLIC_KEY=<base64 DER ECDSA verification key>
 ```
 
 `MAILTRAP_*` vars are ignored once `SENDGRID_API_KEY` is set — the SMTP
 client is never constructed.
+
+Configure SendGrid's signed Event Webhook to post to
+`https://YOUR_API_HOST/api/v1/webhooks/sendgrid`, enable signature verification, and
+store its public verification key in `SENDGRID_WEBHOOK_PUBLIC_KEY`. Scheduling-message
+events are applied only when SendGrid returns the tenant and notification custom
+arguments emitted by the application. Invitation and reset messages do not have a
+Notification row, so their delivery events are intentionally ignored.
 
 ### 4. Run the smoke send
 
@@ -158,6 +166,8 @@ poetry run python scripts/email_smoke.py --allow-live-send --to your-personal-in
   appears within ~5s with status `Delivered`.
 - Check the recipient inbox (give it a minute, especially first send to
   a domain).
+- Confirm the signed callback records one delivery event for a scheduling notification;
+  replay the same event ID and confirm no second delivery log appears.
 
 ---
 
@@ -194,8 +204,8 @@ need to immediately stop further sends:
 - `mobile/SMOKE.md` — cross-platform mobile smoke runbook. The
   "Password reset email" step there depends on this doc having been
   exercised for the deployed backend first.
-- `docs/saas/EMAIL_INTEGRATION_PLAN.md` — design doc for the email
-  pipeline (templates, notification model, future webhook).
+- `docs/saas/EMAIL_INTEGRATION_PLAN.md` — historical design plan for the email
+  pipeline; current behavior is documented here and in the README.
 - `specs/001-email-notifications/spec.md` — original spec, including the
   Mailtrap-for-staging / SendGrid-for-prod split.
 - `scripts/validate_email_system.sh` is retired. Use `scripts/email_smoke.py`

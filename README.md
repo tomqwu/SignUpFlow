@@ -200,15 +200,20 @@ POST /api/v1/solver/solve      →  api/routers/solver.py (HTTP + DB)
 
 ### Provider-backed Features
 
-Notification routes are registered under `/api/v1`. Billing routes remain in the
-codebase under `/api/v1`, and SMS routes under `/api/sms`, but both return 404 by
-default behind `BILLING_ENABLED=false` and `SMS_ENABLED=false`. Paid billing and
-SMS are deferred; the complete scheduling workflow does not require them. The Stripe
-callback is mounted at `/api/v1/webhooks/stripe` behind the billing feature gate. It
-returns 404 while billing is disabled, fails closed without a signing secret, requires
-tenant metadata, and records replay/order/reconciliation state before changing local
-entitlement. The SendGrid event webhook remains intentionally unmounted. The SMS
-webhook paths share the disabled `/api/sms` router.
+Notification routes and the SendGrid callback are registered under `/api/v1` but
+return 404 by default behind `EMAIL_ENABLED=false`. Scheduling emails sent through
+SendGrid carry organization and notification custom arguments; signed callback events
+must match both values and the provider message ID before changing delivery state.
+Duplicate event IDs are recorded once, and processing failures return a retryable 503.
+Production email enablement also requires `SENDGRID_WEBHOOK_PUBLIC_KEY`.
+
+Billing routes remain under `/api/v1`, and SMS routes under `/api/sms`, but both
+return 404 by default behind `BILLING_ENABLED=false` and `SMS_ENABLED=false`. Paid
+billing and SMS are deferred; the complete scheduling workflow does not require them.
+The Stripe callback is mounted at `/api/v1/webhooks/stripe` behind the billing feature
+gate. It fails closed without a signing secret, requires tenant metadata, and records
+replay/order/reconciliation state before changing local entitlement. The SMS webhook
+paths share the disabled `/api/sms` router.
 If SMS is separately authorized and enabled, Twilio callbacks fail closed unless
 their signatures match the exact configured external callback URLs. String person
 IDs, same-tenant recipients, and assignment/event/person relationships are checked

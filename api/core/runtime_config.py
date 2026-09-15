@@ -191,7 +191,7 @@ def _validate_proxy_networks(values: Mapping[str, str]) -> None:
 
 def _validate_enabled_providers(values: Mapping[str, str], enabled: Mapping[str, bool]) -> None:
     requirements = {
-        "EMAIL_ENABLED": ("SENDGRID_API_KEY",),
+        "EMAIL_ENABLED": ("SENDGRID_API_KEY", "SENDGRID_WEBHOOK_PUBLIC_KEY"),
         "SMS_ENABLED": (
             "TWILIO_ACCOUNT_SID",
             "TWILIO_AUTH_TOKEN",

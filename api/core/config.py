@@ -66,6 +66,7 @@ class Settings(BaseSettings):
 
     # SendGrid (Production Email Delivery)
     SENDGRID_API_KEY: str | None = None
+    SENDGRID_WEBHOOK_PUBLIC_KEY: str | None = None
 
     # Stripe Billing
     STRIPE_SECRET_KEY: str | None = None
