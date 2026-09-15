@@ -15,6 +15,7 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 VALID_PRODUCTION_ENV = {
     "SIGNUPFLOW_LOAD_DOTENV": "false",
     "ENVIRONMENT": "production",
+    "RELEASE_SHA": "a" * 40,
     "SECRET_KEY": "synthetic-test-signing-key-that-is-long-enough-1234",
     "DATABASE_URL": "postgresql://signupflow:synthetic-db-password@db/signupflow",
     "APP_URL": "https://app.example.test",
@@ -67,6 +68,14 @@ def _validate_in_subprocess(**overrides: str | None) -> subprocess.CompletedProc
         capture_output=True,
         check=False,
     )
+
+
+@pytest.mark.parametrize("release_sha", [None, "short", "g" * 40, "a" * 41])
+def test_production_requires_exact_git_release_sha(release_sha):
+    result = _validate_in_subprocess(RELEASE_SHA=release_sha)
+
+    assert result.returncode != 0
+    assert "RELEASE_SHA must be a 40-character lowercase Git SHA" in (result.stdout + result.stderr)
 
 
 @pytest.mark.parametrize(
@@ -234,6 +243,10 @@ def test_production_compose_passes_canonical_fail_closed_settings():
     redis = compose["services"]["redis"]
 
     assert environment["ENVIRONMENT"] == "production"
+    assert environment["RELEASE_SHA"] == "${RELEASE_SHA:?Set RELEASE_SHA to the deployed commit}"
+    assert environment["READINESS_FAILURE_ALERT_THRESHOLD"] == (
+        "${READINESS_FAILURE_ALERT_THRESHOLD:-3}"
+    )
     assert environment["ACCESS_TOKEN_EXPIRE_HOURS"] == "${ACCESS_TOKEN_EXPIRE_HOURS:-24}"
     assert environment["SECURITY_HSTS_MAX_AGE"] == "${SECURITY_HSTS_MAX_AGE:-31536000}"
     assert environment["EMAIL_ENABLED"] == "${EMAIL_ENABLED:-false}"
@@ -251,6 +264,11 @@ def test_production_compose_passes_canonical_fail_closed_settings():
     assert compose["services"]["api"]["depends_on"]["migrate"]["condition"] == (
         "service_completed_successfully"
     )
+    health_command = " ".join(compose["services"]["api"]["healthcheck"]["test"])
+    assert "http://localhost:8000/ready" in health_command
+    dockerfile = (REPO_ROOT / "Dockerfile").read_text()
+    assert "http://localhost:8000/ready" in dockerfile
+    assert "http://localhost:8000/health" not in dockerfile
     assert redis["environment"]["REDIS_PASSWORD"] == "${REDIS_PASSWORD:?Set REDIS_PASSWORD}"
     assert "$${REDIS_PASSWORD}" in " ".join(redis["healthcheck"]["test"])
 

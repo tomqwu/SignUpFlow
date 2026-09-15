@@ -31,6 +31,7 @@ def test_artifact_target_builds_private_owned_container_commands():
         "127.0.0.1::8000"
     ]
     assert "--volume" not in app
+    assert target.app_environment()["RELEASE_SHA"] == "f" * 40
 
 
 def test_artifact_target_rejects_untrusted_identifiers():

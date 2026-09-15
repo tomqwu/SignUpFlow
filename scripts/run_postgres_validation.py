@@ -159,6 +159,7 @@ def _test_environment(primary_url: str, upgrade_url: str) -> dict[str, str]:
     for key in (
         "OLLAMA_API_KEY",
         "SENDGRID_API_KEY",
+        "SENTRY_DSN",
         "STRIPE_SECRET_KEY",
         "STRIPE_WEBHOOK_SECRET",
         "TWILIO_ACCOUNT_SID",
@@ -171,6 +172,7 @@ def _test_environment(primary_url: str, upgrade_url: str) -> dict[str, str]:
             "DATABASE_URL": primary_url,
             "EMAIL_ENABLED": "false",
             "ENVIRONMENT": "development",
+            "SENTRY_DSN": "",
             "SIGNUPFLOW_LOAD_DOTENV": "false",
             "SIGNUPFLOW_POSTGRES_TEST_URL": primary_url,
             "SIGNUPFLOW_POSTGRES_UPGRADE_TEST_URL": upgrade_url,

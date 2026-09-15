@@ -391,6 +391,7 @@ python scripts/import_data.py --table events --file data/events.json
 # .env.production (NEVER commit to git)
 SECRET_KEY=<256-bit-random-string>
 DATABASE_URL=postgresql://user:pass@host:5432/db
+RELEASE_SHA=<exact-40-character-lowercase-git-sha>
 STRIPE_SECRET_KEY=sk_live_...
 SENDGRID_API_KEY=SG....
 SENTRY_DSN=https://...@sentry.io/...
@@ -450,22 +451,22 @@ engine = create_engine(
 
 ### Sentry Setup
 
-```python
-# api/main.py
-import sentry_sdk
-
-sentry_sdk.init(
-    dsn=settings.SENTRY_DSN,
-    environment="production",
-    traces_sample_rate=0.1  # 10% performance monitoring
-)
-```
+`api/observability.py` initializes Sentry before database startup only when
+`SENTRY_DSN` is present. The maintained configuration disables default PII and
+performance tracing, associates events with `ENVIRONMENT` and `RELEASE_SHA`, and
+fails startup on initialization errors without logging the DSN. Do not claim
+working monitoring until an authorized controlled error reaches the named operator.
 
 ### Uptime Monitoring
 
 - **UptimeRobot** (free): https://uptimerobot.com
 - **Pingdom**: https://pingdom.com
-- Check URL: https://app.signupflow.io/health
+- Liveness URL: `https://app.signupflow.io/health`
+- Readiness URL: `https://app.signupflow.io/ready`
+
+Use `/health` for process liveness and `/ready` for dependency readiness. Docker
+and Compose health checks use `/ready`; a database outage must remove the instance
+from rotation without causing a liveness restart loop.
 
 ### Logs
 
@@ -527,7 +528,8 @@ jobs:
 
 ## ✅ Post-Deployment Checklist
 
-- [ ] Health check endpoint working: `/health`
+- [ ] Process liveness works without database access: `/health`
+- [ ] Database readiness is sanitized and controls traffic: `/ready`
 - [ ] Database migrations applied
 - [ ] Environment variables set correctly
 - [ ] SSL certificate active (HTTPS working)

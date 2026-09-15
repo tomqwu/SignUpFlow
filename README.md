@@ -37,7 +37,7 @@ SignUpFlow is an open-source application you run yourself. No hosted service,
 paid plan, or production deployment is included. Billing and paid SMS stay disabled
 by default and are not required for the Church or Basketball workflows.
 Production-like startup is fail-closed for signing keys, database/origin settings,
-test bypasses, and enabled-provider coherence; see the
+release identity, test bypasses, and enabled-provider coherence; see the
 [configuration contract](docs/PRODUCTION_CONFIGURATION.md). This is a configuration
 guard, not deployment or provider acceptance.
 
@@ -410,6 +410,9 @@ Run `make test-artifact` for production-image changes after committing the track
 It retains the SHA-labeled image and report, uses private disposable PostgreSQL/Redis,
 runs one migration job before two read-only replicas, and contacts no external provider.
 It is not staging or release approval.
+Production `/health` is dependency-free liveness and `/ready` is sanitized database
+readiness. JSON stdout logs carry the request ID and exact `RELEASE_SHA`; local bounded
+readiness/queue/backup signals do not claim an external operator received an alert.
 Run `make test-mobile` for mobile changes;
 set `FLUTTER=/path/to/flutter` if the SDK is not on your PATH.
 

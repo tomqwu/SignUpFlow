@@ -86,6 +86,18 @@ migration, failure, shutdown, image identity, and result evidence under
 artifact evidence, not staging, TLS/proxy, managed-service, backup/restore, or release
 authorization.
 
+Monitoring regressions run without an external reporting sink:
+
+```bash
+poetry run pytest tests/api/test_readiness.py tests/api/test_middleware.py \
+  tests/unit/test_logging_config.py tests/unit/test_observability.py \
+  tests/unit/test_operational_alerts.py -q
+```
+
+They prove sanitized liveness/readiness and request errors, structured production
+logging, optional reporter initialization through an injected SDK, and fake-sink
+trigger/recovery state. They do not prove Sentry transport or operator receipt.
+
 `make test-postgres` creates one uniquely named PostgreSQL 16 Docker container with
 loopback-only networking, an ownership label, ephemeral tmpfs storage, and no host
 mounts or Docker volumes. It builds both databases through Alembic, runs migration,

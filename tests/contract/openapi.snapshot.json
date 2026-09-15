@@ -12815,7 +12815,7 @@
     },
     "/health": {
       "get": {
-        "description": "Health check endpoint with database connectivity check.\n\nReturns:\n    200 OK: Service and database are healthy\n    503 Service Unavailable: Database connection failed",
+        "description": "Return process liveness without opening a dependency connection.",
         "operationId": "healthCheck",
         "responses": {
           "200": {

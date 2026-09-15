@@ -23,6 +23,12 @@ Forwarded client addresses are trusted only when the direct peer is listed in
 Distributed storage, multi-worker quota enforcement, proxy/TLS deployment verification,
 and limiter-outage behavior remain unresolved under #261.
 
+Current monitoring behavior supersedes the historical examples below. `/health` is
+dependency-free process liveness; `/ready` is sanitized database readiness and is the
+container health target. Production logs are structured on stdout and require an exact
+`RELEASE_SHA`. `api/observability.py` initializes optional Sentry reporting with default
+PII and tracing disabled. Local signal tests do not prove external operator receipt.
+
 ---
 
 ## 🛡️ Security Overview
