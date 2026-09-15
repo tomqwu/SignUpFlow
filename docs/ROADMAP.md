@@ -133,6 +133,14 @@ evidence with a local mock. Do not deploy or enable providers from a roadmap alo
   canonical settings, defaults providers off, and the image enforces one worker until
   #261/#266 add shared-state acceptance. This is local configuration evidence, not a
   deployed artifact, TLS/proxy, provider, backup, or rollback result.
+- #265: the production image no longer migrates from each replica or copies builder
+  executables into the runtime. Compose runs one migration job, keeps PostgreSQL and
+  authenticated Redis private, and starts non-root read-only single-worker replicas
+  without source mounts. The opt-in `make test-artifact` harness binds a fresh image to
+  the committed SHA, scans its contents/history, proves unmigrated startup fails without
+  schema mutation, starts two replicas, runs a provider-free Basketball publish/export,
+  verifies SIGTERM, and records immutable image identity. An authorized staging target,
+  managed-service/TLS evidence, and release-owner approval remain outside local proof.
 - #259: repurpose the obsolete AI/CI gate ticket as local validation and evidence
   hygiene. No workflow, secret, provider or required status is needed for review.
 - #191: the Dart client is regenerated from the current OpenAPI snapshot and

@@ -56,6 +56,7 @@ INVENTORIED_TOOLS = (
     "scripts/retired_tool.py",
     "scripts/run_local_validation.py",
     "scripts/run_postgres_validation.py",
+    "scripts/validate_production_artifact.py",
     "scripts/seed_sms_templates.py",
     "scripts/test_docker_setup.sh",
     "scripts/validate_email_system.sh",
@@ -123,6 +124,20 @@ def test_email_smoke_requires_explicit_live_send_before_loading_credentials():
     assert result.returncode == 2
     assert "--allow-live-send" in result.stdout + result.stderr
     assert "backend:" not in result.stdout
+
+
+def test_artifact_validator_dry_run_does_not_contact_docker():
+    result = subprocess.run(
+        [sys.executable, str(ROOT / "scripts/validate_production_artifact.py"), "--dry-run"],
+        cwd=ROOT,
+        env={**os.environ, "PATH": ""},
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+
+    assert result.returncode == 0
+    assert "private Docker network" in result.stdout
 
 
 @pytest.mark.parametrize("tool", ["tools/db_viewer.py", "tools/db_interactive.py"])

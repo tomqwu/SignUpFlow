@@ -50,13 +50,15 @@ multi-key rotation is not implemented.
 inputs instead of supplying sample production credentials. It passes the
 canonical access-token setting and defaults every provider off. The image runs
 one Uvicorn worker because rate limits and SSE fan-out are process-local.
-Compose binds PostgreSQL and Redis host ports to loopback by default and uses an
-authenticated Redis health check; change those bind addresses only within an
-explicitly secured operator environment.
+Compose does not publish PostgreSQL or Redis host ports and uses an authenticated
+Redis health check. The API image has no source bind mounts and runs non-root,
+read-only, capability-free, and with `no-new-privileges`.
 Do not increase the worker count until #261 and #266 have shared-state and
 cross-worker acceptance evidence.
 
-The entrypoint still runs `alembic upgrade head` before application startup.
+The entrypoint never runs migrations. Compose uses one `migrate` service and API
+replicas start only after it exits successfully; deployment operators must preserve
+that one-shot ordering.
 Local SQLite remains a development/test option and newly prepared files use
 owner-only `0600` permissions; production rejects SQLite entirely.
 Artifact, managed-database, TLS/proxy, backup, restore, alert, and rollback
@@ -70,9 +72,11 @@ Run the clean-process configuration tests without provider credentials:
 poetry run pytest tests/unit/test_production_config.py -q
 poetry run pytest tests/unit/test_secret_key_guard.py tests/unit/test_cors_config.py -q
 make test-all
+make test-artifact
 ```
 
 The tests cover each unsafe setting in a fresh process, prove failure occurs
 before `init_db`, verify errors redact values, and exercise a valid synthetic
-production startup with Secure/HttpOnly cookies. They do not contact a provider
-or deploy an environment.
+production startup with Secure/HttpOnly cookies. The opt-in artifact target uses
+only an owned local Docker network and provider-free synthetic data; it does not
+contact staging or deploy an environment.

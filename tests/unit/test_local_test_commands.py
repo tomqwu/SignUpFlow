@@ -93,3 +93,12 @@ def test_local_postgres_target_runs_the_owned_validator():
     )
 
     assert "scripts/run_postgres_validation.py" in result.stdout
+
+
+def test_local_artifact_target_runs_the_owned_validator():
+    result = subprocess.run(
+        ["make", "-n", "test-artifact"], cwd=ROOT, text=True, capture_output=True, check=True
+    )
+
+    assert "scripts/validate_production_artifact.py" in result.stdout
+    assert "make test-artifact" in (ROOT / "docs/TESTING.md").read_text()
