@@ -9,7 +9,7 @@ from tests.playbooks.registry import PlaybookSpec
 class Playbook:
     """Use public API writes, real identities, and a fresh organization per run."""
 
-    password = "PlaybookTest123!"
+    default_password = "PlaybookTest123!"
 
     def __init__(
         self,
@@ -20,6 +20,7 @@ class Playbook:
         bootstrap_admin: bool = True,
         instance_id: str | None = None,
         start_date: date | None = None,
+        password: str | None = None,
     ):
         self.client = client
         self.spec = definition.model_dump()
@@ -31,6 +32,7 @@ class Playbook:
         today = date.today()
         self.start = start_date or today + timedelta(days=(6 - today.weekday()) % 7 + 14)
         self.email = f"admin@{self.org}.example"
+        self.password = password or self.default_password
         self.headers = {}
         if seed_people and not bootstrap_admin:
             raise ValueError("Cannot seed people before the playbook administrator exists")

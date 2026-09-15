@@ -6,8 +6,8 @@ from datetime import datetime, timedelta
 from tests.playbooks.runtime import Playbook
 
 
-def run_six_week_roster(client, playbook_spec):
-    p = Playbook(client, playbook_spec)
+def run_six_week_roster(client, playbook_spec, *, password=None):
+    p = Playbook(client, playbook_spec, password=password)
     for week in range(6):
         p.event(week)
         p.event(week, playbook_spec.secondary_event, hour=18, day_offset=3)
@@ -94,6 +94,7 @@ def run_six_week_roster(client, playbook_spec):
     # Volunteers and another organization's admin cannot run/publish this roster.
     volunteer = p.member_headers(absent)
     p.request("POST", f"/solutions/{repaired['solution_id']}/publish", 403, headers=volunteer)
-    other = Playbook(client, playbook_spec)
+    other = Playbook(client, playbook_spec, password=password)
     p.request("POST", f"/solutions/{repaired['solution_id']}/publish", 404, headers=other.headers)
     p.request("POST", f"/solutions/{repaired['solution_id']}/publish", 401, headers={})
+    return p

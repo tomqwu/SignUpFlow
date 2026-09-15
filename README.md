@@ -454,6 +454,14 @@ runs one migration job before two read-only replicas, and contacts no external p
 It also terminates HTTPS through an ephemeral self-signed loopback proxy and verifies
 secure browser cookies, same-origin writes, security headers, and TLS negotiation. This
 does not exercise external ingress, managed TLS, staging, or release approval.
+After an owner names and authorizes a disposable staging deployment, run
+`make test-staging` with `STAGING_BASE_URL`, `STAGING_EXPECTED_RELEASE_SHA`, and
+`STAGING_APPROVAL_REFERENCE`. The command refuses unapproved or non-HTTPS remote targets,
+checks the deployed release header and readiness before writes, runs every discovered
+Church/Basketball API playbook with generated credentials, verifies browser cookies and
+security headers, and writes a sanitized receipt under `test-artifacts/staging-validation/`.
+It creates synthetic staging tenants and does not deploy, enable providers, or establish
+operator alert, backup, rollback, capacity, pilot, or production acceptance by itself.
 Then run `make test-security`. The pinned scanner reads a committed archive and the exact
 retained image without Docker-socket access, records advisory database and input hashes,
 exercises secret/database failure fixtures, and writes sanitized findings, license

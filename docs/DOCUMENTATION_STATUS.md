@@ -177,6 +177,10 @@ self-signed loopback TLS termination. The TLS rehearsal verifies negotiated prot
 secure browser cookies, same-origin writes, and security headers through an owned proxy.
 Its report explicitly records that staging, managed services, external ingress/managed
 TLS, providers, backup/restore, and operator release approval were not exercised.
+The separate `make test-staging` command is prepared for an owner-authorized HTTPS target.
+It requires the exact deployed SHA and approval receipt, runs every pluggable API playbook
+plus browser-session checks, and emits a sanitized report. No staging receipt exists yet,
+so this tooling does not change any blocked release-matrix row.
 The monitoring package separates dependency-free `/health` liveness from sanitized
 database `/ready` readiness and closes probe sessions on every failure. Production
 stdout logs are structured, release-correlated, and redact credential-shaped values.

@@ -58,6 +58,7 @@ INVENTORIED_TOOLS = (
     "scripts/run_redis_validation.py",
     "scripts/run_security_validation.py",
     "scripts/run_sqlite_recovery_drill.py",
+    "scripts/run_staging_acceptance.py",
     "scripts/sqlite_recovery.py",
     "scripts/validate_production_artifact.py",
     "scripts/seed_sms_templates.py",
@@ -164,6 +165,29 @@ def test_artifact_validator_dry_run_does_not_contact_docker():
 
     assert result.returncode == 0
     assert "private Docker network" in result.stdout
+
+
+def test_staging_acceptance_requires_explicit_remote_authorization_before_network():
+    result = subprocess.run(
+        [
+            sys.executable,
+            str(ROOT / "scripts/run_staging_acceptance.py"),
+            "--base-url",
+            "https://staging.example.com",
+            "--expected-release-sha",
+            "a" * 40,
+            "--approval-reference",
+            "https://github.com/tomqwu/SignUpFlow/issues/265#issuecomment-1",
+        ],
+        cwd=ROOT,
+        env={**os.environ, "HTTPS_PROXY": "http://127.0.0.1:1"},
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+
+    assert result.returncode == 2
+    assert "--allow-authorized-remote" in result.stderr
 
 
 def test_recovery_drill_dry_run_creates_no_artifacts():

@@ -46,6 +46,30 @@ verifies secure browser-session behavior through an owned reverse proxy. It dele
 the private key after the run. This command does not exercise external ingress or
 managed TLS, use Compose volumes, contact staging, or authorize release.
 
+## Authorized Staging Acceptance
+
+Only after the owner records the disposable target and deployment authorization, run the
+provider-neutral staging receipt from a clean committed checkout:
+
+```bash
+STAGING_BASE_URL=https://staging.example.invalid \
+STAGING_EXPECTED_RELEASE_SHA=<exact-deployed-40-character-sha> \
+STAGING_APPROVAL_REFERENCE=<https-approval-receipt> \
+make test-staging
+```
+
+The command refuses remote HTTP, URL credentials, paths, missing approval receipts and
+release-header mismatches before creating test data. It verifies managed TLS, `/health`,
+`/ready`, every selected pluggable six-week API playbook, secure browser cookies and
+browser security headers. Credentials are generated in memory and omitted from the
+report. The report retains synthetic organization IDs so the staging owner can apply the
+target's approved cleanup procedure.
+
+This command does not create or update a deployment, run migrations, configure DNS,
+enable email/billing/SMS, trigger operator alerts, restore backups, prove rollback or
+approve a release. A passing receipt satisfies only the staging business/browser smoke
+portion of #265/#271 for the exact observed SHA.
+
 ## Health and readiness
 
 - **Liveness:** `GET /health` always reports process health as `200`

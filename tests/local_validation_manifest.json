@@ -111,6 +111,14 @@
       "reason": "Opt-in owned local Docker build and runtime exercise; staging remains separately authorized."
     },
     {
+      "id": "staging",
+      "label": "Authorized staging business and browser acceptance",
+      "paths": [],
+      "command": ["make", "test-staging"],
+      "default_status": "not_run",
+      "reason": "Requires an explicit HTTPS target, exact deployed SHA, approval reference, and remote-authorization flag; never runs by default."
+    },
+    {
       "id": "recovery",
       "label": "Encrypted SQLite recovery acceptance",
       "paths": [],
