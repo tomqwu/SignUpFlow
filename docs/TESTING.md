@@ -117,7 +117,9 @@ trigger/recovery state. They do not prove Sentry transport or operator receipt.
 loopback-only networking, an ownership label, ephemeral tmpfs storage, and no host
 mounts or Docker volumes. It builds both databases through Alembic, runs migration,
 upgrade-from-existing-data, authentication, membership, claim, and publication races,
-then removes only the verified owned container. Two invocations can run concurrently.
+and proves representative organization hard-delete cleanup, retained audit evidence,
+and foreign-tenant survival before removing only the verified owned container. Two
+invocations can run concurrently.
 Missing Docker or any ownership/cleanup mismatch fails explicitly. Each invocation
 writes JUnit XML and a SHA-bound report with PostgreSQL version and counts under
 `test-artifacts/postgres-validation/`. It never reads provider credentials or targets a

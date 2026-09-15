@@ -38,6 +38,26 @@ member deactivation: authenticated administrators retain the restore path during
 retention period, while cancelled organizations are omitted from normal listings.
 Deletion and any later retention purge are separate operations.
 
+## Organization Lifecycle
+
+| Operation | Anonymous | Owning member | Owning admin | Foreign admin | State and audit contract |
+| --- | --- | --- | --- | --- | --- |
+| List/read | Denied | Own tenant only | Own tenant only | Requested tenant denied | Cancelled tenants are hidden by default; `include_cancelled=true` can reveal only the caller's own tenant. |
+| Update | Denied | Denied | Allowed | Denied | Organization fields and one `org.updated` audit row commit together. |
+| Cancel | Denied | Denied | Allowed | Denied | Set `cancelled_at` and the current 30-day retention marker, hide the tenant from the default list, and retain the authenticated admin restore path. |
+| Restore | Denied | Denied | Allowed | Denied | Clear cancellation, retention, and deletion-scheduling markers and return the tenant to the default list. |
+| Hard delete | Denied | Denied | Allowed | Denied | Delete the tenant's owned scheduling and delivery graph while retaining a denormalized `data.bulk_delete` audit row; leave other tenants unchanged. |
+
+Every lifecycle mutation and its audit record share one transaction. A failed audit
+write or commit rolls the mutation back. The PostgreSQL acceptance drill covers a
+representative hard-delete graph containing a member, invitation, event, solution,
+assignment, notification, and delivery log. `Notification.delivery_logs` is explicit
+delete-orphan ownership so provider-delivery evidence cannot strand the tenant delete.
+
+Hard delete is an explicit administrator API operation. No scheduled retention purge,
+legal-hold policy, production backup deletion, or owner-approved retention policy is
+implemented by this contract; those remain under #268.
+
 Church and Basketball BO-12 browser acceptance runs both tenants in one application
 process. It checks each administrator's isolated directory and signs in one member for
 every declared scheduling qualification at 360px and 1440px. Those members cannot open

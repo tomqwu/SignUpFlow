@@ -17,7 +17,18 @@ from sqlalchemy.orm import sessionmaker
 from alembic import command
 from alembic.config import Config
 from api.main import app
-from api.models import Assignment, Event, Invitation, Organization, Person, Solution
+from api.models import (
+    Assignment,
+    AuditAction,
+    AuditLog,
+    DeliveryLog,
+    Event,
+    Invitation,
+    Notification,
+    Organization,
+    Person,
+    Solution,
+)
 from api.routers.auth import SignupRequest, signup
 from api.routers.invitations import accept_invitation
 from api.schemas.invitation import InvitationAccept
@@ -351,6 +362,112 @@ def test_cancelled_organization_keeps_admin_restore_path_but_hides_default_listi
     assert (
         client.post(f"/api/v1/organizations/{org_id}/restore", headers=headers).status_code == 200
     )
+
+
+def test_postgres_hard_delete_removes_related_rows_and_retains_audit(client, sessions) -> None:
+    identity = client.post("/api/v1/auth/signup", json=_signup_payload(suffix="hard-delete")).json()
+    headers = {"Authorization": f"Bearer {identity['token']}"}
+    org_id = identity["org_id"]
+    event_id = "postgres-hard-delete-event"
+    delivery_message_id = "postgres-hard-delete-message"
+    volunteer_id = "postgres-hard-delete-volunteer"
+    foreign_org_id = "postgres-hard-delete-foreign"
+
+    with sessions() as db:
+        db.add(Organization(id=foreign_org_id, name="Foreign survivor"))
+        db.add(
+            Person(
+                id="postgres-hard-delete-foreign-admin",
+                org_id=foreign_org_id,
+                name="Foreign Admin",
+                email="postgres-hard-delete-foreign@example.test",
+                roles=["admin"],
+            )
+        )
+        volunteer = Person(
+            id=volunteer_id,
+            org_id=org_id,
+            name="Synthetic Volunteer",
+            email="postgres-hard-delete-volunteer@example.test",
+            roles=["volunteer", "usher"],
+        )
+        event = Event(
+            id=event_id,
+            org_id=org_id,
+            type="service",
+            start_time=utcnow() + timedelta(days=7),
+            end_time=utcnow() + timedelta(days=7, hours=1),
+        )
+        solution = Solution(
+            org_id=org_id,
+            hard_violations=0,
+            soft_score=0,
+            health_score=100,
+        )
+        notification = Notification(
+            org_id=org_id,
+            recipient=volunteer,
+            event=event,
+            type="assignment",
+            status="delivered",
+            sendgrid_message_id=delivery_message_id,
+        )
+        invitation = Invitation(
+            id="postgres-hard-delete-invitation",
+            org_id=org_id,
+            email="postgres-hard-delete-invitee@example.test",
+            name="Synthetic Invitee",
+            roles=["volunteer", "usher"],
+            invited_by=identity["person_id"],
+            token="postgres-hard-delete-token",
+            expires_at=utcnow() + timedelta(days=1),
+        )
+        db.add_all([event, solution, notification, invitation])
+        db.flush()
+        db.add(
+            Assignment(
+                solution_id=solution.id,
+                event_id=event.id,
+                person_id=volunteer.id,
+                role="usher",
+            )
+        )
+        db.add(
+            DeliveryLog(
+                notification_id=notification.id,
+                event_type="delivered",
+                sendgrid_message_id=delivery_message_id,
+                timestamp=utcnow(),
+            )
+        )
+        db.commit()
+
+    response = client.delete(f"/api/v1/organizations/{org_id}", headers=headers)
+
+    assert response.status_code == 204, response.text
+    with sessions() as db:
+        assert db.query(Organization).filter_by(id=org_id).count() == 0
+        assert db.query(Person).filter_by(org_id=org_id).count() == 0
+        assert db.query(Event).filter_by(org_id=org_id).count() == 0
+        assert db.query(Solution).filter_by(org_id=org_id).count() == 0
+        assert db.query(Assignment).filter_by(person_id=volunteer_id).count() == 0
+        assert db.query(Invitation).filter_by(org_id=org_id).count() == 0
+        assert db.query(Notification).filter_by(org_id=org_id).count() == 0
+        assert db.query(DeliveryLog).filter_by(sendgrid_message_id=delivery_message_id).count() == 0
+        assert db.query(Organization).filter_by(id=foreign_org_id).one()
+        assert db.query(Person).filter_by(org_id=foreign_org_id).count() == 1
+        audit = (
+            db.query(AuditLog)
+            .filter_by(
+                organization_id=org_id,
+                action=AuditAction.BULK_DELETE,
+                resource_type="organization",
+                resource_id=org_id,
+            )
+            .one()
+        )
+        assert audit.user_id == identity["person_id"]
+        assert audit.user_email == identity["email"]
 
 
 def test_postgres_last_slot_claim_has_one_winner(sessions) -> None:

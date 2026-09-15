@@ -81,8 +81,13 @@ evidence with a local mock. Do not deploy or enable providers from a roadmap alo
   proves one bootstrap owner, one invitation winner, and inactive API/browser
   session rejection. Cancellation preserves an authenticated administrator restore
   path while hiding the organization from normal listings.
-- #253: organization authorization and audit fixes merged in PR #272; retain
-  remaining PostgreSQL cascade/release evidence, not the old unmerged-PR blocker.
+- #253: organization authorization and audit fixes merged in PR #272. The owned
+  PostgreSQL lifecycle drill now proves cancel/list/restore behavior and explicit
+  hard deletion of a representative member/invitation/event/solution/assignment/
+  notification/delivery graph, retention of the denormalized deletion audit, and
+  survival of a foreign tenant. Audit failures roll lifecycle mutations back.
+  Automated retention purge, production lifecycle operation, and owner retention
+  decisions remain under #268 rather than being inferred from local cascade proof.
 - #254: the scheduling API now has an executable route policy, real-JWT
   two-tenant event/conflict/availability/solution regressions, and pre-serialization
   person/team export filtering. Local full-suite and PR evidence are required
