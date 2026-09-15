@@ -119,6 +119,7 @@ make test-all
 make test-postgres
 make test-redis
 make test-artifact
+make test-staging  # only with the required STAGING_* authorization variables
 make test-security
 make test-recovery
 make test-mobile
@@ -135,6 +136,13 @@ representative, owner-approved load evidence required by #271. Release-candidate
 requires a separately approved profile and target, an immutable artifact, exact target SHA,
 and explicit remote authorization. The legacy `make test-performance` endpoint assertions
 remain compatibility checks and do not satisfy the capacity row.
+
+`make test-staging` is separately opt-in and refuses remote traffic unless the operator
+supplies an HTTPS origin, exact deployed SHA, specific approval receipt and explicit
+remote authorization. It runs the pluggable Church/Basketball API workflows and verifies
+TLS, readiness, browser cookies and security headers. A passing report covers only those
+rows for the observed SHA; it does not prove deployment provenance, rollback, alert
+receipt, recovery/retention, capacity, external delivery, pilot operation or go/no-go.
 
 ## Decision Rules
 

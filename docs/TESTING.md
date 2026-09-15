@@ -114,6 +114,23 @@ and result evidence under `test-artifacts/artifact-validation/`. It disables ext
 providers. A pass is local artifact evidence, not external ingress, managed TLS,
 staging, managed-service, backup/restore, or release authorization.
 
+An authorized disposable staging deployment can be checked with:
+
+```bash
+STAGING_BASE_URL=https://staging.example.invalid \
+STAGING_EXPECTED_RELEASE_SHA=<exact-deployed-40-character-sha> \
+STAGING_APPROVAL_REFERENCE=<https-approval-receipt> \
+make test-staging
+```
+
+The target must expose the exact SHA through `X-Release-SHA`. The runner checks health and
+readiness before data writes, negotiates verified TLS, executes all discovered pluggable
+six-week API playbooks with generated credentials, then verifies secure CSRF/session
+cookies and browser security headers. It retains synthetic tenant IDs and a sanitized
+report under `test-artifacts/staging-validation/`; it never deploys or configures a
+provider. Target authorization, generated staging data cleanup, alert delivery, backup,
+rollback, capacity and pilot acceptance remain separate operator responsibilities.
+
 Run `make test-security` only after `make test-artifact` passes for the same clean
 revision. It requires the immutable Trivy image documented in
 [SECURITY_VALIDATION.md](SECURITY_VALIDATION.md), fetches a fresh advisory database into
@@ -215,8 +232,8 @@ synthetic success statuses. The Pages workflow only publishes the static site;
 it is not a validation or merge gate.
 
 ```bash
-poetry run black --check api web tests scripts/run_local_validation.py scripts/run_load_validation.py scripts/local_tls_rehearsal.py scripts/validate_production_artifact.py scripts/run_security_validation.py
-poetry run ruff check api web tests scripts/run_local_validation.py scripts/run_load_validation.py scripts/local_tls_rehearsal.py scripts/validate_production_artifact.py scripts/run_security_validation.py
+poetry run black --check api web tests scripts/run_local_validation.py scripts/run_load_validation.py scripts/local_tls_rehearsal.py scripts/validate_production_artifact.py scripts/run_staging_acceptance.py scripts/run_security_validation.py
+poetry run ruff check api web tests scripts/run_local_validation.py scripts/run_load_validation.py scripts/local_tls_rehearsal.py scripts/validate_production_artifact.py scripts/run_staging_acceptance.py scripts/run_security_validation.py
 poetry run mypy --no-incremental api/utils api/core api/schemas
 poetry run mypy api
 make test-all

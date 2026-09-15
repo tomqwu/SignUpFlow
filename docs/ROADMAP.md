@@ -181,6 +181,10 @@ evidence with a local mock. Do not deploy or enable providers from a roadmap alo
   an ephemeral self-signed loopback proxy and verifies secure cookies, same-origin writes,
   browser security headers, and negotiated TLS. An authorized staging target, external
   ingress/managed-TLS evidence, and release-owner approval remain outside local proof.
+  The opt-in `make test-staging` runner is prepared for that later target: it fails before
+  writes on an unapproved/non-HTTPS target or mismatched release SHA, then executes every
+  pluggable six-week API playbook and browser-session checks with generated credentials.
+  It is tooling, not evidence, until an authorized target produces a passing receipt.
 - #267: `/health` is dependency-free process liveness while `/ready` performs one
   context-managed database probe and returns only a generic failure. Production logs
   are structured stdout records correlated to the required release SHA and redact

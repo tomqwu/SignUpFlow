@@ -2,7 +2,7 @@
 
 export SKIP_TEST_DB_FIXTURES ?= false
 
-.PHONY: test-web test-contract test-e2e test-mobile test-mobile-generated test-performance test-load test-recovery test-security test-docs mobile-codegen-preflight mobile-codegen mobile-codegen-check capture-screenshots validate-screenshots
+.PHONY: test-web test-contract test-e2e test-mobile test-mobile-generated test-performance test-load test-recovery test-security test-staging test-docs mobile-codegen-preflight mobile-codegen mobile-codegen-check capture-screenshots validate-screenshots
 FLUTTER ?= flutter
 DART ?= dart
 JAVA_BIN ?=
@@ -204,6 +204,17 @@ test-redis: check-poetry check-docker
 test-artifact: check-poetry check-docker
 	@echo "🧪 Building and exercising an owned production artifact through loopback TLS..."
 	@poetry run python scripts/validate_production_artifact.py
+
+test-staging: check-poetry
+	@test -n "$$STAGING_BASE_URL" || { echo "STAGING_BASE_URL is required"; exit 2; }
+	@test -n "$$STAGING_EXPECTED_RELEASE_SHA" || { echo "STAGING_EXPECTED_RELEASE_SHA is required"; exit 2; }
+	@test -n "$$STAGING_APPROVAL_REFERENCE" || { echo "STAGING_APPROVAL_REFERENCE is required"; exit 2; }
+	@echo "Running explicitly authorized staging acceptance against $$STAGING_BASE_URL..."
+	@poetry run python scripts/run_staging_acceptance.py \
+		--base-url "$$STAGING_BASE_URL" \
+		--expected-release-sha "$$STAGING_EXPECTED_RELEASE_SHA" \
+		--approval-reference "$$STAGING_APPROVAL_REFERENCE" \
+		--allow-authorized-remote
 
 test-recovery: check-poetry
 	@echo "🧪 Running owned SQLite backup and restore acceptance..."
@@ -487,6 +498,7 @@ help:
 	@echo "  make test-postgres    - Run owned PostgreSQL migration/business/race acceptance"
 	@echo "  make test-redis       - Run owned Redis quota, event-bus, and broker acceptance"
 	@echo "  make test-artifact    - Exercise an owned production image and loopback TLS"
+	@echo "  make test-staging     - Run approval-gated Church/Basketball staging acceptance"
 	@echo "  make test-security    - Scan the exact committed source and retained image locally"
 	@echo "  make test-recovery    - Run the owned encrypted SQLite restore drill"
 	@echo "  make test-docs        - Validate documentation dispositions and current local links"
