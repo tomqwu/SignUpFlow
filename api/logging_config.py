@@ -13,18 +13,23 @@ ENV = os.getenv("ENVIRONMENT", "development").strip().lower()
 if ENV in ("development", "dev", "staging", "local"):
     DEBUG = True
 
-# Create logs directory if it doesn't exist
+# Production containers are read-only and emit logs to stdout for the operator.
+# Development keeps the existing convenience files.
 LOGS_DIR = Path("logs")
-LOGS_DIR.mkdir(exist_ok=True)
+FILE_LOGGING_ENABLED = ENV != "production"
 
 # Set log level based on debug mode
 LOG_LEVEL = logging.DEBUG if DEBUG else logging.INFO
 
 # Create handlers
 console_handler = logging.StreamHandler(sys.stdout)
-file_handler = logging.FileHandler(LOGS_DIR / "rostio.log")
-error_handler = logging.FileHandler(LOGS_DIR / "rostio_errors.log")
-error_handler.setLevel(logging.ERROR)
+handlers: list[logging.Handler] = [console_handler]
+if FILE_LOGGING_ENABLED:
+    LOGS_DIR.mkdir(exist_ok=True)
+    file_handler = logging.FileHandler(LOGS_DIR / "rostio.log")
+    error_handler = logging.FileHandler(LOGS_DIR / "rostio_errors.log")
+    error_handler.setLevel(logging.ERROR)
+    handlers.extend((file_handler, error_handler))
 
 from api.utils.request_context import request_id_var
 
@@ -37,7 +42,7 @@ class RequestIDFilter(logging.Filter):
         return True
 
 
-for _handler in (console_handler, file_handler, error_handler):
+for _handler in handlers:
     _handler.addFilter(RequestIDFilter())
 
 # Configure logging format
@@ -48,7 +53,7 @@ if DEBUG:
 
 # Configure logging
 logging.basicConfig(
-    level=LOG_LEVEL, format=log_format, handlers=[console_handler, file_handler, error_handler]
+    level=LOG_LEVEL, format=log_format, handlers=handlers
 )
 
 # Get logger

@@ -154,7 +154,10 @@ services:
 
 ## Log Files
 
-All logs are written to:
+Production writes logs to stdout only so the non-root read-only image can send
+them to the deployment log collector. It does not create `logs/` or file handlers.
+
+Development also writes:
 - `logs/rostio.log` - All logs (INFO and above)
 - `logs/rostio_errors.log` - Only errors (ERROR and above)
 
@@ -176,7 +179,7 @@ Most files already use proper logging. Only print() statements need conversion.
 
 1. **Environment-aware**: Automatically adjusts logging based on environment
 2. **Zero configuration**: Works out of the box in development
-3. **Production-safe**: No verbose logs in production
+3. **Production-safe**: No verbose logs or runtime file writes in production
 4. **Structured logs**: Consistent format with timestamps and levels
 5. **File rotation**: Easy to implement log rotation on log files
 6. **Exception tracking**: Full tracebacks with `exc_info=True`
