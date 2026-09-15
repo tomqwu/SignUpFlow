@@ -24,6 +24,7 @@ make test-unit          # Complete Python unit tier
 make test               # Alias for the complete seven-tier local suite
 make test-all           # All seven Python tiers below, in separate processes
 make test-postgres      # Opt-in PostgreSQL migration/business/race acceptance
+make test-redis         # Opt-in Redis shared-worker rate-limit acceptance
 make test-artifact      # Opt-in production image and private-stack acceptance
 make test-security      # Opt-in exact-source/image scan and CycloneDX evidence
 make test-performance   # Opt-in, owned loopback target only
@@ -125,6 +126,15 @@ writes JUnit XML and a SHA-bound report with PostgreSQL version and counts under
 `test-artifacts/postgres-validation/`. It never reads provider credentials or targets a
 caller-supplied database.
 
+`make test-redis` creates one uniquely named, authenticated Redis 7 container with a
+loopback-only random port, ownership label, and ephemeral tmpfs storage. It proves two
+independent limiter instances consume one atomic quota, verifies expiring hashed keys,
+and removes only the verified owned container. Unit tests separately prove a protected
+production request returns retryable 503 during storage failure and succeeds after the
+same backend object recovers. Reports are SHA-bound under
+`test-artifacts/redis-validation/`. This does not exercise an internet edge or claim
+volumetric DDoS protection.
+
 The [playbook guide](playbooks/README.md) describes automatic discovery, selectors,
 and external definitions. Church and basketball run in API and browser tiers;
 browser cases use phone and desktop widths. Owned local delivery runs in both domains;
@@ -205,7 +215,8 @@ No hosted check, including a static check, is a merge prerequisite.
 ## Before Merge
 
 1. Run `make test-all` on the final source; run `make test-postgres` for database or
-   migration changes, `make test-artifact` and then `make test-security` for release-image changes,
+   migration changes, `make test-redis` for rate-limit changes, `make test-artifact`
+   and then `make test-security` for release-image changes,
    `make test-recovery` for backup/restore changes, and `make test-mobile` for mobile
    changes.
 2. Record the report path, commands, pass/skip/failure counts, date, and pushed head SHA in the PR.

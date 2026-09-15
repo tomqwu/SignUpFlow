@@ -8,7 +8,7 @@ from ipaddress import ip_address, ip_network
 
 from fastapi import HTTPException, Request, status
 
-from api.utils.rate_limiter import RATE_LIMITS, rate_limiter
+from api.utils.rate_limiter import RATE_LIMITS, RateLimitBackendUnavailableError, rate_limiter
 
 
 def get_client_ip(request: Request) -> str:
@@ -80,9 +80,18 @@ def rate_limit(limit_type: str) -> Callable[[Request], bool]:
 
         config = RATE_LIMITS.get(limit_type, {"max_requests": 10, "window_seconds": 60})
 
-        if not rate_limiter.is_allowed(
-            key, max_requests=config["max_requests"], window_seconds=config["window_seconds"]
-        ):
+        try:
+            allowed = rate_limiter.is_allowed(
+                key, max_requests=config["max_requests"], window_seconds=config["window_seconds"]
+            )
+        except RateLimitBackendUnavailableError as exc:
+            raise HTTPException(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                detail="Request protection is temporarily unavailable. Please try again.",
+                headers={"Retry-After": "5"},
+            ) from exc
+
+        if not allowed:
             raise HTTPException(
                 status_code=status.HTTP_429_TOO_MANY_REQUESTS,
                 detail="Rate limit exceeded. Please try again later.",

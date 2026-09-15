@@ -11,8 +11,9 @@ and [release roadmap](ROADMAP.md) first.
 
 - **db** — `postgres:16-alpine`, private-only, volume `postgres_data`, and a
   `pg_isready` healthcheck.
-- **redis** — `redis:7-alpine` for configured task/broker consumers. Rate limits
-  and SSE remain process-local. Redis is authenticated and private-only.
+- **redis** — `redis:7-alpine` for configured task/broker consumers and shared
+  rate limits. SSE and notification fan-out remain process-local. Redis is
+  authenticated and private-only.
 - **migrate** — one-shot `alembic upgrade head`; starts after PostgreSQL is
   healthy and must exit successfully before API replicas start.
 - **api** — built from `Dockerfile`; depends on the completed migration and

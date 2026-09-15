@@ -1,8 +1,8 @@
 """
 Rate limiting utility to prevent spam and abuse.
 
-Implements a simple token bucket algorithm with in-memory storage.
-For production, consider using Redis for distributed rate limiting.
+Development uses a process-local token bucket. Production uses an atomic Redis
+counter so every application worker shares the same quota.
 
 Configuration via environment variables:
 - RATE_LIMIT_SIGNUP_MAX: Max signup requests (default: 3)
@@ -17,9 +17,19 @@ Configuration via environment variables:
 - RATE_LIMIT_VERIFY_INVITATION_WINDOW: Verify invitation window in seconds (default: 60)
 """
 
+import hashlib
+import math
 import os
 import time
 from threading import Lock
+from typing import Any
+
+from redis import Redis
+from redis.exceptions import RedisError
+
+
+class RateLimitBackendUnavailableError(RuntimeError):
+    """Raised when a required shared rate-limit backend cannot be used."""
 
 
 class RateLimiter:
@@ -95,8 +105,119 @@ class RateLimiter:
                 del self._buckets[key]
 
 
-# Global rate limiter instance
-rate_limiter = RateLimiter()
+class RedisRateLimiter:
+    """Fixed-window limiter backed by one atomic Redis script."""
+
+    _SCRIPT = """
+local current = redis.call('INCR', KEYS[1])
+if current == 1 then
+  redis.call('EXPIRE', KEYS[1], ARGV[1])
+end
+if current <= tonumber(ARGV[2]) then
+  return 1
+end
+return 0
+"""
+
+    def __init__(
+        self,
+        url: str | None = None,
+        *,
+        client: Any | None = None,
+        namespace: str = "signupflow:rate-limit",
+    ) -> None:
+        if client is None and not url:
+            raise ValueError("A Redis URL or client is required")
+        self._client = client
+        self._url = url
+        self._namespace = namespace
+
+    def _get_client(self) -> Any:
+        if self._client is None:
+            assert self._url is not None
+            try:
+                self._client = Redis.from_url(
+                    self._url,
+                    decode_responses=True,
+                    socket_connect_timeout=1,
+                    socket_timeout=1,
+                )
+            except (OSError, RedisError, ValueError) as exc:
+                raise RateLimitBackendUnavailableError(
+                    "Shared rate-limit storage is unavailable"
+                ) from exc
+        return self._client
+
+    def _storage_key(self, key: str) -> str:
+        digest = hashlib.sha256(key.encode("utf-8")).hexdigest()
+        return f"{self._namespace}:{digest}"
+
+    def is_allowed(self, key: str, max_requests: int = 5, window_seconds: int = 60) -> bool:
+        window = max(1, math.ceil(window_seconds))
+        try:
+            result = self._get_client().eval(
+                self._SCRIPT,
+                1,
+                self._storage_key(key),
+                window,
+                max_requests,
+            )
+        except (OSError, RedisError) as exc:
+            raise RateLimitBackendUnavailableError(
+                "Shared rate-limit storage is unavailable"
+            ) from exc
+        return bool(result)
+
+    def reset(self, key: str) -> None:
+        try:
+            self._get_client().delete(self._storage_key(key))
+        except (OSError, RedisError) as exc:
+            raise RateLimitBackendUnavailableError(
+                "Shared rate-limit storage is unavailable"
+            ) from exc
+
+
+class ConfiguredRateLimiter:
+    """Choose process-local or shared storage from the runtime environment."""
+
+    def __init__(self) -> None:
+        self._memory = RateLimiter()
+        self._redis_limiters: dict[str, RedisRateLimiter] = {}
+        self._lock = Lock()
+
+    def _backend(self) -> RateLimiter | RedisRateLimiter:
+        environment = os.getenv("ENVIRONMENT", "development").strip().lower()
+        storage = os.getenv("RATE_LIMIT_STORAGE", "").strip().lower()
+        use_redis = storage == "redis" or environment == "production"
+        if not use_redis:
+            return self._memory
+
+        url = os.getenv("RATE_LIMIT_REDIS_URL") or os.getenv("REDIS_URL")
+        if not url:
+            raise RateLimitBackendUnavailableError(
+                "Production rate limiting requires RATE_LIMIT_REDIS_URL or REDIS_URL"
+            )
+        with self._lock:
+            limiter = self._redis_limiters.get(url)
+            if limiter is None:
+                limiter = RedisRateLimiter(url)
+                self._redis_limiters[url] = limiter
+        return limiter
+
+    def is_allowed(self, key: str, max_requests: int = 5, window_seconds: int = 60) -> bool:
+        return self._backend().is_allowed(key, max_requests, window_seconds)
+
+    def reset(self, key: str) -> None:
+        self._memory.reset(key)
+        for limiter in self._redis_limiters.values():
+            limiter.reset(key)
+
+    def cleanup_old_entries(self, max_age_seconds: int = 3600) -> None:
+        self._memory.cleanup_old_entries(max_age_seconds)
+
+
+# Global environment-aware limiter used by route dependencies.
+rate_limiter = ConfiguredRateLimiter()
 
 
 def get_env_int(key: str, default: int) -> int:

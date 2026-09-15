@@ -153,6 +153,23 @@ def _validate_database(values: Mapping[str, str]) -> None:
         raise ValueError("DATABASE_URL contains a known sample credential")
 
 
+def _validate_rate_limit_storage(values: Mapping[str, str]) -> None:
+    if values.get("RATE_LIMIT_STORAGE", "redis").strip().lower() != "redis":
+        raise ValueError("RATE_LIMIT_STORAGE must be redis in production")
+    raw = values.get("RATE_LIMIT_REDIS_URL") or values.get("REDIS_URL", "")
+    raw = raw.strip()
+    try:
+        parsed = urlsplit(raw)
+    except ValueError as exc:
+        raise ValueError("REDIS_URL must be a valid Redis URL") from exc
+    if parsed.scheme not in {"redis", "rediss"} or not parsed.hostname:
+        raise ValueError("REDIS_URL must use redis or rediss and identify a host")
+    if not parsed.password:
+        raise ValueError("REDIS_URL must authenticate in production")
+    if any(marker in raw.lower() for marker in _PLACEHOLDER_MARKERS):
+        raise ValueError("REDIS_URL contains a known sample credential")
+
+
 def _validate_proxy_networks(values: Mapping[str, str]) -> None:
     configured = values.get("TRUSTED_PROXY_IPS", "").strip()
     if not configured:
@@ -227,6 +244,10 @@ def validate_production_environment(environ: Mapping[str, str] | None = None) ->
         issues.append(str(exc))
     try:
         _validate_database(values)
+    except ValueError as exc:
+        issues.append(str(exc))
+    try:
+        _validate_rate_limit_storage(values)
     except ValueError as exc:
         issues.append(str(exc))
     try:

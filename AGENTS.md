@@ -78,6 +78,7 @@ Before declaring a change done:
 - [ ] Unit tests pass: `make test-unit` (or `make test-unit-fast` during iteration).
 - [ ] Full suite passes when shipping: `make test-all`.
 - [ ] PostgreSQL acceptance passes for database/migration changes: `make test-postgres`.
+- [ ] Redis acceptance passes for rate-limit changes: `make test-redis`.
 - [ ] Release-image changes pass `make test-artifact` and then `make test-security` for the same committed SHA.
 - [ ] No secrets in the diff: `git diff --cached | grep -iE 'api[_-]?key|secret|token|password|sk_'` returns nothing meaningful.
 - [ ] If a route was added or moved, the router is registered in `api/main.py` and the path is documented in `CLAUDE.md`.
@@ -112,6 +113,7 @@ make migrate          # Run Alembic migrations
 make test             # Comprehensive backend tests
 make test-all         # All Python tiers, including web + contract + Playwright
 make test-postgres    # Owned PostgreSQL migration/business/race acceptance
+make test-redis       # Owned Redis shared-quota acceptance
 make test-mobile      # Flutter tests (requires Flutter SDK)
 make test-unit        # Python unit tests only
 make test-unit-fast   # Unit tests excluding slow bcrypt tests (~7s)

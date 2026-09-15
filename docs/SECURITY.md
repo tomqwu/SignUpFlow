@@ -148,8 +148,9 @@ verify_org_member(user, org_id)
 
 **Implementation:** `api/utils/rate_limit_middleware.py`, `api/utils/rate_limiter.py`
 
-**Purpose:** Bound repeated authentication operations in one application process. This is
-not a distributed DDoS control.
+**Purpose:** Bound repeated authentication operations. Development uses a process-local
+token bucket; production requires an atomic Redis fixed-window counter shared by every
+application process. This remains an application control, not a network DDoS service.
 
 ### Default Rate Limits
 
@@ -171,7 +172,14 @@ not a distributed DDoS control.
 RATE_LIMIT_LOGIN_MAX=5
 RATE_LIMIT_LOGIN_WINDOW=300
 TRUSTED_PROXY_IPS=10.0.0.0/8
+RATE_LIMIT_STORAGE=redis
+REDIS_URL=redis://:password@redis:6379/0
 ```
+
+Production startup rejects missing, unauthenticated, or non-Redis quota storage. If
+Redis becomes unavailable, protected operations return 503 with `Retry-After: 5`
+instead of allowing unlimited requests. Only direct peers listed in
+`TRUSTED_PROXY_IPS` may supply a forwarded-address chain.
 
 There is no Redis-backed limiter in the current application. Do not configure a Redis URL
 or run multiple workers expecting a shared quota until #261's distributed work is complete.

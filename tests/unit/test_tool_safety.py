@@ -54,6 +54,7 @@ INVENTORIED_TOOLS = (
     "scripts/retired_tool.py",
     "scripts/run_local_validation.py",
     "scripts/run_postgres_validation.py",
+    "scripts/run_redis_validation.py",
     "scripts/run_security_validation.py",
     "scripts/run_sqlite_recovery_drill.py",
     "scripts/sqlite_recovery.py",

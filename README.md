@@ -240,6 +240,7 @@ manual release checks.
 ```bash
 make test-all                        # All seven Python tiers, including Playwright
 make test-postgres                   # Opt-in owned PostgreSQL migration/business/race checks
+make test-redis                      # Opt-in owned Redis shared-quota checks
 make test-artifact                   # Opt-in owned production image/private-stack checks
 make test-security                   # Opt-in committed-source/image scan and SBOM evidence
 make test-performance               # Opt-in; requires an owned loopback test server
@@ -424,6 +425,11 @@ both church and basketball playbooks.
 Run `make test-postgres` for database or migration changes. It creates and removes its
 own loopback-only PostgreSQL 16 container and writes versioned JUnit/report evidence;
 never substitute a shared or customer database.
+Run `make test-redis` for rate-limit changes. It creates an authenticated,
+loopback-only Redis container with ephemeral storage and proves two limiter instances
+share one atomic quota. Production fails protected requests with a retryable 503 when
+shared quota storage is unavailable; development keeps an explicit process-local
+fallback. This is application abuse-control evidence, not network DDoS protection.
 Run `make test-artifact` for production-image changes after committing the tracked tree.
 It retains the SHA-labeled image and report, uses private disposable PostgreSQL/Redis,
 runs one migration job before two read-only replicas, and contacts no external provider.

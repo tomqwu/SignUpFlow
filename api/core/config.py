@@ -75,6 +75,8 @@ class Settings(BaseSettings):
     # Celery Task Queue
     CELERY_BROKER_URL: str = "redis://localhost:6379/0"
     CELERY_RESULT_BACKEND: str = "redis://localhost:6379/0"
+    REDIS_URL: str = "redis://localhost:6379/0"
+    RATE_LIMIT_STORAGE: str = "memory"
 
     # Email Notification Features
     EMAIL_SEND_ASSIGNMENT_NOTIFICATIONS: bool = True
