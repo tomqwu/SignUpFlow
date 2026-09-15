@@ -43,6 +43,11 @@ corresponding SendGrid, Twilio, or Stripe credential names. SMS also requires
 `TWILIO_INCOMING_SMS_URL` and `TWILIO_STATUS_CALLBACK_URL` as the exact external
 HTTPS callback URLs used for Twilio signature validation. This validation is
 configuration coherence, not provider acceptance or permission to enable them.
+Billing additionally requires `STRIPE_WEBHOOK_SECRET`; the mounted callback returns
+404 while billing is disabled and rejects unverifiable payloads when enabled. Verified
+events must include tenant metadata and are recorded for replay, ordering, and
+reconciliation. This local control does not approve prices, refunds, quotas, provider
+sandbox results, or live activation.
 
 Rotating `SECRET_KEY` invalidates every existing JWT and browser session. Apply
 the new key to every application process in one coordinated restart, then require

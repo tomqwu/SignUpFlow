@@ -7123,7 +7123,7 @@
     },
     "/api/v1/billing/invoices/{billing_history_id}/pdf": {
       "get": {
-        "description": "Generate and download invoice PDF for billing history record.\n\nReturns PDF file for download or HTML preview.\n\nRequires:\n    - User must be an authenticated admin of the organization\n\nPath Parameters:\n    billing_history_id: Billing history record ID\n\nQuery Parameters:\n    format: Output format - \"pdf\" (text-based) or \"html\" (styled template)\n\nReturns:\n    PDF file download or HTML response",
+        "description": "Generate an HTML or plain-text invoice export for a billing history record.\n\nReturns a plain-text download or HTML preview.\n\nRequires:\n    - User must be an authenticated admin of the organization\n\nPath Parameters:\n    billing_history_id: Billing history record ID\n\nQuery Parameters:\n    format: Output format - \"text\" or \"html\"\n\nReturns:\n    Plain-text download or HTML response",
         "operationId": "downloadInvoicePdf",
         "parameters": [
           {
@@ -7136,14 +7136,14 @@
             }
           },
           {
-            "description": "Output format (pdf or html)",
+            "description": "Output format (text or html)",
             "in": "query",
             "name": "format",
             "required": false,
             "schema": {
               "default": "html",
-              "description": "Output format (pdf or html)",
-              "pattern": "^(pdf|html)$",
+              "description": "Output format (text or html)",
+              "pattern": "^(text|html)$",
               "title": "Format",
               "type": "string"
             }

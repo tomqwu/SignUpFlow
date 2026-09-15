@@ -49,6 +49,16 @@ evidence with a local mock. Do not deploy or enable providers from a roadmap alo
   configured external URLs, deduplicate incoming message IDs, and prevent delivery-state
   regression. OpenAPI and generated Dart request types are synchronized. Live provider
   acceptance and commercial enablement remain under #270.
+- #270 packages 270.1-270.3: the default-off Stripe callback is mounted behind the
+  billing gate and fails closed on missing/invalid signatures. Verified provider events
+  require tenant metadata, resolve only inside that tenant, persist one receipt, ignore
+  replayed or older state, upsert invoice recovery, and quarantine ambiguous processing
+  for reconciliation. Checkout creation persists an idempotent operation outcome and
+  does not retry an uncertain request. Expired local trials return to free even when a
+  card record exists, invoice exports use real stored fields, and SMS policy tests prove
+  no provider call for unverified, opted-out, or quiet-hours recipients. Billing/SMS stay
+  disabled; pricing, refunds, quotas, authorized sandbox delivery, support ownership,
+  and owner enablement are the remaining 270.4 acceptance boundary.
 - #279/#289 FLOW-1: the machine-readable playbook coverage manifest now binds
   BO-01..12, CH-01..08, BB-01..08, every scheduling qualification, evidence tier,
   and partial/blocked status; pytest rejects omitted bundled roles or scenarios.

@@ -14,7 +14,7 @@ Method | HTTP request | Description
 [**cancelSubscription**](BillingApi.md#cancelsubscription) | **POST** /api/v1/billing/subscription/cancel | Cancel Subscription
 [**createBillingPortalSession**](BillingApi.md#createbillingportalsession) | **POST** /api/v1/billing/portal | Create Billing Portal Session
 [**downgradeSubscription**](BillingApi.md#downgradesubscription) | **POST** /api/v1/billing/subscription/downgrade | Downgrade Subscription
-[**downloadInvoicePdf**](BillingApi.md#downloadinvoicepdf) | **GET** /api/v1/billing/invoices/{billing_history_id}/pdf | Download Invoice Pdf
+[**downloadInvoicePdf**](BillingApi.md#downloadinvoicepdf) | **GET** /api/v1/billing/invoices/{billing_history_id}/pdf | Download invoice as HTML or text
 [**getBillingHistory**](BillingApi.md#getbillinghistory) | **GET** /api/v1/billing/history | Get Billing History
 [**getPaymentMethods**](BillingApi.md#getpaymentmethods) | **GET** /api/v1/billing/payment-methods | Get Payment Methods
 [**getSubscription**](BillingApi.md#getsubscription) | **GET** /api/v1/billing/subscription | Get Subscription
@@ -246,9 +246,9 @@ Name | Type | Description  | Notes
 # **downloadInvoicePdf**
 > JsonObject downloadInvoicePdf(billingHistoryId, format)
 
-Download Invoice Pdf
+Download invoice as HTML or text
 
-Generate and download invoice PDF for billing history record.  Returns PDF file for download or HTML preview.  Requires:     - User must be an authenticated admin of the organization  Path Parameters:     billing_history_id: Billing history record ID  Query Parameters:     format: Output format - \"pdf\" (text-based) or \"html\" (styled template)  Returns:     PDF file download or HTML response
+Generate an HTML or plain-text invoice export for an authenticated organization administrator.
 
 ### Example
 ```dart
@@ -256,7 +256,7 @@ import 'package:signupflow_api/api.dart';
 
 final api = SignupflowApi().getBillingApi();
 final String billingHistoryId = billingHistoryId_example; // String |
-final String format = format_example; // String | Output format (pdf or html)
+final String format = format_example; // String | Output format (text or html)
 
 try {
     final response = api.downloadInvoicePdf(billingHistoryId, format);
@@ -271,7 +271,7 @@ try {
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
  **billingHistoryId** | **String**|  |
- **format** | **String**| Output format (pdf or html) | [optional] [default to 'html']
+ **format** | **String**| Output format (text or html) | [optional] [default to 'html']
 
 ### Return type
 

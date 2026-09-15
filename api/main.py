@@ -45,6 +45,7 @@ from api.routers import (
     solutions,
     solver,
     teams,
+    webhooks,
 )
 
 
@@ -204,6 +205,7 @@ app.include_router(resources.router, prefix="/api/v1")
 app.include_router(holidays.router, prefix="/api/v1")
 app.include_router(notifications.router, prefix="/api/v1")
 app.include_router(billing.router, prefix="/api/v1")
+app.include_router(webhooks.stripe_router, prefix="/api/v1")
 # sms.router self-prefixes "/api/sms" (not the /api/v1 convention) — mount as-is.
 app.include_router(sms.router)
 # webhooks.router (SendGrid event tracking) is intentionally NOT

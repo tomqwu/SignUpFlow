@@ -203,13 +203,21 @@ POST /api/v1/solver/solve      →  api/routers/solver.py (HTTP + DB)
 Notification routes are registered under `/api/v1`. Billing routes remain in the
 codebase under `/api/v1`, and SMS routes under `/api/sms`, but both return 404 by
 default behind `BILLING_ENABLED=false` and `SMS_ENABLED=false`. Paid billing and
-SMS are deferred; the complete scheduling workflow does not require them. Stripe
-and SendGrid webhook handlers exist in `api/routers/webhooks.py` but are intentionally
-not mounted. The SMS webhook paths share the disabled `/api/sms` router.
+SMS are deferred; the complete scheduling workflow does not require them. The Stripe
+callback is mounted at `/api/v1/webhooks/stripe` behind the billing feature gate. It
+returns 404 while billing is disabled, fails closed without a signing secret, requires
+tenant metadata, and records replay/order/reconciliation state before changing local
+entitlement. The SendGrid event webhook remains intentionally unmounted. The SMS
+webhook paths share the disabled `/api/sms` router.
 If SMS is separately authorized and enabled, Twilio callbacks fail closed unless
 their signatures match the exact configured external callback URLs. String person
 IDs, same-tenant recipients, and assignment/event/person relationships are checked
 before provider or queue work.
+
+Provider-backed checkout requests also retain a local operation key and outcome. An
+uncertain response is marked for reconciliation and the same request is not sent again.
+This local behavior is not Stripe/Twilio sandbox acceptance. Pricing, refund policy,
+provider delivery, and live enablement remain unapproved under issue #270.
 
 ---
 

@@ -810,14 +810,16 @@ def get_billing_history(
 @router.get("/billing/invoices/{billing_history_id}/pdf")
 def download_invoice_pdf(
     billing_history_id: str,
-    format: str = Query("html", pattern="^(pdf|html)$", description="Output format (pdf or html)"),
+    format: str = Query(
+        "html", pattern="^(text|html)$", description="Output format (text or html)"
+    ),
     current_user: Person = Depends(get_current_admin_user),
     db: Session = Depends(get_db),
 ):
     """
-    Generate and download invoice PDF for billing history record.
+    Generate an HTML or plain-text invoice export for a billing history record.
 
-    Returns PDF file for download or HTML preview.
+    Returns a plain-text download or HTML preview.
 
     Requires:
         - User must be an authenticated admin of the organization
@@ -826,10 +828,10 @@ def download_invoice_pdf(
         billing_history_id: Billing history record ID
 
     Query Parameters:
-        format: Output format - "pdf" (text-based) or "html" (styled template)
+        format: Output format - "text" or "html"
 
     Returns:
-        PDF file download or HTML response
+        Plain-text download or HTML response
     """
     from fastapi.responses import HTMLResponse, StreamingResponse
 
@@ -863,35 +865,42 @@ def download_invoice_pdf(
     if not org:
         raise HTTPException(status_code=404, detail="Organization not found")
 
+    record_id = str(billing_record.id)
+    record_metadata: dict[str, Any] = (
+        billing_record.extra_metadata if isinstance(billing_record.extra_metadata, dict) else {}
+    )
+    plan_tier = record_metadata.get("plan_tier") or "unknown"
+    invoice_number = record_metadata.get("invoice_number") or f"INV-{record_id.upper()}"
+
     if format == "html":
         # Generate HTML invoice
         html_content = generate_invoice_pdf_html(
-            billing_history_id=billing_record.id,
+            billing_history_id=record_id,
             org_name=org.name,
             event_type=billing_record.event_type,
-            plan_tier=billing_record.plan_tier or "free",
+            plan_tier=plan_tier,
             amount_cents=billing_record.amount_cents or 0,
-            created_at=billing_record.created_at,
+            created_at=billing_record.event_timestamp,
             description=billing_record.description,
             org_address=getattr(org, "region", None),
-            invoice_number=f"INV-{billing_record.id[:8].upper()}",
+            invoice_number=invoice_number,
         )
 
         return HTMLResponse(content=html_content)
 
     else:
-        # Generate simple text-based PDF
+        # Generate a plain-text invoice download.
         pdf_buffer = generate_invoice_pdf(
-            billing_history_id=billing_record.id,
+            billing_history_id=record_id,
             org_name=org.name,
             event_type=billing_record.event_type,
-            plan_tier=billing_record.plan_tier or "free",
+            plan_tier=plan_tier,
             amount_cents=billing_record.amount_cents or 0,
-            created_at=billing_record.created_at,
+            created_at=billing_record.event_timestamp,
             description=billing_record.description,
         )
 
-        filename = f"invoice_{billing_record.id[:8]}.txt"
+        filename = f"invoice_{record_id}.txt"
 
         return StreamingResponse(
             pdf_buffer,

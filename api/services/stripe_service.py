@@ -14,13 +14,16 @@ Example Usage:
     )
 """
 
+import hashlib
+import json
 from datetime import datetime
 from typing import Any
 
 from sqlalchemy.orm import Session, joinedload
 
 from api.logging_config import logger
-from api.models import Organization, PaymentMethod, Subscription
+from api.models import Organization, PaymentMethod, ProviderOperation, Subscription
+from api.timeutils import utcnow
 from api.utils.stripe_client import StripeClient
 
 
@@ -411,11 +414,22 @@ class StripeService:
                 return redirect(result["checkout_url"])
         """
         try:
-            # Get or create Stripe customer
             subscription = self.db.query(Subscription).filter(Subscription.org_id == org_id).first()
 
             if not subscription:
                 return {"success": False, "message": "No subscription record found"}
+
+            operation = self._checkout_operation(
+                org_id,
+                price_id,
+                success_url,
+                cancel_url,
+                trial_days,
+            )
+            if operation.status != "pending" or operation.attempts > 0:
+                return self._existing_checkout_result(operation)
+            operation.attempts = 1
+            self.db.commit()
 
             customer_id = subscription.stripe_customer_id
 
@@ -438,7 +452,9 @@ class StripeService:
                 )
 
                 if not customer_result["success"]:
-                    return {"success": False, "message": customer_result["message"]}
+                    return self._mark_checkout_for_reconciliation(
+                        operation, str(customer_result["message"])
+                    )
 
                 customer_id = customer_result["customer_id"]
                 subscription.stripe_customer_id = customer_id
@@ -461,20 +477,119 @@ class StripeService:
                 success_url=success_url,
                 cancel_url=cancel_url,
                 metadata={"org_id": org_id},
+                idempotency_key=operation.operation_key,
             )
 
             logger.info(f"Created checkout session for org {org_id}: {checkout_session.id}")
 
-            return {
+            result = {
                 "success": True,
+                "status": "created",
                 "checkout_url": checkout_session.url,
                 "session_id": checkout_session.id,
                 "message": "Checkout session created",
             }
+            operation.status = "succeeded"
+            operation.provider_object_id = checkout_session.id
+            operation.response_data = result
+            operation.completed_at = utcnow()
+            self.db.commit()
+            return result
 
         except Exception as e:
+            self.db.rollback()
             logger.error(f"Error creating checkout session for org {org_id}: {e}")
-            return {"success": False, "message": f"Failed to create checkout session: {str(e)}"}
+            operation = locals().get("operation")
+            if isinstance(operation, ProviderOperation):
+                operation = (
+                    self.db.query(ProviderOperation)
+                    .filter(
+                        ProviderOperation.org_id == org_id,
+                        ProviderOperation.operation_key == operation.operation_key,
+                    )
+                    .first()
+                )
+                if operation:
+                    return self._mark_checkout_for_reconciliation(operation, str(e))
+            return {
+                "success": False,
+                "status": "failed",
+                "message": "Checkout session could not be created",
+            }
+
+    def _checkout_operation(
+        self,
+        org_id: str,
+        price_id: str,
+        success_url: str,
+        cancel_url: str,
+        trial_days: int | None,
+    ) -> ProviderOperation:
+        request_data = {
+            "org_id": org_id,
+            "price_id": price_id,
+            "success_url": success_url,
+            "cancel_url": cancel_url,
+            "trial_days": trial_days,
+        }
+        serialized = json.dumps(request_data, sort_keys=True, separators=(",", ":"))
+        fingerprint = hashlib.sha256(serialized.encode("utf-8")).hexdigest()
+        operation_key = f"checkout_{fingerprint}"
+        operation = (
+            self.db.query(ProviderOperation)
+            .filter(
+                ProviderOperation.org_id == org_id,
+                ProviderOperation.provider == "stripe",
+                ProviderOperation.operation_key == operation_key,
+            )
+            .first()
+        )
+        if operation:
+            return operation
+        operation = ProviderOperation(
+            provider="stripe",
+            operation_key=operation_key,
+            org_id=org_id,
+            operation_type="checkout_session.create",
+            request_fingerprint=fingerprint,
+            status="pending",
+            attempts=0,
+        )
+        self.db.add(operation)
+        self.db.commit()
+        self.db.refresh(operation)
+        return operation
+
+    def _existing_checkout_result(self, operation: ProviderOperation) -> dict[str, Any]:
+        if operation.status == "succeeded" and isinstance(operation.response_data, dict):
+            return operation.response_data
+        if operation.status == "pending":
+            operation.status = "reconciliation_required"
+            operation.last_error = "Prior checkout attempt did not record a definitive outcome"
+            operation.completed_at = utcnow()
+        result = {
+            "success": False,
+            "status": "reconciliation_required",
+            "message": "Checkout outcome is uncertain; reconcile with provider before retrying",
+        }
+        operation.response_data = result
+        self.db.commit()
+        return result
+
+    def _mark_checkout_for_reconciliation(
+        self, operation: ProviderOperation, error: str
+    ) -> dict[str, Any]:
+        operation.status = "reconciliation_required"
+        operation.last_error = error
+        operation.completed_at = utcnow()
+        result = {
+            "success": False,
+            "status": "reconciliation_required",
+            "message": "Checkout outcome is uncertain; reconcile with provider before retrying",
+        }
+        operation.response_data = result
+        self.db.commit()
+        return result
 
     def retrieve_checkout_session(self, org_id: str, session_id: str) -> dict[str, Any]:
         """Read and verify a checkout session without changing local entitlement."""
