@@ -3,21 +3,24 @@
 # Tests and owned subprocesses opt out so a developer .env cannot restore
 # provider credentials that the local safety boundary deliberately removed.
 import os
-import traceback
+from collections.abc import AsyncIterator, Awaitable, Callable
 from contextlib import asynccontextmanager
 
 import uvicorn
 from dotenv import load_dotenv
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, RedirectResponse
+from starlette.responses import Response
 
 if os.getenv("SIGNUPFLOW_LOAD_DOTENV", "true").lower() == "true":
     load_dotenv()
 
 from api.core.runtime_config import validate_production_environment
-from api.database import init_db
+from api.database import SessionLocal, init_db
 from api.logging_config import logger
+from api.observability import capture_unhandled_exception, initialize_error_reporting
+from api.operational_alerts import record_operational_signal
 from api.routers import (
     analytics,
     assignments,
@@ -46,28 +49,34 @@ from api.routers import (
 
 # Application lifespan context manager
 @asynccontextmanager
-async def lifespan(app: FastAPI):
+async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     """Handle application startup and shutdown."""
     validate_production_environment()
-    init_db()
+    reporting = initialize_error_reporting()
+    try:
+        init_db()
+    except Exception as exc:
+        capture_unhandled_exception(exc)
+        logger.error(
+            "application.startup_failed",
+            extra={
+                "event": "application.startup_failed",
+                "error_type": type(exc).__name__,
+            },
+        )
+        raise
 
-    # Observability summary — error reporting is config-gated (no hard
-    # dependency): a DSN turns it on, its absence is a normal dev/sandbox
-    # state, not an error.
-    _err_reporting = "enabled" if os.getenv("SENTRY_DSN") else "disabled (no SENTRY_DSN)"
     logger.info(
-        "observability: error_reporting=%s liveness=/health readiness=/ready",
-        _err_reporting,
+        "application.started",
+        extra={
+            "event": "application.started",
+            "error_reporting": (reporting.provider if reporting.enabled else reporting.reason),
+        },
     )
-
-    logger.info("🚀 SignUpFlow API started")
-    logger.info("📖 API docs available at http://localhost:8000/docs")
-    print("🚀 SignUpFlow API started")
-    print("📖 API docs available at http://localhost:8000/docs")
 
     yield
 
-    print("👋 SignUpFlow API shutting down")
+    logger.info("application.stopping", extra={"event": "application.stopping"})
 
 
 app = FastAPI(
@@ -81,15 +90,28 @@ app = FastAPI(
 
 
 @app.middleware("http")
-async def error_logging_middleware(request: Request, call_next):
-    """Log all errors and return user-friendly messages."""
+async def error_logging_middleware(
+    request: Request,
+    call_next: Callable[[Request], Awaitable[Response]],
+) -> Response:
+    """Capture unhandled errors once and return a generic correlated response."""
     try:
         response = await call_next(request)
         return response
-    except Exception as e:
-        logger.error(f"Unhandled error: {str(e)}\n{traceback.format_exc()}")
+    except Exception as exc:
+        capture_unhandled_exception(exc)
+        logger.error(
+            "request.unhandled_error",
+            extra={
+                "event": "request.unhandled_error",
+                "error_type": type(exc).__name__,
+                "method": request.method,
+                "path": request.url.path,
+            },
+        )
         return JSONResponse(
-            status_code=500, content={"detail": "Internal server error. Please try again later."}
+            status_code=500,
+            content={"detail": "Internal server error"},
         )
 
 
@@ -109,42 +131,18 @@ app.add_middleware(
 )
 
 
-@app.get("/health", tags=["health"])
-def health_check():
-    """
-    Health check endpoint with database connectivity check.
-
-    Returns:
-        200 OK: Service and database are healthy
-        503 Service Unavailable: Database connection failed
-    """
-    from sqlalchemy import text
-
-    from api.database import SessionLocal
-
-    health_status = {
+@app.get("/health", tags=["health"], response_model=None)
+def health_check() -> dict[str, str]:
+    """Return process liveness without opening a dependency connection."""
+    return {
         "status": "healthy",
         "service": "signupflow-api",
         "version": "1.0.0",
-        "database": "unknown",
     }
 
-    try:
-        db = SessionLocal()
-        db.execute(text("SELECT 1"))
-        db.close()
-        health_status["database"] = "connected"
-    except Exception as e:
-        health_status["status"] = "unhealthy"
-        health_status["database"] = "disconnected"
-        health_status["error"] = str(e)
-        return JSONResponse(status_code=503, content=health_status)
 
-    return health_status
-
-
-@app.get("/ready", include_in_schema=False)
-def readiness_check():
+@app.get("/ready", include_in_schema=False, response_model=None)
+def readiness_check() -> dict[str, str] | JSONResponse:
     """Readiness probe (ops-only, not part of the client contract).
 
     Distinct from /health (liveness): a 503 here tells an orchestrator
@@ -152,17 +150,24 @@ def readiness_check():
     """
     from sqlalchemy import text
 
-    from api.database import SessionLocal
-
     try:
-        db = SessionLocal()
-        db.execute(text("SELECT 1"))
-        db.close()
+        with SessionLocal() as db:
+            db.execute(text("SELECT 1"))
     except Exception as exc:
+        record_operational_signal("database.readiness", healthy=False)
+        logger.warning(
+            "readiness.dependency_unavailable",
+            extra={
+                "event": "readiness.dependency_unavailable",
+                "signal": "database.readiness",
+                "error_type": type(exc).__name__,
+            },
+        )
         return JSONResponse(
             status_code=503,
-            content={"status": "not_ready", "reason": str(exc)},
+            content={"status": "not_ready", "reason": "dependency_unavailable"},
         )
+    record_operational_signal("database.readiness", healthy=True)
     return {"status": "ready"}
 
 
@@ -198,8 +203,8 @@ app.include_router(sms.router)
 # stays unmounted so it can't accept events.
 
 
-@app.get("/api/v1", tags=["root"])
-def api_info():
+@app.get("/api/v1", tags=["root"], response_model=None)
+def api_info() -> dict[str, object]:
     """API information endpoint."""
     return {
         "service": "SignUpFlow API",
@@ -220,10 +225,8 @@ def api_info():
 
 
 @app.get("/api", tags=["root"], include_in_schema=False)
-def api_redirect():
+def api_redirect() -> RedirectResponse:
     """Redirect bare /api to versioned /api/v1 for one release."""
-    from fastapi.responses import RedirectResponse
-
     return RedirectResponse(url="/api/v1", status_code=308)
 
 
@@ -256,7 +259,7 @@ from web.app import mount_web  # noqa: E402
 mount_web(app)
 
 
-def start():
+def start() -> None:
     """Start the API server (used by poetry script)."""
     uvicorn.run(
         "api.main:app",

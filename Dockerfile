@@ -76,7 +76,7 @@ LABEL org.opencontainers.image.title="SignUpFlow" \
 EXPOSE 8000
 
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
-    CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:8000/health', timeout=5)" || exit 1
+    CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:8000/ready', timeout=5)" || exit 1
 
 ENTRYPOINT ["/app/docker-entrypoint.sh"]
 # Process-local rate limits and SSE require one worker until #261/#266 add

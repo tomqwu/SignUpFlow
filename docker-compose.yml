@@ -104,6 +104,7 @@ services:
 
       # Application Configuration
       ENVIRONMENT: "production"
+      RELEASE_SHA: "${RELEASE_SHA:?Set RELEASE_SHA to the deployed commit}"
       SIGNUPFLOW_LOAD_DOTENV: "false"
       SECRET_KEY: "${SECRET_KEY:?Set SECRET_KEY}"
       ACCESS_TOKEN_EXPIRE_HOURS: "${ACCESS_TOKEN_EXPIRE_HOURS:-24}"
@@ -141,6 +142,8 @@ services:
 
       # Logging
       LOG_LEVEL: ${LOG_LEVEL:-INFO}
+      READINESS_FAILURE_ALERT_THRESHOLD: "${READINESS_FAILURE_ALERT_THRESHOLD:-3}"
+      SENTRY_DSN: "${SENTRY_DSN:-}"
 
     ports:
       - "${PORT:-8000}:8000"
@@ -157,7 +160,7 @@ services:
           "CMD",
           "python",
           "-c",
-          "import urllib.request; urllib.request.urlopen('http://localhost:8000/health', timeout=5)",
+          "import urllib.request; urllib.request.urlopen('http://localhost:8000/ready', timeout=5)",
         ]
       interval: 30s
       timeout: 10s

@@ -1,5 +1,6 @@
 """Safety and startup contracts for the owned PostgreSQL validation runner."""
 
+from pathlib import Path
 from unittest.mock import patch
 
 import pytest
@@ -9,9 +10,42 @@ from scripts.run_postgres_validation import (
     OWNERSHIP_LABEL,
     PostgresTestTarget,
     _junit_counts,
+    _test_environment,
     parse_loopback_port,
     verify_owned_container,
 )
+
+ROOT = Path(__file__).resolve().parents[2]
+
+
+def test_postgres_environment_removes_observability_and_provider_credentials() -> None:
+    with patch.dict(
+        "os.environ",
+        {
+            "SENTRY_DSN": "https://private@example.invalid/1",
+            "SENDGRID_API_KEY": "private-email-key",
+            "OLLAMA_API_KEY": "private-voice-key",
+        },
+        clear=False,
+    ):
+        environment = _test_environment(
+            "postgresql://local/primary",
+            "postgresql://local/upgrade",
+        )
+
+    assert environment["SIGNUPFLOW_LOAD_DOTENV"] == "false"
+    assert environment["EMAIL_ENABLED"] == "false"
+    assert environment["SENTRY_DSN"] == ""
+    assert "SENDGRID_API_KEY" not in environment
+    assert "OLLAMA_API_KEY" not in environment
+
+
+def test_alembic_environment_honors_the_no_dotenv_boundary() -> None:
+    source = (ROOT / "alembic" / "env.py").read_text(encoding="utf-8")
+
+    guard = 'if os.getenv("SIGNUPFLOW_LOAD_DOTENV", "true").lower() == "true":'
+    assert guard in source
+    assert source.index(guard) < source.index("    load_dotenv()")
 
 
 def test_postgres_target_is_ephemeral_loopback_and_uniquely_owned() -> None:

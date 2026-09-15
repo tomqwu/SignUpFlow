@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import math
 import os
+import re
 from collections.abc import Mapping
 from ipaddress import ip_network
 from urllib.parse import urlsplit
@@ -42,6 +43,7 @@ _FORBIDDEN_PRODUCTION_FLAGS = (
     "SIGNUPFLOW_ALLOW_TEST_CLOCK",
 )
 _PLACEHOLDER_MARKERS = ("changeme", "placeholder", "your-secret", "change-in-production")
+_GIT_SHA = re.compile(r"^[0-9a-f]{40}$")
 
 
 class ProductionConfigurationError(RuntimeError):
@@ -177,6 +179,19 @@ def _validate_enabled_providers(values: Mapping[str, str], enabled: Mapping[str,
             raise ValueError(f"{flag} requires {joined}")
 
 
+def _validate_observability(values: Mapping[str, str]) -> None:
+    release_sha = values.get("RELEASE_SHA", "").strip()
+    if not _GIT_SHA.fullmatch(release_sha):
+        raise ValueError("RELEASE_SHA must be a 40-character lowercase Git SHA")
+    raw_threshold = values.get("READINESS_FAILURE_ALERT_THRESHOLD", "3")
+    try:
+        threshold = int(raw_threshold)
+    except ValueError as exc:
+        raise ValueError("READINESS_FAILURE_ALERT_THRESHOLD must be an integer") from exc
+    if threshold < 1:
+        raise ValueError("READINESS_FAILURE_ALERT_THRESHOLD must be at least one")
+
+
 def validate_production_environment(environ: Mapping[str, str] | None = None) -> None:
     """Reject unsafe production settings before database or network startup."""
     values = os.environ if environ is None else environ
@@ -195,6 +210,10 @@ def validate_production_environment(environ: Mapping[str, str] | None = None) ->
         issues.append(str(exc))
     try:
         _validate_database(values)
+    except ValueError as exc:
+        issues.append(str(exc))
+    try:
+        _validate_observability(values)
     except ValueError as exc:
         issues.append(str(exc))
 

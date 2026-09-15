@@ -94,18 +94,6 @@ def _verify_migration_head(bind: Engine) -> None:
 
 def init_db() -> None:
     """Initialize local SQLite or verify a migration-managed database."""
-    import logging
-    import sys
-
-    logging.getLogger("rostio").fatal(f"DEBUG: init_db engine id: {id(engine)}")
-    for k in sorted(sys.modules.keys()):
-        if "api.database" in k:
-            logging.getLogger("rostio").fatal(
-                f"DEBUG: IN THREAD sys.modules[{k}] id: {id(sys.modules[k])}"
-            )
-
-    logging.getLogger("rostio").fatal(f"DEBUG: init_db tables: {list(Base.metadata.tables.keys())}")
-
     if not DATABASE_URL.startswith("sqlite"):
         _verify_migration_head(engine)
         return
@@ -138,9 +126,6 @@ def get_db() -> Generator[Session, None, None]:
         def get_items(db: Session = Depends(get_db)):
             ...
     """
-    import logging
-
-    logging.getLogger("rostio").fatal(f"DEBUG: get_db engine id: {id(engine)}")
     db = SessionLocal()
     try:
         yield db

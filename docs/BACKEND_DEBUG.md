@@ -2,7 +2,10 @@
 
 ## Overview
 
-The backend API now supports environment-based debug mode for conditional logging. Debug mode automatically enables in development environments and can be controlled via environment variables.
+The backend uses readable development logs and structured production logs. Debug
+mode automatically enables in development-like environments. Production emits
+JSON to stdout, adds request/environment/release correlation, and creates no log
+files inside the read-only image.
 
 ## Environment Variables
 
@@ -29,7 +32,7 @@ export ENVIRONMENT=dev
 export ENVIRONMENT=staging
 export ENVIRONMENT=local
 
-# Production mode (default):
+# Production mode (must be selected explicitly):
 export ENVIRONMENT=production
 ```
 
@@ -40,25 +43,24 @@ export ENVIRONMENT=production
 When debug mode is enabled:
 
 1. **Log Level**: Changes from `INFO` to `DEBUG`
-2. **Log Format**: Includes file name and line number
-   - Production: `%(asctime)s - %(name)s - %(levelname)s - %(message)s`
-   - Debug: `%(asctime)s - %(name)s - [%(filename)s:%(lineno)d] - %(levelname)s - %(message)s`
+2. **Log Format**: Development includes request ID, file name, and line number.
+   Production emits bounded JSON fields including timestamp, level, logger,
+   message, request ID, environment, and release SHA.
 3. **Library Logging**: uvicorn and FastAPI logs are visible
-4. **Startup Message**: Shows debug status with emoji 🐛
+4. **Startup Message**: Records the selected logging mode.
 
 ### Example Log Output
 
 **Production Mode:**
-```
-2025-10-13 10:00:00,000 - rostio - INFO - ✅ Production mode (ENVIRONMENT=production)
-2025-10-13 10:00:00,000 - rostio - INFO - 🚀 Rostio API started
+```json
+{"environment":"production","event":"logging.configured","level":"INFO","logger":"rostio","message":"logging.configured","release_sha":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","request_id":"-","timestamp":"..."}
+{"environment":"production","event":"application.started","level":"INFO","logger":"rostio","message":"application.started","release_sha":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","request_id":"-","timestamp":"..."}
 ```
 
 **Debug Mode:**
 ```
-2025-10-13 10:00:00,000 - rostio - [logging_config.py:47] - INFO - 🐛 Debug mode ENABLED (ENVIRONMENT=development)
-2025-10-13 10:00:00,000 - rostio - [logging_config.py:48] - INFO - 📍 Log files: /home/ubuntu/rostio/logs
-2025-10-13 10:00:00,000 - rostio - [main.py:35] - INFO - 🚀 Rostio API started
+2025-10-13 10:00:00,000 - rostio - [-] - [logging_config.py:95] - INFO - Debug mode enabled (ENVIRONMENT=development)
+2025-10-13 10:00:00,000 - rostio - [-] - [logging_config.py:96] - INFO - Log files: /workspace/logs
 ```
 
 ## Usage in Code
@@ -93,9 +95,10 @@ except Exception as e:
 ```python
 try:
     result = process_data(data)
-    logger.debug(f"Processed {len(result)} items")  # Only logs in debug mode
-except Exception as e:
-    logger.error(f"Error processing data: {str(e)}", exc_info=True)  # Always logs with traceback
+    logger.debug("Processed %s items", len(result))
+except Exception:
+    logger.error("data.processing_failed", extra={"event": "data.processing_failed"})
+    raise
 ```
 
 ### Logging Levels
@@ -110,13 +113,17 @@ Use appropriate levels:
 
 ### Exception Logging
 
-Use `exc_info=True` to include full traceback:
+Do not interpolate exception messages, credentials, customer messages, query
+strings, or request bodies into production logs. Let the application middleware
+capture an unhandled exception through the optional configured reporter and emit
+one sanitized correlated event:
 
 ```python
 try:
     dangerous_operation()
-except Exception as e:
-    logger.error("Operation failed", exc_info=True)
+except Exception:
+    logger.error("operation.failed", extra={"event": "operation.failed"})
+    raise
 ```
 
 ## Running with Debug Mode
@@ -134,12 +141,10 @@ poetry run uvicorn api.main:app --reload
 
 ### Production
 ```bash
-# Debug mode is OFF by default
-poetry run uvicorn api.main:app
-
-# Or explicitly set production
+# Supply every required fail-closed setting, including the exact commit.
 export ENVIRONMENT=production
-poetry run uvicorn api.main:app
+export RELEASE_SHA=$(git rev-parse HEAD)
+# See PRODUCTION_CONFIGURATION.md before startup.
 ```
 
 ### Docker
@@ -161,47 +166,41 @@ Development also writes:
 - `logs/rostio.log` - All logs (INFO and above)
 - `logs/rostio_errors.log` - Only errors (ERROR and above)
 
-## Files Refactored
+## Current Boundaries
 
-- ✅ `/api/logging_config.py` - Enhanced with debug mode support
-- ✅ `/api/routers/people.py` - Converted print() to logger.error()
+- `api/logging_config.py` owns development text/file and production JSON/stdout behavior.
+- `api/main.py` owns startup, shutdown, readiness, and unhandled-request events.
+- `api/observability.py` initializes optional Sentry reporting with PII and tracing off.
+- `api/operational_alerts.py` emits bounded local trigger/recovery state.
 
-## Files Remaining
-
-Based on grep analysis:
-- `/api/main.py` - 6 logger statements (already using logger)
-- `/api/routers/solver.py` - 2 logger statements (already using logger)
-- `/api/utils/datetime_utils.py` - 9 logger statements (already using logger)
-
-Most files already use proper logging. Only print() statements need conversion.
+Local structured signals are not external alert-delivery evidence. See #267 and
+the operations runbook for the remaining recipient, retention, and staging work.
 
 ## Benefits
 
 1. **Environment-aware**: Automatically adjusts logging based on environment
 2. **Zero configuration**: Works out of the box in development
 3. **Production-safe**: No verbose logs or runtime file writes in production
-4. **Structured logs**: Consistent format with timestamps and levels
-5. **File rotation**: Easy to implement log rotation on log files
-6. **Exception tracking**: Full tracebacks with `exc_info=True`
+4. **Structured logs**: Production records use bounded machine-readable fields
+5. **Correlation**: Request ID, environment, and release SHA travel together
+6. **Optional error reporting**: A configured Sentry client receives unhandled exceptions
 
 ## Best Practices
 
 1. **Use logger, not print()**: Always use logger for all output
 2. **Use debug() for verbose logs**: Detailed logs should use `logger.debug()`
-3. **Include context**: Add relevant context to log messages
-4. **Use f-strings**: Modern formatting is more readable
-5. **Log exceptions properly**: Always use `exc_info=True` for errors
+3. **Include bounded context**: Use fixed event names and known-safe identifiers
+4. **Use parameterized messages**: Avoid formatting secrets or customer content into logs
+5. **Sanitize errors**: Log the error type and let the configured reporter capture details
 
 ## Testing
 
-Test that debug logs only appear in debug mode:
+Run the maintained logging and observability contracts:
 
 ```bash
-# Should show debug logs
-export DEBUG=true
-poetry run uvicorn api.main:app --reload
-
-# Should NOT show debug logs
-unset DEBUG
-poetry run uvicorn api.main:app --reload
+poetry run pytest tests/unit/test_logging_config.py \
+  tests/unit/test_observability.py tests/unit/test_operational_alerts.py -q
 ```
+
+These tests inject fake reporting and alert sinks. They do not contact Sentry or
+prove delivery to a real operator.

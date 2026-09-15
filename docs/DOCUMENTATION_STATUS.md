@@ -123,6 +123,12 @@ proof for image contents, immutable revision identity, one-shot migration failur
 two replicas, provider-free Basketball publication/export, and graceful shutdown.
 Its report explicitly records that staging, managed services, TLS/proxy, providers,
 backup/restore, and operator release approval were not exercised.
+The monitoring package separates dependency-free `/health` liveness from sanitized
+database `/ready` readiness and closes probe sessions on every failure. Production
+stdout logs are structured, release-correlated, and redact credential-shaped values.
+An optional Sentry DSN now initializes a real error hook with PII and tracing disabled;
+local fake sinks prove database, notification-queue, and backup-freshness trigger/recovery
+state. No external alert recipient, staging delivery, or retention policy is claimed.
 The maintained [scheduling constraint contract](SCHEDULING_CONSTRAINTS.md) now
 lists the three executable REST rule mappings, their CLI equivalents, validation
 failures, built-in invariants, and unsupported policy. The constraints editor now

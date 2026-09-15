@@ -141,6 +141,14 @@ evidence with a local mock. Do not deploy or enable providers from a roadmap alo
   schema mutation, starts two replicas, runs a provider-free Basketball publish/export,
   verifies SIGTERM, and records immutable image identity. An authorized staging target,
   managed-service/TLS evidence, and release-owner approval remain outside local proof.
+- #267: `/health` is dependency-free process liveness while `/ready` performs one
+  context-managed database probe and returns only a generic failure. Production logs
+  are structured stdout records correlated to the required release SHA and redact
+  credential-shaped values. A configured Sentry sink initializes with PII/tracing off;
+  invalid initialization fails visibly without exposing its DSN. Bounded local rules
+  and fake sinks prove one trigger plus recovery for readiness, notification queue, and
+  backup freshness. Real signal producers beyond readiness, external operator receipt,
+  retention, thresholds measured under staging load, and escalation ownership remain.
 - #259: repurpose the obsolete AI/CI gate ticket as local validation and evidence
   hygiene. No workflow, secret, provider or required status is needed for review.
 - #191: the Dart client is regenerated from the current OpenAPI snapshot and

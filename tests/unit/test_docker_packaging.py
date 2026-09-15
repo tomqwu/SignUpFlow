@@ -51,8 +51,8 @@ def test_compose_runs_one_migration_job_before_api_replicas():
     assert "postgresql://" in api["environment"]["DATABASE_URL"]
     assert "@db:5432/" in api["environment"]["DATABASE_URL"]
     assert migrate["environment"]["DATABASE_URL"] == api["environment"]["DATABASE_URL"]
-    # Container healthcheck hits the real /health endpoint.
-    assert "/health" in " ".join(api["healthcheck"]["test"])
+    # Container health reflects dependency readiness; /health remains process liveness.
+    assert "/ready" in " ".join(api["healthcheck"]["test"])
 
 
 def test_compose_keeps_datastores_private_and_runtime_source_immutable():

@@ -1,14 +1,15 @@
-from logging.config import fileConfig
 import os
-from dotenv import load_dotenv
+from logging.config import fileConfig
 
-from sqlalchemy import engine_from_config
-from sqlalchemy import pool
+from dotenv import load_dotenv
+from sqlalchemy import engine_from_config, pool
 
 from alembic import context
 
-# Load environment variables from .env file
-load_dotenv()
+# Owned test and production processes provide an explicit environment and must
+# never restore local provider credentials from a developer .env file.
+if os.getenv("SIGNUPFLOW_LOAD_DOTENV", "true").lower() == "true":
+    load_dotenv()
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
@@ -28,6 +29,7 @@ if config.config_file_name is not None:
 # add your model's MetaData object here
 # for 'autogenerate' support
 from api.models import Base
+
 target_metadata = Base.metadata
 
 # other values from the config, defined by the needs of env.py,
@@ -76,7 +78,8 @@ def run_migrations_online() -> None:
 
     with connectable.connect() as connection:
         context.configure(
-            connection=connection, target_metadata=target_metadata,
+            connection=connection,
+            target_metadata=target_metadata,
             render_as_batch=True,
         )
 
