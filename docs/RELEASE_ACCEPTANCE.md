@@ -23,9 +23,11 @@ artifact, local fake alerts do not prove operator receipt, and local email captu
 not prove external delivery. A self-signed loopback TLS rehearsal does not prove an
 external ingress, managed certificate, DNS, or deployed-environment configuration.
 
-## Preparation Snapshot
+## Historical Preparation Snapshot
 
-The latest pre-release preparation evidence is not a frozen release candidate:
+The dated pre-release preparation evidence below is retained as a historical baseline,
+not a frozen release candidate. Record current candidate evidence in #271 and its PR
+receipts instead of treating this table as a moving status dashboard:
 
 | Evidence | Identity | Result | Boundary |
 | --- | --- | --- | --- |
