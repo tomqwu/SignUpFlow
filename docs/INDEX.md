@@ -3,6 +3,8 @@
 ## Current Entry Points
 
 - [Production roadmap](ROADMAP.md): no CI checks; all validation runs locally.
+- [Release acceptance matrix](RELEASE_ACCEPTANCE.md): candidate scope, owner
+  decisions, evidence invalidation, external blockers, and go/no-go sequence.
 - [Production configuration](PRODUCTION_CONFIGURATION.md): effective environment
   readers, fail-closed startup rules, and current container limitations.
 

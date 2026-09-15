@@ -96,6 +96,12 @@ files:
   docs/MULTI_ORG_LIMITATIONS.md: {<<: *historical, canonical: docs/API_AUTHORIZATION.md}
   docs/NEXT_STEPS.md: {<<: *historical, canonical: docs/ROADMAP.md}
   docs/PRODUCTION_CONFIGURATION.md: {<<: *platform, canonical: docs/PRODUCTION_CONFIGURATION.md}
+  docs/RELEASE_ACCEPTANCE.md:
+    status: current
+    owner: "#271"
+    sources: [docs/ROADMAP.md, docs/RUNBOOK.md, docs/PRODUCTION_CONFIGURATION.md]
+    canonical: docs/RELEASE_ACCEPTANCE.md
+    outcome: "Records candidate scope, owner decisions, same-revision evidence, exclusions, blockers, and release go/no-go without authorizing external operations."
   docs/QUICK_START.md: {<<: *historical, canonical: README.md}
   docs/RATE_LIMITING.md: {<<: *current, canonical: docs/RATE_LIMITING.md}
   docs/RBAC_AUDIT.md: {<<: *historical, canonical: docs/API_AUTHORIZATION.md}

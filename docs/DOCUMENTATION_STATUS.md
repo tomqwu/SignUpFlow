@@ -225,7 +225,8 @@ under `docs/screenshots/legacy/`, and README now shows both complete operating s
 The documentation-control package replaces the stale 176-manual/120-generated inventory with
 Git-derived counts. It recorded 188 manual records and 139 generated mobile documents at its
 reviewed source; issue #191's deterministic regeneration removes one obsolete generated model,
-leaving 188 manual records and 138 generated mobile documents on the current branch.
+leaving 188 manual records and 138 generated mobile documents after codegen. The
+current release-acceptance matrix increases the current manual inventory to 189.
 Every manual file has a current or historical disposition, canonical destination, owner, verified
 source set, and outcome. `make test-docs` checks current Markdown and HTML local paths and anchors;
 historical files carry an explicit file-level link exception, and generated documents remain under

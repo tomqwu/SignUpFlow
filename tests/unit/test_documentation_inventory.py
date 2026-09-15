@@ -16,7 +16,7 @@ def test_documentation_ledger_covers_every_tracked_markdown_file() -> None:
     result = validate_documentation(ROOT, LEDGER)
 
     assert result.errors == [], "\n".join(result.errors)
-    assert result.manual_count == 188
+    assert result.manual_count == 189
     assert result.generated_count == 138
 
 
