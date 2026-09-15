@@ -1,5 +1,6 @@
 """Middleware that attaches an X-Request-ID to every request and response."""
 
+import os
 import re
 import uuid
 from collections.abc import Awaitable, Callable
@@ -11,7 +12,9 @@ from starlette.responses import Response
 from api.utils.request_context import request_id_var
 
 REQUEST_ID_HEADER = "X-Request-ID"
+RELEASE_SHA_HEADER = "X-Release-SHA"
 SAFE_REQUEST_ID = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$")
+SAFE_RELEASE_SHA = re.compile(r"^[a-f0-9]{40}$")
 
 
 def _request_id(value: str | None) -> str:
@@ -19,6 +22,12 @@ def _request_id(value: str | None) -> str:
     if value and SAFE_REQUEST_ID.fullmatch(value):
         return value
     return str(uuid.uuid4())
+
+
+def _release_sha() -> str:
+    """Expose only the exact production revision shape or an explicit unknown value."""
+    value = os.getenv("RELEASE_SHA", "").strip()
+    return value if SAFE_RELEASE_SHA.fullmatch(value) else "unknown"
 
 
 class RequestIDMiddleware(BaseHTTPMiddleware):
@@ -35,4 +44,5 @@ class RequestIDMiddleware(BaseHTTPMiddleware):
         finally:
             request_id_var.reset(token)
         response.headers[REQUEST_ID_HEADER] = request_id
+        response.headers[RELEASE_SHA_HEADER] = _release_sha()
         return response

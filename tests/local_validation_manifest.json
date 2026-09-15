@@ -54,11 +54,19 @@
   "opt_in_tiers": [
     {
       "id": "performance",
-      "label": "Owned-target load tests",
+      "label": "Legacy owned-target performance assertions",
       "paths": ["tests/performance"],
       "command": ["make", "test-performance"],
       "default_status": "not_run",
-      "reason": "Requires an explicitly owned loopback test server and separate performance acceptance."
+      "reason": "Requires an explicitly owned loopback test server; fixed assertions are compatibility checks, not release-capacity evidence."
+    },
+    {
+      "id": "load",
+      "label": "Source-identified bounded load validation",
+      "paths": [],
+      "command": ["make", "test-load"],
+      "default_status": "not_run",
+      "reason": "Runs a bounded synthetic profile against an owned local source server; release-candidate targets and profiles require separate explicit authorization."
     },
     {
       "id": "postgresql",

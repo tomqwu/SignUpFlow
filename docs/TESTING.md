@@ -28,7 +28,8 @@ make test-redis         # Opt-in Redis quota, event-bus, and broker acceptance
 make test-artifact      # Opt-in production image and private-stack acceptance
 make test-security      # Opt-in exact-source/image scan and CycloneDX evidence
 make test-docs          # Tracked documentation dispositions and current local links
-make test-performance   # Opt-in, owned loopback target only
+make test-performance   # Legacy fixed assertions; explicit owned loopback target
+make test-load          # Bounded source-identified load profile on an owned local server
 make test-mobile        # Flutter unit/widget tests; requires Flutter SDK
 make test-mobile-generated # Generated Dart analysis (warnings visible) and tests
 make mobile-codegen-check # Deterministic Dart client drift check
@@ -78,11 +79,23 @@ analysis, `make test-mobile`, and the
 `make test-all` are the same supported complete Python entry point.
 
 The obsolete `tests/test_test_data_setup.py` file was retired because it imported the
-removed comprehensive suite and included assertions that could not fail. The maintained
+removed comprehensive suite and included assertions that could not fail. The legacy
 `tests/performance/test_load.py` suite is opt-in: set
 `SIGNUPFLOW_PERFORMANCE_BASE_URL` to the `/api/v1` URL of an explicitly owned loopback
 test server before running `make test-performance`. Missing, malformed, or non-loopback
-targets fail before the first HTTP request. PostgreSQL remains a separate isolated target.
+targets fail before the first HTTP request. Its fixed endpoint assertions are compatibility
+checks, not source-bound release-capacity evidence.
+
+`make test-load` is the supported bounded load runner. It requires a clean committed tree,
+starts and stops one owned loopback application, disables external providers, creates only
+fictional tenant data in an isolated SQLite database, verifies `X-Release-SHA`, and stores
+the profile hash, raw samples, thresholds, failures, and source identity under
+`test-artifacts/load-validation/`. The checked-in `local-smoke` profile is useful engineering
+evidence only. It cannot claim release-candidate status. Running against a supplied remote
+origin additionally requires an exact expected SHA, a `release_candidate` profile carrying
+the recorded owner-approval reference, and `--allow-authorized-remote`. Obtain explicit
+authorization for the target and workload before using that flag. PostgreSQL and immutable
+artifact capacity remain separate release scopes.
 
 `make test-artifact` requires a clean tracked Git revision and Docker. It builds a
 fresh SHA-labeled image from the lockfile and source, scans its runtime contents,
@@ -199,11 +212,12 @@ synthetic success statuses. The Pages workflow only publishes the static site;
 it is not a validation or merge gate.
 
 ```bash
-poetry run black --check api web tests scripts/run_local_validation.py scripts/validate_production_artifact.py scripts/run_security_validation.py
-poetry run ruff check api web tests scripts/run_local_validation.py scripts/validate_production_artifact.py scripts/run_security_validation.py
+poetry run black --check api web tests scripts/run_local_validation.py scripts/run_load_validation.py scripts/validate_production_artifact.py scripts/run_security_validation.py
+poetry run ruff check api web tests scripts/run_local_validation.py scripts/run_load_validation.py scripts/validate_production_artifact.py scripts/run_security_validation.py
 poetry run mypy --no-incremental api/utils api/core api/schemas
 poetry run mypy api
 make test-all
+make test-load
 make test-recovery
 make test-security
 ```
@@ -239,7 +253,8 @@ No hosted check, including a static check, is a merge prerequisite.
 1. Run `make test-all` on the final source; run `make test-postgres` for database or
    migration changes, `make test-redis` for rate-limit/event-bus/broker changes, `make test-artifact`
    and then `make test-security` for release-image changes,
-   `make test-recovery` for backup/restore changes, and `make mobile-codegen-check`
+   `make test-load` for load-runner changes, `make test-recovery` for backup/restore changes,
+   and `make mobile-codegen-check`
    plus the mobile checks above for mobile changes.
 2. Record the report path, commands, pass/skip/failure counts, date, and pushed head SHA in the PR.
    If tests ran immediately before committing, confirm the committed tree is identical.

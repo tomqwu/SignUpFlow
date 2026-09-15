@@ -244,7 +244,8 @@ make test-redis                      # Opt-in owned Redis shared-quota checks
 make test-artifact                   # Opt-in owned production image/private-stack checks
 make test-security                   # Opt-in committed-source/image scan and SBOM evidence
 make test-docs                       # Tracked documentation ledger and current local links
-make test-performance               # Opt-in; requires an owned loopback test server
+make test-performance               # Legacy assertions; requires an owned loopback server
+make test-load                      # Bounded source-identified local load validation
 make test-mobile                     # Flutter unit/widget tests
 make test-mobile-generated           # Generated Dart analysis and tests
 make mobile-codegen-check            # Deterministic generated Dart client drift check

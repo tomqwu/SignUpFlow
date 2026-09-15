@@ -1,0 +1,27 @@
+{
+  "name": "local-smoke",
+  "evidence_tier": "local_smoke",
+  "duration_seconds": 6,
+  "concurrency": 4,
+  "target_requests_per_second": 12,
+  "request_timeout_seconds": 5,
+  "dataset": {
+    "people": 20,
+    "events": 12
+  },
+  "operations": {
+    "health": 1,
+    "ready": 1,
+    "login": 1,
+    "people": 3,
+    "events": 3,
+    "solutions": 2,
+    "solve": 1
+  },
+  "thresholds": {
+    "minimum_requests": 40,
+    "maximum_error_rate": 0,
+    "maximum_p95_ms": 1500,
+    "minimum_throughput_rps": 5
+  }
+}

@@ -38,6 +38,7 @@ make test                 # Backend comprehensive tests
 make test-all             # All Python tiers, including web + contract + Playwright
 make test-postgres        # Owned PostgreSQL migration/business/race acceptance
 make test-redis           # Owned Redis quota, event-bus, and broker acceptance
+make test-load            # Bounded source-identified local load validation
 make test-docs            # Documentation ledger plus current local paths and anchors
 make test-mobile          # Flutter tests (requires Flutter SDK)
 make test-mobile-generated # Generated Dart analysis and tests

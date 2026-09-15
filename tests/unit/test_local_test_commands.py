@@ -111,3 +111,14 @@ def test_local_artifact_target_runs_the_owned_validator():
 
     assert "scripts/validate_production_artifact.py" in result.stdout
     assert "make test-artifact" in (ROOT / "docs/TESTING.md").read_text()
+
+
+def test_local_load_target_runs_the_owned_source_validator():
+    result = subprocess.run(
+        ["make", "-n", "test-load"], cwd=ROOT, text=True, capture_output=True, check=True
+    )
+
+    assert "scripts/run_load_validation.py" in result.stdout
+    assert "--start-local" in result.stdout
+    assert "tests/performance/profiles/local-smoke.json" in result.stdout
+    assert "SIGNUPFLOW_PERFORMANCE_BASE_URL" not in result.stdout

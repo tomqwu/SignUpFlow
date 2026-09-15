@@ -28,6 +28,25 @@ class TestRequestID:
         assert "X-Request-ID" in response.headers
         assert UUID_RE.match(response.headers["X-Request-ID"])
 
+
+class TestReleaseIdentity:
+    """Every response names the safe runtime revision used by release tools."""
+
+    def test_exact_release_sha_is_exposed(self, client, monkeypatch):
+        release_sha = "a" * 40
+        monkeypatch.setenv("RELEASE_SHA", release_sha)
+
+        response = client.get("/health")
+
+        assert response.headers["X-Release-SHA"] == release_sha
+
+    def test_missing_or_malformed_release_sha_is_unknown(self, client, monkeypatch):
+        monkeypatch.setenv("RELEASE_SHA", "not-a-sha\r\nunsafe")
+
+        response = client.get("/health")
+
+        assert response.headers["X-Release-SHA"] == "unknown"
+
     def test_request_id_preserved_when_supplied(self, client):
         custom_id = "client-supplied-12345"
         response = client.get("/health", headers={"X-Request-ID": custom_id})
