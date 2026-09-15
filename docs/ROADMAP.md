@@ -9,8 +9,10 @@ comments. Ollama is not a code-review provider.
 
 Track scope and progress in [roadmap issue #252](https://github.com/tomqwu/SignUpFlow/issues/252).
 Use [TESTING.md](TESTING.md) for local commands and [local review](ai-pr-review.md)
-for review evidence. Old specifications describe proposals, not automatically
-authorized work. Check current code and issue status before implementation.
+for review evidence. Use the [release acceptance matrix](RELEASE_ACCEPTANCE.md)
+for candidate identity, owner decisions, exclusions, and go/no-go evidence. Old
+specifications describe proposals, not automatically authorized work. Check current
+code and issue status before implementation.
 
 ## Delivery Order
 
