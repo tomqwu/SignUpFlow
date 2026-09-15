@@ -115,12 +115,21 @@ def run_workflow(client: Any, *, suffix: str | None = None) -> dict[str, Any]:
         client.post(f"/api/v1/solutions/{solution['solution_id']}/publish", headers=headers),
         200,
     )
+    exported = _expect(
+        client.post(
+            f"/api/v1/solutions/{solution['solution_id']}/export",
+            headers=headers,
+            json={"format": "json", "scope": "org"},
+        ),
+        200,
+    )
 
     return {
         "org_id": org_id,
         "solution_id": solution["solution_id"],
         "assignment_count": solution["assignment_count"],
         "published": published["is_published"],
+        "export_assignment_count": len(exported["assignments"]),
     }
 
 
@@ -152,6 +161,7 @@ def main() -> None:
     print(f"Organization: {result['org_id']}")
     print(f"Solution: {result['solution_id']}")
     print(f"Event assignments: {result['assignment_count']}")
+    print(f"Exported assignments: {result['export_assignment_count']}")
 
 
 if __name__ == "__main__":

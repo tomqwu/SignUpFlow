@@ -230,6 +230,7 @@ def test_production_compose_passes_canonical_fail_closed_settings():
     compose = yaml.safe_load((REPO_ROOT / "docker-compose.yml").read_text())
     environment = compose["services"]["api"]["environment"]
     database = compose["services"]["db"]
+    migration = compose["services"]["migrate"]
     redis = compose["services"]["redis"]
 
     assert environment["ENVIRONMENT"] == "production"
@@ -243,8 +244,13 @@ def test_production_compose_passes_canonical_fail_closed_settings():
     assert "changeme_in_production" not in (REPO_ROOT / "docker-compose.yml").read_text()
     assert environment["EMAIL_FROM"] == "${EMAIL_FROM:-noreply@signupflow.io}"
     assert "FROM_EMAIL" not in environment
-    assert database["ports"] == ["${POSTGRES_BIND_ADDRESS:-127.0.0.1}:${POSTGRES_PORT:-5432}:5432"]
-    assert redis["ports"] == ["${REDIS_BIND_ADDRESS:-127.0.0.1}:${REDIS_PORT:-6379}:6379"]
+    assert "ports" not in database
+    assert "ports" not in redis
+    assert migration["command"] == ["python", "-m", "alembic", "upgrade", "head"]
+    assert migration["environment"]["DATABASE_URL"] == environment["DATABASE_URL"]
+    assert compose["services"]["api"]["depends_on"]["migrate"]["condition"] == (
+        "service_completed_successfully"
+    )
     assert redis["environment"]["REDIS_PASSWORD"] == "${REDIS_PASSWORD:?Set REDIS_PASSWORD}"
     assert "$${REDIS_PASSWORD}" in " ".join(redis["healthcheck"]["test"])
 

@@ -24,6 +24,7 @@ make test-unit          # Complete Python unit tier
 make test               # Alias for the complete seven-tier local suite
 make test-all           # All seven Python tiers below, in separate processes
 make test-postgres      # Opt-in PostgreSQL migration/business/race acceptance
+make test-artifact      # Opt-in production image and private-stack acceptance
 make test-performance   # Opt-in, owned loopback target only
 make test-mobile        # Flutter unit/widget tests; requires Flutter SDK
 ```
@@ -70,6 +71,20 @@ removed comprehensive suite and included assertions that could not fail. The mai
 `SIGNUPFLOW_PERFORMANCE_BASE_URL` to the `/api/v1` URL of an explicitly owned loopback
 test server before running `make test-performance`. Missing, malformed, or non-loopback
 targets fail before the first HTTP request. PostgreSQL remains a separate isolated target.
+
+`make test-artifact` requires a clean tracked Git revision and Docker. It builds a
+fresh SHA-labeled image from the lockfile and source, scans its runtime contents,
+and retains that image as the local artifact. The runner creates one labeled private
+Docker network with disposable PostgreSQL and authenticated Redis containers. It runs
+Alembic once as a separate job, proves an API replica cannot start or mutate an
+unmigrated database, starts two non-root read-only API replicas without bind mounts,
+and drives health, login/static, Basketball schedule/publish/export, and SIGTERM checks.
+Only the application ports are published, on random loopback ports. The runner removes
+only containers and the network carrying its exact ownership label and writes build,
+migration, failure, shutdown, image identity, and result evidence under
+`test-artifacts/artifact-validation/`. It disables external providers. A pass is local
+artifact evidence, not staging, TLS/proxy, managed-service, backup/restore, or release
+authorization.
 
 `make test-postgres` creates one uniquely named PostgreSQL 16 Docker container with
 loopback-only networking, an ownership label, ephemeral tmpfs storage, and no host
@@ -126,8 +141,8 @@ synthetic success statuses. The Pages workflow only publishes the static site;
 it is not a validation or merge gate.
 
 ```bash
-poetry run black --check api web tests scripts/run_local_validation.py
-poetry run ruff check api web tests scripts/run_local_validation.py
+poetry run black --check api web tests scripts/run_local_validation.py scripts/validate_production_artifact.py
+poetry run ruff check api web tests scripts/run_local_validation.py scripts/validate_production_artifact.py
 poetry run mypy --no-incremental api/utils api/core api/schemas
 poetry run mypy api
 make test-all
@@ -152,7 +167,8 @@ No hosted check, including a static check, is a merge prerequisite.
 ## Before Merge
 
 1. Run `make test-all` on the final source; run `make test-postgres` for database or
-   migration changes and `make test-mobile` for mobile changes.
+   migration changes, `make test-artifact` for release-image changes, and
+   `make test-mobile` for mobile changes.
 2. Record the report path, commands, pass/skip/failure counts, date, and pushed head SHA in the PR.
    If tests ran immediately before committing, confirm the committed tree is identical.
 3. Record initial failures and reruns. Do not hide flakes or treat skipped tests as passed.

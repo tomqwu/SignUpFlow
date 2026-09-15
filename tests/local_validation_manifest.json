@@ -89,9 +89,9 @@
       "id": "artifact",
       "label": "Release artifact acceptance",
       "paths": [],
-      "command": [],
+      "command": ["make", "test-artifact"],
       "default_status": "not_run",
-      "reason": "Runs only in an explicitly authorized release package with artifact and operator evidence."
+      "reason": "Opt-in owned local Docker build and runtime exercise; staging remains separately authorized."
     }
   ],
   "support_files": ["tests/test_environment.py"]

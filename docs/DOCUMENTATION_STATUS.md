@@ -116,6 +116,13 @@ profiles no longer default paid providers or unsupported multiworker behavior on
 operations runbook now labels backup, restore, rollback, TLS/proxy, and deployment work
 as unresolved instead of presenting untested commands as accepted. Clean subprocess
 tests use only synthetic values and do not activate a provider or deployment.
+The release-artifact package separates Alembic from application startup, keeps
+PostgreSQL and Redis private, and removes source bind mounts and builder executables
+from the non-root read-only runtime. `make test-artifact` is the maintained opt-in local
+proof for image contents, immutable revision identity, one-shot migration failure,
+two replicas, provider-free Basketball publication/export, and graceful shutdown.
+Its report explicitly records that staging, managed services, TLS/proxy, providers,
+backup/restore, and operator release approval were not exercised.
 The maintained [scheduling constraint contract](SCHEDULING_CONSTRAINTS.md) now
 lists the three executable REST rule mappings, their CLI equivalents, validation
 failures, built-in invariants, and unsupported policy. The constraints editor now

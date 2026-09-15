@@ -42,14 +42,16 @@ COPY docker-entrypoint.sh ./
 # ============================================================================
 FROM python:3.11-slim
 
+ARG VCS_REF=unknown
+ARG BUILD_DATE=unknown
+
 ENV PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
     PORT=8000 \
     HOST=0.0.0.0
 
-RUN apt-get update && apt-get install -y \
+RUN apt-get update && apt-get install -y --no-install-recommends \
     libpq5 \
-    curl \
     && rm -rf /var/lib/apt/lists/*
 
 RUN groupadd -r signupflow && useradd -r -g signupflow signupflow
@@ -57,24 +59,26 @@ RUN groupadd -r signupflow && useradd -r -g signupflow signupflow
 WORKDIR /app
 
 COPY --from=builder /usr/local/lib/python3.11/site-packages /usr/local/lib/python3.11/site-packages
-COPY --from=builder /usr/local/bin /usr/local/bin
 
-COPY --from=builder --chown=signupflow:signupflow /app ./
+COPY --from=builder /app ./
 
-RUN mkdir -p /app/data /app/logs && \
-    chmod +x /app/docker-entrypoint.sh && \
-    chown -R signupflow:signupflow /app
+RUN find /app -type d -exec chmod 0555 {} + && \
+    find /app -type f -exec chmod 0444 {} + && \
+    chmod 0555 /app/docker-entrypoint.sh
 
 USER signupflow
+
+LABEL org.opencontainers.image.title="SignUpFlow" \
+    org.opencontainers.image.version="1.0.0" \
+    org.opencontainers.image.revision="${VCS_REF}" \
+    org.opencontainers.image.created="${BUILD_DATE}"
 
 EXPOSE 8000
 
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
-    CMD curl -f http://localhost:8000/health || exit 1
+    CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:8000/health', timeout=5)" || exit 1
 
-# Entrypoint runs `alembic upgrade head` before exec'ing the CMD, so a
-# fresh Postgres is migrated on first boot.
 ENTRYPOINT ["/app/docker-entrypoint.sh"]
 # Process-local rate limits and SSE require one worker until #261/#266 add
 # shared state and cross-worker acceptance.
-CMD ["uvicorn", "api.main:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "1"]
+CMD ["python", "-m", "uvicorn", "api.main:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "1"]

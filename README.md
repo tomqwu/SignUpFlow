@@ -228,6 +228,7 @@ manual release checks.
 ```bash
 make test-all                        # All seven Python tiers, including Playwright
 make test-postgres                   # Opt-in owned PostgreSQL migration/business/race checks
+make test-artifact                   # Opt-in owned production image/private-stack checks
 make test-performance               # Opt-in; requires an owned loopback test server
 make test-mobile                     # Flutter unit/widget tests
 make capture-screenshots             # Regenerate asserted Church/Basketball UI evidence
@@ -384,6 +385,7 @@ make test-unit            # Python unit tests only
 make test-unit-fast       # Skip slow bcrypt tests (~7s)
 make test-all             # All Python tiers, including web + contract + Playwright
 make test-postgres        # Owned ephemeral PostgreSQL acceptance (requires Docker)
+make test-artifact        # Build and exercise the committed production image locally
 make test-mobile          # Flutter tests (requires Flutter SDK)
 make capture-screenshots  # Recreate public Church/Basketball screenshots locally
 make validate-screenshots # Verify image, fixture, UI-source, and caption metadata
@@ -404,6 +406,10 @@ both church and basketball playbooks.
 Run `make test-postgres` for database or migration changes. It creates and removes its
 own loopback-only PostgreSQL 16 container and writes versioned JUnit/report evidence;
 never substitute a shared or customer database.
+Run `make test-artifact` for production-image changes after committing the tracked tree.
+It retains the SHA-labeled image and report, uses private disposable PostgreSQL/Redis,
+runs one migration job before two read-only replicas, and contacts no external provider.
+It is not staging or release approval.
 Run `make test-mobile` for mobile changes;
 set `FLUTTER=/path/to/flutter` if the SDK is not on your PATH.
 
