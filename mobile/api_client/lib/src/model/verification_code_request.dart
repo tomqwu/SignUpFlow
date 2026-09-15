@@ -14,9 +14,10 @@ part 'verification_code_request.g.dart';
 /// * [personId]
 /// * [phoneNumber] - Phone number in E.164 format
 @BuiltValue()
-abstract class VerificationCodeRequest implements Built<VerificationCodeRequest, VerificationCodeRequestBuilder> {
+abstract class VerificationCodeRequest
+    implements Built<VerificationCodeRequest, VerificationCodeRequestBuilder> {
   @BuiltValueField(wireName: r'person_id')
-  int get personId;
+  String get personId;
 
   /// Phone number in E.164 format
   @BuiltValueField(wireName: r'phone_number')
@@ -24,18 +25,25 @@ abstract class VerificationCodeRequest implements Built<VerificationCodeRequest,
 
   VerificationCodeRequest._();
 
-  factory VerificationCodeRequest([void updates(VerificationCodeRequestBuilder b)]) = _$VerificationCodeRequest;
+  factory VerificationCodeRequest(
+          [void updates(VerificationCodeRequestBuilder b)]) =
+      _$VerificationCodeRequest;
 
   @BuiltValueHook(initializeBuilder: true)
   static void _defaults(VerificationCodeRequestBuilder b) => b;
 
   @BuiltValueSerializer(custom: true)
-  static Serializer<VerificationCodeRequest> get serializer => _$VerificationCodeRequestSerializer();
+  static Serializer<VerificationCodeRequest> get serializer =>
+      _$VerificationCodeRequestSerializer();
 }
 
-class _$VerificationCodeRequestSerializer implements PrimitiveSerializer<VerificationCodeRequest> {
+class _$VerificationCodeRequestSerializer
+    implements PrimitiveSerializer<VerificationCodeRequest> {
   @override
-  final Iterable<Type> types = const [VerificationCodeRequest, _$VerificationCodeRequest];
+  final Iterable<Type> types = const [
+    VerificationCodeRequest,
+    _$VerificationCodeRequest
+  ];
 
   @override
   final String wireName = r'VerificationCodeRequest';
@@ -48,7 +56,7 @@ class _$VerificationCodeRequestSerializer implements PrimitiveSerializer<Verific
     yield r'person_id';
     yield serializers.serialize(
       object.personId,
-      specifiedType: const FullType(int),
+      specifiedType: const FullType(String),
     );
     yield r'phone_number';
     yield serializers.serialize(
@@ -63,7 +71,9 @@ class _$VerificationCodeRequestSerializer implements PrimitiveSerializer<Verific
     VerificationCodeRequest object, {
     FullType specifiedType = FullType.unspecified,
   }) {
-    return _serializeProperties(serializers, object, specifiedType: specifiedType).toList();
+    return _serializeProperties(serializers, object,
+            specifiedType: specifiedType)
+        .toList();
   }
 
   void _deserializeProperties(
@@ -81,8 +91,8 @@ class _$VerificationCodeRequestSerializer implements PrimitiveSerializer<Verific
         case r'person_id':
           final valueDes = serializers.deserialize(
             value,
-            specifiedType: const FullType(int),
-          ) as int;
+            specifiedType: const FullType(String),
+          ) as String;
           result.personId = valueDes;
           break;
         case r'phone_number':

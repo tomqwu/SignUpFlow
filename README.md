@@ -206,6 +206,10 @@ default behind `BILLING_ENABLED=false` and `SMS_ENABLED=false`. Paid billing and
 SMS are deferred; the complete scheduling workflow does not require them. Stripe
 and SendGrid webhook handlers exist in `api/routers/webhooks.py` but are intentionally
 not mounted. The SMS webhook paths share the disabled `/api/sms` router.
+If SMS is separately authorized and enabled, Twilio callbacks fail closed unless
+their signatures match the exact configured external callback URLs. String person
+IDs, same-tenant recipients, and assignment/event/person relationships are checked
+before provider or queue work.
 
 ---
 

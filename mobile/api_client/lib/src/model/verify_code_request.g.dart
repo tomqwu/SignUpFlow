@@ -10,7 +10,7 @@ class _$VerifyCodeRequest extends VerifyCodeRequest {
   @override
   final int code;
   @override
-  final int personId;
+  final String personId;
 
   factory _$VerifyCodeRequest(
           [void Function(VerifyCodeRequestBuilder)? updates]) =>
@@ -60,9 +60,9 @@ class VerifyCodeRequestBuilder
   int? get code => _$this._code;
   set code(int? code) => _$this._code = code;
 
-  int? _personId;
-  int? get personId => _$this._personId;
-  set personId(int? personId) => _$this._personId = personId;
+  String? _personId;
+  String? get personId => _$this._personId;
+  set personId(String? personId) => _$this._personId = personId;
 
   VerifyCodeRequestBuilder() {
     VerifyCodeRequest._defaults(this);

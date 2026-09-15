@@ -3941,7 +3941,7 @@
           "recipient_ids": {
             "description": "List of person IDs (max 200)",
             "items": {
-              "type": "integer"
+              "type": "string"
             },
             "title": "Recipient Ids",
             "type": "array"
@@ -4994,7 +4994,7 @@
         "properties": {
           "person_id": {
             "title": "Person Id",
-            "type": "integer"
+            "type": "string"
           },
           "phone_number": {
             "description": "Phone number in E.164 format",
@@ -5045,7 +5045,7 @@
           },
           "person_id": {
             "title": "Person Id",
-            "type": "integer"
+            "type": "string"
           }
         },
         "required": [
@@ -5171,7 +5171,7 @@
             "required": true,
             "schema": {
               "title": "Org Id",
-              "type": "integer"
+              "type": "string"
             }
           }
         ],

@@ -28,6 +28,14 @@ requires authenticated tenant administrators; checkout return verifies provider 
 and organization ownership without changing entitlement, and payment-method attachment
 checks ownership before provider mutation. Sandbox callbacks, pricing, and enablement
 remain unverified work under #270.
+The mounted, default-off SMS surface now uses canonical string identifiers and checks
+tenant ownership plus assignment/event/person consistency before queue or provider work.
+Twilio callbacks require signatures over the configured external URLs, process incoming
+message IDs once, and reject delivery-state regressions. OpenAPI and the generated Dart
+request models carry the corrected string-ID contract. Provider delivery remains deferred
+to #270. This package changes disabled integration behavior and generated contracts, not
+the Church or Basketball browser layout, so the committed walkthrough screenshots remain
+current.
 The maintained playbook guides now link a validated machine-readable coverage
 manifest; its partial and blocked rows prevent baseline tests from being described
 as complete role-by-role business acceptance.

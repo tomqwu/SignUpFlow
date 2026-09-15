@@ -8,7 +8,7 @@ part of 'verification_code_request.dart';
 
 class _$VerificationCodeRequest extends VerificationCodeRequest {
   @override
-  final int personId;
+  final String personId;
   @override
   final String phoneNumber;
 
@@ -59,9 +59,9 @@ class VerificationCodeRequestBuilder
         Builder<VerificationCodeRequest, VerificationCodeRequestBuilder> {
   _$VerificationCodeRequest? _$v;
 
-  int? _personId;
-  int? get personId => _$this._personId;
-  set personId(int? personId) => _$this._personId = personId;
+  String? _personId;
+  String? get personId => _$this._personId;
+  set personId(String? personId) => _$this._personId = personId;
 
   String? _phoneNumber;
   String? get phoneNumber => _$this._phoneNumber;

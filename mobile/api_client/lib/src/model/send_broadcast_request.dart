@@ -16,7 +16,8 @@ part 'send_broadcast_request.g.dart';
 /// * [messageText] - Message content (max 1600 chars)
 /// * [recipientIds] - List of person IDs (max 200)
 @BuiltValue()
-abstract class SendBroadcastRequest implements Built<SendBroadcastRequest, SendBroadcastRequestBuilder> {
+abstract class SendBroadcastRequest
+    implements Built<SendBroadcastRequest, SendBroadcastRequestBuilder> {
   /// Bypass rate limits if urgent
   @BuiltValueField(wireName: r'is_urgent')
   bool? get isUrgent;
@@ -27,23 +28,28 @@ abstract class SendBroadcastRequest implements Built<SendBroadcastRequest, SendB
 
   /// List of person IDs (max 200)
   @BuiltValueField(wireName: r'recipient_ids')
-  BuiltList<int> get recipientIds;
+  BuiltList<String> get recipientIds;
 
   SendBroadcastRequest._();
 
-  factory SendBroadcastRequest([void updates(SendBroadcastRequestBuilder b)]) = _$SendBroadcastRequest;
+  factory SendBroadcastRequest([void updates(SendBroadcastRequestBuilder b)]) =
+      _$SendBroadcastRequest;
 
   @BuiltValueHook(initializeBuilder: true)
-  static void _defaults(SendBroadcastRequestBuilder b) => b
-      ..isUrgent = false;
+  static void _defaults(SendBroadcastRequestBuilder b) => b..isUrgent = false;
 
   @BuiltValueSerializer(custom: true)
-  static Serializer<SendBroadcastRequest> get serializer => _$SendBroadcastRequestSerializer();
+  static Serializer<SendBroadcastRequest> get serializer =>
+      _$SendBroadcastRequestSerializer();
 }
 
-class _$SendBroadcastRequestSerializer implements PrimitiveSerializer<SendBroadcastRequest> {
+class _$SendBroadcastRequestSerializer
+    implements PrimitiveSerializer<SendBroadcastRequest> {
   @override
-  final Iterable<Type> types = const [SendBroadcastRequest, _$SendBroadcastRequest];
+  final Iterable<Type> types = const [
+    SendBroadcastRequest,
+    _$SendBroadcastRequest
+  ];
 
   @override
   final String wireName = r'SendBroadcastRequest';
@@ -68,7 +74,7 @@ class _$SendBroadcastRequestSerializer implements PrimitiveSerializer<SendBroadc
     yield r'recipient_ids';
     yield serializers.serialize(
       object.recipientIds,
-      specifiedType: const FullType(BuiltList, [FullType(int)]),
+      specifiedType: const FullType(BuiltList, [FullType(String)]),
     );
   }
 
@@ -78,7 +84,9 @@ class _$SendBroadcastRequestSerializer implements PrimitiveSerializer<SendBroadc
     SendBroadcastRequest object, {
     FullType specifiedType = FullType.unspecified,
   }) {
-    return _serializeProperties(serializers, object, specifiedType: specifiedType).toList();
+    return _serializeProperties(serializers, object,
+            specifiedType: specifiedType)
+        .toList();
   }
 
   void _deserializeProperties(
@@ -110,8 +118,8 @@ class _$SendBroadcastRequestSerializer implements PrimitiveSerializer<SendBroadc
         case r'recipient_ids':
           final valueDes = serializers.deserialize(
             value,
-            specifiedType: const FullType(BuiltList, [FullType(int)]),
-          ) as BuiltList<int>;
+            specifiedType: const FullType(BuiltList, [FullType(String)]),
+          ) as BuiltList<String>;
           result.recipientIds.replace(valueDes);
           break;
         default:

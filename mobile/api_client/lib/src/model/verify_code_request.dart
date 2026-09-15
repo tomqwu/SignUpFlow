@@ -14,26 +14,30 @@ part 'verify_code_request.g.dart';
 /// * [code] - 6-digit verification code
 /// * [personId]
 @BuiltValue()
-abstract class VerifyCodeRequest implements Built<VerifyCodeRequest, VerifyCodeRequestBuilder> {
+abstract class VerifyCodeRequest
+    implements Built<VerifyCodeRequest, VerifyCodeRequestBuilder> {
   /// 6-digit verification code
   @BuiltValueField(wireName: r'code')
   int get code;
 
   @BuiltValueField(wireName: r'person_id')
-  int get personId;
+  String get personId;
 
   VerifyCodeRequest._();
 
-  factory VerifyCodeRequest([void updates(VerifyCodeRequestBuilder b)]) = _$VerifyCodeRequest;
+  factory VerifyCodeRequest([void updates(VerifyCodeRequestBuilder b)]) =
+      _$VerifyCodeRequest;
 
   @BuiltValueHook(initializeBuilder: true)
   static void _defaults(VerifyCodeRequestBuilder b) => b;
 
   @BuiltValueSerializer(custom: true)
-  static Serializer<VerifyCodeRequest> get serializer => _$VerifyCodeRequestSerializer();
+  static Serializer<VerifyCodeRequest> get serializer =>
+      _$VerifyCodeRequestSerializer();
 }
 
-class _$VerifyCodeRequestSerializer implements PrimitiveSerializer<VerifyCodeRequest> {
+class _$VerifyCodeRequestSerializer
+    implements PrimitiveSerializer<VerifyCodeRequest> {
   @override
   final Iterable<Type> types = const [VerifyCodeRequest, _$VerifyCodeRequest];
 
@@ -53,7 +57,7 @@ class _$VerifyCodeRequestSerializer implements PrimitiveSerializer<VerifyCodeReq
     yield r'person_id';
     yield serializers.serialize(
       object.personId,
-      specifiedType: const FullType(int),
+      specifiedType: const FullType(String),
     );
   }
 
@@ -63,7 +67,9 @@ class _$VerifyCodeRequestSerializer implements PrimitiveSerializer<VerifyCodeReq
     VerifyCodeRequest object, {
     FullType specifiedType = FullType.unspecified,
   }) {
-    return _serializeProperties(serializers, object, specifiedType: specifiedType).toList();
+    return _serializeProperties(serializers, object,
+            specifiedType: specifiedType)
+        .toList();
   }
 
   void _deserializeProperties(
@@ -88,8 +94,8 @@ class _$VerifyCodeRequestSerializer implements PrimitiveSerializer<VerifyCodeReq
         case r'person_id':
           final valueDes = serializers.deserialize(
             value,
-            specifiedType: const FullType(int),
-          ) as int;
+            specifiedType: const FullType(String),
+          ) as String;
           result.personId = valueDes;
           break;
         default:

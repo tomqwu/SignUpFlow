@@ -67,7 +67,7 @@ notified.
 | `CORS_ALLOWED_ORIGINS` | API browser origins | Must explicitly include `FRONTEND_URL`; wildcard fails. |
 | `ACCESS_TOKEN_EXPIRE_HOURS` | JWT and browser-session lifetime | One canonical positive value; default 24. |
 | `EMAIL_ENABLED` + `SENDGRID_API_KEY` | Transactional email | default `false`; provider acceptance is not complete |
-| `SMS_ENABLED` + `TWILIO_ACCOUNT_SID`/`_AUTH_TOKEN`/`_PHONE_NUMBER` | Deferred paid SMS | default `false`; enable only for an authorized sandbox validation |
+| `SMS_ENABLED` + `TWILIO_ACCOUNT_SID`/`_AUTH_TOKEN`/`_PHONE_NUMBER` + callback URLs | Deferred paid SMS | default `false`; production callback URLs must be exact external HTTPS URLs; enable only for an authorized sandbox validation |
 | `BILLING_ENABLED` + `STRIPE_SECRET_KEY` | Deferred billing | default `false`; enable only for an authorized Stripe sandbox validation |
 | `READINESS_FAILURE_ALERT_THRESHOLD` | Consecutive DB readiness failures before a local trigger | default `3`; must be a positive integer |
 | `SENTRY_DSN` | Optional Sentry error reporting | absent means explicitly disabled; a configured sink initializes with PII and tracing off; invalid initialization stops startup |
@@ -75,6 +75,12 @@ notified.
 Email, billing, and SMS are feature-gated off by default. Credentials alone do
 not enable them. Their direct routes return 404 and their navigation is hidden.
 Do not enable a provider without its separate authorized acceptance.
+
+When an authorized SMS sandbox is used, configure Twilio's incoming-message URL
+as `TWILIO_INCOMING_SMS_URL` and delivery callback as
+`TWILIO_STATUS_CALLBACK_URL`. The application validates signatures against
+those configured URLs instead of trusting request or forwarded-host headers.
+Missing or invalid signatures return 403 before callback state changes.
 
 ## Backups
 

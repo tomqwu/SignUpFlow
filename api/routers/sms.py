@@ -9,15 +9,23 @@ Provides endpoints for:
 - Incoming webhook handling
 """
 
+import os
+from urllib.parse import urlsplit
 
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Request
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
+from twilio.request_validator import RequestValidator
 
 from api.core.features import require_sms_enabled
 from api.database import get_db
-from api.dependencies import get_current_admin_user, get_current_user
-from api.models import Assignment, Event, Person, SmsPreference
+from api.dependencies import (
+    get_current_admin_user,
+    get_current_user,
+    get_person_in_actor_org,
+    verify_self_or_admin,
+)
+from api.models import Assignment, Event, Person, SmsMessage, SmsPreference
 from api.services.sms_service import SMSService
 from api.tasks.sms_tasks import (
     send_assignment_notification,
@@ -31,6 +39,17 @@ router = APIRouter(
     tags=["sms"],
     dependencies=[Depends(require_sms_enabled)],
 )
+
+_DELIVERY_PROGRESS = {
+    "accepted": 0,
+    "scheduled": 0,
+    "queued": 1,
+    "sending": 2,
+    "sent": 3,
+    "delivered": 4,
+    "read": 5,
+}
+_DELIVERY_FAILURES = {"failed", "undelivered", "canceled"}
 
 
 # ============================================================================
@@ -58,7 +77,7 @@ class PhoneVerificationResponse(BaseModel):
 class VerificationCodeRequest(BaseModel):
     """Request to generate and send verification code."""
 
-    person_id: int
+    person_id: str
     phone_number: str = Field(..., description="Phone number in E.164 format")
 
 
@@ -73,7 +92,7 @@ class VerificationCodeResponse(BaseModel):
 class VerifyCodeRequest(BaseModel):
     """Request to verify SMS code."""
 
-    person_id: int
+    person_id: str
     code: int = Field(..., description="6-digit verification code", ge=100000, le=999999)
 
 
@@ -105,7 +124,7 @@ class SendEventReminderRequest(BaseModel):
 class SendBroadcastRequest(BaseModel):
     """Request to send broadcast message."""
 
-    recipient_ids: list[int] = Field(..., description="List of person IDs (max 200)")
+    recipient_ids: list[str] = Field(..., description="List of person IDs (max 200)")
     message_text: str = Field(..., description="Message content (max 1600 chars)", max_length=1600)
     is_urgent: bool = Field(default=False, description="Bypass rate limits if urgent")
 
@@ -161,9 +180,7 @@ def send_verification_code(
 
     Code expires in 10 minutes, max 3 verification attempts.
     """
-    # Verify user can only request code for themselves (unless admin)
-    if current_user.id != str(request.person_id) and "admin" not in current_user.roles:
-        raise HTTPException(status_code=403, detail="Can only verify your own phone")
+    _authorize_sms_target(request.person_id, current_user, db)
 
     sms_service = SMSService()
 
@@ -196,9 +213,7 @@ def verify_code(
 
     Marks phone as verified and enables SMS notifications.
     """
-    # Verify user can only verify their own code (unless admin)
-    if current_user.id != str(request.person_id) and "admin" not in current_user.roles:
-        raise HTTPException(status_code=403, detail="Can only verify your own phone")
+    _authorize_sms_target(request.person_id, current_user, db)
 
     sms_service = SMSService()
 
@@ -240,6 +255,37 @@ class SmsUsageStatsResponse(BaseModel):
     messages_remaining: int | None = None
 
 
+def _authorize_sms_target(person_id: str, actor: Person, db: Session) -> Person:
+    """Resolve a target through the actor's tenant before provider or queue work."""
+    target = get_person_in_actor_org(person_id, actor, db)
+    verify_self_or_admin(actor, target)
+    return target
+
+
+async def _validated_twilio_form(request: Request, callback_url_env: str) -> dict[str, str]:
+    """Validate Twilio's signature against the configured external callback URL."""
+    signature = request.headers.get("X-Twilio-Signature")
+    if not signature:
+        raise HTTPException(status_code=403, detail="Invalid Twilio signature")
+
+    auth_token = os.getenv("TWILIO_AUTH_TOKEN", "").strip()
+    callback_url = os.getenv(callback_url_env, "").strip()
+    parsed_url = urlsplit(callback_url)
+    if not auth_token or parsed_url.scheme not in {"http", "https"} or not parsed_url.netloc:
+        raise HTTPException(status_code=503, detail="Twilio callback verification unavailable")
+    if (
+        os.getenv("ENVIRONMENT", "development").lower() == "production"
+        and parsed_url.scheme != "https"
+    ):
+        raise HTTPException(status_code=503, detail="Twilio callback verification unavailable")
+
+    form_data = await request.form()
+    params = {str(key): str(value) for key, value in form_data.multi_items()}
+    if not RequestValidator(auth_token).validate(callback_url, params, signature):
+        raise HTTPException(status_code=403, detail="Invalid Twilio signature")
+    return params
+
+
 @router.put("/people/{person_id}/sms-preferences")
 def update_sms_preferences(
     person_id: str,
@@ -252,17 +298,10 @@ def update_sms_preferences(
 
     Users can update their own preferences, admins can update any user.
     """
-    # Authorization: user can update own preferences OR admin can update any
-    person_id_int = int(person_id.split("_")[-1])
-    current_user_id_int = int(current_user.id.split("_")[-1])
-
-    is_admin = "admin" in (current_user.roles if isinstance(current_user.roles, list) else [])
-
-    if person_id_int != current_user_id_int and not is_admin:
-        raise HTTPException(status_code=403, detail="Can only update your own preferences")
+    _authorize_sms_target(person_id, current_user, db)
 
     # Get SMS preferences
-    sms_pref = db.query(SmsPreference).filter(SmsPreference.person_id == person_id_int).first()
+    sms_pref = db.query(SmsPreference).filter(SmsPreference.person_id == person_id).first()
 
     if not sms_pref:
         raise HTTPException(
@@ -305,7 +344,7 @@ def update_sms_preferences(
 
 @router.get("/organizations/{org_id}/sms-usage", response_model=SmsUsageStatsResponse)
 def get_sms_usage_stats(
-    org_id: int,
+    org_id: str,
     current_admin: Person = Depends(get_current_admin_user),
     db: Session = Depends(get_db),
 ):
@@ -317,9 +356,7 @@ def get_sms_usage_stats(
 
     from api.models import SmsUsage
 
-    # Verify admin belongs to organization
-    admin_org_id = int(current_admin.org_id.split("_")[-1])
-    if admin_org_id != org_id:
+    if current_admin.org_id != org_id:
         raise HTTPException(status_code=403, detail="Access denied: wrong organization")
 
     # Get current month usage
@@ -339,7 +376,7 @@ def get_sms_usage_stats(
             messages_delivered=0,
             messages_failed=0,
             total_cost_cents=0,
-            budget_limit_cents=100000,  # Default $1000 budget
+            budget_limit_cents=10000,  # Default $100 budget
             budget_used_percentage=0.0,
             messages_remaining=None,
         )
@@ -358,11 +395,34 @@ def get_sms_usage_stats(
         # Average cost per message: 0.79 cents (rounded to 1 cent)
         messages_remaining = max(0, int(remaining_cents / 1))
 
+    messages_sent = (
+        usage.assignment_count + usage.reminder_count + usage.broadcast_count + usage.system_count
+    )
+    month_start = utcnow().replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+    delivered_count = (
+        db.query(SmsMessage)
+        .filter(
+            SmsMessage.organization_id == org_id,
+            SmsMessage.created_at >= month_start,
+            SmsMessage.status == "delivered",
+        )
+        .count()
+    )
+    failed_count = (
+        db.query(SmsMessage)
+        .filter(
+            SmsMessage.organization_id == org_id,
+            SmsMessage.created_at >= month_start,
+            SmsMessage.status.in_(["failed", "undelivered", "canceled"]),
+        )
+        .count()
+    )
+
     return SmsUsageStatsResponse(
         month_year=usage.month_year,
-        messages_sent=usage.messages_sent,
-        messages_delivered=usage.messages_delivered,
-        messages_failed=usage.messages_failed,
+        messages_sent=messages_sent,
+        messages_delivered=delivered_count,
+        messages_failed=failed_count,
         total_cost_cents=usage.total_cost_cents,
         budget_limit_cents=usage.budget_limit_cents,
         budget_used_percentage=round(budget_used_percentage, 2),
@@ -387,13 +447,31 @@ def send_assignment_notification_api(
 
     Queues background task for async delivery.
     """
-    # Verify event exists
-    event = db.query(Event).filter(Event.id == request.event_id).first()
+    event = (
+        db.query(Event)
+        .filter(Event.id == request.event_id, Event.org_id == current_admin.org_id)
+        .first()
+    )
     if not event:
         raise HTTPException(status_code=404, detail=f"Event {request.event_id} not found")
 
-    # Verify assignment exists
-    assignment = db.query(Assignment).filter(Assignment.id == request.assignment_id).first()
+    person = (
+        db.query(Person)
+        .filter(Person.id == request.person_id, Person.org_id == current_admin.org_id)
+        .first()
+    )
+    if not person:
+        raise HTTPException(status_code=404, detail="Assignment target not found")
+
+    assignment = (
+        db.query(Assignment)
+        .filter(
+            Assignment.id == request.assignment_id,
+            Assignment.event_id == request.event_id,
+            Assignment.person_id == request.person_id,
+        )
+        .first()
+    )
     if not assignment:
         raise HTTPException(status_code=404, detail=f"Assignment {request.assignment_id} not found")
 
@@ -428,8 +506,11 @@ def send_event_reminder_api(
 
     Queues background task for async delivery.
     """
-    # Verify event exists
-    event = db.query(Event).filter(Event.id == request.event_id).first()
+    event = (
+        db.query(Event)
+        .filter(Event.id == request.event_id, Event.org_id == current_admin.org_id)
+        .first()
+    )
     if not event:
         raise HTTPException(status_code=404, detail=f"Event {request.event_id} not found")
 
@@ -467,8 +548,17 @@ def send_broadcast_api(
     if len(request.recipient_ids) > 200:
         raise HTTPException(status_code=422, detail="Maximum 200 recipients per broadcast")
 
-    # Get organization ID from admin
+    if len(set(request.recipient_ids)) != len(request.recipient_ids):
+        raise HTTPException(status_code=422, detail="recipient_ids must be unique")
+
     organization_id = current_admin.org_id
+    recipients = (
+        db.query(Person.id)
+        .filter(Person.id.in_(request.recipient_ids), Person.org_id == organization_id)
+        .all()
+    )
+    if {person_id for (person_id,) in recipients} != set(request.recipient_ids):
+        raise HTTPException(status_code=404, detail="One or more SMS recipients were not found")
 
     # Queue Celery task
     task = send_broadcast_message.delay(
@@ -500,19 +590,16 @@ async def twilio_incoming_sms_webhook(request: Request, db: Session = Depends(ge
 
     Processes YES/NO/STOP/START/HELP replies from volunteers.
     """
-    sms_service = SMSService()
-
     try:
-        # Parse Twilio request
-        form_data = await request.form()
+        form_data = await _validated_twilio_form(request, "TWILIO_INCOMING_SMS_URL")
         from_phone = form_data.get("From")
         message_text = form_data.get("Body")
         twilio_message_sid = form_data.get("MessageSid")
 
-        if not from_phone or not message_text:
+        if not from_phone or not message_text or not twilio_message_sid:
             raise HTTPException(status_code=422, detail="Missing required fields")
 
-        # Process reply
+        sms_service = SMSService()
         result = sms_service.process_incoming_reply(
             db=db,
             from_phone=from_phone,
@@ -520,20 +607,16 @@ async def twilio_incoming_sms_webhook(request: Request, db: Session = Depends(ge
             twilio_message_sid=twilio_message_sid,
         )
 
-        # Return TwiML response
         return {
-            "status": "processed",
+            "status": "duplicate" if result.get("duplicate") else "processed",
             "reply_type": result["reply_type"],
             "action_taken": result["action_taken"],
         }
 
-    except ValueError as e:
-        # Unknown phone number or invalid request
-        return {"status": "error", "message": str(e)}
-    except Exception as e:
-        # Log error but don't expose to Twilio
-        print(f"Error processing incoming SMS: {str(e)}")
-        return {"status": "error", "message": "Failed to process message"}
+    except HTTPException:
+        raise
+    except ValueError:
+        raise HTTPException(status_code=422, detail="Unable to process SMS callback")
 
 
 @router.post("/webhook/delivery-status")
@@ -543,36 +626,43 @@ async def twilio_delivery_status_webhook(request: Request, db: Session = Depends
 
     Updates message status (delivered, failed, undelivered).
     """
-    try:
-        # Parse Twilio request
-        form_data = await request.form()
-        message_sid = form_data.get("MessageSid")
-        message_status = form_data.get("MessageStatus")
+    form_data = await _validated_twilio_form(request, "TWILIO_STATUS_CALLBACK_URL")
+    message_sid = form_data.get("MessageSid")
+    message_status = form_data.get("MessageStatus")
+    if not message_sid or not message_status:
+        raise HTTPException(status_code=422, detail="Missing required fields")
 
-        if not message_sid or not message_status:
-            raise HTTPException(status_code=422, detail="Missing required fields")
+    allowed_statuses = set(_DELIVERY_PROGRESS) | _DELIVERY_FAILURES
+    if message_status not in allowed_statuses:
+        raise HTTPException(status_code=422, detail="Invalid delivery status")
 
-        # Update message status in database
-
-        from api.models import SmsMessage
-
-        sms_message = (
-            db.query(SmsMessage).filter(SmsMessage.twilio_message_sid == message_sid).first()
+    sms_message = db.query(SmsMessage).filter(SmsMessage.twilio_message_sid == message_sid).first()
+    if not sms_message:
+        raise HTTPException(status_code=404, detail="SMS message not found")
+    current_status = str(sms_message.status)
+    is_duplicate = (
+        current_status == message_status
+        or current_status in _DELIVERY_FAILURES
+        or current_status == "read"
+        or (current_status == "delivered" and message_status != "read")
+    )
+    if current_status in _DELIVERY_PROGRESS and message_status in _DELIVERY_PROGRESS:
+        is_duplicate = is_duplicate or (
+            _DELIVERY_PROGRESS[message_status] <= _DELIVERY_PROGRESS[current_status]
         )
+    if is_duplicate:
+        return {
+            "status": "duplicate",
+            "message_sid": message_sid,
+            "updated_status": sms_message.status,
+        }
 
-        if sms_message:
-            sms_message.status = message_status
+    sms_message.status = message_status
+    if message_status in {"delivered", "read"} and not sms_message.delivered_at:
+        sms_message.delivered_at = utcnow()
+    elif message_status in _DELIVERY_FAILURES:
+        sms_message.failed_at = utcnow()
+        sms_message.error_message = form_data.get("ErrorMessage", "Unknown error")
+    db.commit()
 
-            if message_status == "delivered":
-                sms_message.delivered_at = utcnow()
-            elif message_status in ["failed", "undelivered"]:
-                sms_message.failed_at = utcnow()
-                sms_message.error_message = form_data.get("ErrorMessage", "Unknown error")
-
-            db.commit()
-
-        return {"status": "ok", "message_sid": message_sid, "updated_status": message_status}
-
-    except Exception as e:
-        print(f"Error processing delivery status: {str(e)}")
-        return {"status": "error", "message": "Failed to update status"}
+    return {"status": "ok", "message_sid": message_sid, "updated_status": message_status}
