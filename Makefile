@@ -2,7 +2,7 @@
 
 export SKIP_TEST_DB_FIXTURES ?= false
 
-.PHONY: test-web test-contract test-e2e test-mobile test-performance capture-screenshots validate-screenshots
+.PHONY: test-web test-contract test-e2e test-mobile test-performance test-recovery capture-screenshots validate-screenshots
 FLUTTER ?= flutter
 
 TEST_SERVER_HOST ?= 0.0.0.0
@@ -197,6 +197,10 @@ test-postgres: check-poetry check-docker
 test-artifact: check-poetry check-docker
 	@echo "🧪 Building and exercising an owned production artifact..."
 	@poetry run python scripts/validate_production_artifact.py
+
+test-recovery: check-poetry
+	@echo "🧪 Running owned SQLite backup and restore acceptance..."
+	@poetry run python scripts/run_sqlite_recovery_drill.py
 
 test-web: check-poetry
 	@poetry run pytest tests/web/ -v --tb=short

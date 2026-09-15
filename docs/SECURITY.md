@@ -530,32 +530,24 @@ openssl rand -hex 20
 
 ### GDPR (General Data Protection Regulation)
 
-**Data Privacy Features:**
-- ✅ User consent for data collection (signup flow)
-- ✅ Right to access: `/api/people/me` (users can view their data)
-- ✅ Right to deletion: `DELETE /api/people/{id}` (admin can delete users)
-- ✅ Data portability: Calendar export (ICS format)
-- ✅ Audit trail: All data access and modifications logged
-- ✅ Data retention: 30-day grace period after cancellation
-- ✅ Encryption in transit: HTTPS/TLS
-- ✅ Encryption at rest: PostgreSQL encryption (when enabled)
+SignUpFlow has not completed a GDPR or SOC 2 assessment. Existing product controls include
+authenticated profile access, member deletion endpoints, calendar export, selected audit
+events, and cancellation timestamps. They do not establish legal consent, complete data
+subject rights, eventual deletion, log/backup retention, production TLS, or encryption at
+rest. The local SQLite recovery bundle is AES-GCM encrypted, but production database and
+backup controls remain unverified under #268/#269.
 
 ### SOC 2 Type II Readiness
 
-**Controls Implemented:**
-- ✅ Access control (RBAC)
-- ✅ Audit logging (all admin actions)
-- ✅ Change management (audit trail)
-- ✅ Availability (health checks, monitoring)
-- ✅ Confidentiality (encryption, secure credentials)
-- ✅ Processing integrity (input validation, data consistency)
+The repository contains RBAC, audit, health, validation, and local monitoring primitives.
+No SOC 2 readiness or operating-effectiveness conclusion has been established.
 
 ### HIPAA Compliance (if handling health data)
 
-**Required:**
-- ✅ Access controls (RBAC)
-- ✅ Audit trails (comprehensive logging)
-- ✅ Encryption in transit (HTTPS)
+**Required but not certified here:**
+- Access controls and a reviewed authorization model
+- Complete audit coverage and retention
+- Production encryption in transit and at rest
 - ⚠️ Encryption at rest (enable PostgreSQL encryption)
 - ⚠️ Business Associate Agreement (BAA) with vendors
 - ⚠️ Risk assessment (conduct annually)

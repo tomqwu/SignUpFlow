@@ -386,6 +386,7 @@ make test-unit-fast       # Skip slow bcrypt tests (~7s)
 make test-all             # All Python tiers, including web + contract + Playwright
 make test-postgres        # Owned ephemeral PostgreSQL acceptance (requires Docker)
 make test-artifact        # Build and exercise the committed production image locally
+make test-recovery        # Owned encrypted SQLite backup and restored-app acceptance
 make test-mobile          # Flutter tests (requires Flutter SDK)
 make capture-screenshots  # Recreate public Church/Basketball screenshots locally
 make validate-screenshots # Verify image, fixture, UI-source, and caption metadata
@@ -410,6 +411,12 @@ Run `make test-artifact` for production-image changes after committing the track
 It retains the SHA-labeled image and report, uses private disposable PostgreSQL/Redis,
 runs one migration job before two read-only replicas, and contacts no external provider.
 It is not staging or release approval.
+Run `make test-recovery` for SQLite recovery changes. It creates only fictional data,
+uses SQLite's backup API so committed WAL data is included, restores an AES-GCM bundle
+to a new owned destination, exercises Church/Basketball auth and state, and writes a
+source-bound report under `test-artifacts/recovery-drill/`. It does not schedule a
+backup, retain an encryption key, overwrite a database, or perform a cutover. See the
+[recovery runbook](docs/RUNBOOK.md#sqlite-recovery-foundation).
 Production `/health` is dependency-free liveness and `/ready` is sanitized database
 readiness. JSON stdout logs carry the request ID and exact `RELEASE_SHA`; local bounded
 readiness/queue/backup signals do not claim an external operator received an alert.

@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
 set -eu
 SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
-exec python3 "$SCRIPT_DIR/retired_tool.py" "${0##*/}"
+cd "$SCRIPT_DIR/.."
+exec poetry run python "$SCRIPT_DIR/sqlite_recovery.py" backup "$@"

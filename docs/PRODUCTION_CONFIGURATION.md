@@ -68,8 +68,10 @@ replicas start only after it exits successfully; deployment operators must prese
 that one-shot ordering.
 Local SQLite remains a development/test option and newly prepared files use
 owner-only `0600` permissions; production rejects SQLite entirely.
-Managed-database, TLS/proxy, backup, restore, external alert receipt, and rollback
-acceptance remain separate work under #253, #261, and #265 through #271.
+Managed-database, TLS/proxy, scheduled/off-site backup, production restore, external
+alert receipt, and rollback acceptance remain separate work under #253, #261, and #265
+through #271. `make test-recovery` proves only an encrypted, isolated fictional SQLite
+restore and must not be presented as production PostgreSQL/PITR or cutover evidence.
 
 ## Local Validation
 
@@ -80,6 +82,7 @@ poetry run pytest tests/unit/test_production_config.py -q
 poetry run pytest tests/unit/test_secret_key_guard.py tests/unit/test_cors_config.py -q
 make test-all
 make test-artifact
+make test-recovery
 ```
 
 The tests cover each unsafe setting in a fresh process, prove failure occurs

@@ -17,7 +17,10 @@ def test_runbook_documents_current_operator_contract():
         "SECRET_KEY",
         "DATABASE_URL",
         "PRODUCTION_CONFIGURATION.md",
-        "No scheduled backup",
+        "No scheduled PostgreSQL backup",
+        "SQLite recovery foundation",
+        "AES-256-GCM",
+        "There is no overwrite or production-cutover option",
         "Rollback is not yet an accepted operator procedure",
         "#268",
     ):

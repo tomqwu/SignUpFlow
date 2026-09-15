@@ -616,13 +616,17 @@ TOTAL:                $185/mo
 
 ## 🎯 Success Criteria
 
-- ✅ 99.9% uptime
-- ✅ < 500ms API response time
-- ✅ < 1% error rate
-- ✅ Zero data loss
-- ✅ Daily automated backups
-- ✅ 24hr incident response time
+These are historical proposed targets, not measured guarantees:
+
+- 99.9% uptime
+- < 500ms API response time
+- < 1% error rate
+- Owner-approved RPO/RTO and data-loss policy
+- Scheduled, encrypted, off-site backups with restore drills
+- An approved incident-response time
 
 ---
 
-**Ready to deploy?** Start with Railway for fastest MVP launch!
+Do not deploy from this historical guide. Follow [the current roadmap](ROADMAP.md) and
+[runbook](RUNBOOK.md); deployment still requires explicit owner authorization and the
+remaining platform evidence.

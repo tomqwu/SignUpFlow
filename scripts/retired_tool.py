@@ -7,7 +7,6 @@ import sys
 
 REPLACEMENTS = {
     "QUICK_DEMO.sh": "Use make test-all and docs/playbooks/README.md.",
-    "backup_database.sh": "Recovery implementation remains tracked in GitHub issue #268.",
     "build-binary.sh": "Release artifact construction remains tracked in GitHub issue #265.",
     "cleanup_maintenance.sh": "Remove only explicitly owned artifacts with their owning command.",
     "cleanup_servers.sh": "Terminate only the PID recorded by the command that started the server.",
@@ -17,7 +16,6 @@ REPLACEMENTS = {
     "migrate_passwords_to_bcrypt.py": "Use password reset; never replace user passwords in bulk.",
     "migrate_timezone.py": "Use the current Alembic graph; timezone is in the initial revision.",
     "migrate_vacation_reason.py": "Use the current Alembic graph; vacation reason is in the initial revision.",
-    "restore_database.sh": "Recovery implementation remains tracked in GitHub issue #268.",
     "seed_sms_templates.py": "Paid SMS remains disabled and tracked in GitHub issue #257.",
     "test_docker_setup.sh": "Use documented Docker targets individually against an owned project.",
     "validate_email_system.sh": "Use local capture tests; provider acceptance requires explicit approval.",

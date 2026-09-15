@@ -78,9 +78,71 @@ Do not enable a provider without its separate authorized acceptance.
 
 ## Backups
 
-Postgres data lives in the `postgres_data` volume. No scheduled backup, host
-backup mount, retention guarantee, or tested restore procedure is supplied.
-Follow #268 before relying on this topology for recovery.
+Postgres data lives in the `postgres_data` volume. No scheduled PostgreSQL backup,
+host backup mount, off-site destination, key-custody arrangement, retention guarantee,
+or production restore is supplied. Follow #268 before relying on this topology for
+recovery.
+
+### SQLite recovery foundation
+
+The supported local SQLite tool never defaults to `roster.db`, copies a live database,
+overwrites a target, or performs cutover. Use absolute paths and create a new workspace
+in an empty location. Keep the key outside the workspace and backup storage.
+
+```bash
+poetry run python scripts/sqlite_recovery.py init-workspace /absolute/new/recovery-workspace
+poetry run python scripts/sqlite_recovery.py generate-key /absolute/new/recovery.key
+
+scripts/backup_database.sh \
+  --workspace /absolute/new/recovery-workspace \
+  --source /absolute/source.sqlite \
+  --key-file /absolute/new/recovery.key \
+  --name incident-20260915 \
+  --dry-run
+
+scripts/backup_database.sh \
+  --workspace /absolute/new/recovery-workspace \
+  --source /absolute/source.sqlite \
+  --key-file /absolute/new/recovery.key \
+  --name incident-20260915
+
+poetry run python scripts/sqlite_recovery.py verify \
+  --workspace /absolute/new/recovery-workspace \
+  --bundle /absolute/new/recovery-workspace/backups/incident-20260915.sufbackup \
+  --key-file /absolute/new/recovery.key
+
+scripts/restore_database.sh \
+  --workspace /absolute/new/recovery-workspace \
+  --bundle /absolute/new/recovery-workspace/backups/incident-20260915.sufbackup \
+  --key-file /absolute/new/recovery.key \
+  --name isolated-restore \
+  --dry-run
+
+scripts/restore_database.sh \
+  --workspace /absolute/new/recovery-workspace \
+  --bundle /absolute/new/recovery-workspace/backups/incident-20260915.sufbackup \
+  --key-file /absolute/new/recovery.key \
+  --name isolated-restore
+```
+
+The backup uses SQLite's backup API, verifies the current Alembic head, encrypts with
+AES-256-GCM, authenticates metadata, and stores plaintext/ciphertext SHA-256 checksums.
+Restore verifies authentication, checksum, SQLite integrity, foreign keys, and migration
+head before atomically publishing `restores/isolated-restore.sqlite`. If interrupted
+before publication, only the operation's temporary file is removed. If interrupted after
+atomic publication, preserve the complete target for inspection; rerunning refuses to
+touch it.
+
+Do not point the application at the restored file until an operator has reviewed its
+`.restore.json` receipt and explicitly prepared an isolated provider-disabled environment.
+The recovery tool never starts workers or replays queued work. Terminal notification
+rows remain terminal; pending rows remain pending and must be reconciled before any
+delivery provider is enabled. There is no overwrite or production-cutover option.
+
+Run `make test-recovery` to execute the fictional WAL and restored Church/Basketball
+acceptance drill. The report records source SHA, checksums, measured local backup/restore
+time, recovery-point age, migration head, test counts, and key destruction. These local
+measurements are not owner-approved production RPO/RTO evidence.
 
 ## Database readiness
 
@@ -100,9 +162,9 @@ delivery acceptance.
 ## Backup freshness
 
 The bounded `backup.freshness` rule triggers on the first failed freshness check
-and emits one recovery. No backup scheduler currently records this signal. #268
-must define the policy, wire the check, and prove backup/restore behavior before
-this is an operational alert.
+and emits one recovery. The local SQLite tool and drill do not schedule backups or
+record this signal. #268 must still define an approved production policy, wire the
+real producer, and prove operator receipt before this is an operational alert.
 
 ## Common incidents
 
@@ -118,5 +180,6 @@ this is an operational alert.
 
 Rollback is not yet an accepted operator procedure. Do not run an Alembic
 downgrade or substitute an unrecorded image. The local artifact harness records
-an immutable image identity and migration behavior, but #268 must still produce
-a restore drill and an operator-approved data-compatible rollback procedure.
+an immutable image identity and migration behavior, and the SQLite drill proves only
+isolated fictional restoration. #268 still needs an approved PostgreSQL/hosting backup,
+restore, cutover, retention, and data-compatible rollback procedure.

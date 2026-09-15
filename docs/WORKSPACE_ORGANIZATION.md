@@ -99,19 +99,18 @@ make check-server         # Check if server is running
 ```
 
 ### 🗄️ Database Management
-All database commands are **safe** and **repeatable**:
+The commands in the historical block below no longer exist and must not be run. Current
+database operations are explicit:
 
 ```bash
-make db-init              # Initialize fresh database
-make db-reset             # Clean + initialize (complete reset)
-make db-backup            # Backup current database (timestamped)
-make db-restore           # Restore from latest backup
-make db-migrate           # Run Alembic migrations
+make migrate              # Run Alembic migrations against the configured target
+make test-postgres        # Owned ephemeral PostgreSQL migration acceptance
+make test-recovery        # Owned fictional SQLite backup/restore drill
 ```
 
-**Database Files:**
-- `roster.db` - Main database
-- `backups/roster.db.backup.YYYYMMDD_HHMMSS` - Timestamped backups
+Use [the runbook](RUNBOOK.md#sqlite-recovery-foundation) for explicit SQLite workspace,
+source, key, bundle, and new-destination commands. There is no restore-latest, overwrite,
+reset, or automatic production backup command.
 
 ### 🧹 Cleanup Commands
 All cleanup commands are **safe** and can be run anytime:
@@ -293,10 +292,10 @@ def api_server():
 4. Use test fixtures for common setup
 
 ### Database
-1. Backup before major changes: `make db-backup`
-2. Use `make db-reset` for clean slate
-3. Never commit `roster.db` to git
-4. Keep backups in `backups/` directory
+1. Never commit a database, recovery key, bundle, or restored data.
+2. Use only owned fictional targets for local recovery drills.
+3. Never raw-copy a live WAL database or overwrite a restore target.
+4. Follow [the current runbook](RUNBOOK.md#sqlite-recovery-foundation).
 
 ### Documentation
 1. Update `README.md` for major features
@@ -330,9 +329,8 @@ make test            # Run tests
 
 ### Database issues
 ```bash
-make db-reset        # Nuclear option - fresh database
-# or
-make db-restore      # Restore from backup
+make test-postgres   # Diagnose migration/PostgreSQL acceptance in an owned container
+make test-recovery   # Diagnose local SQLite recovery without touching a live database
 ```
 
 ### Documentation messy
