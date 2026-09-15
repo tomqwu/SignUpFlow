@@ -17,11 +17,13 @@ token into standard forms and HTMX requests and returns `403` before route execu
 missing, foreign, mismatched, or forged input. SameSite cookies remain defense in depth.
 
 Browser login, signup, invitation, and password-reset routes use the same operation-specific
-rate-limit dependencies as their API counterparts. Limits are thread-safe but process-local.
+rate-limit operations as their API counterparts. Development limits are thread-safe and
+process-local; production requires atomic Redis counters shared across workers and fails
+protected requests closed with a retryable `503` during storage loss.
 Forwarded client addresses are trusted only when the direct peer is listed in
 `TRUSTED_PROXY_IPS`; otherwise the peer address is used for both limits and audit logs.
-Distributed storage, multi-worker quota enforcement, proxy/TLS deployment verification,
-and limiter-outage behavior remain unresolved under #261.
+Owned Redis acceptance covers multi-worker quota enforcement, limiter outage, and recovery.
+Proxy/TLS deployment verification remains external release evidence under #271.
 
 Current monitoring behavior supersedes the historical examples below. `/health` is
 dependency-free process liveness; `/ready` is sanitized database readiness and is the

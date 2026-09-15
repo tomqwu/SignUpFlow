@@ -120,9 +120,12 @@ evidence with a local mock. Do not deploy or enable providers from a roadmap alo
   Durable unique delivery keys prevent repeated publish/change/reminder operations
   from sending the same intent twice; disabled delivery remains pending and is labeled
   disabled rather than sent. Church and Basketball critical-role members execute the
-  full captured-link and in-app reconciliation flow at 360px and 1440px. External
-  inbox placement, provider webhooks, multi-worker queue recovery, and approved
-  production delivery remain later acceptance under #262/#266.
+  full captured-link and in-app reconciliation flow at 360px and 1440px. Scheduling
+  notification intents now commit before dispatch, have atomic worker leases, bounded
+  retry/dead-letter/uncertain states, and recover after broker loss. Redis carries
+  tenant-scoped refresh hints across independent workers. External inbox placement,
+  provider webhooks, reset/invitation transport durability, and approved production
+  delivery remain later provider/release acceptance under #270/#271.
 - #254/#285/#289 BO-10: personal calendar download and token feeds now share one
   current-assignment policy: draft, declined, deleted, and foreign-tenant child rows
   stay out. UTC storage converts to the member's resolvable IANA rendering zone,
@@ -162,8 +165,9 @@ evidence with a local mock. Do not deploy or enable providers from a roadmap alo
   database settings, unsafe origins/CORS, test and debug bypasses, malformed proxy/
   lifetime/boolean settings, and incoherent enabled-provider configuration before
   database initialization. JWT and browser cookies share one lifetime; Compose passes
-  canonical settings, defaults providers off, and the image enforces one worker until
-  #261/#266 add shared-state acceptance. This is local configuration evidence, not a
+  canonical settings and defaults providers off. The reference keeps one API worker as
+  a conservative capacity default even though Redis-backed shared-state acceptance now
+  exists. This is local configuration evidence, not a
   deployed artifact, TLS/proxy, provider, backup, or rollback result.
 - #265: the production image no longer migrates from each replica or copies builder
   executables into the runtime. Compose runs one migration job, keeps PostgreSQL and

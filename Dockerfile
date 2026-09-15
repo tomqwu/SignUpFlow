@@ -100,6 +100,6 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
     CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:8000/ready', timeout=5)" || exit 1
 
 ENTRYPOINT ["/app/docker-entrypoint.sh"]
-# Process-local rate limits and SSE require one worker until #261/#266 add
-# shared state and cross-worker acceptance.
+# Default to one process; operators may scale replicas only after the owned
+# Redis/event delivery and artifact acceptance drills pass.
 CMD ["python", "-m", "uvicorn", "api.main:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "1"]

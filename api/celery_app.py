@@ -4,10 +4,13 @@ Celery application for asynchronous email notification tasks.
 This module initializes the Celery app and configures scheduled tasks (Celery Beat).
 """
 
-from celery import Celery
+from typing import Any
+
+from celery import Celery, signals
 from celery.schedules import crontab
 
 from api.core.config import settings
+from api.core.runtime_config import validate_production_environment
 
 # Initialize Celery app
 celery_app = Celery(
@@ -39,8 +42,21 @@ celery_app.conf.update(
     worker_max_tasks_per_child=1000,  # Restart worker after 1000 tasks
 )
 
+
+@signals.worker_init.connect  # type: ignore[misc]
+@signals.beat_init.connect  # type: ignore[misc]
+def validate_celery_production_environment(**_: Any) -> None:
+    """Reject unsafe production settings before a worker or beat starts."""
+    validate_production_environment()
+
+
 # Celery Beat schedule for periodic tasks
 celery_app.conf.beat_schedule = {
+    # Recover committed notification intents after transient broker outages.
+    "dispatch-due-notifications": {
+        "task": "api.tasks.notifications.dispatch_due_notifications",
+        "schedule": 60.0,
+    },
     # Send reminder emails every hour (checks for events 24 hours away)
     "send-reminder-emails": {
         "task": "api.tasks.notifications.send_reminder_emails",

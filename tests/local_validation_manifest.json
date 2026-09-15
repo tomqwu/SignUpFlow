@@ -71,7 +71,7 @@
     },
     {
       "id": "redis",
-      "label": "Disposable Redis rate-limit acceptance",
+      "label": "Disposable Redis quota, event-bus, and broker acceptance",
       "paths": ["tests/redis"],
       "required_files": ["tests/redis/test_redis_rate_limit_acceptance.py"],
       "command": ["make", "test-redis"],

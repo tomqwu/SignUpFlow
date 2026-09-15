@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <title>Reminder: {{ event_title }}</title>
+    <title>提醒： {{ event_title }}</title>
     <style>
         body {
             margin: 0;
@@ -194,22 +194,22 @@
     <div class="email-container">
         <!-- Header -->
         <div class="header">
-            <h1>🔔 Event Reminder</h1>
+            <h1>🔔 活动提醒</h1>
         </div>
 
         <!-- Content -->
         <div class="content">
             <div class="greeting">
-                Hi {{ volunteer_name }},
+                你好，{{ volunteer_name }},
             </div>
 
             <div class="reminder-badge">
-                <strong>📅 Upcoming Event Tomorrow!</strong><br>
-                Your event is in <span class="time-highlight">{{ hours_remaining }} hours</span>
+                <strong>📅 活动将在明天举行！</strong><br>
+                距离活动还有 <span class="time-highlight">{{ 小时_remaining }} 小时</span>
             </div>
 
             <div class="message">
-                This is a friendly reminder about your scheduled assignment:
+                这是对你已安排任务的温馨提醒：
             </div>
 
             <!-- Event Card -->
@@ -218,27 +218,27 @@
 
                 <div class="event-details">
                     <div class="detail-row">
-                        <div class="detail-label">Your Role:</div>
+                        <div class="detail-label">你的岗位：</div>
                         <div class="detail-value">
                             <span class="role-highlight">{{ role }}</span>
                         </div>
                     </div>
 
                     <div class="detail-row">
-                        <div class="detail-label">Date & Time:</div>
+                        <div class="detail-label">日期和时间：</div>
                         <div class="detail-value">{{ event_datetime }}</div>
                     </div>
 
                     {% if event_location %}
                     <div class="detail-row">
-                        <div class="detail-label">Location:</div>
+                        <div class="detail-label">地点：</div>
                         <div class="detail-value">{{ event_location }}</div>
                     </div>
                     {% endif %}
 
                     {% if event_duration %}
                     <div class="detail-row">
-                        <div class="detail-label">Duration:</div>
+                        <div class="detail-label">时长：</div>
                         <div class="detail-value">{{ event_duration }}</div>
                     </div>
                     {% endif %}
@@ -246,42 +246,42 @@
             </div>
 
             {% if what_to_bring or additional_info %}
-            <!-- Preparation Box -->
+            <!-- 准备事项 Box -->
             <div class="preparation-box">
-                <h3>📋 Preparation</h3>
+                <h3>📋 准备事项</h3>
                 {% if what_to_bring %}
-                <p><strong>What to bring:</strong></p>
+                <p><strong>需要携带：</strong></p>
                 <p>{{ what_to_bring }}</p>
                 {% endif %}
                 {% if additional_info %}
-                <p><strong>Additional Info:</strong></p>
+                <p><strong>补充信息：</strong></p>
                 <p>{{ additional_info }}</p>
                 {% endif %}
                 <ul>
-                    <li>Please arrive 15 minutes early</li>
-                    <li>Check in with the event coordinator upon arrival</li>
+                    <li>请提前 15 分钟到达</li>
+                    <li>到达后请向活动协调员报到</li>
                 </ul>
             </div>
             {% endif %}
 
             <!-- Actions -->
             <div class="actions">
-                <a href="{{ calendar_url }}" class="button">📅 Add to Calendar</a>
-                <a href="{{ schedule_url }}" class="button button-secondary">View Schedule</a>
+                <a href="{{ calendar_url }}" class="button">📅 添加到日历</a>
+                <a href="{{ schedule_url }}" class="button button-secondary">查看排班</a>
             </div>
 
             <div class="message" style="margin-top: 30px;">
-                See you soon! 👋
+                期待与你见面！ 👋
             </div>
         </div>
 
         <!-- Footer -->
         <div class="footer">
             <div class="footer-text">
-                <a href="{{ unsubscribe_url }}" class="footer-link">Unsubscribe from reminders</a>
+                <a href="{{ unsubscribe_url }}" class="footer-link">取消订阅提醒</a>
             </div>
             <div class="footer-text" style="margin-top: 15px;">
-                Powered by <a href="https://signupflow.io" class="footer-link">SignUpFlow</a>
+                技术支持：<a href="https://signupflow.io" class="footer-link">SignUpFlow</a>
             </div>
         </div>
     </div>

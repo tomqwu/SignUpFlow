@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <title>Event Cancelled: {{ event_title }}</title>
+    <title>活动已取消: {{ event_title }}</title>
     <style>
         body {
             margin: 0;
@@ -197,24 +197,24 @@
     <div class="email-container">
         <!-- Header -->
         <div class="header">
-            <h1>❌ Event Cancelled</h1>
+            <h1>❌ 活动已取消</h1>
         </div>
 
         <!-- Content -->
         <div class="content">
             <div class="greeting">
-                Hi {{ volunteer_name }},
+                你好，{{ volunteer_name }},
             </div>
 
             <div class="message">
-                Unfortunately, the following event has been cancelled:
+                很遗憾，以下活动已取消：
             </div>
 
             <!-- Cancellation Notice -->
             <div class="cancellation-badge">
-                <h3>🚫 This event is no longer happening</h3>
+                <h3>🚫 此活动将不再举行</h3>
                 <p style="margin: 0; color: #721c24;">
-                    Your assignment has been removed and you are no longer scheduled for this event.
+                    你的任务已移除，不再需要参加此活动。
                 </p>
             </div>
 
@@ -222,26 +222,26 @@
             <div class="event-card">
                 <div class="event-title">
                     {{ event_title }}
-                    <span class="cancelled-label">(Cancelled)</span>
+                    <span class="cancelled-label">（已取消）</span>
                 </div>
 
                 <div class="event-details">
                     <div class="detail-row">
-                        <div class="detail-label">Your Role:</div>
+                        <div class="detail-label">你的岗位：</div>
                         <div class="detail-value">
                             <span class="role-highlight">{{ role }}</span>
-                            <span class="cancelled-label">(no longer needed)</span>
+                            <span class="cancelled-label">（不再需要）</span>
                         </div>
                     </div>
 
                     <div class="detail-row">
-                        <div class="detail-label">Originally Scheduled:</div>
+                        <div class="detail-label">原定时间：</div>
                         <div class="detail-value">{{ event_datetime }}</div>
                     </div>
 
                     {% if event_location %}
                     <div class="detail-row">
-                        <div class="detail-label">Location:</div>
+                        <div class="detail-label">地点：</div>
                         <div class="detail-value">{{ event_location }}</div>
                     </div>
                     {% endif %}
@@ -251,23 +251,23 @@
             {% if cancellation_reason %}
             <!-- Cancellation Reason -->
             <div class="reason-box">
-                <h4>📝 Reason for Cancellation</h4>
+                <h4>📝 取消原因</h4>
                 <p>{{ cancellation_reason }}</p>
             </div>
             {% endif %}
 
             <!-- No Action Needed -->
             <div class="no-action-box">
-                <p>✓ No action needed on your part</p>
+                <p>✓ 你无需进行任何操作</p>
             </div>
 
             <!-- Actions -->
             <div class="actions">
-                <a href="{{ schedule_url }}" class="button">📅 View Your Schedule</a>
+                <a href="{{ schedule_url }}" class="button">📅 查看你的排班</a>
             </div>
 
             <div class="message" style="margin-top: 30px;">
-                We appreciate your willingness to serve! 🙏
+                感谢你的参与意愿！ 🙏
             </div>
 
             {% if apology_message %}
@@ -280,10 +280,10 @@
         <!-- Footer -->
         <div class="footer">
             <div class="footer-text">
-                <a href="{{ unsubscribe_url }}" class="footer-link">Unsubscribe from cancellation notifications</a>
+                <a href="{{ unsubscribe_url }}" class="footer-link">取消订阅活动取消通知</a>
             </div>
             <div class="footer-text" style="margin-top: 15px;">
-                Powered by <a href="https://signupflow.io" class="footer-link">SignUpFlow</a>
+                技术支持：<a href="https://signupflow.io" class="footer-link">SignUpFlow</a>
             </div>
         </div>
     </div>

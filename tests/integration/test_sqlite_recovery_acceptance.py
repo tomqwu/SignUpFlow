@@ -37,7 +37,7 @@ from scripts.sqlite_recovery import (
 )
 
 ROOT = Path(__file__).resolve().parents[2]
-CURRENT_HEAD = "a9c2e4f6b8d0"
+CURRENT_HEAD = "b0d3f6a8c1e2"
 
 
 def _migrate(path: Path) -> None:
@@ -224,7 +224,7 @@ def test_restored_church_and_basketball_state_passes_application_acceptance(
             assert foreign.status_code == 403
 
             with patch("api.tasks.notifications._send_assignment_notification") as send_email:
-                result = send_email_task.run(notification_ids["church"])
+                result = send_email_task.run(notification_ids["church"], "recovery-church")
             assert result["status"] == "already_sent"
             send_email.assert_not_called()
 

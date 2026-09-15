@@ -459,6 +459,8 @@ class TestOrganizationStats:
         data = notifications_org
         _seed_notification(data["org_id"], data["vol1_id"], nstatus=NotificationStatus.DELIVERED)
         _seed_notification(data["org_id"], data["vol1_id"], nstatus=NotificationStatus.FAILED)
+        _seed_notification(data["org_id"], data["vol1_id"], nstatus=NotificationStatus.DEAD_LETTER)
+        _seed_notification(data["org_id"], data["vol1_id"], nstatus=NotificationStatus.UNCERTAIN)
 
         resp = data["admin_client"].get(
             f"{data['api_base']}/notifications/stats/organization",
@@ -473,6 +475,11 @@ class TestOrganizationStats:
         assert isinstance(body["status_breakdown"], dict)
         assert isinstance(body["type_breakdown"], dict)
         assert isinstance(body["recent_failures"], list)
+        assert {row["status"] for row in body["recent_failures"]} >= {
+            NotificationStatus.FAILED,
+            NotificationStatus.DEAD_LETTER,
+            NotificationStatus.UNCERTAIN,
+        }
 
     def test_volunteer_forbidden(self, notifications_org):
         data = notifications_org

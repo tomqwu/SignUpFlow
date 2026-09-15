@@ -69,8 +69,9 @@ owned temporary directory and makes no external connection. The browser test par
 generated message, follows its HTTP link, and completes recovery on the same local server.
 
 External SMTP/SendGrid delivery, sender reputation, inbox placement, and mailbox latency
-require separately authorized provider acceptance. Background tasks are best effort and
-do not survive process loss; durable delivery and retry belong to #266.
+require separately authorized provider acceptance. Invitation and password-reset
+background tasks remain direct best-effort transport and do not survive process loss;
+the durable scheduling-notification outbox does not cover these token messages.
 
 Delivery failure is logged without exposing the token or recipient. The caller still sees
 the generic response, and a fresh request can create a new usable link while invalidating
@@ -78,12 +79,12 @@ the failed request's token. Do not label disabled delivery as sent.
 
 ## Rate-Limit Boundary
 
-The API routes declare `password_reset` and `password_reset_confirm` rate-limit
-dependencies. The current limiter is process-local, trusts the existing client-IP helper,
-and is bypassed for tests and loopback. The web handlers call the route functions directly,
-so those FastAPI route dependencies do not cover web submissions. Distributed quotas,
-trusted-proxy handling, and equivalent browser abuse controls remain open in #261; this
-document does not present them as production-ready.
+The API and browser routes use the same `password_reset` and `password_reset_confirm`
+rate-limit operations. Development uses a process-local bucket; production requires an
+atomic Redis counter shared by workers and returns retryable `503` when that storage is
+unavailable. Forwarded client addresses are honored only from configured trusted proxies.
+Owned local tests cover browser wiring, two-worker quota sharing, outage, and recovery;
+deployed edge/proxy/TLS behavior remains release acceptance.
 
 ## Executable Evidence
 
@@ -109,7 +110,6 @@ short-password rejection before claim, escaped display names, and delivery failu
 ## Remaining Acceptance
 
 - Validate an approved external mailbox/provider only in the later release slice.
-- Add durable multi-worker delivery/retry under #266.
-- Complete shared-worker abuse limits, trusted-proxy policy, and browser request protection
-  under #261.
+- Decide whether invitation/reset token messages require their own durable outbox before
+  provider activation; current transport remains explicitly best effort.
 - Validate mobile deep-link handling on an installed client under #191.

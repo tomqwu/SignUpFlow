@@ -1600,7 +1600,7 @@ def _emit_reminder_notifications(
         for p in db.query(EmailPreference).filter(EmailPreference.org_id == person.org_id).all()
     }
     created = 0
-    notification_ids: list[int] = []
+    notification_refs: list[tuple[int, str]] = []
     for pid, eid in first_event.items():
         if pid in prefs and "reminder" not in prefs[pid]:
             continue
@@ -1615,7 +1615,7 @@ def _emit_reminder_notifications(
         )
         if existing is not None:
             if existing.status == "pending":
-                notification_ids.append(cast(int, existing.id))
+                notification_refs.append((cast(int, existing.id), person.org_id))
             continue
         notification = Notification(
             org_id=person.org_id,
@@ -1628,11 +1628,11 @@ def _emit_reminder_notifications(
         )
         db.add(notification)
         db.flush()
-        notification_ids.append(cast(int, notification.id))
+        notification_refs.append((cast(int, notification.id), person.org_id))
         created += 1
     if created:
         db.commit()
-    mode = dispatch_notification_ids(background_tasks, notification_ids)
+    mode = dispatch_notification_ids(background_tasks, notification_refs)
     return created, mode
 
 

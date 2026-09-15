@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <title>Event Cancelled: {{ event_title }}</title>
+    <title>Evento cancelado: {{ event_title }}</title>
     <style>
         body {
             margin: 0;
@@ -197,24 +197,24 @@
     <div class="email-container">
         <!-- Header -->
         <div class="header">
-            <h1>❌ Event Cancelled</h1>
+            <h1>❌ Evento cancelado</h1>
         </div>
 
         <!-- Content -->
         <div class="content">
             <div class="greeting">
-                Hi {{ volunteer_name }},
+                Hola {{ volunteer_name }},
             </div>
 
             <div class="message">
-                Unfortunately, the following event has been cancelled:
+                Lamentablemente, se ha cancelado el siguiente evento:
             </div>
 
             <!-- Cancellation Notice -->
             <div class="cancellation-badge">
-                <h3>🚫 This event is no longer happening</h3>
+                <h3>🚫 Este evento ya no se realizará</h3>
                 <p style="margin: 0; color: #721c24;">
-                    Your assignment has been removed and you are no longer scheduled for this event.
+                    Tu asignación se ha eliminado y ya no estás programado para este evento.
                 </p>
             </div>
 
@@ -222,26 +222,26 @@
             <div class="event-card">
                 <div class="event-title">
                     {{ event_title }}
-                    <span class="cancelled-label">(Cancelled)</span>
+                    <span class="cancelled-label">(Cancelado)</span>
                 </div>
 
                 <div class="event-details">
                     <div class="detail-row">
-                        <div class="detail-label">Your Role:</div>
+                        <div class="detail-label">Tu función:</div>
                         <div class="detail-value">
                             <span class="role-highlight">{{ role }}</span>
-                            <span class="cancelled-label">(no longer needed)</span>
+                            <span class="cancelled-label">(ya no se necesita)</span>
                         </div>
                     </div>
 
                     <div class="detail-row">
-                        <div class="detail-label">Originally Scheduled:</div>
+                        <div class="detail-label">Programado originalmente:</div>
                         <div class="detail-value">{{ event_datetime }}</div>
                     </div>
 
                     {% if event_location %}
                     <div class="detail-row">
-                        <div class="detail-label">Location:</div>
+                        <div class="detail-label">Ubicación:</div>
                         <div class="detail-value">{{ event_location }}</div>
                     </div>
                     {% endif %}
@@ -251,23 +251,23 @@
             {% if cancellation_reason %}
             <!-- Cancellation Reason -->
             <div class="reason-box">
-                <h4>📝 Reason for Cancellation</h4>
+                <h4>📝 Motivo de la cancelación</h4>
                 <p>{{ cancellation_reason }}</p>
             </div>
             {% endif %}
 
             <!-- No Action Needed -->
             <div class="no-action-box">
-                <p>✓ No action needed on your part</p>
+                <p>✓ No necesitas hacer nada</p>
             </div>
 
             <!-- Actions -->
             <div class="actions">
-                <a href="{{ schedule_url }}" class="button">📅 View Your Schedule</a>
+                <a href="{{ schedule_url }}" class="button">📅 Ver tu horario</a>
             </div>
 
             <div class="message" style="margin-top: 30px;">
-                We appreciate your willingness to serve! 🙏
+                ¡Agradecemos tu disposición para colaborar! 🙏
             </div>
 
             {% if apology_message %}
@@ -280,10 +280,10 @@
         <!-- Footer -->
         <div class="footer">
             <div class="footer-text">
-                <a href="{{ unsubscribe_url }}" class="footer-link">Unsubscribe from cancellation notifications</a>
+                <a href="{{ unsubscribe_url }}" class="footer-link">Cancelar las notificaciones de cancelación</a>
             </div>
             <div class="footer-text" style="margin-top: 15px;">
-                Powered by <a href="https://signupflow.io" class="footer-link">SignUpFlow</a>
+                Con tecnología de <a href="https://signupflow.io" class="footer-link">SignUpFlow</a>
             </div>
         </div>
     </div>

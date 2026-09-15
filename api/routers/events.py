@@ -330,8 +330,8 @@ def update_event(
     db.commit()
     db.refresh(event)
     if material_change:
-        notification_ids = [
-            row.id
+        notification_refs = [
+            (row.id, row.org_id)
             for row in db.query(Notification)
             .filter(
                 Notification.org_id == event.org_id,
@@ -340,7 +340,7 @@ def update_event(
             )
             .all()
         ]
-        dispatch_notification_ids(background_tasks, notification_ids)
+        dispatch_notification_ids(background_tasks, notification_refs)
     return event
 
 
@@ -577,7 +577,7 @@ def manage_assignment(
         if deleted_solution_id is not None:
             background_tasks.add_task(
                 event_bus.publish,
-                f"solution:{deleted_solution_id}",
+                event_bus.solution_topic(cast(str, event.org_id), deleted_solution_id),
                 {
                     "type": "assignment.changed",
                     "assignment_id": deleted_assignment_id,

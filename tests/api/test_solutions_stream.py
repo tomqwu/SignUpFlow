@@ -19,6 +19,7 @@ from api.main import app
 from api.models import Organization, Person, Solution
 from api.security import create_access_token
 from api.services import event_bus
+from api.services.event_bus import solution_topic
 
 
 def _seed_admin_and_solution(db, *, org_id="sse_org", solution_id=987):
@@ -76,7 +77,7 @@ async def test_event_bus_subscribe_publish_round_trip():
     by the auth/404 tests above + the operator runs the full stream
     against a real client.
     """
-    topic = "test_topic_roundtrip"
+    topic = solution_topic("test-org", 42)
 
     received: list[dict] = []
     consumer_started = asyncio.Event()

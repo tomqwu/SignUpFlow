@@ -1,6 +1,6 @@
 # Documentation Reconciliation
 
-Audit date: 2026-09-14. Scope: local-only review and all validation, with no CI checks, test commands
+Audit date: 2026-09-15. Scope: local-only review and all validation, with no CI checks, test commands
 and counts, merge instructions, related specification proposals, documentation
 navigation, and router-state claims in active developer entry points.
 
@@ -140,10 +140,21 @@ existing request-integrity browser evidence plus production configuration tests 
 local cookie, exact-origin, expiry, and revocation behavior. Deployed edge/proxy/TLS
 behavior remains external release evidence under #271; it is not represented as local
 application work still missing.
+The durable notification package commits scheduling intents before dispatch, claims them
+with tenant-scoped atomic leases, recovers abandoned work, bounds retries, and surfaces
+dead-letter or uncertain provider outcomes to administrators. Compose now runs one
+notification worker and exactly one beat scheduler. The owned Redis drill covers shared
+quota, cross-worker tenant-scoped refresh delivery, and broker outage/recovery; the owned
+PostgreSQL drill proves exactly one winner in a simultaneous lease race. Invitation and
+password-reset transport remains direct best-effort, and no external provider, deployed
+broker, inbox, or operator alert receipt is claimed. These backend and infrastructure
+changes do not alter rendered Church/Basketball pages, so committed screenshots remain current.
+All 24 scheduling email templates now contain localized visible copy and matching HTML
+language metadata; localized subject tests cover the same four message types and six languages.
 The maintained production-configuration contract now maps effective environment readers,
 defaults, fail-closed rules, provider gates, and current container limits. Production
-rejects unsafe settings before database initialization, and the Compose/reference
-profiles no longer default paid providers or unsupported multiworker behavior on. The
+rejects unsafe settings before database initialization; the Compose/reference profiles
+keep paid providers off, use Redis shared state, and retain one conservative API worker. The
 operations runbook now labels backup, restore, rollback, TLS/proxy, and deployment work
 as unresolved instead of presenting untested commands as accepted. Clean subprocess
 tests use only synthetic values and do not activate a provider or deployment.

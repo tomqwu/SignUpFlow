@@ -195,7 +195,7 @@ test-postgres: check-poetry check-docker
 	@poetry run python scripts/run_postgres_validation.py
 
 test-redis: check-poetry check-docker
-	@echo "🧪 Running owned Redis rate-limit acceptance..."
+	@echo "🧪 Running owned Redis quota, event-bus, and broker acceptance..."
 	@poetry run python scripts/run_redis_validation.py
 
 test-artifact: check-poetry check-docker
@@ -485,7 +485,7 @@ help:
 	@echo "  make test-integration - Run integration tests only"
 	@echo "  make test-all         - Run all Python tiers, including web/contract/Playwright"
 	@echo "  make test-postgres    - Run owned PostgreSQL migration/business/race acceptance"
-	@echo "  make test-redis       - Run owned Redis shared rate-limit acceptance"
+	@echo "  make test-redis       - Run owned Redis quota, event-bus, and broker acceptance"
 	@echo "  make test-artifact    - Build and exercise an owned production image locally"
 	@echo "  make test-performance - Run load tests against an explicit owned loopback server"
 	@echo "  make test-mobile      - Run Flutter tests locally (requires Flutter SDK)"

@@ -1555,8 +1555,8 @@ async def admin_solution_stream(
     db: Session = Depends(get_db),
 ):
     """Cookie-authed SSE mirror of GET /api/v1/solutions/{id}/assignments
-    /stream (which is Bearer-only). Same per-process event_bus topic
-    (solution:{id}) the assignment-mutation endpoints publish to."""
+    /stream (which is Bearer-only). It uses the same tenant-scoped event-bus
+    topic that assignment-mutation endpoints publish to after commit."""
     import json
 
     from fastapi.responses import StreamingResponse
@@ -1568,7 +1568,7 @@ async def admin_solution_stream(
 
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Solution not found")
 
-    topic = f"solution:{solution_id}"
+    topic = event_bus.solution_topic(person.org_id, solution_id)
 
     async def _stream():
         yield ": stream open\n\n"

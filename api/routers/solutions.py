@@ -198,7 +198,7 @@ async def stream_solution_assignments(
     Sprint 10 PR 10.4: replaces pull-to-refresh on the admin Solution
     Review with live updates. Each subscriber gets its own per-process
     asyncio.Queue (see api/services/event_bus.py); publishers fan-out
-    via `event_bus.publish(\"solution:{id}\", ...)` from assignment-mutation
+    via `event_bus.publish("solution:{id}", ...)` from assignment-mutation
     endpoints.
 
     Format: standard `text/event-stream` per W3C SSE. Each event is a
@@ -227,7 +227,7 @@ async def stream_solution_assignments(
             detail="Solution not found",
         )
 
-    topic = f"solution:{solution_id}"
+    topic = event_bus.solution_topic(admin.org_id, solution_id)
 
     async def _event_stream():
         # Initial comment line so the connection is fully established
@@ -619,8 +619,8 @@ def publish_solution(
     except Exception:
         db.rollback()
         raise
-    notification_ids = [
-        row.id
+    notification_refs = [
+        (row.id, row.org_id)
         for row in db.query(Notification)
         .filter(
             Notification.org_id == solution.org_id,
@@ -629,7 +629,7 @@ def publish_solution(
         )
         .all()
     ]
-    dispatch_notification_ids(background_tasks, notification_ids)
+    dispatch_notification_ids(background_tasks, notification_refs)
     return _solution_response(solution, db)
 
 

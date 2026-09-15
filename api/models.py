@@ -738,6 +738,9 @@ class NotificationStatus:
     BOUNCED = "bounced"  # Email bounced (invalid address)
     FAILED = "failed"  # Sending failed (will retry)
     RETRY = "retry"  # Retrying after failure
+    DEAD_LETTER = "dead_letter"  # Retry budget exhausted; operator action required
+    UNCERTAIN = "uncertain"  # Provider outcome cannot be reconciled automatically
+    SUPPRESSED = "suppressed"  # In-app intent retained but email preference disabled
 
 
 class EmailFrequency:
@@ -779,6 +782,11 @@ class Notification(Base):
     template_data = Column(JSONType, nullable=True)  # Template rendering data
     delivery_key = Column(String, nullable=True)
     retry_count = Column(Integer, default=0, nullable=False)
+    delivery_attempts = Column(Integer, default=0, nullable=False)
+    delivery_lease_token = Column(String, nullable=True)
+    delivery_lease_expires_at = Column(DateTime, nullable=True)
+    next_attempt_at = Column(DateTime, nullable=True)
+    last_attempt_at = Column(DateTime, nullable=True)
     sendgrid_message_id = Column(String, nullable=True, unique=True)  # SendGrid message ID
     error_message = Column(Text, nullable=True)
     created_at = Column(DateTime, default=utcnow)
@@ -805,6 +813,7 @@ class Notification(Base):
         Index("idx_notifications_status", "status"),
         Index("idx_notifications_created_at", "created_at"),
         Index("idx_notifications_delivery_key", "delivery_key", unique=True),
+        Index("idx_notifications_delivery_due", "org_id", "status", "next_attempt_at"),
     )
 
 

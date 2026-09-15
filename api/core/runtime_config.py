@@ -170,6 +170,11 @@ def _validate_rate_limit_storage(values: Mapping[str, str]) -> None:
         raise ValueError("REDIS_URL contains a known sample credential")
 
 
+def _validate_event_bus_storage(values: Mapping[str, str]) -> None:
+    if values.get("EVENT_BUS_STORAGE", "redis").strip().lower() != "redis":
+        raise ValueError("EVENT_BUS_STORAGE must be redis in production")
+
+
 def _validate_proxy_networks(values: Mapping[str, str]) -> None:
     configured = values.get("TRUSTED_PROXY_IPS", "").strip()
     if not configured:
@@ -248,6 +253,10 @@ def validate_production_environment(environ: Mapping[str, str] | None = None) ->
         issues.append(str(exc))
     try:
         _validate_rate_limit_storage(values)
+    except ValueError as exc:
+        issues.append(str(exc))
+    try:
+        _validate_event_bus_storage(values)
     except ValueError as exc:
         issues.append(str(exc))
     try:

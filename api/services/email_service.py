@@ -28,6 +28,41 @@ from api.timeutils import utcnow
 
 logger = logging.getLogger("email_service")
 
+_NOTIFICATION_SUBJECTS = {
+    "assignment": {
+        "en": "New Assignment: {event_title}",
+        "es": "Nueva asignación: {event_title}",
+        "fr": "Nouvelle affectation : {event_title}",
+        "pt": "Nova atribuição: {event_title}",
+        "zh-CN": "新的任务安排：{event_title}",
+        "zh-TW": "新的任務安排：{event_title}",
+    },
+    "reminder": {
+        "en": "Reminder: {event_title} in {hours_remaining} hours",
+        "es": "Recordatorio: {event_title} en {hours_remaining} horas",
+        "fr": "Rappel : {event_title} dans {hours_remaining} heures",
+        "pt": "Lembrete: {event_title} em {hours_remaining} horas",
+        "zh-CN": "提醒：{event_title} 将在 {hours_remaining} 小时后开始",
+        "zh-TW": "提醒：{event_title} 將在 {hours_remaining} 小時後開始",
+    },
+    "update": {
+        "en": "Schedule Update: {event_title}",
+        "es": "Actualización del horario: {event_title}",
+        "fr": "Mise à jour du planning : {event_title}",
+        "pt": "Atualização da escala: {event_title}",
+        "zh-CN": "排班更新：{event_title}",
+        "zh-TW": "排班更新：{event_title}",
+    },
+    "cancellation": {
+        "en": "Event Cancelled: {event_title}",
+        "es": "Evento cancelado: {event_title}",
+        "fr": "Événement annulé : {event_title}",
+        "pt": "Evento cancelado: {event_title}",
+        "zh-CN": "活动已取消：{event_title}",
+        "zh-TW": "活動已取消：{event_title}",
+    },
+}
+
 # Try to import SendGrid (optional dependency)
 try:
     from sendgrid import SendGridAPIClient
@@ -444,6 +479,22 @@ class EmailService:
                 return template.render(**template_data)
             raise
 
+    def _notification_subject(
+        self,
+        template_name: str,
+        language: str,
+        *,
+        event_title: str,
+        hours_remaining: int | None = None,
+    ) -> str:
+        """Render a localized scheduling-notification subject."""
+        templates = _NOTIFICATION_SUBJECTS[template_name]
+        template = templates.get(language, templates["en"])
+        return template.format(
+            event_title=event_title,
+            hours_remaining=hours_remaining,
+        )
+
     def _update_notification_status(
         self,
         notification: Any,
@@ -638,7 +689,7 @@ class EmailService:
         }
 
         # Email subject
-        subject = f"New Assignment: {event_title}"
+        subject = self._notification_subject("assignment", language, event_title=event_title)
 
         # Send email using template
         return self.send_email(
@@ -728,7 +779,12 @@ class EmailService:
         }
 
         # Email subject
-        subject = f"Reminder: {event_title} in {hours_remaining} hours"
+        subject = self._notification_subject(
+            "reminder",
+            language,
+            event_title=event_title,
+            hours_remaining=hours_remaining,
+        )
 
         # Send email using template
         return self.send_email(
@@ -820,7 +876,7 @@ class EmailService:
         }
 
         # Email subject
-        subject = f"Schedule Update: {event_title}"
+        subject = self._notification_subject("update", language, event_title=event_title)
 
         # Send email using template
         return self.send_email(
@@ -901,7 +957,7 @@ class EmailService:
         }
 
         # Email subject
-        subject = f"Event Cancelled: {event_title}"
+        subject = self._notification_subject("cancellation", language, event_title=event_title)
 
         # Send email using template
         return self.send_email(
