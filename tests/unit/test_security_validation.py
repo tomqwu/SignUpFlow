@@ -147,6 +147,34 @@ def test_image_only_component_is_visible_even_when_source_sbom_is_clean() -> Non
     assert component_names(image) - component_names(source) == {"libpq5@16"}
 
 
+def test_image_only_high_vulnerability_blocks_release_acceptance() -> None:
+    raw = {
+        "Results": [
+            {
+                "Target": "alpine:3.23",
+                "Vulnerabilities": [
+                    {
+                        "VulnerabilityID": "CVE-TEST-IMAGE-ONLY",
+                        "PkgName": "libpq",
+                        "InstalledVersion": "16.0-r0",
+                        "FixedVersion": "16.0-r1",
+                        "Severity": "HIGH",
+                        "Status": "fixed",
+                    }
+                ],
+            }
+        ]
+    }
+
+    findings = sanitize_trivy_report(raw, scope="image")
+    accepted, blocked = apply_exceptions(findings, [])
+
+    assert accepted == []
+    assert blocked == findings
+    assert blocked[0]["package_name"] == "libpq"
+    assert blocked[0]["blocking"] is True
+
+
 def test_license_inventory_preserves_known_expressions_and_unknowns() -> None:
     sbom = {
         "components": [
