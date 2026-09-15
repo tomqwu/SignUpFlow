@@ -64,8 +64,8 @@ def _prepare_sqlite_file(sqlite_path: Path, db_url: str) -> None:
     """Ensure the SQLite file and parent directories exist with write access."""
     sqlite_path.parent.mkdir(parents=True, exist_ok=True)
     sqlite_path.touch(exist_ok=True)
-    # Always set permissions (touch doesn't update existing file permissions)
-    sqlite_path.chmod(0o666)  # rw-rw-rw- for maximum compatibility in tests
+    # Always set permissions because touch does not tighten an existing file.
+    sqlite_path.chmod(0o600)
     if settings.TESTING or os.getenv("TESTING"):
         stats = sqlite_path.stat()
         print(

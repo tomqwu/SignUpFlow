@@ -8,6 +8,8 @@ import os
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
+from api.core.runtime_config import DEFAULT_SECRET_KEY
+
 _DOTENV_FILE = ".env" if os.getenv("SIGNUPFLOW_LOAD_DOTENV", "true").lower() == "true" else None
 
 
@@ -18,13 +20,14 @@ class Settings(BaseSettings):
         env_file=_DOTENV_FILE,
         case_sensitive=True,
         extra="ignore",
+        hide_input_in_errors=True,
     )
 
     # Database
     DATABASE_URL: str = "sqlite:///./roster.db"
 
     # JWT Authentication
-    SECRET_KEY: str = "change-this-to-a-random-secret-key-in-production"
+    SECRET_KEY: str = DEFAULT_SECRET_KEY
     ALGORITHM: str = "HS256"
     # Float so sub-hour values work (e.g. 0.05 = 3 min for short-TTL
     # refresh smoke per mobile/SMOKE.md). Read via os.getenv in

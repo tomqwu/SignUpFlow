@@ -1,7 +1,9 @@
 # SignUpFlow — Operations Runbook
 
-Operator guide for deploying and running SignUpFlow in production. Grounded
-in the actual `Dockerfile`, `docker-compose.yml`, and app endpoints.
+Production-like operator reference grounded in the current `Dockerfile`,
+`docker-compose.yml`, and app endpoints. It does not authorize deployment or
+claim production readiness. Read the [effective configuration contract](PRODUCTION_CONFIGURATION.md)
+and [release roadmap](ROADMAP.md) first.
 
 ## Stack
 
@@ -9,14 +11,15 @@ in the actual `Dockerfile`, `docker-compose.yml`, and app endpoints.
 
 - **db** — `postgres:16-alpine`, volume `postgres_data`, `./backups` mounted
   for dumps, `pg_isready` healthcheck.
-- **redis** — `redis:7-alpine` (caching / rate-limit / sessions).
+- **redis** — `redis:7-alpine` for configured task/broker consumers. Rate limits
+  and SSE remain process-local.
 - **api** — built from `Dockerfile`; depends on `db` + `redis` being
-  *healthy*; serves the API **and** the same-origin web UI on `:8000`.
+  *healthy*; serves the API and same-origin web UI on `:8000` with one worker.
 
-## Deploy
+## Local Artifact Exercise
 
 ```bash
-cp .env.example .env          # then edit secrets (see below)
+cp .env.example .env          # supply every required production-like value
 docker compose up -d --build
 docker compose ps             # all services should be healthy
 ```
@@ -38,29 +41,27 @@ to run migrations by hand: `docker compose exec api alembic upgrade head`.
 
 | Env var | Purpose | Notes |
 |---|---|---|
-| `SECRET_KEY` | JWT signing | **Must** be unique & ≥ 32 chars. Production logs a `CRITICAL` if it's the default/short. |
+| `SECRET_KEY` | JWT signing | Must be unique and at least 32 characters. Invalid production values stop startup. |
 | `DATABASE_URL` | Postgres DSN | compose sets `postgresql://…@db:5432/…` |
-| `ENVIRONMENT` | `production` enables HSTS + the SECRET_KEY guard | |
-| `EMAIL_ENABLED` + `MAILTRAP_SMTP_USER`/`_PASSWORD` | Transactional email (sandbox: Mailtrap) | or `SENDGRID_API_KEY` for prod |
+| `ENVIRONMENT` | Selects the production validator and secure middleware behavior | Compose sets `production`. |
+| `APP_URL`, `API_BASE_URL`, `FRONTEND_URL` | Public origins | Production requires explicit HTTPS origins. |
+| `CORS_ALLOWED_ORIGINS` | API browser origins | Must explicitly include `FRONTEND_URL`; wildcard fails. |
+| `ACCESS_TOKEN_EXPIRE_HOURS` | JWT and browser-session lifetime | One canonical positive value; default 24. |
+| `EMAIL_ENABLED` + `SENDGRID_API_KEY` | Transactional email | default `false`; provider acceptance is not complete |
 | `SMS_ENABLED` + `TWILIO_ACCOUNT_SID`/`_AUTH_TOKEN`/`_PHONE_NUMBER` | Deferred paid SMS | default `false`; enable only for an authorized sandbox validation |
 | `BILLING_ENABLED` + `STRIPE_SECRET_KEY` | Deferred billing | default `false`; enable only for an authorized Stripe sandbox validation |
 | `SENTRY_DSN` | Error reporting | absent → disabled (logged at startup) |
 
-Email delivery is credential-gated. Billing and SMS are feature-gated off by
-default: their direct routes return 404 and their navigation is hidden. They
-never block startup or the core scheduling workflow.
+Email, billing, and SMS are feature-gated off by default. Credentials alone do
+not enable them. Their direct routes return 404 and their navigation is hidden.
+Do not enable a provider without its separate authorized acceptance.
 
 ## Backups
 
-Postgres data lives in the `postgres_data` volume; `./backups` is mounted
-into the `db` container.
-
-```bash
-# nightly dump
-docker compose exec db pg_dump -U signupflow signupflow > backups/$(date +%F).sql
-# restore
-docker compose exec -T db psql -U signupflow signupflow < backups/<file>.sql
-```
+Postgres data lives in the `postgres_data` volume and `./backups` is mounted
+into the database container. No scheduled backup, retention guarantee, or
+tested restore procedure is currently supplied. Follow #268 before relying on
+this mount for recovery.
 
 ## Common incidents
 
@@ -74,7 +75,7 @@ docker compose exec -T db psql -U signupflow signupflow < backups/<file>.sql
 
 ## Rollback
 
-`docker compose` keeps the previous image until rebuilt. To roll back:
-`docker compose up -d --no-build` with the prior image tag, then
-`alembic downgrade -1` only if a migration must be reversed (rare —
-prefer forward fixes).
+Rollback is not yet an accepted operator procedure. Do not run an Alembic
+downgrade or substitute an unrecorded image. #265 and #268 must produce an
+immutable artifact, migration compatibility decision, restore drill, and
+recorded rollback command before this section can become operational.

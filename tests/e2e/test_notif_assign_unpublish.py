@@ -94,14 +94,21 @@ def test_manual_assign_and_remove(live_server, page):
     page.wait_for_selector("#event-assignments")
     page.select_option("#ea_person", label="Admin Dana")
     page.fill("#ea_role", "greeter")
-    page.click("button:has-text('Add to event')")
-    page.wait_for_selector("#event-assignments:has-text('Admin Dana')")
+    with page.expect_response(
+        lambda response: response.request.method == "POST"
+        and response.url.endswith("/assignments/add")
+    ) as add_response:
+        page.click("button:has-text('Add to event')")
+    assert add_response.value.ok
+    assignee_row = page.locator("#event-assignments .row", has_text="Admin Dana")
+    assignee_row.get_by_role("button", name="Remove").wait_for()
+    page.wait_for_selector("#event-assignments:not(.htmx-added)")
 
     with page.expect_response(
         lambda response: response.request.method == "POST"
         and response.url.endswith("/assignments/remove")
     ) as response_info:
-        page.locator("#event-assignments button", has_text="Remove").click()
+        assignee_row.get_by_role("button", name="Remove").click()
     assert response_info.value.ok
     expect(page.locator("#event-assignments")).to_contain_text("No one assigned yet")
 

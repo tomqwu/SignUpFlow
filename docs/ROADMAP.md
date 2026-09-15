@@ -126,6 +126,13 @@ evidence with a local mock. Do not deploy or enable providers from a roadmap alo
   and audit logs only from configured proxy peers; loopback has no production bypass.
   Distributed limiter storage, multi-worker quotas and outage behavior, and deployed
   proxy/TLS acceptance remain later work in the same issue.
+- #258: production startup now rejects known sample signing keys, SQLite or sample
+  database settings, unsafe origins/CORS, test and debug bypasses, malformed proxy/
+  lifetime/boolean settings, and incoherent enabled-provider configuration before
+  database initialization. JWT and browser cookies share one lifetime; Compose passes
+  canonical settings, defaults providers off, and the image enforces one worker until
+  #261/#266 add shared-state acceptance. This is local configuration evidence, not a
+  deployed artifact, TLS/proxy, provider, backup, or rollback result.
 - #259: repurpose the obsolete AI/CI gate ticket as local validation and evidence
   hygiene. No workflow, secret, provider or required status is needed for review.
 - #191: the Dart client is regenerated from the current OpenAPI snapshot and

@@ -3,7 +3,7 @@
 # ============================================================================
 # Stage 1: Builder - Install dependencies and build
 # ============================================================================
-FROM python:3.11-slim as builder
+FROM python:3.11-slim AS builder
 
 ENV PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
@@ -36,8 +36,6 @@ COPY web/ ./web/
 COPY alembic/ ./alembic/
 COPY alembic.ini ./
 COPY docker-entrypoint.sh ./
-
-RUN poetry install --only main
 
 # ============================================================================
 # Stage 2: Production - Minimal runtime image
@@ -77,4 +75,6 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
 # Entrypoint runs `alembic upgrade head` before exec'ing the CMD, so a
 # fresh Postgres is migrated on first boot.
 ENTRYPOINT ["/app/docker-entrypoint.sh"]
-CMD ["uvicorn", "api.main:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "4"]
+# Process-local rate limits and SSE require one worker until #261/#266 add
+# shared state and cross-worker acceptance.
+CMD ["uvicorn", "api.main:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "1"]
