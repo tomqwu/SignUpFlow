@@ -52,6 +52,14 @@ The maintained API, mobile, agent, and roadmap entry points now describe atomic
 organization/first-admin bootstrap, invitation-only membership for existing
 organizations, one permission role plus scheduling qualifications, and the
 regenerated Dart client. `API_README.md` is explicitly historical.
+The maintained API authorization matrix now records the complete organization
+lifecycle actor contract. Local real-JWT tests cover anonymous, owning-member,
+owning-admin, and foreign-admin reads and mutations plus transactional audit rollback.
+The owned PostgreSQL drill deletes a representative scheduling/delivery child graph,
+retains denormalized deletion audit evidence, and proves a foreign tenant survives.
+Cancellation remains reversible; no automated retention purge or production policy is
+claimed. This backend-only package does not change rendered pages, so the asserted
+Church and Basketball screenshot set remains current.
 The maintained assignment-response contract now separates roster allocation from
 member acknowledgement, documents revision and migration behavior, and aligns the
 coordinator/member surfaces with the Church and Basketball browser playbooks. The

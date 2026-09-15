@@ -271,7 +271,10 @@ and exercise a real same-origin profile save in Chromium.
 API tests exercise event management, conflicts, availability, profiles, teams,
 scheduling, organization lifecycle, and authorization. The
 [executable API authorization matrix](docs/API_AUTHORIZATION.md) records every
-mounted operation and the real-JWT tenant regressions for scheduling routes.
+mounted operation, the organization cancel/restore/hard-delete actor matrix, and
+the real-JWT tenant regressions for scheduling routes. The owned PostgreSQL drill
+also proves representative tenant-child cleanup, retained deletion audit evidence,
+and foreign-tenant survival.
 Production acceptance still requires the remaining
 [playbook boundaries](docs/playbooks/README.md#known-boundaries-and-release-blockers).
 

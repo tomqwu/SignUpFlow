@@ -793,6 +793,9 @@ class Notification(Base):
         "Person", back_populates="notifications_received", foreign_keys=[recipient_id]
     )
     event = relationship("Event", back_populates="notifications")
+    delivery_logs = relationship(
+        "DeliveryLog", back_populates="notification", cascade="all, delete-orphan"
+    )
 
     # Indexes
     __table_args__ = (
@@ -849,7 +852,7 @@ class DeliveryLog(Base):
     created_at = Column(DateTime, default=utcnow)
 
     # Relationships
-    notification = relationship("Notification", backref="delivery_logs")
+    notification = relationship("Notification", back_populates="delivery_logs")
 
     # Indexes
     __table_args__ = (
