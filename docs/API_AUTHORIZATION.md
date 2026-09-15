@@ -90,7 +90,7 @@ same-origin HTMX success, and a rejected foreign-origin write in Chromium.
 | `/conflicts` | Admin | Admin check operation | Person, target event, existing assignments, and overlapping events are joined through the admin's organization. | `tests/api/test_scheduling_tenant_boundaries.py`, conflict case |
 | `/solver` | Admin | Admin | The requested organization must equal the admin's organization; source rows are organization-filtered. | Domain playbooks and multi-tenant API tests |
 | `/solutions` | Admin, including assignment snapshots, streams, statistics, and comparisons | Admin, including create, export, publish, rollback, and delete | Solutions are selected by ID plus actor organization. Assignment children require same-tenant event and person joins. | `tests/api/test_scheduling_tenant_boundaries.py`, solution and stream cases |
-| `/solutions/{id}/export` | Admin | Admin | Validate `org`, `person:{id}`, or `team:{id}` before querying assignments. Filter event, person, assignment, and identity-bearing metric rows before JSON, CSV, or PDF serialization. ICS remains an explicit `501`, never a broader fallback. | `tests/api/test_scheduling_tenant_boundaries.py`, export case |
+| `/solutions/{id}/export` | Admin | Admin | Validate `org`, `person:{id}`, or `team:{id}` before querying assignments. Filter event, person, assignment, resource, and identity-bearing metric rows before JSON, CSV, ICS, or PDF serialization. | `tests/api/test_scheduling_tenant_boundaries.py`, export case |
 
 The remaining mounted operations are classified individually in the executable
 policy. Public-token routes are exceptions, not evidence that a router or route

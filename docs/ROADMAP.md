@@ -210,8 +210,9 @@ evidence with a local mock. Do not deploy or enable providers from a roadmap alo
   iOS simulator integration passes, and an Android debug APK builds locally.
   Physical-device, signed release, store, and authorized environment acceptance
   remain open.
-- ICS solution export remains explicitly unsupported with `501`; calendar ICS
-  export is separate. Do not represent unsupported solution ICS as shipped.
+- Tenant-scoped solution ICS export is implemented for organization, person,
+  and team scopes. Real-JWT API coverage parses the calendar and verifies that
+  foreign people, assignments, events, and roles are excluded.
 
 These are verified partial milestones, not blanket closure of their tickets.
 Retire old effort totals until remaining acceptance criteria are re-estimated.

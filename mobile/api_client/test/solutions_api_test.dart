@@ -36,7 +36,7 @@ void main() {
 
     // Export Solution
     //
-    // Export a tenant-scoped solution in JSON, CSV, or PDF.
+    // Export a tenant-scoped solution in JSON, CSV, ICS, or PDF.
     //
     //Future<JsonObject> exportSolution(int solutionId, ExportFormat exportFormat) async
     test('test exportSolution', () async {

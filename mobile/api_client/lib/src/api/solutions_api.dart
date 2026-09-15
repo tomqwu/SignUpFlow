@@ -265,7 +265,7 @@ class SolutionsApi {
   }
 
   /// Export Solution
-  /// Export a tenant-scoped solution in JSON, CSV, or PDF.
+  /// Export a tenant-scoped solution in JSON, CSV, ICS, or PDF.
   ///
   /// Parameters:
   /// * [solutionId]
