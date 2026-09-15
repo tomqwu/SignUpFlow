@@ -12,7 +12,7 @@ class _$SendBroadcastRequest extends SendBroadcastRequest {
   @override
   final String messageText;
   @override
-  final BuiltList<int> recipientIds;
+  final BuiltList<String> recipientIds;
 
   factory _$SendBroadcastRequest(
           [void Function(SendBroadcastRequestBuilder)? updates]) =>
@@ -71,10 +71,10 @@ class SendBroadcastRequestBuilder
   String? get messageText => _$this._messageText;
   set messageText(String? messageText) => _$this._messageText = messageText;
 
-  ListBuilder<int>? _recipientIds;
-  ListBuilder<int> get recipientIds =>
-      _$this._recipientIds ??= ListBuilder<int>();
-  set recipientIds(ListBuilder<int>? recipientIds) =>
+  ListBuilder<String>? _recipientIds;
+  ListBuilder<String> get recipientIds =>
+      _$this._recipientIds ??= ListBuilder<String>();
+  set recipientIds(ListBuilder<String>? recipientIds) =>
       _$this._recipientIds = recipientIds;
 
   SendBroadcastRequestBuilder() {

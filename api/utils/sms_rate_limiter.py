@@ -30,7 +30,7 @@ class SmsRateLimiter:
 
         self.max_sms_per_day = 3  # Non-urgent messages limit
 
-    def check_rate_limit(self, person_id: int, is_urgent: bool = False) -> tuple[bool, int | None]:
+    def check_rate_limit(self, person_id: str, is_urgent: bool = False) -> tuple[bool, int | None]:
         """
         Check if person has exceeded daily SMS rate limit.
 
@@ -59,7 +59,7 @@ class SmsRateLimiter:
 
         return (True, self.max_sms_per_day - count - 1)
 
-    def increment_count(self, person_id: int, is_urgent: bool = False) -> int:
+    def increment_count(self, person_id: str, is_urgent: bool = False) -> int:
         """
         Increment SMS count for person.
 
@@ -84,7 +84,7 @@ class SmsRateLimiter:
 
         return new_count
 
-    def get_remaining_count(self, person_id: int) -> int:
+    def get_remaining_count(self, person_id: str) -> int:
         """
         Get remaining SMS count for person today.
 
@@ -104,7 +104,7 @@ class SmsRateLimiter:
         remaining = max(0, self.max_sms_per_day - count)
         return remaining
 
-    def reset_count(self, person_id: int) -> None:
+    def reset_count(self, person_id: str) -> None:
         """
         Reset SMS count for person (admin override).
 

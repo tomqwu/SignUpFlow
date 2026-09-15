@@ -39,7 +39,7 @@ class CostTracker:
     def track_usage(
         self,
         db: Session,
-        organization_id: int,
+        organization_id: str,
         message_type: str,
         cost_cents: int,
     ) -> dict[str, Any]:
@@ -123,7 +123,7 @@ class CostTracker:
             "auto_pause_enabled": usage.auto_pause_enabled,
         }
 
-    def check_budget(self, db: Session, organization_id: int) -> dict[str, Any]:
+    def check_budget(self, db: Session, organization_id: str) -> dict[str, Any]:
         """
         Check current budget status for organization.
 

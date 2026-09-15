@@ -39,7 +39,9 @@ unset. HSTS and CSP must remain enabled. Boolean settings accept only
 Provider keys do not enable a feature. `EMAIL_ENABLED`, `SMS_ENABLED`, and
 `BILLING_ENABLED` default to false and disabled services perform no external
 delivery or payment action. If explicitly enabled later, startup requires the
-corresponding SendGrid, Twilio, or Stripe credential names. This validation is
+corresponding SendGrid, Twilio, or Stripe credential names. SMS also requires
+`TWILIO_INCOMING_SMS_URL` and `TWILIO_STATUS_CALLBACK_URL` as the exact external
+HTTPS callback URLs used for Twilio signature validation. This validation is
 configuration coherence, not provider acceptance or permission to enable them.
 
 Rotating `SECRET_KEY` invalidates every existing JWT and browser session. Apply

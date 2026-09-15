@@ -14,7 +14,7 @@ stale, or wired to the wrong authentication dependency.
 | --- | --- |
 | `public` | No credential. Limited to health, API metadata, login, atomic first-organization signup, and email availability. |
 | `public-token` | No bearer JWT. The request carries a separate scoped token, such as an invitation, refresh token, calendar feed token, or password-reset token. |
-| `public-callback` | No bearer JWT. Reserved for disabled-by-default provider callbacks. Twilio signature verification remains deferred with SMS and must be completed before activation. |
+| `public-callback` | No bearer JWT. Reserved for disabled-by-default provider callbacks. Twilio callbacks require an SDK-validated signature over the exact configured external URL and form fields before any state change. |
 | `member` | Valid JWT for an active person. Tenant reads derive organization scope from that actor. Person-owned data permits self-service and an administrator in the same tenant. |
 | `admin` | Valid JWT whose sole access role is `admin`. Organization identifiers must match the actor's tenant. |
 

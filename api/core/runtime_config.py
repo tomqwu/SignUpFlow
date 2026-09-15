@@ -170,13 +170,30 @@ def _validate_proxy_networks(values: Mapping[str, str]) -> None:
 def _validate_enabled_providers(values: Mapping[str, str], enabled: Mapping[str, bool]) -> None:
     requirements = {
         "EMAIL_ENABLED": ("SENDGRID_API_KEY",),
-        "SMS_ENABLED": ("TWILIO_ACCOUNT_SID", "TWILIO_AUTH_TOKEN", "TWILIO_PHONE_NUMBER"),
+        "SMS_ENABLED": (
+            "TWILIO_ACCOUNT_SID",
+            "TWILIO_AUTH_TOKEN",
+            "TWILIO_PHONE_NUMBER",
+            "TWILIO_INCOMING_SMS_URL",
+            "TWILIO_STATUS_CALLBACK_URL",
+        ),
         "BILLING_ENABLED": ("STRIPE_SECRET_KEY", "STRIPE_WEBHOOK_SECRET"),
     }
     for flag, required_names in requirements.items():
         if enabled[flag] and any(not values.get(name, "").strip() for name in required_names):
             joined = ", ".join(required_names)
             raise ValueError(f"{flag} requires {joined}")
+    if enabled["SMS_ENABLED"]:
+        for name in ("TWILIO_INCOMING_SMS_URL", "TWILIO_STATUS_CALLBACK_URL"):
+            parsed = urlsplit(values[name].strip())
+            if (
+                parsed.scheme.lower() != "https"
+                or not parsed.hostname
+                or parsed.username is not None
+                or parsed.password is not None
+                or parsed.fragment
+            ):
+                raise ValueError(f"{name} must be a valid external HTTPS callback URL")
 
 
 def _validate_observability(values: Mapping[str, str]) -> None:

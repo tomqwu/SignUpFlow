@@ -43,6 +43,12 @@ evidence with a local mock. Do not deploy or enable providers from a roadmap alo
   ownership before creating a customer or attaching the object, and already-owned
   methods are idempotent. Billing remains disabled by default; webhook state changes,
   provider sandbox acceptance, pricing, and commercial enablement remain under #270.
+- #257: the mounted, default-off SMS surface uses canonical string IDs and validates
+  tenant ownership plus assignment/event/person consistency before queue or provider
+  work. Twilio callbacks fail closed on missing or invalid signatures, bind to exact
+  configured external URLs, deduplicate incoming message IDs, and prevent delivery-state
+  regression. OpenAPI and generated Dart request types are synchronized. Live provider
+  acceptance and commercial enablement remain under #270.
 - #279/#289 FLOW-1: the machine-readable playbook coverage manifest now binds
   BO-01..12, CH-01..08, BB-01..08, every scheduling qualification, evidence tier,
   and partial/blocked status; pytest rejects omitted bundled roles or scenarios.

@@ -15,6 +15,7 @@ from datetime import timedelta
 from typing import Any
 
 from jinja2 import Template
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 from twilio.base.exceptions import TwilioRestException
 from twilio.rest import Client
@@ -22,6 +23,7 @@ from twilio.rest import Client
 from api.models import (
     Assignment,
     Event,
+    Person,
     SmsMessage,
     SmsPreference,
     SmsReply,
@@ -63,11 +65,11 @@ class SMSService:
     def send_sms(
         self,
         db: Session,
-        recipient_id: int,
+        recipient_id: str,
         message_text: str,
         message_type: str,
-        organization_id: int,
-        event_id: int | None = None,
+        organization_id: str,
+        event_id: str | None = None,
         template_id: int | None = None,
         is_urgent: bool = False,
     ) -> dict[str, Any]:
@@ -82,8 +84,15 @@ class SMSService:
             )
             return {"status": "disabled", "message": "SMS sending disabled"}
 
-        # 1. Get recipient SMS preferences
-        sms_pref = db.query(SmsPreference).filter(SmsPreference.person_id == recipient_id).first()
+        sms_pref = (
+            db.query(SmsPreference)
+            .join(Person, Person.id == SmsPreference.person_id)
+            .filter(
+                SmsPreference.person_id == recipient_id,
+                Person.org_id == organization_id,
+            )
+            .first()
+        )
 
         if not sms_pref:
             raise ValueError(f"No SMS preferences found for person {recipient_id}")
@@ -176,9 +185,9 @@ class SMSService:
     def send_broadcast(
         self,
         db: Session,
-        recipient_ids: list[int],
+        recipient_ids: list[str],
         message_text: str,
-        organization_id: int,
+        organization_id: str,
         is_urgent: bool = False,
         bypass_quiet_hours: bool = False,
     ) -> dict[str, Any]:
@@ -209,6 +218,18 @@ class SMSService:
                 f"Too many recipients ({len(recipient_ids)}). Maximum 200 per broadcast."
             )
 
+        if len(set(recipient_ids)) != len(recipient_ids):
+            raise ValueError("recipient_ids must be unique")
+
+        tenant_recipient_ids = {
+            person_id
+            for (person_id,) in db.query(Person.id)
+            .filter(Person.id.in_(recipient_ids), Person.org_id == organization_id)
+            .all()
+        }
+        if tenant_recipient_ids != set(recipient_ids):
+            raise ValueError("One or more SMS recipients were not found")
+
         # 2. Initialize tracking variables
         queued_count = 0
         skipped_count = 0
@@ -223,7 +244,13 @@ class SMSService:
             try:
                 # Get SMS preferences
                 sms_pref = (
-                    db.query(SmsPreference).filter(SmsPreference.person_id == person_id).first()
+                    db.query(SmsPreference)
+                    .join(Person, Person.id == SmsPreference.person_id)
+                    .filter(
+                        SmsPreference.person_id == person_id,
+                        Person.org_id == organization_id,
+                    )
+                    .first()
                 )
 
                 # Skip if no preferences
@@ -334,7 +361,7 @@ class SMSService:
                 }
             raise
 
-    def generate_verification_code(self, db: Session, person_id: int, phone_number: str) -> int:
+    def generate_verification_code(self, db: Session, person_id: str, phone_number: str) -> int:
         """
         Generate 6-digit verification code and send via SMS.
 
@@ -390,7 +417,7 @@ class SMSService:
                 msg=f"Failed to send verification code: {e.msg}",
             )
 
-    def verify_code(self, db: Session, person_id: int, code: int) -> dict[str, Any]:
+    def verify_code(self, db: Session, person_id: str, code: int) -> dict[str, Any]:
         """
         Verify SMS verification code and mark phone as verified.
 
@@ -499,33 +526,47 @@ class SMSService:
         Raises:
             ValueError: If phone number not found in system
         """
-        # 1. Normalize message text (uppercase, trim)
+        existing_reply = (
+            db.query(SmsReply).filter(SmsReply.twilio_message_sid == twilio_message_sid).first()
+        )
+        if existing_reply:
+            return {
+                "reply_type": existing_reply.reply_type,
+                "action_taken": existing_reply.action_taken,
+                "response_message": "",
+                "person_id": existing_reply.person_id,
+                "duplicate": True,
+            }
+
         normalized_text = message_text.strip().upper()
+        matching_preferences = (
+            db.query(SmsPreference).filter(SmsPreference.phone_number == from_phone).all()
+        )
+        if len(matching_preferences) != 1:
+            raise ValueError("SMS sender is not uniquely registered")
 
-        # Find person by phone number
-        sms_pref = db.query(SmsPreference).filter(SmsPreference.phone_number == from_phone).first()
-
-        if not sms_pref:
-            raise ValueError(f"Phone number not found in system: {from_phone}")
-
+        sms_pref = matching_preferences[0]
+        person = db.query(Person).filter(Person.id == sms_pref.person_id).first()
+        if not person:
+            raise ValueError("SMS sender is not registered")
         person_id = sms_pref.person_id
+        org_id = person.org_id
 
-        # 2. Determine reply type (YES/NO/STOP/START/HELP/UNKNOWN)
         if normalized_text in ["YES", "Y", "CONFIRM", "OK"]:
             reply_type = "yes"
-            response = self.process_yes_reply(db, person_id, None)
+            response = self.process_yes_reply(db, person_id, None, org_id=org_id)
             action = "confirmed_assignment"
-        elif normalized_text in ["NO", "N", "DECLINE", "CANCEL"]:
-            reply_type = "no"
-            response = self.process_no_reply(db, person_id, None)
-            action = "declined_assignment"
         elif normalized_text in ["STOP", "UNSUBSCRIBE", "CANCEL", "END", "QUIT"]:
             reply_type = "stop"
-            response = self.process_stop_reply(db, person_id)
+            response = self.process_stop_reply(db, person_id, commit=False)
             action = "opted_out"
+        elif normalized_text in ["NO", "N", "DECLINE"]:
+            reply_type = "no"
+            response = self.process_no_reply(db, person_id, None, org_id=org_id, commit=False)
+            action = "declined_assignment"
         elif normalized_text in ["START", "SUBSCRIBE", "UNSTOP"]:
             reply_type = "start"
-            response = self.process_start_reply(db, person_id)
+            response = self.process_start_reply(db, person_id, commit=False)
             action = "opted_in"
         elif normalized_text in ["HELP", "INFO", "?"]:
             reply_type = "help"
@@ -536,7 +577,6 @@ class SMSService:
             response = self.process_unknown_reply(db, person_id, message_text)
             action = "unknown_reply"
 
-        # 4. Log reply to sms_replies table
         sms_reply = SmsReply(
             person_id=person_id,
             phone_number=from_phone,
@@ -549,18 +589,37 @@ class SMSService:
             processed_at=utcnow(),
         )
         db.add(sms_reply)
-        db.commit()
+        try:
+            db.commit()
+        except IntegrityError:
+            db.rollback()
+            existing_reply = (
+                db.query(SmsReply).filter(SmsReply.twilio_message_sid == twilio_message_sid).first()
+            )
+            if not existing_reply:
+                raise
+            return {
+                "reply_type": existing_reply.reply_type,
+                "action_taken": existing_reply.action_taken,
+                "response_message": "",
+                "person_id": existing_reply.person_id,
+                "duplicate": True,
+            }
 
-        # 5. Return action taken and response message
         return {
             "reply_type": reply_type,
             "action_taken": action,
             "response_message": response,
             "person_id": person_id,
+            "duplicate": False,
         }
 
     def process_yes_reply(
-        self, db: Session, person_id: int, original_message_id: int | None
+        self,
+        db: Session,
+        person_id: str,
+        original_message_id: int | None,
+        org_id: str | None = None,
     ) -> str:
         """
         Process YES reply to assignment notification.
@@ -579,9 +638,10 @@ class SMSService:
             .join(Event)
             .filter(
                 Assignment.person_id == person_id,
-                Event.datetime >= utcnow(),
+                Event.start_time >= utcnow(),
+                *((Event.org_id == org_id,) if org_id else ()),
             )
-            .order_by(Event.datetime.asc())
+            .order_by(Event.start_time.asc())
             .first()
         )
 
@@ -593,8 +653,8 @@ class SMSService:
 
         # 2. Get event details
         event = upcoming_assignment.event
-        event_name = event.title
-        event_date = event.datetime.strftime("%A, %B %d at %I:%M %p")
+        event_name = (event.extra_data or {}).get("title", event.type)
+        event_date = event.start_time.strftime("%A, %B %d at %I:%M %p")
         role = upcoming_assignment.role or "volunteer"
 
         # 3. Return confirmation message
@@ -607,7 +667,14 @@ class SMSService:
             f"Thank you for confirming!"
         )
 
-    def process_no_reply(self, db: Session, person_id: int, original_message_id: int | None) -> str:
+    def process_no_reply(
+        self,
+        db: Session,
+        person_id: str,
+        original_message_id: int | None,
+        org_id: str | None = None,
+        commit: bool = True,
+    ) -> str:
         """
         Process NO reply to assignment notification.
 
@@ -625,9 +692,10 @@ class SMSService:
             .join(Event)
             .filter(
                 Assignment.person_id == person_id,
-                Event.datetime >= utcnow(),
+                Event.start_time >= utcnow(),
+                *((Event.org_id == org_id,) if org_id else ()),
             )
-            .order_by(Event.datetime.asc())
+            .order_by(Event.start_time.asc())
             .first()
         )
 
@@ -639,13 +707,14 @@ class SMSService:
 
         # 2. Get event details before removal
         event = upcoming_assignment.event
-        event_name = event.title
-        event_date = event.datetime.strftime("%A, %B %d at %I:%M %p")
+        event_name = (event.extra_data or {}).get("title", event.type)
+        event_date = event.start_time.strftime("%A, %B %d at %I:%M %p")
         role = upcoming_assignment.role or "volunteer"
 
         # 3. Remove assignment (MVP approach - Phase 3 will add notification to admin)
         db.delete(upcoming_assignment)
-        db.commit()
+        if commit:
+            db.commit()
 
         # 4. Return declination message
         return (
@@ -655,7 +724,7 @@ class SMSService:
             f"Your assignment has been removed. Administrator will be notified."
         )
 
-    def process_stop_reply(self, db: Session, person_id: int) -> str:
+    def process_stop_reply(self, db: Session, person_id: str, commit: bool = True) -> str:
         """
         Process STOP reply (opt-out from SMS notifications).
 
@@ -674,7 +743,8 @@ class SMSService:
 
         # 2. Update opt_out_date (TCPA compliance)
         sms_pref.opt_out_date = utcnow()
-        db.commit()
+        if commit:
+            db.commit()
 
         # 3. Return opt-out confirmation
         return (
@@ -682,7 +752,7 @@ class SMSService:
             "You will receive email notifications instead. Reply START to re-enable."
         )
 
-    def process_start_reply(self, db: Session, person_id: int) -> str:
+    def process_start_reply(self, db: Session, person_id: str, commit: bool = True) -> str:
         """
         Process START reply (re-enable SMS after opt-out).
 
@@ -706,7 +776,8 @@ class SMSService:
         # 3. Clear opt_out_date to re-enable
         sms_pref.opt_out_date = None
         sms_pref.opt_in_date = utcnow()  # Update opt-in date
-        db.commit()
+        if commit:
+            db.commit()
 
         # 4. Return re-enablement confirmation
         return (
@@ -714,7 +785,7 @@ class SMSService:
             "Reply STOP anytime to unsubscribe."
         )
 
-    def process_help_reply(self, db: Session, person_id: int) -> str:
+    def process_help_reply(self, db: Session, person_id: str) -> str:
         """
         Process HELP reply (send help instructions).
 
@@ -735,7 +806,7 @@ class SMSService:
             "Support: support@signupflow.io"
         )
 
-    def process_unknown_reply(self, db: Session, person_id: int, message_text: str) -> str:
+    def process_unknown_reply(self, db: Session, person_id: str, message_text: str) -> str:
         """
         Process unrecognized reply (send friendly error message).
 
@@ -782,17 +853,17 @@ class SMSService:
             raise ValueError(f"No assignment template found for organization {event.org_id}")
 
         # 2. Extract event details (name, date, time, location)
-        event_datetime = event.datetime
+        event_datetime = event.start_time
         date_str = event_datetime.strftime("%A, %B %d")  # "Monday, January 15"
         time_str = event_datetime.strftime("%I:%M %p")  # "10:00 AM"
 
         # 3. Build context for template substitution
         context = {
             "volunteer_name": "Volunteer",  # Will be replaced with actual name when sending
-            "event_name": event.title,
+            "event_name": (event.extra_data or {}).get("title", event.type),
             "date": date_str,
             "time": time_str,
-            "location": event.location or "TBD",
+            "location": (event.extra_data or {}).get("location", "TBD"),
             "role": role,
         }
 

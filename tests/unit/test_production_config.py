@@ -133,6 +133,36 @@ def test_disabled_providers_ignore_inherited_credentials():
     assert result.stdout.strip() == "VALID"
 
 
+def test_enabled_sms_requires_external_https_callback_urls():
+    result = _validate_in_subprocess(
+        SMS_ENABLED="true",
+        TWILIO_ACCOUNT_SID="AC00000000000000000000000000000000",
+        TWILIO_AUTH_TOKEN="synthetic-twilio-token",
+        TWILIO_PHONE_NUMBER="+15005550006",
+        TWILIO_INCOMING_SMS_URL="http://api.example.test/api/sms/webhook/incoming-sms",
+        TWILIO_STATUS_CALLBACK_URL="https://api.example.test/api/sms/webhook/delivery-status",
+    )
+
+    assert result.returncode != 0
+    assert "TWILIO_INCOMING_SMS_URL must be a valid external HTTPS callback URL" in (
+        result.stdout + result.stderr
+    )
+
+
+def test_enabled_sms_accepts_complete_synthetic_callback_configuration():
+    result = _validate_in_subprocess(
+        SMS_ENABLED="true",
+        TWILIO_ACCOUNT_SID="AC00000000000000000000000000000000",
+        TWILIO_AUTH_TOKEN="synthetic-twilio-token",
+        TWILIO_PHONE_NUMBER="+15005550006",
+        TWILIO_INCOMING_SMS_URL="https://api.example.test/api/sms/webhook/incoming-sms",
+        TWILIO_STATUS_CALLBACK_URL="https://api.example.test/api/sms/webhook/delivery-status",
+    )
+
+    assert result.returncode == 0, result.stderr
+    assert result.stdout.strip() == "VALID"
+
+
 def test_invalid_production_config_stops_before_database_initialization():
     script = """
 import json

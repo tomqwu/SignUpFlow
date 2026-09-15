@@ -44,7 +44,7 @@ def send_assignment_notification(
     assignment_id: int,
     event_id: str,
     person_id: str,
-    organization_id: int,
+    organization_id: str,
     language: str = "en",
 ) -> dict[str, Any]:
     """
@@ -67,22 +67,37 @@ def send_assignment_notification(
     if not sms_enabled():
         return disabled_sms_task_result()
     db = SessionLocal()
-    sms_service = SMSService()
 
     try:
         # 1. Get event and assignment details
-        event = db.query(Event).filter(Event.id == event_id).first()
+        event = (
+            db.query(Event).filter(Event.id == event_id, Event.org_id == organization_id).first()
+        )
         if not event:
             raise ValueError(f"Event {event_id} not found")
 
-        assignment = db.query(Assignment).filter(Assignment.id == assignment_id).first()
+        assignment = (
+            db.query(Assignment)
+            .filter(
+                Assignment.id == assignment_id,
+                Assignment.event_id == event_id,
+                Assignment.person_id == person_id,
+            )
+            .first()
+        )
         if not assignment:
             raise ValueError(f"Assignment {assignment_id} not found")
 
         # 2. Get person to get their name for personalized message
-        person = db.query(Person).filter(Person.id == person_id).first()
+        person = (
+            db.query(Person)
+            .filter(Person.id == person_id, Person.org_id == organization_id)
+            .first()
+        )
         if not person:
             raise ValueError(f"Person {person_id} not found")
+
+        sms_service = SMSService()
 
         # 3. Compose assignment message
         message_text = sms_service.compose_assignment_message(
@@ -95,11 +110,11 @@ def send_assignment_notification(
         # 4. Send SMS
         result = sms_service.send_sms(
             db=db,
-            recipient_id=int(person_id.split("_")[-1]),  # Extract numeric ID
+            recipient_id=person_id,
             message_text=message_text,
             message_type="assignment",
             organization_id=organization_id,
-            event_id=int(event_id.split("_")[-1]),  # Extract numeric ID
+            event_id=event_id,
             is_urgent=False,
         )
 
@@ -122,7 +137,7 @@ def send_assignment_notification(
 def send_event_reminder(
     self,
     event_id: str,
-    organization_id: int,
+    organization_id: str,
     hours_before: int = 24,
     language: str = "en",
 ) -> dict[str, Any]:
@@ -145,11 +160,12 @@ def send_event_reminder(
     if not sms_enabled():
         return disabled_sms_task_result()
     db = SessionLocal()
-    sms_service = SMSService()
 
     try:
         # 1. Get event
-        event = db.query(Event).filter(Event.id == event_id).first()
+        event = (
+            db.query(Event).filter(Event.id == event_id, Event.org_id == organization_id).first()
+        )
         if not event:
             raise ValueError(f"Event {event_id} not found")
 
@@ -179,16 +195,18 @@ def send_event_reminder(
         if not template:
             raise ValueError(f"No reminder template found for organization {organization_id}")
 
+        sms_service = SMSService()
+
         # 4. Build context
-        event_datetime = event.datetime
+        event_datetime = event.start_time
         date_str = event_datetime.strftime("%A, %B %d")
         time_str = event_datetime.strftime("%I:%M %p")
 
         context = {
-            "event_name": event.title,
+            "event_name": (event.extra_data or {}).get("title", event.type),
             "date": date_str,
             "time": time_str,
-            "location": event.location or "TBD",
+            "location": (event.extra_data or {}).get("location", "TBD"),
         }
 
         # 5. Render template
@@ -197,9 +215,7 @@ def send_event_reminder(
         )
 
         # 6. Send to all assigned volunteers
-        recipient_ids = [
-            int(a.person_id.split("_")[-1]) for a in assignments
-        ]  # Extract numeric IDs
+        recipient_ids = [assignment.person_id for assignment in assignments]
 
         result = sms_service.send_broadcast(
             db=db,
@@ -229,7 +245,7 @@ def send_event_reminder(
 def send_schedule_change_notification(
     self,
     event_id: str,
-    organization_id: int,
+    organization_id: str,
     change_description: str,
     language: str = "en",
 ) -> dict[str, Any]:
@@ -252,11 +268,12 @@ def send_schedule_change_notification(
     if not sms_enabled():
         return disabled_sms_task_result()
     db = SessionLocal()
-    sms_service = SMSService()
 
     try:
         # 1. Get event
-        event = db.query(Event).filter(Event.id == event_id).first()
+        event = (
+            db.query(Event).filter(Event.id == event_id, Event.org_id == organization_id).first()
+        )
         if not event:
             raise ValueError(f"Event {event_id} not found")
 
@@ -270,21 +287,23 @@ def send_schedule_change_notification(
                 "message": "No assignments to notify",
             }
 
+        sms_service = SMSService()
+
         # 3. Compose change notification message
-        event_datetime = event.datetime
+        event_datetime = event.start_time
         date_str = event_datetime.strftime("%A, %B %d")
         time_str = event_datetime.strftime("%I:%M %p")
 
         message_text = (
-            f"SCHEDULE CHANGE: {event.title}\n"
+            f"SCHEDULE CHANGE: {(event.extra_data or {}).get('title', event.type)}\n"
             f"{change_description}\n"
             f"Updated: {date_str} at {time_str}\n"
-            f"Location: {event.location or 'TBD'}\n"
+            f"Location: {(event.extra_data or {}).get('location', 'TBD')}\n"
             f"Reply YES to confirm or NO if unavailable."
         )
 
         # 4. Send broadcast
-        recipient_ids = [int(a.person_id.split("_")[-1]) for a in assignments]
+        recipient_ids = [assignment.person_id for assignment in assignments]
 
         result = sms_service.send_broadcast(
             db=db,
@@ -313,9 +332,9 @@ def send_schedule_change_notification(
 
 @celery_app.task
 def send_broadcast_message(
-    recipient_ids: list[int],
+    recipient_ids: list[str],
     message_text: str,
-    organization_id: int,
+    organization_id: str,
     is_urgent: bool = False,
 ) -> dict[str, Any]:
     """
@@ -333,9 +352,22 @@ def send_broadcast_message(
     if not sms_enabled():
         return disabled_sms_task_result()
     db = SessionLocal()
-    sms_service = SMSService()
 
     try:
+        if not recipient_ids or len(recipient_ids) > 200:
+            raise ValueError("Invalid SMS recipient count")
+        if len(set(recipient_ids)) != len(recipient_ids):
+            raise ValueError("recipient_ids must be unique")
+        tenant_recipient_ids = {
+            person_id
+            for (person_id,) in db.query(Person.id)
+            .filter(Person.id.in_(recipient_ids), Person.org_id == organization_id)
+            .all()
+        }
+        if tenant_recipient_ids != set(recipient_ids):
+            raise ValueError("One or more SMS recipients were not found")
+
+        sms_service = SMSService()
         result = sms_service.send_broadcast(
             db=db,
             recipient_ids=recipient_ids,
