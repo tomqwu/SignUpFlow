@@ -46,6 +46,7 @@ def test_alembic_environment_honors_the_no_dotenv_boundary() -> None:
     guard = 'if os.getenv("SIGNUPFLOW_LOAD_DOTENV", "true").lower() == "true":'
     assert guard in source
     assert source.index(guard) < source.index("    load_dotenv()")
+    assert "disable_existing_loggers=False" in source
 
 
 def test_postgres_target_is_ephemeral_loopback_and_uniquely_owned() -> None:

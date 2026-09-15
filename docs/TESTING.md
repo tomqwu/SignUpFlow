@@ -158,6 +158,7 @@ poetry run ruff check api web tests scripts/run_local_validation.py scripts/vali
 poetry run mypy --no-incremental api/utils api/core api/schemas
 poetry run mypy api
 make test-all
+make test-recovery
 ```
 
 Use a clean environment installed from the lockfile, not another worktree's
@@ -168,9 +169,16 @@ changed modules to pass their applicable checks.
 For database or migration work, run `make test-postgres`; do not supply a database URL
 or reuse a developer database. The owned runner proves a fresh migration, upgrade from
 representative existing data, Alembic drift check, business requests, and synchronized
-write races. This is local application acceptance, not deployment, backup/restore,
-managed-service, or production-data evidence. Run Flutter analysis and tests locally
-for mobile work.
+write races. This is local application acceptance, not deployment, managed-service,
+or production-data evidence.
+
+For SQLite backup/restore work, run `make test-recovery`. The owned runner creates a
+migrated fictional WAL database, encrypts and restores it under a marker-bound workspace,
+measures the local operation, and runs recovery unit plus Church/Basketball restored-app
+acceptance. Its report, JUnit, and log live under `test-artifacts/recovery-drill/`. It does
+not test scheduled PostgreSQL backups, off-site storage, production keys, retention,
+cutover, provider replay, or approved RPO/RTO. Run Flutter analysis and tests locally for
+mobile work.
 
 Follow [local code review](ai-pr-review.md) and [the roadmap](ROADMAP.md).
 Local results are procedural evidence, not independently attested by GitHub.
@@ -179,8 +187,9 @@ No hosted check, including a static check, is a merge prerequisite.
 ## Before Merge
 
 1. Run `make test-all` on the final source; run `make test-postgres` for database or
-   migration changes, `make test-artifact` for release-image changes, and
-   `make test-mobile` for mobile changes.
+   migration changes, `make test-artifact` for release-image changes,
+   `make test-recovery` for backup/restore changes, and `make test-mobile` for mobile
+   changes.
 2. Record the report path, commands, pass/skip/failure counts, date, and pushed head SHA in the PR.
    If tests ran immediately before committing, confirm the committed tree is identical.
 3. Record initial failures and reruns. Do not hide flakes or treat skipped tests as passed.

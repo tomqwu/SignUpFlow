@@ -8,7 +8,7 @@ process. Do not bypass a refusal by copying the old command from historical docs
 | Tool | Status | Supported scope or replacement | Owner |
 |---|---|---|---|
 | `scripts/QUICK_DEMO.sh` | Retired | Run `make test-all`; use `docs/playbooks/README.md` for scenarios. | Testing |
-| `scripts/backup_database.sh` | Retired | Recovery remains in #268; raw live SQLite copies are unsupported. | Data platform |
+| `scripts/backup_database.sh` | Supported local SQLite | Delegates to `sqlite_recovery.py backup`; requires an owned workspace, explicit source, separate mode-`0600` key, and new bundle name. | Data platform |
 | `scripts/build-binary.sh` | Retired | Artifact construction remains in #265. | Release |
 | `scripts/capture_playbook_screenshots.py` | Supported | Run through `make capture-screenshots`; owns its server, ports, database, and output manifest. | Web testing |
 | `scripts/check_test_docstrings.py` | Supported read-only | Pass an explicit source directory; reports only. | Testing |
@@ -27,10 +27,12 @@ process. Do not bypass a refusal by copying the old command from historical docs
 | `scripts/agent_tool_guard.py` | Internal support | Enforces mode-specific Git/GitHub commands and owned-path staging. | Agent tooling |
 | `scripts/ralph-loop-gemini.sh` | Supported | Gemini adapter for `agent_runner.py`; no auto-approval or model switching. | Agent tooling |
 | `scripts/ralph-loop.sh` | Supported | Claude adapter for `agent_runner.py`; no auto-approval or model switching. | Agent tooling |
-| `scripts/restore_database.sh` | Retired | Recovery remains in #268; unowned database replacement is unsupported. | Data platform |
+| `scripts/restore_database.sh` | Supported local SQLite | Delegates to `sqlite_recovery.py restore`; authenticates and integrity-checks the bundle before atomically publishing a new isolated database. | Data platform |
 | `scripts/retired_tool.py` | Internal support | Emits deterministic refusal messages for retired entry points. | Developer tooling |
 | `scripts/run_local_validation.py` | Supported | Run through `make test-all`; owns unique logs/JUnit/report artifacts. | Testing |
 | `scripts/run_postgres_validation.py` | Supported | Run through `make test-postgres`; owns one loopback-only, tmpfs PostgreSQL container and unique report directory. | Testing |
+| `scripts/run_sqlite_recovery_drill.py` | Supported local opt-in | Run through `make test-recovery`; owns fictional SQLite files and source-bound report/JUnit/log artifacts, destroys its temporary key, and performs no cutover. | Data platform |
+| `scripts/sqlite_recovery.py` | Supported local SQLite | Initializes marker-bound workspaces, generates a separate key, creates/verifies encrypted WAL-consistent bundles, and restores only to a new owned destination. | Data platform |
 | `scripts/validate_production_artifact.py` | Supported local opt-in | Run through `make test-artifact`; owns one private Docker network and disposable datastore/runtime containers, retains the SHA-labeled image and report. | Release |
 | `scripts/seed_sms_templates.py` | Retired | Paid SMS remains disabled and tracked in #257. | Messaging |
 | `scripts/test_docker_setup.sh` | Retired | Use documented Docker targets individually against an owned Compose project. | Developer tooling |

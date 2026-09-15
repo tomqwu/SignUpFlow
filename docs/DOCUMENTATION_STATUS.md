@@ -129,6 +129,14 @@ stdout logs are structured, release-correlated, and redact credential-shaped val
 An optional Sentry DSN now initializes a real error hook with PII and tracing disabled;
 local fake sinks prove database, notification-queue, and backup-freshness trigger/recovery
 state. No external alert recipient, staging delivery, or retention policy is claimed.
+The SQLite recovery foundation replaces the retired raw-copy wrappers with explicit
+owned-workspace commands. It includes committed WAL rows through SQLite's backup API,
+encrypts/authenticates bundles with a separately stored owner-only key, checks both
+plaintext and ciphertext, and can publish only a new isolated verified target. The
+source-bound `make test-recovery` drill covers restored Church/Basketball login, tenant
+separation, published response/inbox state, and terminal-notification replay safety.
+No scheduled PostgreSQL backup, off-site copy, production key custody, retention/purge,
+cutover, operator receipt, or approved RPO/RTO is claimed.
 The maintained [scheduling constraint contract](SCHEDULING_CONSTRAINTS.md) now
 lists the three executable REST rule mappings, their CLI equivalents, validation
 failures, built-in invariants, and unsupported policy. The constraints editor now

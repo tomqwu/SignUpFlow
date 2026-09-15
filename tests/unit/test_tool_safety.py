@@ -16,7 +16,6 @@ import pytest
 ROOT = Path(__file__).resolve().parents[2]
 RETIRED_TOOLS = (
     "scripts/QUICK_DEMO.sh",
-    "scripts/backup_database.sh",
     "scripts/build-binary.sh",
     "scripts/cleanup_maintenance.sh",
     "scripts/cleanup_servers.sh",
@@ -26,7 +25,6 @@ RETIRED_TOOLS = (
     "scripts/migrate_passwords_to_bcrypt.py",
     "scripts/migrate_timezone.py",
     "scripts/migrate_vacation_reason.py",
-    "scripts/restore_database.sh",
     "scripts/seed_sms_templates.py",
     "scripts/test_docker_setup.sh",
     "scripts/validate_email_system.sh",
@@ -56,6 +54,8 @@ INVENTORIED_TOOLS = (
     "scripts/retired_tool.py",
     "scripts/run_local_validation.py",
     "scripts/run_postgres_validation.py",
+    "scripts/run_sqlite_recovery_drill.py",
+    "scripts/sqlite_recovery.py",
     "scripts/validate_production_artifact.py",
     "scripts/seed_sms_templates.py",
     "scripts/test_docker_setup.sh",
@@ -63,6 +63,11 @@ INVENTORIED_TOOLS = (
     "tools/db_interactive.py",
     "tools/db_viewer.py",
     "tools/sqlite_readonly.py",
+)
+
+RECOVERY_WRAPPERS = (
+    "scripts/backup_database.sh",
+    "scripts/restore_database.sh",
 )
 
 
@@ -111,6 +116,24 @@ def test_supported_test_wrappers_are_dry_runnable_and_have_no_global_cleanup(rel
     assert "make test-" in result.stdout
 
 
+@pytest.mark.parametrize("relative", RECOVERY_WRAPPERS)
+def test_recovery_wrappers_have_no_implicit_database_or_destructive_shortcut(relative, tmp_path):
+    source = (ROOT / relative).read_text(encoding="utf-8")
+
+    assert "sqlite_recovery.py" in source
+    assert "roster.db" not in source
+    for unsafe in (" cp ", " mv ", " rm ", "--overwrite", "retired_tool.py"):
+        assert unsafe not in source
+
+    result = subprocess.run(
+        [str(ROOT / relative)], cwd=tmp_path, text=True, capture_output=True, check=False
+    )
+    assert result.returncode == 2
+    output = result.stdout + result.stderr
+    assert "--workspace" in output
+    assert "--source" in output if relative.endswith("backup_database.sh") else "--bundle" in output
+
+
 def test_email_smoke_requires_explicit_live_send_before_loading_credentials():
     result = subprocess.run(
         [sys.executable, str(ROOT / "scripts/email_smoke.py"), "--to", "nobody@example.com"],
@@ -138,6 +161,25 @@ def test_artifact_validator_dry_run_does_not_contact_docker():
 
     assert result.returncode == 0
     assert "private Docker network" in result.stdout
+
+
+def test_recovery_drill_dry_run_creates_no_artifacts():
+    artifact_root = ROOT / "test-artifacts" / "recovery-drill"
+    before = sorted(artifact_root.iterdir()) if artifact_root.exists() else []
+    result = subprocess.run(
+        [sys.executable, str(ROOT / "scripts/run_sqlite_recovery_drill.py"), "--dry-run"],
+        cwd=ROOT,
+        env={**os.environ, "SENDGRID_API_KEY": "must-not-be-read"},
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+
+    assert result.returncode == 0
+    assert '"mutates": false' in result.stdout
+    assert '"external_providers": false' in result.stdout
+    after = sorted(artifact_root.iterdir()) if artifact_root.exists() else []
+    assert after == before
 
 
 @pytest.mark.parametrize("tool", ["tools/db_viewer.py", "tools/db_interactive.py"])

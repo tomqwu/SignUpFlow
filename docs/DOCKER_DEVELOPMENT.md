@@ -270,10 +270,10 @@ make migrate-docker
 # Open PostgreSQL shell
 make db-shell
 
-# Backup database (from within db-shell)
+# Development-only logical dump (not the accepted production recovery path)
 pg_dump -U signupflow signupflow_dev > /backups/backup_$(date +%Y%m%d).sql
 
-# Restore database (from within db-shell)
+# Development-only restore into a disposable database
 psql -U signupflow signupflow_dev < /backups/backup_20250101.sql
 ```
 
@@ -489,6 +489,11 @@ docker-compose -f docker-compose.dev.yml exec api alembic history
 ```
 
 ### Backup and Restore
+
+The commands in this section are historical development examples. They are destructive,
+unencrypted, and do not satisfy the production recovery contract. Do not run them against
+shared/customer data. Use [the current runbook](RUNBOOK.md#sqlite-recovery-foundation)
+for the supported local SQLite drill; PostgreSQL production recovery remains open in #268.
 
 **Backup:**
 ```bash

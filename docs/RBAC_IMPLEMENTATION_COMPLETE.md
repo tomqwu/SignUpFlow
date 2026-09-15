@@ -328,19 +328,18 @@ This structure allows testing:
 
 ### Migration Guide for Existing Deployments:
 
-```bash
-# 1. Backup database
-cp roster.db roster.db.backup
+This historical guide is not an executable deployment procedure. Raw-copying a live
+SQLite WAL database is unsupported. Use [the current recovery runbook](RUNBOOK.md#sqlite-recovery-foundation)
+and obtain separate deployment authorization.
 
-# 2. Update code
+```bash
+# 1. Update an explicitly approved checkout
 git pull origin main
 
-# 3. Run tests to verify
+# 2. Run tests to verify
 poetry run pytest tests/e2e/test_rbac_security.py -v
 
-# 4. Update frontend to handle 403 errors gracefully
-# 5. Ensure all users have correct roles assigned
-# 6. Deploy
+# 3. Review authorization and migration evidence before any deployment
 ```
 
 ## Success Metrics

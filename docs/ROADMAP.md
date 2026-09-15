@@ -149,6 +149,14 @@ evidence with a local mock. Do not deploy or enable providers from a roadmap alo
   and fake sinks prove one trigger plus recovery for readiness, notification queue, and
   backup freshness. Real signal producers beyond readiness, external operator receipt,
   retention, thresholds measured under staging load, and escalation ownership remain.
+- #268: the supported local SQLite recovery tool uses the backup API to retain committed
+  WAL data, requires a marker-bound workspace plus separate owner-only key, emits an
+  authenticated AES-GCM bundle with plaintext/ciphertext checksums, and restores only to
+  a new isolated destination after integrity, foreign-key, and Alembic-head verification.
+  `make test-recovery` measures a fictional restore and re-runs Church/Basketball login,
+  tenant, publication/response, inbox, and completed-notification replay checks. Scheduled
+  PostgreSQL/PITR, off-site storage, production key custody, backup freshness delivery,
+  approved RPO/RTO, retention/holds/purge, and cutover remain unproven.
 - #259: repurpose the obsolete AI/CI gate ticket as local validation and evidence
   hygiene. No workflow, secret, provider or required status is needed for review.
 - #191: the Dart client is regenerated from the current OpenAPI snapshot and
