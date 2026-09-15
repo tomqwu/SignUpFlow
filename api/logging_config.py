@@ -52,9 +52,7 @@ if DEBUG:
     log_format = "%(asctime)s - %(name)s - [%(request_id)s] - [%(filename)s:%(lineno)d] - %(levelname)s - %(message)s"
 
 # Configure logging
-logging.basicConfig(
-    level=LOG_LEVEL, format=log_format, handlers=handlers
-)
+logging.basicConfig(level=LOG_LEVEL, format=log_format, handlers=handlers)
 
 # Get logger
 logger = logging.getLogger("rostio")
