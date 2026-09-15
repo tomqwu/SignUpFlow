@@ -80,12 +80,12 @@ files:
   docs/ASSIGNMENT_RESPONSES.md: {<<: *business, canonical: docs/ASSIGNMENT_RESPONSES.md}
   docs/BACKEND_DEBUG.md: {<<: *current, canonical: docs/BACKEND_DEBUG.md}
   docs/COMPREHENSIVE_TEST_SUITE.md: {<<: *historical, canonical: docs/TESTING.md}
-  docs/DATETIME_ARCHITECTURE.md: {<<: *current, canonical: docs/DATETIME_ARCHITECTURE.md}
+  docs/DATETIME_ARCHITECTURE.md: {<<: *historical, canonical: docs/playbooks/README.md}
   docs/DEBUG_REFACTORING.md: {<<: *historical, canonical: docs/BACKEND_DEBUG.md}
   docs/DEPLOYMENT_GUIDE.md: {<<: *historical, canonical: docs/RUNBOOK.md}
-  docs/DOCKER_DEVELOPMENT.md: {<<: *current, canonical: docs/DOCKER_DEVELOPMENT.md}
+  docs/DOCKER_DEVELOPMENT.md: {<<: *historical, canonical: README.md}
   docs/DOCUMENTATION_STATUS.md: {<<: *current, canonical: docs/DOCUMENTATION_STATUS.md}
-  docs/ENVIRONMENT_SETUP.md: {<<: *current, canonical: docs/ENVIRONMENT_SETUP.md}
+  docs/ENVIRONMENT_SETUP.md: {<<: *historical, canonical: docs/PRODUCTION_CONFIGURATION.md}
   docs/EVENT_ROLES_FEATURE.md: {<<: *historical, canonical: docs/playbooks/README.md}
   docs/FINAL_STATUS.md: {<<: *historical, canonical: docs/ROADMAP.md}
   docs/IMPLEMENTATION_COMPLETE.md: {<<: *historical, canonical: docs/ROADMAP.md}
