@@ -1,5 +1,12 @@
 # Roster API Documentation
 
+> Historical Python-library sketch. The `roster_cli` package used by the examples
+> below no longer exists, so do not run these snippets as current instructions.
+> Start the supported application with `make run`, inspect the live REST contract
+> at `/docs`, use the root [README](../README.md) for CLI examples, and use the
+> [authorization matrix](API_AUTHORIZATION.md) for actor and tenant boundaries.
+> This file is retained only to explain the earlier library design.
+
 This document describes how to use the Roster scheduling engine programmatically via its Python API.
 
 ## Installation

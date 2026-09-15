@@ -20,6 +20,10 @@ Reconciled 2026-09-13 for testing, CI, and merge policy:
 - [API authorization matrix](API_AUTHORIZATION.md): executable route classes,
   active-tenant session binding, role separation, response semantics, and scheduling
   regression evidence.
+- REST discovery: run `make run` and inspect `/docs`; use the repository
+  [README](../README.md) for the supported `signupflow` CLI. The older
+  `API.md` and `API_QUICKSTART.md` library examples are historical because their
+  `roster_cli` package no longer exists.
 - [Scheduling constraints](SCHEDULING_CONSTRAINTS.md): supported saved-rule mapping,
   validation, CLI equivalence, and built-in invariants.
 - [Operational playbooks](playbooks/README.md): church and basketball workflows.

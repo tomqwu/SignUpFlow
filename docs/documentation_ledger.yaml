@@ -73,10 +73,10 @@ files:
   README.md: {<<: *business, canonical: README.md}
   docs/AGENT_RUNNER.md: {<<: *agent, canonical: docs/AGENT_RUNNER.md}
   docs/ALLOCATION_TRANSACTIONS.md: {<<: *business, canonical: docs/ALLOCATION_TRANSACTIONS.md}
-  docs/API.md: {<<: *current, canonical: docs/API.md}
+  docs/API.md: {<<: *historical, canonical: docs/API_AUTHORIZATION.md}
   docs/API_AUTHORIZATION.md: {<<: *current, canonical: docs/API_AUTHORIZATION.md}
-  docs/API_QUICKSTART.md: {<<: *current, canonical: docs/API_QUICKSTART.md}
-  docs/API_README.md: {<<: *historical, canonical: docs/API.md}
+  docs/API_QUICKSTART.md: {<<: *historical, canonical: README.md}
+  docs/API_README.md: {<<: *historical, canonical: docs/API_AUTHORIZATION.md}
   docs/ASSIGNMENT_RESPONSES.md: {<<: *business, canonical: docs/ASSIGNMENT_RESPONSES.md}
   docs/BACKEND_DEBUG.md: {<<: *current, canonical: docs/BACKEND_DEBUG.md}
   docs/COMPREHENSIVE_TEST_SUITE.md: {<<: *historical, canonical: docs/TESTING.md}
