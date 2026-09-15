@@ -172,9 +172,11 @@ The release-artifact package separates Alembic from application startup, keeps
 PostgreSQL and Redis private, and removes source bind mounts and builder executables
 from the non-root read-only runtime. `make test-artifact` is the maintained opt-in local
 proof for image contents, immutable revision identity, one-shot migration failure,
-two replicas, provider-free Basketball publication/export, and graceful shutdown.
-Its report explicitly records that staging, managed services, TLS/proxy, providers,
-backup/restore, and operator release approval were not exercised.
+two replicas, provider-free Basketball publication/export, graceful shutdown, and
+self-signed loopback TLS termination. The TLS rehearsal verifies negotiated protocol,
+secure browser cookies, same-origin writes, and security headers through an owned proxy.
+Its report explicitly records that staging, managed services, external ingress/managed
+TLS, providers, backup/restore, and operator release approval were not exercised.
 The monitoring package separates dependency-free `/health` liveness from sanitized
 database `/ready` readiness and closes probe sessions on every failure. Production
 stdout logs are structured, release-correlated, and redact credential-shaped values.

@@ -24,6 +24,11 @@ from urllib.request import urlopen
 import httpx
 
 from examples.api_client_example import run_workflow
+from scripts.local_tls_rehearsal import (
+    LoopbackTLSProxy,
+    TLSMaterial,
+    verify_cookie_security,
+)
 
 ROOT = Path(__file__).resolve().parents[1]
 POSTGRES_IMAGE = "postgres:16-alpine"
@@ -697,6 +702,12 @@ def _exercise_replicas(target: ArtifactTarget, run_dir: Path) -> dict[str, Any]:
     if workflow.get("export_assignment_count", 0) < 1:
         raise RuntimeError("Artifact workflow did not export a published assignment")
 
+    tls_rehearsal = _exercise_tls_rehearsal(
+        target=target,
+        backend_port=ports[0],
+        run_dir=run_dir,
+    )
+
     stopped_name = target.app_names[1]
     _run(["docker", "stop", "--timeout", "10", stopped_name])
     inspect_data = _inspect_container(stopped_name)
@@ -714,9 +725,111 @@ def _exercise_replicas(target: ArtifactTarget, run_dir: Path) -> dict[str, Any]:
         "static_asset_status": static.status_code,
         "health_status": health.status_code,
         "hsts": health.headers.get("strict-transport-security"),
+        "tls_rehearsal": tls_rehearsal,
         "workflow": workflow,
         "graceful_shutdown_exit_code": exit_code,
     }
+
+
+def _exercise_tls_rehearsal(
+    *,
+    target: ArtifactTarget,
+    backend_port: int,
+    run_dir: Path,
+) -> dict[str, Any]:
+    """Exercise browser-session controls through owned loopback HTTPS termination."""
+    hostname = "artifact.signupflow.invalid"
+    tls_dir = run_dir / "tls-rehearsal"
+    material = TLSMaterial.create(tls_dir, hostname=hostname)
+    try:
+        with LoopbackTLSProxy(backend_port=backend_port, material=material) as proxy:
+            negotiated = proxy.negotiated_protocol()
+            with httpx.Client(
+                base_url=proxy.url,
+                verify=str(material.ca_certificate),
+                headers={"Host": hostname},
+                follow_redirects=False,
+                timeout=30.0,
+                trust_env=False,
+            ) as client:
+                login_form = client.get("/auth/login")
+                if login_form.status_code != 200:
+                    raise RuntimeError("TLS rehearsal could not load the browser login form")
+                csrf_headers = login_form.headers.get_list("set-cookie")
+                csrf_cookie = verify_cookie_security(
+                    csrf_headers,
+                    "signupflow_csrf",
+                    http_only=False,
+                )
+                csrf_token = client.cookies.get("signupflow_csrf")
+                if not csrf_token:
+                    raise RuntimeError("TLS rehearsal did not retain the secure CSRF cookie")
+
+                login = client.post(
+                    "/auth/login",
+                    data={
+                        "email": f"manager-{target.run_id}@basketball.example",
+                        "password": "LocalExample123!",
+                        "csrf_token": csrf_token,
+                    },
+                    headers={"Origin": f"https://{hostname}"},
+                )
+                if login.status_code != 303 or login.headers.get("location") != "/a/dashboard":
+                    raise RuntimeError("TLS rehearsal browser login did not reach the dashboard")
+                session_cookie = verify_cookie_security(
+                    login.headers.get_list("set-cookie"),
+                    "signupflow_session",
+                    http_only=True,
+                )
+
+                dashboard = client.get("/a/dashboard")
+                if dashboard.status_code != 200:
+                    raise RuntimeError("TLS rehearsal secure session was not usable over HTTPS")
+                required_headers = {
+                    "content-security-policy",
+                    "strict-transport-security",
+                    "x-content-type-options",
+                    "x-frame-options",
+                }
+                if required_headers - set(dashboard.headers):
+                    raise RuntimeError("TLS rehearsal dashboard is missing security headers")
+
+                foreign_origin = client.post(
+                    "/auth/logout",
+                    data={"csrf_token": csrf_token},
+                    headers={"Origin": "https://attacker.invalid"},
+                )
+                if foreign_origin.status_code != 403:
+                    raise RuntimeError("TLS rehearsal foreign-origin write was not rejected")
+                if client.get("/a/dashboard").status_code != 200:
+                    raise RuntimeError("Rejected foreign-origin write changed the browser session")
+
+                insecure = client.get(
+                    f"http://127.0.0.1:{backend_port}/a/dashboard",
+                    headers={"Host": hostname},
+                )
+                if insecure.status_code != 303 or insecure.headers.get("location") != "/auth/login":
+                    raise RuntimeError("Secure session cookie was sent over plain HTTP")
+
+            return {
+                "scope": "owned self-signed loopback TLS termination",
+                "hostname": hostname,
+                "loopback_port": proxy.port,
+                "ca_sha256": material.ca_sha256,
+                "negotiated": negotiated,
+                "login_status": login.status_code,
+                "dashboard_status": dashboard.status_code,
+                "foreign_origin_status": foreign_origin.status_code,
+                "plain_http_session_status": insecure.status_code,
+                "csrf_cookie": csrf_cookie,
+                "session_cookie": session_cookie,
+                "external_exposure": False,
+            }
+    finally:
+        material.server_key.unlink(missing_ok=True)
+        material.server_certificate.unlink(missing_ok=True)
+        material.ca_certificate.unlink(missing_ok=True)
+        tls_dir.rmdir()
 
 
 def _cleanup_container(target: ArtifactTarget, name: str) -> None:

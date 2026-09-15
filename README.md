@@ -246,7 +246,7 @@ manual release checks.
 make test-all                        # All seven Python tiers, including Playwright
 make test-postgres                   # Opt-in owned PostgreSQL migration/business/race checks
 make test-redis                      # Opt-in owned Redis shared-quota checks
-make test-artifact                   # Opt-in owned production image/private-stack checks
+make test-artifact                   # Opt-in image/private-stack/loopback-TLS checks
 make test-security                   # Opt-in committed-source/image scan and SBOM evidence
 make test-docs                       # Tracked documentation ledger and current local links
 make test-performance               # Legacy assertions; requires an owned loopback server
@@ -415,7 +415,7 @@ make test-unit-fast       # Skip slow bcrypt tests (~7s)
 make test-all             # All Python tiers, including web + contract + Playwright
 make test-postgres        # Owned ephemeral PostgreSQL acceptance (requires Docker)
 make test-redis           # Owned Redis quota, event-bus, and broker acceptance
-make test-artifact        # Build and exercise the committed production image locally
+make test-artifact        # Exercise the committed image and owned loopback TLS locally
 make test-security        # Scan that exact image and committed dependency inputs locally
 make test-recovery        # Owned encrypted SQLite backup and restored-app acceptance
 make test-docs            # Validate every tracked documentation disposition and current link
@@ -451,7 +451,9 @@ local application evidence, not network DDoS or deployed infrastructure acceptan
 Run `make test-artifact` for production-image changes after committing the tracked tree.
 It retains the SHA-labeled image and report, uses private disposable PostgreSQL/Redis,
 runs one migration job before two read-only replicas, and contacts no external provider.
-It is not staging or release approval.
+It also terminates HTTPS through an ephemeral self-signed loopback proxy and verifies
+secure browser cookies, same-origin writes, security headers, and TLS negotiation. This
+does not exercise external ingress, managed TLS, staging, or release approval.
 Then run `make test-security`. The pinned scanner reads a committed archive and the exact
 retained image without Docker-socket access, records advisory database and input hashes,
 exercises secret/database failure fixtures, and writes sanitized findings, license

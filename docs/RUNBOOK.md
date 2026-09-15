@@ -41,7 +41,10 @@ run Alembic concurrently from each replica.
 
 For the maintained provider-free local artifact proof, commit the tracked source
 and run `make test-artifact`. Inspect the emitted report and retained image tag.
-This command does not use Compose volumes, contact staging, or authorize release.
+The command terminates HTTPS with an ephemeral self-signed loopback certificate and
+verifies secure browser-session behavior through an owned reverse proxy. It deletes
+the private key after the run. This command does not exercise external ingress or
+managed TLS, use Compose volumes, contact staging, or authorize release.
 
 ## Health and readiness
 

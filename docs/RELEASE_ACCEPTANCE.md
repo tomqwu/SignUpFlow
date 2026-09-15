@@ -20,7 +20,8 @@ immutable runtime artifact before an owner go/no-go decision.
 
 A status is evidence only for its named row. Local source tests do not prove a built
 artifact, local fake alerts do not prove operator receipt, and local email capture does
-not prove external delivery.
+not prove external delivery. A self-signed loopback TLS rehearsal does not prove an
+external ingress, managed certificate, DNS, or deployed-environment configuration.
 
 ## Preparation Snapshot
 
@@ -44,7 +45,7 @@ operator in #271. Any source or configuration change invalidates affected rows.
 
 | Decision | Current status | Required recorded answer |
 | --- | --- | --- |
-| Church/Basketball business workflow | `BLOCKED_OWNER` | Accept or reject the statement and named limitations in #289. |
+| Church/Basketball business workflow | `PASS` | Accepted in #289 on 2026-09-15 for merged main `cb77a9f`; the recorded limitations remain in force. |
 | Pilot cohort | `BLOCKED_OWNER` | Name organizations, participant count, invitation owner, and whether all data is fictional. |
 | Region and data handling | `BLOCKED_OWNER` | Name hosting region, data classification, retention basis, and approved access roles. |
 | Support | `BLOCKED_OWNER` | Name support owner, hours, contact path, severity rules, and response expectations. |
@@ -60,7 +61,7 @@ approved capacity promise.
 
 | Surface | Candidate disposition | Exit evidence |
 | --- | --- | --- |
-| Web and API scheduling | In scope after #289 acceptance | Built-artifact Church and Basketball journeys on the frozen candidate |
+| Web and API scheduling | In scope; #289 accepted | Built-artifact Church and Basketball journeys on the frozen candidate |
 | In-app notifications and calendar export | In scope | Built-artifact publish/change/reminder and calendar checks |
 | Invitation and password-reset delivery | `BLOCKED_PROVIDER` | Authorized external recipient receives usable links; local capture remains development evidence |
 | Billing | `EXCLUDED` | `BILLING_ENABLED=false`; routes and UI remain unavailable |
@@ -72,7 +73,7 @@ approved capacity promise.
 
 | Row | Current status | Required candidate evidence | Owner issue |
 | --- | --- | --- | --- |
-| Business acceptance | `BLOCKED_OWNER` | Owner accepts #289 and its limitations | #289 |
+| Business acceptance | `PASS` | Owner accepted #289 and its limitations on 2026-09-15 | #289 |
 | Source validation and local review | `INVALIDATED` after the next source change | `make test-all`, applicable mobile checks, local review, and exact head/base SHAs | #271 |
 | Immutable runtime artifact | `INVALIDATED` | Same-SHA image digest, migration revision, package/assets/probes, nonroot runtime, and retained report | #265 |
 | PostgreSQL and Redis | `INVALIDATED` | Same-candidate migration, tenant, concurrency, notification, and shared-state exercises | #253, #261, #266 |
@@ -91,7 +92,7 @@ approved capacity promise.
 
 ## Execution Order
 
-1. Obtain #289 acceptance and record every owner decision above.
+1. Preserve the accepted #289 limitations and record every remaining owner decision above.
 2. Freeze one candidate source revision. Build one immutable artifact and record its
    image digest, migration revision, configuration fingerprint, and toolchain.
 3. Run all applicable local source, PostgreSQL, Redis, artifact, security, recovery,
