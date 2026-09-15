@@ -816,7 +816,7 @@ Create `.vscode/launch.json`:
 
 3. **Read More Documentation**
    - [Quick Start Guide](QUICK_START.md)
-   - [Deployment Guide](DEPLOYMENT.md)
+   - [Operations Runbook](RUNBOOK.md)
    - [Security Guide](SECURITY.md)
 
 ### Production Deployment
@@ -824,7 +824,7 @@ Create `.vscode/launch.json`:
 When ready for production:
 
 1. Use production `docker-compose.yml` (not `docker-compose.dev.yml`)
-2. Follow [DEPLOYMENT.md](DEPLOYMENT.md) guide
+2. Follow the [operations runbook](RUNBOOK.md)
 3. Use production environment variables (no defaults)
 4. Enable security features (HTTPS, secure secrets)
 

@@ -19,7 +19,7 @@
 ## Features
 
 - **Greedy Heuristic Solver** — auto-generate fair schedules with role-based constraints
-- **Responsive web app** — full admin + volunteer workflow in the browser, served by the same FastAPI process ([walkthrough below](#web-app--end-to-end-walkthrough)) — the primary surface
+- **Responsive web app** — full admin + volunteer workflow in the browser, served by the same FastAPI process ([walkthrough below](#web-app---church-and-basketball-workflows)) — the primary surface
 - **Flutter mobile app** (`mobile/`) — volunteer + admin app, local analysis and tests; see `mobile/README.md` for status
 - **CLI + API** — schedule from YAML files or through REST endpoints
 - **Multi-tenant** — full org isolation with JWT auth and RBAC (admin/volunteer)
@@ -243,6 +243,7 @@ make test-postgres                   # Opt-in owned PostgreSQL migration/busines
 make test-redis                      # Opt-in owned Redis shared-quota checks
 make test-artifact                   # Opt-in owned production image/private-stack checks
 make test-security                   # Opt-in committed-source/image scan and SBOM evidence
+make test-docs                       # Tracked documentation ledger and current local links
 make test-performance               # Opt-in; requires an owned loopback test server
 make test-mobile                     # Flutter unit/widget tests
 make capture-screenshots             # Regenerate asserted Church/Basketball UI evidence
@@ -409,6 +410,7 @@ make test-redis           # Owned Redis quota, event-bus, and broker acceptance
 make test-artifact        # Build and exercise the committed production image locally
 make test-security        # Scan that exact image and committed dependency inputs locally
 make test-recovery        # Owned encrypted SQLite backup and restored-app acceptance
+make test-docs            # Validate every tracked documentation disposition and current link
 make test-mobile          # Flutter tests (requires Flutter SDK)
 make capture-screenshots  # Recreate public Church/Basketball screenshots locally
 make validate-screenshots # Verify image, fixture, UI-source, and caption metadata

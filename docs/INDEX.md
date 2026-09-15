@@ -39,6 +39,8 @@ Reconciled 2026-09-13 for testing, CI, and merge policy:
 - [Mobile guide](../mobile/README.md) and [device smoke checks](../mobile/SMOKE.md).
 - [Documentation reconciliation record](DOCUMENTATION_STATUS.md): audit scope,
   historical classification, and verification limits.
+- [Documentation disposition ledger](documentation_ledger.yaml): machine-checked status,
+  canonical destination, owner, sources, and outcome for every tracked manual document.
 
 ## Historical Catalog (2025-10-27)
 

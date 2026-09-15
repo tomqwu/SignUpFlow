@@ -592,5 +592,5 @@ docker-compose exec api env | grep CONFIG_PROFILE
 **Author:** Claude Code
 **Related Docs:**
 - [DOCKER_DEVELOPMENT.md](DOCKER_DEVELOPMENT.md)
-- [DOCKER_QUICK_START.md](../DOCKER_QUICK_START.md)
+- [Docker development guide](DOCKER_DEVELOPMENT.md)
 - [QUICK_START.md](QUICK_START.md)

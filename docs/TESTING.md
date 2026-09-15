@@ -27,6 +27,7 @@ make test-postgres      # Opt-in PostgreSQL migration/business/race acceptance
 make test-redis         # Opt-in Redis quota, event-bus, and broker acceptance
 make test-artifact      # Opt-in production image and private-stack acceptance
 make test-security      # Opt-in exact-source/image scan and CycloneDX evidence
+make test-docs          # Tracked documentation dispositions and current local links
 make test-performance   # Opt-in, owned loopback target only
 make test-mobile        # Flutter unit/widget tests; requires Flutter SDK
 ```
@@ -101,6 +102,12 @@ and writes sanitized findings plus source/image CycloneDX documents under
 socket, and fails on missing tools/databases, an expired exception, stale artifact
 identity, or an unaccepted blocking finding. This is local artifact evidence, not hosted
 attestation or a deployed-environment scan.
+
+`make test-docs` compares every tracked Markdown file with
+`docs/documentation_ledger.yaml`, verifies required disposition metadata and source references,
+and checks local paths and anchors in current Markdown and HTML content. Historical link exceptions
+are explicit ledger outcomes; generated mobile documents are inventoried as the #191 cohort and are
+never repaired by this command.
 
 Monitoring regressions run without an external reporting sink:
 
