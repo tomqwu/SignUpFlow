@@ -4,6 +4,7 @@ from datetime import date, datetime, timedelta
 from io import BytesIO
 
 import pytest
+from icalendar import Calendar
 
 from api.models import (
     Assignment,
@@ -340,6 +341,15 @@ def test_solution_exports_filter_person_and_team_before_serialization(
     db.commit()
 
     endpoint = f"/api/v1/solutions/{solution.id}/export"
+    assert client.post(endpoint, json={"format": "ics", "scope": "org"}).status_code == 401
+    assert (
+        client.post(
+            endpoint,
+            json={"format": "ics", "scope": "org"},
+            headers=headers["member_a"],
+        ).status_code
+        == 403
+    )
     person_response = client.post(
         endpoint,
         json={"format": "json", "scope": f"person:{tenants['member_a']['person_id']}"},
@@ -413,8 +423,41 @@ def test_solution_exports_filter_person_and_team_before_serialization(
         json={"format": "ics", "scope": "team:tenant-a-team"},
         headers=headers["admin_a"],
     )
-    assert ics_response.status_code == 501
-    assert "Member A" not in ics_response.text
+    assert ics_response.status_code == 200, ics_response.text
+    assert ics_response.headers["content-type"].startswith("text/calendar")
+    assert (
+        ics_response.headers["content-disposition"]
+        == f"attachment; filename=solution_{solution.id}.ics"
+    )
+    calendar = Calendar.from_ical(ics_response.content)
+    calendar_events = [component for component in calendar.walk() if component.name == "VEVENT"]
+    assert len(calendar_events) == 1
+    assert str(calendar_events[0]["summary"]) == tenants["event_a"]["type"]
+    assert "Member A" in str(calendar_events[0]["description"])
+    assert "guard" in str(calendar_events[0]["description"])
+    assert "Peer A" not in ics_response.text
+    assert "Member B" not in ics_response.text
+
+    person_ics_response = client.post(
+        endpoint,
+        json={"format": "ics", "scope": f"person:{tenants['member_a']['person_id']}"},
+        headers=headers["admin_a"],
+    )
+    assert person_ics_response.status_code == 200, person_ics_response.text
+    assert "Member A" in person_ics_response.text
+    assert "Peer A" not in person_ics_response.text
+    assert "Member B" not in person_ics_response.text
+
+    org_ics_response = client.post(
+        endpoint,
+        json={"format": "ics", "scope": "org"},
+        headers=headers["admin_a"],
+    )
+    assert org_ics_response.status_code == 200, org_ics_response.text
+    assert org_ics_response.text.count("BEGIN:VEVENT") == 1
+    assert "Member A" in org_ics_response.text
+    assert "Peer A" in org_ics_response.text
+    assert "Member B" not in org_ics_response.text
 
     for scope, expected_status in (
         (f"person:{tenants['member_b']['person_id']}", 404),

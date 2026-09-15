@@ -3,7 +3,7 @@
 import json
 import math
 from copy import deepcopy
-from typing import Any
+from typing import Any, cast
 
 from fastapi import (
     APIRouter,
@@ -36,6 +36,7 @@ from api.models import (
     Notification,
     Organization,
     Person,
+    Resource,
     Solution,
     Team,
     TeamMember,
@@ -63,6 +64,7 @@ from api.services.publication_service import (
     unpublish_solution_transaction,
 )
 from api.timeutils import utcnow
+from api.utils.calendar_utils import generate_ics_from_events
 from api.utils.pdf_export import generate_schedule_pdf
 
 router = APIRouter(prefix="/solutions", tags=["solutions"])
@@ -349,7 +351,7 @@ def export_solution(
     current_admin: Person = Depends(get_current_admin_user),
     db: Session = Depends(get_db),
 ):
-    """Export a tenant-scoped solution in JSON, CSV, or PDF."""
+    """Export a tenant-scoped solution in JSON, CSV, ICS, or PDF."""
     solution = _get_admin_solution(solution_id, current_admin, db)
 
     if export_format.format not in {"json", "csv", "ics", "pdf"}:
@@ -534,9 +536,57 @@ def export_solution(
         )
 
     elif export_format.format == "ics":
-        # TODO: ICS export has StringIO bug - needs fixing
-        raise HTTPException(
-            status_code=status.HTTP_501_NOT_IMPLEMENTED, detail="ICS export not yet implemented"
+        org = db.query(Organization).filter(Organization.id == solution.org_id).one()
+        org_config: dict[str, Any] = org.config if isinstance(org.config, dict) else {}
+        people_by_id: dict[str, Person] = {cast(str, person.id): person for person in people_db}
+        resource_ids = {
+            cast(str, event.resource_id) for event in events_db if event.resource_id is not None
+        }
+        resources_by_id: dict[str, Resource] = {
+            cast(str, resource.id): resource
+            for resource in db.query(Resource)
+            .filter(Resource.org_id == solution.org_id, Resource.id.in_(resource_ids))
+            .all()
+        }
+
+        calendar_events: list[dict[str, Any]] = []
+        for event in sorted(events_db, key=lambda item: (item.start_time, item.id)):
+            event_id = cast(str, event.id)
+            resource_id = cast(str | None, event.resource_id)
+            resource = resources_by_id.get(resource_id) if resource_id is not None else None
+            calendar_events.append(
+                {
+                    "id": event_id,
+                    "type": event.type,
+                    "start_time": event.start_time,
+                    "end_time": event.end_time,
+                    "extra_data": event.extra_data or {},
+                    "resource": {"location": resource.location} if resource else None,
+                    "assignments": [
+                        {
+                            "person": {
+                                "name": people_by_id[cast(str, row.person_id)].name,
+                            },
+                            "role": row.role,
+                        }
+                        for row in sorted(
+                            event_assignments[event_id],
+                            key=lambda item: (item.person_id, item.role or ""),
+                        )
+                    ],
+                }
+            )
+
+        content = generate_ics_from_events(
+            calendar_events,
+            calendar_name=f"{org.name} - Solution {solution_id}",
+            timezone=str(org_config.get("timezone") or "UTC"),
+            include_assignments=True,
+        )
+        return Response(
+            content=content,
+            media_type="text/calendar",
+            headers={"Content-Disposition": f"attachment; filename=solution_{solution_id}.ics"},
         )
 
     elif export_format.format == "pdf":
