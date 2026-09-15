@@ -36,6 +36,13 @@ evidence with a local mock. Do not deploy or enable providers from a roadmap alo
   contexts fail on JavaScript errors. Broader legacy/manifest work remains open.
 - #288: billing and paid SMS now default off behind shared API/web feature gates;
   the scheduling flow and both domain playbooks run without provider credentials.
+- #256: every mounted billing operation still requires an authenticated tenant admin.
+  Checkout return now performs a read-only provider lookup and verifies both customer
+  and organization metadata before reporting `pending` or `complete`; neither state
+  changes local entitlement. Payment-method attachment checks existing provider
+  ownership before creating a customer or attaching the object, and already-owned
+  methods are idempotent. Billing remains disabled by default; webhook state changes,
+  provider sandbox acceptance, pricing, and commercial enablement remain under #270.
 - #279/#289 FLOW-1: the machine-readable playbook coverage manifest now binds
   BO-01..12, CH-01..08, BB-01..08, every scheduling qualification, evidence tier,
   and partial/blocked status; pytest rejects omitted bundled roles or scenarios.

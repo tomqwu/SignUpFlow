@@ -129,6 +129,97 @@ def test_checkout_requires_authenticated_admin(client, billing_actors, billing_s
         service.assert_not_called()
 
 
+def _add_subscription(db, *, customer_id: str | None = "cus_own") -> None:
+    db.add(
+        Subscription(
+            org_id="billing-a",
+            plan_tier="free",
+            status="active",
+            stripe_customer_id=customer_id,
+        )
+    )
+    db.commit()
+
+
+def test_checkout_rejects_foreign_session_without_entitlement_mutation(
+    client, db, billing_actors, monkeypatch
+):
+    _add_subscription(db)
+    retrieve = MagicMock(
+        return_value={
+            "id": "cs_foreign",
+            "customer": "cus_foreign",
+            "metadata": {"org_id": "billing-b"},
+            "status": "complete",
+            "payment_status": "paid",
+        }
+    )
+    monkeypatch.setattr("stripe.checkout.Session.retrieve", retrieve)
+
+    response = client.post(
+        "/api/v1/billing/subscription/checkout-success",
+        headers=billing_actors["admin"],
+        params={"session_id": "cs_foreign"},
+    )
+
+    assert response.status_code == 400
+    assert response.json() == {"detail": "Checkout session not found for organization"}
+    retrieve.assert_called_once_with("cs_foreign")
+    subscription = db.query(Subscription).filter(Subscription.org_id == "billing-a").one()
+    assert subscription.plan_tier == "free"
+    assert subscription.status == "active"
+    assert subscription.stripe_subscription_id is None
+
+
+@pytest.mark.parametrize(
+    "provider_status,payment_status,expected_status,expected_success",
+    [
+        ("open", "unpaid", "pending", False),
+        ("complete", "paid", "complete", True),
+        ("complete", "no_payment_required", "complete", True),
+    ],
+)
+def test_checkout_reports_verified_provider_state_without_granting_entitlement(
+    client,
+    db,
+    billing_actors,
+    monkeypatch,
+    provider_status,
+    payment_status,
+    expected_status,
+    expected_success,
+):
+    _add_subscription(db)
+    retrieve = MagicMock(
+        return_value={
+            "id": "cs_own",
+            "customer": "cus_own",
+            "metadata": {"org_id": "billing-a"},
+            "status": provider_status,
+            "payment_status": payment_status,
+        }
+    )
+    monkeypatch.setattr("stripe.checkout.Session.retrieve", retrieve)
+
+    response = client.post(
+        "/api/v1/billing/subscription/checkout-success",
+        headers=billing_actors["admin"],
+        params={"session_id": "cs_own"},
+    )
+
+    assert response.status_code == 200, response.text
+    body = response.json()
+    assert body["success"] is expected_success
+    assert body["checkout_status"] == expected_status
+    assert body["entitlement_updated"] is False
+    assert body["subscription"]["plan_tier"] == "free"
+    retrieve.assert_called_once_with("cs_own")
+    subscription = db.query(Subscription).filter(Subscription.org_id == "billing-a").one()
+    assert subscription.plan_tier == "free"
+    assert subscription.status == "active"
+    assert subscription.stripe_subscription_id is None
+
+
 @pytest.mark.parametrize("operation", ["detach_payment_method", "set_default_payment_method"])
 @pytest.mark.parametrize("customer", [None, "cus_foreign", "cus_own"])
 def test_payment_method_ownership(db, billing_actors, monkeypatch, operation, customer):
@@ -155,6 +246,55 @@ def test_payment_method_ownership(db, billing_actors, monkeypatch, operation, cu
         modify.assert_called_once_with(
             "cus_own", invoice_settings={"default_payment_method": "pm_test"}
         )
+
+
+def test_foreign_payment_method_attach_is_rejected_before_provider_mutation(
+    db, billing_actors, monkeypatch
+):
+    _add_subscription(db, customer_id=None)
+    retrieve = MagicMock(return_value={"id": "pm_foreign", "customer": "cus_foreign"})
+    create_customer = MagicMock()
+    attach = MagicMock()
+    modify = MagicMock()
+    monkeypatch.setattr("stripe.PaymentMethod.retrieve", retrieve)
+    monkeypatch.setattr("stripe.Customer.create", create_customer)
+    monkeypatch.setattr("stripe.PaymentMethod.attach", attach)
+    monkeypatch.setattr("stripe.Customer.modify", modify)
+
+    result = StripeService(db).attach_payment_method("billing-a", "pm_foreign")
+
+    assert result == {
+        "success": False,
+        "message": "Payment method not available for organization",
+    }
+    retrieve.assert_called_once_with("pm_foreign")
+    create_customer.assert_not_called()
+    attach.assert_not_called()
+    modify.assert_not_called()
+    subscription = db.query(Subscription).filter(Subscription.org_id == "billing-a").one()
+    assert subscription.stripe_customer_id is None
+
+
+def test_already_owned_payment_method_attach_is_idempotent(db, billing_actors, monkeypatch):
+    _add_subscription(db)
+    retrieve_payment_method = MagicMock(return_value={"id": "pm_own", "customer": "cus_own"})
+    attach = MagicMock()
+    customer = MagicMock()
+    customer.invoice_settings.default_payment_method = "pm_own"
+    retrieve_customer = MagicMock(return_value=customer)
+    modify = MagicMock()
+    monkeypatch.setattr("stripe.PaymentMethod.retrieve", retrieve_payment_method)
+    monkeypatch.setattr("stripe.PaymentMethod.attach", attach)
+    monkeypatch.setattr("stripe.Customer.retrieve", retrieve_customer)
+    monkeypatch.setattr("stripe.Customer.modify", modify)
+
+    result = StripeService(db).attach_payment_method("billing-a", "pm_own")
+
+    assert result == {"success": True, "message": "Payment method added successfully"}
+    retrieve_payment_method.assert_called_once_with("pm_own")
+    attach.assert_not_called()
+    retrieve_customer.assert_called_once_with("cus_own")
+    modify.assert_not_called()
 
 
 def test_existing_foreign_invoice_is_hidden(client, db, billing_actors):

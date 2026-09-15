@@ -1,7 +1,13 @@
 # Stripe Integration Plan - SignUpFlow
 
+> **Historical planning document (2025-10-20).** Prices, timelines, provider choices,
+> completion marks, and launch instructions below are not current product decisions or
+> evidence. Billing is registered but disabled by default. See
+> [the current roadmap](../ROADMAP.md) and issue #270 before any sandbox work or
+> enablement; no live provider action is authorized by this document.
+
 **Created:** 2025-10-20
-**Status:** Planning Phase
+**Status:** Historical proposal; superseded for current execution
 **Target:** Week 1-2 of SaaS MVP Launch
 
 ---
@@ -15,7 +21,7 @@
 
 ---
 
-## 💰 Pricing Tiers (Final)
+## 💰 Proposed Historical Pricing Tiers
 
 ### FREE TIER
 ```yaml
