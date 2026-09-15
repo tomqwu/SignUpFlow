@@ -18,6 +18,8 @@ names and reasons only; secret values are not included in the error.
 | `RELEASE_SHA` | structured logging and operational signals | `unknown` | Supply the exact 40-character lowercase Git commit SHA; missing or malformed values fail. |
 | `SECRET_KEY` | `api.security` | known sample value | Supply a unique value of at least 32 characters; known repository samples fail. |
 | `DATABASE_URL` | `api.database` | local SQLite | Use a PostgreSQL URL with a host and database; known sample credentials fail. |
+| `RATE_LIMIT_STORAGE` | `api.utils.rate_limiter` | process-local memory | Set to `redis`; any other production value fails. |
+| `REDIS_URL` or `RATE_LIMIT_REDIS_URL` | shared request limiter | localhost Redis | Supply an authenticated `redis://` or `rediss://` URL; missing, malformed, or sample credentials fail. |
 | `ACCESS_TOKEN_EXPIRE_HOURS` | `api.core.runtime_config` | `24` | Use a positive finite value of at least one minute. Browser session `Max-Age` uses the same value. |
 | `APP_URL` | message-link generation and browser-origin fallback | localhost | Supply one HTTPS origin with no path, query, or credentials. |
 | `FRONTEND_URL` | browser-origin enforcement and message links | APP_URL/localhost fallback | Supply the exact public HTTPS browser origin. |
@@ -58,8 +60,9 @@ multi-key rotation is not implemented.
 
 `docker-compose.yml` requires database, Redis, signing-key, and HTTPS-origin
 inputs instead of supplying sample production credentials. It passes the
-canonical access-token setting and defaults every provider off. The image runs
-one Uvicorn worker because rate limits and SSE fan-out are process-local.
+canonical access-token setting and defaults every provider off. Production rate limits
+use shared Redis and fail protected operations closed during an outage. The image still
+runs one Uvicorn worker because SSE fan-out and notification dispatch remain process-local.
 Compose does not publish PostgreSQL or Redis host ports and uses an authenticated
 Redis health check. The API image has no source bind mounts and runs non-root,
 read-only, capability-free, and with `no-new-privileges`.
@@ -67,8 +70,8 @@ Production logs are JSON records on stdout with request ID, environment, release
 SHA, and bounded event fields. Credential-shaped assignments and PostgreSQL/Redis
 URL userinfo are redacted. `/health` is dependency-free process liveness;
 container health uses sanitized database readiness from `/ready`.
-Do not increase the worker count until #261 and #266 have shared-state and
-cross-worker acceptance evidence.
+Do not increase the worker count until #266 has cross-worker notification acceptance
+evidence.
 
 The entrypoint never runs migrations. Compose uses one `migrate` service and API
 replicas start only after it exits successfully; deployment operators must preserve
@@ -87,6 +90,7 @@ Run the clean-process configuration tests without provider credentials:
 ```bash
 poetry run pytest tests/unit/test_production_config.py -q
 poetry run pytest tests/unit/test_secret_key_guard.py tests/unit/test_cors_config.py -q
+make test-redis
 make test-all
 make test-artifact
 make test-recovery

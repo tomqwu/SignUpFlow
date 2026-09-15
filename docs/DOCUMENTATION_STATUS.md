@@ -133,8 +133,13 @@ Browser authentication routes carry the existing local rate-limit dependencies, 
 rate limits and audit records ignore forwarded addresses from untrusted peers. A real
 Chromium case covers rejection without mutation and same-origin success. The package adds
 only hidden request metadata and does not alter the rendered walkthrough, so the committed
-Church and Basketball screenshots remain current. Distributed quotas and deployed
-proxy/TLS behavior remain unresolved release evidence under #261.
+Church and Basketball screenshots remain current. Production request limits now use
+atomic Redis storage shared by application workers; an owned Redis 7 drill covers shared
+quota and expiring hashed keys, while unit tests cover fail-closed 503 and recovery. The
+existing request-integrity browser evidence plus production configuration tests cover
+local cookie, exact-origin, expiry, and revocation behavior. Deployed edge/proxy/TLS
+behavior remains external release evidence under #271; it is not represented as local
+application work still missing.
 The maintained production-configuration contract now maps effective environment readers,
 defaults, fail-closed rules, provider gates, and current container limits. Production
 rejects unsafe settings before database initialization, and the Compose/reference

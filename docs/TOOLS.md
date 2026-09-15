@@ -31,6 +31,7 @@ process. Do not bypass a refusal by copying the old command from historical docs
 | `scripts/retired_tool.py` | Internal support | Emits deterministic refusal messages for retired entry points. | Developer tooling |
 | `scripts/run_local_validation.py` | Supported | Run through `make test-all`; owns unique logs/JUnit/report artifacts. | Testing |
 | `scripts/run_postgres_validation.py` | Supported | Run through `make test-postgres`; owns one loopback-only, tmpfs PostgreSQL container and unique report directory. | Testing |
+| `scripts/run_redis_validation.py` | Supported | Run through `make test-redis`; owns one authenticated loopback-only, tmpfs Redis container and unique report directory. | Testing |
 | `scripts/run_security_validation.py` | Supported local opt-in | Run through `make test-security` after a same-SHA `make test-artifact`; scans a committed archive and exact retained image with a pinned container, no Docker socket, and owned temporary cache. | Security |
 | `scripts/run_sqlite_recovery_drill.py` | Supported local opt-in | Run through `make test-recovery`; owns fictional SQLite files and source-bound report/JUnit/log artifacts, destroys its temporary key, and performs no cutover. | Data platform |
 | `scripts/sqlite_recovery.py` | Supported local SQLite | Initializes marker-bound workspaces, generates a separate key, creates/verifies encrypted WAL-consistent bundles, and restores only to a new owned destination. | Data platform |

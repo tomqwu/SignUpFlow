@@ -4,11 +4,16 @@ Rostio includes built-in rate limiting to prevent spam and bot abuse on critical
 
 ## Overview
 
-Rate limiting is implemented using a **token bucket algorithm** that:
+Development rate limiting uses a process-local token bucket. Production uses an atomic
+Redis fixed-window counter shared across application workers. Both implementations:
 - Tracks requests per IP address
 - Automatically refills tokens over time
 - Returns HTTP 429 (Too Many Requests) when limits are exceeded
 - Is disabled during tests (when `TESTING=true`)
+
+Production requires `RATE_LIMIT_STORAGE=redis` and an authenticated `REDIS_URL` (or
+dedicated `RATE_LIMIT_REDIS_URL`). Missing or unavailable shared storage returns a
+retryable 503 for protected operations instead of silently allowing traffic.
 
 ## Default Rate Limits
 
@@ -79,6 +84,10 @@ RATE_LIMIT_CREATE_ORG_WINDOW=3600    # 1 hour
 
 ### Token Bucket Algorithm
 
+This algorithm describes the development fallback. Production increments one Redis key
+atomically and expires the fixed window; the key contains a SHA-256 digest rather than
+the raw client address.
+
 1. **Initial State**: Each IP starts with a full bucket of tokens (e.g., 3 tokens for signup)
 2. **Request**: Each request consumes 1 token
 3. **Refill**: Tokens automatically refill at a constant rate over time
@@ -99,11 +108,9 @@ Time    | Tokens | Action              | Result
 
 ## IP Address Detection
 
-Rate limits are tracked per IP address. The system checks:
-1. **X-Forwarded-For header** (for requests through proxies/load balancers)
-2. **Direct client IP** (fallback for direct connections)
-
-This ensures accurate rate limiting behind reverse proxies like Nginx or CDNs.
+Rate limits are tracked per client address. The direct peer is authoritative unless it
+belongs to `TRUSTED_PROXY_IPS`; only then is the forwarded chain considered. An
+attacker-supplied `X-Forwarded-For` header from any other peer is ignored.
 
 ## Response Format
 
@@ -122,10 +129,9 @@ Content-Type: application/json
 
 Rate limiting is **automatically disabled** during tests when `TESTING=true` is set in the environment.
 
-To test rate limiting manually:
-1. Unset `TESTING` environment variable
-2. Make multiple rapid requests to an endpoint
-3. Observe HTTP 429 after exceeding the limit
+Run `make test-redis` for repeatable owned Redis acceptance. It proves two limiter
+instances share one quota and that hashed keys expire. Focused unit tests cover backend
+outage and recovery without contacting a provider.
 
 ## Production Considerations
 
@@ -143,14 +149,9 @@ location / {
 
 ### Distributed Deployments
 
-The current implementation uses **in-memory storage**, suitable for:
-- Single-server deployments
-- Development environments
-- Small-scale production
-
-For **distributed deployments** with multiple servers, consider:
-- Redis-based rate limiting (shared state across servers)
-- API Gateway rate limiting (AWS API Gateway, Kong, etc.)
+Application workers share Redis quota state. Keep network-edge limits and volumetric
+attack controls at the reverse proxy, load balancer, or dedicated edge service; this
+application limiter is not a replacement for them.
 
 ### Monitoring
 

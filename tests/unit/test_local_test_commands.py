@@ -19,6 +19,7 @@ def test_static_validation_commands_are_documented_locally():
     ):
         assert command in commands
     assert "make test-postgres" in commands
+    assert "make test-redis" in commands
 
 
 def test_mobile_validation_commands_are_documented_locally():
@@ -93,6 +94,14 @@ def test_local_postgres_target_runs_the_owned_validator():
     )
 
     assert "scripts/run_postgres_validation.py" in result.stdout
+
+
+def test_local_redis_target_runs_the_owned_validator():
+    result = subprocess.run(
+        ["make", "-n", "test-redis"], cwd=ROOT, text=True, capture_output=True, check=True
+    )
+
+    assert "scripts/run_redis_validation.py" in result.stdout
 
 
 def test_local_artifact_target_runs_the_owned_validator():

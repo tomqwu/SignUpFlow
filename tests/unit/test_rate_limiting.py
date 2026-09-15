@@ -5,8 +5,44 @@ import os
 import pytest
 from fastapi import HTTPException
 
+from api.utils import rate_limit_middleware
 from api.utils.rate_limit_middleware import get_client_ip, rate_limit
-from api.utils.rate_limiter import RATE_LIMITS, RateLimiter, rate_limiter
+from api.utils.rate_limiter import (
+    RATE_LIMITS,
+    RateLimitBackendUnavailableError,
+    RateLimiter,
+    RedisRateLimiter,
+    rate_limiter,
+)
+
+
+class SharedRedisStub:
+    """Minimal shared Redis surface for atomic limiter unit tests."""
+
+    def __init__(self) -> None:
+        self.counts: dict[str, int] = {}
+
+    def eval(self, script, key_count, key, window_seconds, max_requests):
+        assert "INCR" in script
+        assert key_count == 1
+        self.counts[key] = self.counts.get(key, 0) + 1
+        return 1 if self.counts[key] <= int(max_requests) else 0
+
+    def delete(self, key):
+        self.counts.pop(key, None)
+
+
+class RecoveringRedisStub(SharedRedisStub):
+    def __init__(self) -> None:
+        super().__init__()
+        self.available = False
+
+    def eval(self, *args):
+        if not self.available:
+            from redis.exceptions import ConnectionError
+
+            raise ConnectionError("synthetic outage")
+        return super().eval(*args)
 
 
 class TestRateLimiter:
@@ -115,6 +151,37 @@ class TestRateLimiter:
         assert "old_user" not in limiter._buckets
 
 
+class TestRedisRateLimiter:
+    def test_two_instances_share_one_atomic_quota(self):
+        redis = SharedRedisStub()
+        worker_a = RedisRateLimiter(client=redis)
+        worker_b = RedisRateLimiter(client=redis)
+
+        assert worker_a.is_allowed("login:203.0.113.8", max_requests=2, window_seconds=60)
+        assert worker_b.is_allowed("login:203.0.113.8", max_requests=2, window_seconds=60)
+        assert not worker_a.is_allowed("login:203.0.113.8", max_requests=2, window_seconds=60)
+
+    def test_redis_keys_do_not_store_the_raw_client_identifier(self):
+        redis = SharedRedisStub()
+        limiter = RedisRateLimiter(client=redis)
+
+        limiter.is_allowed("login:203.0.113.8", max_requests=2, window_seconds=60)
+
+        stored_key = next(iter(redis.counts))
+        assert "203.0.113.8" not in stored_key
+        assert stored_key.startswith("signupflow:rate-limit:")
+
+    def test_same_limiter_recovers_after_backend_restoration(self):
+        redis = RecoveringRedisStub()
+        limiter = RedisRateLimiter(client=redis)
+
+        with pytest.raises(RateLimitBackendUnavailableError):
+            limiter.is_allowed("login:203.0.113.9", max_requests=2, window_seconds=60)
+
+        redis.available = True
+        assert limiter.is_allowed("login:203.0.113.9", max_requests=2, window_seconds=60)
+
+
 class TestRateLimitMiddleware:
     """Test the FastAPI rate limit middleware."""
 
@@ -187,7 +254,7 @@ class TestRateLimitMiddleware:
 class TestRateLimitProduction:
     """Test rate limiting behavior in production mode."""
 
-    def test_rate_limit_enforced_in_production(self):
+    def test_rate_limit_enforced_in_production(self, monkeypatch):
         """Test that rate limits are enforced when TESTING is not set."""
 
         # Temporarily unset TESTING and DISABLE_RATE_LIMITS
@@ -198,6 +265,8 @@ class TestRateLimitProduction:
         original_disable = os.getenv("DISABLE_RATE_LIMITS")
         if "DISABLE_RATE_LIMITS" in os.environ:
             del os.environ["DISABLE_RATE_LIMITS"]
+
+        monkeypatch.setattr(rate_limit_middleware, "rate_limiter", RateLimiter())
 
         try:
 
@@ -243,6 +312,8 @@ class TestRateLimitProduction:
         monkeypatch.delenv("DISABLE_RATE_LIMITS", raising=False)
         monkeypatch.delenv("TRUSTED_PROXY_IPS", raising=False)
         monkeypatch.setenv("ENVIRONMENT", "production")
+        local_limiter = RateLimiter()
+        monkeypatch.setattr(rate_limit_middleware, "rate_limiter", local_limiter)
 
         class MockClient:
             host = "198.51.100.77"
@@ -261,7 +332,31 @@ class TestRateLimitProduction:
                 check_fn(MockRequest())
             assert exc_info.value.status_code == 429
         finally:
-            rate_limiter.reset(key)
+            local_limiter.reset(key)
+
+    def test_backend_outage_fails_closed_with_temporary_error(self, monkeypatch):
+        monkeypatch.delenv("TESTING", raising=False)
+        monkeypatch.delenv("DISABLE_RATE_LIMITS", raising=False)
+        monkeypatch.setenv("ENVIRONMENT", "production")
+
+        class UnavailableLimiter:
+            def is_allowed(self, *args, **kwargs):
+                raise RateLimitBackendUnavailableError("redis unavailable")
+
+        class MockClient:
+            host = "198.51.100.88"
+
+        class MockRequest:
+            client = MockClient()
+            headers = {}
+
+        monkeypatch.setattr(rate_limit_middleware, "rate_limiter", UnavailableLimiter())
+
+        with pytest.raises(HTTPException) as exc_info:
+            rate_limit("login")(MockRequest())
+
+        assert exc_info.value.status_code == 503
+        assert exc_info.value.headers == {"Retry-After": "5"}
 
 
 if __name__ == "__main__":

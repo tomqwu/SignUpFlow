@@ -1,4 +1,4 @@
-.PHONY: run dev stop restart setup install migrate test test-backend test-integration test-all test-postgres test-artifact test-coverage test-unit test-unit-fast test-unit-file test-with-timing clean clean-all pre-commit help check-poetry check-python check-deps install-poetry install-deps up down build logs shell db-shell redis-shell test-docker migrate-docker restart-api ps clean-docker check-docker ensure-test-deps prepare-test-data ensure-test-env
+.PHONY: run dev stop restart setup install migrate test test-backend test-integration test-all test-postgres test-redis test-artifact test-coverage test-unit test-unit-fast test-unit-file test-with-timing clean clean-all pre-commit help check-poetry check-python check-deps install-poetry install-deps up down build logs shell db-shell redis-shell test-docker migrate-docker restart-api ps clean-docker check-docker ensure-test-deps prepare-test-data ensure-test-env
 
 export SKIP_TEST_DB_FIXTURES ?= false
 
@@ -193,6 +193,10 @@ test-all: ensure-test-env
 test-postgres: check-poetry check-docker
 	@echo "🧪 Running owned PostgreSQL acceptance..."
 	@poetry run python scripts/run_postgres_validation.py
+
+test-redis: check-poetry check-docker
+	@echo "🧪 Running owned Redis rate-limit acceptance..."
+	@poetry run python scripts/run_redis_validation.py
 
 test-artifact: check-poetry check-docker
 	@echo "🧪 Building and exercising an owned production artifact..."
@@ -481,6 +485,7 @@ help:
 	@echo "  make test-integration - Run integration tests only"
 	@echo "  make test-all         - Run all Python tiers, including web/contract/Playwright"
 	@echo "  make test-postgres    - Run owned PostgreSQL migration/business/race acceptance"
+	@echo "  make test-redis       - Run owned Redis shared rate-limit acceptance"
 	@echo "  make test-artifact    - Build and exercise an owned production image locally"
 	@echo "  make test-performance - Run load tests against an explicit owned loopback server"
 	@echo "  make test-mobile      - Run Flutter tests locally (requires Flutter SDK)"

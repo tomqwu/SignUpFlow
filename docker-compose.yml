@@ -99,6 +99,7 @@ services:
 
       # Redis/Celery Configuration
       REDIS_URL: "redis://:${REDIS_PASSWORD:?Set REDIS_PASSWORD}@redis:6379/0"
+      RATE_LIMIT_STORAGE: "redis"
       CELERY_BROKER_URL: "redis://:${REDIS_PASSWORD:?Set REDIS_PASSWORD}@redis:6379/0"
       CELERY_RESULT_BACKEND: "redis://:${REDIS_PASSWORD:?Set REDIS_PASSWORD}@redis:6379/0"
 

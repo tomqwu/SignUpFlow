@@ -70,6 +70,15 @@
       "reason": "Requires an explicitly provisioned disposable PostgreSQL database."
     },
     {
+      "id": "redis",
+      "label": "Disposable Redis rate-limit acceptance",
+      "paths": ["tests/redis"],
+      "required_files": ["tests/redis/test_redis_rate_limit_acceptance.py"],
+      "command": ["make", "test-redis"],
+      "default_status": "not_run",
+      "reason": "Requires an owned loopback-only Redis container for shared-worker quota acceptance."
+    },
+    {
       "id": "mobile",
       "label": "Flutter tests",
       "paths": [],

@@ -18,6 +18,7 @@ VALID_PRODUCTION_ENV = {
     "RELEASE_SHA": "a" * 40,
     "SECRET_KEY": "synthetic-test-signing-key-that-is-long-enough-1234",
     "DATABASE_URL": "postgresql://signupflow:synthetic-db-password@db/signupflow",
+    "REDIS_URL": "redis://:synthetic-redis-password@redis:6379/0",
     "APP_URL": "https://app.example.test",
     "API_BASE_URL": "https://api.example.test",
     "FRONTEND_URL": "https://app.example.test",
@@ -90,6 +91,8 @@ def test_production_requires_exact_git_release_sha(release_sha):
             "DATABASE_URL",
             "postgresql://signupflow:changeme_in_production@db/signupflow",
         ),
+        ("REDIS_URL", ""),
+        ("REDIS_URL", "http://redis:6379/0"),
         ("APP_URL", "http://app.example.test"),
         ("FRONTEND_URL", "https://app.example.test/path"),
         ("CORS_ALLOWED_ORIGINS", "*"),
@@ -116,7 +119,8 @@ def test_each_unsafe_production_setting_fails_in_a_clean_process(variable, value
 
     assert result.returncode != 0
     assert variable in combined
-    assert value not in combined
+    if value:
+        assert value not in combined
 
 
 def test_disabled_providers_ignore_inherited_credentials():
@@ -282,6 +286,7 @@ def test_production_compose_passes_canonical_fail_closed_settings():
     assert environment["EMAIL_ENABLED"] == "${EMAIL_ENABLED:-false}"
     assert environment["SMS_ENABLED"] == "${SMS_ENABLED:-false}"
     assert environment["BILLING_ENABLED"] == "${BILLING_ENABLED:-false}"
+    assert environment["RATE_LIMIT_STORAGE"] == "redis"
     assert "JWT_EXPIRE_HOURS" not in environment
     assert "RATE_LIMITING_ENABLED" not in environment
     assert "changeme_in_production" not in (REPO_ROOT / "docker-compose.yml").read_text()
@@ -320,7 +325,7 @@ def test_production_reference_profile_keeps_unverified_services_disabled():
     profile = yaml.safe_load((REPO_ROOT / "config/env.prod.yaml").read_text())
 
     assert profile["app"]["workers"] == 1
-    assert profile["redis"]["rate_limiting_enabled"] is False
+    assert profile["redis"]["rate_limiting_enabled"] is True
     assert profile["email"]["enabled"] is False
     assert profile["sms"]["enabled"] is False
     assert profile["billing"]["enabled"] is False

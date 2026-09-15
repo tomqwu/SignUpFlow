@@ -152,8 +152,12 @@ evidence with a local mock. Do not deploy or enable providers from a roadmap alo
   middleware, rejected requests cannot mutate state, and browser authentication routes
   use the existing per-operation rate limits. Forwarded client addresses affect limits
   and audit logs only from configured proxy peers; loopback has no production bypass.
-  Distributed limiter storage, multi-worker quotas and outage behavior, and deployed
-  proxy/TLS acceptance remain later work in the same issue.
+  Production now requires atomic Redis limiter storage, hashes client identifiers in
+  expiring keys, and returns retryable 503 rather than unlimited access during storage
+  failure. An owned Redis 7 drill proves two independent workers share one quota; local
+  production configuration proves secure cookies, exact HTTPS origins, expiry/revocation,
+  and fail-closed settings. Deployed edge/proxy/TLS acceptance remains external release
+  evidence under #271, not unfinished application implementation.
 - #258: production startup now rejects known sample signing keys, SQLite or sample
   database settings, unsafe origins/CORS, test and debug bypasses, malformed proxy/
   lifetime/boolean settings, and incoherent enabled-provider configuration before
