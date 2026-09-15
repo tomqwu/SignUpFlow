@@ -41,6 +41,9 @@ def test_rrule_preset_set_and_clear(live_server, page):
     page.click("#rrule-section button:has-text('Every Sunday')")
     page.wait_for_selector("#rrule-section .mono-data:has-text('FREQ=WEEKLY;BYDAY=SU')")
 
+    # Reload proves persistence and avoids racing HTMX while it binds the swapped button.
+    page.reload()
+    page.wait_for_selector("#rrule-section .mono-data:has-text('FREQ=WEEKLY;BYDAY=SU')")
     page.click("#rrule-section button:has-text('Clear recurring rule')")
     page.wait_for_selector("#rrule-section:has-text('No recurring rule')")
 
