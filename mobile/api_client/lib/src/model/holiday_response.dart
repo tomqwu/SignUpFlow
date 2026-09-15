@@ -187,4 +187,3 @@ class _$HolidayResponseSerializer implements PrimitiveSerializer<HolidayResponse
     return result.build();
   }
 }
-

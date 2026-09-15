@@ -5,6 +5,7 @@
 // ignore_for_file: unused_element
 import 'package:built_collection/built_collection.dart';
 import 'package:signupflow_api/src/model/validation_error_loc_inner.dart';
+import 'package:built_value/json_object.dart';
 import 'package:built_value/built_value.dart';
 import 'package:built_value/serializer.dart';
 
@@ -13,11 +14,19 @@ part 'validation_error.g.dart';
 /// ValidationError
 ///
 /// Properties:
+/// * [ctx]
+/// * [input]
 /// * [loc]
 /// * [msg]
 /// * [type]
 @BuiltValue()
 abstract class ValidationError implements Built<ValidationError, ValidationErrorBuilder> {
+  @BuiltValueField(wireName: r'ctx')
+  JsonObject? get ctx;
+
+  @BuiltValueField(wireName: r'input')
+  JsonObject? get input;
+
   @BuiltValueField(wireName: r'loc')
   BuiltList<ValidationErrorLocInner> get loc;
 
@@ -50,6 +59,20 @@ class _$ValidationErrorSerializer implements PrimitiveSerializer<ValidationError
     ValidationError object, {
     FullType specifiedType = FullType.unspecified,
   }) sync* {
+    if (object.ctx != null) {
+      yield r'ctx';
+      yield serializers.serialize(
+        object.ctx,
+        specifiedType: const FullType(JsonObject),
+      );
+    }
+    if (object.input != null) {
+      yield r'input';
+      yield serializers.serialize(
+        object.input,
+        specifiedType: const FullType.nullable(JsonObject),
+      );
+    }
     yield r'loc';
     yield serializers.serialize(
       object.loc,
@@ -88,6 +111,21 @@ class _$ValidationErrorSerializer implements PrimitiveSerializer<ValidationError
       final key = serializedList[i] as String;
       final value = serializedList[i + 1];
       switch (key) {
+        case r'ctx':
+          final valueDes = serializers.deserialize(
+            value,
+            specifiedType: const FullType(JsonObject),
+          ) as JsonObject;
+          result.ctx = valueDes;
+          break;
+        case r'input':
+          final valueDes = serializers.deserialize(
+            value,
+            specifiedType: const FullType.nullable(JsonObject),
+          ) as JsonObject?;
+          if (valueDes == null) continue;
+          result.input = valueDes;
+          break;
         case r'loc':
           final valueDes = serializers.deserialize(
             value,
@@ -137,4 +175,3 @@ class _$ValidationErrorSerializer implements PrimitiveSerializer<ValidationError
     return result.build();
   }
 }
-

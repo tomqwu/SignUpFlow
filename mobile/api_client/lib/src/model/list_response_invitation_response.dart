@@ -153,4 +153,3 @@ class _$ListResponseInvitationResponseSerializer implements PrimitiveSerializer<
     return result.build();
   }
 }
-

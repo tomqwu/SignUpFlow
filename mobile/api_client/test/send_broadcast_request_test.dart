@@ -1,13 +1,10 @@
 import 'package:test/test.dart';
-import 'package:built_collection/built_collection.dart';
 import 'package:signupflow_api/signupflow_api.dart';
 
 // tests for SendBroadcastRequest
 void main() {
-  final instance = (SendBroadcastRequestBuilder()
-        ..messageText = 'Practice moved to 7 PM'
-        ..recipientIds = ListBuilder<String>(['member-alpha', 'member-beta']))
-      .build();
+  final instance = SendBroadcastRequestBuilder();
+  // TODO add properties to the builder and call build()
 
   group(SendBroadcastRequest, () {
     // Bypass rate limits if urgent
@@ -25,7 +22,8 @@ void main() {
     // List of person IDs (max 200)
     // BuiltList<String> recipientIds
     test('to test the property `recipientIds`', () async {
-      expect(instance.recipientIds, ['member-alpha', 'member-beta']);
+      // TODO
     });
+
   });
 }

@@ -17,7 +17,7 @@ def test_documentation_ledger_covers_every_tracked_markdown_file() -> None:
 
     assert result.errors == [], "\n".join(result.errors)
     assert result.manual_count == 188
-    assert result.generated_count == 139
+    assert result.generated_count == 138
 
 
 @pytest.mark.unit

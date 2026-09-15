@@ -138,4 +138,3 @@ class _$AssignmentRequestSerializer implements PrimitiveSerializer<AssignmentReq
     return result.build();
   }
 }
-

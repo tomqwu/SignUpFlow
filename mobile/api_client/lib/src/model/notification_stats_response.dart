@@ -221,4 +221,3 @@ class _$NotificationStatsResponseSerializer implements PrimitiveSerializer<Notif
     return result.build();
   }
 }
-

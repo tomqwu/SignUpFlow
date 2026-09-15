@@ -136,4 +136,3 @@ class _$FairnessStatsSerializer implements PrimitiveSerializer<FairnessStats> {
     return result.build();
   }
 }
-

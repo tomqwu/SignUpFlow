@@ -104,4 +104,3 @@ class _$RefreshRequestSerializer implements PrimitiveSerializer<RefreshRequest> 
     return result.build();
   }
 }
-

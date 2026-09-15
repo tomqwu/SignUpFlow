@@ -140,4 +140,3 @@ class _$InvitationCreateSerializer implements PrimitiveSerializer<InvitationCrea
     return result.build();
   }
 }
-

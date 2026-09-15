@@ -153,4 +153,3 @@ class _$ListResponseAuditLogResponseSerializer implements PrimitiveSerializer<Li
     return result.build();
   }
 }
-

@@ -52,6 +52,26 @@ void main() {
       // TODO
     });
 
+    // Date scopeEnd
+    test('to test the property `scopeEnd`', () async {
+      // TODO
+    });
+
+    // BuiltList<String> scopeEventIds
+    test('to test the property `scopeEventIds`', () async {
+      // TODO
+    });
+
+    // String scopeFingerprint
+    test('to test the property `scopeFingerprint`', () async {
+      // TODO
+    });
+
+    // Date scopeStart
+    test('to test the property `scopeStart`', () async {
+      // TODO
+    });
+
     // num softScore
     test('to test the property `softScore`', () async {
       // TODO

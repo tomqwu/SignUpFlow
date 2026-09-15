@@ -107,4 +107,3 @@ class _$HTTPValidationErrorSerializer implements PrimitiveSerializer<HTTPValidat
     return result.build();
   }
 }
-

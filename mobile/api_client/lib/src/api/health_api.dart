@@ -19,7 +19,7 @@ class HealthApi {
   const HealthApi(this._dio, this._serializers);
 
   /// Health Check
-  /// Health check endpoint with database connectivity check.  Returns:     200 OK: Service and database are healthy     503 Service Unavailable: Database connection failed
+  /// Return process liveness without opening a dependency connection.
   ///
   /// Parameters:
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation

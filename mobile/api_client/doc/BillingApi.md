@@ -14,7 +14,7 @@ Method | HTTP request | Description
 [**cancelSubscription**](BillingApi.md#cancelsubscription) | **POST** /api/v1/billing/subscription/cancel | Cancel Subscription
 [**createBillingPortalSession**](BillingApi.md#createbillingportalsession) | **POST** /api/v1/billing/portal | Create Billing Portal Session
 [**downgradeSubscription**](BillingApi.md#downgradesubscription) | **POST** /api/v1/billing/subscription/downgrade | Downgrade Subscription
-[**downloadInvoicePdf**](BillingApi.md#downloadinvoicepdf) | **GET** /api/v1/billing/invoices/{billing_history_id}/pdf | Download invoice as HTML or text
+[**downloadInvoicePdf**](BillingApi.md#downloadinvoicepdf) | **GET** /api/v1/billing/invoices/{billing_history_id}/pdf | Download Invoice Pdf
 [**getBillingHistory**](BillingApi.md#getbillinghistory) | **GET** /api/v1/billing/history | Get Billing History
 [**getPaymentMethods**](BillingApi.md#getpaymentmethods) | **GET** /api/v1/billing/payment-methods | Get Payment Methods
 [**getSubscription**](BillingApi.md#getsubscription) | **GET** /api/v1/billing/subscription | Get Subscription
@@ -246,9 +246,9 @@ Name | Type | Description  | Notes
 # **downloadInvoicePdf**
 > JsonObject downloadInvoicePdf(billingHistoryId, format)
 
-Download invoice as HTML or text
+Download Invoice Pdf
 
-Generate an HTML or plain-text invoice export for an authenticated organization administrator.
+Generate an HTML or plain-text invoice export for a billing history record.  Returns a plain-text download or HTML preview.  Requires:     - User must be an authenticated admin of the organization  Path Parameters:     billing_history_id: Billing history record ID  Query Parameters:     format: Output format - \"text\" or \"html\"  Returns:     Plain-text download or HTML response
 
 ### Example
 ```dart

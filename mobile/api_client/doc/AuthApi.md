@@ -195,7 +195,7 @@ No authorization required
 
 Request Password Reset
 
-Request a password reset token.  Always returns the same generic message regardless of whether the email exists. Audits every request. The reset token is persisted in the ``password_reset_tokens`` table (see model in ``api/models.py``) so it survives multi-worker deployments — the legacy in-memory dict broke under the documented default ``WORKERS=4`` because the worker handling ``POST /reset-password`` may differ from the one that issued the token. The token is NEVER returned in the response in production. Set ``DEBUG_RETURN_RESET_TOKEN=true`` in dev/test environments to opt into receiving the token in the JSON body for E2E exercise.  Email send is queued via ``BackgroundTasks`` so the HTTP response timing is independent of email backend latency — both for anti- enumeration and to prevent slow-SMTP DoS. The reset token is issued synchronously; email delivery is best-effort.
+Request a password reset token.  Always returns the same generic message regardless of whether the email exists. Audits every request. The reset token is persisted in the ``password_reset_tokens`` table (see model in ``api/models.py``) so it survives multi-worker deployments — the legacy in-memory dict broke under the documented default ``WORKERS=4`` because the worker handling ``POST /reset-password`` may differ from the one that issued the token. The token is NEVER returned in the response in production. Set ``DEBUG_RETURN_RESET_TOKEN=true`` only for isolated debugging. Committed acceptance tests must follow the captured message and never use that shortcut.  Email send is queued via ``BackgroundTasks`` so the HTTP response timing is independent of email backend latency — both for anti- enumeration and to prevent slow-SMTP DoS. The reset token is issued synchronously; email delivery is best-effort.
 
 ### Example
 ```dart
@@ -318,4 +318,3 @@ No authorization required
  - **Accept**: application/json
 
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
-

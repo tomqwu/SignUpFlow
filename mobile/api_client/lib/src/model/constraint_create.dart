@@ -195,4 +195,3 @@ class _$ConstraintCreateSerializer implements PrimitiveSerializer<ConstraintCrea
     return result.build();
   }
 }
-

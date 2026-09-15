@@ -17,9 +17,10 @@ MOBILE_DIR=$(cd "$SCRIPT_DIR/.." && pwd)
 cd "$MOBILE_DIR"
 
 TEST_TARGET="${1:-integration_test/}"
+FLUTTER="${FLUTTER:-flutter}"
 
 echo "==> Resolving Flutter device target"
-DEVICES_JSON=$(flutter devices --machine 2>/dev/null || echo "[]")
+DEVICES_JSON=$("$FLUTTER" devices --machine 2>/dev/null || echo "[]")
 
 # Pick an iOS simulator if present; else first Android device; else bail.
 # `flutter devices --machine` emits `targetPlatform` (e.g. "ios",
@@ -49,4 +50,22 @@ fi
 
 echo "==> Running integration tests on device: $TARGET_DEVICE"
 echo "    Target: $TEST_TARGET"
-exec flutter test "$TEST_TARGET" -d "$TARGET_DEVICE"
+
+TEST_FILES=()
+if [ -d "$TEST_TARGET" ]; then
+  while IFS= read -r test_file; do
+    TEST_FILES+=("$test_file")
+  done < <(find "$TEST_TARGET" -type f -name '*_test.dart' -print | sort)
+else
+  TEST_FILES+=("$TEST_TARGET")
+fi
+
+if [ "${#TEST_FILES[@]}" -eq 0 ]; then
+  echo "ERROR: no integration test files found under $TEST_TARGET." >&2
+  exit 1
+fi
+
+for test_file in "${TEST_FILES[@]}"; do
+  echo "==> Running: $test_file"
+  "$FLUTTER" test "$test_file" -d "$TARGET_DEVICE"
+done

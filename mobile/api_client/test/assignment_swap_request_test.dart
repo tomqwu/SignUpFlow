@@ -7,6 +7,11 @@ void main() {
   // TODO add properties to the builder and call build()
 
   group(AssignmentSwapRequest, () {
+    // int expectedRevision
+    test('to test the property `expectedRevision`', () async {
+      // TODO
+    });
+
     // String note
     test('to test the property `note`', () async {
       // TODO

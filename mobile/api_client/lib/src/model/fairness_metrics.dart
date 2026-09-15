@@ -120,4 +120,3 @@ class _$FairnessMetricsSerializer implements PrimitiveSerializer<FairnessMetrics
     return result.build();
   }
 }
-

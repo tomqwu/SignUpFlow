@@ -11,7 +11,7 @@ void main() {
     //
     // Get SMS usage statistics for organization (admin only).  Returns current month usage with budget tracking.
     //
-    //Future<SmsUsageStatsResponse> getSmsUsageStats(int orgId) async
+    //Future<SmsUsageStatsResponse> getSmsUsageStats(String orgId) async
     test('test getSmsUsageStats', () async {
       // TODO
     });

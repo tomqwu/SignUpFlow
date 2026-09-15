@@ -355,4 +355,3 @@ class _$NotificationResponseSerializer implements PrimitiveSerializer<Notificati
     return result.build();
   }
 }
-

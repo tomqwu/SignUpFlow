@@ -246,6 +246,8 @@ make test-security                   # Opt-in committed-source/image scan and SB
 make test-docs                       # Tracked documentation ledger and current local links
 make test-performance               # Opt-in; requires an owned loopback test server
 make test-mobile                     # Flutter unit/widget tests
+make test-mobile-generated           # Generated Dart analysis and tests
+make mobile-codegen-check            # Deterministic generated Dart client drift check
 make capture-screenshots             # Regenerate asserted Church/Basketball UI evidence
 make validate-screenshots            # Reject missing, altered, or stale captures
 ```
@@ -412,6 +414,8 @@ make test-security        # Scan that exact image and committed dependency input
 make test-recovery        # Owned encrypted SQLite backup and restored-app acceptance
 make test-docs            # Validate every tracked documentation disposition and current link
 make test-mobile          # Flutter tests (requires Flutter SDK)
+make test-mobile-generated # Generated Dart analysis and tests
+make mobile-codegen-check # Verify generated Dart client matches OpenAPI snapshot
 make capture-screenshots  # Recreate public Church/Basketball screenshots locally
 make validate-screenshots # Verify image, fixture, UI-source, and caption metadata
 make migrate              # Run Alembic migrations

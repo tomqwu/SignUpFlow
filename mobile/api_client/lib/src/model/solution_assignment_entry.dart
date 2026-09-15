@@ -178,4 +178,3 @@ class _$SolutionAssignmentEntrySerializer implements PrimitiveSerializer<Solutio
     return result.build();
   }
 }
-

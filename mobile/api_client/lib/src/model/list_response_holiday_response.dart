@@ -153,4 +153,3 @@ class _$ListResponseHolidayResponseSerializer implements PrimitiveSerializer<Lis
     return result.build();
   }
 }
-

@@ -1,18 +1,19 @@
 # TestFlight Upload Runbook
 
-> Last sprint pushed: Sprint 9 (build #_TBD_).
->
-> The Flutter app is API-complete (Sprint 7) + auth/feature complete
-> (Sprint 8). This document is the human-side runbook for getting a
-> build onto TestFlight. It needs sudo, Apple ID 2FA, and an Apple
-> Developer account.
+> No TestFlight upload or signed iOS release is evidenced by the current
+> issue #191 work. This is an owner-side future release procedure, not a
+> release record. Running it requires explicit authorization, signing
+> material, App Store Connect access, and a real-device smoke test.
 >
 > **For the cross-platform smoke checklist (iOS + Android volunteer +
 > admin journeys, backend integration paths, deep-link verification),
 > see `mobile/SMOKE.md`. This doc remains the iOS-specific upload +
 > signing detail.**
 
-## Build history
+## Historical build notes
+
+The following identifiers came from earlier planning and are not verified by
+the current local run. Confirm them in App Store Connect before reuse.
 
 | Build | Sprint | Changelog |
 |-------|--------|-----------|
@@ -130,6 +131,14 @@ bundle exec fastlane build_only
 
 Outputs `build/ios/ipa/signupflow_mobile.ipa` without uploading. Drag it into Xcode → Window → Devices & Simulators → connected iPhone → install.
 
+For unsigned local development evidence, run the integration harness against
+a named simulator. Flutter 3.41.9 plus Xcode 27 has a known upstream
+multi-architecture simulator-build failure in the standalone
+`flutter build ios --simulator` command
+([flutter/flutter#188461](https://github.com/flutter/flutter/issues/188461));
+device-specific integration builds succeed. Neither result proves signing or
+a distributable `.ipa`.
+
 ---
 
 ## On-device sanity check
@@ -176,4 +185,6 @@ If anything's off, file an issue against `specs/022-flutter-mobile-app/spec.md` 
 - On-device smoke test.
 - Submit for App Store review (when ready beyond TestFlight).
 
-The agent can write the changelog string, fix bugs found in smoke testing, and re-trigger CI — it just can't run the actual `xcodebuild` or talk to Apple's servers.
+An agent may prepare code and run authorized local builds. It must not upload,
+use owner credentials, or contact App Store Connect without explicit release
+authorization. GitHub Actions does not run or attest this release flow.

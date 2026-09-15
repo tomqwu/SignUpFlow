@@ -242,4 +242,3 @@ class _$EventResponseSerializer implements PrimitiveSerializer<EventResponse> {
     return result.build();
   }
 }
-

@@ -349,7 +349,7 @@ class EventsApi {
   }
 
   /// Get Event
-  /// Get event by ID.
+  /// Get an event within the authenticated member&#39;s tenant.
   ///
   /// Parameters:
   /// * [eventId]
@@ -430,7 +430,7 @@ class EventsApi {
   }
 
   /// List Events
-  /// List events with optional filters.
+  /// List events within the authenticated member&#39;s tenant.
   ///
   /// Parameters:
   /// * [orgId] - Filter by organization ID

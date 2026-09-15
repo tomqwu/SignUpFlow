@@ -126,4 +126,3 @@ class _$InvitationAcceptSerializer implements PrimitiveSerializer<InvitationAcce
     return result.build();
   }
 }
-

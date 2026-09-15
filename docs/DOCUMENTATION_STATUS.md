@@ -213,7 +213,9 @@ scenario, caption, viewport, image hash, and relevant UI hashes; local unit vali
 rejects missing or stale evidence. The former ten README images are explicitly retired
 under `docs/screenshots/legacy/`, and README now shows both complete operating scenarios.
 The documentation-control package replaces the stale 176-manual/120-generated inventory with
-Git-derived counts: 188 manual records and 139 generated mobile documents at the reviewed source.
+Git-derived counts. It recorded 188 manual records and 139 generated mobile documents at its
+reviewed source; issue #191's deterministic regeneration removes one obsolete generated model,
+leaving 188 manual records and 138 generated mobile documents on the current branch.
 Every manual file has a current or historical disposition, canonical destination, owner, verified
 source set, and outcome. `make test-docs` checks current Markdown and HTML local paths and anchors;
 historical files carry an explicit file-level link exception, and generated documents remain under

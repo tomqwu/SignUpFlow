@@ -7,6 +7,16 @@ void main() {
   // TODO add properties to the builder and call build()
 
   group(ValidationError, () {
+    // JsonObject ctx
+    test('to test the property `ctx`', () async {
+      // TODO
+    });
+
+    // JsonObject input
+    test('to test the property `input`', () async {
+      // TODO
+    });
+
     // BuiltList<ValidationErrorLocInner> loc
     test('to test the property `loc`', () async {
       // TODO

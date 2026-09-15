@@ -145,4 +145,3 @@ class _$HolidayUpdateSerializer implements PrimitiveSerializer<HolidayUpdate> {
     return result.build();
   }
 }
-

@@ -40,6 +40,8 @@ make test-postgres        # Owned PostgreSQL migration/business/race acceptance
 make test-redis           # Owned Redis quota, event-bus, and broker acceptance
 make test-docs            # Documentation ledger plus current local paths and anchors
 make test-mobile          # Flutter tests (requires Flutter SDK)
+make test-mobile-generated # Generated Dart analysis and tests
+make mobile-codegen-check # Verify generated Dart client matches OpenAPI snapshot
 make test-unit            # Python unit tests only
 make test-unit-fast       # Unit tests excluding slow bcrypt tests (~7s)
 

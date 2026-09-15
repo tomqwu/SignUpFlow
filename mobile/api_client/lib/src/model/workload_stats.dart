@@ -167,4 +167,3 @@ class _$WorkloadStatsSerializer implements PrimitiveSerializer<WorkloadStats> {
     return result.build();
   }
 }
-

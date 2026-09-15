@@ -30,8 +30,7 @@ part 'solution_response.g.dart';
 /// * [softScore]
 /// * [solveMs]
 @BuiltValue()
-abstract class SolutionResponse
-    implements Built<SolutionResponse, SolutionResponseBuilder> {
+abstract class SolutionResponse implements Built<SolutionResponse, SolutionResponseBuilder> {
   @BuiltValueField(wireName: r'assignment_count')
   int? get assignmentCount;
 
@@ -79,21 +78,18 @@ abstract class SolutionResponse
 
   SolutionResponse._();
 
-  factory SolutionResponse([void updates(SolutionResponseBuilder b)]) =
-      _$SolutionResponse;
+  factory SolutionResponse([void updates(SolutionResponseBuilder b)]) = _$SolutionResponse;
 
   @BuiltValueHook(initializeBuilder: true)
   static void _defaults(SolutionResponseBuilder b) => b
-    ..assignmentCount = 0
-    ..isPublished = false;
+      ..assignmentCount = 0
+      ..isPublished = false;
 
   @BuiltValueSerializer(custom: true)
-  static Serializer<SolutionResponse> get serializer =>
-      _$SolutionResponseSerializer();
+  static Serializer<SolutionResponse> get serializer => _$SolutionResponseSerializer();
 }
 
-class _$SolutionResponseSerializer
-    implements PrimitiveSerializer<SolutionResponse> {
+class _$SolutionResponseSerializer implements PrimitiveSerializer<SolutionResponse> {
   @override
   final Iterable<Type> types = const [SolutionResponse, _$SolutionResponse];
 
@@ -140,13 +136,10 @@ class _$SolutionResponseSerializer
       );
     }
     yield r'metrics';
-    yield object.metrics == null
-        ? null
-        : serializers.serialize(
-            object.metrics,
-            specifiedType: const FullType.nullable(
-                BuiltMap, [FullType(String), FullType.nullable(JsonObject)]),
-          );
+    yield object.metrics == null ? null : serializers.serialize(
+      object.metrics,
+      specifiedType: const FullType.nullable(BuiltMap, [FullType(String), FullType.nullable(JsonObject)]),
+    );
     yield r'org_id';
     yield serializers.serialize(
       object.orgId,
@@ -205,9 +198,7 @@ class _$SolutionResponseSerializer
     SolutionResponse object, {
     FullType specifiedType = FullType.unspecified,
   }) {
-    return _serializeProperties(serializers, object,
-            specifiedType: specifiedType)
-        .toList();
+    return _serializeProperties(serializers, object, specifiedType: specifiedType).toList();
   }
 
   void _deserializeProperties(
@@ -267,8 +258,7 @@ class _$SolutionResponseSerializer
         case r'metrics':
           final valueDes = serializers.deserialize(
             value,
-            specifiedType: const FullType.nullable(
-                BuiltMap, [FullType(String), FullType.nullable(JsonObject)]),
+            specifiedType: const FullType.nullable(BuiltMap, [FullType(String), FullType.nullable(JsonObject)]),
           ) as BuiltMap<String, JsonObject?>?;
           if (valueDes == null) continue;
           result.metrics.replace(valueDes);
@@ -299,8 +289,7 @@ class _$SolutionResponseSerializer
         case r'scope_event_ids':
           final valueDes = serializers.deserialize(
             value,
-            specifiedType:
-                const FullType.nullable(BuiltList, [FullType(String)]),
+            specifiedType: const FullType.nullable(BuiltList, [FullType(String)]),
           ) as BuiltList<String>?;
           if (valueDes == null) continue;
           result.scopeEventIds.replace(valueDes);

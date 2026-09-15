@@ -141,4 +141,3 @@ class _$TimeOffCreateSerializer implements PrimitiveSerializer<TimeOffCreate> {
     return result.build();
   }
 }
-

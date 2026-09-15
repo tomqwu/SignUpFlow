@@ -201,4 +201,3 @@ class _$SolutionDiffResponseSerializer implements PrimitiveSerializer<SolutionDi
     return result.build();
   }
 }
-

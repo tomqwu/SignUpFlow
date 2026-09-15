@@ -102,7 +102,7 @@ Name | Type | Description  | Notes
 
 ### Authorization
 
-No authorization required
+[HTTPBearer](../README.md#HTTPBearer)
 
 ### HTTP request headers
 
@@ -144,7 +144,7 @@ void (empty response body)
 
 ### Authorization
 
-No authorization required
+[HTTPBearer](../README.md#HTTPBearer)
 
 ### HTTP request headers
 
@@ -158,7 +158,7 @@ No authorization required
 
 Export Solution
 
-Export solution in various formats (CSV, ICS, JSON).
+Export a tenant-scoped solution in JSON, CSV, or PDF.
 
 ### Example
 ```dart
@@ -189,7 +189,7 @@ Name | Type | Description  | Notes
 
 ### Authorization
 
-No authorization required
+[HTTPBearer](../README.md#HTTPBearer)
 
 ### HTTP request headers
 
@@ -203,7 +203,7 @@ No authorization required
 
 Get Solution
 
-Get solution by ID.
+Get a solution inside the authenticated admin's tenant.
 
 ### Example
 ```dart
@@ -232,7 +232,7 @@ Name | Type | Description  | Notes
 
 ### Authorization
 
-No authorization required
+[HTTPBearer](../README.md#HTTPBearer)
 
 ### HTTP request headers
 
@@ -275,7 +275,7 @@ Name | Type | Description  | Notes
 
 ### Authorization
 
-No authorization required
+[HTTPBearer](../README.md#HTTPBearer)
 
 ### HTTP request headers
 
@@ -332,7 +332,7 @@ Name | Type | Description  | Notes
 
 List Solutions
 
-List solutions with optional filters.
+List solutions inside the authenticated admin's tenant.
 
 ### Example
 ```dart
@@ -365,7 +365,7 @@ Name | Type | Description  | Notes
 
 ### Authorization
 
-No authorization required
+[HTTPBearer](../README.md#HTTPBearer)
 
 ### HTTP request headers
 
@@ -379,7 +379,7 @@ No authorization required
 
 Publish Solution
 
-Publish a solution (admin only). Unpublishes any prior published in the same org.
+Publish a complete, current full-horizon solution (admin only).
 
 ### Example
 ```dart
@@ -545,4 +545,3 @@ Name | Type | Description  | Notes
  - **Accept**: application/json
 
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
-

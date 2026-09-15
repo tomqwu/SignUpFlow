@@ -97,7 +97,7 @@ Class | Method | HTTP request | Description
 [*BillingApi*](doc/BillingApi.md) | [**cancelSubscription**](doc/BillingApi.md#cancelsubscription) | **POST** /api/v1/billing/subscription/cancel | Cancel Subscription
 [*BillingApi*](doc/BillingApi.md) | [**createBillingPortalSession**](doc/BillingApi.md#createbillingportalsession) | **POST** /api/v1/billing/portal | Create Billing Portal Session
 [*BillingApi*](doc/BillingApi.md) | [**downgradeSubscription**](doc/BillingApi.md#downgradesubscription) | **POST** /api/v1/billing/subscription/downgrade | Downgrade Subscription
-[*BillingApi*](doc/BillingApi.md) | [**downloadInvoicePdf**](doc/BillingApi.md#downloadinvoicepdf) | **GET** /api/v1/billing/invoices/{billing_history_id}/pdf | Download invoice as HTML or text
+[*BillingApi*](doc/BillingApi.md) | [**downloadInvoicePdf**](doc/BillingApi.md#downloadinvoicepdf) | **GET** /api/v1/billing/invoices/{billing_history_id}/pdf | Download Invoice Pdf
 [*BillingApi*](doc/BillingApi.md) | [**getBillingHistory**](doc/BillingApi.md#getbillinghistory) | **GET** /api/v1/billing/history | Get Billing History
 [*BillingApi*](doc/BillingApi.md) | [**getPaymentMethods**](doc/BillingApi.md#getpaymentmethods) | **GET** /api/v1/billing/payment-methods | Get Payment Methods
 [*BillingApi*](doc/BillingApi.md) | [**getSubscription**](doc/BillingApi.md#getsubscription) | **GET** /api/v1/billing/subscription | Get Subscription
@@ -337,5 +337,3 @@ Authentication schemes defined for the API:
 
 
 ## Author
-
-

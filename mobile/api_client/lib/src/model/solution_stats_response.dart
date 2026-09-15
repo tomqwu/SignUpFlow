@@ -154,4 +154,3 @@ class _$SolutionStatsResponseSerializer implements PrimitiveSerializer<SolutionS
     return result.build();
   }
 }
-

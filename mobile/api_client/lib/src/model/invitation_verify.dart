@@ -142,4 +142,3 @@ class _$InvitationVerifySerializer implements PrimitiveSerializer<InvitationVeri
     return result.build();
   }
 }
-

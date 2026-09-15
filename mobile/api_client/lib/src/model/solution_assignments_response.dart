@@ -137,4 +137,3 @@ class _$SolutionAssignmentsResponseSerializer implements PrimitiveSerializer<Sol
     return result.build();
   }
 }
-

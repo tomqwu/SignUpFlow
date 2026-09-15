@@ -2,8 +2,11 @@
 
 export SKIP_TEST_DB_FIXTURES ?= false
 
-.PHONY: test-web test-contract test-e2e test-mobile test-performance test-recovery test-security test-docs capture-screenshots validate-screenshots
+.PHONY: test-web test-contract test-e2e test-mobile test-mobile-generated test-performance test-recovery test-security test-docs mobile-codegen-preflight mobile-codegen mobile-codegen-check capture-screenshots validate-screenshots
 FLUTTER ?= flutter
+DART ?= dart
+JAVA_BIN ?=
+NPX ?= npx
 
 TEST_SERVER_HOST ?= 0.0.0.0
 TEST_SERVER_PORT ?= 8000
@@ -232,6 +235,9 @@ validate-screenshots: check-poetry
 test-mobile:
 	@cd mobile && $(FLUTTER) pub get && $(FLUTTER) test
 
+test-mobile-generated:
+	@cd mobile/api_client && $(DART) analyze --no-fatal-warnings && $(DART) test
+
 test-performance: ensure-test-env
 	@poetry run pytest tests/performance/ -v --tb=short
 
@@ -285,39 +291,23 @@ update-openapi-snapshot: check-poetry
 # Mobile (Flutter) — see specs/022-flutter-mobile-app/spec.md
 # ============================================================================
 
-# Regenerate the Dart API client from the OpenAPI snapshot.
-# Requires: openjdk@17 (`brew install openjdk@17`) and node (already required).
-# Run after any backend API change that you want surfaced to the iOS app.
-# Auto-detect Java: prefer brew openjdk@17 if installed (most common dev
-# setup), fall back to anything on PATH that responds to `java -version`.
-JAVA_HOME_BREW := $(shell brew --prefix openjdk@17 2>/dev/null)
-JAVA_BIN := $(if $(JAVA_HOME_BREW),$(JAVA_HOME_BREW)/bin/java,$(shell command -v java 2>/dev/null))
+# Validate the pinned Java/Node/Flutter/Dart toolchain and canonical schema.
+# Override tool discovery with JAVA_BIN, NPX, FLUTTER, or DART when needed.
+mobile-codegen-preflight: check-poetry
+	@JAVA_BIN="$(JAVA_BIN)" NPX="$(NPX)" FLUTTER="$(FLUTTER)" DART="$(DART)" \
+		poetry run python scripts/mobile_codegen.py --preflight
 
-mobile-codegen:
-	@echo "🔄 Generating Flutter API client from OpenAPI snapshot..."
-	@if [ -z "$(JAVA_BIN)" ] || ! $(JAVA_BIN) -version >/dev/null 2>&1; then \
-		echo "❌ Java not found. Install with: brew install openjdk@17"; \
-		echo "   The Make target auto-detects brew openjdk@17 — no need to set JAVA_HOME."; \
-		exit 1; \
-	fi
-	@echo "ℹ️  Using $(JAVA_BIN)"
-	# Generator 7.14 turns nullable primitives inside this strict request into
-	# uncompilable ModelNull aliases. Relax only its temporary input, not the contract.
-	@tmp_spec="$$(mktemp /tmp/signupflow-openapi.XXXXXX.json)"; \
-	  trap 'rm -f "$$tmp_spec"' EXIT; \
-	  jq 'del(.components.schemas.SignupRequest.additionalProperties)' \
-	    tests/contract/openapi.snapshot.json > "$$tmp_spec"; \
-	  PATH="$(dir $(JAVA_BIN)):$$PATH" \
-	  npx -y @openapitools/openapi-generator-cli@2.20.2 generate \
-	  -i "$$tmp_spec" \
-	  -g dart-dio \
-	  -o mobile/api_client \
-	  --additional-properties=pubName=signupflow_api,pubVersion=0.0.1,nullSafe=true,nullableFields=true \
-	  --skip-validate-spec
-	@cd mobile/api_client && PATH=/Users/tomwu/Projects/flutter/bin:$$PATH flutter pub get
-	@cd mobile/api_client && PATH=/Users/tomwu/Projects/flutter/bin:$$PATH dart run build_runner build --delete-conflicting-outputs
-	@cd mobile && PATH=/Users/tomwu/Projects/flutter/bin:$$PATH flutter pub get
-	@echo "✅ Mobile API client regenerated as a path-dep package at mobile/api_client/."
+# Generate twice in temporary directories, require identical output, then sync
+# the complete generated package. The strict canonical snapshot is never modified.
+mobile-codegen: check-poetry
+	@JAVA_BIN="$(JAVA_BIN)" NPX="$(NPX)" FLUTTER="$(FLUTTER)" DART="$(DART)" \
+		poetry run python scripts/mobile_codegen.py --write
+
+# Prove deterministic generation and fail on checked-in client drift without
+# modifying mobile/api_client or the maintained Flutter application.
+mobile-codegen-check: check-poetry
+	@JAVA_BIN="$(JAVA_BIN)" NPX="$(NPX)" FLUTTER="$(FLUTTER)" DART="$(DART)" \
+		poetry run python scripts/mobile_codegen.py --check
 
 # ============================================================================
 # Docker Compose Commands (Development Environment)
@@ -496,6 +486,10 @@ help:
 	@echo "  make test-docs        - Validate documentation dispositions and current local links"
 	@echo "  make test-performance - Run load tests against an explicit owned loopback server"
 	@echo "  make test-mobile      - Run Flutter tests locally (requires Flutter SDK)"
+	@echo "  make test-mobile-generated - Analyze and test the generated Dart client"
+	@echo "  make mobile-codegen-preflight - Validate pinned tools and the OpenAPI snapshot"
+	@echo "  make mobile-codegen   - Reproducibly update the generated Dart API client"
+	@echo "  make mobile-codegen-check - Detect generated-client drift without writing"
 	@echo "  make test-e2e         - Run Playwright browser tests locally"
 	@echo "  make test-web         - Run in-process web tests locally"
 	@echo "  make test-contract    - Run OpenAPI contract tests locally"

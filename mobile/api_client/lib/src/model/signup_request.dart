@@ -231,4 +231,3 @@ class _$SignupRequestSerializer implements PrimitiveSerializer<SignupRequest> {
     return result.build();
   }
 }
-

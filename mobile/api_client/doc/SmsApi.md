@@ -33,7 +33,7 @@ Get SMS usage statistics for organization (admin only).  Returns current month u
 import 'package:signupflow_api/api.dart';
 
 final api = SignupflowApi().getSmsApi();
-final int orgId = 56; // int |
+final String orgId = orgId_example; // String |
 
 try {
     final response = api.getSmsUsageStats(orgId);
@@ -47,7 +47,7 @@ try {
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **orgId** | **int**|  |
+ **orgId** | **String**|  |
 
 ### Return type
 

@@ -122,4 +122,3 @@ class _$AssignmentDeclineRequestSerializer implements PrimitiveSerializer<Assign
     return result.build();
   }
 }
-

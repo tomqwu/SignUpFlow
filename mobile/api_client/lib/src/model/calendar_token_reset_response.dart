@@ -151,4 +151,3 @@ class _$CalendarTokenResetResponseSerializer implements PrimitiveSerializer<Cale
     return result.build();
   }
 }
-

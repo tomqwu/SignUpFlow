@@ -142,4 +142,3 @@ class _$ConflictCheckResponseSerializer implements PrimitiveSerializer<ConflictC
     return result.build();
   }
 }
-

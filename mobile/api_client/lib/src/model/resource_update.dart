@@ -165,4 +165,3 @@ class _$ResourceUpdateSerializer implements PrimitiveSerializer<ResourceUpdate> 
     return result.build();
   }
 }
-

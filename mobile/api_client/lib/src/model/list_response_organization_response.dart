@@ -153,4 +153,3 @@ class _$ListResponseOrganizationResponseSerializer implements PrimitiveSerialize
     return result.build();
   }
 }
-

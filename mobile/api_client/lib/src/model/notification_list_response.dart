@@ -153,4 +153,3 @@ class _$NotificationListResponseSerializer implements PrimitiveSerializer<Notifi
     return result.build();
   }
 }
-

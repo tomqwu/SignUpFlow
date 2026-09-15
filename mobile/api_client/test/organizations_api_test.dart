@@ -16,18 +16,9 @@ void main() {
       // TODO
     });
 
-    // Create Organization
-    //
-    // Create a new organization. Rate limited to 2 requests per hour per IP.  Automatically creates Free plan subscription with 10 volunteer limit.
-    //
-    //Future<OrganizationResponse> createOrganization(OrganizationCreate organizationCreate) async
-    test('test createOrganization', () async {
-      // TODO
-    });
-
     // Delete Organization
     //
-    // Delete organization and all related data.
+    // Hard-delete the authenticated admin's organization and related data.
     //
     //Future deleteOrganization(String orgId) async
     test('test deleteOrganization', () async {
@@ -36,7 +27,7 @@ void main() {
 
     // Get Organization
     //
-    // Get organization by ID.
+    // Read the authenticated member's organization only.
     //
     //Future<OrganizationResponse> getOrganization(String orgId) async
     test('test getOrganization', () async {
@@ -45,7 +36,7 @@ void main() {
 
     // List Organizations
     //
-    // List all organizations. Excludes cancelled by default.
+    // List only the caller's organization. Excludes cancelled by default.
     //
     //Future<ListResponseOrganizationResponse> listOrganizations({ bool includeCancelled, String q, int limit, int offset }) async
     test('test listOrganizations', () async {
@@ -63,7 +54,7 @@ void main() {
 
     // Update Organization
     //
-    // Update organization.
+    // Update the authenticated admin's organization and record the actor.
     //
     //Future<OrganizationResponse> updateOrganization(String orgId, OrganizationUpdate organizationUpdate) async
     test('test updateOrganization', () async {

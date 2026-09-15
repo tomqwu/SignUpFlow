@@ -56,6 +56,8 @@ make test-artifact  # Owned production image acceptance
 make test-security  # Same-SHA source/image security and SBOM evidence
 make test-docs      # Documentation ledger plus current local paths and anchors
 make test-mobile    # Flutter tests (requires Flutter SDK)
+make test-mobile-generated # Generated Dart analysis and tests
+make mobile-codegen-check # Verify generated Dart client matches OpenAPI snapshot
 make migrate        # Alembic upgrade head
 ```
 

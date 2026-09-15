@@ -119,4 +119,3 @@ class _$RefreshResponseSerializer implements PrimitiveSerializer<RefreshResponse
     return result.build();
   }
 }
-

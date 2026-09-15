@@ -265,7 +265,7 @@ class SolutionsApi {
   }
 
   /// Export Solution
-  /// Export solution in various formats (CSV, ICS, JSON).
+  /// Export a tenant-scoped solution in JSON, CSV, or PDF.
   ///
   /// Parameters:
   /// * [solutionId]
@@ -368,7 +368,7 @@ class SolutionsApi {
   }
 
   /// Get Solution
-  /// Get solution by ID.
+  /// Get a solution inside the authenticated admin&#39;s tenant.
   ///
   /// Parameters:
   /// * [solutionId]
@@ -611,7 +611,7 @@ class SolutionsApi {
   }
 
   /// List Solutions
-  /// List solutions with optional filters.
+  /// List solutions inside the authenticated admin&#39;s tenant.
   ///
   /// Parameters:
   /// * [orgId] - Filter by organization ID
@@ -703,7 +703,7 @@ class SolutionsApi {
   }
 
   /// Publish Solution
-  /// Publish a solution (admin only). Unpublishes any prior published in the same org.
+  /// Publish a complete, current full-horizon solution (admin only).
   ///
   /// Parameters:
   /// * [solutionId]

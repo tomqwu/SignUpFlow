@@ -151,4 +151,3 @@ class _$CalendarSubscriptionResponseSerializer implements PrimitiveSerializer<Ca
     return result.build();
   }
 }
-

@@ -13,7 +13,8 @@ void main() {
       // TODO
     });
 
-    // String language
+    // User language
+    // String language (default value: 'en')
     test('to test the property `language`', () async {
       // TODO
     });
@@ -30,18 +31,25 @@ void main() {
       // TODO
     });
 
+    // Organization name
+    // String orgName
+    test('to test the property `orgName`', () async {
+      // TODO
+    });
+
     // Password (min 6 characters)
     // String password
     test('to test the property `password`', () async {
       // TODO
     });
 
-    // BuiltList<String> roles
-    test('to test the property `roles`', () async {
+    // String region
+    test('to test the property `region`', () async {
       // TODO
     });
 
-    // String timezone
+    // User timezone
+    // String timezone (default value: 'UTC')
     test('to test the property `timezone`', () async {
       // TODO
     });

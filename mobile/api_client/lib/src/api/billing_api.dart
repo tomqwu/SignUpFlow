@@ -488,8 +488,8 @@ class BillingApi {
     );
   }
 
-  /// Download invoice as HTML or text.
-  /// Generate an invoice export for an authenticated organization administrator.
+  /// Download Invoice Pdf
+  /// Generate an HTML or plain-text invoice export for a billing history record.  Returns a plain-text download or HTML preview.  Requires:     - User must be an authenticated admin of the organization  Path Parameters:     billing_history_id: Billing history record ID  Query Parameters:     format: Output format - \&quot;text\&quot; or \&quot;html\&quot;  Returns:     Plain-text download or HTML response
   ///
   /// Parameters:
   /// * [billingHistoryId]

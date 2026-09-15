@@ -65,4 +65,3 @@ class _$ValidationErrorLocInnerSerializer implements PrimitiveSerializer<Validat
     return result.build();
   }
 }
-

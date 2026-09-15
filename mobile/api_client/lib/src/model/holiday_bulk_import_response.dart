@@ -139,4 +139,3 @@ class _$HolidayBulkImportResponseSerializer implements PrimitiveSerializer<Holid
     return result.build();
   }
 }
-

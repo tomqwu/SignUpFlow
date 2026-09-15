@@ -300,4 +300,3 @@ class _$AssignmentResponseSerializer implements PrimitiveSerializer<AssignmentRe
     return result.build();
   }
 }
-

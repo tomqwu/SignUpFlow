@@ -187,4 +187,3 @@ class _$SolutionMetricsSerializer implements PrimitiveSerializer<SolutionMetrics
     return result.build();
   }
 }
-

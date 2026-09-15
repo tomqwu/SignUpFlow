@@ -153,4 +153,3 @@ class _$ListResponseSolutionResponseSerializer implements PrimitiveSerializer<Li
     return result.build();
   }
 }
-

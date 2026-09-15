@@ -27,16 +27,16 @@ void main() {
 
     // Export Organization Events
     //
-    // Export all organization events as ICS file (admin only).  This endpoint is for administrators to export all events in the organization.
+    // Export all organization events as ICS file (admin only).  Caller must be authenticated and an admin in `org_id`. The legacy `person_id` query param used as an auth proxy has been removed — the caller is now identified solely by their JWT.
     //
-    //Future<JsonObject> exportOrganizationEvents(String orgId, String personId, { bool includeAssignments }) async
+    //Future<JsonObject> exportOrganizationEvents(String orgId, { bool includeAssignments }) async
     test('test exportOrganizationEvents', () async {
       // TODO
     });
 
     // Export Personal Schedule
     //
-    // Export personal schedule as ICS file.  This endpoint downloads an ICS file with all assigned events for a person.
+    // Export personal schedule as ICS file.  This endpoint downloads an ICS file with all assigned events for a person. Caller must be the target person or an admin in the same organization.
     //
     //Future<JsonObject> exportPersonalSchedule(String personId) async
     test('test exportPersonalSchedule', () async {
