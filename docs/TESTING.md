@@ -25,7 +25,7 @@ make test               # Alias for the complete seven-tier local suite
 make test-all           # All seven Python tiers below, in separate processes
 make test-postgres      # Opt-in PostgreSQL migration/business/race acceptance
 make test-redis         # Opt-in Redis quota, event-bus, and broker acceptance
-make test-artifact      # Opt-in production image and private-stack acceptance
+make test-artifact      # Opt-in image, private-stack, and loopback-TLS acceptance
 make test-security      # Opt-in exact-source/image scan and CycloneDX evidence
 make test-docs          # Tracked documentation dispositions and current local links
 make test-performance   # Legacy fixed assertions; explicit owned loopback target
@@ -104,12 +104,15 @@ Docker network with disposable PostgreSQL and authenticated Redis containers. It
 Alembic once as a separate job, proves an API replica cannot start or mutate an
 unmigrated database, starts two non-root read-only API replicas without bind mounts,
 and drives health, login/static, Basketball schedule/publish/export, and SIGTERM checks.
-Only the application ports are published, on random loopback ports. The runner removes
-only containers and the network carrying its exact ownership label and writes build,
-migration, failure, shutdown, image identity, and result evidence under
-`test-artifacts/artifact-validation/`. It disables external providers. A pass is local
-artifact evidence, not staging, TLS/proxy, managed-service, backup/restore, or release
-authorization.
+It creates an ephemeral local CA and server certificate, terminates HTTPS through an
+owned loopback reverse proxy, and verifies TLS negotiation, Secure/HttpOnly/SameSite
+cookie behavior, same-origin write enforcement, and browser security headers. Only the
+application and proxy ports are published, on random loopback ports. Private keys are
+deleted after the run. The runner removes only containers and the network carrying its
+exact ownership label and writes build, migration, TLS, failure, shutdown, image identity,
+and result evidence under `test-artifacts/artifact-validation/`. It disables external
+providers. A pass is local artifact evidence, not external ingress, managed TLS,
+staging, managed-service, backup/restore, or release authorization.
 
 Run `make test-security` only after `make test-artifact` passes for the same clean
 revision. It requires the immutable Trivy image documented in
@@ -212,8 +215,8 @@ synthetic success statuses. The Pages workflow only publishes the static site;
 it is not a validation or merge gate.
 
 ```bash
-poetry run black --check api web tests scripts/run_local_validation.py scripts/run_load_validation.py scripts/validate_production_artifact.py scripts/run_security_validation.py
-poetry run ruff check api web tests scripts/run_local_validation.py scripts/run_load_validation.py scripts/validate_production_artifact.py scripts/run_security_validation.py
+poetry run black --check api web tests scripts/run_local_validation.py scripts/run_load_validation.py scripts/local_tls_rehearsal.py scripts/validate_production_artifact.py scripts/run_security_validation.py
+poetry run ruff check api web tests scripts/run_local_validation.py scripts/run_load_validation.py scripts/local_tls_rehearsal.py scripts/validate_production_artifact.py scripts/run_security_validation.py
 poetry run mypy --no-incremental api/utils api/core api/schemas
 poetry run mypy api
 make test-all

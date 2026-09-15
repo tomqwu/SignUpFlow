@@ -202,7 +202,7 @@ test-redis: check-poetry check-docker
 	@poetry run python scripts/run_redis_validation.py
 
 test-artifact: check-poetry check-docker
-	@echo "🧪 Building and exercising an owned production artifact..."
+	@echo "🧪 Building and exercising an owned production artifact through loopback TLS..."
 	@poetry run python scripts/validate_production_artifact.py
 
 test-recovery: check-poetry
@@ -486,7 +486,7 @@ help:
 	@echo "  make test-all         - Run all Python tiers, including web/contract/Playwright"
 	@echo "  make test-postgres    - Run owned PostgreSQL migration/business/race acceptance"
 	@echo "  make test-redis       - Run owned Redis quota, event-bus, and broker acceptance"
-	@echo "  make test-artifact    - Build and exercise an owned production image locally"
+	@echo "  make test-artifact    - Exercise an owned production image and loopback TLS"
 	@echo "  make test-security    - Scan the exact committed source and retained image locally"
 	@echo "  make test-recovery    - Run the owned encrypted SQLite restore drill"
 	@echo "  make test-docs        - Validate documentation dispositions and current local links"

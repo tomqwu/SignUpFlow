@@ -2,8 +2,14 @@
 
 from __future__ import annotations
 
-import pytest
+import ipaddress
+import stat
 
+import pytest
+from cryptography import x509
+from cryptography.x509.oid import ExtensionOID
+
+from scripts.local_tls_rehearsal import TLSMaterial, verify_cookie_security
 from scripts.validate_production_artifact import (
     ArtifactTarget,
     parse_loopback_port,
@@ -79,3 +85,46 @@ def test_owned_network_requires_matching_name_and_label():
     record["Name"] = "another-network"
     with pytest.raises(RuntimeError, match="name"):
         verify_owned_network(target, [record])
+
+
+def test_tls_material_is_private_and_scoped_to_loopback(tmp_path):
+    material = TLSMaterial.create(tmp_path, hostname="artifact.signupflow.invalid")
+
+    certificate = x509.load_pem_x509_certificate(material.server_certificate.read_bytes())
+    names = certificate.extensions.get_extension_for_oid(
+        ExtensionOID.SUBJECT_ALTERNATIVE_NAME
+    ).value
+
+    assert names.get_values_for_type(x509.DNSName) == ["artifact.signupflow.invalid"]
+    assert names.get_values_for_type(x509.IPAddress) == [ipaddress.ip_address("127.0.0.1")]
+    assert stat.S_IMODE(material.server_key.stat().st_mode) == 0o600
+    assert len(material.ca_sha256) == 64
+
+
+def test_cookie_security_requires_production_browser_attributes():
+    cookies = [
+        "signupflow_csrf=csrf-value; Path=/; SameSite=lax; Secure",
+        "signupflow_session=session-value; HttpOnly; Path=/; SameSite=lax; Secure",
+    ]
+
+    csrf = verify_cookie_security(cookies, "signupflow_csrf", http_only=False)
+    session = verify_cookie_security(cookies, "signupflow_session", http_only=True)
+
+    assert csrf["secure"] is True
+    assert csrf["http_only"] is False
+    assert session["secure"] is True
+    assert session["http_only"] is True
+
+
+@pytest.mark.parametrize(
+    "cookie",
+    [
+        "signupflow_session=value; HttpOnly; Path=/; SameSite=lax",
+        "signupflow_session=value; HttpOnly; Path=/; Secure",
+        "signupflow_session=value; Path=/; SameSite=lax; Secure",
+        "signupflow_session=value; HttpOnly; Path=/admin; SameSite=lax; Secure",
+    ],
+)
+def test_cookie_security_rejects_missing_or_incorrect_attributes(cookie):
+    with pytest.raises(RuntimeError, match="signupflow_session"):
+        verify_cookie_security([cookie], "signupflow_session", http_only=True)

@@ -169,16 +169,18 @@ evidence with a local mock. Do not deploy or enable providers from a roadmap alo
   database initialization. JWT and browser cookies share one lifetime; Compose passes
   canonical settings and defaults providers off. The reference keeps one API worker as
   a conservative capacity default even though Redis-backed shared-state acceptance now
-  exists. This is local configuration evidence, not a
-  deployed artifact, TLS/proxy, provider, backup, or rollback result.
+  exists. This is local configuration evidence, not a deployed artifact, external
+  ingress, managed TLS, provider, backup, or rollback result.
 - #265: the production image no longer migrates from each replica or copies builder
   executables into the runtime. Compose runs one migration job, keeps PostgreSQL and
   authenticated Redis private, and starts non-root read-only single-worker replicas
   without source mounts. The opt-in `make test-artifact` harness binds a fresh image to
   the committed SHA, scans its contents/history, proves unmigrated startup fails without
   schema mutation, starts two replicas, runs a provider-free Basketball publish/export,
-  verifies SIGTERM, and records immutable image identity. An authorized staging target,
-  managed-service/TLS evidence, and release-owner approval remain outside local proof.
+  verifies SIGTERM, and records immutable image identity. It also terminates HTTPS through
+  an ephemeral self-signed loopback proxy and verifies secure cookies, same-origin writes,
+  browser security headers, and negotiated TLS. An authorized staging target, external
+  ingress/managed-TLS evidence, and release-owner approval remain outside local proof.
 - #267: `/health` is dependency-free process liveness while `/ready` performs one
   context-managed database probe and returns only a generic failure. Production logs
   are structured stdout records correlated to the required release SHA and redact
