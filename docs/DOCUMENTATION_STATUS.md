@@ -137,6 +137,19 @@ source-bound `make test-recovery` drill covers restored Church/Basketball login,
 separation, published response/inbox state, and terminal-notification replay safety.
 No scheduled PostgreSQL backup, off-site copy, production key custody, retention/purge,
 cutover, operator receipt, or approved RPO/RTO is claimed.
+The maintained [local release security guide](SECURITY_VALIDATION.md) inventories every
+locked, vendored, container, native-build, and Pages publication input. The local runner
+binds findings, license inventory, and CycloneDX source/image SBOMs to a clean Git SHA and
+same-SHA retained artifact, records pinned scanner and advisory database provenance, sanitizes secret
+matches, and proves expected failure for a generated secret and missing database. The
+production and development images now pin the same reviewed Alpine manifest; the release
+image upgrades OS packages, installs hash-locked runtime dependencies into an isolated
+environment, and excludes Poetry, package managers, and build tools. The Python JWT and
+vulnerable dependency chains and the mobile Fastlane/Rubyzip lock are updated. The Pages
+publisher uses reviewed action commit SHAs. No hosted validation, Ollama review, native
+artifact scan, deployed-environment scan, or blanket production acceptance is claimed.
+This package changes tooling and publication provenance, not rendered product UI, so the
+current Church/Basketball screenshots remain applicable.
 The maintained [scheduling constraint contract](SCHEDULING_CONSTRAINTS.md) now
 lists the three executable REST rule mappings, their CLI equivalents, validation
 failures, built-in invariants, and unsupported policy. The constraints editor now

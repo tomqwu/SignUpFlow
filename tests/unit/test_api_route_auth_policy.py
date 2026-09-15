@@ -1,13 +1,14 @@
 """Keep every mounted API route in the reviewed authentication policy."""
 
-from fastapi.routing import APIRoute
+from fastapi.routing import APIRoute, RouteContext, iter_route_contexts
 
 from api.main import app
 from api.route_auth_policy import ROUTE_AUTH_POLICY
 
 
-def _dependency_names(route: APIRoute) -> set[str]:
+def _dependency_names(route: RouteContext) -> set[str]:
     names: set[str] = set()
+    assert route.dependant is not None
     pending = list(route.dependant.dependencies)
     while pending:
         dependency = pending.pop()
@@ -19,8 +20,8 @@ def _dependency_names(route: APIRoute) -> set[str]:
 def test_every_api_route_matches_the_explicit_auth_policy():
     routes = {
         route.name: route
-        for route in app.routes
-        if isinstance(route, APIRoute)
+        for route in iter_route_contexts(app.routes)
+        if isinstance(route.original_route, APIRoute)
         and (route.path.startswith("/api") or route.path in {"/health", "/ready"})
     }
 

@@ -123,7 +123,7 @@ class TestCreateEvent:
         assert body["extra_data"]["role_counts"]["usher"] == 2
 
     def test_create_requires_admin(self, api_server, api_base):
-        # Unauthenticated POST: FastAPI HTTPBearer returns 403 with no header.
+        # Unauthenticated requests fail before the admin authorization check.
         client = httpx.Client()
         start, end = _future_window()
         resp = client.post(
@@ -136,7 +136,7 @@ class TestCreateEvent:
                 "end_time": end,
             },
         )
-        assert resp.status_code == 403
+        assert resp.status_code == 401
 
     def test_create_duplicate_id_conflicts(self, setup_admin):
         setup = setup_admin
@@ -319,7 +319,7 @@ class TestUpdateEvent:
             f"{api_base}/events/{event['id']}",
             json={"type": "hacked"},
         )
-        assert resp.status_code == 403
+        assert resp.status_code == 401
 
 
 class TestDeleteEvent:

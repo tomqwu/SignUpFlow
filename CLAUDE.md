@@ -133,6 +133,8 @@ reviewed SHAs, findings, fixes, and any remaining limitations in the PR. Follow
 
 All validation runs locally. Do not run CI checks in GitHub Actions,
 send PR patches to Ollama, or substitute another hosted review provider.
+For release-image or dependency changes, run `make test-artifact` and then
+`make test-security` against the same committed SHA.
 
 Builder agents may merge only after successful local validation and review are
 recorded, GitHub reports mergeable, and required reviews and blocking

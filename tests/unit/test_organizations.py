@@ -103,9 +103,9 @@ class TestOrganizationRead:
         assert data["name"] == "Get Test Org"
 
     def test_get_org_requires_membership(self, client):
-        """Test retrieving non-existent org requires membership."""
+        """Test retrieving an organization requires authentication."""
         response = client.get(f"{API_BASE}/organizations/nonexistent_org")
-        assert response.status_code == 403
+        assert response.status_code == 401
 
     def test_list_orgs(self, client):
         """Test listing all organizations."""
@@ -147,11 +147,11 @@ class TestOrganizationUpdate:
         assert data.get("region") == "New Region"
 
     def test_update_org_requires_membership(self, client):
-        """Test updating non-existent org requires membership."""
+        """Test updating an organization requires authentication."""
         response = client.put(
             f"{API_BASE}/organizations/nonexistent_org", json={"name": "Updated Name"}
         )
-        assert response.status_code == 403
+        assert response.status_code == 401
 
     def test_update_org_partial(self, client):
         """Test partial update of organization."""
@@ -190,6 +190,6 @@ class TestOrganizationDelete:
         assert response.status_code == 401
 
     def test_delete_org_requires_membership(self, client):
-        """Test deleting non-existent org requires membership."""
+        """Test deleting an organization requires authentication."""
         response = client.delete(f"{API_BASE}/organizations/nonexistent_org")
-        assert response.status_code == 403
+        assert response.status_code == 401

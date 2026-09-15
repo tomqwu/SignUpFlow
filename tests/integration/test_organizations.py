@@ -77,7 +77,7 @@ class TestGetOrganization:
     def test_anonymous_read_denied(self, api_server, api_base):
         with httpx.Client() as client:
             response = client.get(f"{api_base}/organizations/unknown")
-        assert response.status_code == 403
+        assert response.status_code == 401
 
     def test_unknown_tenant_does_not_reveal_existence(self, setup_admin):
         data = setup_admin
@@ -163,8 +163,7 @@ class TestCancelRestoreOrganization:
         org_id = _unique("cancel_auth_org")
         response = client.post(f"{api_base}/organizations/{org_id}/cancel")
 
-        # FastAPI HTTPBearer returns 403 when the Authorization header is missing.
-        assert response.status_code == 403
+        assert response.status_code == 401
 
     def test_cancel_sets_cancelled_at_and_retention(self, setup_admin):
         data = setup_admin

@@ -12,8 +12,8 @@ Covers:
 import time
 from datetime import timedelta
 
+import jwt
 import pytest
-from jose import jwt
 
 from api.models import Organization, Person
 from api.security import (

@@ -54,6 +54,7 @@ INVENTORIED_TOOLS = (
     "scripts/retired_tool.py",
     "scripts/run_local_validation.py",
     "scripts/run_postgres_validation.py",
+    "scripts/run_security_validation.py",
     "scripts/run_sqlite_recovery_drill.py",
     "scripts/sqlite_recovery.py",
     "scripts/validate_production_artifact.py",
@@ -177,6 +178,25 @@ def test_recovery_drill_dry_run_creates_no_artifacts():
 
     assert result.returncode == 0
     assert '"mutates": false' in result.stdout
+    assert '"external_providers": false' in result.stdout
+    after = sorted(artifact_root.iterdir()) if artifact_root.exists() else []
+    assert after == before
+
+
+def test_security_validator_dry_run_does_not_contact_docker():
+    artifact_root = ROOT / "test-artifacts" / "security-validation"
+    before = sorted(artifact_root.iterdir()) if artifact_root.exists() else []
+    result = subprocess.run(
+        [sys.executable, str(ROOT / "scripts/run_security_validation.py"), "--dry-run"],
+        cwd=ROOT,
+        env={**os.environ, "PATH": ""},
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+
+    assert result.returncode == 0
+    assert '"docker_socket": false' in result.stdout
     assert '"external_providers": false' in result.stdout
     after = sorted(artifact_root.iterdir()) if artifact_root.exists() else []
     assert after == before

@@ -6,6 +6,8 @@ import ast
 import json
 from pathlib import Path
 
+from fastapi.routing import iter_route_contexts
+
 from web.app import router
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -33,7 +35,7 @@ def test_matrix_covers_every_web_route_and_template():
     }
     actual_routes = {
         (method, route.path, route.name)
-        for route in router.routes
+        for route in iter_route_contexts(router.routes)
         for method in (route.methods or set()) - {"HEAD", "OPTIONS"}
     }
     assert documented_routes == actual_routes

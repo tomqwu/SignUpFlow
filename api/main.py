@@ -11,6 +11,7 @@ from dotenv import load_dotenv
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, RedirectResponse
+from fastapi.routing import APIRoute
 from starlette.responses import Response
 
 if os.getenv("SIGNUPFLOW_LOAD_DOTENV", "true").lower() == "true":
@@ -79,6 +80,16 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     logger.info("application.stopping", extra={"event": "application.stopping"})
 
 
+def _snake_to_camel(name: str) -> str:
+    head, *tail = name.split("_")
+    return head + "".join(part.title() for part in tail)
+
+
+def _generate_operation_id(route: APIRoute) -> str:
+    """Return stable Dart-codegen operation IDs from route function names."""
+    return _snake_to_camel(route.name)
+
+
 app = FastAPI(
     title="SignUpFlow API",
     description="AI-powered volunteer scheduling and sign-up management",
@@ -86,6 +97,7 @@ app = FastAPI(
     docs_url="/docs",
     redoc_url="/redoc",
     lifespan=lifespan,
+    generate_unique_id_function=_generate_operation_id,
 )
 
 
@@ -229,28 +241,6 @@ def api_redirect() -> RedirectResponse:
     """Redirect bare /api to versioned /api/v1 for one release."""
     return RedirectResponse(url="/api/v1", status_code=308)
 
-
-def _snake_to_camel(name: str) -> str:
-    head, *tail = name.split("_")
-    return head + "".join(part.title() for part in tail)
-
-
-def _set_camel_case_operation_ids(app: FastAPI) -> None:
-    """Override FastAPI's auto-generated operationIds with predictable camelCase names.
-
-    Function names in this codebase are already unique snake_case verbs (e.g.,
-    `list_people`, `create_event`), so a direct snake -> camel mapping yields
-    `listPeople`, `createEvent`. openapi-generator-cli (Dart-Dio target) reads
-    operationId verbatim, so this is what the Flutter client gets as method names.
-    """
-    from fastapi.routing import APIRoute
-
-    for route in app.routes:
-        if isinstance(route, APIRoute):
-            route.operation_id = _snake_to_camel(route.name)
-
-
-_set_camel_case_operation_ids(app)
 
 # Server-rendered responsive web app (Sprint 11). Mounted last; routes
 # are include_in_schema=False so they stay out of the OpenAPI contract.

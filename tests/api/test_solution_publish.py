@@ -114,8 +114,7 @@ class TestPublishSolution:
         sol = _seed_solution(db, org_id)
 
         resp = client.post(f"/api/v1/solutions/{sol.id}/publish")
-        # HTTPBearer without credentials returns 403 by FastAPI default.
-        assert resp.status_code in (401, 403)
+        assert resp.status_code == 401
 
     def test_cross_org_admin_blocked(self, client, db):
         seed_org(client, "pub-a")

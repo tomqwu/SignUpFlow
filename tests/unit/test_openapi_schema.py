@@ -2,7 +2,7 @@
 
 import re
 
-from fastapi.routing import APIRoute
+from fastapi.routing import APIRoute, RouteContext, iter_route_contexts
 
 from api.main import app
 
@@ -13,35 +13,44 @@ def _all_api_routes():
     # include_in_schema=False — they're not API endpoints and correctly
     # carry no codegen operationId, so they're excluded here just as they
     # are from /openapi.json and the contract snapshot.
-    return [r for r in app.routes if isinstance(r, APIRoute) and r.include_in_schema]
+    return [
+        route
+        for route in iter_route_contexts(app.routes)
+        if isinstance(route.original_route, APIRoute) and route.include_in_schema
+    ]
+
+
+def _operation_id(route: RouteContext) -> str:
+    return route.operation_id or route.unique_id
 
 
 def test_every_api_route_has_operation_id():
     """No route is left with the FastAPI default `<name>_<method>_<path>` slug."""
     for route in _all_api_routes():
-        assert route.operation_id, f"Missing operation_id on {route.path}"
+        assert _operation_id(route), f"Missing operation_id on {route.path}"
 
 
 def test_operation_ids_are_camel_case():
     """Operation IDs start lowercase, contain no underscores, and aren't slug-style."""
     pattern = re.compile(r"^[a-z][a-zA-Z0-9]*$")
     for route in _all_api_routes():
+        operation_id = _operation_id(route)
         assert pattern.match(
-            route.operation_id
-        ), f"operation_id {route.operation_id!r} on {route.path} is not camelCase"
+            operation_id
+        ), f"operation_id {operation_id!r} on {route.path} is not camelCase"
         # Reject FastAPI auto-generated slugs which end in _get/_post/etc.
-        assert not route.operation_id.endswith(("_get", "_post", "_put", "_delete", "_patch"))
+        assert not operation_id.endswith(("_get", "_post", "_put", "_delete", "_patch"))
 
 
 def test_operation_ids_are_unique():
     """openapi-generator emits one method per operationId; collisions break codegen."""
-    ids = [r.operation_id for r in _all_api_routes()]
+    ids = [_operation_id(route) for route in _all_api_routes()]
     assert len(ids) == len(set(ids)), "Duplicate operationIds detected"
 
 
 def test_well_known_operation_ids_exist():
     """Canonical names the Flutter client will reach for."""
-    ids = {r.operation_id for r in _all_api_routes()}
+    ids = {_operation_id(route) for route in _all_api_routes()}
     expected = {
         "getCurrentPerson",
         "listPeople",

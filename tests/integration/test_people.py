@@ -94,7 +94,7 @@ class TestMeEndpoints:
 
     def test_me_unauthenticated_rejected(self, api_server, api_base):
         resp = httpx.Client().get(f"{api_base}/people/me")
-        assert resp.status_code == 403
+        assert resp.status_code == 401
 
     def test_update_me_changes_name_and_timezone(self, people_org):
         data = people_org

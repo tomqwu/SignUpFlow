@@ -279,8 +279,9 @@ def test_production_artifact_enforces_single_worker_until_shared_state_exists():
 
     assert '"--workers", "1"' in dockerfile
     assert '"--workers", "4"' not in dockerfile
-    assert dockerfile.count("poetry install") == 1
-    assert "--no-root" in dockerfile
+    assert dockerfile.count("poetry export") == 1
+    assert "pip install --require-hashes" in dockerfile
+    assert "COPY --from=builder /opt/venv /opt/venv" in dockerfile
     assert "WORKERS=1" in example
     assert "WORKERS=4" not in example
 

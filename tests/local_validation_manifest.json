@@ -92,6 +92,22 @@
       "command": ["make", "test-artifact"],
       "default_status": "not_run",
       "reason": "Opt-in owned local Docker build and runtime exercise; staging remains separately authorized."
+    },
+    {
+      "id": "recovery",
+      "label": "Encrypted SQLite recovery acceptance",
+      "paths": [],
+      "command": ["make", "test-recovery"],
+      "default_status": "not_run",
+      "reason": "Opt-in encrypted backup and isolated restored-application drill; production backup operations remain separately authorized."
+    },
+    {
+      "id": "security",
+      "label": "Release dependency, secret, image, and SBOM validation",
+      "paths": [],
+      "command": ["make", "test-security"],
+      "default_status": "not_run",
+      "reason": "Requires Docker, the pinned scanner image, a fresh advisory database, and a same-SHA passing retained artifact report."
     }
   ],
   "support_files": ["tests/test_environment.py"]

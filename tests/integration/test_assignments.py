@@ -181,7 +181,7 @@ class TestAcceptAssignment:
 
         with httpx.Client() as anon:
             resp = anon.post(f"{data['api_base']}/assignments/{aid}/accept")
-        assert resp.status_code in (401, 403)
+        assert resp.status_code == 401
 
 
 class TestDeclineAssignment:
@@ -330,7 +330,7 @@ class TestListMyAssignments:
         data = assignments_org
         with httpx.Client() as anon:
             resp = anon.get(f"{data['api_base']}/assignments/me")
-        assert resp.status_code in (401, 403)
+        assert resp.status_code == 401
 
     def test_list_empty_when_no_assignments(self, assignments_org):
         """A fresh volunteer with nothing assigned gets total: 0."""

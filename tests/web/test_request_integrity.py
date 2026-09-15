@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import pytest
-from fastapi.routing import APIRoute
+from fastapi.routing import APIRoute, iter_route_contexts
 from fastapi.testclient import TestClient
 
 from api.main import app
@@ -58,9 +58,9 @@ def test_every_unsafe_browser_route_is_inside_the_protected_surface():
     unsafe = {"POST", "PUT", "PATCH", "DELETE"}
     routes = [
         route
-        for route in app.routes
-        if isinstance(route, APIRoute)
-        and route.methods.intersection(unsafe)
+        for route in iter_route_contexts(app.routes)
+        if isinstance(route.original_route, APIRoute)
+        and (route.methods or set()).intersection(unsafe)
         and not route.path.startswith("/api/")
     ]
 
@@ -71,9 +71,9 @@ def test_every_unsafe_browser_route_is_inside_the_protected_surface():
 def test_public_browser_auth_routes_apply_the_api_rate_limit_policies():
     routes = {
         (method, route.path): route
-        for route in app.routes
-        if isinstance(route, APIRoute)
-        for method in route.methods
+        for route in iter_route_contexts(app.routes)
+        if isinstance(route.original_route, APIRoute)
+        for method in route.methods or set()
     }
 
     for route_key, expected_limit in EXPECTED_AUTH_RATE_LIMITS.items():

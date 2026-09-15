@@ -55,7 +55,7 @@ def tenants(client, db):
 def test_event_reads_are_member_scoped_and_private_views_are_admin_only(client, tenants):
     headers = tenants["headers"]
 
-    assert client.get("/api/v1/events/?org_id=tenant-a").status_code == 403
+    assert client.get("/api/v1/events/?org_id=tenant-a").status_code == 401
     assert (
         client.get("/api/v1/events/?org_id=tenant-a", headers=headers["invalid"]).status_code == 401
     )
@@ -183,7 +183,7 @@ def test_conflict_checks_are_admin_scoped_and_hide_foreign_children(client, tena
     foreign_event = {**own_body, "event_id": tenants["event_b"]["id"]}
     headers = tenants["headers"]
 
-    assert client.post(path, json=own_body).status_code == 403
+    assert client.post(path, json=own_body).status_code == 401
     assert client.post(path, json=own_body, headers=headers["invalid"]).status_code == 401
     assert client.post(path, json=own_body, headers=headers["member_a"]).status_code == 403
     assert client.post(path, json=own_body, headers=headers["admin_a"]).status_code == 200
@@ -203,7 +203,7 @@ def test_availability_is_self_service_with_same_tenant_admin_override(client, db
     }
     headers = tenants["headers"]
 
-    assert client.get(path).status_code == 403
+    assert client.get(path).status_code == 401
     assert client.get(path, headers=headers["invalid"]).status_code == 401
     assert client.get(path, headers=headers["member_a"]).status_code == 200
     assert client.get(path, headers=headers["peer_a"]).status_code == 403
@@ -265,7 +265,7 @@ def test_solution_surface_is_admin_only_and_foreign_ids_are_hidden(client, db, t
     headers = tenants["headers"]
     collection = "/api/v1/solutions/?org_id=tenant-a"
 
-    assert client.get(collection).status_code == 403
+    assert client.get(collection).status_code == 401
     assert client.get(collection, headers=headers["member_a"]).status_code == 403
     own_collection = client.get(collection, headers=headers["admin_a"])
     assert own_collection.status_code == 200

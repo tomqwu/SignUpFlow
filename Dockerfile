@@ -3,31 +3,44 @@
 # ============================================================================
 # Stage 1: Builder - Install dependencies and build
 # ============================================================================
-FROM python:3.11-slim AS builder
+FROM python:3.11-alpine@sha256:0d55920083f1ce1e38ac292e2772f924b4f8bb4188d336c79bf66963039e6146 AS builder
 
 ENV PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
     PIP_NO_CACHE_DIR=1 \
     PIP_DISABLE_PIP_VERSION_CHECK=1 \
     POETRY_VERSION=1.7.1 \
-    POETRY_HOME="/opt/poetry" \
     POETRY_NO_INTERACTION=1 \
     POETRY_VIRTUALENVS_CREATE=false
 
-RUN apt-get update && apt-get install -y \
-    curl \
-    build-essential \
-    libpq-dev \
-    && rm -rf /var/lib/apt/lists/*
+RUN apk upgrade --no-cache \
+    && apk add --no-cache \
+        build-base \
+        postgresql-dev
 
-RUN curl -sSL https://install.python-poetry.org | python3 - \
-    && ln -s /opt/poetry/bin/poetry /usr/local/bin/poetry
+RUN python -m venv /opt/poetry \
+    && /opt/poetry/bin/pip install --no-cache-dir \
+        "poetry==${POETRY_VERSION}" \
+        "poetry-plugin-export==1.6.0"
+
+RUN python -m venv /opt/venv
+
+ENV VIRTUAL_ENV=/opt/venv \
+    PATH="/opt/venv/bin:/opt/poetry/bin:${PATH}"
 
 WORKDIR /app
 
 COPY pyproject.toml poetry.lock* ./
 
-RUN poetry install --only main --no-root --no-directory
+RUN poetry export --only main --format requirements.txt --output requirements.txt \
+    && pip install --require-hashes --no-cache-dir -r requirements.txt \
+    && rm -rf \
+        /opt/venv/bin/pip* \
+        /opt/venv/lib/python3.11/site-packages/_distutils_hack \
+        /opt/venv/lib/python3.11/site-packages/pip* \
+        /opt/venv/lib/python3.11/site-packages/pkg_resources \
+        /opt/venv/lib/python3.11/site-packages/setuptools* \
+        /opt/venv/lib/python3.11/site-packages/wheel*
 
 # web/ is imported by api.main (`from web.app import mount_web`) — the
 # HTML app won't start without it.
@@ -40,25 +53,33 @@ COPY docker-entrypoint.sh ./
 # ============================================================================
 # Stage 2: Production - Minimal runtime image
 # ============================================================================
-FROM python:3.11-slim
+FROM python:3.11-alpine@sha256:0d55920083f1ce1e38ac292e2772f924b4f8bb4188d336c79bf66963039e6146
 
 ARG VCS_REF=unknown
 ARG BUILD_DATE=unknown
 
 ENV PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
+    VIRTUAL_ENV=/opt/venv \
+    PATH="/opt/venv/bin:${PATH}" \
     PORT=8000 \
     HOST=0.0.0.0
 
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    libpq5 \
-    && rm -rf /var/lib/apt/lists/*
+RUN apk upgrade --no-cache \
+    && apk add --no-cache libpq \
+    && rm -rf \
+        /usr/local/bin/pip* \
+        /usr/local/lib/python3.11/site-packages/_distutils_hack \
+        /usr/local/lib/python3.11/site-packages/pip* \
+        /usr/local/lib/python3.11/site-packages/pkg_resources \
+        /usr/local/lib/python3.11/site-packages/setuptools* \
+        /usr/local/lib/python3.11/site-packages/wheel*
 
-RUN groupadd -r signupflow && useradd -r -g signupflow signupflow
+RUN addgroup -S signupflow && adduser -S -G signupflow signupflow
 
 WORKDIR /app
 
-COPY --from=builder /usr/local/lib/python3.11/site-packages /usr/local/lib/python3.11/site-packages
+COPY --from=builder /opt/venv /opt/venv
 
 COPY --from=builder /app ./
 

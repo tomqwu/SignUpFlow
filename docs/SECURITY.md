@@ -29,6 +29,11 @@ container health target. Production logs are structured on stdout and require an
 `RELEASE_SHA`. `api/observability.py` initializes optional Sentry reporting with default
 PII and tracing disabled. Local signal tests do not prove external operator receipt.
 
+Current dependency, secret, container, SBOM, exception, and Pages action policy lives in
+[SECURITY_VALIDATION.md](SECURITY_VALIDATION.md). It uses local-only exact-revision
+evidence and supersedes the historical `poetry audit` and automated-scanner proposals
+below. It is not a compliance certification or deployed-environment assessment.
+
 ---
 
 ## 🛡️ Security Overview

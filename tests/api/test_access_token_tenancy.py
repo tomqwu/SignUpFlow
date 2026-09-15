@@ -1,7 +1,7 @@
 """Tenant-bound access-token and active-membership regressions."""
 
+import jwt
 import pytest
-from jose import jwt
 
 from api.models import Person
 from api.security import ALGORITHM, SECRET_KEY, create_access_token
