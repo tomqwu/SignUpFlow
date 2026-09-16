@@ -1,6 +1,6 @@
 {
   "browser": "Chromium 151.0.7922.34",
-  "captured_at": "2026-09-16T13:34:13.357625Z",
+  "captured_at": "2026-09-16T13:58:46.096616Z",
   "entries": [
     {
       "actor": "member",
@@ -95,7 +95,7 @@
       "scenario": "BO-02",
       "source_files": {
         "web/static/css/styles.css": "68457829fe937a02a414bb8b329f7e457747420c85bbb73df00c37438b557603",
-        "web/templates/admin/people.html": "9bbeaba8e12869970ac9bd2df702bce662510dda2ec5ecf30a3e437eceaca189",
+        "web/templates/admin/people.html": "8756d19d4dd2b66b7030fa9c2d85303ebc9aa48bc8cdb037635971ac8031edac",
         "web/templates/base.html": "ad841003489fa8279c1a6c4ecc792fe78118434eb6752bce79d934028ec85e9c",
         "web/templates/partials/people_list.html": "dbb878e714eedbd1e7b1e14960d5ff6763002269ada948763f38d98f8a4f869f"
       },
@@ -379,7 +379,7 @@
       "scenario": "BO-02",
       "source_files": {
         "web/static/css/styles.css": "68457829fe937a02a414bb8b329f7e457747420c85bbb73df00c37438b557603",
-        "web/templates/admin/people.html": "9bbeaba8e12869970ac9bd2df702bce662510dda2ec5ecf30a3e437eceaca189",
+        "web/templates/admin/people.html": "8756d19d4dd2b66b7030fa9c2d85303ebc9aa48bc8cdb037635971ac8031edac",
         "web/templates/base.html": "ad841003489fa8279c1a6c4ecc792fe78118434eb6752bce79d934028ec85e9c",
         "web/templates/partials/people_list.html": "dbb878e714eedbd1e7b1e14960d5ff6763002269ada948763f38d98f8a4f869f"
       },
@@ -663,7 +663,7 @@
       "scenario": "BO-02",
       "source_files": {
         "web/static/css/styles.css": "68457829fe937a02a414bb8b329f7e457747420c85bbb73df00c37438b557603",
-        "web/templates/admin/people.html": "9bbeaba8e12869970ac9bd2df702bce662510dda2ec5ecf30a3e437eceaca189",
+        "web/templates/admin/people.html": "8756d19d4dd2b66b7030fa9c2d85303ebc9aa48bc8cdb037635971ac8031edac",
         "web/templates/base.html": "ad841003489fa8279c1a6c4ecc792fe78118434eb6752bce79d934028ec85e9c",
         "web/templates/partials/people_list.html": "dbb878e714eedbd1e7b1e14960d5ff6763002269ada948763f38d98f8a4f869f"
       },
@@ -947,7 +947,7 @@
       "scenario": "BO-02",
       "source_files": {
         "web/static/css/styles.css": "68457829fe937a02a414bb8b329f7e457747420c85bbb73df00c37438b557603",
-        "web/templates/admin/people.html": "9bbeaba8e12869970ac9bd2df702bce662510dda2ec5ecf30a3e437eceaca189",
+        "web/templates/admin/people.html": "8756d19d4dd2b66b7030fa9c2d85303ebc9aa48bc8cdb037635971ac8031edac",
         "web/templates/base.html": "ad841003489fa8279c1a6c4ecc792fe78118434eb6752bce79d934028ec85e9c",
         "web/templates/partials/people_list.html": "dbb878e714eedbd1e7b1e14960d5ff6763002269ada948763f38d98f8a4f869f"
       },
@@ -1141,5 +1141,5 @@
   ],
   "scenario_date": "2030-01-09",
   "schema_version": 1,
-  "source_ref": "9ea7dff9d2e3d1bb8067fbb23f2207ba5908094f"
+  "source_ref": "cd16cf825032c196977a16e1ec6e0c946739d586"
 }
