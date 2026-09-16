@@ -47,6 +47,9 @@ delivery runbook instead.
   shown when a capture or email backend is configured. For external sharing, serve
   the browser app at an invitee-accessible origin and set `FRONTEND_URL` or `APP_URL`
   to that same origin; browser writes from a different private origin are rejected.
+  Pending manual invitations remain visible to the administrator on **People**
+  after a refresh. Expired links are not shown; cancel the expired invitation
+  there and create a new one.
 - Captured notification records move from `pending` to `sent` only after the `.eml`
   file is atomically renamed into place.
 - Every notification operation has a unique delivery key. Replaying a publish,

@@ -17,6 +17,7 @@ from api.models import (
     Constraint,
     EmailPreference,
     Event,
+    Invitation,
     Notification,
     Person,
     RecurringSeries,
@@ -26,8 +27,10 @@ from api.models import (
 from api.roles import PERMISSION_ROLES
 from api.services.allocation_service import member_can_take_role
 from api.services.assignment_visibility import member_visible_assignment
+from api.services.email_service import email_service
 from api.timeutils import utcnow
 from web.deps import get_session_admin, get_session_user
+from web.invite_links import manual_invitation_link
 
 router = APIRouter(tags=["web-pages"])
 
@@ -932,6 +935,33 @@ def admin_analytics(
     )
 
 
+def _pending_invitations(db: Session, org_id: str) -> list[dict]:
+    invitations = (
+        db.query(Invitation)
+        .filter(Invitation.org_id == org_id, Invitation.status.in_(["pending", "expired"]))
+        .order_by(Invitation.created_at.desc(), Invitation.id.desc())
+        .all()
+    )
+    now = utcnow()
+    manual_links_enabled = email_service.delivery_mode == "disabled"
+    return [
+        {
+            "id": invitation.id,
+            "name": invitation.name,
+            "email": invitation.email,
+            "expired": invitation.status == "expired" or invitation.expires_at <= now,
+            "link": (
+                manual_invitation_link(invitation.token)
+                if manual_links_enabled
+                and invitation.status == "pending"
+                and invitation.expires_at > now
+                else None
+            ),
+        }
+        for invitation in invitations
+    ]
+
+
 @router.get("/a/people", response_class=HTMLResponse)
 def admin_people(
     request: Request,
@@ -948,10 +978,12 @@ def admin_people(
             "person": person,
             "active_tab": "people",
             "people": _people(db, person.org_id, q),
+            "pending_invitations": _pending_invitations(db, person.org_id),
             "q": q or "",
             "notice": None,
             "error": None,
         },
+        headers={"Cache-Control": "no-store"},
     )
 
 

@@ -2,16 +2,18 @@
 
 from __future__ import annotations
 
+from datetime import timedelta
 from unittest.mock import MagicMock
 
 from api.models import Invitation, Person
 from api.routers import invitations
+from api.timeutils import utcnow
 from tests.web.conftest import seed_person
 from web.deps import SESSION_COOKIE
 
 
-def _admin(client, db, *, org="i_org", email="iadmin@web.test"):
-    seed_person(db, person_id="i_admin", org_id=org, email=email, roles=["admin"])
+def _admin(client, db, *, org="i_org", email="iadmin@web.test", person_id="i_admin"):
+    seed_person(db, person_id=person_id, org_id=org, email=email, roles=["admin"])
     r = client.post("/auth/login", data={"email": email, "password": "WebPass123!"})
     return r.cookies[SESSION_COOKIE]
 
@@ -104,6 +106,158 @@ def test_manual_invite_rejects_private_origin_when_public_url_configured(client,
         .first()
         is None
     )
+
+
+def test_pending_invitation_link_survives_people_refresh(client, db):
+    token = _admin(client, db, org="i_pending", email="pending-admin@web.test")
+    client.post(
+        "/a/people/invite",
+        data={"name": "Pending Member", "email": "pending@example.com", "role": "volunteer"},
+        cookies={SESSION_COOKIE: token},
+    )
+    invitation = (
+        db.query(Invitation)
+        .filter(Invitation.org_id == "i_pending", Invitation.email == "pending@example.com")
+        .one()
+    )
+
+    page = client.get("/a/people", cookies={SESSION_COOKIE: token})
+
+    assert page.status_code == 200
+    assert page.headers["cache-control"] == "no-store"
+    assert "Pending Member" in page.text
+    assert f'data-invite-link="/auth/invitation/{invitation.token}"' in page.text
+    assert f'action="/a/people/invitations/{invitation.id}/cancel"' in page.text
+
+
+def test_people_page_hides_other_org_invitations(client, db):
+    first_token = _admin(client, db, org="i_first", email="first-admin@web.test")
+    client.post(
+        "/a/people/invite",
+        data={"name": "Other Member", "email": "other@example.com", "role": "volunteer"},
+        cookies={SESSION_COOKIE: first_token},
+    )
+    other_invitation = (
+        db.query(Invitation)
+        .filter(Invitation.org_id == "i_first", Invitation.email == "other@example.com")
+        .one()
+    )
+    second_token = _admin(
+        client, db, org="i_second", email="second-admin@web.test", person_id="i_second_admin"
+    )
+
+    page = client.get("/a/people", cookies={SESSION_COOKIE: second_token})
+
+    assert "other@example.com" not in page.text
+    assert other_invitation.token not in page.text
+
+
+def test_cancel_pending_invitation_allows_recreation(client, db):
+    token = _admin(client, db, org="i_cancel", email="cancel-admin@web.test")
+    invite_data = {"name": "Cancel Member", "email": "cancel@example.com", "role": "volunteer"}
+    client.post("/a/people/invite", data=invite_data, cookies={SESSION_COOKIE: token})
+    invitation = (
+        db.query(Invitation)
+        .filter(Invitation.org_id == "i_cancel", Invitation.email == "cancel@example.com")
+        .one()
+    )
+
+    cancelled = client.post(
+        f"/a/people/invitations/{invitation.id}/cancel", cookies={SESSION_COOKIE: token}
+    )
+
+    assert cancelled.status_code == 303
+    assert cancelled.headers["location"] == "/a/people"
+    db.refresh(invitation)
+    assert invitation.status == "cancelled"
+    assert invitation.token not in client.get("/a/people", cookies={SESSION_COOKIE: token}).text
+    recreated = client.post("/a/people/invite", data=invite_data, cookies={SESSION_COOKIE: token})
+    assert recreated.status_code == 200
+    assert "Invitation created" in recreated.text
+
+
+def test_cancel_other_org_invitation_is_not_found(client, db):
+    first_token = _admin(client, db, org="i_owner", email="owner-admin@web.test")
+    client.post(
+        "/a/people/invite",
+        data={"name": "Owner Member", "email": "owner@example.com", "role": "volunteer"},
+        cookies={SESSION_COOKIE: first_token},
+    )
+    invitation = (
+        db.query(Invitation)
+        .filter(Invitation.org_id == "i_owner", Invitation.email == "owner@example.com")
+        .one()
+    )
+    second_token = _admin(
+        client, db, org="i_attacker", email="attacker-admin@web.test", person_id="i_attacker_admin"
+    )
+
+    response = client.post(
+        f"/a/people/invitations/{invitation.id}/cancel", cookies={SESSION_COOKIE: second_token}
+    )
+
+    assert response.status_code == 404
+    db.refresh(invitation)
+    assert invitation.status == "pending"
+
+
+def test_cancel_invitation_requires_admin(client, db):
+    token = _admin(client, db, org="i_guard", email="guard-admin@web.test")
+    client.post(
+        "/a/people/invite",
+        data={"name": "Guard Member", "email": "guard@example.com", "role": "volunteer"},
+        cookies={SESSION_COOKIE: token},
+    )
+    invitation = (
+        db.query(Invitation)
+        .filter(Invitation.org_id == "i_guard", Invitation.email == "guard@example.com")
+        .one()
+    )
+    client.cookies.clear()
+
+    response = client.post(f"/a/people/invitations/{invitation.id}/cancel")
+
+    assert response.status_code == 303
+    assert response.headers["location"] == "/auth/login"
+    db.refresh(invitation)
+    assert invitation.status == "pending"
+
+
+def test_expired_pending_invitation_cannot_be_copied(client, db):
+    token = _admin(client, db, org="i_expired", email="expired-admin@web.test")
+    client.post(
+        "/a/people/invite",
+        data={"name": "Expired Member", "email": "expired@example.com", "role": "volunteer"},
+        cookies={SESSION_COOKIE: token},
+    )
+    invitation = (
+        db.query(Invitation)
+        .filter(Invitation.org_id == "i_expired", Invitation.email == "expired@example.com")
+        .one()
+    )
+    invitation.expires_at = utcnow() - timedelta(minutes=1)
+    db.commit()
+    verification = invitations.verify_invitation(invitation.token, db)
+    assert verification.valid is False
+    db.refresh(invitation)
+    assert invitation.status == "expired"
+
+    page = client.get("/a/people", cookies={SESSION_COOKIE: token})
+
+    assert "Expired Member" in page.text
+    assert "Expired" in page.text
+    assert invitation.token not in page.text
+    assert f'action="/a/people/invitations/{invitation.id}/cancel"' in page.text
+    cancelled = client.post(
+        f"/a/people/invitations/{invitation.id}/cancel", cookies={SESSION_COOKIE: token}
+    )
+    assert cancelled.status_code == 303
+    recreated = client.post(
+        "/a/people/invite",
+        data={"name": "Expired Member", "email": "expired@example.com", "role": "volunteer"},
+        cookies={SESSION_COOKIE: token},
+    )
+    assert recreated.status_code == 200
 
 
 def test_invite_volunteer_with_scheduling_qualifications(client, db):
@@ -236,6 +390,7 @@ def test_browser_invite_executes_email_task(client, db, monkeypatch, tmp_path):
         .one()
     )
     path = f"/auth/invitation/{invitation.token}"
+    assert invitation.token not in client.get("/a/people", cookies={SESSION_COOKIE: token}).text
     _, _, html_body, plain_body = send.call_args.args
     assert f"https://signup.example{path}" in html_body
     assert f"https://signup.example{path}" in plain_body

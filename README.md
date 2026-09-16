@@ -94,6 +94,9 @@ that configured channel instead. For links shared outside the administrator's ne
 serve the browser app at an invitee-accessible origin and set `FRONTEND_URL` or `APP_URL`
 to that same origin. Browser writes from a different private origin are rejected.
 Treat invitation links as account-creation secrets.
+Pending invitations remain on **People** after a refresh. An administrator can
+copy an active manual link again or cancel an invitation, including an expired
+one, before creating a replacement for the same email.
 
 ---
 

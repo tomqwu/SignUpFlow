@@ -180,6 +180,10 @@ a { color: var(--accent); text-decoration: none; }
 }
 .group .row:last-child { border-bottom: 0; }
 
+.invite-row { display: block; cursor: default; }
+.invite-row .row-main { margin-bottom: 12px; }
+.invite-row form { margin: 8px 0 0; }
+
 .person-meta {
   display: flex;
   flex-direction: column;

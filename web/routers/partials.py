@@ -9,11 +9,10 @@ the assignment card partial so HTMX swaps the fresh status in place.
 
 from __future__ import annotations
 
-import os
 from typing import cast
 
 from fastapi import APIRouter, BackgroundTasks, Depends, Form, HTTPException, Query, Request
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, RedirectResponse
 from pydantic import ValidationError
 from sqlalchemy.orm import Session
 
@@ -47,7 +46,7 @@ from api.routers.events import (
     manage_assignment,
     update_event,
 )
-from api.routers.invitations import create_invitation
+from api.routers.invitations import cancel_invitation, create_invitation
 from api.routers.organizations import get_organization, update_organization
 from api.routers.people import bulk_import_people, update_current_person
 from api.routers.recurring_events import (
@@ -93,6 +92,7 @@ from api.services.notification_service import dispatch_notification_ids
 from api.services.qualification_service import replace_person_roles
 from api.timeutils import utcnow
 from web.deps import get_session_admin, get_session_user
+from web.invite_links import manual_invitation_link
 from web.routers.pages import (
     NOTIF_TYPES,
     RRULE_PRESETS,
@@ -528,9 +528,7 @@ def people_invite(
         return _result(False, str(exc.detail), exc.status_code or 400)
     if email_service.delivery_mode == "disabled":
         message = f"Invitation created for {email}. Email delivery is disabled."
-        invite_path = f"/auth/invitation/{invitation.token}"
-        public_url = os.getenv("FRONTEND_URL") or os.getenv("APP_URL")
-        invite_link = f"{public_url.rstrip('/')}{invite_path}" if public_url else invite_path
+        invite_link = manual_invitation_link(invitation.token)
     elif email_service.delivery_mode == "local_capture":
         message = f"Invitation created for {email}; queued in local mail capture."
         invite_link = None
@@ -538,6 +536,16 @@ def people_invite(
         message = f"Invitation created for {email}; email queued."
         invite_link = None
     return _result(True, message, invite_link=invite_link)
+
+
+@router.post("/a/people/invitations/{invitation_id}/cancel")
+def people_cancel_invitation(
+    invitation_id: str,
+    person: Person = Depends(get_session_admin),
+    db: Session = Depends(get_db),
+):
+    cancel_invitation(invitation_id, admin=person, db=db)
+    return RedirectResponse(url="/a/people", status_code=303)
 
 
 @router.post("/a/people/{person_id}/qualifications", response_class=HTMLResponse)

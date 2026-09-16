@@ -78,6 +78,30 @@ Sam Lee,sam@church.org,volunteer"></textarea>
 
   <div class="spacer-18"></div>
 
+  {% if pending_invitations %}
+  <div class="mono-label">Open invitations</div>
+  <div class="group" id="pending-invitations">
+    {% for invitation in pending_invitations %}
+    <div class="row invite-row" data-invitation-id="{{ invitation.id }}">
+      <div class="row-main">
+        <div class="row-title">{{ invitation.name }}</div>
+        <div class="row-sub">{{ invitation.email }}</div>
+        <div class="row-sub">{{ 'Expired' if invitation.expired else 'Awaiting acceptance' }}</div>
+      </div>
+      {% if invitation.link %}
+      {% set invite_link = invitation.link %}
+      {% set invite_link_id = 'invite-link-' ~ invitation.id %}
+      {% include 'partials/invite_link_control.html' %}
+      {% endif %}
+      <form method="post" action="/a/people/invitations/{{ invitation.id }}/cancel">
+        <button class="btn btn-secondary" type="submit">Cancel invitation</button>
+      </form>
+    </div>
+    {% endfor %}
+  </div>
+  <div class="spacer-18"></div>
+  {% endif %}
+
   <div class="field">
     <label class="field-label" for="q">Search</label>
     <input id="q" name="q" type="search" value="{{ q }}"
