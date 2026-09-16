@@ -9,6 +9,7 @@ the assignment card partial so HTMX swaps the fresh status in place.
 
 from __future__ import annotations
 
+import os
 from typing import cast
 
 from fastapi import APIRouter, BackgroundTasks, Depends, Form, HTTPException, Query, Request
@@ -504,12 +505,13 @@ def people_invite(
     The invitee only appears on /a/people once they accept."""
     from web.app import templates
 
-    def _result(ok: bool, msg: str, code: int = 200):
+    def _result(ok: bool, msg: str, code: int = 200, invite_link: str | None = None):
         return templates.TemplateResponse(
             request,
             "partials/invite_result.html",
-            {"ok": ok, "msg": msg},
+            {"ok": ok, "msg": msg, "invite_link": invite_link},
             status_code=code,
+            headers={"Cache-Control": "no-store"},
         )
 
     try:
@@ -519,16 +521,23 @@ def people_invite(
         message = str(exc) if qualifications else "Enter a valid name and email."
         return _result(False, message, 400)
     try:
-        create_invitation(payload, background_tasks, org_id=person.org_id, inviter=person, db=db)
+        invitation = create_invitation(
+            payload, background_tasks, org_id=person.org_id, inviter=person, db=db
+        )
     except HTTPException as exc:
         return _result(False, str(exc.detail), exc.status_code or 400)
     if email_service.delivery_mode == "disabled":
         message = f"Invitation created for {email}. Email delivery is disabled."
+        invite_path = f"/auth/invitation/{invitation.token}"
+        public_url = os.getenv("FRONTEND_URL") or os.getenv("APP_URL")
+        invite_link = f"{public_url.rstrip('/')}{invite_path}" if public_url else invite_path
     elif email_service.delivery_mode == "local_capture":
         message = f"Invitation created for {email}; queued in local mail capture."
+        invite_link = None
     else:
         message = f"Invitation created for {email}; email queued."
-    return _result(True, message)
+        invite_link = None
+    return _result(True, message, invite_link=invite_link)
 
 
 @router.post("/a/people/{person_id}/qualifications", response_class=HTMLResponse)

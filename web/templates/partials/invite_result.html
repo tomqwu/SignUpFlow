@@ -2,6 +2,25 @@
 <div id="invite-result">
   {% if ok %}
   <div class="form-notice" role="status">{{ msg }}</div>
+  {% if invite_link %}
+  <div class="spacer-12"></div>
+  <div x-data="{ copied: false, copyFailed: false }">
+    <div class="field">
+      <label class="field-label" for="invite-link">Invitation link</label>
+      <input id="invite-link" type="url" readonly x-ref="inviteLink"
+             data-invite-link="{{ invite_link }}"
+             x-init="$el.value = new URL($el.dataset.inviteLink, window.location.origin).href"
+             @focus="$el.select()">
+    </div>
+    <div class="spacer-12"></div>
+    <button class="btn btn-secondary" type="button"
+            @click="copied = false; copyFailed = false; $refs.inviteLink.select(); if (navigator.clipboard) { navigator.clipboard.writeText($refs.inviteLink.value).then(() => copied = true).catch(() => copyFailed = true) } else { copyFailed = true }"
+            x-text="copied ? 'Copied' : 'Copy link'">Copy link</button>
+    <div class="form-error" role="alert" x-show="copyFailed" x-cloak>
+      Copy unavailable. Select the link and copy it manually.
+    </div>
+  </div>
+  {% endif %}
   {% else %}
   <div class="form-error" role="alert">{{ msg }}</div>
   {% endif %}

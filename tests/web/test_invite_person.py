@@ -38,11 +38,15 @@ def test_invite_creates_invitation(client, db):
     assert resp.status_code == 200
     assert "Invitation created for jamie@example.com" in resp.text
     assert "Email delivery is disabled" in resp.text
+    assert resp.headers["cache-control"] == "no-store"
     inv = db.query(Invitation).filter(Invitation.email == "jamie@example.com").first()
     assert inv is not None
     assert inv.org_id == "i_org2"
     assert inv.roles == ["volunteer"]
     assert inv.status == "pending"
+    assert f'data-invite-link="/auth/invitation/{inv.token}"' in resp.text
+    assert 'id="invite-link"' in resp.text
+    assert "Copy link" in resp.text
 
 
 def test_invite_admin_role(client, db):
@@ -58,6 +62,48 @@ def test_invite_admin_role(client, db):
     )
     inv = db.query(Invitation).filter(Invitation.email == "newadmin@example.com").first()
     assert inv.roles == ["admin"]
+
+
+def test_manual_invite_uses_configured_public_url(client, db, monkeypatch):
+    token = _admin(client, db, org="i_public", email="public-admin@web.test")
+    monkeypatch.setenv("FRONTEND_URL", "https://signup.example/")
+
+    response = client.post(
+        "/a/people/invite",
+        data={"name": "Public Member", "email": "public@example.com", "role": "volunteer"},
+        cookies={SESSION_COOKIE: token},
+    )
+
+    assert response.status_code == 200
+    invitation = (
+        db.query(Invitation)
+        .filter(Invitation.org_id == "i_public", Invitation.email == "public@example.com")
+        .one()
+    )
+    assert (
+        f'data-invite-link="https://signup.example/auth/invitation/{invitation.token}"'
+        in response.text
+    )
+
+
+def test_manual_invite_rejects_private_origin_when_public_url_configured(client, db, monkeypatch):
+    token = _admin(client, db, org="i_origin", email="origin-admin@web.test")
+    monkeypatch.setenv("FRONTEND_URL", "https://signup.example/")
+
+    response = client.post(
+        "/a/people/invite",
+        data={"name": "Private Member", "email": "private@example.com", "role": "volunteer"},
+        headers={"Origin": "http://private.example"},
+        cookies={SESSION_COOKIE: token},
+    )
+
+    assert response.status_code == 403
+    assert (
+        db.query(Invitation)
+        .filter(Invitation.org_id == "i_origin", Invitation.email == "private@example.com")
+        .first()
+        is None
+    )
 
 
 def test_invite_volunteer_with_scheduling_qualifications(client, db):
@@ -170,9 +216,10 @@ def test_invite_requires_auth(client):
     assert resp.status_code == 303
 
 
-def test_browser_invite_executes_email_task(client, db, monkeypatch):
+def test_browser_invite_executes_email_task(client, db, monkeypatch, tmp_path):
     token = _admin(client, db)
     monkeypatch.setenv("FRONTEND_URL", "https://signup.example/")
+    monkeypatch.setattr(invitations.email_service, "capture_dir", tmp_path)
     send = MagicMock(return_value=True)
     monkeypatch.setattr(invitations.email_service, "send_email", send)
     response = client.post(
@@ -181,6 +228,7 @@ def test_browser_invite_executes_email_task(client, db, monkeypatch):
         cookies={SESSION_COOKIE: token},
     )
     assert response.status_code == 200
+    assert 'id="invite-link"' not in response.text
     send.assert_called_once()
     invitation = (
         db.query(Invitation)

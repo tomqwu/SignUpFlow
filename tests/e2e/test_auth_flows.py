@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import pytest
 
-from tests.e2e._helpers import accept_invitation, invite_token, no_js_errors, rid, signup_admin
+from tests.e2e._helpers import accept_invitation, no_js_errors, rid, signup_admin
 
 pytestmark = pytest.mark.e2e
 
@@ -69,7 +69,7 @@ def test_forgot_password_is_non_enumerating(live_server, page):
     page.wait_for_selector(f"text={msg}")
 
 
-def test_invite_accept_lands_on_schedule(live_server, new_context, page, db_path):
+def test_invite_accept_lands_on_schedule(live_server, new_context, page):
     base = live_server
     vol_email = f"vol+{rid()}@hope.e2e"
 
@@ -82,8 +82,20 @@ def test_invite_accept_lands_on_schedule(live_server, new_context, page, db_path
     page.click("button:has-text('Send invite')")
     page.wait_for_selector("#invite-result:has-text('Invitation created')")
 
-    tok = invite_token(db_path, vol_email)
-    assert tok, "invitation token not found"
+    link = page.locator("#invite-link")
+    link.wait_for()
+    invite_url = link.input_value()
+    assert invite_url.startswith(f"{base}/auth/invitation/")
+    page.context.grant_permissions(["clipboard-read", "clipboard-write"])
+    page.get_by_role("button", name="Copy link").click()
+    page.get_by_role("button", name="Copied").wait_for()
+    assert page.evaluate("navigator.clipboard.readText()") == invite_url
+    page.evaluate(
+        "() => { navigator.clipboard.writeText = () => Promise.reject(new Error('denied')) }"
+    )
+    page.get_by_role("button", name="Copied").click()
+    page.get_by_role("alert").filter(has_text="Copy unavailable").wait_for()
+    tok = invite_url.rsplit("/", 1)[1]
     vol_page = accept_invitation(new_context(), base, tok)  # asserts /v/schedule
     vol_page.wait_for_selector("text=Schedule")
     no_js_errors(vol_page)

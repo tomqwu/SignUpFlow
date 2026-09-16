@@ -87,6 +87,14 @@ administrator-created invitation. The script accepts loopback endpoints only, us
 synthetic `.example` identities, and contains no real token or provider credential.
 Interactive API docs are at http://127.0.0.1:8000/docs.
 
+In the browser, an administrator can create an invitation from **People**. When
+email delivery is disabled, the result shows a one-time link to copy and share with
+the invitee; with local capture or an enabled email backend, the link is sent through
+that configured channel instead. For links shared outside the administrator's network,
+serve the browser app at an invitee-accessible origin and set `FRONTEND_URL` or `APP_URL`
+to that same origin. Browser writes from a different private origin are rejected.
+Treat invitation links as account-creation secrets.
+
 ---
 
 ## Web App - Church and Basketball Workflows

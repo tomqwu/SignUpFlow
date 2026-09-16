@@ -11,7 +11,6 @@ import pytest
 
 from tests.e2e._helpers import (
     accept_invitation,
-    invite_token,
     next_sunday_iso,
     no_js_errors,
     rid,
@@ -66,7 +65,7 @@ def _assert_responsive_step_layout(page):
     assert action_box["width"] >= content_box["width"] - 1
 
 
-def test_fresh_admin_completes_wizard(live_server, new_context, page, db_path):
+def test_fresh_admin_completes_wizard(live_server, new_context, page):
     base = live_server
     vol_email = f"vol+{rid()}@hope.e2e"
 
@@ -85,7 +84,9 @@ def test_fresh_admin_completes_wizard(live_server, new_context, page, db_path):
     page.select_option("#inv_role", "volunteer")
     page.click("button:has-text('Send invite')")
     page.wait_for_selector("#invite-result:has-text('Invitation created')")
-    accept_invitation(new_context(), base, invite_token(db_path, vol_email))
+    invite_url = page.locator("#invite-link").input_value()
+    assert invite_url.startswith(f"{base}/auth/invitation/")
+    accept_invitation(new_context(), base, invite_url.rsplit("/", 1)[1])
     _return_to_onboarding(page, "1/4")
 
     # 2) Create an event.
