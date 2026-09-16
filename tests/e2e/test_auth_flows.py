@@ -95,7 +95,37 @@ def test_invite_accept_lands_on_schedule(live_server, new_context, page):
     )
     page.get_by_role("button", name="Copied").click()
     page.get_by_role("alert").filter(has_text="Copy unavailable").wait_for()
-    tok = invite_url.rsplit("/", 1)[1]
+    page.reload()
+    pending = page.locator(".invite-row").filter(has_text=vol_email)
+    pending.wait_for()
+    recovered_url = pending.locator("input[data-invite-link]").input_value()
+    assert recovered_url == invite_url
+    tok = recovered_url.rsplit("/", 1)[1]
     vol_page = accept_invitation(new_context(), base, tok)  # asserts /v/schedule
     vol_page.wait_for_selector("text=Schedule")
     no_js_errors(vol_page)
+
+
+def test_pending_invitation_can_be_cancelled_and_recreated(live_server, page):
+    base = live_server
+    vol_email = f"cancel+{rid()}@hope.e2e"
+    signup_admin(page, base)
+    page.goto(f"{base}/a/people")
+    page.get_by_role("button", name="Invite person").click()
+    page.fill("#inv_name", "Cancel Member")
+    page.fill("#inv_email", vol_email)
+    page.get_by_role("button", name="Send invite").click()
+    page.wait_for_selector("#invite-result:has-text('Invitation created')")
+
+    page.reload()
+    pending = page.locator(".invite-row").filter(has_text=vol_email)
+    pending.get_by_role("button", name="Cancel invitation").click()
+    page.wait_for_url("**/a/people")
+    assert page.locator(".invite-row").filter(has_text=vol_email).count() == 0
+
+    page.get_by_role("button", name="Invite person").click()
+    page.fill("#inv_name", "Cancel Member")
+    page.fill("#inv_email", vol_email)
+    page.get_by_role("button", name="Send invite").click()
+    page.wait_for_selector("#invite-result:has-text('Invitation created')")
+    no_js_errors(page)
