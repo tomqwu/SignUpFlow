@@ -237,6 +237,10 @@ def test_expired_pending_invitation_cannot_be_copied(client, db):
     )
     invitation.expires_at = utcnow() - timedelta(minutes=1)
     db.commit()
+    verification = invitations.verify_invitation(invitation.token, db)
+    assert verification.valid is False
+    db.refresh(invitation)
+    assert invitation.status == "expired"
 
     page = client.get("/a/people", cookies={SESSION_COOKIE: token})
 

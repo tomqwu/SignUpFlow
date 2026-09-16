@@ -17,7 +17,7 @@ from pydantic import ValidationError
 from sqlalchemy.orm import Session
 
 from api.database import get_db
-from api.models import Assignment, EmailPreference, Event, Invitation, Notification, Person
+from api.models import Assignment, EmailPreference, Event, Notification, Person
 from api.roles import build_roles, parse_qualifications, replace_qualifications
 from api.routers.assignments import (
     accept_assignment,
@@ -46,7 +46,7 @@ from api.routers.events import (
     manage_assignment,
     update_event,
 )
-from api.routers.invitations import create_invitation
+from api.routers.invitations import cancel_invitation, create_invitation
 from api.routers.organizations import get_organization, update_organization
 from api.routers.people import bulk_import_people, update_current_person
 from api.routers.recurring_events import (
@@ -544,19 +544,7 @@ def people_cancel_invitation(
     person: Person = Depends(get_session_admin),
     db: Session = Depends(get_db),
 ):
-    invitation = (
-        db.query(Invitation)
-        .filter(
-            Invitation.id == invitation_id,
-            Invitation.org_id == person.org_id,
-            Invitation.status == "pending",
-        )
-        .first()
-    )
-    if invitation is None:
-        raise HTTPException(status_code=404, detail="Invitation not found")
-    invitation.status = "cancelled"
-    db.commit()
+    cancel_invitation(invitation_id, admin=person, db=db)
     return RedirectResponse(url="/a/people", status_code=303)
 
 

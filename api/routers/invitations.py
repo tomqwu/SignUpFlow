@@ -193,10 +193,7 @@ async def list_invitations(
     ).all()
 
     for inv in expired_invitations:
-        inv.status = "expired"
-
-    if expired_invitations:
-        db.commit()
+        _expire_invitation(db, inv, inv.token)
 
     invitations = query.order_by(Invitation.created_at.desc()).all()
 
@@ -226,17 +223,50 @@ def verify_invitation(token: str, db: Session = Depends(get_db)):
 
     if invitation.status != "pending":
         return InvitationVerify(
-            valid=False, invitation=invitation, message=f"Invitation is {invitation.status}"
+            valid=False,
+            invitation=_verification_invitation(invitation, token),
+            message=f"Invitation is {invitation.status}",
         )
 
     if invitation.expires_at < utcnow():
-        invitation.status = "expired"
-        db.commit()
+        _expire_invitation(db, invitation, token)
         return InvitationVerify(
-            valid=False, invitation=invitation, message="Invitation has expired"
+            valid=False,
+            invitation=_verification_invitation(invitation, token),
+            message="Invitation has expired",
         )
 
-    return InvitationVerify(valid=True, invitation=invitation, message="Invitation is valid")
+    return InvitationVerify(
+        valid=True,
+        invitation=_verification_invitation(invitation, token),
+        message="Invitation is valid",
+    )
+
+
+def _verification_invitation(invitation: Invitation, supplied_token: str) -> InvitationResponse:
+    # A concurrent resend can rotate the ORM row before serialization; never reveal its new token.
+    return InvitationResponse.model_validate(invitation).model_copy(
+        update={"token": supplied_token}
+    )
+
+
+def _expire_invitation(db: Session, invitation: Invitation, token: str) -> None:
+    expired = (
+        db.query(Invitation)
+        .filter(
+            Invitation.id == invitation.id,
+            Invitation.org_id == invitation.org_id,
+            Invitation.token == token,
+            Invitation.status == "pending",
+            Invitation.expires_at < utcnow(),
+        )
+        .update({Invitation.status: "expired"}, synchronize_session=False)
+    )
+    if expired:
+        db.commit()
+        db.refresh(invitation)
+    else:
+        db.rollback()
 
 
 @router.post(
@@ -266,8 +296,7 @@ def accept_invitation(
         )
 
     if invitation.expires_at < utcnow():
-        invitation.status = "expired"
-        db.commit()
+        _expire_invitation(db, invitation, token)
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST, detail="Invitation has expired"
         )
@@ -311,11 +340,29 @@ def accept_invitation(
         extra_data={},
     )
 
-    db.add(person)
+    accepted_at = utcnow()
+    claimed = (
+        db.query(Invitation)
+        .filter(
+            Invitation.id == invitation.id,
+            Invitation.org_id == invitation.org_id,
+            Invitation.token == token,
+            Invitation.status == "pending",
+            Invitation.expires_at > accepted_at,
+        )
+        .update(
+            {Invitation.status: "accepted", Invitation.accepted_at: accepted_at},
+            synchronize_session=False,
+        )
+    )
+    if claimed != 1:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Invitation is no longer available",
+        )
 
-    # Update invitation status
-    invitation.status = "accepted"
-    invitation.accepted_at = utcnow()
+    db.add(person)
 
     try:
         db.commit()
@@ -369,18 +416,36 @@ def cancel_invitation(
     """
     Cancel a pending invitation (admin only).
     """
-    # Get invitation
-    invitation = db.query(Invitation).filter(Invitation.id == invitation_id).first()
+    invitation = (
+        db.query(Invitation)
+        .filter(Invitation.id == invitation_id, Invitation.org_id == admin.org_id)
+        .first()
+    )
     if not invitation:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Invitation not found")
 
-    # Verify admin belongs to the same organization
-    verify_org_member(admin, invitation.org_id)
+    if invitation.status not in {"pending", "expired"}:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Invitation is no longer open",
+        )
 
-    # Cancel invitation
-    if invitation.status == "pending":
-        invitation.status = "cancelled"
-        db.commit()
+    cancelled = (
+        db.query(Invitation)
+        .filter(
+            Invitation.id == invitation_id,
+            Invitation.org_id == admin.org_id,
+            Invitation.status.in_(["pending", "expired"]),
+        )
+        .update({Invitation.status: "cancelled"}, synchronize_session=False)
+    )
+    if cancelled != 1:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Invitation is no longer open",
+        )
+    db.commit()
 
     return None
 
@@ -398,7 +463,11 @@ def resend_invitation(
     Generates a new token and extends the expiry date.
     """
     # Get invitation
-    invitation = db.query(Invitation).filter(Invitation.id == invitation_id).first()
+    invitation = (
+        db.query(Invitation)
+        .filter(Invitation.id == invitation_id, Invitation.org_id == admin.org_id)
+        .first()
+    )
     if not invitation:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Invitation not found")
 
@@ -412,11 +481,30 @@ def resend_invitation(
             detail=f"Cannot resend {invitation.status} invitations",
         )
 
-    # Generate new token and extend expiry
-    invitation.token = generate_invitation_token()
-    invitation.expires_at = utcnow() + timedelta(days=7)
-    invitation.status = "pending"
-
+    new_token = generate_invitation_token()
+    renewed = (
+        db.query(Invitation)
+        .filter(
+            Invitation.id == invitation_id,
+            Invitation.org_id == admin.org_id,
+            Invitation.token == invitation.token,
+            Invitation.status.in_(["pending", "expired"]),
+        )
+        .update(
+            {
+                Invitation.token: new_token,
+                Invitation.expires_at: utcnow() + timedelta(days=7),
+                Invitation.status: "pending",
+            },
+            synchronize_session=False,
+        )
+    )
+    if renewed != 1:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Invitation is no longer open",
+        )
     db.commit()
     db.refresh(invitation)
 

@@ -938,7 +938,7 @@ def admin_analytics(
 def _pending_invitations(db: Session, org_id: str) -> list[dict]:
     invitations = (
         db.query(Invitation)
-        .filter(Invitation.org_id == org_id, Invitation.status == "pending")
+        .filter(Invitation.org_id == org_id, Invitation.status.in_(["pending", "expired"]))
         .order_by(Invitation.created_at.desc(), Invitation.id.desc())
         .all()
     )
@@ -949,10 +949,12 @@ def _pending_invitations(db: Session, org_id: str) -> list[dict]:
             "id": invitation.id,
             "name": invitation.name,
             "email": invitation.email,
-            "expired": invitation.expires_at <= now,
+            "expired": invitation.status == "expired" or invitation.expires_at <= now,
             "link": (
                 manual_invitation_link(invitation.token)
-                if manual_links_enabled and invitation.expires_at > now
+                if manual_links_enabled
+                and invitation.status == "pending"
+                and invitation.expires_at > now
                 else None
             ),
         }
