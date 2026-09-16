@@ -41,7 +41,12 @@ delivery runbook instead.
 - `LOCAL_EMAIL_CAPTURE_DIR` takes precedence over SMTP and SendGrid and reports the
   `local_capture` mode.
 - `EMAIL_ENABLED=false` with no capture directory reports `disabled`; user-facing
-  copy says delivery is disabled and never says a message was sent.
+  copy says delivery is disabled and never says a message was sent. The authenticated
+  administrator's browser invite result offers the newly created one-time link for
+  manual sharing; the response is `Cache-Control: no-store` and the link is not
+  shown when a capture or email backend is configured. For external sharing, serve
+  the browser app at an invitee-accessible origin and set `FRONTEND_URL` or `APP_URL`
+  to that same origin; browser writes from a different private origin are rejected.
 - Captured notification records move from `pending` to `sent` only after the `.eml`
   file is atomically renamed into place.
 - Every notification operation has a unique delivery key. Replaying a publish,
