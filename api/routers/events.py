@@ -1,7 +1,7 @@
 """Events router."""
 
 from datetime import datetime
-from typing import cast
+from typing import Any, cast
 
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query, status
 from pydantic import BaseModel
@@ -347,10 +347,11 @@ def update_event(
 @router.delete("/{event_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_event(
     event_id: str,
+    background_tasks: BackgroundTasks,
     current_admin: Person = Depends(get_current_admin_user),
     db: Session = Depends(get_db),
-):
-    """Delete event (admin only)."""
+) -> None:
+    """Cancel an event (admin only), telling whoever was scheduled for it."""
     event = (
         db.query(Event).filter(Event.id == event_id, Event.org_id == current_admin.org_id).first()
     )
@@ -360,9 +361,64 @@ def delete_event(
     # Verify admin belongs to the same organization as the event
     verify_org_member(current_admin, event.org_id)
 
+    notification_refs = _queue_cancellation_notices(db, event)
+
     db.delete(event)
     db.commit()
+    dispatch_notification_ids(background_tasks, notification_refs)
     return None
+
+
+def _queue_cancellation_notices(db: Session, event: Event) -> list[tuple[int, str]]:
+    """Record one cancellation notice per assignee before the event row goes away.
+
+    The notice deliberately stores ``event_id=None`` and a self-contained
+    snapshot in ``template_data``. ``Event.notifications`` cascades with
+    ``delete-orphan``, so a notice still pointing at the event would be deleted
+    in the same transaction, and the renderer could not re-read a deleted event
+    to fill in the email.
+    """
+    assignments = db.query(Assignment).filter(Assignment.event_id == event.id).all()
+    if not assignments:
+        return []
+
+    event_data: dict[str, Any] = event.extra_data or {}
+    snapshot: dict[str, Any] = {
+        "event_id": event.id,
+        "event_title": event_data.get("title") or event.type,
+        "event_datetime": event.start_time.strftime("%A, %B %d, %Y at %I:%M %p"),
+        "event_location": event_data.get("location")
+        or (event.resource.location if event.resource else None),
+    }
+
+    queued: list[tuple[int, str]] = []
+    # One notice per person, even when they hold several roles at this event.
+    for person_id in dict.fromkeys(a.person_id for a in assignments):
+        role = next((a.role for a in assignments if a.person_id == person_id and a.role), None)
+        delivery_key = f"event:{event.id}:cancel:{person_id}"
+        already = (
+            db.query(Notification)
+            .filter(
+                Notification.org_id == event.org_id,
+                Notification.delivery_key == delivery_key,
+            )
+            .first()
+        )
+        if already is not None:
+            continue
+        notification = Notification(
+            org_id=event.org_id,
+            recipient_id=person_id,
+            type=NotificationType.CANCELLATION,
+            status=NotificationStatus.PENDING,
+            event_id=None,
+            delivery_key=delivery_key,
+            template_data={**snapshot, "role": role or "Volunteer"},
+        )
+        db.add(notification)
+        db.flush()
+        queued.append((cast(int, notification.id), cast(str, event.org_id)))
+    return queued
 
 
 @router.get("/{event_id}/available-people", response_model=list[AvailablePerson])
