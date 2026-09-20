@@ -76,7 +76,13 @@ def _volunteer(client, headers, org_id=ORG, email=VOL_EMAIL, name="Sarah", passw
 
 
 def _past_event(db, org_id, event_id, days_ago=7, roles=None):
-    """Past events cannot be created through the API, so seed the row directly."""
+    """Seed a finished event directly.
+
+    The API would accept one too: ``validate_time_range`` only requires
+    ``end > start``, never that the start is in the future. Seeding the row
+    keeps this helper independent of that, since what these tests need is a
+    past event, not a test of how past events are created.
+    """
     start = utcnow() - timedelta(days=days_ago)
     row = Event(
         id=event_id,
