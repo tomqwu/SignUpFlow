@@ -283,11 +283,10 @@ class TestManualOverrideOfSolverPlacement:
 
         Publication counts manual assignments alongside the candidate solution's
         own, so the re-placed solver pick plus the surviving override read as two
-        ushers in a one-usher role and publication refuses. The override is not
-        mentioned in the refusal, so from the coordinator's side the next
-        schedule simply cannot go live until they undo their own override or
-        regenerate. Nothing here says that is the intended design; the assertions
-        record what the system does today.
+        ushers in a one-usher role and publication refuses. Whether a re-solve
+        ought to preserve an override is an open design question, so the refusal
+        itself stands; what it must not do is leave the coordinator guessing, so
+        it now names the manual holder and the two ways out.
         """
         headers, everyone = self._setup(client)
         first_solution, event_id, chosen = self._published_placement(client, db, headers)
@@ -302,6 +301,10 @@ class TestManualOverrideOfSolverPlacement:
         detail = published.json()["detail"]
         assert "role capacity exceeded" in detail.lower()
         assert f"{event_id}:usher" in detail
+        # The refusal has to point at the override, otherwise the coordinator
+        # sees only "1 extra" and has no way to find what to undo.
+        assert "manual assignment" in detail.lower()
+        assert "regenerate the schedule" in detail.lower()
         # The refusal changes nothing: the override still stands, the new
         # solution stays a draft, and the older solution keeps the publication.
         assert _manual_roster(db, self.ORG) == {(event_id, replacement, "usher")}
