@@ -110,12 +110,29 @@ curl http://localhost:8000/health
 # {"status":"healthy","service":"signupflow-api","version":"1.0.0"}
 ```
 
-### Step 3 — Create your organization and first administrator
+### Step 3 — Sign in with a sample login, or create your organization
 
-Open <http://localhost:8000>. It redirects to the sign-in page, and there is no
-seeded account and no default password.
+`make setup` finishes by loading a demo organization, *Grace Community Church
+(demo)*, with the same people and weekly services as the
+[Church example](#church-week-to-week-operations), and prints its logins:
 
-Click **Create a new organization** and fill in the form. That first sign-up
+| Account | Email | Password |
+| --- | --- | --- |
+| Admin | `admin@example.com` | `DemoPass123!` |
+| Volunteer (worship leader) | `worship-leader-a@example.com`, `worship-leader-b@example.com` | `DemoPass123!` |
+| Volunteer (musician) | `musician-a@example.com`, `musician-b@example.com` | `DemoPass123!` |
+
+Open <http://localhost:8000>, sign in as the admin, and go to `/a/solver` to
+generate a schedule for the six weeks of upcoming events. Sign in as a
+volunteer to see the other side at `/v/schedule`.
+
+The password is published here, so the demo is for local use only. Loading it
+is refused when `ENVIRONMENT=production`, and every address is on
+`example.com`, which cannot receive mail. Run `make seed-demo` to load it again
+or print the logins, or skip it with `make setup SEED_DEMO=false`.
+
+To start your own organization instead, click **Create a new organization**
+on the sign-in page and fill in the form. That first sign-up
 creates the organization and its first administrator together, in one step.
 Everyone after that joins by invitation, so this is the only time you will see
 that form.

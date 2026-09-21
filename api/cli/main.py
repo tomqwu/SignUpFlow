@@ -310,6 +310,36 @@ def doctor() -> None:
     sys.exit(env_doctor.report(Path.cwd()))
 
 
+@cli.command("seed-demo")
+def seed_demo_command() -> None:
+    """Load the demo organization and print its sample logins.
+
+    ``make setup`` runs this after migrating. It is safe to repeat: an
+    existing demo organization is left alone and its logins are printed again.
+    """
+    import os
+
+    from api.database import SessionLocal
+    from api.demo_seed import DemoSeedRefusedError, seed_demo
+
+    db = SessionLocal()
+    try:
+        result = seed_demo(db)
+    except DemoSeedRefusedError as exc:
+        click.echo(f"❌ {exc}", err=True)
+        sys.exit(1)
+    finally:
+        db.close()
+
+    app_url = os.getenv("APP_URL", "http://localhost:8000")
+    status = "Demo organization loaded" if result.created else "Demo organization already loaded"
+    click.echo(f"🌱 {status}. Sign in at {app_url} with any of:")
+    width = max(len(login.label) for login in result.logins)
+    for login in result.logins:
+        click.echo(f"   {login.label.ljust(width)}  {login.email}")
+    click.echo(f"   {'Password'.ljust(width)}  {result.password}  (every demo account)")
+
+
 def main():
     cli()
 

@@ -1,4 +1,4 @@
-.PHONY: run dev stop restart setup install migrate test test-backend test-integration test-all test-postgres test-redis test-artifact test-coverage test-unit test-unit-fast test-unit-file test-with-timing clean clean-all pre-commit help check-poetry check-python check-deps install-poetry install-deps up down build logs shell db-shell redis-shell test-docker migrate-docker restart-api ps clean-docker check-docker ensure-test-deps prepare-test-data ensure-test-env
+.PHONY: run dev stop restart setup install migrate seed-demo test test-backend test-integration test-all test-postgres test-redis test-artifact test-coverage test-unit test-unit-fast test-unit-file test-with-timing clean clean-all pre-commit help check-poetry check-python check-deps install-poetry install-deps up down build logs shell db-shell redis-shell test-docker migrate-docker restart-api ps clean-docker check-docker ensure-test-deps prepare-test-data ensure-test-env
 
 export SKIP_TEST_DB_FIXTURES ?= false
 
@@ -205,6 +205,7 @@ setup:
 	@$(MAKE) install
 	@$(MAKE) services
 	@$(MAKE) migrate
+	@if [ "$(SEED_DEMO)" != "false" ]; then echo ""; $(MAKE) --no-print-directory seed-demo; fi
 	@echo ""
 	@echo "✅ Setup complete! Run 'make up' to start the app."
 	@echo "   Visit http://localhost:8000/docs"
@@ -279,6 +280,26 @@ migrate: check-poetry
 			;; \
 	esac
 	@echo "✅ Migrations complete"
+
+# Load the demo organization and print its sample logins. 'make setup' runs
+# this last; set SEED_DEMO=false to skip it. It is routed like 'migrate',
+# because it writes to the same database, and it refuses ENVIRONMENT=production.
+seed-demo: check-poetry
+	@set -e; \
+	DB_URL="$$($(DB_URL_CMD))"; \
+	case "$$DB_URL" in \
+		$(COMPOSE_DB_PATTERNS)) \
+			if [ -f /.dockerenv ]; then \
+				poetry run python -m api.cli.main seed-demo; \
+			else \
+				$(MAKE) require-docker; \
+				$(DOCKER_COMPOSE) -f docker-compose.dev.yml run --rm api python -m api.cli.main seed-demo; \
+			fi; \
+			;; \
+		*) \
+			poetry run python -m api.cli.main seed-demo; \
+			;; \
+	esac
 
 # Run all backend tests
 test: test-all
@@ -595,6 +616,7 @@ help:
 	@echo "  make stop             - Retired; stop the owning 'make up' terminal"
 	@echo "  make restart          - Retired; restart from the owning terminal"
 	@echo "  make migrate          - Run database migrations"
+	@echo "  make seed-demo        - Load the demo organization and print its logins"
 	@echo ""
 	@echo "Testing:"
 	@echo "  make test             - Run backend tests"
