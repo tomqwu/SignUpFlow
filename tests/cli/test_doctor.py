@@ -13,6 +13,7 @@ test runner would otherwise leak in and make the result meaningless.
 """
 
 import os
+import shutil
 import subprocess
 import sys
 from pathlib import Path
@@ -215,32 +216,48 @@ class TestDoctorExplainsProductionMode:
         assert result.returncode == 0
 
 
+@pytest.fixture
+def make_checkout(tmp_path: Path) -> Path:
+    """The Makefile and doctor script alone, with no .env.
+
+    Running `make doctor` from the repository root would read the developer's
+    own .env, so a machine set up for Docker would fail the "clean" case.
+    Doctor imports nothing from ``api``, so these two files are all it needs.
+    """
+    (tmp_path / "scripts").mkdir()
+    shutil.copy(REPO_ROOT / "Makefile", tmp_path / "Makefile")
+    shutil.copy(REPO_ROOT / "scripts" / "doctor.py", tmp_path / "scripts" / "doctor.py")
+    return tmp_path
+
+
+def run_make_doctor(cwd: Path, **overrides: str) -> subprocess.CompletedProcess:
+    env = {k: v for k, v in os.environ.items() if k not in _CONTROLLED}
+    env.update(overrides)
+    return subprocess.run(
+        ["make", "doctor"],
+        capture_output=True,
+        text=True,
+        timeout=180,
+        cwd=cwd,
+        env=env,
+    )
+
+
 class TestMakeDoctorMatchesTheCli:
     """The README tells people to run `make doctor`, so that path must work too."""
 
-    def test_make_doctor_passes_on_a_clean_environment(self):
-        env = {k: v for k, v in os.environ.items() if k not in _CONTROLLED}
-        result = subprocess.run(
-            ["make", "doctor"],
-            capture_output=True,
-            text=True,
-            timeout=180,
-            cwd=REPO_ROOT,
-            env=env,
-        )
+    def test_make_doctor_passes_on_a_clean_environment(self, make_checkout):
+        result = run_make_doctor(make_checkout)
         assert result.returncode == 0, result.stdout + result.stderr
         assert "No blocking problems found" in result.stdout
 
-    def test_make_doctor_fails_on_the_compose_host(self):
-        env = {k: v for k, v in os.environ.items() if k not in _CONTROLLED}
-        env["DATABASE_URL"] = "postgresql://u:p@db:5432/x"
-        result = subprocess.run(
-            ["make", "doctor"],
-            capture_output=True,
-            text=True,
-            timeout=180,
-            cwd=REPO_ROOT,
-            env=env,
-        )
+    def test_make_doctor_fails_on_the_compose_host(self, make_checkout):
+        result = run_make_doctor(make_checkout, DATABASE_URL="postgresql://u:p@db:5432/x")
         assert result.returncode != 0
         assert "docker-compose service name" in result.stdout
+
+    def test_make_doctor_reads_dotenv_from_the_checkout(self, make_checkout):
+        (make_checkout / ".env").write_text("DATABASE_URL=postgresql://u:p@db:5432/x\n")
+        result = run_make_doctor(make_checkout)
+        assert result.returncode != 0
+        assert "came from your .env" in result.stdout
