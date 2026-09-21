@@ -2,7 +2,7 @@
 
 export SKIP_TEST_DB_FIXTURES ?= false
 
-.PHONY: test-web test-contract test-e2e test-mobile test-mobile-generated test-performance test-load test-recovery test-security test-staging test-docs mobile-codegen-preflight mobile-codegen mobile-codegen-check capture-screenshots validate-screenshots
+.PHONY: doctor check-db-host test-web test-contract test-e2e test-mobile test-mobile-generated test-performance test-load test-recovery test-security test-staging test-docs mobile-codegen-preflight mobile-codegen mobile-codegen-check capture-screenshots validate-screenshots
 FLUTTER ?= flutter
 DART ?= dart
 JAVA_BIN ?=
@@ -155,6 +155,9 @@ restart:
 	@echo "Retired: stop the owned 'make run' process, then run 'make run' again."
 	@exit 2
 
+doctor: check-poetry
+	@poetry run signupflow doctor
+
 setup:
 	@echo "🚀 Starting SignUpFlow setup..."
 	@echo ""
@@ -212,6 +215,8 @@ check-db-host:
 				echo "   To reach a PostgreSQL server from the host, use its published port:"; \
 				echo "       DATABASE_URL=postgresql://signupflow:<password>@localhost:5432/signupflow"; \
 				echo "   To run inside compose instead, use 'make up' then 'make migrate-docker'."; \
+				echo ""; \
+				echo "   Run 'make doctor' for the full environment report."; \
 				exit 1; \
 				;; \
 		esac; \

@@ -60,7 +60,19 @@ Docker is **not** required for this walkthrough. If you would rather use it, see
 ```bash
 git clone https://github.com/tomqwu/SignUpFlow.git
 cd SignUpFlow
+make doctor    # reports what this machine will actually start the app with
 make setup
+```
+
+`make doctor` is worth the five seconds. The app reads its configuration from
+the environment, so a variable exported in your shell changes how it starts and
+a fresh clone cannot clear it. The report names every value that applies, says
+whether it came from your shell or from `.env`, and exits non-zero on anything
+that will stop the app from starting. On a clean machine it prints:
+
+```
+  (nothing set; every default applies)
+  No blocking problems found.
 ```
 
 `make setup` installs dependencies and creates a local SQLite database at
