@@ -64,11 +64,16 @@ make doctor    # reports what this machine will actually start the app with
 make setup
 ```
 
-`make doctor` is worth the five seconds. The app reads its configuration from
-the environment, so a variable exported in your shell changes how it starts and
-a fresh clone cannot clear it. The report names every value that applies, says
-whether it came from your shell or from `.env`, and exits non-zero on anything
-that will stop the app from starting. On a clean machine it prints:
+`make doctor` is worth the five seconds, and it runs before `make setup` on
+purpose: it uses only the Python standard library, so it works on a bare clone
+with nothing installed. That matters because it is what you run when setup
+itself fails.
+
+The app reads its configuration from the environment, so a variable exported in
+your shell changes how it starts and a fresh clone cannot clear it. The report
+names every value that applies, says whether it came from your shell or from
+`.env`, and exits non-zero on anything that will stop the app from starting. On
+a clean machine it prints:
 
 ```
   (nothing set; every default applies)

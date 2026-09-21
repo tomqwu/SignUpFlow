@@ -8,8 +8,6 @@ Usage:
 """
 
 import json
-import os
-import re
 import sys
 from pathlib import Path
 
@@ -294,137 +292,22 @@ def _write_sample_events(ws: Path):
         yaml.dump(data, f, default_flow_style=False, sort_keys=False)
 
 
-#: Ambient variables that change how the app starts. Anything set here comes
-#: from outside the repository, so a fresh clone cannot make it go away and a
-#: contributor has no way to see it without being told to look.
-_AMBIENT_VARS = (
-    "DATABASE_URL",
-    "ENVIRONMENT",
-    "SECRET_KEY",
-    "REDIS_URL",
-    "RATE_LIMIT_STORAGE",
-    "RATE_LIMIT_REDIS_URL",
-    "APP_URL",
-    "FRONTEND_URL",
-    "TESTING",
-    "TENANCY_GUARD",
-    "RELEASE_SHA",
-    "SIGNUPFLOW_LOAD_DOTENV",
-    "EMAIL_ENABLED",
-    "SMS_ENABLED",
-    "BILLING_ENABLED",
-)
-
-_SECRET_PARTS = ("SECRET", "TOKEN", "PASSWORD", "KEY")
-
-
-def _redact(name: str, value: str) -> str:
-    """Never print a credential, and never print a password inside a URL."""
-    if any(part in name for part in _SECRET_PARTS):
-        return f"<set, {len(value)} chars>"
-    return re.sub(r"://([^:/@]+):[^@]*@", r"://\1:***@", value)
-
-
-def _dotenv_values(path: Path) -> dict[str, str]:
-    """Parse .env well enough to report it, tolerating export and quotes."""
-    values: dict[str, str] = {}
-    if not path.exists():
-        return values
-    for raw in path.read_text(encoding="utf-8", errors="replace").splitlines():
-        line = raw.strip()
-        if not line or line.startswith("#"):
-            continue
-        if line.startswith("export "):
-            line = line[len("export ") :].lstrip()
-        key, sep, value = line.partition("=")
-        if not sep:
-            continue
-        values[key.strip()] = value.strip().strip('"').strip("'")
-    return values
-
-
 @cli.command()
 def doctor() -> None:
     """Report the environment this machine will actually start the app with.
 
-    A fresh clone cannot reset an exported variable, and python-dotenv will not
-    override one, so two people on the same commit can get different behaviour
-    with nothing in the repository to explain it. This prints the effective
-    value of every input that matters, says where each came from, and exits
-    non-zero when one of them will stop the app from starting.
+    The implementation lives in ``scripts/doctor.py`` and uses only the
+    standard library, so the same check runs through ``make doctor`` before
+    dependencies exist. This command is the convenience wrapper for once the
+    package is installed.
     """
-    problems: list[str] = []
-    notes: list[str] = []
-
-    click.echo("SignUpFlow environment report")
-    click.echo("=" * 60)
-
-    version = f"{sys.version_info.major}.{sys.version_info.minor}"
-    supported = (3, 11) <= (sys.version_info.major, sys.version_info.minor) <= (3, 13)
-    click.echo(f"\nPython {version} ({sys.executable})")
-    if not supported:
-        problems.append(f"Python {version} is outside the supported 3.11 to 3.13 range.")
-
-    env_path = Path(".env")
-    file_values = _dotenv_values(env_path)
-    click.echo(
-        f".env: {'present' if env_path.exists() else 'absent (fine; SQLite is the default)'}"
-    )
-
-    click.echo("\nEffective configuration")
-    click.echo("-" * 60)
-    for name in _AMBIENT_VARS:
-        shell_value = os.environ.get(name)
-        if shell_value is not None:
-            source, value = "shell", shell_value
-        elif name in file_values:
-            source, value = ".env", file_values[name]
-        else:
-            continue
-        click.echo(f"  {name} = {_redact(name, value)}   [from {source}]")
-        if name == "DATABASE_URL":
-            problems.extend(_database_url_problems(value, source))
-
-    if not any(os.environ.get(n) is not None or n in file_values for n in _AMBIENT_VARS):
-        click.echo("  (nothing set; every default applies)")
-
-    if os.environ.get("ENVIRONMENT", file_values.get("ENVIRONMENT", "")) == "production":
-        notes.append(
-            "ENVIRONMENT=production makes startup fail-closed. It requires an explicit "
-            "SECRET_KEY and rejects a SQLite database. Unset it for local development."
-        )
-
-    click.echo("\nVerdict")
-    click.echo("-" * 60)
-    for note in notes:
-        click.echo(f"  note: {note}")
-    if problems:
-        for problem in problems:
-            click.echo(f"  problem: {problem}")
-        click.echo("\nThe app will not start until the problems above are resolved.")
-        sys.exit(1)
-    click.echo("  No blocking problems found.")
-    if not notes:
-        click.echo("  'make setup' then 'make run' should work on this machine.")
-
-
-def _database_url_problems(value: str, source: str) -> list[str]:
-    """Explain a DATABASE_URL that cannot work from the host, if that is the case."""
-    # The scheme may carry a driver and digits, as in postgresql+psycopg2://.
-    host = re.sub(r"^[A-Za-z0-9+.\-]+://(?:[^@/]*@)?", "", value).split("/")[0].split(":")[0]
-    if host not in {"db", "redis", "postgres"}:
-        return []
-    fix = (
-        "it is exported in your shell, so it survives a fresh clone and overrides "
-        ".env; run 'unset DATABASE_URL' and remove the export from your shell profile"
-        if source == "shell"
-        else "set DATABASE_URL=sqlite:///./roster.db in .env, or delete .env"
-    )
-    return [
-        f"DATABASE_URL host '{host}' is a docker-compose service name and resolves only "
-        f"inside that network. It came from your {source}, so {fix}. "
-        "To use a real PostgreSQL server from the host, point at its published port."
-    ]
+    scripts_dir = Path(__file__).resolve().parents[2] / "scripts"
+    sys.path.insert(0, str(scripts_dir))
+    try:
+        import doctor as env_doctor
+    finally:
+        sys.path.remove(str(scripts_dir))
+    sys.exit(env_doctor.report(Path.cwd()))
 
 
 def main():

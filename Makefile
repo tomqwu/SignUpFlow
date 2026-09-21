@@ -155,8 +155,10 @@ restart:
 	@echo "Retired: stop the owned 'make run' process, then run 'make run' again."
 	@exit 2
 
-doctor: check-poetry
-	@poetry run signupflow doctor
+# Deliberately does not depend on check-poetry or an installed virtualenv:
+# this is what you run when setup itself fails, so it must work before setup.
+doctor:
+	@python3 scripts/doctor.py
 
 setup:
 	@echo "🚀 Starting SignUpFlow setup..."
