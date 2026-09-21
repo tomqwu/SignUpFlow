@@ -170,9 +170,13 @@ make up              # serves the app from the api container
 ```
 
 Rejoin the walkthrough at Step 3 on <http://localhost:8000>. PostgreSQL is
-published on 5433 and Redis on 6380, chosen so they do not collide with anything
-already running locally. Use `make logs` to follow output and `make down` to
-stop.
+published on 5433 and Redis on 6380 by default, chosen so they do not collide
+with anything already running locally. `POSTGRES_PORT` and `REDIS_PORT` override
+them, and a `.env` copied from `.env.example` sets them to 5432 and 6379. Use
+`make logs` to follow output and `make down` to stop.
+
+`make doctor` reports this configuration as the Docker path rather than a
+problem, as long as Docker is running.
 
 The individual steps remain available if you want them: `make compose-up`
 starts the stack unconditionally and `make migrate-docker` migrates inside it.
