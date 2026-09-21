@@ -97,6 +97,7 @@ services:
     volumes:
       # Hot-reload: Mount source code
       - ./api:/app/api
+      - ./web:/app/web
       - ./frontend:/app/frontend
       - ./locales:/app/locales
       - ./alembic:/app/alembic
@@ -115,7 +116,8 @@ services:
       # - ./poetry.lock:/app/poetry.lock
 
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      # The dev image is Alpine without curl; probe with its own Python.
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health', timeout=3)"]
       interval: 10s
       timeout: 5s
       retries: 3
@@ -156,6 +158,9 @@ services:
       - ./api:/app/api
       - ./config:/app/config:ro
       - ./logs:/app/logs
+    # The image's HEALTHCHECK polls :8000/health, which Celery never serves.
+    healthcheck:
+      disable: true
     networks:
       - signupflow-dev-network
     command: celery -A api.celery_app worker --loglevel=info

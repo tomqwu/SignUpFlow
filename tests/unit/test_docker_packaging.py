@@ -66,3 +66,41 @@ def test_compose_keeps_datastores_private_and_runtime_source_immutable():
     assert svcs["api"]["read_only"] is True
     assert svcs["migrate"]["read_only"] is True
     assert svcs["api"]["cap_drop"] == ["ALL"]
+
+
+def _dev_compose() -> dict:
+    return yaml.safe_load((ROOT / "docker-compose.dev.yml").read_text())["services"]
+
+
+def test_dev_image_packages_web_because_the_api_imports_it():
+    """`make up` on the compose path serves from this image; without web/ the
+    api container crashes at import with ModuleNotFoundError."""
+    df = (ROOT / "Dockerfile.dev").read_text()
+    assert "COPY web/ ./web/" in df
+    assert "COPY api/ ./api/" in df
+
+
+def test_dev_compose_hot_reloads_web_alongside_api():
+    volumes = _dev_compose()["api"]["volumes"]
+    assert "./api:/app/api" in volumes
+    assert "./web:/app/web" in volumes
+
+
+def test_dev_healthchecks_use_tools_the_alpine_image_has():
+    """The dev image is Alpine with no curl, so a curl probe always fails and
+    the api reads as unhealthy even while it serves."""
+    svcs = _dev_compose()
+    probe = " ".join(svcs["api"]["healthcheck"]["test"])
+    assert "curl" not in probe
+    assert "/health" in probe
+    assert "curl" not in (ROOT / "Dockerfile.dev").read_text()
+
+
+def test_dev_worker_is_not_probed_on_the_http_port_it_does_not_serve():
+    """The worker reuses the dev image, whose HEALTHCHECK polls :8000/health.
+    Celery serves no HTTP, so that probe marks a working worker unhealthy."""
+    worker = _dev_compose()["worker"]
+    # Absent means the image's :8000 probe is inherited, so it must be explicit.
+    assert "healthcheck" in worker
+    healthcheck = worker["healthcheck"]
+    assert healthcheck.get("disable") is True or "8000" not in " ".join(healthcheck.get("test", []))
