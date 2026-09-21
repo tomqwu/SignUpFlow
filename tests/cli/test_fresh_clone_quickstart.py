@@ -142,7 +142,8 @@ class TestFreshCloneSurfacesAmbientState:
         )
         assert result.returncode != 0
         assert "could not translate host name" not in result.stdout + result.stderr
-        assert "only resolves inside" in result.stdout
+        # Wrapped across lines for the terminal, so compare on the words alone.
+        assert "only resolves inside docker compose" in " ".join(result.stdout.split())
 
     @pytest.mark.skipif(
         _docker_is_usable(),
