@@ -73,12 +73,34 @@ Interactive API docs are at <http://localhost:8000/docs>, and
 `GET /health` reports liveness.
 
 You do not need a `.env` file for any of the above; the defaults are SQLite and
-providers disabled. If you do create one from `.env.example`, leave
-`DATABASE_URL` on the SQLite value. The commented PostgreSQL line uses the host
-`db`, which is the docker-compose service name and resolves only inside that
-network, so enabling it on the host makes `make setup` fail to resolve `db`.
-To use PostgreSQL from the host, point at its published port instead; to run in
-containers, use `make up` and `make migrate-docker`.
+providers disabled.
+
+### Running on Docker instead
+
+`make setup` and `make run` are the host path: Poetry, SQLite, no containers.
+Docker is a separate path with its own two commands, and it brings PostgreSQL
+and Redis with it:
+
+```bash
+make up              # starts db, redis and the api container
+make migrate-docker  # applies migrations inside the api container
+```
+
+The app is on <http://localhost:8000> as before. PostgreSQL is published on
+5433 and Redis on 6380, so they do not collide with anything you already run
+locally. Use `make logs` to follow output and `make down` to stop.
+
+Pick one path or the other. `make setup` deliberately does not start containers,
+because Docker is not a prerequisite for the host path and starting a stack is a
+heavier side effect than installing dependencies.
+
+The two paths share one trap. If you create a `.env` from `.env.example` and
+uncomment its PostgreSQL line, that URL uses the host `db`, which is the compose
+service name and resolves only inside the compose network. On the host it cannot
+be reached, so `make setup` stops and tells you so. Leave `DATABASE_URL` on the
+SQLite value for the host path, point at a published port such as
+`localhost:5433` to reach the compose database from the host, or let the
+containers set it themselves on the Docker path.
 
 To try the scheduler on its own, with no database and no server, use the CLI
 instead:
