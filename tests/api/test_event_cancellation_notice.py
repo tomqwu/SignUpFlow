@@ -10,15 +10,19 @@ be deleted in the same transaction. These tests pin the surviving notice and
 the self-contained snapshot the renderer needs once the event is gone.
 """
 
+from datetime import timedelta
+
 import pytest
 
 from api.models import (
     Assignment,
+    Event,
     Notification,
     NotificationStatus,
     NotificationType,
     Solution,
 )
+from api.timeutils import utcnow
 from tests.api.conftest import (
     accept_invitation,
     auth_headers,
@@ -134,6 +138,23 @@ class TestEventCancellationNotice:
         types = [row["type"] for row in listed.json()["notifications"]]
         assert NotificationType.CANCELLATION in types
 
+    def test_deleting_a_past_event_does_not_mail_its_volunteers(self, client, db):
+        """Tidying up an event that already happened is not a cancellation.
+
+        Without this, clearing out last month's events would email everyone who
+        served at them that their shift had been cancelled.
+        """
+        hdrs, volunteer, event = _org_with_assigned_volunteer(client)
+        row = db.query(Event).filter(Event.id == event["id"], Event.org_id == ORG).one()
+        row.start_time = utcnow() - timedelta(days=7)
+        row.end_time = row.start_time + timedelta(hours=2)
+        db.commit()
+
+        deleted = client.delete(f"/api/v1/events/{event['id']}", headers=hdrs)
+        assert deleted.status_code == 204, deleted.text
+
+        assert _cancellations_for(db, volunteer["person_id"]) == []
+
     def test_cancelling_an_unstaffed_event_notifies_nobody(self, client, db):
         """No assignees means no notices, not an empty broadcast."""
         seed_org(client, ORG)
@@ -202,9 +223,7 @@ class TestCancellationNoticeScope:
     must never be mailed from this organization at all.
     """
 
-    def test_declined_assignees_are_not_told_a_shift_they_refused_was_cancelled(
-        self, client, db
-    ):
+    def test_declined_assignees_are_not_told_a_shift_they_refused_was_cancelled(self, client, db):
         hdrs, volunteer, event = _org_with_assigned_volunteer(client)
         assignment = db.query(Assignment).filter(Assignment.event_id == event["id"]).one()
         assignment.response_status = "declined"

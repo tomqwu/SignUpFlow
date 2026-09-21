@@ -394,7 +394,12 @@ def _queue_cancellation_notices(db: Session, event: Event) -> list[tuple[int, st
     ``delete-orphan``, so a notice still pointing at the event would be deleted
     in the same transaction, and the renderer could not re-read a deleted event
     to fill in the email.
+
+    Deleting an event that has already started is record cleanup, not a
+    cancellation, so it notifies nobody.
     """
+    if cast(datetime, event.start_time) <= utcnow():
+        return []
     assignments = _notifiable_assignments(db, event)
     if not assignments:
         return []
