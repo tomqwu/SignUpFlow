@@ -108,14 +108,25 @@ class TestFreshCloneSurfacesAmbientState:
     """The failure a new contributor actually hits, reproduced from a clone."""
 
     def test_exported_compose_host_is_caught_before_migrating(self, fresh_clone):
-        """An exported variable survives cloning, so cloning again cannot fix it."""
+        """An exported variable survives cloning, so cloning again cannot fix it.
+
+        With Docker usable the compose host is the Docker path, so this stubs a
+        dead Docker to hold the premise on any machine.
+        """
+        stub = fresh_clone.parent / "docker-down"
+        stub.mkdir(exist_ok=True)
+        (stub / "docker").write_text("#!/bin/sh\nexit 1\n")
+        (stub / "docker").chmod(0o755)
         result = subprocess.run(
             [sys.executable, "-m", "api.cli.main", "doctor"],
             capture_output=True,
             text=True,
             timeout=120,
             cwd=fresh_clone,
-            env=clean_env(DATABASE_URL="postgresql://u:p@db:5432/x"),
+            env=clean_env(
+                DATABASE_URL="postgresql://u:p@db:5432/x",
+                PATH=f"{stub}{os.pathsep}{os.environ.get('PATH', '')}",
+            ),
         )
         assert result.returncode == 1
         assert "survives a fresh clone" in result.stdout
@@ -196,9 +207,7 @@ class TestLifecycleIsTwoCommands:
         assert result.returncode == 0, result.stdout + result.stderr
         return result.stdout
 
-    def test_up_serves_on_the_host_when_no_compose_database_is_configured(
-        self, fresh_clone
-    ):
+    def test_up_serves_on_the_host_when_no_compose_database_is_configured(self, fresh_clone):
         """The default path must not reach for Docker at all."""
         stdout = self._dry_run_up(fresh_clone)
         assert self.UVICORN in stdout
@@ -209,9 +218,7 @@ class TestLifecycleIsTwoCommands:
         assert self.COMPOSE_UP in stdout
         assert self.UVICORN not in stdout
 
-    def test_setup_points_at_up_rather_than_leaving_the_app_unstarted(
-        self, fresh_clone
-    ):
+    def test_setup_points_at_up_rather_than_leaving_the_app_unstarted(self, fresh_clone):
         """Setup stops short of serving, so it has to say what comes next."""
         makefile = (fresh_clone / "Makefile").read_text(encoding="utf-8")
         assert "Run 'make up' to start the app." in makefile

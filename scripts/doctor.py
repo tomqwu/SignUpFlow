@@ -14,6 +14,8 @@ from __future__ import annotations
 
 import os
 import re
+import shutil
+import subprocess
 import sys
 from pathlib import Path
 
@@ -36,13 +38,23 @@ AMBIENT_VARS = (
     "EMAIL_ENABLED",
     "SMS_ENABLED",
     "BILLING_ENABLED",
+    "SENTRY_DSN",
 )
 
-_SECRET_PARTS = ("SECRET", "TOKEN", "PASSWORD", "KEY")
+#: A Sentry DSN embeds its client key, so it is treated as a secret too.
+_SECRET_PARTS = ("SECRET", "TOKEN", "PASSWORD", "KEY", "DSN")
+
+#: The shape sentry_sdk accepts: a key, a host and a numeric project id.
+_SENTRY_DSN = re.compile(r"^https?://[^@/\s]+@[^/\s]+/(?:\S*/)?\d+/?$")
 
 #: Compose service names. A URL pointing at one of these resolves only inside
 #: the compose network, so on the host it cannot be reached at all.
 _COMPOSE_HOSTS = {"db", "redis", "postgres"}
+
+#: The compose database the Makefile routes through Docker (its
+#: COMPOSE_DB_PATTERNS). With Docker usable, ``make setup`` and ``make up`` run
+#: inside compose, so this host is the Docker path rather than a mistake.
+_ROUTED_COMPOSE_HOST = "db"
 
 MIN_PYTHON = (3, 11)
 MAX_PYTHON = (3, 13)
@@ -50,9 +62,7 @@ MAX_PYTHON = (3, 13)
 
 #: Query parameters that carry a credential. A URL can hold one outside the
 #: userinfo part entirely, which the userinfo pattern below would walk past.
-_SECRET_PARAMS = re.compile(
-    r"(?i)\b(password|passwd|pwd|secret|token|api[-_]?key|auth)=([^&#\s]+)"
-)
+_SECRET_PARAMS = re.compile(r"(?i)\b(password|passwd|pwd|secret|token|api[-_]?key|auth)=([^&#\s]+)")
 
 #: The userinfo credential. The username is optional on purpose: a Redis URL
 #: with a password and no user is spelled ``redis://:secret@host``, and a
@@ -87,16 +97,74 @@ def dotenv_values(path: Path) -> dict[str, str]:
         key, sep, value = line.partition("=")
         if not sep:
             continue
-        values[key.strip()] = value.strip().strip('"').strip("'")
+        values[key.strip()] = _dotenv_value(value.strip())
     return values
 
 
-def database_url_problems(value: str, source: str) -> list[str]:
-    """Explain a DATABASE_URL that cannot work from the host, if that is the case."""
+def _dotenv_value(value: str) -> str:
+    """Read one value the way python-dotenv does.
+
+    A quoted value keeps everything inside its quotes, ``#`` included. An
+    unquoted value ends at whitespace followed by ``#``, which starts a comment.
+    """
+    if value[:1] in {"'", '"'}:
+        closing = value.find(value[0], 1)
+        if closing != -1:
+            return value[1:closing]
+    return re.split(r"\s+#", value, maxsplit=1)[0].strip()
+
+
+def docker_usable() -> bool:
+    """Match the Makefile's require-docker: a binary and a live daemon."""
+    docker = shutil.which("docker")
+    if docker is None:
+        return False
+    try:
+        return subprocess.run([docker, "info"], capture_output=True, timeout=20).returncode == 0
+    except (OSError, subprocess.SubprocessError):
+        return False
+
+
+def poetry_python(root: Path) -> tuple[str, str] | None:
+    """The interpreter and version of this project's Poetry environment, if any.
+
+    The app runs there, not on whichever ``python3`` launched this script, so
+    that is the version that has to be in range.
+    """
+    poetry = shutil.which("poetry")
+    if poetry is None:
+        return None
+    try:
+        found = subprocess.run(
+            [poetry, "env", "info", "--executable"],
+            capture_output=True,
+            text=True,
+            timeout=30,
+            cwd=root,
+        )
+        executable = found.stdout.strip()
+        if found.returncode != 0 or not executable:
+            return None
+        probed = subprocess.run(
+            [executable, "-c", "import sys; print('%d.%d' % sys.version_info[:2])"],
+            capture_output=True,
+            text=True,
+            timeout=30,
+        )
+    except (OSError, subprocess.SubprocessError):
+        return None
+    version = probed.stdout.strip()
+    if probed.returncode != 0 or not re.fullmatch(r"\d+\.\d+", version):
+        return None
+    return executable, version
+
+
+def database_url_findings(value: str, source: str) -> tuple[list[str], list[str]]:
+    """Explain a DATABASE_URL on a compose host. Returns (problems, notes)."""
     # The scheme may carry a driver and digits, as in postgresql+psycopg2://.
     host = re.sub(r"^[A-Za-z0-9+.\-]+://(?:[^@/]*@)?", "", value).split("/")[0].split(":")[0]
     if host not in _COMPOSE_HOSTS:
-        return []
+        return [], []
     if source == "shell":
         fix = (
             "It is exported in your shell, so it survives a fresh clone and overrides "
@@ -105,12 +173,26 @@ def database_url_problems(value: str, source: str) -> list[str]:
         )
     else:
         fix = "Set DATABASE_URL=sqlite:///./roster.db in .env, or delete .env."
+
+    if host == _ROUTED_COMPOSE_HOST and docker_usable():
+        return [], [
+            f"DATABASE_URL names the compose database '{host}', so 'make setup' and "
+            "'make up' run the database and the app inside docker compose. Host-only "
+            "commands such as 'make serve' cannot reach it. The value came from your "
+            f"{source}. For a host-only setup instead: {fix}"
+        ]
+
+    reason = (
+        "Docker is unavailable, so 'make setup' cannot route it through compose. "
+        if host == _ROUTED_COMPOSE_HOST
+        else ""
+    )
     return [
         f"DATABASE_URL host '{host}' is a docker-compose service name and resolves only "
-        f"inside that network, so it cannot be reached from the host. The value came "
-        f"from your {source}. {fix} "
+        f"inside that network, so it cannot be reached from the host. {reason}"
+        f"The value came from your {source}. {fix} "
         "To use a real PostgreSQL server from the host, point at its published port."
-    ]
+    ], []
 
 
 def report(root: Path | None = None) -> int:
@@ -122,9 +204,14 @@ def report(root: Path | None = None) -> int:
     print("SignUpFlow environment report")
     print("=" * 60)
 
-    version = f"{sys.version_info.major}.{sys.version_info.minor}"
-    running = (sys.version_info.major, sys.version_info.minor)
-    print(f"\nPython {version} ({sys.executable})")
+    environment = poetry_python(root)
+    if environment is not None:
+        executable, version = environment
+        print(f"\nPython {version} (Poetry environment: {executable})")
+    else:
+        version = f"{sys.version_info.major}.{sys.version_info.minor}"
+        print(f"\nPython {version} ({sys.executable}; no Poetry environment yet)")
+    running = tuple(int(part) for part in version.split("."))
     if not MIN_PYTHON <= running <= MAX_PYTHON:
         problems.append(
             f"Python {version} is outside the supported "
@@ -148,8 +235,17 @@ def report(root: Path | None = None) -> int:
             continue
         reported = True
         print(f"  {name} = {redact(name, value)}   [from {source}]")
+        if name == "SENTRY_DSN" and value and not _SENTRY_DSN.match(value):
+            problems.append(
+                f"SENTRY_DSN is set but is not a valid Sentry DSN, so startup fails "
+                f"closed when it initialises error reporting. The value came from your "
+                f"{source}. Leave it empty to turn error reporting off, or paste the "
+                "DSN from your Sentry project settings."
+            )
         if name == "DATABASE_URL":
-            problems.extend(database_url_problems(value, source))
+            db_problems, db_notes = database_url_findings(value, source)
+            problems.extend(db_problems)
+            notes.extend(db_notes)
     if not reported:
         print("  (nothing set; every default applies)")
 
@@ -170,7 +266,7 @@ def report(root: Path | None = None) -> int:
         return 1
     print("  No blocking problems found.")
     if not notes:
-        print("  'make setup' then 'make run' should work on this machine.")
+        print("  'make setup' then 'make up' should work on this machine.")
     return 0
 
 
