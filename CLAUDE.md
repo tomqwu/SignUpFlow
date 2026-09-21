@@ -32,8 +32,9 @@ Notification routes and the signed SendGrid callback are registered under `/api/
 ## Commands
 
 ```bash
-make setup                # First-time: install deps, run migrations, seed data
-make run                  # Dev server on :8000 (uvicorn --reload)
+make doctor               # Report the environment the app will actually start with
+make setup                # Prepare the environment: deps, backing services, schema
+make up                   # Start the app on :8000 (uvicorn --reload, or compose)
 make test                 # Backend comprehensive tests
 make test-all             # All Python tiers, including web + contract + Playwright
 make test-postgres        # Owned PostgreSQL migration/business/race acceptance

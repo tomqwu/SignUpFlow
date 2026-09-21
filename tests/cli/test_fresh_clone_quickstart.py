@@ -36,6 +36,13 @@ pytestmark = [
 ]
 
 
+def _docker_is_usable() -> bool:
+    """Match the Makefile: the binary existing is not the same as a live daemon."""
+    if shutil.which("docker") is None:
+        return False
+    return subprocess.run(["docker", "info"], capture_output=True, timeout=30).returncode == 0
+
+
 def clean_env(**overrides: str) -> dict:
     """The environment a new contributor has: none of ours, plus any overrides."""
     env = {k: v for k, v in os.environ.items() if k not in _CONTROLLED}
@@ -113,8 +120,18 @@ class TestFreshCloneSurfacesAmbientState:
         assert result.returncode == 1
         assert "survives a fresh clone" in result.stdout
 
+    @pytest.mark.skipif(
+        _docker_is_usable(),
+        reason="asserts the branch taken when Docker cannot be reached",
+    )
     def test_make_migrate_refuses_rather_than_raising_psycopg2(self, fresh_clone):
-        """Without the guard this dies inside alembic naming neither cause nor fix."""
+        """Without the guard this dies inside alembic naming neither cause nor fix.
+
+        A compose hostname resolves only inside that network, so migrating from
+        the host could never work. With Docker present the migration is routed
+        into the container instead, which is why this only covers the case
+        where Docker is unavailable.
+        """
         result = subprocess.run(
             ["make", "migrate"],
             capture_output=True,
@@ -125,4 +142,75 @@ class TestFreshCloneSurfacesAmbientState:
         )
         assert result.returncode != 0
         assert "could not translate host name" not in result.stdout + result.stderr
-        assert "only resolves inside docker compose" in result.stdout
+        assert "only resolves inside" in result.stdout
+
+    @pytest.mark.skipif(
+        _docker_is_usable(),
+        reason="asserts the branch taken when Docker cannot be reached",
+    )
+    def test_services_refuses_rather_than_starting_half_a_stack(self, fresh_clone):
+        """An unreachable Docker must stop setup, not be reported as success.
+
+        This exists because it did not: the guard ran inside a shell ``case``
+        whose subsequent commands kept going, so the target printed its failure
+        and then its success line and exited zero, and ``make setup`` carried on
+        to migrate against a database that was never started.
+        """
+        result = subprocess.run(
+            ["make", "services"],
+            capture_output=True,
+            text=True,
+            timeout=300,
+            cwd=fresh_clone,
+            env=clean_env(DATABASE_URL="postgresql://u:p@db:5432/x"),
+        )
+        assert result.returncode != 0
+        assert "Backing services are up" not in result.stdout
+
+
+class TestLifecycleIsTwoCommands:
+    """``make setup`` prepares the environment; ``make up`` runs the app.
+
+    Both follow DATABASE_URL rather than the name of the target, so neither can
+    be typed into the wrong path. These assert the routing without starting
+    anything, which is what keeps them runnable on a machine without Docker.
+
+    ``--dry-run`` still descends into sub-makes, so the branch that was taken is
+    visible. It is read from the command the chosen branch would run, not from
+    the branch names, because make echoes the whole ``case`` either way.
+    """
+
+    UVICORN = "uvicorn api.main:app"
+    COMPOSE_UP = "docker-compose.dev.yml up -d"
+
+    def _dry_run_up(self, cwd, **env: str) -> str:
+        result = subprocess.run(
+            ["make", "--dry-run", "up"],
+            capture_output=True,
+            text=True,
+            timeout=120,
+            cwd=cwd,
+            env=clean_env(**env),
+        )
+        assert result.returncode == 0, result.stdout + result.stderr
+        return result.stdout
+
+    def test_up_serves_on_the_host_when_no_compose_database_is_configured(
+        self, fresh_clone
+    ):
+        """The default path must not reach for Docker at all."""
+        stdout = self._dry_run_up(fresh_clone)
+        assert self.UVICORN in stdout
+        assert self.COMPOSE_UP not in stdout
+
+    def test_up_routes_into_compose_when_the_database_lives_there(self, fresh_clone):
+        stdout = self._dry_run_up(fresh_clone, DATABASE_URL="postgresql://u:p@db:5432/x")
+        assert self.COMPOSE_UP in stdout
+        assert self.UVICORN not in stdout
+
+    def test_setup_points_at_up_rather_than_leaving_the_app_unstarted(
+        self, fresh_clone
+    ):
+        """Setup stops short of serving, so it has to say what comes next."""
+        makefile = (fresh_clone / "Makefile").read_text(encoding="utf-8")
+        assert "Run 'make up' to start the app." in makefile

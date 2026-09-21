@@ -80,18 +80,28 @@ a clean machine it prints:
   No blocking problems found.
 ```
 
-`make setup` installs dependencies and creates a local SQLite database at
-`roster.db`. It ends with `✅ Setup complete!`. You do not need a `.env` file;
-the defaults are SQLite with every external provider disabled.
+`make setup` prepares everything the app needs in order to run: dependencies,
+any backing services, and the database schema. It does not start the app. It
+ends with `✅ Setup complete!`. You do not need a `.env` file; the defaults are
+SQLite with every external provider disabled, and nothing is containerised.
+
+Two commands cover the whole lifecycle: `make setup` prepares the environment
+and `make up` runs the app. What either one does is decided by `DATABASE_URL`,
+not by which command you type. Leave it unset or on SQLite and both stay
+entirely on the host. Point it at the compose database and setup brings up
+PostgreSQL and Redis and migrates inside that network, and `make up` serves the
+app from the api container — because a compose hostname is only reachable from
+within that network. The configuration and the commands cannot disagree.
 
 ### Step 2 — Start the app
 
 ```bash
-make run
+make up
 ```
 
 This serves on <http://localhost:8000> with auto-reload, and keeps running until
 you press Ctrl+C. Leave it running and use a second terminal for anything else.
+`make run` and `make dev` are aliases, and `make serve` forces the host path.
 
 To confirm it is alive:
 
@@ -144,28 +154,28 @@ cycle run week to week, with screenshots.
 
 ### Stopping and starting again
 
-Press Ctrl+C in the terminal running `make run`. Your data lives in `roster.db`,
-so `make run` picks up where you left off. Delete that file and re-run
+Press Ctrl+C in the terminal running `make up`. Your data lives in `roster.db`,
+so `make up` picks up where you left off. Delete that file and re-run
 `make setup` to start over.
 
 ### Running on Docker
 
-Docker is a separate path that brings PostgreSQL and Redis with it, rather than
-SQLite:
+Docker brings PostgreSQL and Redis rather than SQLite. Point `DATABASE_URL` at
+the compose database and the same two commands apply:
 
 ```bash
-make up              # starts db, redis and the api container
-make migrate-docker  # applies migrations inside the api container
+echo 'DATABASE_URL=postgresql://signupflow:dev_password_change_in_production@db:5432/signupflow_dev' >> .env
+make setup           # starts PostgreSQL and Redis, migrates inside that network
+make up              # serves the app from the api container
 ```
 
-The app is on <http://localhost:8000> as before, so rejoin the walkthrough at
-Step 3. PostgreSQL is published on 5433 and Redis on 6380, chosen so they do not
-collide with anything already running locally. Use `make logs` to follow output
-and `make down` to stop.
+Rejoin the walkthrough at Step 3 on <http://localhost:8000>. PostgreSQL is
+published on 5433 and Redis on 6380, chosen so they do not collide with anything
+already running locally. Use `make logs` to follow output and `make down` to
+stop.
 
-Pick one path or the other. `make setup` deliberately does not start containers,
-because Docker is not a prerequisite for the host path and starting a stack is a
-heavier side effect than installing dependencies.
+The individual steps remain available if you want them: `make compose-up`
+starts the stack unconditionally and `make migrate-docker` migrates inside it.
 
 ### If `make setup` fails on a database host
 
@@ -190,7 +200,7 @@ SQLite is the default and no `.env` is needed.
 
 To reach a real PostgreSQL server from the host, point at its published port,
 such as `localhost:5433` for the compose database. To run in containers, use
-`make up` and `make migrate-docker` and let them set it themselves.
+`make compose-up` and `make migrate-docker` and let them set it themselves.
 
 ### Just the scheduler, no database or server
 
@@ -585,8 +595,9 @@ CLI equivalents, built-in overlap/availability behavior, and unsupported policy.
 ### Commands
 
 ```bash
-make setup                # First-time setup
-make run                  # Dev server on :8000
+make doctor               # Report what this machine will start the app with
+make setup                # Prepare the environment: deps, services, schema
+make up                   # Start the app on :8000 (follows DATABASE_URL)
 make test                 # Complete local Python suite (same as make test-all)
 make test-unit            # Python unit tests only
 make test-unit-fast       # Skip slow bcrypt tests (~7s)

@@ -2,7 +2,7 @@
 
 export SKIP_TEST_DB_FIXTURES ?= false
 
-.PHONY: doctor check-db-host test-web test-contract test-e2e test-mobile test-mobile-generated test-performance test-load test-recovery test-security test-staging test-docs mobile-codegen-preflight mobile-codegen mobile-codegen-check capture-screenshots validate-screenshots
+.PHONY: doctor services serve compose-up require-docker test-web test-contract test-e2e test-mobile test-mobile-generated test-performance test-load test-recovery test-security test-staging test-docs mobile-codegen-preflight mobile-codegen mobile-codegen-check capture-screenshots validate-screenshots
 FLUTTER ?= flutter
 DART ?= dart
 JAVA_BIN ?=
@@ -44,7 +44,7 @@ check-docker:
 		exit 1; \
 	}
 
-DOCKER_TARGETS := up down build rebuild logs logs-api logs-db logs-redis shell db-shell redis-shell \
+DOCKER_TARGETS := compose-up down build rebuild logs logs-api logs-db logs-redis shell db-shell redis-shell \
 	test-docker test-docker-quick test-docker-summary test-docker-file \
 	test-docker-unit test-docker-unit-fast test-docker-integration \
 	test-docker-coverage \
@@ -135,10 +135,28 @@ check-deps:
 		echo "✅ All dependencies installed! You can run 'make setup' to install project packages."; \
 	fi
 
-# Run the development server
-run: check-poetry
+# Bring the app up. Two commands cover the whole lifecycle: 'make setup'
+# prepares the environment, 'make up' serves the app. Which way it is served
+# follows DATABASE_URL, so the same command works on either path.
+up:
+	@set -e; \
+	DB_URL="$$($(DB_URL_CMD))"; \
+	case "$$DB_URL" in \
+		$(COMPOSE_DB_PATTERNS)) \
+			echo "🐳 DATABASE_URL names the compose database, so the app runs there."; \
+			$(MAKE) compose-up; \
+			;; \
+		*) \
+			$(MAKE) serve; \
+			;; \
+	esac
+
+# Run the development server on the host.
+serve: check-poetry
 	@echo "🚀 Starting SignUpFlow development server..."
 	@poetry run uvicorn api.main:app --host 0.0.0.0 --port 8000 --reload
+
+run: up
 
 # Run Celery worker
 celery: check-poetry
@@ -148,11 +166,11 @@ celery: check-poetry
 dev: run
 
 stop:
-	@echo "Retired: stop the development server from the terminal that ran 'make run'."
+	@echo "Retired: stop the development server from the terminal that ran 'make up'."
 	@exit 2
 
 restart:
-	@echo "Retired: stop the owned 'make run' process, then run 'make run' again."
+	@echo "Retired: stop the owned 'make up' process, then run 'make up' again."
 	@exit 2
 
 # Deliberately does not depend on check-poetry or an installed virtualenv:
@@ -160,69 +178,107 @@ restart:
 doctor:
 	@python3 scripts/doctor.py
 
+# Resolve DATABASE_URL the way the app does: an exported variable wins, because
+# python-dotenv will not override one, and .env is only consulted when it does
+# not. Shared by every target that needs to know which database is configured.
+DB_URL_CMD = if [ -n "$$DATABASE_URL" ]; then printf '%s' "$$DATABASE_URL"; \
+	elif [ -f .env ]; then \
+		sed -n 's/^[[:space:]]*\(export[[:space:]][[:space:]]*\)\{0,1\}DATABASE_URL[[:space:]]*=[[:space:]]*//p' .env \
+		| tail -n 1 | sed -e 's/^"//' -e 's/"$$//' -e "s/^'//" -e "s/'$$//"; \
+	fi
+
+# The shapes a URL takes when its host is the compose service name 'db', which
+# resolves only inside the compose network. Kept in one place so every target
+# agrees on what "the compose database" means.
+COMPOSE_DB_PATTERNS = *@db:*|*@db/*|*@db
+
+# Prepare everything the app needs to run: language dependencies, any backing
+# services the configuration asks for, and the schema. It does not serve the
+# app; 'make up' does that. Whether the services are containers is decided by
+# DATABASE_URL, not by which target you typed, so the configuration and the
+# commands cannot disagree.
 setup:
 	@echo "🚀 Starting SignUpFlow setup..."
 	@echo ""
 	@$(MAKE) check-python
 	@$(MAKE) install-deps
 	@$(MAKE) install
+	@$(MAKE) services
 	@$(MAKE) migrate
 	@echo ""
-	@echo "✅ Setup complete! Run 'make run' to start the server."
+	@echo "✅ Setup complete! Run 'make up' to start the app."
 	@echo "   Visit http://localhost:8000/docs"
 	@echo ""
+
+# Start the backing services the configuration points at, and nothing else.
+#
+# A compose hostname is only resolvable inside the compose network, so a
+# compose-backed database brings its containers up here; the app itself waits
+# for 'make up'. A SQLite or directly reachable database needs nothing, so the
+# common case stays free of Docker entirely.
+services:
+	@set -e; \
+	if [ -f /.dockerenv ]; then \
+		echo "ℹ️  Inside a container; backing services are managed by compose."; \
+	else \
+		DB_URL="$$($(DB_URL_CMD))"; \
+		case "$$DB_URL" in \
+			$(COMPOSE_DB_PATTERNS)) \
+				echo "🐳 DATABASE_URL names the compose database, which only resolves"; \
+				echo "   inside docker compose, so the database runs there."; \
+				$(MAKE) require-docker; \
+				$(DOCKER_COMPOSE) -f docker-compose.dev.yml up -d db redis; \
+				echo "✅ Backing services are up."; \
+				;; \
+			*) \
+				echo "✅ No backing services needed (using the configured database directly)."; \
+				;; \
+		esac; \
+	fi
+
+# One explanation of an unusable Docker, shared by every target that needs it,
+# so the remedy never drifts between them. Callers that know why they wanted
+# Docker say so first; this only reports that it is not there.
+require-docker:
+	@if ! command -v docker >/dev/null 2>&1 || ! docker info >/dev/null 2>&1; then \
+		echo "❌ Docker is unavailable, so the compose stack cannot be reached."; \
+		echo "   Start Docker and retry, or switch to SQLite for a host-only setup:"; \
+		echo "       DATABASE_URL=sqlite:///./roster.db"; \
+		echo "   Run 'make doctor' for the full environment report."; \
+		exit 1; \
+	fi
 
 install: check-poetry
 	@echo "📦 Installing project packages..."
 	@poetry install
 	@echo "✅ Project packages installed"
 
-migrate: check-poetry check-db-host
-	@echo "🔄 Running database migrations..."
-	@poetry run alembic upgrade head
+# Migrations run wherever the configured database actually lives. A compose
+# hostname resolves only inside that network, so running alembic on the host
+# could never reach it; those migrations go through a one-off api container,
+# which works whether or not the app is already serving.
+migrate: check-poetry
+	@set -e; \
+	DB_URL="$$($(DB_URL_CMD))"; \
+	case "$$DB_URL" in \
+		$(COMPOSE_DB_PATTERNS)) \
+			if [ -f /.dockerenv ]; then \
+				echo "🔄 Running database migrations..."; \
+				poetry run alembic upgrade head; \
+			else \
+				echo "🐳 DATABASE_URL names the compose database, which only resolves"; \
+				echo "   inside docker compose, so migrations run there too."; \
+				$(MAKE) require-docker; \
+				echo "🔄 Running database migrations inside compose..."; \
+				$(DOCKER_COMPOSE) -f docker-compose.dev.yml run --rm api alembic upgrade head; \
+			fi; \
+			;; \
+		*) \
+			echo "🔄 Running database migrations..."; \
+			poetry run alembic upgrade head; \
+			;; \
+	esac
 	@echo "✅ Migrations complete"
-
-# A DATABASE_URL pointing at the compose service name only resolves inside the
-# compose network. Outside it, alembic fails with a raw psycopg2 name-resolution
-# error that names neither .env nor the fix, so catch it here instead.
-check-db-host:
-	@if [ ! -f /.dockerenv ]; then \
-		DB_URL="$${DATABASE_URL:-}"; \
-		DB_SRC="shell environment"; \
-		if [ -z "$$DB_URL" ] && [ -f .env ]; then \
-			DB_URL=$$(sed -n 's/^[[:space:]]*\(export[[:space:]][[:space:]]*\)\{0,1\}DATABASE_URL[[:space:]]*=[[:space:]]*//p' .env | tail -n 1); \
-			DB_URL=$$(printf '%s' "$$DB_URL" | sed -e 's/^"//' -e 's/"$$//' -e "s/^'//" -e "s/'$$//"); \
-			DB_SRC=".env"; \
-		fi; \
-		case "$$DB_URL" in \
-			*@db:*|*@db/*|*@db) \
-				echo "❌ DATABASE_URL points at host 'db', which only resolves inside docker compose."; \
-				echo "   You are running on the host, so that name cannot be reached."; \
-				echo ""; \
-				echo "   The value came from your $$DB_SRC:"; \
-				echo "       $$DB_URL"; \
-				echo ""; \
-				if [ "$$DB_SRC" = "shell environment" ]; then \
-					echo "   It is exported in your shell, so it survives a fresh clone and"; \
-					echo "   overrides .env. Editing .env will NOT help. Clear it with:"; \
-					echo "       unset DATABASE_URL"; \
-					echo "   and remove any 'export DATABASE_URL=' line from your shell profile"; \
-					echo "   (~/.bashrc, ~/.zshrc or similar), then run 'make setup' again."; \
-				else \
-					echo "   To run on the host, set SQLite in .env:"; \
-					echo "       DATABASE_URL=sqlite:///./roster.db"; \
-					echo "   or delete .env entirely; SQLite is the default."; \
-				fi; \
-				echo ""; \
-				echo "   To reach a PostgreSQL server from the host, use its published port:"; \
-				echo "       DATABASE_URL=postgresql://signupflow:<password>@localhost:5432/signupflow"; \
-				echo "   To run inside compose instead, use 'make up' then 'make migrate-docker'."; \
-				echo ""; \
-				echo "   Run 'make doctor' for the full environment report."; \
-				exit 1; \
-				;; \
-		esac; \
-	fi
 
 # Run all backend tests
 test: test-all
@@ -377,7 +433,9 @@ mobile-codegen-check: check-poetry
 # Docker Compose Commands (Development Environment)
 # ============================================================================
 
-up:
+# The unconditional compose path. 'make up' routes here when DATABASE_URL names
+# the compose database; call it directly to bring the stack up regardless.
+compose-up:
 	@echo "🐳 Starting SignUpFlow development environment..."
 	@$(DOCKER_COMPOSE) -f docker-compose.dev.yml up -d
 	@echo ""
@@ -400,7 +458,7 @@ build:
 	@$(DOCKER_COMPOSE) -f docker-compose.dev.yml build --no-cache
 	@echo "✅ Build complete"
 
-rebuild: down build up
+rebuild: down build compose-up
 
 logs:
 	@$(DOCKER_COMPOSE) -f docker-compose.dev.yml logs -f
@@ -504,11 +562,12 @@ help:
 	@echo "SignUpFlow Commands:"
 	@echo ""
 	@echo "🚀 Quick Start:"
-	@echo "  make setup            - Auto-install Poetry, packages, and setup DB"
-	@echo "  make up               - Start Docker environment (PostgreSQL + Redis + API)"
+	@echo "  make doctor           - Report what this machine will start the app with"
+	@echo "  make setup            - Prepare the environment: deps, services, schema"
+	@echo "  make up               - Start the app (follows DATABASE_URL)"
 	@echo ""
-	@echo "🐳 Docker Development (Recommended):"
-	@echo "  make up               - Start all services (PostgreSQL + Redis + API)"
+	@echo "🐳 Docker Development:"
+	@echo "  make compose-up       - Start all services (PostgreSQL + Redis + API)"
 	@echo "  make down             - Stop all services"
 	@echo "  make logs             - View logs from all services"
 	@echo "  make logs-api         - View API logs only"
@@ -529,11 +588,11 @@ help:
 	@echo "  make install-deps     - Auto-install Poetry (if missing)"
 	@echo "  make install-poetry   - Auto-install Poetry only"
 	@echo "  make install          - Install project packages (requires Poetry)"
-	@echo "  make run              - Start development server (localhost:8000)"
+	@echo "  make serve            - Start development server on the host (localhost:8000)"
 	@echo ""
 	@echo "Development:"
-	@echo "  make dev              - Alias for 'make run'"
-	@echo "  make stop             - Retired; stop the owning 'make run' terminal"
+	@echo "  make run / make dev   - Aliases for 'make up'"
+	@echo "  make stop             - Retired; stop the owning 'make up' terminal"
 	@echo "  make restart          - Retired; restart from the owning terminal"
 	@echo "  make migrate          - Run database migrations"
 	@echo ""
