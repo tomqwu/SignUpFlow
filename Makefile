@@ -184,10 +184,11 @@ check-db-host:
 	@if [ ! -f /.dockerenv ]; then \
 		DB_URL="$${DATABASE_URL:-}"; \
 		if [ -z "$$DB_URL" ] && [ -f .env ]; then \
-			DB_URL=$$(grep -E '^[[:space:]]*DATABASE_URL=' .env | tail -n 1 | cut -d= -f2-); \
+			DB_URL=$$(sed -n 's/^[[:space:]]*\(export[[:space:]][[:space:]]*\)\{0,1\}DATABASE_URL[[:space:]]*=[[:space:]]*//p' .env | tail -n 1); \
+			DB_URL=$$(printf '%s' "$$DB_URL" | sed -e 's/^"//' -e 's/"$$//' -e "s/^'//" -e "s/'$$//"); \
 		fi; \
 		case "$$DB_URL" in \
-			*@db:*) \
+			*@db:*|*@db/*|*@db) \
 				echo "❌ DATABASE_URL points at host 'db', which only resolves inside docker compose."; \
 				echo "   You are running on the host, so that name cannot be reached."; \
 				echo ""; \
