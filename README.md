@@ -41,6 +41,18 @@ release identity, test bypasses, and enabled-provider coherence; see the
 [configuration contract](docs/PRODUCTION_CONFIGURATION.md). This is a configuration
 guard, not deployment or provider acceptance.
 
+You need three things on your PATH before anything below will run:
+
+| Requirement | Notes |
+| --- | --- |
+| Python 3.11, 3.12 or 3.13 | `make setup` rejects anything outside this range, including 3.14 |
+| [Poetry](https://python-poetry.org/docs/#installation) | `make setup` stops immediately if `poetry` is missing |
+| `make` | Preinstalled on macOS and Linux; on Windows use WSL |
+
+If you would rather not use `make`, every target is a thin wrapper: `poetry
+install`, then `poetry run alembic upgrade head`, then `poetry run uvicorn
+api.main:app --reload`.
+
 Run the web app:
 
 ```bash
@@ -197,7 +209,7 @@ POST /api/v1/solver/solve      →  api/routers/solver.py (HTTP + DB)
                                (people, events, constraints, holidays)
 ```
 
-**Backend:** FastAPI + SQLAlchemy 2.0 + Pydantic 2.x (Python 3.11+)
+**Backend:** FastAPI + SQLAlchemy 2.0 + Pydantic 2.x (Python 3.11 to 3.13)
 **CLI:** YAML workspace in, JSON solution out (`api.cli.main`)
 **Database:** SQLite (dev) / PostgreSQL (prod)
 **Auth:** JWT (HS256) + bcrypt
