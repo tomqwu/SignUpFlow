@@ -50,6 +50,19 @@ response for the same event, person, and role. New or changed work remains
 unanswered. Publication never invents acceptance from an assignment's default
 workflow status.
 
+Carry-forward reads the organization's *currently published* solutions. A
+replacement published directly over the live roster therefore keeps a matching
+acceptance, while unpublishing first and then publishing the same roster finds
+no prior solution, leaves the work unanswered, and asks the member again. The
+two routes reach the same destination with different results; `tests/api/
+test_publication_recovery.py` pins both. Prefer publishing the replacement
+directly until that asymmetry is resolved.
+
+Unpublishing sends nothing. A member keeps any assignment notice they already
+received while the shift stops appearing in their schedule. Correcting an event
+during an unpublished window is likewise silent, yet still resets every response
+for that event.
+
 Pending assignment notification intent is stored in the same database transaction
 as the active-roster switch and audit record. Already accepted unchanged work does
 not receive a redundant assignment notification. External email and paid SMS
@@ -60,6 +73,16 @@ delivery remain disabled by default and are outside this contract.
 Validation returns `409 Conflict` with the affected event, role, or member where
 available. A legacy solution also returns `409` and asks the administrator to
 regenerate. Rollback to a solution that was never published returns `400`.
+
+A role-capacity refusal caused by a manual assignment names the member holding
+it and states the two ways out, removing it or regenerating. This matters after
+a coordinator overrides one of the solver's placements: the next solve neither
+sees nor preserves that override, so it re-places the person who was removed and
+the two together read as over-staffed.
+
+Rollback re-validates the target's scope, so it recovers a bad roster choice but
+not a corrected event. Once an event inside the solve window changes, rolling
+back to the pre-correction solution returns `409` and asks for regeneration.
 
 Any validation, audit, notification-intent, flush, or commit failure leaves the
 previously published solution active. Concurrent publish, rollback, claim, swap,

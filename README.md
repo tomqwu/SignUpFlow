@@ -41,10 +41,29 @@ release identity, test bypasses, and enabled-provider coherence; see the
 [configuration contract](docs/PRODUCTION_CONFIGURATION.md). This is a configuration
 guard, not deployment or provider acceptance.
 
+Run the web app:
+
 ```bash
 git clone https://github.com/tomqwu/SignUpFlow.git
 cd SignUpFlow
-make setup
+make setup     # installs dependencies and creates the database
+make run       # serves the app on http://localhost:8000
+```
+
+Then open <http://localhost:8000>. It redirects to the sign-in page. There is
+no seeded account and no default password: the first sign-up creates your
+organization and its first administrator together, and everyone after that
+joins through an invitation that administrator sends. From there, follow the
+[Church](#church-week-to-week-operations) or
+[Basketball](#basketball-week-to-week-operations) walkthrough.
+
+Interactive API docs are at <http://localhost:8000/docs>, and
+`GET /health` reports liveness.
+
+To try the scheduler on its own, with no database and no server, use the CLI
+instead:
+
+```bash
 poetry run signupflow --help
 ```
 
@@ -188,7 +207,7 @@ POST /api/v1/solver/solve      →  api/routers/solver.py (HTTP + DB)
 ```
 /api/v1/auth           — atomic organization bootstrap, login, refresh, email check
 /api/v1/organizations  — authenticated read/update/lifecycle operations
-/api/v1/people         — CRUD for people, /me profile
+/api/v1/people         — CRUD for people, /me profile, deactivate a departing member
 /api/v1/teams          — CRUD for teams + membership
 /api/v1/events         — CRUD for events + manual assignments
 /api/v1/constraints    — CRUD for scheduling constraints
@@ -290,7 +309,11 @@ and exercise a real same-origin profile save in Chromium.
 ### API Test Coverage
 
 API tests exercise event management, conflicts, availability, profiles, teams,
-scheduling, organization lifecycle, and authorization. The
+scheduling, organization lifecycle, and authorization. They also cover the
+day-to-day operations around a live roster: cancelling an event and notifying
+its assignees, retiring or erasing a departing member, re-solving after a
+qualification change or a manual override, filling a shift that starts today,
+and the publish/unpublish/correct/republish recovery chain. The
 [executable API authorization matrix](docs/API_AUTHORIZATION.md) records every
 mounted operation, the organization cancel/restore/hard-delete actor matrix, and
 the real-JWT tenant regressions for scheduling routes. The owned PostgreSQL drill
@@ -310,6 +333,19 @@ replacement, regeneration, publication, acceptance, and swaps.
 **Basketball team** — A coach runs a six-week game and practice roster with
 multi-position players, injuries, simultaneous events, shortages, replacement,
 regeneration, publication, acceptance, and swaps.
+
+**Mid-season roster changes** — Cancelling an event notifies everyone who was
+scheduled for it, so a member is never left holding a shift that no longer
+exists. The notice carries its own copy of the event title, original time,
+location, and role, because the event row is gone by the time the message is
+rendered.
+
+A member who leaves should be retired with `POST /api/v1/people/{id}/deactivate`
+rather than deleted. Deactivating reopens their future live work the same way
+removing a qualification does, and keeps their completed history intact. A hard
+`DELETE` still exists for genuine erasure requests, but it cascades through
+every assignment the person ever held, including past work on published
+rosters.
 
 Roster allocation is not member acceptance. See the
 [assignment response contract](docs/ASSIGNMENT_RESPONSES.md) for persisted states,
