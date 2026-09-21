@@ -152,16 +152,28 @@ heavier side effect than installing dependencies.
 
 ### If `make setup` fails on a database host
 
-Both paths share one trap. If you created a `.env` from `.env.example` and
-uncommented its PostgreSQL line, that URL uses the host `db`. That is the
-compose service name, and it resolves only inside the compose network, so on the
-host it cannot be reached and `make setup` stops to tell you so. Either:
+Both paths share one trap: a `DATABASE_URL` whose host is `db`. That is the
+compose service name and it resolves only inside the compose network, so on the
+host it cannot be reached. `make setup` stops and tells you which source the
+value came from, because the fix differs.
 
-- leave `DATABASE_URL` on the SQLite value for the host path, or
-- point at a published port such as `localhost:5433` to reach the compose
-  database from the host, or
-- delete `.env` entirely and let the containers set it themselves on the Docker
-  path.
+**From your shell.** An exported `DATABASE_URL` survives a fresh clone and
+overrides `.env`, so re-cloning or editing `.env` changes nothing. Clear it:
+
+```bash
+unset DATABASE_URL
+```
+
+and delete any `export DATABASE_URL=` line from `~/.bashrc`, `~/.zshrc` or
+whichever profile your shell loads. Check with `echo "$DATABASE_URL"`, which
+should print an empty line.
+
+**From `.env`.** Set `DATABASE_URL=sqlite:///./roster.db`, or delete the file;
+SQLite is the default and no `.env` is needed.
+
+To reach a real PostgreSQL server from the host, point at its published port,
+such as `localhost:5433` for the compose database. To run in containers, use
+`make up` and `make migrate-docker` and let them set it themselves.
 
 ### Just the scheduler, no database or server
 

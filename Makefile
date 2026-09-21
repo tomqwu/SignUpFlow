@@ -183,20 +183,34 @@ migrate: check-poetry check-db-host
 check-db-host:
 	@if [ ! -f /.dockerenv ]; then \
 		DB_URL="$${DATABASE_URL:-}"; \
+		DB_SRC="shell environment"; \
 		if [ -z "$$DB_URL" ] && [ -f .env ]; then \
 			DB_URL=$$(sed -n 's/^[[:space:]]*\(export[[:space:]][[:space:]]*\)\{0,1\}DATABASE_URL[[:space:]]*=[[:space:]]*//p' .env | tail -n 1); \
 			DB_URL=$$(printf '%s' "$$DB_URL" | sed -e 's/^"//' -e 's/"$$//' -e "s/^'//" -e "s/'$$//"); \
+			DB_SRC=".env"; \
 		fi; \
 		case "$$DB_URL" in \
 			*@db:*|*@db/*|*@db) \
 				echo "❌ DATABASE_URL points at host 'db', which only resolves inside docker compose."; \
 				echo "   You are running on the host, so that name cannot be reached."; \
 				echo ""; \
-				echo "   To run on the host, use SQLite in .env:"; \
-				echo "       DATABASE_URL=sqlite:///./roster.db"; \
-				echo "   Or point at a published PostgreSQL port, for example:"; \
-				echo "       DATABASE_URL=postgresql://signupflow:<password>@localhost:5432/signupflow"; \
+				echo "   The value came from your $$DB_SRC:"; \
+				echo "       $$DB_URL"; \
 				echo ""; \
+				if [ "$$DB_SRC" = "shell environment" ]; then \
+					echo "   It is exported in your shell, so it survives a fresh clone and"; \
+					echo "   overrides .env. Editing .env will NOT help. Clear it with:"; \
+					echo "       unset DATABASE_URL"; \
+					echo "   and remove any 'export DATABASE_URL=' line from your shell profile"; \
+					echo "   (~/.bashrc, ~/.zshrc or similar), then run 'make setup' again."; \
+				else \
+					echo "   To run on the host, set SQLite in .env:"; \
+					echo "       DATABASE_URL=sqlite:///./roster.db"; \
+					echo "   or delete .env entirely; SQLite is the default."; \
+				fi; \
+				echo ""; \
+				echo "   To reach a PostgreSQL server from the host, use its published port:"; \
+				echo "       DATABASE_URL=postgresql://signupflow:<password>@localhost:5432/signupflow"; \
 				echo "   To run inside compose instead, use 'make up' then 'make migrate-docker'."; \
 				exit 1; \
 				;; \
