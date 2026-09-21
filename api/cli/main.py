@@ -410,11 +410,13 @@ def doctor() -> None:
 
 def _database_url_problems(value: str, source: str) -> list[str]:
     """Explain a DATABASE_URL that cannot work from the host, if that is the case."""
-    host = re.sub(r"^[a-z+]+://(?:[^@/]*@)?", "", value).split("/")[0].split(":")[0]
+    # The scheme may carry a driver and digits, as in postgresql+psycopg2://.
+    host = re.sub(r"^[A-Za-z0-9+.\-]+://(?:[^@/]*@)?", "", value).split("/")[0].split(":")[0]
     if host not in {"db", "redis", "postgres"}:
         return []
     fix = (
-        "run 'unset DATABASE_URL' and remove the export from your shell profile"
+        "it is exported in your shell, so it survives a fresh clone and overrides "
+        ".env; run 'unset DATABASE_URL' and remove the export from your shell profile"
         if source == "shell"
         else "set DATABASE_URL=sqlite:///./roster.db in .env, or delete .env"
     )
