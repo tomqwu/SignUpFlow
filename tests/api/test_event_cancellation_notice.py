@@ -12,7 +12,13 @@ the self-contained snapshot the renderer needs once the event is gone.
 
 import pytest
 
-from api.models import Assignment, Notification, NotificationStatus, NotificationType
+from api.models import (
+    Assignment,
+    Notification,
+    NotificationStatus,
+    NotificationType,
+    Solution,
+)
 from tests.api.conftest import (
     accept_invitation,
     auth_headers,
@@ -54,6 +60,17 @@ def _org_with_assigned_volunteer(client, *, event_id="evt-cancel", days_from_now
     )
     assert assigned.status_code == 200, assigned.text
     return hdrs, volunteer, event
+
+
+def _solution(org_id: str, *, is_published: bool) -> Solution:
+    """A solution row with the score columns the schema requires."""
+    return Solution(
+        org_id=org_id,
+        is_published=is_published,
+        hard_violations=0,
+        soft_score=0.0,
+        health_score=100.0,
+    )
 
 
 def _cancellations_for(db, person_id):
@@ -136,16 +153,117 @@ class TestEventCancellationNotice:
             == 0
         )
 
-    def test_cancellation_notice_is_not_duplicated_per_assignment(self, client, db):
-        """One notice per person, even when they hold two roles at the event."""
-        hdrs, volunteer, event = _org_with_assigned_volunteer(client)
-        # Same person, second role at the same event.
-        client.post(
+    def test_one_notice_per_person_rests_on_an_enforced_invariant(self, client, db):
+        """A person cannot hold two roles at one event, so one notice is one person.
+
+        This replaces a test that assigned a second role without checking the
+        response. The API refuses that assignment, so the test's stated case
+        never occurred and its assertion held for the wrong reason. What is
+        actually true is asserted here instead: the refusal, and the single
+        notice that follows from it.
+        """
+        seed_org(client, ORG)
+        seed_user(client, ORG, ADMIN_EMAIL, "Admin", ADMIN_PW)
+        hdrs = auth_headers(client, ADMIN_EMAIL, ADMIN_PW)
+        invitation = seed_invitation(
+            client, hdrs, ORG, VOL_EMAIL, "Sarah", roles=["usher", "greeter"]
+        )
+        volunteer = accept_invitation(client, invitation["token"], password=VOL_PW)
+        event = seed_event(
+            client, hdrs, ORG, "evt-two-roles", role_counts={"usher": 1, "greeter": 1}
+        )
+
+        first = client.post(
+            f"/api/v1/events/{event['id']}/assignments",
+            json={"person_id": volunteer["person_id"], "action": "assign", "role": "usher"},
+            headers=hdrs,
+        )
+        assert first.status_code == 200, first.text
+        second = client.post(
             f"/api/v1/events/{event['id']}/assignments",
             json={"person_id": volunteer["person_id"], "action": "assign", "role": "greeter"},
             headers=hdrs,
         )
+        assert second.status_code >= 400, "a person held two roles at one event"
+        assert db.query(Assignment).filter(Assignment.event_id == event["id"]).count() == 1
 
         client.delete(f"/api/v1/events/{event['id']}", headers=hdrs)
 
         assert len(_cancellations_for(db, volunteer["person_id"])) == 1
+
+
+@pytest.mark.no_mock_auth
+class TestCancellationNoticeScope:
+    """Who is told is not simply "whoever has an assignment row".
+
+    A draft solver assignment is not a commitment anyone has been shown, so
+    cancelling it must not be the first a volunteer hears of it. Someone who
+    already declined is not scheduled. And a row belonging to another tenant
+    must never be mailed from this organization at all.
+    """
+
+    def test_declined_assignees_are_not_told_a_shift_they_refused_was_cancelled(
+        self, client, db
+    ):
+        hdrs, volunteer, event = _org_with_assigned_volunteer(client)
+        assignment = db.query(Assignment).filter(Assignment.event_id == event["id"]).one()
+        assignment.response_status = "declined"
+        db.commit()
+
+        client.delete(f"/api/v1/events/{event['id']}", headers=hdrs)
+
+        assert _cancellations_for(db, volunteer["person_id"]) == []
+
+    def test_unpublished_solver_assignments_do_not_trigger_notices(self, client, db):
+        """Nothing in a draft solution is visible, so nothing in it was promised."""
+        hdrs, volunteer, event = _org_with_assigned_volunteer(client)
+        draft = _solution(ORG, is_published=False)
+        db.add(draft)
+        db.flush()
+        assignment = db.query(Assignment).filter(Assignment.event_id == event["id"]).one()
+        assignment.solution_id = draft.id
+        db.commit()
+
+        client.delete(f"/api/v1/events/{event['id']}", headers=hdrs)
+
+        assert _cancellations_for(db, volunteer["person_id"]) == []
+
+    def test_published_solver_assignments_still_trigger_notices(self, client, db):
+        """The converse: publication is what makes the shift real, so it notifies."""
+        hdrs, volunteer, event = _org_with_assigned_volunteer(client)
+        published = _solution(ORG, is_published=True)
+        db.add(published)
+        db.flush()
+        assignment = db.query(Assignment).filter(Assignment.event_id == event["id"]).one()
+        assignment.solution_id = published.id
+        db.commit()
+
+        client.delete(f"/api/v1/events/{event['id']}", headers=hdrs)
+
+        assert len(_cancellations_for(db, volunteer["person_id"])) == 1
+
+    def test_reusing_a_cancelled_event_id_still_notifies(self, client, db):
+        """The dedupe key must not permanently burn an event id.
+
+        Cancellation notices outlive their event by design, so a key derived
+        only from the event id survives too. Recreating an event under the same
+        id then looks like a duplicate, and the second cancellation is silently
+        dropped.
+        """
+        hdrs, volunteer, event = _org_with_assigned_volunteer(client, event_id="evt-reused")
+        client.delete(f"/api/v1/events/{event['id']}", headers=hdrs)
+        assert len(_cancellations_for(db, volunteer["person_id"])) == 1
+
+        again = seed_event(
+            client, hdrs, ORG, "evt-reused", days_from_now=21, role_counts={"usher": 1}
+        )
+        assigned = client.post(
+            f"/api/v1/events/{again['id']}/assignments",
+            json={"person_id": volunteer["person_id"], "action": "assign", "role": "usher"},
+            headers=hdrs,
+        )
+        assert assigned.status_code == 200, assigned.text
+
+        client.delete(f"/api/v1/events/{again['id']}", headers=hdrs)
+
+        assert len(_cancellations_for(db, volunteer["person_id"])) == 2

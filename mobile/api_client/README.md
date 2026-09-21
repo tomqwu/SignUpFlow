@@ -158,6 +158,7 @@ Class | Method | HTTP request | Description
 [*OrganizationsApi*](doc/OrganizationsApi.md) | [**updateOrganization**](doc/OrganizationsApi.md#updateorganization) | **PUT** /api/v1/organizations/{org_id} | Update Organization
 [*PeopleApi*](doc/PeopleApi.md) | [**bulkImportPeople**](doc/PeopleApi.md#bulkimportpeople) | **POST** /api/v1/people/bulk | Bulk Import People
 [*PeopleApi*](doc/PeopleApi.md) | [**createPerson**](doc/PeopleApi.md#createperson) | **POST** /api/v1/people/ | Create Person
+[*PeopleApi*](doc/PeopleApi.md) | [**deactivatePerson**](doc/PeopleApi.md#deactivateperson) | **POST** /api/v1/people/{person_id}/deactivate | Deactivate Person
 [*PeopleApi*](doc/PeopleApi.md) | [**deletePerson**](doc/PeopleApi.md#deleteperson) | **DELETE** /api/v1/people/{person_id} | Delete Person
 [*PeopleApi*](doc/PeopleApi.md) | [**getCurrentPerson**](doc/PeopleApi.md#getcurrentperson) | **GET** /api/v1/people/me | Get Current Person
 [*PeopleApi*](doc/PeopleApi.md) | [**getPerson**](doc/PeopleApi.md#getperson) | **GET** /api/v1/people/{person_id} | Get Person

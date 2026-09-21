@@ -614,3 +614,79 @@ class TestPersonDeactivation:
         resp = client.post(f"/api/v1/people/{peer['person_id']}/deactivate", headers=vol_headers)
 
         assert resp.status_code == 403
+
+
+@pytest.mark.no_mock_auth
+class TestDeactivatedPeopleAreNotScheduled:
+    """Deactivation must also stop future work being created for the person.
+
+    Releasing their existing shifts is only half of leaving. The solver loaded
+    every Person row in the organization, so the next solve handed the freed
+    shift straight back to someone who can no longer sign in to see it, and the
+    coordinator had no way to tell from the roster that it would never be
+    served.
+    """
+
+    def test_solver_does_not_assign_work_to_a_deactivated_person(self, client, db):
+        headers = _admin(client)
+        volunteer = _volunteer(client, headers)
+        event = seed_event(client, headers, ORG, "solve-after-deact", role_counts={"usher": 1})
+
+        deactivated = client.post(
+            f"/api/v1/people/{volunteer['person_id']}/deactivate", headers=headers
+        )
+        assert deactivated.status_code == 200, deactivated.text
+
+        start = (utcnow() + timedelta(days=13)).date()
+        end = (utcnow() + timedelta(days=15)).date()
+        solved = client.post(
+            "/api/v1/solver/solve",
+            json={
+                "org_id": ORG,
+                "from_date": start.isoformat(),
+                "to_date": end.isoformat(),
+            },
+            headers=headers,
+        )
+        assert solved.status_code == 200, solved.text
+
+        db.expire_all()
+        assigned = (
+            db.query(Assignment)
+            .filter(
+                Assignment.event_id == event["id"],
+                Assignment.person_id == volunteer["person_id"],
+            )
+            .count()
+        )
+        assert assigned == 0, "the solver scheduled someone who cannot sign in"
+
+    def test_solver_still_assigns_active_people(self, client, db):
+        """The converse, so the filter cannot pass by excluding everyone."""
+        headers = _admin(client)
+        volunteer = _volunteer(client, headers)
+        event = seed_event(client, headers, ORG, "solve-active", role_counts={"usher": 1})
+
+        start = (utcnow() + timedelta(days=13)).date()
+        end = (utcnow() + timedelta(days=15)).date()
+        solved = client.post(
+            "/api/v1/solver/solve",
+            json={
+                "org_id": ORG,
+                "from_date": start.isoformat(),
+                "to_date": end.isoformat(),
+            },
+            headers=headers,
+        )
+        assert solved.status_code == 200, solved.text
+
+        db.expire_all()
+        assert (
+            db.query(Assignment)
+            .filter(
+                Assignment.event_id == event["id"],
+                Assignment.person_id == volunteer["person_id"],
+            )
+            .count()
+            == 1
+        ), "an active, qualified volunteer was not scheduled"

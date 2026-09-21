@@ -176,6 +176,32 @@ class TestDoctorProtectsCredentials:
         result = run_doctor(workdir, SECRET_KEY="super-secret-signing-key")
         assert "SECRET_KEY" in result.stdout
 
+    def test_password_with_no_username_is_masked(self, workdir):
+        """Redis URLs carry the password alone, with an empty username.
+
+        A pattern that requires at least one character before the colon skips
+        these entirely and prints the password in full, which is exactly the
+        shape the default Redis URL takes once it is given a password.
+        """
+        result = run_doctor(workdir, REDIS_URL="redis://:s3cr3t@localhost:6379/0")
+        assert "s3cr3t" not in result.stdout
+        assert "***" in result.stdout
+
+    def test_password_in_a_query_parameter_is_masked(self, workdir):
+        """Not every credential sits in the userinfo part of a URL."""
+        result = run_doctor(
+            workdir,
+            DATABASE_URL="postgresql://someone@localhost:5432/x?password=s3cr3t",
+        )
+        assert "s3cr3t" not in result.stdout
+
+    def test_masking_keeps_enough_of_the_url_to_diagnose_it(self, workdir):
+        """Redaction that hid the host would defeat the point of the report."""
+        result = run_doctor(workdir, DATABASE_URL="postgresql://someone:s3cr3t@db:5432/x")
+        assert "s3cr3t" not in result.stdout
+        assert "someone" in result.stdout
+        assert "db:5432" in result.stdout
+
 
 class TestDoctorExplainsProductionMode:
     def test_production_environment_is_called_out(self, workdir):

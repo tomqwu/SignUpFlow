@@ -48,11 +48,29 @@ MIN_PYTHON = (3, 11)
 MAX_PYTHON = (3, 13)
 
 
+#: Query parameters that carry a credential. A URL can hold one outside the
+#: userinfo part entirely, which the userinfo pattern below would walk past.
+_SECRET_PARAMS = re.compile(
+    r"(?i)\b(password|passwd|pwd|secret|token|api[-_]?key|auth)=([^&#\s]+)"
+)
+
+#: The userinfo credential. The username is optional on purpose: a Redis URL
+#: with a password and no user is spelled ``redis://:secret@host``, and a
+#: pattern demanding a username skips it and prints the password in full.
+_URL_CREDENTIAL = re.compile(r"://([^:/@]*):[^@/]*@")
+
+
 def redact(name: str, value: str) -> str:
-    """Never print a credential, and never print a password inside a URL."""
+    """Never print a credential, and never print a password inside a URL.
+
+    The report is written to be pasted into an issue, so this has to hold for
+    whatever shape the value arrives in, not only the common one. What survives
+    is everything needed to diagnose the value: scheme, user, host, port, path.
+    """
     if any(part in name for part in _SECRET_PARTS):
         return f"<set, {len(value)} chars>"
-    return re.sub(r"://([^:/@]+):[^@]*@", r"://\1:***@", value)
+    masked = _URL_CREDENTIAL.sub(r"://\1:***@", value)
+    return _SECRET_PARAMS.sub(r"\1=***", masked)
 
 
 def dotenv_values(path: Path) -> dict[str, str]:

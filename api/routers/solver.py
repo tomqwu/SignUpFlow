@@ -108,8 +108,15 @@ def solve_schedule(
     # Verify admin belongs to the organization
     verify_org_member(current_admin, solve_request.org_id)
 
-    # Load all data
-    people_db = db.query(Person).filter(Person.org_id == solve_request.org_id).all()
+    # Load all data. Deactivated people are excluded: they cannot sign in, so
+    # scheduling them creates work nobody will ever see, and it would hand back
+    # the very shifts deactivation just released. "invited" is likewise not yet
+    # a member who can serve.
+    people_db = (
+        db.query(Person)
+        .filter(Person.org_id == solve_request.org_id, Person.status == "active")
+        .all()
+    )
     teams_db = db.query(Team).filter(Team.org_id == solve_request.org_id).all()
     events_db = (
         db.query(Event)
