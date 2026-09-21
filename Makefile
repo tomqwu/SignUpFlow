@@ -172,10 +172,35 @@ install: check-poetry
 	@poetry install
 	@echo "✅ Project packages installed"
 
-migrate: check-poetry
+migrate: check-poetry check-db-host
 	@echo "🔄 Running database migrations..."
 	@poetry run alembic upgrade head
 	@echo "✅ Migrations complete"
+
+# A DATABASE_URL pointing at the compose service name only resolves inside the
+# compose network. Outside it, alembic fails with a raw psycopg2 name-resolution
+# error that names neither .env nor the fix, so catch it here instead.
+check-db-host:
+	@if [ ! -f /.dockerenv ]; then \
+		DB_URL="$${DATABASE_URL:-}"; \
+		if [ -z "$$DB_URL" ] && [ -f .env ]; then \
+			DB_URL=$$(grep -E '^[[:space:]]*DATABASE_URL=' .env | tail -n 1 | cut -d= -f2-); \
+		fi; \
+		case "$$DB_URL" in \
+			*@db:*) \
+				echo "❌ DATABASE_URL points at host 'db', which only resolves inside docker compose."; \
+				echo "   You are running on the host, so that name cannot be reached."; \
+				echo ""; \
+				echo "   To run on the host, use SQLite in .env:"; \
+				echo "       DATABASE_URL=sqlite:///./roster.db"; \
+				echo "   Or point at a published PostgreSQL port, for example:"; \
+				echo "       DATABASE_URL=postgresql://signupflow:<password>@localhost:5432/signupflow"; \
+				echo ""; \
+				echo "   To run inside compose instead, use 'make up' then 'make migrate-docker'."; \
+				exit 1; \
+				;; \
+		esac; \
+	fi
 
 # Run all backend tests
 test: test-all

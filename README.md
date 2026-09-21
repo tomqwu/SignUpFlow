@@ -72,6 +72,14 @@ joins through an invitation that administrator sends. From there, follow the
 Interactive API docs are at <http://localhost:8000/docs>, and
 `GET /health` reports liveness.
 
+You do not need a `.env` file for any of the above; the defaults are SQLite and
+providers disabled. If you do create one from `.env.example`, leave
+`DATABASE_URL` on the SQLite value. The commented PostgreSQL line uses the host
+`db`, which is the docker-compose service name and resolves only inside that
+network, so enabling it on the host makes `make setup` fail to resolve `db`.
+To use PostgreSQL from the host, point at its published port instead; to run in
+containers, use `make up` and `make migrate-docker`.
+
 To try the scheduler on its own, with no database and no server, use the CLI
 instead:
 
