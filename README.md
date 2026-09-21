@@ -41,7 +41,10 @@ release identity, test bypasses, and enabled-provider coherence; see the
 [configuration contract](docs/PRODUCTION_CONFIGURATION.md). This is a configuration
 guard, not deployment or provider acceptance.
 
-You need three things on your PATH before anything below will run:
+This walkthrough goes from an empty machine to a published schedule you can see
+in the browser. Every command below was run against a clean checkout.
+
+### Step 0 — Install the prerequisites
 
 | Requirement | Notes |
 | --- | --- |
@@ -49,61 +52,118 @@ You need three things on your PATH before anything below will run:
 | [Poetry](https://python-poetry.org/docs/#installation) | `make setup` stops immediately if `poetry` is missing |
 | `make` | Preinstalled on macOS and Linux; on Windows use WSL |
 
-If you would rather not use `make`, every target is a thin wrapper: `poetry
-install`, then `poetry run alembic upgrade head`, then `poetry run uvicorn
-api.main:app --reload`.
+Docker is **not** required for this walkthrough. If you would rather use it, see
+[Running on Docker](#running-on-docker) below and then rejoin at Step 3.
 
-Run the web app:
+### Step 1 — Get the code and build the environment
 
 ```bash
 git clone https://github.com/tomqwu/SignUpFlow.git
 cd SignUpFlow
-make setup     # installs dependencies and creates the database
-make run       # serves the app on http://localhost:8000
+make setup
 ```
 
-Then open <http://localhost:8000>. It redirects to the sign-in page. There is
-no seeded account and no default password: the first sign-up creates your
-organization and its first administrator together, and everyone after that
-joins through an invitation that administrator sends. From there, follow the
-[Church](#church-week-to-week-operations) or
-[Basketball](#basketball-week-to-week-operations) walkthrough.
+`make setup` installs dependencies and creates a local SQLite database at
+`roster.db`. It ends with `✅ Setup complete!`. You do not need a `.env` file;
+the defaults are SQLite with every external provider disabled.
 
-Interactive API docs are at <http://localhost:8000/docs>, and
-`GET /health` reports liveness.
+### Step 2 — Start the app
 
-You do not need a `.env` file for any of the above; the defaults are SQLite and
-providers disabled.
+```bash
+make run
+```
 
-### Running on Docker instead
+This serves on <http://localhost:8000> with auto-reload, and keeps running until
+you press Ctrl+C. Leave it running and use a second terminal for anything else.
 
-`make setup` and `make run` are the host path: Poetry, SQLite, no containers.
-Docker is a separate path with its own two commands, and it brings PostgreSQL
-and Redis with it:
+To confirm it is alive:
+
+```bash
+curl http://localhost:8000/health
+# {"status":"healthy","service":"signupflow-api","version":"1.0.0"}
+```
+
+### Step 3 — Create your organization and first administrator
+
+Open <http://localhost:8000>. It redirects to the sign-in page, and there is no
+seeded account and no default password.
+
+Click **Create a new organization** and fill in the form. That first sign-up
+creates the organization and its first administrator together, in one step.
+Everyone after that joins by invitation, so this is the only time you will see
+that form.
+
+Use a browser rather than `curl` for this. Browser writes carry a CSRF token, so
+a bare `curl` POST to the form is rejected with `403`. The JSON API at
+`/api/v1/auth/signup` is available if you want to script it.
+
+### Step 4 — Add the people and events you want scheduled
+
+You land on the admin dashboard, which links to a **Get started** checklist at
+`/a/onboarding`. It lists four things and says you can do them in any order:
+
+1. **Invite a teammate** at `/a/people`. Each invitation carries the
+   qualifications that person can serve, such as `usher` or `point_guard`.
+   Qualifications are not permissions; only `admin` and `volunteer` are.
+2. **Create an event** at `/a/events`, giving it the roles it requires and how
+   many of each.
+3. **Generate a schedule** at `/a/solver`. The solver fills every required role
+   it can, spreads work fairly, and reports anything it could not cover.
+4. **Share the schedule** by publishing it. Nothing is visible to volunteers
+   until you publish, and publication is refused while a required role is
+   unfilled.
+
+The checklist has a **Skip for now** link if you would rather explore directly.
+
+### Step 5 — See the result
+
+Once published, each volunteer sees their own shifts at `/v/schedule` and can
+accept or decline. You can watch the whole roster at `/a/assignments`, and
+`/a/analytics` summarises coverage and workload.
+
+From here, the [Church](#church-week-to-week-operations) and
+[Basketball](#basketball-week-to-week-operations) walkthroughs show the same
+cycle run week to week, with screenshots.
+
+### Stopping and starting again
+
+Press Ctrl+C in the terminal running `make run`. Your data lives in `roster.db`,
+so `make run` picks up where you left off. Delete that file and re-run
+`make setup` to start over.
+
+### Running on Docker
+
+Docker is a separate path that brings PostgreSQL and Redis with it, rather than
+SQLite:
 
 ```bash
 make up              # starts db, redis and the api container
 make migrate-docker  # applies migrations inside the api container
 ```
 
-The app is on <http://localhost:8000> as before. PostgreSQL is published on
-5433 and Redis on 6380, so they do not collide with anything you already run
-locally. Use `make logs` to follow output and `make down` to stop.
+The app is on <http://localhost:8000> as before, so rejoin the walkthrough at
+Step 3. PostgreSQL is published on 5433 and Redis on 6380, chosen so they do not
+collide with anything already running locally. Use `make logs` to follow output
+and `make down` to stop.
 
 Pick one path or the other. `make setup` deliberately does not start containers,
 because Docker is not a prerequisite for the host path and starting a stack is a
 heavier side effect than installing dependencies.
 
-The two paths share one trap. If you create a `.env` from `.env.example` and
-uncomment its PostgreSQL line, that URL uses the host `db`, which is the compose
-service name and resolves only inside the compose network. On the host it cannot
-be reached, so `make setup` stops and tells you so. Leave `DATABASE_URL` on the
-SQLite value for the host path, point at a published port such as
-`localhost:5433` to reach the compose database from the host, or let the
-containers set it themselves on the Docker path.
+### If `make setup` fails on a database host
 
-To try the scheduler on its own, with no database and no server, use the CLI
-instead:
+Both paths share one trap. If you created a `.env` from `.env.example` and
+uncommented its PostgreSQL line, that URL uses the host `db`. That is the
+compose service name, and it resolves only inside the compose network, so on the
+host it cannot be reached and `make setup` stops to tell you so. Either:
+
+- leave `DATABASE_URL` on the SQLite value for the host path, or
+- point at a published port such as `localhost:5433` to reach the compose
+  database from the host, or
+- delete `.env` entirely and let the containers set it themselves on the Docker
+  path.
+
+### Just the scheduler, no database or server
 
 ```bash
 poetry run signupflow --help
