@@ -2,6 +2,12 @@
 
 from __future__ import annotations
 
+import re
+from datetime import datetime, timedelta
+
+import pytest
+
+from api.models import Assignment, Event, Person
 from tests.web.conftest import seed_person
 from web.deps import SESSION_COOKIE
 
@@ -47,3 +53,73 @@ def test_dashboard_links_to_analytics(client, db):
     dash = client.get("/a/dashboard", cookies={SESSION_COOKIE: tok})
     assert dash.status_code == 200
     assert 'href="/a/analytics"' in dash.text
+
+
+# ---------------------------------------------------------------------------
+# "Last 30 days" on the dashboard and /a/analytics means the past 30 days.
+# A published six-week schedule must not count as recent work or burnout.
+# The app clock (api.timeutils.utcnow) is pinned; events are naive UTC.
+# ---------------------------------------------------------------------------
+
+PINNED_NOW = datetime(2030, 1, 9, 12, 0)
+
+
+@pytest.fixture
+def scheduled_org(client, db, monkeypatch):
+    monkeypatch.setenv("SIGNUPFLOW_ALLOW_TEST_CLOCK", "true")
+    monkeypatch.setenv("SIGNUPFLOW_TEST_NOW", PINNED_NOW.isoformat() + "+00:00")
+    org = "an_win"
+    tok = _admin(client, db, org=org, email="anwin@web.test")
+    for pid, name in [("an_recent", "Recent Rita"), ("an_ahead", "Ahead Ari")]:
+        db.add(
+            Person(
+                id=pid,
+                org_id=org,
+                name=name,
+                email=f"{pid}@web.test",
+                roles=["volunteer"],
+                status="active",
+            )
+        )
+    # Rita served the last four Sundays; Ari is booked for the next six.
+    for pid, days in [("an_recent", d) for d in (-2, -9, -16, -23)] + [
+        ("an_ahead", d) for d in (5, 12, 19, 26, 33, 40)
+    ]:
+        start = PINNED_NOW + timedelta(days=days)
+        event_id = f"an_evt_{days}"
+        db.add(
+            Event(
+                id=event_id,
+                org_id=org,
+                type="Sunday",
+                start_time=start,
+                end_time=start + timedelta(hours=2),
+            )
+        )
+        db.add(Assignment(event_id=event_id, person_id=pid))
+    db.commit()
+    return tok
+
+
+def test_dashboard_last_30_days_excludes_future_assignments(client, scheduled_org):
+    html = client.get("/a/dashboard", cookies={SESSION_COOKIE: scheduled_org}).text
+    most_active = html.split("Most active", 1)[1]
+    assert "Recent Rita" in most_active
+    assert "Ahead Ari" not in most_active
+    assert "1 volunteer(s) at risk" in html
+
+
+def test_analytics_last_n_days_excludes_future_assignments(client, scheduled_org):
+    html = client.get("/a/analytics", cookies={SESSION_COOKIE: scheduled_org}).text
+    participation = html.split("Participation · last 30 days", 1)[1].split("Schedule health")[0]
+    assert "Recent Rita" in participation
+    assert "Ahead Ari" not in participation
+    burnout = html.split("Burnout risk", 1)[1]
+    assert "Recent Rita" in burnout
+    assert "Ahead Ari" not in burnout
+
+
+def test_analytics_upcoming_events_still_count_the_future(client, scheduled_org):
+    html = client.get("/a/analytics", cookies={SESSION_COOKIE: scheduled_org}).text
+    health = html.split("Schedule health", 1)[1].split("Burnout risk")[0]
+    assert re.search(r'kpi-value">\s*6\s*</div>\s*<div class="kpi-label">Upcoming events', health)
