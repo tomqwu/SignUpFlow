@@ -113,23 +113,29 @@ curl http://localhost:8000/health
 ### Step 3 — Sign in with a sample login, or create your organization
 
 `make setup` finishes by loading a demo organization, *Grace Community Church
-(demo)*, with the same people and weekly services as the
-[Church example](#church-week-to-week-operations), and prints its logins:
+(demo)*, built from the [Church playbook](docs/playbooks/church.md) the same
+way a coordinator would build it. Fourteen volunteers joined by invitation into
+four teams, with two scheduling rules. Sunday services and band rehearsals run
+from two weeks ago to six weeks ahead, and a published schedule staffs every
+slot. The first fortnight is accepted, one musician has declined, the sound
+tech has asked for a swap, one volunteer is away, and one invitation is still
+pending. Setup prints the logins:
 
-| Account | Email | Password |
+| Account | Email | What you will see |
 | --- | --- | --- |
-| Admin | `admin@example.com` | `DemoPass123!` |
-| Volunteer (worship leader) | `worship-leader-a@example.com`, `worship-leader-b@example.com` | `DemoPass123!` |
-| Volunteer (musician) | `musician-a@example.com`, `musician-b@example.com` | `DemoPass123!` |
+| Admin | `admin@example.com` | Dashboard, assignments, swaps, analytics |
+| Volunteer, musician | `mia.chen@example.com` | A schedule, booked time off, an open shift to pick up |
+| Volunteer, worship leader | `grace.park@example.com` | A confirmed schedule and inbox |
+| Volunteer, sound | `priya.nair@example.com` | A pending swap request |
 
-Open <http://localhost:8000>, sign in as the admin, and go to `/a/solver` to
-generate a schedule for the six weeks of upcoming events. Sign in as a
-volunteer to see the other side at `/v/schedule`.
+Every account uses the password `DemoPass123!`. Open <http://localhost:8000>
+and sign in.
 
 The password is published here, so the demo is for local use only. Loading it
 is refused when `ENVIRONMENT=production`, and every address is on
-`example.com`, which cannot receive mail. Run `make seed-demo` to load it again
-or print the logins, or skip it with `make setup SEED_DEMO=false`.
+`example.com`, which cannot receive mail. The dates are fixed when it loads, so
+run `make seed-demo RESET=1` to rebuild it with fresh ones. `make seed-demo`
+prints the logins again, and `make setup SEED_DEMO=false` skips the demo.
 
 To start your own organization instead, click **Create a new organization**
 on the sign-in page and fill in the form. That first sign-up

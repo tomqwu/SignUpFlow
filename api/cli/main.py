@@ -311,29 +311,39 @@ def doctor() -> None:
 
 
 @cli.command("seed-demo")
-def seed_demo_command() -> None:
+@click.option(
+    "--reset",
+    is_flag=True,
+    help="Delete the demo organization and build it again with fresh dates.",
+)
+def seed_demo_command(reset: bool) -> None:
     """Load the demo organization and print its sample logins.
 
     ``make setup`` runs this after migrating. It is safe to repeat: an
     existing demo organization is left alone and its logins are printed again.
+    The demo is dated from the day it is loaded, so use --reset to refresh it.
     """
     import os
 
-    from api.database import SessionLocal
-    from api.demo_seed import DemoSeedRefusedError, seed_demo
+    from api.demo_seed import DemoSeedConflictError, DemoSeedRefusedError, run_seed_demo
 
-    db = SessionLocal()
     try:
-        result = seed_demo(db)
-    except DemoSeedRefusedError as exc:
+        result = run_seed_demo(reset=reset)
+    except (DemoSeedRefusedError, DemoSeedConflictError) as exc:
         click.echo(f"❌ {exc}", err=True)
         sys.exit(1)
-    finally:
-        db.close()
 
     app_url = os.getenv("APP_URL", "http://localhost:8000")
-    status = "Demo organization loaded" if result.created else "Demo organization already loaded"
-    click.echo(f"🌱 {status}. Sign in at {app_url} with any of:")
+    if result.created:
+        s = result.summary
+        click.echo(
+            f"🌱 Demo organization loaded: {s['volunteers']} volunteers, {s['events']} events, "
+            f"{s['assignments']} published assignments ({s['accepted']} accepted, "
+            f"{s['declined']} declined, {s['swap_requests']} swap request)."
+        )
+    else:
+        click.echo("🌱 Demo organization already loaded (run with --reset to rebuild it).")
+    click.echo(f"   Sign in at {app_url} with any of:")
     width = max(len(login.label) for login in result.logins)
     for login in result.logins:
         click.echo(f"   {login.label.ljust(width)}  {login.email}")

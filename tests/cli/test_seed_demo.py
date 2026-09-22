@@ -28,7 +28,7 @@ def run_seed(tmp_path: Path, database: Path, **overrides: str) -> subprocess.Com
         [sys.executable, "-m", "api.cli.main", "seed-demo"],
         capture_output=True,
         text=True,
-        timeout=120,
+        timeout=180,
         cwd=tmp_path,
         env=env,
     )
@@ -46,7 +46,8 @@ def test_it_prints_the_logins_after_loading(tmp_path, database):
     assert result.returncode == 0, result.stdout + result.stderr
     assert "Demo organization loaded" in result.stdout
     assert "admin@example.com" in result.stdout
-    assert "worship-leader-a@example.com" in result.stdout
+    assert "mia.chen@example.com" in result.stdout
+    assert "88 published assignments" in result.stdout
     assert "DemoPass123!" in result.stdout
 
 
@@ -57,6 +58,22 @@ def test_a_second_run_still_prints_the_logins(tmp_path, database):
     assert result.returncode == 0, result.stdout + result.stderr
     assert "already loaded" in result.stdout
     assert "admin@example.com" in result.stdout
+
+
+def test_reset_rebuilds_the_demo(tmp_path, database):
+    run_seed(tmp_path, database)
+    env = {k: v for k, v in os.environ.items() if k not in _CONTROLLED}
+    env.update(DATABASE_URL=f"sqlite:///{database}", PYTHONPATH=str(REPO_ROOT))
+    result = subprocess.run(
+        [sys.executable, "-m", "api.cli.main", "seed-demo", "--reset"],
+        capture_output=True,
+        text=True,
+        timeout=180,
+        cwd=tmp_path,
+        env=env,
+    )
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert "Demo organization loaded:" in result.stdout
 
 
 def test_it_points_at_the_configured_app_url(tmp_path, database):
@@ -73,7 +90,7 @@ def test_production_is_refused_without_writing(tmp_path, database):
         assert conn.exec_driver_sql("select count(*) from organizations").scalar() == 0
 
 
-def _run_make_with_stubs(tmp_path: Path, target: str, **env: str) -> str:
+def _run_make_with_stubs(tmp_path: Path, target: str, *args: str, **env: str) -> str:
     """Run a real make target with ``poetry`` and Docker replaced by stubs.
 
     Not ``--dry-run``: make still executes any recipe line containing $(MAKE)
@@ -91,7 +108,7 @@ def _run_make_with_stubs(tmp_path: Path, target: str, **env: str) -> str:
     environ.update(env)
     environ["PATH"] = f"{bin_dir}{os.pathsep}{os.environ.get('PATH', '')}"
     result = subprocess.run(
-        ["make", target],
+        ["make", target, *args],
         capture_output=True,
         text=True,
         timeout=120,
@@ -120,6 +137,11 @@ class TestMakeRoutesTheSeedLikeMigrations:
         # Either compose spelling, whichever the Makefile detected.
         assert f"-f docker-compose.dev.yml run --rm api {self.SEED}" in calls
         assert f"poetry run {self.SEED}" not in calls
+
+
+def test_reset_flag_reaches_the_command(tmp_path):
+    calls = _run_make_with_stubs(tmp_path, "seed-demo", "RESET=1", DATABASE_URL="sqlite:///./x.db")
+    assert "api.cli.main seed-demo --reset" in calls
 
 
 def _setup_recipe() -> list[str]:
