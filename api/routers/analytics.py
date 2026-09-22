@@ -3,7 +3,7 @@
 from datetime import datetime, timedelta
 
 from fastapi import APIRouter, Depends, Query
-from sqlalchemy import func
+from sqlalchemy import ColumnElement, func
 from sqlalchemy.orm import Session
 
 from api.database import get_db
@@ -14,7 +14,7 @@ from api.timeutils import utcnow
 router = APIRouter(prefix="/analytics", tags=["analytics"])
 
 
-def _in_last_days(days: int, now: datetime):
+def _in_last_days(days: int, now: datetime) -> ColumnElement[bool]:
     """Events that started in [now - days, now]; published future work is not history.
 
     `Event.start_time` is stored as naive UTC, so `now` must come from `utcnow()`.
