@@ -11387,7 +11387,7 @@
         ]
       },
       "put": {
-        "description": "Update the series template (affects future occurrences).\n\nOnly updates the template - existing occurrences are NOT changed.\nUse this to modify what future occurrences will look like.\n\nNote: To modify recurrence pattern, delete and recreate the series.",
+        "description": "Update the series template.\n\nEvery occurrence is generated when the series is created, so a template\nchange alone would reach nothing. New role requirements are therefore\napplied to the occurrences that have not started, except any edited on\ntheir own (``is_exception``). Past occurrences keep the roles they were\nserved with.\n\nNote: To modify recurrence pattern, delete and recreate the series.",
         "operationId": "updateSeriesTemplate",
         "parameters": [
           {
