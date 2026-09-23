@@ -1,4 +1,4 @@
-.PHONY: run dev stop restart setup install migrate migrate-host migrate-compose seed-demo seed-demo-host seed-demo-compose services services-compose test test-backend test-integration test-all test-postgres test-redis test-artifact test-coverage test-unit test-unit-fast test-unit-file test-with-timing clean clean-all pre-commit help check-poetry check-python check-deps install-poetry install-deps up down build logs shell db-shell redis-shell test-docker migrate-docker restart-api ps clean-docker check-docker ensure-test-deps prepare-test-data ensure-test-env
+.PHONY: run dev stop restart setup install test-stack migrate migrate-host migrate-compose seed-demo seed-demo-host seed-demo-compose services services-compose test test-backend test-integration test-all test-postgres test-redis test-artifact test-coverage test-unit test-unit-fast test-unit-file test-with-timing clean clean-all pre-commit help check-poetry check-python check-deps install-poetry install-deps up down build logs shell db-shell redis-shell test-docker migrate-docker restart-api ps clean-docker check-docker ensure-test-deps prepare-test-data ensure-test-env
 
 export SKIP_TEST_DB_FIXTURES ?= false
 
@@ -319,6 +319,19 @@ seed-demo-host: check-poetry
 seed-demo-compose: require-docker
 	@$(DOCKER_COMPOSE) -f docker-compose.dev.yml run --rm api python -m api.cli.main seed-demo $(SEED_DEMO_FLAGS)
 
+# Walk the demo in Chromium, WebKit and Firefox against the app you are running
+# after 'make setup' and 'make up', including the Docker path. make test-all
+# starts its own server and never exercises that path, so run this whenever
+# setup, compose, headers or pages change. STACK_URL defaults to localhost:8000.
+STACK_URL ?= http://localhost:8000
+
+test-stack: check-poetry
+	@curl -sf $(STACK_URL)/health >/dev/null 2>&1 || { \
+		echo "❌ Nothing is serving $(STACK_URL). Run 'make setup' and 'make up' first."; \
+		exit 1; \
+	}
+	@SIGNUPFLOW_STACK_URL=$(STACK_URL) poetry run pytest tests/e2e/test_demo_tour.py -v --tb=short -p no:cacheprovider
+
 # Run all backend tests
 test: test-all
 
@@ -635,6 +648,7 @@ help:
 	@echo "  make restart          - Retired; restart from the owning terminal"
 	@echo "  make migrate          - Run database migrations"
 	@echo "  make seed-demo        - Load the demo organization and print its logins (RESET=1 rebuilds)"
+	@echo "  make test-stack       - Browse the running app as the demo users in three browsers"
 	@echo ""
 	@echo "Testing:"
 	@echo "  make test             - Run backend tests"

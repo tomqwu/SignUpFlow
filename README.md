@@ -129,7 +129,8 @@ pending. Setup prints the logins:
 | Volunteer, sound | `priya.nair@example.com` | A pending swap request |
 
 Every account uses the password `DemoPass123!`. Open <http://localhost:8000>
-and sign in.
+and sign in. `make test-stack` signs in as these accounts in Chromium, WebKit
+and Firefox and checks that every page they open works.
 
 The password is published here, so the demo is for local use only. Loading it
 is refused when `ENVIRONMENT=production`, and every address is on
