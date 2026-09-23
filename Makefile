@@ -1,4 +1,4 @@
-.PHONY: run dev stop restart setup install migrate seed-demo test test-backend test-integration test-all test-postgres test-redis test-artifact test-coverage test-unit test-unit-fast test-unit-file test-with-timing clean clean-all pre-commit help check-poetry check-python check-deps install-poetry install-deps up down build logs shell db-shell redis-shell test-docker migrate-docker restart-api ps clean-docker check-docker ensure-test-deps prepare-test-data ensure-test-env
+.PHONY: run dev stop restart setup install migrate migrate-host migrate-compose seed-demo seed-demo-host seed-demo-compose services services-compose test test-backend test-integration test-all test-postgres test-redis test-artifact test-coverage test-unit test-unit-fast test-unit-file test-with-timing clean clean-all pre-commit help check-poetry check-python check-deps install-poetry install-deps up down build logs shell db-shell redis-shell test-docker migrate-docker restart-api ps clean-docker check-docker ensure-test-deps prepare-test-data ensure-test-env
 
 export SKIP_TEST_DB_FIXTURES ?= false
 
@@ -227,15 +227,20 @@ services:
 			$(COMPOSE_DB_PATTERNS)) \
 				echo "🐳 DATABASE_URL names the compose database, which only resolves"; \
 				echo "   inside docker compose, so the database runs there."; \
-				$(MAKE) require-docker; \
-				$(DOCKER_COMPOSE) -f docker-compose.dev.yml up -d db redis; \
-				echo "✅ Backing services are up."; \
+				$(MAKE) --no-print-directory services-compose; \
 				;; \
 			*) \
 				echo "✅ No backing services needed (using the configured database directly)."; \
 				;; \
 		esac; \
 	fi
+
+# The branches the lifecycle targets choose between. A $(MAKE) line runs even
+# under 'make -n', so the choosing lines above do nothing but choose; the work
+# lives here, where a dry run only prints it.
+services-compose: require-docker
+	@$(DOCKER_COMPOSE) -f docker-compose.dev.yml up -d db redis
+	@echo "✅ Backing services are up."
 
 # One explanation of an unusable Docker, shared by every target that needs it,
 # so the remedy never drifts between them. Callers that know why they wanted
@@ -258,27 +263,32 @@ install: check-poetry
 # hostname resolves only inside that network, so running alembic on the host
 # could never reach it; those migrations go through a one-off api container,
 # which works whether or not the app is already serving.
-migrate: check-poetry
+migrate:
 	@set -e; \
 	DB_URL="$$($(DB_URL_CMD))"; \
 	case "$$DB_URL" in \
 		$(COMPOSE_DB_PATTERNS)) \
 			if [ -f /.dockerenv ]; then \
-				echo "🔄 Running database migrations..."; \
-				poetry run alembic upgrade head; \
+				$(MAKE) --no-print-directory migrate-host; \
 			else \
 				echo "🐳 DATABASE_URL names the compose database, which only resolves"; \
 				echo "   inside docker compose, so migrations run there too."; \
-				$(MAKE) require-docker; \
-				echo "🔄 Running database migrations inside compose..."; \
-				$(DOCKER_COMPOSE) -f docker-compose.dev.yml run --rm api alembic upgrade head; \
+				$(MAKE) --no-print-directory migrate-compose; \
 			fi; \
 			;; \
 		*) \
-			echo "🔄 Running database migrations..."; \
-			poetry run alembic upgrade head; \
+			$(MAKE) --no-print-directory migrate-host; \
 			;; \
 	esac
+
+migrate-host: check-poetry
+	@echo "🔄 Running database migrations..."
+	@poetry run alembic upgrade head
+	@echo "✅ Migrations complete"
+
+migrate-compose: require-docker
+	@echo "🔄 Running database migrations inside compose..."
+	@$(DOCKER_COMPOSE) -f docker-compose.dev.yml run --rm api alembic upgrade head
 	@echo "✅ Migrations complete"
 
 # Load the demo organization and print its sample logins. 'make setup' runs
@@ -287,22 +297,27 @@ migrate: check-poetry
 # because it writes to the same database, and it refuses ENVIRONMENT=production.
 SEED_DEMO_FLAGS = $(if $(filter 1 true yes,$(RESET)),--reset,)
 
-seed-demo: check-poetry
+seed-demo:
 	@set -e; \
 	DB_URL="$$($(DB_URL_CMD))"; \
 	case "$$DB_URL" in \
 		$(COMPOSE_DB_PATTERNS)) \
 			if [ -f /.dockerenv ]; then \
-				poetry run python -m api.cli.main seed-demo $(SEED_DEMO_FLAGS); \
+				$(MAKE) --no-print-directory seed-demo-host; \
 			else \
-				$(MAKE) require-docker; \
-				$(DOCKER_COMPOSE) -f docker-compose.dev.yml run --rm api python -m api.cli.main seed-demo $(SEED_DEMO_FLAGS); \
+				$(MAKE) --no-print-directory seed-demo-compose; \
 			fi; \
 			;; \
 		*) \
-			poetry run python -m api.cli.main seed-demo $(SEED_DEMO_FLAGS); \
+			$(MAKE) --no-print-directory seed-demo-host; \
 			;; \
 	esac
+
+seed-demo-host: check-poetry
+	@poetry run python -m api.cli.main seed-demo $(SEED_DEMO_FLAGS)
+
+seed-demo-compose: require-docker
+	@$(DOCKER_COMPOSE) -f docker-compose.dev.yml run --rm api python -m api.cli.main seed-demo $(SEED_DEMO_FLAGS)
 
 # Run all backend tests
 test: test-all
