@@ -380,3 +380,26 @@ class TestSecurityHeadersEdgeCases:
         # Should use default (31536000) instead of crashing
         assert isinstance(middleware.hsts_max_age, int)
         assert middleware.hsts_max_age > 0
+
+
+class TestUpgradeInsecureRequestsFollowsHttps:
+    """`upgrade-insecure-requests` rewrites every same-origin http subresource
+    to https. Safari applies that even on localhost, so on a plain-http
+    development server the stylesheet and scripts failed with TLS errors and
+    the app rendered unstyled. Like HSTS, it only belongs on an HTTPS site."""
+
+    @staticmethod
+    def _csp(test_client):
+        return test_client.get("/test").headers["Content-Security-Policy"]
+
+    @patch.dict(os.environ, {"ENVIRONMENT": "development", "SECURITY_HSTS_ENABLED": "false"})
+    def test_not_sent_on_a_plain_http_development_server(self, test_app, test_client):
+        test_app.add_middleware(SecurityHeadersMiddleware)
+        csp = self._csp(test_client)
+        assert "upgrade-insecure-requests" not in csp
+        assert "default-src 'self'" in csp, "the rest of the policy must stay"
+
+    @patch.dict(os.environ, {"ENVIRONMENT": "production", "SECURITY_HSTS_ENABLED": "true"})
+    def test_sent_when_the_site_is_https_only(self, test_app, test_client):
+        test_app.add_middleware(SecurityHeadersMiddleware)
+        assert "upgrade-insecure-requests" in self._csp(test_client)
