@@ -104,3 +104,14 @@ def test_dev_worker_is_not_probed_on_the_http_port_it_does_not_serve():
     assert "healthcheck" in worker
     healthcheck = worker["healthcheck"]
     assert healthcheck.get("disable") is True or "8000" not in " ".join(healthcheck.get("test", []))
+
+
+def test_dev_compose_leaves_email_to_the_configuration():
+    """Email is off by default and set in .env; compose must not force it on.
+
+    The dev stack has no mail catcher, so a hardcoded EMAIL_ENABLED=true made
+    every publish try to send through whatever placeholder credentials .env held.
+    """
+    for name in ("api", "worker"):
+        value = str(_dev_compose()[name]["environment"].get("EMAIL_ENABLED", ""))
+        assert value in ("", "${EMAIL_ENABLED:-false}"), (name, value)

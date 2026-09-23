@@ -76,8 +76,8 @@ services:
       # Use service name 'api' for Docker networking (localhost doesn't work inside container)
       E2E_API_BASE: http://api:8000/api
 
-      # Enable email for development/manual testing
-      EMAIL_ENABLED: true
+      # Off unless .env turns it on: the dev stack has no mail catcher.
+      EMAIL_ENABLED: ${EMAIL_ENABLED:-false}
 
       # Disable rate limiting for E2E tests (prevents HTTP 429 errors during test suite)
       DISABLE_RATE_LIMITS: true
@@ -148,7 +148,7 @@ services:
       - .env
     environment:
       CONFIG_PROFILE: dev
-      EMAIL_ENABLED: "true"
+      EMAIL_ENABLED: ${EMAIL_ENABLED:-false}
       # Runtime overrides
       DATABASE_URL: postgresql://${POSTGRES_USER:-signupflow}:${POSTGRES_PASSWORD:-dev_password_change_in_production}@db:5432/${POSTGRES_DB:-signupflow_dev}
       REDIS_URL: redis://:${REDIS_PASSWORD:-dev_redis_password}@redis:6379/0
