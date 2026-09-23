@@ -24,7 +24,7 @@ from api.demo_seed import (
     DemoSeedRefusedError,
     seed_demo,
 )
-from api.models import Assignment, Event, Organization, Person, Solution
+from api.models import Assignment, Event, Organization, Person, RecurringSeries, Solution
 from api.timeutils import utcnow
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
@@ -71,6 +71,17 @@ class TestDemoIsARealisticChurch:
         now = utcnow()
         assert any(e.start_time < now for e in events), "no history"
         assert any(e.start_time > now + timedelta(weeks=5) for e in events), "no horizon"
+
+    def test_sunday_services_come_from_a_recurring_series(self, client, db):
+        """The demo exercises recurring series, which the solver must staff."""
+        seed_demo(client)
+        services = (
+            db.query(Event)
+            .filter(Event.org_id == DEMO_ORG_ID, Event.type == "Sunday worship")
+            .all()
+        )
+        assert services and all(e.series_id for e in services)
+        assert db.query(RecurringSeries).filter(RecurringSeries.org_id == DEMO_ORG_ID).count() == 1
 
     def test_every_event_is_fully_staffed_by_qualified_people(self, client, db):
         seed_demo(client)
@@ -123,11 +134,17 @@ class TestDemoIsSafeToRepeat:
 
     def test_reset_rebuilds_through_the_apps_own_delete(self, client, db):
         seed_demo(client)
-        first_ids = {e.id for e in db.query(Event).filter(Event.org_id == DEMO_ORG_ID)}
+
+        def calendar():
+            return {
+                (e.type, e.start_time) for e in db.query(Event).filter(Event.org_id == DEMO_ORG_ID)
+            }
+
+        first = calendar()
         again = seed_demo(client, reset=True)
         assert again.created
         assert db.query(Organization).filter(Organization.id == DEMO_ORG_ID).count() == 1
-        assert {e.id for e in db.query(Event).filter(Event.org_id == DEMO_ORG_ID)} == first_ids
+        assert calendar() == first
         assert db.query(Solution).filter(Solution.org_id == DEMO_ORG_ID).count() == 1
 
     def test_it_never_touches_another_organization(self, client, db):

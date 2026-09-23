@@ -3,9 +3,9 @@
 The demo is the README's Church playbook (``docs/playbooks/church.json``) run
 for real: an administrator signs up, invites the band, the production crew,
 the welcome team and the children's leaders, sets up teams and scheduling
-rules, books Sunday services and band rehearsals, records who is away, runs
-the solver and publishes the result. Volunteers then accept their shifts, one
-declines, and one asks for a swap. There are two weeks of history and six
+rules, makes Sunday worship a weekly recurring series, books band rehearsals,
+records who is away, runs the solver and publishes the result. Volunteers
+then accept their shifts, one declines, and one asks for a swap. There are two weeks of history and six
 weeks ahead, so every screen has something on it.
 
 Everything goes through the public API, in process, so the data obeys the same
@@ -277,42 +277,41 @@ def _build(api: _Api, today: date) -> dict[str, int]:
     )
 
     sundays = _sundays(today)
+    # Sunday worship is a weekly recurring series, as a church would set it up.
+    api.call(
+        "POST",
+        f"/recurring-series?org_id={DEMO_ORG_ID}",
+        admin,
+        json={
+            "title": "Sunday worship",
+            "duration": 120,
+            "location": "Main sanctuary",
+            "role_requirements": SERVICE_ROLES,
+            "pattern_type": "weekly",
+            "frequency_interval": 1,
+            "selected_days": ["sunday"],
+            "start_date": sundays[0].isoformat(),
+            "start_time": "10:00:00",
+            "end_condition_type": "count",
+            "occurrence_count": len(sundays),
+        },
+    )
+    # Band rehearsals are booked one by one, the Thursday before each service.
     for sunday in sundays:
-        rehearsal = sunday - timedelta(days=3)
-        for event_id, event_type, day, start, hours, roles, location in (
-            (
-                f"band-rehearsal-{rehearsal.isoformat()}",
-                "Band rehearsal",
-                rehearsal,
-                time(19),
-                2,
-                REHEARSAL_ROLES,
-                "Music room",
-            ),
-            (
-                f"sunday-worship-{sunday.isoformat()}",
-                "Sunday worship",
-                sunday,
-                time(10),
-                2,
-                SERVICE_ROLES,
-                "Main sanctuary",
-            ),
-        ):
-            begins = datetime.combine(day, start)
-            api.call(
-                "POST",
-                "/events/",
-                admin,
-                json={
-                    "id": event_id,
-                    "org_id": DEMO_ORG_ID,
-                    "type": event_type,
-                    "start_time": begins.isoformat(),
-                    "end_time": (begins + timedelta(hours=hours)).isoformat(),
-                    "extra_data": {"role_counts": roles, "location": location},
-                },
-            )
+        rehearsal = datetime.combine(sunday - timedelta(days=3), time(19))
+        api.call(
+            "POST",
+            "/events/",
+            admin,
+            json={
+                "id": f"band-rehearsal-{rehearsal.date().isoformat()}",
+                "org_id": DEMO_ORG_ID,
+                "type": "Band rehearsal",
+                "start_time": rehearsal.isoformat(),
+                "end_time": (rehearsal + timedelta(hours=2)).isoformat(),
+                "extra_data": {"role_counts": REHEARSAL_ROLES, "location": "Music room"},
+            },
+        )
 
     # Time away, booked before the schedule is made so the solver respects it.
     first_upcoming = sundays[HISTORY_WEEKS]

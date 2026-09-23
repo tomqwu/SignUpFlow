@@ -41,6 +41,7 @@ ADMIN_PAGES = [
     ("/a/swaps", ["No swap requests."], ["Priya Nair"]),
     ("/a/analytics", ["No assignments in this window."], ["Top volunteers", "Grace Park"]),
     ("/a/people", [], ["Mia Chen", "Ava Thompson"]),
+    ("/a/recurring", ["No recurring series yet."], ["Sunday worship"]),
 ]
 
 
@@ -87,3 +88,5 @@ def test_swap_request_is_visible_to_the_other_sound_volunteer(client, demo):
 def test_published_schedule_reached_the_inbox(client, demo):
     html = _page(client, _session(client, email_for("Grace Park")), "/v/inbox")
     assert "No notifications yet." not in html
+    assert "Sunday worship ·" in html or "Band rehearsal ·" in html
+    assert "event_" not in html, "an internal event id leaked into the inbox"
