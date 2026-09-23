@@ -15,20 +15,19 @@ which is the only way to cover the Docker path people actually use.
 
 from __future__ import annotations
 
-import os
-import subprocess
-import sys
-from pathlib import Path
-
 import pytest
 
-from api.demo_seed import DEMO_ADMIN_EMAIL, DEMO_PASSWORD, email_for
-from tests.e2e.conftest import ENGINES, assert_page_health, track_page_health
-from tests.test_environment import build_test_environment
+from tests.e2e.conftest import (
+    DEMO_ADMIN,
+    DEMO_LEADER,
+    DEMO_MUSICIAN,
+    ENGINES,
+    assert_page_health,
+    assert_page_works,
+    track_page_health,
+)
 
-REPO_ROOT = Path(__file__).resolve().parents[2]
-
-ADMIN, MUSICIAN, LEADER = DEMO_ADMIN_EMAIL, email_for("Mia Chen"), email_for("Grace Park")
+ADMIN, MUSICIAN, LEADER = DEMO_ADMIN, DEMO_MUSICIAN, DEMO_LEADER
 
 #: (account, path, empty state that must not show, text that must show)
 TOUR = [
@@ -47,69 +46,6 @@ TOUR = [
 ]
 
 
-@pytest.fixture(scope="session")
-def demo_base(request, db_path) -> str:
-    stack = os.getenv("SIGNUPFLOW_STACK_URL")
-    if stack:
-        return stack.rstrip("/")
-    base = request.getfixturevalue("live_server")
-    environment = build_test_environment(
-        os.environ,
-        database_url=f"sqlite:///{db_path}",
-        secret_key="e2e-overnight-secret-key-min-32-chars-long-xx",
-    )
-    seeded = subprocess.run(
-        [sys.executable, "-m", "api.cli.main", "seed-demo"],
-        cwd=REPO_ROOT,
-        env=environment,
-        capture_output=True,
-        text=True,
-        timeout=300,
-    )
-    assert seeded.returncode == 0, seeded.stdout + seeded.stderr
-    return base
-
-
-#: Each account submits the real login form once, in a different engine, and
-#: the other engines reuse that session. That keeps a tour of a stack started
-#: with 'make up' inside the login rate limit (5 per 5 minutes), while every
-#: engine still loads and checks the sign-in page itself.
-SIGN_IN_ENGINE = {ADMIN: "webkit", MUSICIAN: "firefox", LEADER: "chromium"}
-
-
-def _assert_page_works(page, where: str) -> None:
-    # Styled: the app's stylesheet sets Inter on the body. Unstyled pages fall
-    # back to the browser default, as in the Safari bug.
-    font = page.evaluate("getComputedStyle(document.body).fontFamily")
-    assert "Inter" in font, f"{where} is unstyled (font: {font})"
-    # Scripted: HTMX drives every interactive list and form.
-    assert page.evaluate("typeof window.htmx !== 'undefined'"), f"{where}: no HTMX"
-
-
-@pytest.fixture(scope="session")
-def demo_sessions(engine_browser, demo_base) -> dict:
-    """Sign each demo account in once through the login form; keep the session."""
-    sessions = {}
-    for account, engine in SIGN_IN_ENGINE.items():
-        context = engine_browser(engine).new_context()
-        track_page_health(context)
-        try:
-            page = context.new_page()
-            page.goto(f"{demo_base}/auth/login")
-            page.wait_for_load_state("networkidle")
-            _assert_page_works(page, f"{engine} /auth/login")
-            page.fill("input[name=email]", account)
-            page.fill("input[name=password]", DEMO_PASSWORD)
-            page.click("button[type=submit]")
-            page.wait_for_load_state("networkidle")
-            assert "/auth/login" not in page.url, f"{account} could not sign in in {engine}"
-            assert_page_health(context)
-            sessions[account] = context.storage_state()
-        finally:
-            context.close()
-    return sessions
-
-
 @pytest.mark.parametrize("engine", ENGINES)
 def test_sign_in_page_works(engine, engine_browser, demo_base):
     context = engine_browser(engine).new_context()
@@ -118,7 +54,7 @@ def test_sign_in_page_works(engine, engine_browser, demo_base):
         page = context.new_page()
         page.goto(f"{demo_base}/auth/login")
         page.wait_for_load_state("networkidle")
-        _assert_page_works(page, f"{engine} /auth/login")
+        assert_page_works(page, f"{engine} /auth/login")
         assert_page_health(context)
     finally:
         context.close()
@@ -142,7 +78,7 @@ def test_demo_pages_work_in_every_browser(
             page.wait_for_load_state("networkidle")
             where = f"{engine} {account} {path}"
             assert "/auth/login" not in page.url, f"{where}: the session was not accepted"
-            _assert_page_works(page, where)
+            assert_page_works(page, where)
             text = page.inner_text("body")
             if empty:
                 assert empty not in text, f"{where} shows its empty state: {empty!r}"

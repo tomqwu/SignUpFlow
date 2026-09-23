@@ -55,8 +55,8 @@ html, body {
 a { color: var(--accent); text-decoration: none; }
 
 /* ─── Responsive app shell ──────────────────────────────────────────
-   Mobile: single column, full width. Desktop: centered, max 520px,
-   keeps the prototype's calm single-column feel. */
+   Phone: single column, full width, bottom tab bar, as in the mobile app.
+   Wider screens are handled in "Wider screens" at the end of this file. */
 .app {
   min-height: 100vh;
   display: flex; flex-direction: column;
@@ -65,10 +65,6 @@ a { color: var(--accent); text-decoration: none; }
   max-width: 520px;
   margin: 0 auto;
   position: relative;
-}
-@media (min-width: 1024px) {
-  .app { max-width: 640px; border-left: 1px solid var(--line-1);
-         border-right: 1px solid var(--line-1); min-height: 100vh; }
 }
 
 /* iOS-style large-title nav header */
@@ -513,3 +509,110 @@ a { color: var(--accent); text-decoration: none; }
 .spacer-18 { height: 18px; }
 [x-cloak] { display: none !important; }
 .htmx-request.btn, .htmx-request .btn { opacity: 0.6; pointer-events: none; }
+
+/* ─── Layout hooks for wider screens ────────────────────────────────
+   These reproduce the phone layout exactly; "Wider screens" rearranges them. */
+.dash-links { display: grid; gap: 12px; }
+/* Keeps the phone spacing: "Most active" follows the card, not a new block. */
+.dash-columns > div > .mono-label:first-child { margin-top: 22px; }
+.assignment-chips {
+  margin-top: 6px;
+  display: flex; gap: 6px; flex-wrap: wrap; align-items: center;
+}
+.assignment-note { margin-top: 5px; }
+.tab-bar .tab-more { display: none; }
+
+/* ─── Wider screens ─────────────────────────────────────────────────
+   The phone layout above is the base and stays close to the mobile app.
+   Tablets widen the column. Desktops turn the tab bar into a sidebar and
+   let admin pages use the width their lists and numbers need. Sign-in and
+   other standalone pages stay a narrow card at every size. */
+@media (min-width: 768px) {
+  .app { max-width: 760px; border-left: 1px solid var(--line-1);
+         border-right: 1px solid var(--line-1); }
+  .app-plain { max-width: 520px; }
+}
+
+@media (min-width: 1024px) {
+  .app-admin  { --shell-max: 1440px; }
+  .app-member { --shell-max: 1100px; }
+  .app-admin, .app-member {
+    --sidebar: 224px;
+    max-width: var(--shell-max);
+    padding-left: var(--sidebar);
+  }
+
+  /* The tab bar becomes a sidebar pinned to the left edge of the shell. */
+  .app-admin > .tab-bar, .app-member > .tab-bar {
+    position: fixed;
+    top: 0; bottom: 0; right: auto;
+    left: max(0px, calc((100vw - var(--shell-max)) / 2));
+    width: var(--sidebar);
+    flex-direction: column;
+    gap: 2px;
+    padding: 20px 12px;
+    border-top: 0;
+    border-right: 1px solid var(--line-1);
+  }
+  .app-admin > .tab-bar::before, .app-member > .tab-bar::before {
+    content: "SignUp/Flow";
+    display: block;
+    padding: 4px 12px 20px;
+    font-weight: 700; font-size: 15px; letter-spacing: -0.01em;
+    text-transform: uppercase;
+    color: var(--ink-1);
+  }
+  .app-admin > .tab-bar a, .app-member > .tab-bar a {
+    flex: 0 0 auto;
+    flex-direction: row;
+    justify-content: flex-start;
+    gap: 12px;
+    padding: 10px 12px;
+    border-radius: 10px;
+  }
+  .app-admin > .tab-bar a:hover, .app-member > .tab-bar a:hover { background: var(--line-2); }
+  .app-admin > .tab-bar a.active, .app-member > .tab-bar a.active {
+    background: var(--accent-soft); color: var(--accent-ink);
+  }
+  .app-admin > .tab-bar .tab-label, .app-member > .tab-bar .tab-label { font-size: 11px; }
+
+  .app-admin .nav, .app-member .nav { padding: 20px 32px 6px; }
+  .app-admin .page-title, .app-member .page-title { padding: 4px 32px 20px; }
+  .app-admin .scroll, .app-member .scroll { padding: 4px 32px 48px; }
+
+  /* The sections phones reach through page links sit in the sidebar. */
+  .app-admin > .tab-bar .tab-more, .app-member > .tab-bar .tab-more {
+    display: flex;
+    padding-left: 46px;
+  }
+  .app-admin > .tab-bar a:not(.tab-more) + .tab-more,
+  .app-member > .tab-bar a:not(.tab-more) + .tab-more { margin-top: 14px; }
+  .app-admin > .tab-bar a.active.shadowed, .app-member > .tab-bar a.active.shadowed {
+    background: transparent; color: var(--ink-3);
+  }
+
+  /* Buttons fit their label; grids and rows still size the ones inside them. */
+  .app-admin .btn, .app-member .btn { width: auto; }
+
+  /* Admin numbers and shortcuts read across, not down. */
+  .app-admin .kpi-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .app-admin .dash-links { grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); }
+  .app-admin .dash-columns {
+    display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 2fr);
+    gap: 16px; align-items: start;
+  }
+  .app-admin .dash-columns > div > .mono-label:first-child { margin-top: 0; }
+
+  /* Event actions line up instead of stacking. */
+  .app-admin .event-actions { flex-direction: row; flex: 0 0 auto; }
+  .app-admin .event-actions .btn { width: auto; white-space: nowrap; padding: 8px 14px; }
+
+  /* An assignment is one line: event, who and what, response. */
+  .app-admin .assignment-row .row-main {
+    display: grid;
+    grid-template-columns: minmax(200px, 1.1fr) minmax(0, 2fr) minmax(180px, 1.2fr);
+    align-items: center;
+    column-gap: 16px;
+  }
+  .app-admin .assignment-chips, .app-admin .assignment-note { margin-top: 0; }
+}
