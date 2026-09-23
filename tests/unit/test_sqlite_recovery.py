@@ -19,7 +19,7 @@ from scripts.sqlite_recovery import (
     verify_backup,
 )
 
-CURRENT_HEAD = "b0d3f6a8c1e2"
+CURRENT_HEAD = "c1e5a7b9d2f4"
 
 
 def _source_database(path: Path, *, revision: str = CURRENT_HEAD) -> sqlite3.Connection:
