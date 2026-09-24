@@ -1,7 +1,8 @@
 """Events router."""
 
 from datetime import datetime
-from typing import cast
+from typing import Any, cast
+from uuid import uuid4
 
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query, status
 from pydantic import BaseModel
@@ -20,7 +21,6 @@ from api.models import (
     Organization,
     Person,
     Resource,
-    Solution,
     Team,
 )
 from api.schemas.common import PaginationParams, get_pagination_params
@@ -32,6 +32,7 @@ from api.services.allocation_service import (
     unassign_person_from_event,
 )
 from api.services.assignment_response import reset_event_assignment_responses
+from api.services.assignment_visibility import member_visible_assignment
 from api.services.notification_service import dispatch_notification_ids
 from api.timeutils import utcnow
 from api.utils.event_helpers import (
@@ -283,18 +284,7 @@ def update_event(
         )
 
     if material_change:
-        visible_assignments = (
-            db.query(Assignment)
-            .join(Person, Person.id == Assignment.person_id)
-            .outerjoin(Solution, Solution.id == Assignment.solution_id)
-            .filter(
-                Assignment.event_id == event.id,
-                Person.org_id == event.org_id,
-                Assignment.response_status != "declined",
-                or_(Assignment.solution_id.is_(None), Solution.is_published.is_(True)),
-            )
-            .all()
-        )
+        visible_assignments = _notifiable_assignments(db, event)
         reset_event_assignment_responses(db, event.id, event.org_id)
         for assignment in visible_assignments:
             delivery_key = (
@@ -347,10 +337,11 @@ def update_event(
 @router.delete("/{event_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_event(
     event_id: str,
+    background_tasks: BackgroundTasks,
     current_admin: Person = Depends(get_current_admin_user),
     db: Session = Depends(get_db),
-):
-    """Delete event (admin only)."""
+) -> None:
+    """Cancel an event (admin only), telling whoever was scheduled for it."""
     event = (
         db.query(Event).filter(Event.id == event_id, Event.org_id == current_admin.org_id).first()
     )
@@ -360,9 +351,97 @@ def delete_event(
     # Verify admin belongs to the same organization as the event
     verify_org_member(current_admin, event.org_id)
 
+    notification_refs = _queue_cancellation_notices(db, event)
+
     db.delete(event)
     db.commit()
+    dispatch_notification_ids(background_tasks, notification_refs)
     return None
+
+
+def _notifiable_assignments(db: Session, event: Event) -> list[Assignment]:
+    """The assignments whose holders should hear about a change to this event.
+
+    Not simply every row pointing at the event. Three things narrow it, and all
+    of them matter:
+
+    * Tenancy. The holder must belong to the event's organization, so a stray
+      cross-tenant row can never be mailed from here.
+    * Visibility. A draft solver assignment is not something anyone has been
+      shown, so an update or cancellation must not be the first a volunteer
+      hears of work they were never given.
+    * Response. Someone who declined is not scheduled, and telling them their
+      shift moved or vanished is noise about a commitment they do not hold.
+    """
+    return (
+        db.query(Assignment)
+        .join(Person, Person.id == Assignment.person_id)
+        .filter(
+            Assignment.event_id == event.id,
+            Person.org_id == event.org_id,
+            Assignment.response_status != "declined",
+            member_visible_assignment(cast(str, event.org_id)),
+        )
+        .all()
+    )
+
+
+def _queue_cancellation_notices(db: Session, event: Event) -> list[tuple[int, str]]:
+    """Record one cancellation notice per assignee before the event row goes away.
+
+    The notice deliberately stores ``event_id=None`` and a self-contained
+    snapshot in ``template_data``. ``Event.notifications`` cascades with
+    ``delete-orphan``, so a notice still pointing at the event would be deleted
+    in the same transaction, and the renderer could not re-read a deleted event
+    to fill in the email.
+
+    Deleting an event that has already started is record cleanup, not a
+    cancellation, so it notifies nobody.
+    """
+    if cast(datetime, event.start_time) <= utcnow():
+        return []
+    assignments = _notifiable_assignments(db, event)
+    if not assignments:
+        return []
+
+    event_data: dict[str, Any] = event.extra_data or {}
+    snapshot: dict[str, Any] = {
+        "event_id": event.id,
+        "event_title": event_data.get("title") or event.type,
+        "event_datetime": event.start_time.strftime("%A, %B %d, %Y at %I:%M %p"),
+        "event_location": event_data.get("location")
+        or (event.resource.location if event.resource else None),
+    }
+
+    # Every other delivery key is derived from a row that outlives the notice,
+    # which is what lets those keys dedupe. A cancellation notice outlives
+    # everything it names, by design, so there is no such row here: the event
+    # is about to be deleted, its assignments with it, and event ids are
+    # chosen by the caller and can be reused. A key built from the event id
+    # alone therefore stays behind and makes the next cancellation of a
+    # same-named event look like a duplicate, dropping it in silence. So the
+    # key is minted per cancellation instead. It keeps the `event:<id>:cancel:`
+    # prefix, which is what the queries and the logs match on.
+    cancellation = uuid4().hex[:12]
+
+    queued: list[tuple[int, str]] = []
+    # One notice per person, even when they hold several roles at this event.
+    for person_id in dict.fromkeys(a.person_id for a in assignments):
+        role = next((a.role for a in assignments if a.person_id == person_id and a.role), None)
+        delivery_key = f"event:{event.id}:cancel:{person_id}:{cancellation}"
+        notification = Notification(
+            org_id=event.org_id,
+            recipient_id=person_id,
+            type=NotificationType.CANCELLATION,
+            status=NotificationStatus.PENDING,
+            event_id=None,
+            delivery_key=delivery_key,
+            template_data={**snapshot, "role": role or "Volunteer"},
+        )
+        db.add(notification)
+        db.flush()
+        queued.append((cast(int, notification.id), cast(str, event.org_id)))
+    return queued
 
 
 @router.get("/{event_id}/available-people", response_model=list[AvailablePerson])

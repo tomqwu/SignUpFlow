@@ -1521,11 +1521,17 @@ def event_update(
 def event_delete(
     request: Request,
     event_id: str,
+    background_tasks: BackgroundTasks,
     person: Person = Depends(get_session_admin),
     db: Session = Depends(get_db),
 ):
     try:
-        delete_event(event_id, person, db)
+        delete_event(
+            event_id,
+            background_tasks=background_tasks,
+            current_admin=person,
+            db=db,
+        )
     except HTTPException:
         pass  # already gone — return a fresh, correct list
     return _events_list(request, person, db)

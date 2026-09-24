@@ -106,6 +106,7 @@ ADMIN_OPERATIONS = {
     "create_recurring_series",
     "create_resource",
     "create_team",
+    "deactivate_person",
     "delete_constraint",
     "delete_event",
     "delete_holiday",

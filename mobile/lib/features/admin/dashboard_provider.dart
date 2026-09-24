@@ -2,14 +2,13 @@
 //
 // Combines:
 //   AnalyticsApi.getVolunteerStats(org_id) → JsonObject (active volunteers + …)
-//   AnalyticsApi.getScheduleHealth(org_id) → JsonObject (events, health, …)
+//   AnalyticsApi.getScheduleHealth(org_id) → JsonObject (upcoming_events,
+//                                            latest_solution.health_score, …)
 //   SolutionsApi.listSolutions(org_id)     → list[SolutionResponse]
 //
 // The two analytics endpoints return JsonObject because the backend
 // FastAPI handlers don't declare typed response models. We decode them
 // manually with optional fields — missing keys fall back to safe defaults.
-
-import 'dart:convert';
 
 import 'package:built_value/json_object.dart' show JsonObject;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -20,7 +19,7 @@ import 'package:signupflow_mobile/auth/auth_provider.dart';
 class DashboardData {
   const DashboardData({
     required this.activeVolunteers,
-    required this.eventsThisWeek,
+    required this.upcomingEvents,
     required this.healthScore,
     required this.publishedSolution,
     required this.publishedAt,
@@ -28,17 +27,21 @@ class DashboardData {
   });
 
   final int activeVolunteers;
-  final int eventsThisWeek;
-  final num healthScore;
+  final int upcomingEvents;
+
+  /// Health score of the org's most recent solution; null until the solver
+  /// has produced one.
+  final num? healthScore;
   final api.SolutionResponse? publishedSolution;
   final DateTime? publishedAt;
   final List<api.SolutionResponse> recentSolutions;
 }
 
+// The generated client wraps the already-decoded body in a MapJsonObject;
+// its toString() is Dart map syntax, not JSON, so read the value directly.
 Map<String, dynamic>? _decodeJsonObject(JsonObject? obj) {
-  if (obj == null) return null;
-  final decoded = json.decode(obj.toString());
-  return decoded is Map<String, dynamic> ? decoded : null;
+  final value = obj?.value;
+  return value is Map ? Map<String, dynamic>.from(value) : null;
 }
 
 final dashboardProvider = FutureProvider<DashboardData>((ref) async {
@@ -46,8 +49,8 @@ final dashboardProvider = FutureProvider<DashboardData>((ref) async {
   if (orgId == null) {
     return const DashboardData(
       activeVolunteers: 0,
-      eventsThisWeek: 0,
-      healthScore: 0,
+      upcomingEvents: 0,
+      healthScore: null,
       publishedSolution: null,
       publishedAt: null,
       recentSolutions: [],
@@ -75,9 +78,11 @@ final dashboardProvider = FutureProvider<DashboardData>((ref) async {
   final activeVolunteers = (volStats['active_volunteers'] as num?)?.toInt() ??
       (volStats['total'] as num?)?.toInt() ??
       0;
-  final eventsThisWeek =
-      (health['events_this_week'] as num?)?.toInt() ?? 0;
-  final healthScore = (health['health_score'] as num?) ?? 0;
+  final upcomingEvents = (health['upcoming_events'] as num?)?.toInt() ?? 0;
+  final latestSolution = health['latest_solution'];
+  final healthScore = latestSolution is Map
+      ? latestSolution['health_score'] as num?
+      : null;
 
   api.SolutionResponse? published;
   for (final s in solList) {
@@ -89,7 +94,7 @@ final dashboardProvider = FutureProvider<DashboardData>((ref) async {
 
   return DashboardData(
     activeVolunteers: activeVolunteers,
-    eventsThisWeek: eventsThisWeek,
+    upcomingEvents: upcomingEvents,
     healthScore: healthScore,
     publishedSolution: published,
     publishedAt: published?.publishedAt,

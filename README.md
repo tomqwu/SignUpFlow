@@ -41,10 +41,198 @@ release identity, test bypasses, and enabled-provider coherence; see the
 [configuration contract](docs/PRODUCTION_CONFIGURATION.md). This is a configuration
 guard, not deployment or provider acceptance.
 
+This walkthrough goes from an empty machine to a published schedule you can see
+in the browser. Every command below was run against a clean checkout.
+
+### Step 0 — Install the prerequisites
+
+| Requirement | Notes |
+| --- | --- |
+| Python 3.11, 3.12 or 3.13 | `make setup` rejects anything outside this range, including 3.14 |
+| [Poetry](https://python-poetry.org/docs/#installation) | `make setup` stops immediately if `poetry` is missing |
+| `make` | Preinstalled on macOS and Linux; on Windows use WSL |
+
+Docker is **not** required for this walkthrough. If you would rather use it, see
+[Running on Docker](#running-on-docker) below and then rejoin at Step 3.
+
+### Step 1 — Get the code and build the environment
+
 ```bash
 git clone https://github.com/tomqwu/SignUpFlow.git
 cd SignUpFlow
+make doctor    # reports what this machine will actually start the app with
 make setup
+```
+
+`make doctor` is worth the five seconds, and it runs before `make setup` on
+purpose: it uses only the Python standard library, so it works on a bare clone
+with nothing installed. That matters because it is what you run when setup
+itself fails.
+
+The app reads its configuration from the environment, so a variable exported in
+your shell changes how it starts and a fresh clone cannot clear it. The report
+names every value that applies, says whether it came from your shell or from
+`.env`, and exits non-zero on anything that will stop the app from starting. On
+a clean machine it prints:
+
+```
+  (nothing set; every default applies)
+  No blocking problems found.
+```
+
+`make setup` prepares everything the app needs in order to run: dependencies,
+any backing services, and the database schema. It does not start the app. It
+ends with `✅ Setup complete!`. You do not need a `.env` file; the defaults are
+SQLite with every external provider disabled, and nothing is containerised.
+
+Two commands cover the whole lifecycle: `make setup` prepares the environment
+and `make up` runs the app. What either one does is decided by `DATABASE_URL`,
+not by which command you type. Leave it unset or on SQLite and both stay
+entirely on the host. Point it at the compose database and setup brings up
+PostgreSQL and Redis and migrates inside that network, and `make up` serves the
+app from the api container — because a compose hostname is only reachable from
+within that network. The configuration and the commands cannot disagree.
+
+### Step 2 — Start the app
+
+```bash
+make up
+```
+
+This serves on <http://localhost:8000> with auto-reload, and keeps running until
+you press Ctrl+C. Leave it running and use a second terminal for anything else.
+`make run` and `make dev` are aliases, and `make serve` forces the host path.
+
+To confirm it is alive:
+
+```bash
+curl http://localhost:8000/health
+# {"status":"healthy","service":"signupflow-api","version":"1.0.0"}
+```
+
+### Step 3 — Sign in with a sample login, or create your organization
+
+`make setup` finishes by loading a demo organization, *Grace Community Church
+(demo)*, built from the [Church playbook](docs/playbooks/church.md) the same
+way a coordinator would build it. Fourteen volunteers joined by invitation into
+four teams, with two scheduling rules. Sunday services and band rehearsals run
+from two weeks ago to six weeks ahead, and a published schedule staffs every
+slot. The first fortnight is accepted, one musician has declined, the sound
+tech has asked for a swap, one volunteer is away, and one invitation is still
+pending. Setup prints the logins:
+
+| Account | Email | What you will see |
+| --- | --- | --- |
+| Admin | `admin@example.com` | Dashboard, assignments, swaps, analytics |
+| Volunteer, musician | `mia.chen@example.com` | A schedule, booked time off, an open shift to pick up |
+| Volunteer, worship leader | `grace.park@example.com` | A confirmed schedule and inbox |
+| Volunteer, sound | `priya.nair@example.com` | A pending swap request |
+
+Every account uses the password `DemoPass123!`. Open <http://localhost:8000>
+and sign in. `make test-stack` signs in as these accounts in Chromium, WebKit
+and Firefox and checks that every page they open works.
+
+The password is published here, so the demo is for local use only. Loading it
+is refused when `ENVIRONMENT=production`, and every address is on
+`example.com`, which cannot receive mail. The dates are fixed when it loads, so
+run `make seed-demo RESET=1` to rebuild it with fresh ones. `make seed-demo`
+prints the logins again, and `make setup SEED_DEMO=false` skips the demo.
+
+To start your own organization instead, click **Create a new organization**
+on the sign-in page and fill in the form. That first sign-up
+creates the organization and its first administrator together, in one step.
+Everyone after that joins by invitation, so this is the only time you will see
+that form.
+
+Use a browser rather than `curl` for this. Browser writes carry a CSRF token, so
+a bare `curl` POST to the form is rejected with `403`. The JSON API at
+`/api/v1/auth/signup` is available if you want to script it.
+
+### Step 4 — Add the people and events you want scheduled
+
+You land on the admin dashboard, which links to a **Get started** checklist at
+`/a/onboarding`. It lists four things and says you can do them in any order:
+
+1. **Invite a teammate** at `/a/people`. Each invitation carries the
+   qualifications that person can serve, such as `usher` or `point_guard`.
+   Qualifications are not permissions; only `admin` and `volunteer` are.
+2. **Create an event** at `/a/events`, giving it the roles it requires and how
+   many of each.
+3. **Generate a schedule** at `/a/solver`. The solver fills every required role
+   it can, spreads work fairly, and reports anything it could not cover.
+4. **Share the schedule** by publishing it. Nothing is visible to volunteers
+   until you publish, and publication is refused while a required role is
+   unfilled.
+
+The checklist has a **Skip for now** link if you would rather explore directly.
+
+### Step 5 — See the result
+
+Once published, each volunteer sees their own shifts at `/v/schedule` and can
+accept or decline. You can watch the whole roster at `/a/assignments`, and
+`/a/analytics` summarises coverage and workload.
+
+From here, the [Church](#church-week-to-week-operations) and
+[Basketball](#basketball-week-to-week-operations) walkthroughs show the same
+cycle run week to week, with screenshots.
+
+### Stopping and starting again
+
+Press Ctrl+C in the terminal running `make up`. Your data lives in `roster.db`,
+so `make up` picks up where you left off. Delete that file and re-run
+`make setup` to start over.
+
+### Running on Docker
+
+Docker brings PostgreSQL and Redis rather than SQLite. Point `DATABASE_URL` at
+the compose database and the same two commands apply:
+
+```bash
+echo 'DATABASE_URL=postgresql://signupflow:dev_password_change_in_production@db:5432/signupflow_dev' >> .env
+make setup           # starts PostgreSQL and Redis, migrates inside that network
+make up              # serves the app from the api container
+```
+
+Rejoin the walkthrough at Step 3 on <http://localhost:8000>. PostgreSQL is
+published on 5433 and Redis on 6380 by default, chosen so they do not collide
+with anything already running locally. `POSTGRES_PORT` and `REDIS_PORT` override
+them, and a `.env` copied from `.env.example` sets them to 5432 and 6379. Use
+`make logs` to follow output and `make down` to stop.
+
+`make doctor` reports this configuration as the Docker path rather than a
+problem, as long as Docker is running.
+
+The individual steps remain available if you want them: `make compose-up`
+starts the stack unconditionally and `make migrate-docker` migrates inside it.
+
+### If `make setup` fails on a database host
+
+Both paths share one trap: a `DATABASE_URL` whose host is `db`. That is the
+compose service name and it resolves only inside the compose network, so on the
+host it cannot be reached. `make setup` stops and tells you which source the
+value came from, because the fix differs.
+
+**From your shell.** An exported `DATABASE_URL` survives a fresh clone and
+overrides `.env`, so re-cloning or editing `.env` changes nothing. Clear it:
+
+```bash
+unset DATABASE_URL
+```
+
+and delete any `export DATABASE_URL=` line from `~/.bashrc`, `~/.zshrc` or
+whichever profile your shell loads. Check with `echo "$DATABASE_URL"`, which
+should print an empty line.
+
+**From `.env`.** Set `DATABASE_URL=sqlite:///./roster.db`, or delete the file;
+SQLite is the default and no `.env` is needed.
+
+To reach a real PostgreSQL server from the host, point at its published port,
+such as `localhost:5433` for the compose database. To run in containers, use
+`make compose-up` and `make migrate-docker` and let them set it themselves.
+
+### Just the scheduler, no database or server
+
+```bash
 poetry run signupflow --help
 ```
 
@@ -178,7 +366,7 @@ POST /api/v1/solver/solve      →  api/routers/solver.py (HTTP + DB)
                                (people, events, constraints, holidays)
 ```
 
-**Backend:** FastAPI + SQLAlchemy 2.0 + Pydantic 2.x (Python 3.11+)
+**Backend:** FastAPI + SQLAlchemy 2.0 + Pydantic 2.x (Python 3.11 to 3.13)
 **CLI:** YAML workspace in, JSON solution out (`api.cli.main`)
 **Database:** SQLite (dev) / PostgreSQL (prod)
 **Auth:** JWT (HS256) + bcrypt
@@ -188,7 +376,7 @@ POST /api/v1/solver/solve      →  api/routers/solver.py (HTTP + DB)
 ```
 /api/v1/auth           — atomic organization bootstrap, login, refresh, email check
 /api/v1/organizations  — authenticated read/update/lifecycle operations
-/api/v1/people         — CRUD for people, /me profile
+/api/v1/people         — CRUD for people, /me profile, deactivate a departing member
 /api/v1/teams          — CRUD for teams + membership
 /api/v1/events         — CRUD for events + manual assignments
 /api/v1/constraints    — CRUD for scheduling constraints
@@ -290,7 +478,11 @@ and exercise a real same-origin profile save in Chromium.
 ### API Test Coverage
 
 API tests exercise event management, conflicts, availability, profiles, teams,
-scheduling, organization lifecycle, and authorization. The
+scheduling, organization lifecycle, and authorization. They also cover the
+day-to-day operations around a live roster: cancelling an event and notifying
+its assignees, retiring or erasing a departing member, re-solving after a
+qualification change or a manual override, filling a shift that starts today,
+and the publish/unpublish/correct/republish recovery chain. The
 [executable API authorization matrix](docs/API_AUTHORIZATION.md) records every
 mounted operation, the organization cancel/restore/hard-delete actor matrix, and
 the real-JWT tenant regressions for scheduling routes. The owned PostgreSQL drill
@@ -310,6 +502,19 @@ replacement, regeneration, publication, acceptance, and swaps.
 **Basketball team** — A coach runs a six-week game and practice roster with
 multi-position players, injuries, simultaneous events, shortages, replacement,
 regeneration, publication, acceptance, and swaps.
+
+**Mid-season roster changes** — Cancelling an event notifies everyone who was
+scheduled for it, so a member is never left holding a shift that no longer
+exists. The notice carries its own copy of the event title, original time,
+location, and role, because the event row is gone by the time the message is
+rendered.
+
+A member who leaves should be retired with `POST /api/v1/people/{id}/deactivate`
+rather than deleted. Deactivating reopens their future live work the same way
+removing a qualification does, and keeps their completed history intact. A hard
+`DELETE` still exists for genuine erasure requests, but it cascades through
+every assignment the person ever held, including past work on published
+rosters.
 
 Roster allocation is not member acceptance. See the
 [assignment response contract](docs/ASSIGNMENT_RESPONSES.md) for persisted states,
@@ -418,8 +623,9 @@ CLI equivalents, built-in overlap/availability behavior, and unsupported policy.
 ### Commands
 
 ```bash
-make setup                # First-time setup
-make run                  # Dev server on :8000
+make doctor               # Report what this machine will start the app with
+make setup                # Prepare the environment: deps, services, schema
+make up                   # Start the app on :8000 (follows DATABASE_URL)
 make test                 # Complete local Python suite (same as make test-all)
 make test-unit            # Python unit tests only
 make test-unit-fast       # Skip slow bcrypt tests (~7s)

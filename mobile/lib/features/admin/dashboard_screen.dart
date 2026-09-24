@@ -93,12 +93,14 @@ class _Body extends StatelessWidget {
                 label: 'Active volunteers',
               ),
               KpiCell(
-                value: '${data.eventsThisWeek}',
-                label: 'Events this week',
+                value: '${data.upcomingEvents}',
+                label: 'Upcoming events',
               ),
               KpiCell(
-                value: '${data.healthScore.toInt()}',
-                unit: '/100',
+                value: data.healthScore == null
+                    ? '—'
+                    : '${data.healthScore!.toInt()}',
+                unit: data.healthScore == null ? null : '/100',
                 label: 'Health score',
                 accent: true,
               ),

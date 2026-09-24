@@ -43,22 +43,24 @@
   {% else %}
   <div class="group">
     {% for r in data.rows %}
-    <div class="row">
+    <div class="row assignment-row">
       <div class="row-main">
-        <div class="row-title">{{ r.event_type }}</div>
-        <div class="row-sub">{{ r.when }}</div>
-        <div style="margin-top:6px;display:flex;gap:6px;flex-wrap:wrap;align-items:center">
+        <div class="assignment-event">
+          <div class="row-title">{{ r.event_type }}</div>
+          <div class="row-sub">{{ r.when }}</div>
+        </div>
+        <div class="assignment-chips">
           <span class="role-chip">{{ r.person_name }}</span>
           {% if r.role %}<span class="role-chip">{{ r.role }}</span>{% endif %}
           <span class="role-chip">{{ 'manual' if r.manual else 'solver' }}</span>
           <span class="status-text {{ r.status }}">{{ r.status_label }}</span>
         </div>
         {% if r.responded_at %}
-        <div class="row-sub" style="margin-top:5px">
+        <div class="row-sub assignment-note">
           Response r{{ r.response_revision }} · {{ r.responded_at.strftime('%d %b %Y at %H:%M') }}
         </div>
         {% else %}
-        <div class="row-sub" style="margin-top:5px">
+        <div class="row-sub assignment-note">
           Awaiting response for r{{ r.commitment_revision }}
         </div>
         {% endif %}

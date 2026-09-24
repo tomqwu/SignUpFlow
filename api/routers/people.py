@@ -1,5 +1,6 @@
 """People router."""
 
+from typing import Any, cast
 
 from fastapi import APIRouter, Body, Depends, HTTPException, Query, Request, status
 from pydantic import BaseModel, Field
@@ -19,7 +20,7 @@ from api.models import AuditAction, Organization, Person
 from api.roles import normalize_roles
 from api.schemas.common import PaginationParams, get_pagination_params
 from api.schemas.person import PersonCreate, PersonList, PersonResponse, PersonUpdate
-from api.services.qualification_service import replace_person_roles
+from api.services.qualification_service import release_person_work, replace_person_roles
 from api.utils.audit_logger import log_audit_event
 from api.utils.bulk_import import (
     MAX_BULK_IMPORT_ITEMS,
@@ -402,13 +403,73 @@ def update_person(
         raise
 
 
+@router.post("/{person_id}/deactivate", response_model=PersonResponse)
+def deactivate_person(
+    person_id: str,
+    http_request: Request,
+    current_admin: Person = Depends(get_current_admin_user),
+    db: Session = Depends(get_db),
+) -> Person:
+    """Retire a departing member (admin only), keeping their history.
+
+    This is the departure path to prefer over ``DELETE``. A hard delete
+    cascades through ``Person.assignments`` and erases completed work along
+    with the future work, silently rewriting a published record. Deactivating
+    keeps the row, so past assignments stay as history, while future live work
+    is reopened exactly as a qualification removal would reopen it.
+    ``get_current_user`` already rejects a non-active person, so their session
+    and any further login stop working.
+    """
+    person = db.query(Person).filter(Person.id == person_id).first()
+    if not person:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail=f"Person '{person_id}' not found"
+        )
+
+    verify_org_member(current_admin, person.org_id)
+
+    if person.id == current_admin.id:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="You cannot deactivate your own account",
+        )
+
+    reopened = release_person_work(db, person)
+    person.status = cast(Any, "inactive")
+    # Invalidate outstanding refresh tokens for the departing member.
+    person.refresh_token_version = cast(Any, (person.refresh_token_version or 0) + 1)
+
+    log_audit_event(
+        db,
+        action=AuditAction.USER_UPDATED,
+        user_id=cast(str, current_admin.id),
+        user_email=cast(str, current_admin.email),
+        organization_id=cast(str, person.org_id),
+        resource_type="person",
+        resource_id=cast(str, person.id),
+        details={"change": "deactivated", "reopened_assignments": reopened},
+        ip_address=http_request.client.host if http_request.client else None,
+        user_agent=http_request.headers.get("user-agent"),
+    )
+
+    db.commit()
+    db.refresh(person)
+    return person
+
+
 @router.delete("/{person_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_person(
     person_id: str,
+    http_request: Request,
     current_admin: Person = Depends(get_current_admin_user),
     db: Session = Depends(get_db),
-):
-    """Delete person (admin only)."""
+) -> None:
+    """Erase a person and all their work (admin only).
+
+    This removes completed history as well as future work, because
+    ``Person.assignments`` cascades. Prefer ``POST /{person_id}/deactivate``
+    for someone who has simply left; keep this for genuine erasure requests.
+    """
     person = db.query(Person).filter(Person.id == person_id).first()
     if not person:
         raise HTTPException(
@@ -417,6 +478,19 @@ def delete_person(
 
     # Verify admin belongs to the same organization
     verify_org_member(current_admin, person.org_id)
+
+    log_audit_event(
+        db,
+        action=AuditAction.USER_DELETED,
+        user_id=cast(str, current_admin.id),
+        user_email=cast(str, current_admin.email),
+        organization_id=cast(str, person.org_id),
+        resource_type="person",
+        resource_id=cast(str, person.id),
+        details={"email": cast(str, person.email)},
+        ip_address=http_request.client.host if http_request.client else None,
+        user_agent=http_request.headers.get("user-agent"),
+    )
 
     db.delete(person)
     db.commit()

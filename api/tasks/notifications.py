@@ -445,23 +445,47 @@ def _send_cancellation_notification(
     language: str,
     db: Session,
 ) -> str | None:
-    """Send cancellation notification email."""
-    # Get event details
-    event = (
-        db.query(Event)
-        .filter(Event.id == notification.event_id, Event.org_id == notification.org_id)
-        .first()
-    )
-    if not event:
-        logger.error(f"Event {notification.event_id} not found")
+    """Send cancellation notification email.
+
+    A cancelled event is deleted, so this renderer cannot rely on reading the
+    event row. ``delete_event`` stores a self-contained snapshot in
+    ``template_data``; the event lookup below is only a fallback for notices
+    created while the event still exists.
+    """
+    template_data = cast(dict[str, Any], notification.template_data or {})
+
+    event = None
+    if notification.event_id is not None:
+        event = (
+            db.query(Event)
+            .filter(Event.id == notification.event_id, Event.org_id == notification.org_id)
+            .first()
+        )
+
+    event_title: str | None
+    event_datetime: str | None
+    event_location: str | None
+
+    if event is not None:
+        event_data = cast(dict[str, Any], event.extra_data or {})
+        event_title = cast(str, event_data.get("title") or event.type)
+        event_datetime = event.start_time.strftime("%A, %B %d, %Y at %I:%M %p")
+        event_location = event_data.get("location") or (
+            event.resource.location if event.resource else None
+        )
+    else:
+        event_title = template_data.get("event_title")
+        event_datetime = template_data.get("event_datetime")
+        event_location = template_data.get("event_location")
+
+    if not event_title or not event_datetime:
+        logger.error(
+            "Cancellation notice %s has no event row and an incomplete snapshot",
+            notification.id,
+        )
         return None
 
-    # Format event datetime
-    event_datetime = event.start_time.strftime("%A, %B %d, %Y at %I:%M %p")
-
-    event_data = cast(dict[str, Any], event.extra_data or {})
     unsubscribe_token = cast(str | None, email_pref.unsubscribe_token if email_pref else None)
-    template_data = cast(dict[str, Any], notification.template_data or {})
     role = cast(str, template_data.get("role", "Volunteer"))
     cancellation_reason = template_data.get("cancellation_reason")
     apology_message = template_data.get("apology_message")
@@ -470,12 +494,10 @@ def _send_cancellation_notification(
     return email_service.send_cancellation_email(
         volunteer_email=cast(str, recipient.email),
         volunteer_name=cast(str, recipient.name),
-        event_title=cast(str, event_data.get("title") or event.type),
+        event_title=event_title,
         role=role,
         event_datetime=event_datetime,
-        event_location=(
-            event_data.get("location") or (event.resource.location if event.resource else None)
-        ),
+        event_location=event_location,
         cancellation_reason=cancellation_reason,
         apology_message=apology_message,
         unsubscribe_token=unsubscribe_token,

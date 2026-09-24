@@ -68,7 +68,7 @@ Name | Type | Description  | Notes
 
 Delete Event
 
-Delete event (admin only).
+Cancel an event (admin only), telling whoever was scheduled for it.
 
 ### Example
 ```dart
