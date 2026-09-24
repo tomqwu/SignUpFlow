@@ -49,7 +49,7 @@ import 'package:signupflow_api/signupflow_api.dart';
 
 final api = SignupflowApi().getAnalyticsApi();
 final String orgId = orgId_example; // String |
-final int threshold = 56; // int | Assignments per month threshold
+final int threshold = 56; // int | Assignments in the last 30 days (upcoming excluded) that flag risk
 
 try {
     final response = await api.getBurnoutRisk(orgId, threshold);
