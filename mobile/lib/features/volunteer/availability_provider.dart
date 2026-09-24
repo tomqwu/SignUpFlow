@@ -5,8 +5,6 @@
 // - Recurring rrule (single string per person): added Sprint 8.3, wired here.
 // - Single-date exceptions: added Sprint 8.2, wired here.
 
-import 'dart:convert';
-
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:signupflow_api/signupflow_api.dart' as api;
 import 'package:signupflow_mobile/api/api_client.dart';
@@ -79,22 +77,22 @@ final availabilityProvider = FutureProvider<AvailabilityData>((ref) async {
   final res = await apiClient.getAvailabilityApi().getTimeoff(personId: personId);
   final body = res.data;
   final entries = <TimeOffEntry>[];
-  if (body != null) {
-    final decoded = json.decode(body.toString());
-    if (decoded is Map<String, dynamic>) {
-      final raw = decoded['timeoff'];
-      if (raw is List) {
-        for (final e in raw) {
-          if (e is! Map<String, dynamic>) continue;
-          entries.add(TimeOffEntry(
-            id: (e['id'] as num).toInt(),
-            startDate: _parseDate(e['start_date'] as String),
-            endDate: _parseDate(e['end_date'] as String),
-            reason: e['reason'] as String?,
-          ));
-        }
-        entries.sort((a, b) => a.startDate.compareTo(b.startDate));
+  // The generated client wraps the already-decoded body in a MapJsonObject;
+  // its toString() is Dart map syntax, not JSON, so read the value directly.
+  final decoded = body?.value;
+  if (decoded is Map) {
+    final raw = decoded['timeoff'];
+    if (raw is List) {
+      for (final e in raw) {
+        if (e is! Map) continue;
+        entries.add(TimeOffEntry(
+          id: (e['id'] as num).toInt(),
+          startDate: _parseDate(e['start_date'] as String),
+          endDate: _parseDate(e['end_date'] as String),
+          reason: e['reason'] as String?,
+        ));
       }
+      entries.sort((a, b) => a.startDate.compareTo(b.startDate));
     }
   }
 
