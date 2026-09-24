@@ -2,9 +2,11 @@
 
 from __future__ import annotations
 
-from datetime import datetime
+import re
+from datetime import datetime, timedelta
 
 from api.models import Assignment, Event, Solution
+from api.timeutils import utcnow
 from tests.web.conftest import seed_person
 from web.deps import SESSION_COOKIE
 
@@ -40,23 +42,36 @@ def test_dashboard_reflects_data(client, db):
             end_time=datetime(2099, 6, 7, 11, 30),
         )
     )
+    # "Most active" covers the last 30 days, so the volunteer also served last week.
+    served = utcnow() - timedelta(days=7)
+    db.add(
+        Event(
+            id="d_ev_past",
+            org_id="d_org2",
+            type="Sunday Service",
+            start_time=served,
+            end_time=served + timedelta(hours=1, minutes=30),
+        )
+    )
     solution = Solution(org_id="d_org2", hard_violations=0, soft_score=1, health_score=90)
     db.add(solution)
     db.flush()
-    db.add(
-        Assignment(
-            event_id="d_ev",
-            person_id=vol.id,
-            solution_id=solution.id,
-            role="usher",
-            status="confirmed",
+    for event_id in ("d_ev", "d_ev_past"):
+        db.add(
+            Assignment(
+                event_id=event_id,
+                person_id=vol.id,
+                solution_id=solution.id,
+                role="usher",
+                status="confirmed",
+            )
         )
-    )
     db.commit()
 
     resp = client.get("/a/dashboard", cookies={SESSION_COOKIE: token})
     assert resp.status_code == 200
-    # Upcoming event counted; top-volunteer list populated.
+    # Upcoming event counted; top-volunteer list populated from last week.
+    assert re.search(r'kpi-value">1</div>\s*<div class="kpi-label">Upcoming events', resp.text)
     assert "Sunday Service" not in resp.text  # dashboard shows names, not events
     assert "Val" not in resp.text or "d_vol" not in resp.text
     assert "Most active" in resp.text

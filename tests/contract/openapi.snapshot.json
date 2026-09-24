@@ -5604,7 +5604,7 @@
     },
     "/api/v1/analytics/{org_id}/burnout-risk": {
       "get": {
-        "description": "Identify volunteers at risk of burnout (serving too frequently).\n\nAdmin-only within `org_id`. This endpoint returns other volunteers'\nnames and emails, so peer volunteers can never read it.",
+        "description": "Identify volunteers at risk of burnout (serving too frequently).\n\nCounts assignments on events that started in the last 30 days; upcoming\nassignments do not count.\n\nAdmin-only within `org_id`. This endpoint returns other volunteers'\nnames and emails, so peer volunteers can never read it.",
         "operationId": "getBurnoutRisk",
         "parameters": [
           {
@@ -5617,13 +5617,13 @@
             }
           },
           {
-            "description": "Assignments per month threshold",
+            "description": "Assignments in the last 30 days (upcoming excluded) that flag risk",
             "in": "query",
             "name": "threshold",
             "required": false,
             "schema": {
               "default": 4,
-              "description": "Assignments per month threshold",
+              "description": "Assignments in the last 30 days (upcoming excluded) that flag risk",
               "title": "Threshold",
               "type": "integer"
             }
@@ -5662,7 +5662,7 @@
     },
     "/api/v1/analytics/{org_id}/schedule-health": {
       "get": {
-        "description": "Get schedule health metrics.\n\nAdmin-only within `org_id`.",
+        "description": "Get schedule health metrics for upcoming events (start time now or later).\n\nAdmin-only within `org_id`.",
         "operationId": "getScheduleHealth",
         "parameters": [
           {
@@ -5708,7 +5708,7 @@
     },
     "/api/v1/analytics/{org_id}/volunteer-stats": {
       "get": {
-        "description": "Get volunteer participation statistics.\n\nAdmin-only within `org_id`. The caller must be an authenticated admin\nwhose own org matches the requested one.",
+        "description": "Get volunteer participation statistics for events in the last `days` days.\n\nCounts only events that started between now - `days` and now; a published\nfuture schedule is not participation yet.\n\nAdmin-only within `org_id`. The caller must be an authenticated admin\nwhose own org matches the requested one.",
         "operationId": "getVolunteerStats",
         "parameters": [
           {
@@ -5721,13 +5721,13 @@
             }
           },
           {
-            "description": "Number of days to analyze",
+            "description": "Number of past days to analyze; the window ends now and excludes upcoming events",
             "in": "query",
             "name": "days",
             "required": false,
             "schema": {
               "default": 30,
-              "description": "Number of days to analyze",
+              "description": "Number of past days to analyze; the window ends now and excludes upcoming events",
               "title": "Days",
               "type": "integer"
             }

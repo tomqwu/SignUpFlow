@@ -21,11 +21,11 @@ class AnalyticsApi {
   const AnalyticsApi(this._dio, this._serializers);
 
   /// Get Burnout Risk
-  /// Identify volunteers at risk of burnout (serving too frequently).  Admin-only within &#x60;org_id&#x60;. This endpoint returns other volunteers&#39; names and emails, so peer volunteers can never read it.
+  /// Identify volunteers at risk of burnout (serving too frequently).  Counts assignments on events that started in the last 30 days; upcoming assignments do not count.  Admin-only within &#x60;org_id&#x60;. This endpoint returns other volunteers&#39; names and emails, so peer volunteers can never read it.
   ///
   /// Parameters:
   /// * [orgId]
-  /// * [threshold] - Assignments per month threshold
+  /// * [threshold] - Assignments in the last 30 days (upcoming excluded) that flag risk
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -109,7 +109,7 @@ class AnalyticsApi {
   }
 
   /// Get Schedule Health
-  /// Get schedule health metrics.  Admin-only within &#x60;org_id&#x60;.
+  /// Get schedule health metrics for upcoming events (start time now or later).  Admin-only within &#x60;org_id&#x60;.
   ///
   /// Parameters:
   /// * [orgId]
@@ -190,11 +190,11 @@ class AnalyticsApi {
   }
 
   /// Get Volunteer Stats
-  /// Get volunteer participation statistics.  Admin-only within &#x60;org_id&#x60;. The caller must be an authenticated admin whose own org matches the requested one.
+  /// Get volunteer participation statistics for events in the last &#x60;days&#x60; days.  Counts only events that started between now - &#x60;days&#x60; and now; a published future schedule is not participation yet.  Admin-only within &#x60;org_id&#x60;. The caller must be an authenticated admin whose own org matches the requested one.
   ///
   /// Parameters:
   /// * [orgId]
-  /// * [days] - Number of days to analyze
+  /// * [days] - Number of past days to analyze; the window ends now and excludes upcoming events
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
