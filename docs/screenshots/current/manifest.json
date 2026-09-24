@@ -1,6 +1,6 @@
 {
   "browser": "Chromium 151.0.7922.34",
-  "captured_at": "2026-09-24T00:54:43.201811Z",
+  "captured_at": "2026-09-24T12:08:41.685573Z",
   "entries": [
     {
       "actor": "member",
@@ -10,7 +10,7 @@
       "domain": "basketball",
       "fixture_path": "docs/playbooks/basketball.json",
       "fixture_sha256": "bbdc430b42c5a5dcb68fcd0bd7a16ce281d313ef83abd233c05773ca4928b08b",
-      "image_sha256": "2e1bcc35de7ea00e3b05746c02c549d60f2b23c5a19f5aaa55e3710cba4e2404",
+      "image_sha256": "e415bcd84c820fc698da535d0343ef7eef8061906fba9668f4d5a58a46475fad",
       "path": "docs/screenshots/current/basketball/1440/accepted.png",
       "pixel_size": {
         "height": 1800,
@@ -18,7 +18,7 @@
       },
       "scenario": "BO-05",
       "source_files": {
-        "web/static/css/styles.css": "c14199cf50ede9ba58a80a9c40a7c9891eef2178b738948dc9975e22d2222de8",
+        "web/static/css/styles.css": "eae8b31b48d992ed65e64cf544fa85713b95e3fb23bf525fafeca72346b6190d",
         "web/templates/base.html": "15e72cd2b9eb577a486a6fecf3be0e0d2f3be81c90c21e6f0f9aba60bf3226fd",
         "web/templates/partials/assignment_detail_card.html": "167de6e1f135d669350baba1aad2160aeb1db0b8a46027f225d40dbc6ba44e98",
         "web/templates/volunteer/assignment_detail.html": "ee8247161c465e71f4459a066a693c625bc474d7ab82cc74f50604a8d8acf6aa"
@@ -36,7 +36,7 @@
       "domain": "basketball",
       "fixture_path": "docs/playbooks/basketball.json",
       "fixture_sha256": "bbdc430b42c5a5dcb68fcd0bd7a16ce281d313ef83abd233c05773ca4928b08b",
-      "image_sha256": "504392de846eaadb94064df028d9e20b7d173b2db899f0cd8ef601475c8d6be6",
+      "image_sha256": "bce00cc90dceccbf330d26b454bee0f2cc25b6ef22d9ba470df5c3e3d2974616",
       "path": "docs/screenshots/current/basketball/1440/dashboard.png",
       "pixel_size": {
         "height": 1800,
@@ -44,7 +44,7 @@
       },
       "scenario": "BO-01",
       "source_files": {
-        "web/static/css/styles.css": "c14199cf50ede9ba58a80a9c40a7c9891eef2178b738948dc9975e22d2222de8",
+        "web/static/css/styles.css": "eae8b31b48d992ed65e64cf544fa85713b95e3fb23bf525fafeca72346b6190d",
         "web/templates/admin/dashboard.html": "c84237f5944326f618b1cb16f7c8057bae5cd8390410126eca7ef26316288885",
         "web/templates/base.html": "15e72cd2b9eb577a486a6fecf3be0e0d2f3be81c90c21e6f0f9aba60bf3226fd"
       },
@@ -61,7 +61,7 @@
       "domain": "basketball",
       "fixture_path": "docs/playbooks/basketball.json",
       "fixture_sha256": "bbdc430b42c5a5dcb68fcd0bd7a16ce281d313ef83abd233c05773ca4928b08b",
-      "image_sha256": "87d8039a11e7f5a26f10727f3413d4f5ac127373ca7e37e43af4514f6d4442cf",
+      "image_sha256": "bc3273708b88f52d7c5317b25ae85281f759a372c2a76bf7171376983dfa0224",
       "path": "docs/screenshots/current/basketball/1440/onboarding.png",
       "pixel_size": {
         "height": 1800,
@@ -69,7 +69,7 @@
       },
       "scenario": "BO-01",
       "source_files": {
-        "web/static/css/styles.css": "c14199cf50ede9ba58a80a9c40a7c9891eef2178b738948dc9975e22d2222de8",
+        "web/static/css/styles.css": "eae8b31b48d992ed65e64cf544fa85713b95e3fb23bf525fafeca72346b6190d",
         "web/templates/admin/onboarding.html": "98989bf974b84ddef561da2f085f3202f6ac6fae39f0366101316760c75340e1",
         "web/templates/base.html": "15e72cd2b9eb577a486a6fecf3be0e0d2f3be81c90c21e6f0f9aba60bf3226fd"
       },
@@ -86,7 +86,7 @@
       "domain": "basketball",
       "fixture_path": "docs/playbooks/basketball.json",
       "fixture_sha256": "bbdc430b42c5a5dcb68fcd0bd7a16ce281d313ef83abd233c05773ca4928b08b",
-      "image_sha256": "ff7540eeeb363f15869d3e8db28a31abcea389e846da7c1d4bb30038187a521a",
+      "image_sha256": "33f9db12a44ff7a802ed8efddacca530bcf48d5682fd659fca8732f75612cd31",
       "path": "docs/screenshots/current/basketball/1440/qualified.png",
       "pixel_size": {
         "height": 1800,
@@ -94,7 +94,7 @@
       },
       "scenario": "BO-02",
       "source_files": {
-        "web/static/css/styles.css": "c14199cf50ede9ba58a80a9c40a7c9891eef2178b738948dc9975e22d2222de8",
+        "web/static/css/styles.css": "eae8b31b48d992ed65e64cf544fa85713b95e3fb23bf525fafeca72346b6190d",
         "web/templates/admin/people.html": "8756d19d4dd2b66b7030fa9c2d85303ebc9aa48bc8cdb037635971ac8031edac",
         "web/templates/base.html": "15e72cd2b9eb577a486a6fecf3be0e0d2f3be81c90c21e6f0f9aba60bf3226fd",
         "web/templates/partials/people_list.html": "dbb878e714eedbd1e7b1e14960d5ff6763002269ada948763f38d98f8a4f869f"
@@ -112,7 +112,7 @@
       "domain": "basketball",
       "fixture_path": "docs/playbooks/basketball.json",
       "fixture_sha256": "bbdc430b42c5a5dcb68fcd0bd7a16ce281d313ef83abd233c05773ca4928b08b",
-      "image_sha256": "81aa890c196a1f206944eb4fee12f22f18d4cfa2ec578f6a8576aa273c1ae500",
+      "image_sha256": "8948545cbc0ef029602b7d722c368db050ddff48f4a933c4a45fd5bbea1ff043",
       "path": "docs/screenshots/current/basketball/1440/replacement-covered.png",
       "pixel_size": {
         "height": 1800,
@@ -120,7 +120,7 @@
       },
       "scenario": "BB-D02",
       "source_files": {
-        "web/static/css/styles.css": "c14199cf50ede9ba58a80a9c40a7c9891eef2178b738948dc9975e22d2222de8",
+        "web/static/css/styles.css": "eae8b31b48d992ed65e64cf544fa85713b95e3fb23bf525fafeca72346b6190d",
         "web/templates/base.html": "15e72cd2b9eb577a486a6fecf3be0e0d2f3be81c90c21e6f0f9aba60bf3226fd",
         "web/templates/partials/assignment_detail_card.html": "167de6e1f135d669350baba1aad2160aeb1db0b8a46027f225d40dbc6ba44e98",
         "web/templates/volunteer/assignment_detail.html": "ee8247161c465e71f4459a066a693c625bc474d7ab82cc74f50604a8d8acf6aa",
@@ -139,7 +139,7 @@
       "domain": "basketball",
       "fixture_path": "docs/playbooks/basketball.json",
       "fixture_sha256": "bbdc430b42c5a5dcb68fcd0bd7a16ce281d313ef83abd233c05773ca4928b08b",
-      "image_sha256": "6dd0a825f0f796ba0d375a31adcac85713451fd127c2c09de8f14b5c9f3afbac",
+      "image_sha256": "4337d1677ee13de7e390a45d610f39205ae61a3185d6571e2d118a7291942a45",
       "path": "docs/screenshots/current/basketball/1440/replacement-needed.png",
       "pixel_size": {
         "height": 1800,
@@ -147,7 +147,7 @@
       },
       "scenario": "BB-D02",
       "source_files": {
-        "web/static/css/styles.css": "c14199cf50ede9ba58a80a9c40a7c9891eef2178b738948dc9975e22d2222de8",
+        "web/static/css/styles.css": "eae8b31b48d992ed65e64cf544fa85713b95e3fb23bf525fafeca72346b6190d",
         "web/templates/admin/swaps.html": "747d4d99f979199f2be8578a922e2e267cf0756ab74ac2e8fef1dae7c3774650",
         "web/templates/base.html": "15e72cd2b9eb577a486a6fecf3be0e0d2f3be81c90c21e6f0f9aba60bf3226fd",
         "web/templates/partials/swaps_list.html": "e2d3688bf894efc541ac510c97ddeddc0d4a848ee767773e9179ea15bf1a34f0"
@@ -165,7 +165,7 @@
       "domain": "basketball",
       "fixture_path": "docs/playbooks/basketball.json",
       "fixture_sha256": "bbdc430b42c5a5dcb68fcd0bd7a16ce281d313ef83abd233c05773ca4928b08b",
-      "image_sha256": "30d00e6969d5e5f4069852a25d4ec85b8da033650b3db7790fcceefcb8b53063",
+      "image_sha256": "85ef043ddacd7fe9e3c5bd2ed7932e167707c2f1a23b62e0ede3b07779920e18",
       "path": "docs/screenshots/current/basketball/1440/schedule-change-admin.png",
       "pixel_size": {
         "height": 1800,
@@ -173,7 +173,7 @@
       },
       "scenario": "BB-D03",
       "source_files": {
-        "web/static/css/styles.css": "c14199cf50ede9ba58a80a9c40a7c9891eef2178b738948dc9975e22d2222de8",
+        "web/static/css/styles.css": "eae8b31b48d992ed65e64cf544fa85713b95e3fb23bf525fafeca72346b6190d",
         "web/templates/admin/solution_review.html": "364a57407bcd67cddf0687fad9f22ed4895af3cf8e96a728493aa1d0b57502e3",
         "web/templates/base.html": "15e72cd2b9eb577a486a6fecf3be0e0d2f3be81c90c21e6f0f9aba60bf3226fd",
         "web/templates/partials/publish_state.html": "416154d21a14f14bce7d5a12b786769ae28992b2d5745d4782c702cc417d4048"
@@ -191,7 +191,7 @@
       "domain": "basketball",
       "fixture_path": "docs/playbooks/basketball.json",
       "fixture_sha256": "bbdc430b42c5a5dcb68fcd0bd7a16ce281d313ef83abd233c05773ca4928b08b",
-      "image_sha256": "7f442b79c9989a7528dd739d2a210d1c3b1b20c53a689a881021408e244cc499",
+      "image_sha256": "e0352ea4510ae417da6b83d8aab5b4c335b6d3746a5645c15fea3e4c81d66901",
       "path": "docs/screenshots/current/basketball/1440/schedule-change-member.png",
       "pixel_size": {
         "height": 1800,
@@ -199,7 +199,7 @@
       },
       "scenario": "BB-D03",
       "source_files": {
-        "web/static/css/styles.css": "c14199cf50ede9ba58a80a9c40a7c9891eef2178b738948dc9975e22d2222de8",
+        "web/static/css/styles.css": "eae8b31b48d992ed65e64cf544fa85713b95e3fb23bf525fafeca72346b6190d",
         "web/templates/base.html": "15e72cd2b9eb577a486a6fecf3be0e0d2f3be81c90c21e6f0f9aba60bf3226fd",
         "web/templates/partials/assignment_detail_card.html": "167de6e1f135d669350baba1aad2160aeb1db0b8a46027f225d40dbc6ba44e98",
         "web/templates/volunteer/assignment_detail.html": "ee8247161c465e71f4459a066a693c625bc474d7ab82cc74f50604a8d8acf6aa"
@@ -217,7 +217,7 @@
       "domain": "basketball",
       "fixture_path": "docs/playbooks/basketball.json",
       "fixture_sha256": "bbdc430b42c5a5dcb68fcd0bd7a16ce281d313ef83abd233c05773ca4928b08b",
-      "image_sha256": "d038acc04940edd899ba1c4732565e0b3c5b869cc7527a02ef274d23aea1f0d7",
+      "image_sha256": "7f56ebedb3f6007f4fe89129c1c78fba38ab7df46b53447340c40aae76db088b",
       "path": "docs/screenshots/current/basketball/1440/six-week-solution.png",
       "pixel_size": {
         "height": 1800,
@@ -225,7 +225,7 @@
       },
       "scenario": "BO-04",
       "source_files": {
-        "web/static/css/styles.css": "c14199cf50ede9ba58a80a9c40a7c9891eef2178b738948dc9975e22d2222de8",
+        "web/static/css/styles.css": "eae8b31b48d992ed65e64cf544fa85713b95e3fb23bf525fafeca72346b6190d",
         "web/templates/admin/solution_review.html": "364a57407bcd67cddf0687fad9f22ed4895af3cf8e96a728493aa1d0b57502e3",
         "web/templates/base.html": "15e72cd2b9eb577a486a6fecf3be0e0d2f3be81c90c21e6f0f9aba60bf3226fd",
         "web/templates/partials/solution_assignments.html": "b1dc136d126e7bff9c7a6d871e40ed6b9e97d61a8044d6d24a9eb2bb69d751f3"
@@ -243,7 +243,7 @@
       "domain": "basketball",
       "fixture_path": "docs/playbooks/basketball.json",
       "fixture_sha256": "bbdc430b42c5a5dcb68fcd0bd7a16ce281d313ef83abd233c05773ca4928b08b",
-      "image_sha256": "9b1d2c9e574b7a95b723c63cfda14ff70a6cf8b659c2928b256618cd76f68ac5",
+      "image_sha256": "daec7747c4f9d4d0262022d71f093c003e56d0131381923aa75673847415f531",
       "path": "docs/screenshots/current/basketball/1440/unanswered.png",
       "pixel_size": {
         "height": 1800,
@@ -251,7 +251,7 @@
       },
       "scenario": "BO-05",
       "source_files": {
-        "web/static/css/styles.css": "c14199cf50ede9ba58a80a9c40a7c9891eef2178b738948dc9975e22d2222de8",
+        "web/static/css/styles.css": "eae8b31b48d992ed65e64cf544fa85713b95e3fb23bf525fafeca72346b6190d",
         "web/templates/base.html": "15e72cd2b9eb577a486a6fecf3be0e0d2f3be81c90c21e6f0f9aba60bf3226fd",
         "web/templates/volunteer/schedule.html": "78b25425d16bcad0a49728182a119a011c1d5adc4208e9a5d3320f58ccdeb1ae"
       },
@@ -268,7 +268,7 @@
       "domain": "basketball",
       "fixture_path": "docs/playbooks/basketball.json",
       "fixture_sha256": "bbdc430b42c5a5dcb68fcd0bd7a16ce281d313ef83abd233c05773ca4928b08b",
-      "image_sha256": "eed3ec87dc7dd359fdfba8b132fd61ad49096773b8cf7e1362b6cab696dd33d3",
+      "image_sha256": "14008bdea71f55d161ba366a7d2d1d67e539292c2fe27cef6f0190206c5b3827",
       "path": "docs/screenshots/current/basketball/1440/week-seven-rollover.png",
       "pixel_size": {
         "height": 1800,
@@ -276,7 +276,7 @@
       },
       "scenario": "BO-08",
       "source_files": {
-        "web/static/css/styles.css": "c14199cf50ede9ba58a80a9c40a7c9891eef2178b738948dc9975e22d2222de8",
+        "web/static/css/styles.css": "eae8b31b48d992ed65e64cf544fa85713b95e3fb23bf525fafeca72346b6190d",
         "web/templates/admin/events.html": "1ccc8b63ac5d645ceb6db1059b6f2bcf77c45793c332b50842878933c39e974f",
         "web/templates/base.html": "15e72cd2b9eb577a486a6fecf3be0e0d2f3be81c90c21e6f0f9aba60bf3226fd",
         "web/templates/partials/events_list.html": "8988f1c93cc7a0f45aaade4051fbdb03cd3dd7579b0d35100090b00ff3b5039a"
@@ -294,7 +294,7 @@
       "domain": "basketball",
       "fixture_path": "docs/playbooks/basketball.json",
       "fixture_sha256": "bbdc430b42c5a5dcb68fcd0bd7a16ce281d313ef83abd233c05773ca4928b08b",
-      "image_sha256": "e65ce92a4fcaeeef55f53ceeb72e09b9dfd5910a67be2c63ee928e185560d6b7",
+      "image_sha256": "ee9fda9933264d5fa0d595809318a34be760730d9353ff9d07c0c4e9c5969e22",
       "path": "docs/screenshots/current/basketball/360/accepted.png",
       "pixel_size": {
         "height": 1800,
@@ -302,7 +302,7 @@
       },
       "scenario": "BO-05",
       "source_files": {
-        "web/static/css/styles.css": "c14199cf50ede9ba58a80a9c40a7c9891eef2178b738948dc9975e22d2222de8",
+        "web/static/css/styles.css": "eae8b31b48d992ed65e64cf544fa85713b95e3fb23bf525fafeca72346b6190d",
         "web/templates/base.html": "15e72cd2b9eb577a486a6fecf3be0e0d2f3be81c90c21e6f0f9aba60bf3226fd",
         "web/templates/partials/assignment_detail_card.html": "167de6e1f135d669350baba1aad2160aeb1db0b8a46027f225d40dbc6ba44e98",
         "web/templates/volunteer/assignment_detail.html": "ee8247161c465e71f4459a066a693c625bc474d7ab82cc74f50604a8d8acf6aa"
@@ -320,7 +320,7 @@
       "domain": "basketball",
       "fixture_path": "docs/playbooks/basketball.json",
       "fixture_sha256": "bbdc430b42c5a5dcb68fcd0bd7a16ce281d313ef83abd233c05773ca4928b08b",
-      "image_sha256": "80d675753b4405da829fa494adc17fe65e0197fd06daca658cbc3cc132126a28",
+      "image_sha256": "a8f6f6ed5bdf5ab43a9865cebe4e15ba86e10d218017f89a51cb301082d995f4",
       "path": "docs/screenshots/current/basketball/360/dashboard.png",
       "pixel_size": {
         "height": 1800,
@@ -328,7 +328,7 @@
       },
       "scenario": "BO-01",
       "source_files": {
-        "web/static/css/styles.css": "c14199cf50ede9ba58a80a9c40a7c9891eef2178b738948dc9975e22d2222de8",
+        "web/static/css/styles.css": "eae8b31b48d992ed65e64cf544fa85713b95e3fb23bf525fafeca72346b6190d",
         "web/templates/admin/dashboard.html": "c84237f5944326f618b1cb16f7c8057bae5cd8390410126eca7ef26316288885",
         "web/templates/base.html": "15e72cd2b9eb577a486a6fecf3be0e0d2f3be81c90c21e6f0f9aba60bf3226fd"
       },
@@ -345,7 +345,7 @@
       "domain": "basketball",
       "fixture_path": "docs/playbooks/basketball.json",
       "fixture_sha256": "bbdc430b42c5a5dcb68fcd0bd7a16ce281d313ef83abd233c05773ca4928b08b",
-      "image_sha256": "eaefd48b382e6854c19cb5794feb6aca121d515c0a3737119ef0dd7401998377",
+      "image_sha256": "55b91e23303c96752021f5ebefaeb16b88553957cd59dadbfc9e41b3f7392fa9",
       "path": "docs/screenshots/current/basketball/360/onboarding.png",
       "pixel_size": {
         "height": 1800,
@@ -353,7 +353,7 @@
       },
       "scenario": "BO-01",
       "source_files": {
-        "web/static/css/styles.css": "c14199cf50ede9ba58a80a9c40a7c9891eef2178b738948dc9975e22d2222de8",
+        "web/static/css/styles.css": "eae8b31b48d992ed65e64cf544fa85713b95e3fb23bf525fafeca72346b6190d",
         "web/templates/admin/onboarding.html": "98989bf974b84ddef561da2f085f3202f6ac6fae39f0366101316760c75340e1",
         "web/templates/base.html": "15e72cd2b9eb577a486a6fecf3be0e0d2f3be81c90c21e6f0f9aba60bf3226fd"
       },
@@ -370,7 +370,7 @@
       "domain": "basketball",
       "fixture_path": "docs/playbooks/basketball.json",
       "fixture_sha256": "bbdc430b42c5a5dcb68fcd0bd7a16ce281d313ef83abd233c05773ca4928b08b",
-      "image_sha256": "c5f222eae6abdd2825ffa14f05bc9c87d8999ee43d692ef0c768fa7999294f39",
+      "image_sha256": "065aec6ea95426ada158ed1521ee3e890b3999b79202dee1fed9a28011b8656e",
       "path": "docs/screenshots/current/basketball/360/qualified.png",
       "pixel_size": {
         "height": 1800,
@@ -378,7 +378,7 @@
       },
       "scenario": "BO-02",
       "source_files": {
-        "web/static/css/styles.css": "c14199cf50ede9ba58a80a9c40a7c9891eef2178b738948dc9975e22d2222de8",
+        "web/static/css/styles.css": "eae8b31b48d992ed65e64cf544fa85713b95e3fb23bf525fafeca72346b6190d",
         "web/templates/admin/people.html": "8756d19d4dd2b66b7030fa9c2d85303ebc9aa48bc8cdb037635971ac8031edac",
         "web/templates/base.html": "15e72cd2b9eb577a486a6fecf3be0e0d2f3be81c90c21e6f0f9aba60bf3226fd",
         "web/templates/partials/people_list.html": "dbb878e714eedbd1e7b1e14960d5ff6763002269ada948763f38d98f8a4f869f"
@@ -396,7 +396,7 @@
       "domain": "basketball",
       "fixture_path": "docs/playbooks/basketball.json",
       "fixture_sha256": "bbdc430b42c5a5dcb68fcd0bd7a16ce281d313ef83abd233c05773ca4928b08b",
-      "image_sha256": "57a4ee31e7912a79354bb2b478a7fbc25eeea4d22b2c2f415298dea7b1c991fe",
+      "image_sha256": "df58afc18e1416b90cab55d287bbdc483d7c499cf139d34de31e4da5ab4020e0",
       "path": "docs/screenshots/current/basketball/360/replacement-covered.png",
       "pixel_size": {
         "height": 1800,
@@ -404,7 +404,7 @@
       },
       "scenario": "BB-D02",
       "source_files": {
-        "web/static/css/styles.css": "c14199cf50ede9ba58a80a9c40a7c9891eef2178b738948dc9975e22d2222de8",
+        "web/static/css/styles.css": "eae8b31b48d992ed65e64cf544fa85713b95e3fb23bf525fafeca72346b6190d",
         "web/templates/base.html": "15e72cd2b9eb577a486a6fecf3be0e0d2f3be81c90c21e6f0f9aba60bf3226fd",
         "web/templates/partials/assignment_detail_card.html": "167de6e1f135d669350baba1aad2160aeb1db0b8a46027f225d40dbc6ba44e98",
         "web/templates/volunteer/assignment_detail.html": "ee8247161c465e71f4459a066a693c625bc474d7ab82cc74f50604a8d8acf6aa",
@@ -423,7 +423,7 @@
       "domain": "basketball",
       "fixture_path": "docs/playbooks/basketball.json",
       "fixture_sha256": "bbdc430b42c5a5dcb68fcd0bd7a16ce281d313ef83abd233c05773ca4928b08b",
-      "image_sha256": "9d343adfb5eb254496a8c409e3c2f2ac074c91d65dc4687db19fa3eb07a1678b",
+      "image_sha256": "4e053353ea747774845c6df01430c1a30ac159cc385fe705f97085729dc68fa8",
       "path": "docs/screenshots/current/basketball/360/replacement-needed.png",
       "pixel_size": {
         "height": 1800,
@@ -431,7 +431,7 @@
       },
       "scenario": "BB-D02",
       "source_files": {
-        "web/static/css/styles.css": "c14199cf50ede9ba58a80a9c40a7c9891eef2178b738948dc9975e22d2222de8",
+        "web/static/css/styles.css": "eae8b31b48d992ed65e64cf544fa85713b95e3fb23bf525fafeca72346b6190d",
         "web/templates/admin/swaps.html": "747d4d99f979199f2be8578a922e2e267cf0756ab74ac2e8fef1dae7c3774650",
         "web/templates/base.html": "15e72cd2b9eb577a486a6fecf3be0e0d2f3be81c90c21e6f0f9aba60bf3226fd",
         "web/templates/partials/swaps_list.html": "e2d3688bf894efc541ac510c97ddeddc0d4a848ee767773e9179ea15bf1a34f0"
@@ -449,7 +449,7 @@
       "domain": "basketball",
       "fixture_path": "docs/playbooks/basketball.json",
       "fixture_sha256": "bbdc430b42c5a5dcb68fcd0bd7a16ce281d313ef83abd233c05773ca4928b08b",
-      "image_sha256": "d78f1d411962b1612b5c1fc0976f9dc5ec9037c2b443c34a1cd5802d05faff74",
+      "image_sha256": "8d2d2159071ff3721d866ae76e7102262f226c3bf972b0ac016b9499cb136f51",
       "path": "docs/screenshots/current/basketball/360/schedule-change-admin.png",
       "pixel_size": {
         "height": 1800,
@@ -457,7 +457,7 @@
       },
       "scenario": "BB-D03",
       "source_files": {
-        "web/static/css/styles.css": "c14199cf50ede9ba58a80a9c40a7c9891eef2178b738948dc9975e22d2222de8",
+        "web/static/css/styles.css": "eae8b31b48d992ed65e64cf544fa85713b95e3fb23bf525fafeca72346b6190d",
         "web/templates/admin/solution_review.html": "364a57407bcd67cddf0687fad9f22ed4895af3cf8e96a728493aa1d0b57502e3",
         "web/templates/base.html": "15e72cd2b9eb577a486a6fecf3be0e0d2f3be81c90c21e6f0f9aba60bf3226fd",
         "web/templates/partials/publish_state.html": "416154d21a14f14bce7d5a12b786769ae28992b2d5745d4782c702cc417d4048"
@@ -475,7 +475,7 @@
       "domain": "basketball",
       "fixture_path": "docs/playbooks/basketball.json",
       "fixture_sha256": "bbdc430b42c5a5dcb68fcd0bd7a16ce281d313ef83abd233c05773ca4928b08b",
-      "image_sha256": "76a5efaa603086d52138c9073d2565e4e197c290e282677afdb16ab301d51c99",
+      "image_sha256": "aa97388474923ab2cd727d2f9fc70745d5d148c52f42bc6eb1491df70e37f7ce",
       "path": "docs/screenshots/current/basketball/360/schedule-change-member.png",
       "pixel_size": {
         "height": 1800,
@@ -483,7 +483,7 @@
       },
       "scenario": "BB-D03",
       "source_files": {
-        "web/static/css/styles.css": "c14199cf50ede9ba58a80a9c40a7c9891eef2178b738948dc9975e22d2222de8",
+        "web/static/css/styles.css": "eae8b31b48d992ed65e64cf544fa85713b95e3fb23bf525fafeca72346b6190d",
         "web/templates/base.html": "15e72cd2b9eb577a486a6fecf3be0e0d2f3be81c90c21e6f0f9aba60bf3226fd",
         "web/templates/partials/assignment_detail_card.html": "167de6e1f135d669350baba1aad2160aeb1db0b8a46027f225d40dbc6ba44e98",
         "web/templates/volunteer/assignment_detail.html": "ee8247161c465e71f4459a066a693c625bc474d7ab82cc74f50604a8d8acf6aa"
@@ -501,7 +501,7 @@
       "domain": "basketball",
       "fixture_path": "docs/playbooks/basketball.json",
       "fixture_sha256": "bbdc430b42c5a5dcb68fcd0bd7a16ce281d313ef83abd233c05773ca4928b08b",
-      "image_sha256": "0d865e93847260dbfeb33a64229ba4c3bf1267fc10c9e05c8d6751b2ed8c350f",
+      "image_sha256": "f1c28fd42efe51d4165b0a6dffa95f957ee9f10cb5c75b6c4d7efe8cdd9a3493",
       "path": "docs/screenshots/current/basketball/360/six-week-solution.png",
       "pixel_size": {
         "height": 1800,
@@ -509,7 +509,7 @@
       },
       "scenario": "BO-04",
       "source_files": {
-        "web/static/css/styles.css": "c14199cf50ede9ba58a80a9c40a7c9891eef2178b738948dc9975e22d2222de8",
+        "web/static/css/styles.css": "eae8b31b48d992ed65e64cf544fa85713b95e3fb23bf525fafeca72346b6190d",
         "web/templates/admin/solution_review.html": "364a57407bcd67cddf0687fad9f22ed4895af3cf8e96a728493aa1d0b57502e3",
         "web/templates/base.html": "15e72cd2b9eb577a486a6fecf3be0e0d2f3be81c90c21e6f0f9aba60bf3226fd",
         "web/templates/partials/solution_assignments.html": "b1dc136d126e7bff9c7a6d871e40ed6b9e97d61a8044d6d24a9eb2bb69d751f3"
@@ -527,7 +527,7 @@
       "domain": "basketball",
       "fixture_path": "docs/playbooks/basketball.json",
       "fixture_sha256": "bbdc430b42c5a5dcb68fcd0bd7a16ce281d313ef83abd233c05773ca4928b08b",
-      "image_sha256": "ee4820df2762e9c3b14457862c19709f5f23ecb0c1c2e9aaacbe65bcf878f499",
+      "image_sha256": "26dd45c53ce23af448a34b2a1d9c2b04aa52b62ca65a566e4a05c185d5b3478c",
       "path": "docs/screenshots/current/basketball/360/unanswered.png",
       "pixel_size": {
         "height": 1800,
@@ -535,7 +535,7 @@
       },
       "scenario": "BO-05",
       "source_files": {
-        "web/static/css/styles.css": "c14199cf50ede9ba58a80a9c40a7c9891eef2178b738948dc9975e22d2222de8",
+        "web/static/css/styles.css": "eae8b31b48d992ed65e64cf544fa85713b95e3fb23bf525fafeca72346b6190d",
         "web/templates/base.html": "15e72cd2b9eb577a486a6fecf3be0e0d2f3be81c90c21e6f0f9aba60bf3226fd",
         "web/templates/volunteer/schedule.html": "78b25425d16bcad0a49728182a119a011c1d5adc4208e9a5d3320f58ccdeb1ae"
       },
@@ -552,7 +552,7 @@
       "domain": "basketball",
       "fixture_path": "docs/playbooks/basketball.json",
       "fixture_sha256": "bbdc430b42c5a5dcb68fcd0bd7a16ce281d313ef83abd233c05773ca4928b08b",
-      "image_sha256": "95ff82abc60212bdd218860dbc1b00076c44b9b804a5887f525208768a26a395",
+      "image_sha256": "fdf5b76c0f57f1e8acdd887ec608ef572dd12c1b9d2a1a6c11f466c3e3479505",
       "path": "docs/screenshots/current/basketball/360/week-seven-rollover.png",
       "pixel_size": {
         "height": 1800,
@@ -560,7 +560,7 @@
       },
       "scenario": "BO-08",
       "source_files": {
-        "web/static/css/styles.css": "c14199cf50ede9ba58a80a9c40a7c9891eef2178b738948dc9975e22d2222de8",
+        "web/static/css/styles.css": "eae8b31b48d992ed65e64cf544fa85713b95e3fb23bf525fafeca72346b6190d",
         "web/templates/admin/events.html": "1ccc8b63ac5d645ceb6db1059b6f2bcf77c45793c332b50842878933c39e974f",
         "web/templates/base.html": "15e72cd2b9eb577a486a6fecf3be0e0d2f3be81c90c21e6f0f9aba60bf3226fd",
         "web/templates/partials/events_list.html": "8988f1c93cc7a0f45aaade4051fbdb03cd3dd7579b0d35100090b00ff3b5039a"
@@ -578,7 +578,7 @@
       "domain": "church",
       "fixture_path": "docs/playbooks/church.json",
       "fixture_sha256": "393bc92eb8eb20f04ff5d54dc29cbbe0692dd03d7d9c7d44e0cfd20e51f42d2a",
-      "image_sha256": "eba27c1c6ac9cd1780acffc3fcdca3944a7dde6859aa1a0b98f9be828b1c83c4",
+      "image_sha256": "524726d021ca7ba7568ca8e388de3a3e997a933f20d616361cfda20d2e0d5219",
       "path": "docs/screenshots/current/church/1440/accepted.png",
       "pixel_size": {
         "height": 1800,
@@ -586,7 +586,7 @@
       },
       "scenario": "BO-05",
       "source_files": {
-        "web/static/css/styles.css": "c14199cf50ede9ba58a80a9c40a7c9891eef2178b738948dc9975e22d2222de8",
+        "web/static/css/styles.css": "eae8b31b48d992ed65e64cf544fa85713b95e3fb23bf525fafeca72346b6190d",
         "web/templates/base.html": "15e72cd2b9eb577a486a6fecf3be0e0d2f3be81c90c21e6f0f9aba60bf3226fd",
         "web/templates/partials/assignment_detail_card.html": "167de6e1f135d669350baba1aad2160aeb1db0b8a46027f225d40dbc6ba44e98",
         "web/templates/volunteer/assignment_detail.html": "ee8247161c465e71f4459a066a693c625bc474d7ab82cc74f50604a8d8acf6aa"
@@ -604,7 +604,7 @@
       "domain": "church",
       "fixture_path": "docs/playbooks/church.json",
       "fixture_sha256": "393bc92eb8eb20f04ff5d54dc29cbbe0692dd03d7d9c7d44e0cfd20e51f42d2a",
-      "image_sha256": "504392de846eaadb94064df028d9e20b7d173b2db899f0cd8ef601475c8d6be6",
+      "image_sha256": "bce00cc90dceccbf330d26b454bee0f2cc25b6ef22d9ba470df5c3e3d2974616",
       "path": "docs/screenshots/current/church/1440/dashboard.png",
       "pixel_size": {
         "height": 1800,
@@ -612,7 +612,7 @@
       },
       "scenario": "BO-01",
       "source_files": {
-        "web/static/css/styles.css": "c14199cf50ede9ba58a80a9c40a7c9891eef2178b738948dc9975e22d2222de8",
+        "web/static/css/styles.css": "eae8b31b48d992ed65e64cf544fa85713b95e3fb23bf525fafeca72346b6190d",
         "web/templates/admin/dashboard.html": "c84237f5944326f618b1cb16f7c8057bae5cd8390410126eca7ef26316288885",
         "web/templates/base.html": "15e72cd2b9eb577a486a6fecf3be0e0d2f3be81c90c21e6f0f9aba60bf3226fd"
       },
@@ -629,7 +629,7 @@
       "domain": "church",
       "fixture_path": "docs/playbooks/church.json",
       "fixture_sha256": "393bc92eb8eb20f04ff5d54dc29cbbe0692dd03d7d9c7d44e0cfd20e51f42d2a",
-      "image_sha256": "87d8039a11e7f5a26f10727f3413d4f5ac127373ca7e37e43af4514f6d4442cf",
+      "image_sha256": "bc3273708b88f52d7c5317b25ae85281f759a372c2a76bf7171376983dfa0224",
       "path": "docs/screenshots/current/church/1440/onboarding.png",
       "pixel_size": {
         "height": 1800,
@@ -637,7 +637,7 @@
       },
       "scenario": "BO-01",
       "source_files": {
-        "web/static/css/styles.css": "c14199cf50ede9ba58a80a9c40a7c9891eef2178b738948dc9975e22d2222de8",
+        "web/static/css/styles.css": "eae8b31b48d992ed65e64cf544fa85713b95e3fb23bf525fafeca72346b6190d",
         "web/templates/admin/onboarding.html": "98989bf974b84ddef561da2f085f3202f6ac6fae39f0366101316760c75340e1",
         "web/templates/base.html": "15e72cd2b9eb577a486a6fecf3be0e0d2f3be81c90c21e6f0f9aba60bf3226fd"
       },
@@ -654,7 +654,7 @@
       "domain": "church",
       "fixture_path": "docs/playbooks/church.json",
       "fixture_sha256": "393bc92eb8eb20f04ff5d54dc29cbbe0692dd03d7d9c7d44e0cfd20e51f42d2a",
-      "image_sha256": "795ea70641cb78aed77743f7c135d90587e4e3be4feb291350dc583b94af391a",
+      "image_sha256": "df578c87014362c5b375fd590c812675d0b479ab5fae60d51ca29471fdaef666",
       "path": "docs/screenshots/current/church/1440/qualified.png",
       "pixel_size": {
         "height": 1800,
@@ -662,7 +662,7 @@
       },
       "scenario": "BO-02",
       "source_files": {
-        "web/static/css/styles.css": "c14199cf50ede9ba58a80a9c40a7c9891eef2178b738948dc9975e22d2222de8",
+        "web/static/css/styles.css": "eae8b31b48d992ed65e64cf544fa85713b95e3fb23bf525fafeca72346b6190d",
         "web/templates/admin/people.html": "8756d19d4dd2b66b7030fa9c2d85303ebc9aa48bc8cdb037635971ac8031edac",
         "web/templates/base.html": "15e72cd2b9eb577a486a6fecf3be0e0d2f3be81c90c21e6f0f9aba60bf3226fd",
         "web/templates/partials/people_list.html": "dbb878e714eedbd1e7b1e14960d5ff6763002269ada948763f38d98f8a4f869f"
@@ -680,7 +680,7 @@
       "domain": "church",
       "fixture_path": "docs/playbooks/church.json",
       "fixture_sha256": "393bc92eb8eb20f04ff5d54dc29cbbe0692dd03d7d9c7d44e0cfd20e51f42d2a",
-      "image_sha256": "d9054a23c5d87dd9cba88ac7c8cfc8fdba61b7d6f39308d26093cf5545438606",
+      "image_sha256": "632f39eb1193a4454f27950a9f279dcb3b20ce60df30ef020aa6ab674d7da4c6",
       "path": "docs/screenshots/current/church/1440/replacement-covered.png",
       "pixel_size": {
         "height": 1800,
@@ -688,7 +688,7 @@
       },
       "scenario": "CH-D01",
       "source_files": {
-        "web/static/css/styles.css": "c14199cf50ede9ba58a80a9c40a7c9891eef2178b738948dc9975e22d2222de8",
+        "web/static/css/styles.css": "eae8b31b48d992ed65e64cf544fa85713b95e3fb23bf525fafeca72346b6190d",
         "web/templates/base.html": "15e72cd2b9eb577a486a6fecf3be0e0d2f3be81c90c21e6f0f9aba60bf3226fd",
         "web/templates/partials/assignment_detail_card.html": "167de6e1f135d669350baba1aad2160aeb1db0b8a46027f225d40dbc6ba44e98",
         "web/templates/volunteer/assignment_detail.html": "ee8247161c465e71f4459a066a693c625bc474d7ab82cc74f50604a8d8acf6aa",
@@ -707,7 +707,7 @@
       "domain": "church",
       "fixture_path": "docs/playbooks/church.json",
       "fixture_sha256": "393bc92eb8eb20f04ff5d54dc29cbbe0692dd03d7d9c7d44e0cfd20e51f42d2a",
-      "image_sha256": "2e578f8138daa2def8fad8ef87c3363f831d811cc9df02f8dbfeeef3e7633cb8",
+      "image_sha256": "a510465a7c776ac11e88339365005b9fbbca5300aead467757723b375b5fef93",
       "path": "docs/screenshots/current/church/1440/replacement-needed.png",
       "pixel_size": {
         "height": 1800,
@@ -715,7 +715,7 @@
       },
       "scenario": "CH-D01",
       "source_files": {
-        "web/static/css/styles.css": "c14199cf50ede9ba58a80a9c40a7c9891eef2178b738948dc9975e22d2222de8",
+        "web/static/css/styles.css": "eae8b31b48d992ed65e64cf544fa85713b95e3fb23bf525fafeca72346b6190d",
         "web/templates/admin/swaps.html": "747d4d99f979199f2be8578a922e2e267cf0756ab74ac2e8fef1dae7c3774650",
         "web/templates/base.html": "15e72cd2b9eb577a486a6fecf3be0e0d2f3be81c90c21e6f0f9aba60bf3226fd",
         "web/templates/partials/swaps_list.html": "e2d3688bf894efc541ac510c97ddeddc0d4a848ee767773e9179ea15bf1a34f0"
@@ -733,7 +733,7 @@
       "domain": "church",
       "fixture_path": "docs/playbooks/church.json",
       "fixture_sha256": "393bc92eb8eb20f04ff5d54dc29cbbe0692dd03d7d9c7d44e0cfd20e51f42d2a",
-      "image_sha256": "bf6654b23cfe81f77a2aa59af894b16b46c9d281872269989bebe3349ae07d41",
+      "image_sha256": "7b00cac81b6a08de6b7d561a9d6e49149bdda4fe015a3ee5e143d088b51ea7df",
       "path": "docs/screenshots/current/church/1440/schedule-change-admin.png",
       "pixel_size": {
         "height": 1800,
@@ -741,7 +741,7 @@
       },
       "scenario": "CH-D03",
       "source_files": {
-        "web/static/css/styles.css": "c14199cf50ede9ba58a80a9c40a7c9891eef2178b738948dc9975e22d2222de8",
+        "web/static/css/styles.css": "eae8b31b48d992ed65e64cf544fa85713b95e3fb23bf525fafeca72346b6190d",
         "web/templates/admin/solution_review.html": "364a57407bcd67cddf0687fad9f22ed4895af3cf8e96a728493aa1d0b57502e3",
         "web/templates/base.html": "15e72cd2b9eb577a486a6fecf3be0e0d2f3be81c90c21e6f0f9aba60bf3226fd",
         "web/templates/partials/publish_state.html": "416154d21a14f14bce7d5a12b786769ae28992b2d5745d4782c702cc417d4048"
@@ -759,7 +759,7 @@
       "domain": "church",
       "fixture_path": "docs/playbooks/church.json",
       "fixture_sha256": "393bc92eb8eb20f04ff5d54dc29cbbe0692dd03d7d9c7d44e0cfd20e51f42d2a",
-      "image_sha256": "fe3673e3499bf194b54fdce66a70bcaabea68d90e88ff0cb883d1d5a09c84423",
+      "image_sha256": "ed0e34b26dabed7e371acaee3d9b39c8fc2912a6a5eeb31f5576106a0e77b89f",
       "path": "docs/screenshots/current/church/1440/schedule-change-member.png",
       "pixel_size": {
         "height": 1800,
@@ -767,7 +767,7 @@
       },
       "scenario": "CH-D03",
       "source_files": {
-        "web/static/css/styles.css": "c14199cf50ede9ba58a80a9c40a7c9891eef2178b738948dc9975e22d2222de8",
+        "web/static/css/styles.css": "eae8b31b48d992ed65e64cf544fa85713b95e3fb23bf525fafeca72346b6190d",
         "web/templates/base.html": "15e72cd2b9eb577a486a6fecf3be0e0d2f3be81c90c21e6f0f9aba60bf3226fd",
         "web/templates/partials/assignment_detail_card.html": "167de6e1f135d669350baba1aad2160aeb1db0b8a46027f225d40dbc6ba44e98",
         "web/templates/volunteer/assignment_detail.html": "ee8247161c465e71f4459a066a693c625bc474d7ab82cc74f50604a8d8acf6aa"
@@ -785,7 +785,7 @@
       "domain": "church",
       "fixture_path": "docs/playbooks/church.json",
       "fixture_sha256": "393bc92eb8eb20f04ff5d54dc29cbbe0692dd03d7d9c7d44e0cfd20e51f42d2a",
-      "image_sha256": "5fb6b900b0e6bd3daa9f7753571413ba357636cd774148edc5b19affc8e6ba71",
+      "image_sha256": "399f2dc924b0d948ff6f906eab8d8ee5b8d82c3ad27d162d0a95e1f2a92f31f2",
       "path": "docs/screenshots/current/church/1440/six-week-solution.png",
       "pixel_size": {
         "height": 1800,
@@ -793,7 +793,7 @@
       },
       "scenario": "BO-04",
       "source_files": {
-        "web/static/css/styles.css": "c14199cf50ede9ba58a80a9c40a7c9891eef2178b738948dc9975e22d2222de8",
+        "web/static/css/styles.css": "eae8b31b48d992ed65e64cf544fa85713b95e3fb23bf525fafeca72346b6190d",
         "web/templates/admin/solution_review.html": "364a57407bcd67cddf0687fad9f22ed4895af3cf8e96a728493aa1d0b57502e3",
         "web/templates/base.html": "15e72cd2b9eb577a486a6fecf3be0e0d2f3be81c90c21e6f0f9aba60bf3226fd",
         "web/templates/partials/solution_assignments.html": "b1dc136d126e7bff9c7a6d871e40ed6b9e97d61a8044d6d24a9eb2bb69d751f3"
@@ -811,7 +811,7 @@
       "domain": "church",
       "fixture_path": "docs/playbooks/church.json",
       "fixture_sha256": "393bc92eb8eb20f04ff5d54dc29cbbe0692dd03d7d9c7d44e0cfd20e51f42d2a",
-      "image_sha256": "f08a01c1b1ede2b30348c1f61062210b55bd450b0f4e215edc6c9f84c3aaf096",
+      "image_sha256": "4d1f754655be879c8e5637a893d2aad04a33ce5435b6dbef28a9080c7273fa02",
       "path": "docs/screenshots/current/church/1440/unanswered.png",
       "pixel_size": {
         "height": 1800,
@@ -819,7 +819,7 @@
       },
       "scenario": "BO-05",
       "source_files": {
-        "web/static/css/styles.css": "c14199cf50ede9ba58a80a9c40a7c9891eef2178b738948dc9975e22d2222de8",
+        "web/static/css/styles.css": "eae8b31b48d992ed65e64cf544fa85713b95e3fb23bf525fafeca72346b6190d",
         "web/templates/base.html": "15e72cd2b9eb577a486a6fecf3be0e0d2f3be81c90c21e6f0f9aba60bf3226fd",
         "web/templates/volunteer/schedule.html": "78b25425d16bcad0a49728182a119a011c1d5adc4208e9a5d3320f58ccdeb1ae"
       },
@@ -836,7 +836,7 @@
       "domain": "church",
       "fixture_path": "docs/playbooks/church.json",
       "fixture_sha256": "393bc92eb8eb20f04ff5d54dc29cbbe0692dd03d7d9c7d44e0cfd20e51f42d2a",
-      "image_sha256": "fbb93095359d7f7de9b654c1c503175afb577c8ef6e3d02f1c0ba64b1c6323de",
+      "image_sha256": "ce82845bf958714bb941adc22d0dea7ea8a05b70e026fa8dc2bb47f71ef150b8",
       "path": "docs/screenshots/current/church/1440/week-seven-rollover.png",
       "pixel_size": {
         "height": 1800,
@@ -844,7 +844,7 @@
       },
       "scenario": "BO-08",
       "source_files": {
-        "web/static/css/styles.css": "c14199cf50ede9ba58a80a9c40a7c9891eef2178b738948dc9975e22d2222de8",
+        "web/static/css/styles.css": "eae8b31b48d992ed65e64cf544fa85713b95e3fb23bf525fafeca72346b6190d",
         "web/templates/admin/events.html": "1ccc8b63ac5d645ceb6db1059b6f2bcf77c45793c332b50842878933c39e974f",
         "web/templates/base.html": "15e72cd2b9eb577a486a6fecf3be0e0d2f3be81c90c21e6f0f9aba60bf3226fd",
         "web/templates/partials/events_list.html": "8988f1c93cc7a0f45aaade4051fbdb03cd3dd7579b0d35100090b00ff3b5039a"
@@ -862,7 +862,7 @@
       "domain": "church",
       "fixture_path": "docs/playbooks/church.json",
       "fixture_sha256": "393bc92eb8eb20f04ff5d54dc29cbbe0692dd03d7d9c7d44e0cfd20e51f42d2a",
-      "image_sha256": "a50e8947465375d5e9506880490499148cba235ae9a0df9f2bdd95037a1cf19c",
+      "image_sha256": "869e4fc7b0e8130f8ea4232de1cef8450cf65662358205294b937c8433d3bf7b",
       "path": "docs/screenshots/current/church/360/accepted.png",
       "pixel_size": {
         "height": 1800,
@@ -870,7 +870,7 @@
       },
       "scenario": "BO-05",
       "source_files": {
-        "web/static/css/styles.css": "c14199cf50ede9ba58a80a9c40a7c9891eef2178b738948dc9975e22d2222de8",
+        "web/static/css/styles.css": "eae8b31b48d992ed65e64cf544fa85713b95e3fb23bf525fafeca72346b6190d",
         "web/templates/base.html": "15e72cd2b9eb577a486a6fecf3be0e0d2f3be81c90c21e6f0f9aba60bf3226fd",
         "web/templates/partials/assignment_detail_card.html": "167de6e1f135d669350baba1aad2160aeb1db0b8a46027f225d40dbc6ba44e98",
         "web/templates/volunteer/assignment_detail.html": "ee8247161c465e71f4459a066a693c625bc474d7ab82cc74f50604a8d8acf6aa"
@@ -888,7 +888,7 @@
       "domain": "church",
       "fixture_path": "docs/playbooks/church.json",
       "fixture_sha256": "393bc92eb8eb20f04ff5d54dc29cbbe0692dd03d7d9c7d44e0cfd20e51f42d2a",
-      "image_sha256": "80d675753b4405da829fa494adc17fe65e0197fd06daca658cbc3cc132126a28",
+      "image_sha256": "a8f6f6ed5bdf5ab43a9865cebe4e15ba86e10d218017f89a51cb301082d995f4",
       "path": "docs/screenshots/current/church/360/dashboard.png",
       "pixel_size": {
         "height": 1800,
@@ -896,7 +896,7 @@
       },
       "scenario": "BO-01",
       "source_files": {
-        "web/static/css/styles.css": "c14199cf50ede9ba58a80a9c40a7c9891eef2178b738948dc9975e22d2222de8",
+        "web/static/css/styles.css": "eae8b31b48d992ed65e64cf544fa85713b95e3fb23bf525fafeca72346b6190d",
         "web/templates/admin/dashboard.html": "c84237f5944326f618b1cb16f7c8057bae5cd8390410126eca7ef26316288885",
         "web/templates/base.html": "15e72cd2b9eb577a486a6fecf3be0e0d2f3be81c90c21e6f0f9aba60bf3226fd"
       },
@@ -913,7 +913,7 @@
       "domain": "church",
       "fixture_path": "docs/playbooks/church.json",
       "fixture_sha256": "393bc92eb8eb20f04ff5d54dc29cbbe0692dd03d7d9c7d44e0cfd20e51f42d2a",
-      "image_sha256": "eaefd48b382e6854c19cb5794feb6aca121d515c0a3737119ef0dd7401998377",
+      "image_sha256": "55b91e23303c96752021f5ebefaeb16b88553957cd59dadbfc9e41b3f7392fa9",
       "path": "docs/screenshots/current/church/360/onboarding.png",
       "pixel_size": {
         "height": 1800,
@@ -921,7 +921,7 @@
       },
       "scenario": "BO-01",
       "source_files": {
-        "web/static/css/styles.css": "c14199cf50ede9ba58a80a9c40a7c9891eef2178b738948dc9975e22d2222de8",
+        "web/static/css/styles.css": "eae8b31b48d992ed65e64cf544fa85713b95e3fb23bf525fafeca72346b6190d",
         "web/templates/admin/onboarding.html": "98989bf974b84ddef561da2f085f3202f6ac6fae39f0366101316760c75340e1",
         "web/templates/base.html": "15e72cd2b9eb577a486a6fecf3be0e0d2f3be81c90c21e6f0f9aba60bf3226fd"
       },
@@ -938,7 +938,7 @@
       "domain": "church",
       "fixture_path": "docs/playbooks/church.json",
       "fixture_sha256": "393bc92eb8eb20f04ff5d54dc29cbbe0692dd03d7d9c7d44e0cfd20e51f42d2a",
-      "image_sha256": "0b12181b0ede16c89f1742ef2c3878601dbde4dc34ca80350fbf56f29c727e25",
+      "image_sha256": "6b3cf9684dda25a23059446c933e2b70a6ff9f8557ca9f9068474065cd6e5782",
       "path": "docs/screenshots/current/church/360/qualified.png",
       "pixel_size": {
         "height": 1800,
@@ -946,7 +946,7 @@
       },
       "scenario": "BO-02",
       "source_files": {
-        "web/static/css/styles.css": "c14199cf50ede9ba58a80a9c40a7c9891eef2178b738948dc9975e22d2222de8",
+        "web/static/css/styles.css": "eae8b31b48d992ed65e64cf544fa85713b95e3fb23bf525fafeca72346b6190d",
         "web/templates/admin/people.html": "8756d19d4dd2b66b7030fa9c2d85303ebc9aa48bc8cdb037635971ac8031edac",
         "web/templates/base.html": "15e72cd2b9eb577a486a6fecf3be0e0d2f3be81c90c21e6f0f9aba60bf3226fd",
         "web/templates/partials/people_list.html": "dbb878e714eedbd1e7b1e14960d5ff6763002269ada948763f38d98f8a4f869f"
@@ -964,7 +964,7 @@
       "domain": "church",
       "fixture_path": "docs/playbooks/church.json",
       "fixture_sha256": "393bc92eb8eb20f04ff5d54dc29cbbe0692dd03d7d9c7d44e0cfd20e51f42d2a",
-      "image_sha256": "2551c926f94ed0f4d683b567cc3ffac82ef86a5b59ea402b44d801eb10dc7489",
+      "image_sha256": "fe7151f012c8c38c8fc4cd9951e4f3d8654043601cf8b209faa4f1d09c35f263",
       "path": "docs/screenshots/current/church/360/replacement-covered.png",
       "pixel_size": {
         "height": 1800,
@@ -972,7 +972,7 @@
       },
       "scenario": "CH-D01",
       "source_files": {
-        "web/static/css/styles.css": "c14199cf50ede9ba58a80a9c40a7c9891eef2178b738948dc9975e22d2222de8",
+        "web/static/css/styles.css": "eae8b31b48d992ed65e64cf544fa85713b95e3fb23bf525fafeca72346b6190d",
         "web/templates/base.html": "15e72cd2b9eb577a486a6fecf3be0e0d2f3be81c90c21e6f0f9aba60bf3226fd",
         "web/templates/partials/assignment_detail_card.html": "167de6e1f135d669350baba1aad2160aeb1db0b8a46027f225d40dbc6ba44e98",
         "web/templates/volunteer/assignment_detail.html": "ee8247161c465e71f4459a066a693c625bc474d7ab82cc74f50604a8d8acf6aa",
@@ -991,7 +991,7 @@
       "domain": "church",
       "fixture_path": "docs/playbooks/church.json",
       "fixture_sha256": "393bc92eb8eb20f04ff5d54dc29cbbe0692dd03d7d9c7d44e0cfd20e51f42d2a",
-      "image_sha256": "f3adf8510f123214699f049c3157f6cc56f9f08bf2ae79260268134dec07e2ae",
+      "image_sha256": "97b97a998a5157d5a751262d91f8d2883412ecc6dbd62e2d62908e95d3724040",
       "path": "docs/screenshots/current/church/360/replacement-needed.png",
       "pixel_size": {
         "height": 1800,
@@ -999,7 +999,7 @@
       },
       "scenario": "CH-D01",
       "source_files": {
-        "web/static/css/styles.css": "c14199cf50ede9ba58a80a9c40a7c9891eef2178b738948dc9975e22d2222de8",
+        "web/static/css/styles.css": "eae8b31b48d992ed65e64cf544fa85713b95e3fb23bf525fafeca72346b6190d",
         "web/templates/admin/swaps.html": "747d4d99f979199f2be8578a922e2e267cf0756ab74ac2e8fef1dae7c3774650",
         "web/templates/base.html": "15e72cd2b9eb577a486a6fecf3be0e0d2f3be81c90c21e6f0f9aba60bf3226fd",
         "web/templates/partials/swaps_list.html": "e2d3688bf894efc541ac510c97ddeddc0d4a848ee767773e9179ea15bf1a34f0"
@@ -1017,7 +1017,7 @@
       "domain": "church",
       "fixture_path": "docs/playbooks/church.json",
       "fixture_sha256": "393bc92eb8eb20f04ff5d54dc29cbbe0692dd03d7d9c7d44e0cfd20e51f42d2a",
-      "image_sha256": "e892ecb1bf4c5607ceec2888f5d058194fd56b6975a0c0375db192340f7225e3",
+      "image_sha256": "58d4cbd966d254f9cca6f8a303cde876535adce539b0223068f16b1b173fd6aa",
       "path": "docs/screenshots/current/church/360/schedule-change-admin.png",
       "pixel_size": {
         "height": 1800,
@@ -1025,7 +1025,7 @@
       },
       "scenario": "CH-D03",
       "source_files": {
-        "web/static/css/styles.css": "c14199cf50ede9ba58a80a9c40a7c9891eef2178b738948dc9975e22d2222de8",
+        "web/static/css/styles.css": "eae8b31b48d992ed65e64cf544fa85713b95e3fb23bf525fafeca72346b6190d",
         "web/templates/admin/solution_review.html": "364a57407bcd67cddf0687fad9f22ed4895af3cf8e96a728493aa1d0b57502e3",
         "web/templates/base.html": "15e72cd2b9eb577a486a6fecf3be0e0d2f3be81c90c21e6f0f9aba60bf3226fd",
         "web/templates/partials/publish_state.html": "416154d21a14f14bce7d5a12b786769ae28992b2d5745d4782c702cc417d4048"
@@ -1043,7 +1043,7 @@
       "domain": "church",
       "fixture_path": "docs/playbooks/church.json",
       "fixture_sha256": "393bc92eb8eb20f04ff5d54dc29cbbe0692dd03d7d9c7d44e0cfd20e51f42d2a",
-      "image_sha256": "ed23f2ec037d040261ed7191caf9b94afda57ae4da9d3a35bb6e6d0364e11735",
+      "image_sha256": "3b3f8e161ac7066a52db56ef87fbe3175a232b30a27070db6e71ae9e15cd712c",
       "path": "docs/screenshots/current/church/360/schedule-change-member.png",
       "pixel_size": {
         "height": 1800,
@@ -1051,7 +1051,7 @@
       },
       "scenario": "CH-D03",
       "source_files": {
-        "web/static/css/styles.css": "c14199cf50ede9ba58a80a9c40a7c9891eef2178b738948dc9975e22d2222de8",
+        "web/static/css/styles.css": "eae8b31b48d992ed65e64cf544fa85713b95e3fb23bf525fafeca72346b6190d",
         "web/templates/base.html": "15e72cd2b9eb577a486a6fecf3be0e0d2f3be81c90c21e6f0f9aba60bf3226fd",
         "web/templates/partials/assignment_detail_card.html": "167de6e1f135d669350baba1aad2160aeb1db0b8a46027f225d40dbc6ba44e98",
         "web/templates/volunteer/assignment_detail.html": "ee8247161c465e71f4459a066a693c625bc474d7ab82cc74f50604a8d8acf6aa"
@@ -1069,7 +1069,7 @@
       "domain": "church",
       "fixture_path": "docs/playbooks/church.json",
       "fixture_sha256": "393bc92eb8eb20f04ff5d54dc29cbbe0692dd03d7d9c7d44e0cfd20e51f42d2a",
-      "image_sha256": "9f171e670ecb41857c0a8b8a5bae8df0718a7a0e8e7f5712ba63baf7dc83fefb",
+      "image_sha256": "097a086e98056f679a08ae4e079191fa65bc2a04b7c442014112897e517d30ac",
       "path": "docs/screenshots/current/church/360/six-week-solution.png",
       "pixel_size": {
         "height": 1800,
@@ -1077,7 +1077,7 @@
       },
       "scenario": "BO-04",
       "source_files": {
-        "web/static/css/styles.css": "c14199cf50ede9ba58a80a9c40a7c9891eef2178b738948dc9975e22d2222de8",
+        "web/static/css/styles.css": "eae8b31b48d992ed65e64cf544fa85713b95e3fb23bf525fafeca72346b6190d",
         "web/templates/admin/solution_review.html": "364a57407bcd67cddf0687fad9f22ed4895af3cf8e96a728493aa1d0b57502e3",
         "web/templates/base.html": "15e72cd2b9eb577a486a6fecf3be0e0d2f3be81c90c21e6f0f9aba60bf3226fd",
         "web/templates/partials/solution_assignments.html": "b1dc136d126e7bff9c7a6d871e40ed6b9e97d61a8044d6d24a9eb2bb69d751f3"
@@ -1095,7 +1095,7 @@
       "domain": "church",
       "fixture_path": "docs/playbooks/church.json",
       "fixture_sha256": "393bc92eb8eb20f04ff5d54dc29cbbe0692dd03d7d9c7d44e0cfd20e51f42d2a",
-      "image_sha256": "636b53c08703633a26df58c3b05737f828990c44016e35ffe4f12db495b6ad3c",
+      "image_sha256": "d6f9537433291efe4bbf63254c8e1037d33174d8d51c93dc44a4aab532540f7f",
       "path": "docs/screenshots/current/church/360/unanswered.png",
       "pixel_size": {
         "height": 1800,
@@ -1103,7 +1103,7 @@
       },
       "scenario": "BO-05",
       "source_files": {
-        "web/static/css/styles.css": "c14199cf50ede9ba58a80a9c40a7c9891eef2178b738948dc9975e22d2222de8",
+        "web/static/css/styles.css": "eae8b31b48d992ed65e64cf544fa85713b95e3fb23bf525fafeca72346b6190d",
         "web/templates/base.html": "15e72cd2b9eb577a486a6fecf3be0e0d2f3be81c90c21e6f0f9aba60bf3226fd",
         "web/templates/volunteer/schedule.html": "78b25425d16bcad0a49728182a119a011c1d5adc4208e9a5d3320f58ccdeb1ae"
       },
@@ -1120,7 +1120,7 @@
       "domain": "church",
       "fixture_path": "docs/playbooks/church.json",
       "fixture_sha256": "393bc92eb8eb20f04ff5d54dc29cbbe0692dd03d7d9c7d44e0cfd20e51f42d2a",
-      "image_sha256": "6816c4084f8495c928349add9132b021af136f274211bbfd374db53841111c4b",
+      "image_sha256": "701080e3b1c1ea596772a7d185a32e56a4fcf6bcf344374ffcfbb411bc5726bd",
       "path": "docs/screenshots/current/church/360/week-seven-rollover.png",
       "pixel_size": {
         "height": 1800,
@@ -1128,7 +1128,7 @@
       },
       "scenario": "BO-08",
       "source_files": {
-        "web/static/css/styles.css": "c14199cf50ede9ba58a80a9c40a7c9891eef2178b738948dc9975e22d2222de8",
+        "web/static/css/styles.css": "eae8b31b48d992ed65e64cf544fa85713b95e3fb23bf525fafeca72346b6190d",
         "web/templates/admin/events.html": "1ccc8b63ac5d645ceb6db1059b6f2bcf77c45793c332b50842878933c39e974f",
         "web/templates/base.html": "15e72cd2b9eb577a486a6fecf3be0e0d2f3be81c90c21e6f0f9aba60bf3226fd",
         "web/templates/partials/events_list.html": "8988f1c93cc7a0f45aaade4051fbdb03cd3dd7579b0d35100090b00ff3b5039a"
@@ -1141,5 +1141,5 @@
   ],
   "scenario_date": "2030-01-09",
   "schema_version": 1,
-  "source_ref": "f57f694a3eb5c128bf887776015767928016a8c6"
+  "source_ref": "1ed82c778fd5630aa18927a54d4e49a6ebe99444"
 }
