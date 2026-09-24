@@ -35,7 +35,7 @@ void main() {
   testWidgets('dashboard renders KPI grid + recent solutions', (tester) async {
     final data = DashboardData(
       activeVolunteers: 47,
-      eventsThisWeek: 12,
+      upcomingEvents: 12,
       healthScore: 98,
       publishedSolution: _solution(id: 141, isPublished: true, health: 96),
       publishedAt: DateTime(2026, 5, 4),
@@ -62,6 +62,8 @@ void main() {
     expect(find.text('47'), findsOneWidget);
     expect(find.text('12'), findsOneWidget);
     expect(find.text('98'), findsOneWidget);
+    expect(find.text('UPCOMING EVENTS'), findsOneWidget);
+    expect(find.text('EVENTS THIS WEEK'), findsNothing);
     expect(find.text('Solution #142'), findsOneWidget);
     expect(find.text('DRAFT'), findsOneWidget);
     // Solution #141 appears twice: in the KPI card subtitle + in the
@@ -77,8 +79,8 @@ void main() {
         overrides: [
           dashboardProvider.overrideWith((ref) async => const DashboardData(
                 activeVolunteers: 0,
-                eventsThisWeek: 0,
-                healthScore: 0,
+                upcomingEvents: 0,
+                healthScore: null,
                 publishedSolution: null,
                 publishedAt: null,
                 recentSolutions: [],
@@ -94,6 +96,8 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('NONE LIVE'), findsOneWidget);
+    // No solution yet → no health score to show, not a misleading 0/100.
+    expect(find.text('—'), findsOneWidget);
     expect(find.textContaining('No solutions yet'), findsOneWidget);
   });
 }
