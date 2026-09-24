@@ -8861,7 +8861,7 @@
     },
     "/api/v1/events/{event_id}": {
       "delete": {
-        "description": "Delete event (admin only).",
+        "description": "Cancel an event (admin only), telling whoever was scheduled for it.",
         "operationId": "deleteEvent",
         "parameters": [
           {
@@ -10895,7 +10895,7 @@
     },
     "/api/v1/people/{person_id}": {
       "delete": {
-        "description": "Delete person (admin only).",
+        "description": "Erase a person and all their work (admin only).\n\nThis removes completed history as well as future work, because\n``Person.assignments`` cascades. Prefer ``POST /{person_id}/deactivate``\nfor someone who has simply left; keep this for genuine erasure requests.",
         "operationId": "deletePerson",
         "parameters": [
           {
@@ -11031,6 +11031,54 @@
           }
         ],
         "summary": "Update Person",
+        "tags": [
+          "people"
+        ]
+      }
+    },
+    "/api/v1/people/{person_id}/deactivate": {
+      "post": {
+        "description": "Retire a departing member (admin only), keeping their history.\n\nThis is the departure path to prefer over ``DELETE``. A hard delete\ncascades through ``Person.assignments`` and erases completed work along\nwith the future work, silently rewriting a published record. Deactivating\nkeeps the row, so past assignments stay as history, while future live work\nis reopened exactly as a qualification removal would reopen it.\n``get_current_user`` already rejects a non-active person, so their session\nand any further login stop working.",
+        "operationId": "deactivatePerson",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "person_id",
+            "required": true,
+            "schema": {
+              "title": "Person Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PersonResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Deactivate Person",
         "tags": [
           "people"
         ]
@@ -11339,7 +11387,7 @@
         ]
       },
       "put": {
-        "description": "Update the series template (affects future occurrences).\n\nOnly updates the template - existing occurrences are NOT changed.\nUse this to modify what future occurrences will look like.\n\nNote: To modify recurrence pattern, delete and recreate the series.",
+        "description": "Update the series template.\n\nEvery occurrence is generated when the series is created, so a template\nchange alone would reach nothing. New role requirements are therefore\napplied to the occurrences that have not started, except any edited on\ntheir own (``is_exception``). Past occurrences keep the roles they were\nserved with.\n\nNote: To modify recurrence pattern, delete and recreate the series.",
         "operationId": "updateSeriesTemplate",
         "parameters": [
           {

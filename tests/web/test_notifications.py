@@ -128,3 +128,40 @@ def test_preferences_save_and_validate(client, db):
     )
     assert bad.status_code == 400
     assert "between 0 and 23" in bad.text
+
+
+def test_inbox_names_the_event_rather_than_its_id(client, db):
+    """Event ids are internal (recurring ones are UUIDs); people know services by name."""
+    tok = _login(client, db, pid="n_name", org="n_o_name", email="nname@web.test")
+    event = Event(
+        id="event_3f2a9c1e-internal",
+        org_id="n_o_name",
+        type="Sunday worship",
+        start_time=datetime(2030, 1, 6, 10, 0),
+        end_time=datetime(2030, 1, 6, 12, 0),
+    )
+    db.add(event)
+    db.commit()
+    notice = _notif(db, org="n_o_name", recipient="n_name")
+    notice.event_id = event.id
+    db.commit()
+
+    html = client.get("/v/inbox", cookies={SESSION_COOKIE: tok}).text
+    assert "Sunday worship" in html
+    assert "Sun 06 Jan, 10:00" in html
+    assert "event_3f2a9c1e-internal" not in html
+
+
+def test_inbox_names_a_cancelled_event_from_its_snapshot(client, db):
+    """A cancelled event's row is gone; its notice carries the details instead."""
+    tok = _login(client, db, pid="n_cancel", org="n_o_cancel", email="ncancel@web.test")
+    notice = _notif(db, org="n_o_cancel", recipient="n_cancel", ntype="cancellation")
+    notice.template_data = {
+        "event_title": "Youth night",
+        "event_datetime": "Friday, January 11, 2030 at 07:00 PM",
+    }
+    db.commit()
+
+    html = client.get("/v/inbox", cookies={SESSION_COOKIE: tok}).text
+    assert "Youth night" in html
+    assert "Friday, January 11, 2030 at 07:00 PM" in html

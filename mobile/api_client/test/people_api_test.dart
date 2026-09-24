@@ -25,9 +25,18 @@ void main() {
       // TODO
     });
 
+    // Deactivate Person
+    //
+    // Retire a departing member (admin only), keeping their history.  This is the departure path to prefer over ``DELETE``. A hard delete cascades through ``Person.assignments`` and erases completed work along with the future work, silently rewriting a published record. Deactivating keeps the row, so past assignments stay as history, while future live work is reopened exactly as a qualification removal would reopen it. ``get_current_user`` already rejects a non-active person, so their session and any further login stop working.
+    //
+    //Future<PersonResponse> deactivatePerson(String personId) async
+    test('test deactivatePerson', () async {
+      // TODO
+    });
+
     // Delete Person
     //
-    // Delete person (admin only).
+    // Erase a person and all their work (admin only).  This removes completed history as well as future work, because ``Person.assignments`` cascades. Prefer ``POST /{person_id}/deactivate`` for someone who has simply left; keep this for genuine erasure requests.
     //
     //Future deletePerson(String personId) async
     test('test deletePerson', () async {

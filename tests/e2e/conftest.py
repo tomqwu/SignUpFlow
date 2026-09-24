@@ -172,14 +172,87 @@ def mail_live_server(mail_db_path, mail_capture_dir):
                 proc.kill()
 
 
+#: Every engine a user might bring. Chromium alone missed a Safari-only
+#: failure that left the whole UI unstyled, so the cross-browser tour runs all
+#: three, and SIGNUPFLOW_E2E_BROWSER picks the engine for the rest of the suite.
+ENGINES = ("chromium", "webkit", "firefox")
+
+#: The app's own assets. A page whose stylesheet or scripts fail to load does
+#: not raise a JavaScript error, so without this check an unstyled, script-less
+#: page passed every test.
+_ASSET_TYPES = {"stylesheet", "script", "font", "image"}
+_ASSET_PREFIX = "/web/static/"
+
+
 @pytest.fixture(scope="session")
-def _browser():
+def _playwright():
     from playwright.sync_api import sync_playwright
 
     with sync_playwright() as p:
-        b = p.chromium.launch()
-        yield b
-        b.close()
+        yield p
+
+
+def launch_engine(playwright, name: str):
+    """Launch one engine, failing with the fix when it is not installed."""
+    try:
+        return getattr(playwright, name).launch()
+    except Exception as exc:
+        if "Executable doesn't exist" in str(exc):
+            pytest.fail(
+                f"Playwright {name} is not installed. Run: "
+                "poetry run playwright install chromium webkit firefox"
+            )
+        raise
+
+
+@pytest.fixture(scope="session")
+def engine_browser(_playwright):
+    """Launch-once factory: engine_browser("webkit") returns a shared browser."""
+    launched: dict = {}
+
+    def _get(name: str):
+        if name not in launched:
+            launched[name] = launch_engine(_playwright, name)
+        return launched[name]
+
+    yield _get
+    for browser in launched.values():
+        browser.close()
+
+
+@pytest.fixture(scope="session")
+def _browser(engine_browser):
+    import os
+
+    return engine_browser(os.getenv("SIGNUPFLOW_E2E_BROWSER", "chromium"))
+
+
+def track_page_health(ctx) -> None:
+    """Record uncaught JavaScript errors and failed app assets on a context."""
+    from urllib.parse import urlsplit
+
+    ctx.signupflow_javascript_errors = []
+    ctx.signupflow_asset_failures = []
+
+    def is_app_asset(request) -> bool:
+        return request.resource_type in _ASSET_TYPES and urlsplit(request.url).path.startswith(
+            _ASSET_PREFIX
+        )
+
+    def on_failed(request):
+        if is_app_asset(request):
+            ctx.signupflow_asset_failures.append(f"{request.url}: {request.failure}")
+
+    def on_response(response):
+        if response.status >= 400 and is_app_asset(response.request):
+            ctx.signupflow_asset_failures.append(f"{response.url}: HTTP {response.status}")
+
+    def track_page(pg):
+        pg.on("pageerror", lambda error: ctx.signupflow_javascript_errors.append(str(error)))
+
+    ctx.on("page", track_page)
+    ctx.on("requestfailed", on_failed)
+    ctx.on("response", on_response)
 
 
 @pytest.fixture
@@ -191,24 +264,25 @@ def new_context(_browser):
 
     def _make():
         ctx = _browser.new_context(viewport={"width": 430, "height": 932}, device_scale_factor=2)
-        ctx.signupflow_javascript_errors = []
-
-        def track_page(pg):
-            pg.on("pageerror", lambda error: ctx.signupflow_javascript_errors.append(str(error)))
-
-        ctx.on("page", track_page)
+        track_page_health(ctx)
         made.append(ctx)
         return ctx
 
     yield _make
     for context in made:
-        assert_no_javascript_errors(context)
+        assert_page_health(context)
         context.close()
 
 
 def assert_no_javascript_errors(context) -> None:
     """Fail every browser context on uncaught JavaScript errors."""
     assert not context.signupflow_javascript_errors, context.signupflow_javascript_errors
+
+
+def assert_page_health(context) -> None:
+    """Fail on uncaught JavaScript errors and on app assets that did not load."""
+    assert_no_javascript_errors(context)
+    assert not context.signupflow_asset_failures, context.signupflow_asset_failures
 
 
 @pytest.fixture

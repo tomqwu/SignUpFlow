@@ -32,14 +32,16 @@ Notification routes and the signed SendGrid callback are registered under `/api/
 ## Commands
 
 ```bash
-make setup                # First-time: install deps, run migrations, seed data
-make run                  # Dev server on :8000 (uvicorn --reload)
+make doctor               # Report the environment the app will actually start with
+make setup                # Prepare the environment: deps, backing services, schema
+make up                   # Start the app on :8000 (uvicorn --reload, or compose)
 make test                 # Backend comprehensive tests
 make test-all             # All Python tiers, including web + contract + Playwright
 make test-postgres        # Owned PostgreSQL migration/business/race acceptance
 make test-redis           # Owned Redis quota, event-bus, and broker acceptance
 make test-load            # Bounded source-identified local load validation
 make test-docs            # Documentation ledger plus current local paths and anchors
+make test-stack           # Demo tour in three browsers against the running `make up` stack
 make test-mobile          # Flutter tests (requires Flutter SDK)
 make test-mobile-generated # Generated Dart analysis and tests
 make mobile-codegen-check # Verify generated Dart client matches OpenAPI snapshot

@@ -4,7 +4,7 @@ end-to-end. Real screens land in 11.1+ (see plan)."""
 
 from __future__ import annotations
 
-from typing import cast
+from typing import Any, cast
 
 from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
@@ -396,12 +396,32 @@ def _inbox(db: Session, person: Person) -> dict:
                 "id": n.id,
                 "label": _notif_label(n.type),
                 "event_id": n.event_id,
+                "subject": _notif_subject(n, person),
                 "when": n.created_at.strftime("%a %d %b %Y, %H:%M") if n.created_at else "",
                 "unread": is_unread,
                 "status": (n.status or "").lower(),
             }
         )
     return {"rows": out, "unread": unread}
+
+
+def _notif_subject(notification: Notification, person: Person) -> str | None:
+    """What a notice is about, in the words people use: the event's name and time.
+
+    Event ids are internal (recurring occurrences are UUIDs), so they are never
+    shown. A cancelled event's row is gone by design, so its notice falls back
+    to the snapshot it was queued with.
+    """
+    event = notification.event
+    if event is not None and event.org_id == person.org_id:
+        details = event.extra_data or {}
+        title = details.get("title") or event.type
+        return f"{title} · {event.start_time:%a %d %b, %H:%M}"
+    snapshot: dict[str, Any] = cast(dict[str, Any], notification.template_data or {})
+    title, when = snapshot.get("event_title"), snapshot.get("event_datetime")
+    if title and when:
+        return f"{title} · {when}"
+    return title or None
 
 
 def _unread_count(db: Session, person: Person) -> int:

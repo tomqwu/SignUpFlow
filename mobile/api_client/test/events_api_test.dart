@@ -18,7 +18,7 @@ void main() {
 
     // Delete Event
     //
-    // Delete event (admin only).
+    // Cancel an event (admin only), telling whoever was scheduled for it.
     //
     //Future deleteEvent(String eventId) async
     test('test deleteEvent', () async {

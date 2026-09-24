@@ -30,10 +30,29 @@ make test-security      # Opt-in exact-source/image scan and CycloneDX evidence
 make test-docs          # Tracked documentation dispositions and current local links
 make test-performance   # Legacy fixed assertions; explicit owned loopback target
 make test-load          # Bounded source-identified load profile on an owned local server
+make test-stack         # Demo tour in Chromium, WebKit and Firefox against the app `make up` is serving
 make test-mobile        # Flutter unit/widget tests; requires Flutter SDK
 make test-mobile-generated # Generated Dart analysis (warnings visible) and tests
 make mobile-codegen-check # Deterministic Dart client drift check
 ```
+
+### Browsers and the running stack
+
+The Playwright tier fails a test on any uncaught JavaScript error and on any
+app stylesheet, script, font or image that does not load. A page that renders
+unstyled or without HTMX raises no JavaScript error, so both are checked.
+
+`tests/e2e/test_demo_tour.py` signs in as the printed demo accounts and opens
+the pages the README points at in Chromium, WebKit and Firefox. It requires each
+page to be styled, to have HTMX, and not to show its empty state. WebKit
+matters on its own: Safari once upgraded the app's own assets to https on a
+plain-http localhost, and Chromium and Firefox do not.
+
+`make test-all` starts its own server, so it never exercises `make setup` and
+`make up`, Docker included. After those two, `make test-stack` runs the same
+tour against the app they started (`STACK_URL`, default
+`http://localhost:8000`). Install the three engines once with
+`poetry run playwright install chromium webkit firefox`.
 
 Set `FLUTTER=/absolute/path/to/flutter` when the SDK is not on PATH.
 The test harness strips provider credentials, disables external email/SMS/billing,

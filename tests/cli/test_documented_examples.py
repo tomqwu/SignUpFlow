@@ -35,7 +35,9 @@ def test_installed_cli_help() -> None:
 def test_documented_workspace_solves(domain: str, tmp_path: Path) -> None:
     """Each retained domain workspace loads and solves in a disposable copy."""
     workspace = tmp_path / domain
-    shutil.copytree(ROOT / "examples" / domain, workspace)
+    # The README has readers run `solve examples/<domain>`, which writes
+    # output/ into the checkout. Leave that behind so the copy starts clean.
+    shutil.copytree(ROOT / "examples" / domain, workspace, ignore=shutil.ignore_patterns("output"))
 
     result = run_cli("solve", str(workspace), "--json-output")
     solution = json.loads(result.stdout)

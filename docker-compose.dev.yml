@@ -76,8 +76,8 @@ services:
       # Use service name 'api' for Docker networking (localhost doesn't work inside container)
       E2E_API_BASE: http://api:8000/api
 
-      # Enable email for development/manual testing
-      EMAIL_ENABLED: true
+      # Off unless .env turns it on: the dev stack has no mail catcher.
+      EMAIL_ENABLED: ${EMAIL_ENABLED:-false}
 
       # Disable rate limiting for E2E tests (prevents HTTP 429 errors during test suite)
       DISABLE_RATE_LIMITS: true
@@ -97,6 +97,7 @@ services:
     volumes:
       # Hot-reload: Mount source code
       - ./api:/app/api
+      - ./web:/app/web
       - ./frontend:/app/frontend
       - ./locales:/app/locales
       - ./alembic:/app/alembic
@@ -115,7 +116,8 @@ services:
       # - ./poetry.lock:/app/poetry.lock
 
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      # The dev image is Alpine without curl; probe with its own Python.
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health', timeout=3)"]
       interval: 10s
       timeout: 5s
       retries: 3
@@ -146,7 +148,7 @@ services:
       - .env
     environment:
       CONFIG_PROFILE: dev
-      EMAIL_ENABLED: "true"
+      EMAIL_ENABLED: ${EMAIL_ENABLED:-false}
       # Runtime overrides
       DATABASE_URL: postgresql://${POSTGRES_USER:-signupflow}:${POSTGRES_PASSWORD:-dev_password_change_in_production}@db:5432/${POSTGRES_DB:-signupflow_dev}
       REDIS_URL: redis://:${REDIS_PASSWORD:-dev_redis_password}@redis:6379/0
@@ -156,6 +158,9 @@ services:
       - ./api:/app/api
       - ./config:/app/config:ro
       - ./logs:/app/logs
+    # The image's HEALTHCHECK polls :8000/health, which Celery never serves.
+    healthcheck:
+      disable: true
     networks:
       - signupflow-dev-network
     command: celery -A api.celery_app worker --loglevel=info

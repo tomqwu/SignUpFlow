@@ -115,7 +115,7 @@ def test_migration_only_schema_is_current_and_matches_critical_contracts(postgre
             assert connection.dialect.name == "postgresql"
             assert connection.scalar(text("SELECT version()"))
             assert (
-                connection.scalar(text("SELECT version_num FROM alembic_version")) == "b0d3f6a8c1e2"
+                connection.scalar(text("SELECT version_num FROM alembic_version")) == "c1e5a7b9d2f4"
             )
 
         people_columns = {column["name"]: column for column in inspector.get_columns("people")}
@@ -209,7 +209,7 @@ def test_upgrade_from_existing_data_preserves_identity_and_assignment_truth() ->
             command.check(config)
         with engine.connect() as connection:
             assert (
-                connection.scalar(text("SELECT version_num FROM alembic_version")) == "b0d3f6a8c1e2"
+                connection.scalar(text("SELECT version_num FROM alembic_version")) == "c1e5a7b9d2f4"
             )
             assert (
                 connection.scalar(text("SELECT roles FROM people WHERE id='upgrade-person'"))

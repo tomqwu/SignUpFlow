@@ -122,3 +122,6 @@ debug_*.txt
 test_*output*.txt
 __diffs__/
 tests/archived/
+
+# Written by `signupflow solve examples/<domain>` as the README shows
+examples/*/output/

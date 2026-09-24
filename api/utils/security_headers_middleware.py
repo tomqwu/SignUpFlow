@@ -121,8 +121,13 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
             "frame-ancestors 'none'",  # Prevent embedding (same as X-Frame-Options: DENY)
             "base-uri 'self'",  # Restrict base tag to same origin
             "form-action 'self'",  # Only allow forms to submit to same origin
-            "upgrade-insecure-requests",  # Upgrade HTTP to HTTPS automatically
         ]
+        # Like HSTS, this asserts the site is served over HTTPS. On a plain-http
+        # development server it only breaks things: Safari upgrades same-origin
+        # stylesheets and scripts to https even on localhost, they fail with TLS
+        # errors, and the app renders unstyled with no JavaScript.
+        if self.hsts_enabled:
+            policy_directives.append("upgrade-insecure-requests")
 
         return "; ".join(policy_directives)
 

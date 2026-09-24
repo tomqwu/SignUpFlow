@@ -1,6 +1,7 @@
 """Keep complete validation available locally without hosted CI."""
 
 import subprocess
+import tomllib
 from pathlib import Path
 
 import pytest
@@ -71,6 +72,24 @@ def test_playwright_is_a_locked_development_dependency():
 
     assert 'playwright = "' in project
     assert 'name = "playwright"' in lock
+
+
+def test_development_image_skips_the_browser_only_dependency_group():
+    """Playwright ships glibc wheels only, so it cannot install on Alpine.
+
+    The dev image is Alpine and runs unit tests, not browser tests. Keeping
+    Playwright in its own group lets the image skip it while a plain host
+    `poetry install` still installs it for `make test-all`.
+    """
+    project = tomllib.loads((ROOT / "pyproject.toml").read_text())
+    groups = project["tool"]["poetry"]["group"]
+    dockerfile = (ROOT / "Dockerfile.dev").read_text()
+
+    assert "playwright" in groups["e2e"]["dependencies"]
+    assert "playwright" not in groups["dev"]["dependencies"]
+    installs = [line for line in dockerfile.splitlines() if "poetry install" in line]
+    assert installs
+    assert all("--without e2e" in line for line in installs), installs
 
 
 def test_python_preflight_matches_the_project_range():

@@ -100,3 +100,16 @@ def test_create_monthly_and_delete(client, db):
         .first()
         is None
     )
+
+
+def test_roles_entered_in_the_form_reach_the_solver_key(client, db):
+    """The form's roles must land where the solver reads them, on every occurrence."""
+    from api.models import Event
+
+    tok = _admin(client, db, org="rc_roles", email="rcroles@web.test")
+    data = {**WEEKLY, "role_name": ["usher", "greeter"], "role_count": ["2", "1"]}
+    r = client.post("/a/recurring/create", data=data, cookies={SESSION_COOKIE: tok})
+    assert r.status_code == 200, r.text
+    events = db.query(Event).filter(Event.org_id == "rc_roles").all()
+    assert len(events) == 8
+    assert all(e.extra_data["role_counts"] == {"usher": 2, "greeter": 1} for e in events)
