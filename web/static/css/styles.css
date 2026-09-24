@@ -528,6 +528,11 @@ a { color: var(--accent); text-decoration: none; }
 .assignment-note { margin-top: 5px; }
 .tab-bar .tab-more { display: none; }
 
+/* Who holds each role on an event, beside the role's coverage. */
+.cov-people { display: flex; flex-wrap: wrap; gap: 6px 14px; margin-top: 6px; }
+.cov-person { display: inline-flex; align-items: center; gap: 6px; }
+.cov-name { font-size: 14px; font-weight: 600; color: var(--ink-1); }
+
 /* ─── Wider screens ─────────────────────────────────────────────────
    The phone layout above is the base and stays close to the mobile app.
    Tablets widen the column. Desktops turn the tab bar into a sidebar and
