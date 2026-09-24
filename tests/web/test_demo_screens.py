@@ -7,9 +7,12 @@ accounts and read each page the README points people at, failing on the empty
 state that page would otherwise show.
 """
 
+import re
+
 import pytest
 
-from api.demo_seed import DEMO_ADMIN_EMAIL, DEMO_PASSWORD, email_for, seed_demo
+from api.demo_seed import DEMO_ADMIN_EMAIL, DEMO_ORG_ID, DEMO_PASSWORD, email_for, seed_demo
+from api.models import Assignment, Event
 from web.deps import SESSION_COOKIE
 
 
@@ -90,3 +93,24 @@ def test_published_schedule_reached_the_inbox(client, demo):
     assert "No notifications yet." not in html
     assert "Sunday worship ·" in html or "Band rehearsal ·" in html
     assert "event_" not in html, "an internal event id leaked into the inbox"
+
+
+def test_burnout_watch_reads_only_the_past_month(client, db, demo):
+    """Six published weeks ahead are neither burnout nor recent participation.
+
+    The demo has two weeks of history and a fair rotation, so nobody has
+    reached four assignments in the last 30 days. Counting the upcoming
+    schedule flagged nearly the whole roster.
+    """
+    cookies = _session(client, DEMO_ADMIN_EMAIL)
+    dashboard = _page(client, cookies, "/a/dashboard")
+    assert "No volunteers over the assignment threshold." in dashboard
+    assert "volunteer(s) at risk" not in dashboard
+
+    analytics = _page(client, cookies, "/a/analytics")
+    assert "No volunteers over the threshold." in analytics
+    recent = int(
+        re.search(r'kpi-value">(\d+)</div>\s*<div class="kpi-label">Assignments', analytics)[1]
+    )
+    scheduled = db.query(Assignment).join(Event).filter(Event.org_id == DEMO_ORG_ID).count()
+    assert 0 < recent < scheduled
