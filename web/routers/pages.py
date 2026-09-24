@@ -1400,16 +1400,34 @@ def _event_assignments(db: Session, org_id: str, event_id: str) -> dict | None:
     )
     assigned_ids = {p.id for _, p in rows}
     people = db.query(Person).filter(Person.org_id == org_id).order_by(Person.name.asc()).all()
+    unassigned = [p for p in people if p.id not in assigned_ids]
     rc = (ev.extra_data or {}).get("role_counts") or {}
     filled_by_role: dict[str, int] = {}
-    for a, _ in rows:
-        filled_by_role[a.role or ""] = filled_by_role.get(a.role or "", 0) + 1
+    people_by_role: dict[str, list[dict]] = {}
+    for a, p in rows:
+        role = a.role or ""
+        response = _row_dict(a, ev)
+        people_by_role.setdefault(role, []).append(
+            {"name": p.name, "status": response["status"], "label": response["status_label"]}
+        )
+        # A declined assignment frees its slot, as on the open-shifts page. A
+        # swap request still holds it until someone takes it over.
+        if (a.status or "").lower() == "declined":
+            continue
+        filled_by_role[role] = filled_by_role.get(role, 0) + 1
     coverage = [
         {
             "role": r,
             "needed": n,
             "filled": filled_by_role.get(r, 0),
             "gap": max(0, n - filled_by_role.get(r, 0)),
+            "people": sorted(people_by_role.get(r, []), key=lambda person: person["name"]),
+            # Only people the server would accept: qualified, free, no clash.
+            "candidates": [
+                {"id": p.id, "name": p.name}
+                for p in unassigned
+                if member_can_take_role(db, person=p, event=ev, role=r)
+            ],
         }
         for r, n in rc.items()
     ]

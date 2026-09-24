@@ -25,21 +25,33 @@
           {{ c.filled }}/{{ c.needed }} filled
           {% if c.gap > 0 %}· <strong>{{ c.gap }} needed</strong>{% else %}· covered{% endif %}
         </div>
+        {% if c.people %}
+        <div class="cov-people">
+          {% for person in c.people %}
+          <span class="cov-person">
+            <span class="cov-name">{{ person.name }}</span>
+            <span class="status-text {{ person.status }}">{{ person.label }}</span>
+          </span>
+          {% endfor %}
+        </div>
+        {% endif %}
       </div>
-      {% if c.gap > 0 and data.candidates %}
+      {% if c.gap > 0 and c.candidates %}
       <form hx-post="/a/events/{{ data.event.id }}/assignments/add"
             hx-target="#event-assignments" hx-swap="outerHTML"
             style="margin:0;display:flex;gap:8px;align-items:center">
         <input type="hidden" name="role" value="{{ c.role }}">
         <select name="person_id" required aria-label="Fill {{ c.role }}"
                 style="border:0;background:transparent;font-family:inherit;font-size:14px;color:var(--ink-1)">
-          {% for cand in data.candidates %}
+          {% for cand in c.candidates %}
           <option value="{{ cand.id }}">{{ cand.name }}</option>
           {% endfor %}
         </select>
         <button class="btn btn-primary" style="width:auto;padding:6px 12px"
                 type="submit">Fill</button>
       </form>
+      {% elif c.gap > 0 %}
+      <div class="row-sub">No one qualified is free</div>
       {% endif %}
     </div>
     {% endfor %}

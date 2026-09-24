@@ -40,7 +40,7 @@ def test_fresh_admin_sees_zero_progress(client, db):
     r = client.get("/a/onboarding", cookies={SESSION_COOKIE: tok})
     assert r.status_code == 200
     assert "0 of 4 done" in r.text
-    assert "/web/static/css/styles.css?v=20260911" in r.text
+    assert "/web/static/css/styles.css?v=20260923" in r.text
     row = (
         db.query(OnboardingProgress)
         .filter(
