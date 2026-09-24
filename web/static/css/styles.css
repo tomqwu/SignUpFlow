@@ -10,6 +10,8 @@
   --ink-1:        #18181B;
   --ink-2:        #52525B;
   --ink-3:        #A1A1AA;
+  /* Inactive navigation: readable at small sizes (4.5:1 or more on cards). */
+  --ink-nav:      #71717A;
   --line-1:       #E4E4E7;
   --line-2:       #F4F4F5;
   --accent:       #0F766E;
@@ -37,6 +39,7 @@ html[data-theme="dark"] {
   --ink-1:    #FAFAF9;
   --ink-2:    #D4D4D8;
   --ink-3:    #71717A;
+  --ink-nav:  #A1A1AA;
   --line-1:   #27272A;
   --line-2:   #1F1F23;
   --accent-soft: #134E4A;
@@ -438,7 +441,7 @@ a { color: var(--accent); text-decoration: none; }
   flex: 1;
   background: transparent; border: 0; padding: 4px;
   display: flex; flex-direction: column; align-items: center; gap: 3px;
-  color: var(--ink-3);
+  color: var(--ink-nav);
   cursor: pointer;
   font-family: inherit;
   text-decoration: none;
@@ -591,8 +594,12 @@ a { color: var(--accent); text-decoration: none; }
   .app-admin > .tab-bar a:not(.tab-more) + .tab-more,
   .app-member > .tab-bar a:not(.tab-more) + .tab-more { margin-top: 14px; }
   .app-admin > .tab-bar a.active.shadowed, .app-member > .tab-bar a.active.shadowed {
-    background: transparent; color: var(--ink-3);
+    background: transparent; color: var(--ink-nav);
   }
+
+  /* The sidebar is the navigation now; the header's section and back links
+     would be a second copy. Header actions such as Sign out stay. */
+  .app-admin .nav .nav-back, .app-member .nav .nav-back { visibility: hidden; }
 
   /* Forms keep a readable width instead of spreading fields across the page. */
   .app-admin .scroll form, .app-member .scroll form { max-width: 720px; }

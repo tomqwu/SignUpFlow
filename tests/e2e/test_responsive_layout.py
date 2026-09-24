@@ -295,3 +295,82 @@ def test_desktop_forms_keep_a_readable_width(engine, engine_browser, demo_base, 
         assert_page_health(context)
     finally:
         context.close()
+
+
+#: WCAG contrast of each navigation label against the background it sits on.
+_NAV_CONTRAST = """(els) => els.map((el) => {
+    const channel = (c) => { c /= 255; return c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4; };
+    const lum = (rgb) => 0.2126 * channel(rgb[0]) + 0.7152 * channel(rgb[1]) + 0.0722 * channel(rgb[2]);
+    const parse = (s) => s.match(/[\\d.]+/g).map(Number);
+    const label = el.querySelector('.tab-label') || el;
+    const fg = parse(getComputedStyle(label).color);
+    let node = el, bg = null;
+    while (node && !bg) {
+        const c = parse(getComputedStyle(node).backgroundColor);
+        if (c.length < 4 || c[3] > 0) bg = c;
+        node = node.parentElement;
+    }
+    const [a, b] = [lum(fg), lum(bg || [255, 255, 255])].sort((x, y) => y - x);
+    return [el.textContent.trim(), Math.round(((a + 0.05) / (b + 0.05)) * 100) / 100];
+})"""
+
+
+@pytest.mark.parametrize("engine", ENGINES)
+@pytest.mark.parametrize("scheme", ["light", "dark"])
+@pytest.mark.parametrize("viewport", [PHONE, DESKTOP], ids=["phone", "desktop"])
+def test_navigation_labels_are_readable(
+    engine, scheme, viewport, engine_browser, demo_base, demo_sessions
+):
+    """Inactive navigation used the lightest grey, about 2.5:1 on white; small
+    text needs at least 4.5:1 (WCAG AA)."""
+    context = engine_browser(engine).new_context(
+        viewport=viewport, color_scheme=scheme, storage_state=demo_sessions[DEMO_ADMIN]
+    )
+    track_page_health(context)
+    try:
+        page = context.new_page()
+        _go(page, f"{demo_base}/a/dashboard")
+        ratios = page.eval_on_selector_all(".tab-bar a", _NAV_CONTRAST)
+        visible = [
+            (label, ratio)
+            for (label, ratio), shown in zip(
+                ratios,
+                page.locator(".tab-bar a").evaluate_all(
+                    "(els) => els.map((e) => !!e.offsetParent)"
+                ),
+            )
+            if shown
+        ]
+        low = [(label, ratio) for label, ratio in visible if ratio < 4.5]
+        assert visible and not low, f"{engine} {scheme} {viewport}: low contrast {low}"
+        assert_page_health(context)
+    finally:
+        context.close()
+
+
+@pytest.mark.parametrize("engine", ENGINES)
+def test_header_links_the_sidebar_covers_show_only_on_phones(
+    engine, engine_browser, demo_base, demo_sessions
+):
+    """With a sidebar, the header's section links (Settings on the dashboard,
+    the back links elsewhere) were a second copy of the same navigation."""
+    pages = [
+        (DEMO_ADMIN, "/a/dashboard"),
+        (DEMO_ADMIN, "/a/assignments"),
+        (DEMO_MUSICIAN, "/v/schedule"),
+    ]
+    for viewport, expected in ((DESKTOP, False), (PHONE, True)):
+        for account, path in pages:
+            context, page = _open(
+                engine_browser, engine, demo_base, demo_sessions, account, viewport
+            )
+            try:
+                _go(page, f"{demo_base}{path}")
+                link = page.locator(".nav .nav-back")
+                assert link.count() == 1, f"{path}: no header link to check"
+                assert link.is_visible() is expected, f"{engine} {viewport} {path}"
+                # Sign out stays everywhere.
+                assert page.locator(".nav .nav-action").first.is_visible()
+                assert_page_health(context)
+            finally:
+                context.close()
