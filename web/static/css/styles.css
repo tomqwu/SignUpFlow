@@ -367,6 +367,9 @@ a { color: var(--accent); text-decoration: none; }
   width: 100%;
 }
 .field input:focus { outline: none; }
+/* Text inputs fill the field; a checkbox or radio keeps its size beside its
+   label instead of stretching across the row. */
+.field input[type="checkbox"], .field input[type="radio"] { width: auto; flex: 0 0 auto; }
 .field input::placeholder { color: var(--ink-3); font-weight: 400; }
 
 /* Segmented control */
@@ -591,12 +594,17 @@ a { color: var(--accent); text-decoration: none; }
     background: transparent; color: var(--ink-3);
   }
 
+  /* Forms keep a readable width instead of spreading fields across the page. */
+  .app-admin .scroll form, .app-member .scroll form { max-width: 720px; }
+
   /* Buttons fit their label; grids and rows still size the ones inside them. */
   .app-admin .btn, .app-member .btn { width: auto; }
 
   /* Admin numbers and shortcuts read across, not down. */
   .app-admin .kpi-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
-  .app-admin .dash-links { grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); }
+  /* Shortcuts keep their labels on one line and wrap as whole buttons. */
+  .app-admin .dash-links { display: flex; flex-wrap: wrap; }
+  .app-admin .dash-links > .btn { flex: 1 1 auto; white-space: nowrap; }
   .app-admin .dash-columns {
     display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 2fr);
     gap: 16px; align-items: start;

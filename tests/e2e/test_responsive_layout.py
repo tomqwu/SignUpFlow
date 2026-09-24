@@ -25,6 +25,20 @@ DESKTOP = {"width": 1440, "height": 900}
 ADMIN_PAGES = ["/a/dashboard", "/a/assignments", "/a/events", "/a/people", "/a/analytics"]
 MEMBER_PAGES = ["/v/schedule", "/v/open", "/v/availability"]
 
+#: How many lines of text an element's label occupies.
+_LINE_COUNT = """(els) => els.map((el) => {
+    const range = document.createRange();
+    range.selectNodeContents(el);
+    // Rects on one line differ by a few pixels (an arrow glyph sits higher),
+    // so group tops within half a line height.
+    const half = parseFloat(getComputedStyle(el).fontSize) * 0.6;
+    const lines = [];
+    for (const r of range.getClientRects()) {
+        if (r.width && !lines.some((top) => Math.abs(top - r.top) < half)) lines.push(r.top);
+    }
+    return lines.length;
+})"""
+
 _BOX = "(el) => { const r = el.getBoundingClientRect(); return [r.x, r.y, r.width, r.height]; }"
 
 
@@ -214,3 +228,70 @@ def test_sidebar_reaches_every_admin_section_on_desktop_only(
             assert_page_health(context)
         finally:
             context.close()
+
+
+@pytest.mark.parametrize("engine", ENGINES)
+def test_dashboard_shortcuts_keep_their_labels_on_one_line(
+    engine, engine_browser, demo_base, demo_sessions
+):
+    """The longest shortcut wrapped onto two left-aligned lines in a quarter column."""
+    for width in (1024, 1280, 1440):
+        viewport = {"width": width, "height": 900}
+        context, page = _open(
+            engine_browser, engine, demo_base, demo_sessions, DEMO_ADMIN, viewport
+        )
+        try:
+            _go(page, f"{demo_base}/a/dashboard")
+            _no_sideways_scroll(page, f"{engine} {width}px dashboard")
+            # Grid rows stretch every button to the same height, so count the
+            # label's own lines of text instead.
+            lines = page.eval_on_selector_all(".dash-links > .btn", _LINE_COUNT)
+            assert max(lines) == 1, f"{engine} {width}px: a shortcut label wrapped {lines}"
+            assert_page_health(context)
+        finally:
+            context.close()
+
+
+@pytest.mark.parametrize("engine", ENGINES)
+@pytest.mark.parametrize("viewport", [PHONE, DESKTOP], ids=["phone", "desktop"])
+def test_checkboxes_sit_next_to_their_labels(
+    engine, viewport, engine_browser, demo_base, demo_sessions
+):
+    """A checkbox inside a form field took the whole row and pushed its label
+    to the far edge, on phones and, far more visibly, on desktops."""
+    context, page = _open(engine_browser, engine, demo_base, demo_sessions, DEMO_ADMIN, viewport)
+    try:
+        _go(page, f"{demo_base}/a/recurring")
+        page.click("text=New series")
+        page.wait_for_selector("input[name=selected_days]", state="visible")
+        # From the checkbox's left edge to its label: a stretched checkbox
+        # carries its label to the far side of the field.
+        spans = page.eval_on_selector_all(
+            "input[name=selected_days]",
+            "(els) => els.map((box) => box.nextElementSibling.getBoundingClientRect().left"
+            " - box.getBoundingClientRect().left)",
+        )
+        assert spans and max(spans) < 60, f"{engine} {viewport}: checkbox to label {spans}"
+        assert_page_health(context)
+    finally:
+        context.close()
+
+
+@pytest.mark.parametrize("engine", ENGINES)
+def test_desktop_forms_keep_a_readable_width(engine, engine_browser, demo_base, demo_sessions):
+    context, page = _open(engine_browser, engine, demo_base, demo_sessions, DEMO_ADMIN, DESKTOP)
+    try:
+        for path, opener in (("/a/recurring", "text=New series"), ("/a/settings", None)):
+            _go(page, f"{demo_base}{path}")
+            if opener:
+                page.click(opener)
+                page.wait_for_selector("form[hx-post='/a/recurring/create']", state="visible")
+            widths = page.eval_on_selector_all(
+                ".scroll form:not([hidden])",
+                "(els) => els.filter((el) => el.offsetParent)"
+                ".map((el) => el.getBoundingClientRect().width)",
+            )
+            assert widths and max(widths) <= 760, f"{engine} {path}: form widths {widths}"
+        assert_page_health(context)
+    finally:
+        context.close()
