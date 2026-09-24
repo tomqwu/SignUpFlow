@@ -11,6 +11,7 @@ Provides REST API endpoints for:
 
 import uuid
 from datetime import date, datetime, time
+from typing import Any, cast
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel, ConfigDict, Field
@@ -196,9 +197,11 @@ def create_recurring_series(
             series_id=series.id,
             occurrence_sequence=occ["occurrence_sequence"],
             is_exception=False,
+            # role_counts is the key the solver, publication checks and event
+            # helpers read. The series keeps role_requirements as its template.
             extra_data={
                 "location": occ.get("location"),
-                "role_requirements": occ.get("role_requirements"),
+                "role_counts": dict(occ.get("role_requirements") or {}),
             },
         )
         db.add(event)
@@ -430,10 +433,13 @@ def update_series_template(
     db: Session = Depends(get_db),
 ):
     """
-    Update the series template (affects future occurrences).
+    Update the series template.
 
-    Only updates the template - existing occurrences are NOT changed.
-    Use this to modify what future occurrences will look like.
+    Every occurrence is generated when the series is created, so a template
+    change alone would reach nothing. New role requirements are therefore
+    applied to the occurrences that have not started, except any edited on
+    their own (``is_exception``). Past occurrences keep the roles they were
+    served with.
 
     Note: To modify recurrence pattern, delete and recreate the series.
     """
@@ -454,6 +460,20 @@ def update_series_template(
 
     if role_requirements is not None:
         series.role_requirements = role_requirements
+        upcoming = (
+            db.query(Event)
+            .filter(
+                Event.org_id == series.org_id,
+                Event.series_id == series.id,
+                Event.is_exception.is_(False),
+                Event.start_time >= utcnow(),
+            )
+            .all()
+        )
+        for event in upcoming:
+            # Reassign rather than mutate, so the JSON column registers the change.
+            extra = cast(dict[str, Any], event.extra_data or {})
+            event.extra_data = cast(Any, {**extra, "role_counts": dict(role_requirements)})
 
     series.updated_at = utcnow()
 

@@ -11,6 +11,7 @@ Method | HTTP request | Description
 ------------- | ------------- | -------------
 [**bulkImportPeople**](PeopleApi.md#bulkimportpeople) | **POST** /api/v1/people/bulk | Bulk Import People
 [**createPerson**](PeopleApi.md#createperson) | **POST** /api/v1/people/ | Create Person
+[**deactivatePerson**](PeopleApi.md#deactivateperson) | **POST** /api/v1/people/{person_id}/deactivate | Deactivate Person
 [**deletePerson**](PeopleApi.md#deleteperson) | **DELETE** /api/v1/people/{person_id} | Delete Person
 [**getCurrentPerson**](PeopleApi.md#getcurrentperson) | **GET** /api/v1/people/me | Get Current Person
 [**getPerson**](PeopleApi.md#getperson) | **GET** /api/v1/people/{person_id} | Get Person
@@ -107,12 +108,55 @@ Name | Type | Description  | Notes
 
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
+# **deactivatePerson**
+> PersonResponse deactivatePerson(personId)
+
+Deactivate Person
+
+Retire a departing member (admin only), keeping their history.  This is the departure path to prefer over ``DELETE``. A hard delete cascades through ``Person.assignments`` and erases completed work along with the future work, silently rewriting a published record. Deactivating keeps the row, so past assignments stay as history, while future live work is reopened exactly as a qualification removal would reopen it. ``get_current_user`` already rejects a non-active person, so their session and any further login stop working.
+
+### Example
+```dart
+import 'package:signupflow_api/api.dart';
+
+final api = SignupflowApi().getPeopleApi();
+final String personId = personId_example; // String |
+
+try {
+    final response = api.deactivatePerson(personId);
+    print(response);
+} catch on DioException (e) {
+    print('Exception when calling PeopleApi->deactivatePerson: $e\n');
+}
+```
+
+### Parameters
+
+Name | Type | Description  | Notes
+------------- | ------------- | ------------- | -------------
+ **personId** | **String**|  |
+
+### Return type
+
+[**PersonResponse**](PersonResponse.md)
+
+### Authorization
+
+[HTTPBearer](../README.md#HTTPBearer)
+
+### HTTP request headers
+
+ - **Content-Type**: Not defined
+ - **Accept**: application/json
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
 # **deletePerson**
 > deletePerson(personId)
 
 Delete Person
 
-Delete person (admin only).
+Erase a person and all their work (admin only).  This removes completed history as well as future work, because ``Person.assignments`` cascades. Prefer ``POST /{person_id}/deactivate`` for someone who has simply left; keep this for genuine erasure requests.
 
 ### Example
 ```dart

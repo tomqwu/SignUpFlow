@@ -236,8 +236,89 @@ class PeopleApi {
     );
   }
 
+  /// Deactivate Person
+  /// Retire a departing member (admin only), keeping their history.  This is the departure path to prefer over &#x60;&#x60;DELETE&#x60;&#x60;. A hard delete cascades through &#x60;&#x60;Person.assignments&#x60;&#x60; and erases completed work along with the future work, silently rewriting a published record. Deactivating keeps the row, so past assignments stay as history, while future live work is reopened exactly as a qualification removal would reopen it. &#x60;&#x60;get_current_user&#x60;&#x60; already rejects a non-active person, so their session and any further login stop working.
+  ///
+  /// Parameters:
+  /// * [personId]
+  /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
+  /// * [headers] - Can be used to add additional headers to the request
+  /// * [extras] - Can be used to add flags to the request
+  /// * [validateStatus] - A [ValidateStatus] callback that can be used to determine request success based on the HTTP status of the response
+  /// * [onSendProgress] - A [ProgressCallback] that can be used to get the send progress
+  /// * [onReceiveProgress] - A [ProgressCallback] that can be used to get the receive progress
+  ///
+  /// Returns a [Future] containing a [Response] with a [PersonResponse] as data
+  /// Throws [DioException] if API call or serialization fails
+  Future<Response<PersonResponse>> deactivatePerson({
+    required String personId,
+    CancelToken? cancelToken,
+    Map<String, dynamic>? headers,
+    Map<String, dynamic>? extra,
+    ValidateStatus? validateStatus,
+    ProgressCallback? onSendProgress,
+    ProgressCallback? onReceiveProgress,
+  }) async {
+    final _path = r'/api/v1/people/{person_id}/deactivate'.replaceAll('{' r'person_id' '}', encodeQueryParameter(_serializers, personId, const FullType(String)).toString());
+    final _options = Options(
+      method: r'POST',
+      headers: <String, dynamic>{
+        ...?headers,
+      },
+      extra: <String, dynamic>{
+        'secure': <Map<String, String>>[
+          {
+            'type': 'http',
+            'scheme': 'bearer',
+            'name': 'HTTPBearer',
+          },
+        ],
+        ...?extra,
+      },
+      validateStatus: validateStatus,
+    );
+
+    final _response = await _dio.request<Object>(
+      _path,
+      options: _options,
+      cancelToken: cancelToken,
+      onSendProgress: onSendProgress,
+      onReceiveProgress: onReceiveProgress,
+    );
+
+    PersonResponse? _responseData;
+
+    try {
+      final rawResponse = _response.data;
+      _responseData = rawResponse == null ? null : _serializers.deserialize(
+        rawResponse,
+        specifiedType: const FullType(PersonResponse),
+      ) as PersonResponse;
+
+    } catch (error, stackTrace) {
+      throw DioException(
+        requestOptions: _response.requestOptions,
+        response: _response,
+        type: DioExceptionType.unknown,
+        error: error,
+        stackTrace: stackTrace,
+      );
+    }
+
+    return Response<PersonResponse>(
+      data: _responseData,
+      headers: _response.headers,
+      isRedirect: _response.isRedirect,
+      requestOptions: _response.requestOptions,
+      redirects: _response.redirects,
+      statusCode: _response.statusCode,
+      statusMessage: _response.statusMessage,
+      extra: _response.extra,
+    );
+  }
+
   /// Delete Person
-  /// Delete person (admin only).
+  /// Erase a person and all their work (admin only).  This removes completed history as well as future work, because &#x60;&#x60;Person.assignments&#x60;&#x60; cascades. Prefer &#x60;&#x60;POST /{person_id}/deactivate&#x60;&#x60; for someone who has simply left; keep this for genuine erasure requests.
   ///
   /// Parameters:
   /// * [personId]

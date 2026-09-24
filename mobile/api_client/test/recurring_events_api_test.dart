@@ -63,7 +63,7 @@ void main() {
 
     // Update Series Template
     //
-    // Update the series template (affects future occurrences).  Only updates the template - existing occurrences are NOT changed. Use this to modify what future occurrences will look like.  Note: To modify recurrence pattern, delete and recreate the series.
+    // Update the series template.  Every occurrence is generated when the series is created, so a template change alone would reach nothing. New role requirements are therefore applied to the occurrences that have not started, except any edited on their own (``is_exception``). Past occurrences keep the roles they were served with.  Note: To modify recurrence pattern, delete and recreate the series.
     //
     //Future<JsonObject> updateSeriesTemplate(String seriesId, { String title, String location, BuiltMap<String, JsonObject> requestBody }) async
     test('test updateSeriesTemplate', () async {

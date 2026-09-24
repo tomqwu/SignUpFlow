@@ -388,6 +388,18 @@ def _validate_roster(
                     f"Member {person_id} overlaps on {previous[2]} and {current[2]}."
                 )
 
+    # A manual assignment made against an earlier schedule still counts here,
+    # so a fresh solve that re-places the same slot reads as over-staffed. Name
+    # the manual holder in that case: without it the refusal tells the
+    # coordinator a slot is over capacity but not that their own override is
+    # the cause, which leaves no way forward but guesswork.
+    manual_holders: dict[tuple[str, str], list[str]] = defaultdict(list)
+    for row in manual:
+        role = cast(str | None, row.role)
+        person = people.get(str(row.person_id))
+        if role and person is not None:
+            manual_holders[(str(row.event_id), role)].append(cast(str, person.name))
+
     gaps: list[str] = []
     excess: list[str] = []
     for event in events:
@@ -396,7 +408,14 @@ def _validate_roster(
             if actual < required:
                 gaps.append(f"{event.id}:{role} needs {required - actual} ({event.type})")
             elif actual > required:
-                excess.append(f"{event.id}:{role} has {actual - required} extra ({event.type})")
+                detail = f"{event.id}:{role} has {actual - required} extra ({event.type})"
+                held_by = manual_holders.get((str(event.id), role))
+                if held_by:
+                    detail += (
+                        f" including a manual assignment for {', '.join(sorted(held_by))};"
+                        " remove it or regenerate the schedule"
+                    )
+                excess.append(detail)
     if gaps:
         raise PublicationConflictError("Required role shortages: " + "; ".join(gaps))
     if excess:

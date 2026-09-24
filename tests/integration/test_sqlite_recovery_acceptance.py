@@ -37,7 +37,7 @@ from scripts.sqlite_recovery import (
 )
 
 ROOT = Path(__file__).resolve().parents[2]
-CURRENT_HEAD = "b0d3f6a8c1e2"
+CURRENT_HEAD = "c1e5a7b9d2f4"
 
 
 def _migrate(path: Path) -> None:

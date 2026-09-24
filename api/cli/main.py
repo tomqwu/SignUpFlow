@@ -292,6 +292,64 @@ def _write_sample_events(ws: Path):
         yaml.dump(data, f, default_flow_style=False, sort_keys=False)
 
 
+@cli.command()
+def doctor() -> None:
+    """Report the environment this machine will actually start the app with.
+
+    The implementation lives in ``scripts/doctor.py`` and uses only the
+    standard library, so the same check runs through ``make doctor`` before
+    dependencies exist. This command is the convenience wrapper for once the
+    package is installed.
+    """
+    scripts_dir = Path(__file__).resolve().parents[2] / "scripts"
+    sys.path.insert(0, str(scripts_dir))
+    try:
+        import doctor as env_doctor
+    finally:
+        sys.path.remove(str(scripts_dir))
+    sys.exit(env_doctor.report(Path.cwd()))
+
+
+@cli.command("seed-demo")
+@click.option(
+    "--reset",
+    is_flag=True,
+    help="Delete the demo organization and build it again with fresh dates.",
+)
+def seed_demo_command(reset: bool) -> None:
+    """Load the demo organization and print its sample logins.
+
+    ``make setup`` runs this after migrating. It is safe to repeat: an
+    existing demo organization is left alone and its logins are printed again.
+    The demo is dated from the day it is loaded, so use --reset to refresh it.
+    """
+    import os
+
+    from api.demo_seed import DemoSeedConflictError, DemoSeedRefusedError, run_seed_demo
+
+    try:
+        result = run_seed_demo(reset=reset)
+    except (DemoSeedRefusedError, DemoSeedConflictError) as exc:
+        click.echo(f"❌ {exc}", err=True)
+        sys.exit(1)
+
+    app_url = os.getenv("APP_URL", "http://localhost:8000")
+    if result.created:
+        s = result.summary
+        click.echo(
+            f"🌱 Demo organization loaded: {s['volunteers']} volunteers, {s['events']} events, "
+            f"{s['assignments']} published assignments ({s['accepted']} accepted, "
+            f"{s['declined']} declined, {s['swap_requests']} swap request)."
+        )
+    else:
+        click.echo("🌱 Demo organization already loaded (run with --reset to rebuild it).")
+    click.echo(f"   Sign in at {app_url} with any of:")
+    width = max(len(login.label) for login in result.logins)
+    for login in result.logins:
+        click.echo(f"   {login.label.ljust(width)}  {login.email}")
+    click.echo(f"   {'Password'.ljust(width)}  {result.password}  (every demo account)")
+
+
 def main():
     cli()
 

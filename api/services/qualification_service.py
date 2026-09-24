@@ -37,3 +37,30 @@ def replace_person_roles(db: Session, person: Person, roles: list[str]) -> int:
 
     person.roles = cast(Any, roles)
     return len(reopened)
+
+
+def release_person_work(db: Session, person: Person) -> int:
+    """Reopen a departing person's future live work, keeping their history.
+
+    Leaving the organization and losing every qualification are the same
+    domain event: this person can no longer serve. So departure reopens the
+    same narrow slice ``replace_person_roles`` does — future, org-scoped,
+    member-visible work — and for the same reasons. Past assignments remain as
+    completed history, and draft candidates remain intact so publication
+    validation can reject a stale roster explicitly rather than silently.
+    """
+    org_id = cast(str, person.org_id)
+    reopened = (
+        db.query(Assignment)
+        .join(Event, Assignment.event_id == Event.id)
+        .filter(
+            Event.org_id == org_id,
+            Event.start_time >= utcnow(),
+            Assignment.person_id == person.id,
+            member_visible_assignment(org_id),
+        )
+        .all()
+    )
+    for assignment in reopened:
+        db.delete(assignment)
+    return len(reopened)

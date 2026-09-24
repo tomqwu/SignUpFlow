@@ -4,7 +4,13 @@ from __future__ import annotations
 
 from datetime import date, datetime, timedelta
 
-from api.models import Assignment, Event, RecurringSeries
+from api.models import (
+    Assignment,
+    Event,
+    Notification,
+    NotificationType,
+    RecurringSeries,
+)
 from api.timeutils import utcnow
 from tests.web.conftest import seed_person
 from web.deps import SESSION_COOKIE
@@ -151,6 +157,35 @@ def test_delete_event(client, db):
     assert resp.status_code == 200
     assert "Doomed Event" not in resp.text
     assert db.query(Event).filter(Event.id == "ec_del").first() is None
+
+
+def test_delete_staffed_event_queues_a_cancellation_notice(client, db):
+    """The web UI cancels through the same path as the API, notice included."""
+    token = _admin(client, db, org="ec_cancel", email="eccancel@web.test")
+    event = Event(
+        id="ec_cancel_event",
+        org_id="ec_cancel",
+        type="Sunday Service",
+        start_time=datetime(2099, 6, 7, 10, 0),
+        end_time=datetime(2099, 6, 7, 11, 30),
+    )
+    assignment = Assignment(event_id=event.id, person_id="ec_admin", role="usher")
+    db.add_all([event, assignment])
+    db.commit()
+
+    resp = client.post(f"/a/events/{event.id}/delete", cookies={SESSION_COOKIE: token})
+
+    assert resp.status_code == 200
+    notices = (
+        db.query(Notification)
+        .filter(
+            Notification.org_id == "ec_cancel",
+            Notification.recipient_id == "ec_admin",
+            Notification.type == NotificationType.CANCELLATION,
+        )
+        .all()
+    )
+    assert len(notices) == 1
 
 
 def test_update_event_resets_an_accepted_response(client, db):

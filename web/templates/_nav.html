@@ -1,9 +1,38 @@
-{# Bottom tab bar. `tabs` is a list of (href, icon, label, key);
-   `active_tab` selects the highlighted one. #}
+{# Tab bar: a bottom tab bar on phones, a sidebar on desktops.
+   `tabs` is a list of (href, icon, label, key); `active_tab` selects the
+   highlighted one. On desktops the sidebar also lists the sections phones
+   reach through page links; when one of those is the current page, it is
+   highlighted instead and the page's tab is `shadowed`. #}
+{% set path = request.url.path %}
+{% if path.startswith('/a/') %}
+  {% set more = [
+    ('/a/assignments', 'Assignments'),
+    ('/a/swaps', 'Swaps'),
+    ('/a/analytics', 'Analytics'),
+    ('/a/teams', 'Teams'),
+    ('/a/recurring', 'Recurring'),
+    ('/a/constraints', 'Constraints'),
+    ('/a/settings', 'Settings'),
+  ] %}
+{% elif path.startswith('/v/') %}
+  {% set more = [
+    ('/v/open', 'Open shifts'),
+    ('/v/swaps', 'Swaps'),
+    ('/v/inbox', 'Inbox'),
+  ] %}
+{% else %}
+  {% set more = [] %}
+{% endif %}
+{% set more_active = more | selectattr(0, 'equalto', path) | list %}
 <nav class="tab-bar">
   {% for href, icon, label, key in tabs %}
-  <a href="{{ href }}" class="{{ 'active' if active_tab == key else '' }}">
+  <a href="{{ href }}" class="{{ 'active' if active_tab == key else '' }}{{ ' shadowed' if active_tab == key and more_active else '' }}">
     <span class="tab-icon">{{ icon }}</span>
+    <span class="tab-label">{{ label }}</span>
+  </a>
+  {% endfor %}
+  {% for href, label in more %}
+  <a href="{{ href }}" class="tab-more{{ ' active' if href == path else '' }}">
     <span class="tab-label">{{ label }}</span>
   </a>
   {% endfor %}

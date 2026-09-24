@@ -1,8 +1,8 @@
-.PHONY: run dev stop restart setup install migrate test test-backend test-integration test-all test-postgres test-redis test-artifact test-coverage test-unit test-unit-fast test-unit-file test-with-timing clean clean-all pre-commit help check-poetry check-python check-deps install-poetry install-deps up down build logs shell db-shell redis-shell test-docker migrate-docker restart-api ps clean-docker check-docker ensure-test-deps prepare-test-data ensure-test-env
+.PHONY: run dev stop restart setup install test-stack migrate migrate-host migrate-compose seed-demo seed-demo-host seed-demo-compose services services-compose test test-backend test-integration test-all test-postgres test-redis test-artifact test-coverage test-unit test-unit-fast test-unit-file test-with-timing clean clean-all pre-commit help check-poetry check-python check-deps install-poetry install-deps up down build logs shell db-shell redis-shell test-docker migrate-docker restart-api ps clean-docker check-docker ensure-test-deps prepare-test-data ensure-test-env
 
 export SKIP_TEST_DB_FIXTURES ?= false
 
-.PHONY: test-web test-contract test-e2e test-mobile test-mobile-generated test-performance test-load test-recovery test-security test-staging test-docs mobile-codegen-preflight mobile-codegen mobile-codegen-check capture-screenshots validate-screenshots
+.PHONY: doctor services serve compose-up require-docker test-web test-contract test-e2e test-mobile test-mobile-generated test-performance test-load test-recovery test-security test-staging test-docs mobile-codegen-preflight mobile-codegen mobile-codegen-check capture-screenshots validate-screenshots
 FLUTTER ?= flutter
 DART ?= dart
 JAVA_BIN ?=
@@ -44,7 +44,7 @@ check-docker:
 		exit 1; \
 	}
 
-DOCKER_TARGETS := up down build rebuild logs logs-api logs-db logs-redis shell db-shell redis-shell \
+DOCKER_TARGETS := compose-up down build rebuild logs logs-api logs-db logs-redis shell db-shell redis-shell \
 	test-docker test-docker-quick test-docker-summary test-docker-file \
 	test-docker-unit test-docker-unit-fast test-docker-integration \
 	test-docker-coverage \
@@ -135,10 +135,28 @@ check-deps:
 		echo "✅ All dependencies installed! You can run 'make setup' to install project packages."; \
 	fi
 
-# Run the development server
-run: check-poetry
+# Bring the app up. Two commands cover the whole lifecycle: 'make setup'
+# prepares the environment, 'make up' serves the app. Which way it is served
+# follows DATABASE_URL, so the same command works on either path.
+up:
+	@set -e; \
+	DB_URL="$$($(DB_URL_CMD))"; \
+	case "$$DB_URL" in \
+		$(COMPOSE_DB_PATTERNS)) \
+			echo "🐳 DATABASE_URL names the compose database, so the app runs there."; \
+			$(MAKE) compose-up; \
+			;; \
+		*) \
+			$(MAKE) serve; \
+			;; \
+	esac
+
+# Run the development server on the host.
+serve: check-poetry
 	@echo "🚀 Starting SignUpFlow development server..."
 	@poetry run uvicorn api.main:app --host 0.0.0.0 --port 8000 --reload
+
+run: up
 
 # Run Celery worker
 celery: check-poetry
@@ -148,34 +166,171 @@ celery: check-poetry
 dev: run
 
 stop:
-	@echo "Retired: stop the development server from the terminal that ran 'make run'."
+	@echo "Retired: stop the development server from the terminal that ran 'make up'."
 	@exit 2
 
 restart:
-	@echo "Retired: stop the owned 'make run' process, then run 'make run' again."
+	@echo "Retired: stop the owned 'make up' process, then run 'make up' again."
 	@exit 2
 
+# Deliberately does not depend on check-poetry or an installed virtualenv:
+# this is what you run when setup itself fails, so it must work before setup.
+doctor:
+	@python3 scripts/doctor.py
+
+# Resolve DATABASE_URL the way the app does: an exported variable wins, because
+# python-dotenv will not override one, and .env is only consulted when it does
+# not. Shared by every target that needs to know which database is configured.
+DB_URL_CMD = if [ -n "$$DATABASE_URL" ]; then printf '%s' "$$DATABASE_URL"; \
+	elif [ -f .env ]; then \
+		sed -n 's/^[[:space:]]*\(export[[:space:]][[:space:]]*\)\{0,1\}DATABASE_URL[[:space:]]*=[[:space:]]*//p' .env \
+		| tail -n 1 | sed -e 's/^"//' -e 's/"$$//' -e "s/^'//" -e "s/'$$//"; \
+	fi
+
+# The shapes a URL takes when its host is the compose service name 'db', which
+# resolves only inside the compose network. Kept in one place so every target
+# agrees on what "the compose database" means.
+COMPOSE_DB_PATTERNS = *@db:*|*@db/*|*@db
+
+# Prepare everything the app needs to run: language dependencies, any backing
+# services the configuration asks for, and the schema. It does not serve the
+# app; 'make up' does that. Whether the services are containers is decided by
+# DATABASE_URL, not by which target you typed, so the configuration and the
+# commands cannot disagree.
 setup:
 	@echo "🚀 Starting SignUpFlow setup..."
 	@echo ""
 	@$(MAKE) check-python
 	@$(MAKE) install-deps
 	@$(MAKE) install
+	@$(MAKE) services
 	@$(MAKE) migrate
+	@if [ "$(SEED_DEMO)" != "false" ]; then echo ""; $(MAKE) --no-print-directory seed-demo; fi
 	@echo ""
-	@echo "✅ Setup complete! Run 'make run' to start the server."
+	@echo "✅ Setup complete! Run 'make up' to start the app."
 	@echo "   Visit http://localhost:8000/docs"
 	@echo ""
+
+# Start the backing services the configuration points at, and nothing else.
+#
+# A compose hostname is only resolvable inside the compose network, so a
+# compose-backed database brings its containers up here; the app itself waits
+# for 'make up'. A SQLite or directly reachable database needs nothing, so the
+# common case stays free of Docker entirely.
+services:
+	@set -e; \
+	if [ -f /.dockerenv ]; then \
+		echo "ℹ️  Inside a container; backing services are managed by compose."; \
+	else \
+		DB_URL="$$($(DB_URL_CMD))"; \
+		case "$$DB_URL" in \
+			$(COMPOSE_DB_PATTERNS)) \
+				echo "🐳 DATABASE_URL names the compose database, which only resolves"; \
+				echo "   inside docker compose, so the database runs there."; \
+				$(MAKE) --no-print-directory services-compose; \
+				;; \
+			*) \
+				echo "✅ No backing services needed (using the configured database directly)."; \
+				;; \
+		esac; \
+	fi
+
+# The branches the lifecycle targets choose between. A $(MAKE) line runs even
+# under 'make -n', so the choosing lines above do nothing but choose; the work
+# lives here, where a dry run only prints it.
+services-compose: require-docker
+	@$(DOCKER_COMPOSE) -f docker-compose.dev.yml up -d db redis
+	@echo "✅ Backing services are up."
+
+# One explanation of an unusable Docker, shared by every target that needs it,
+# so the remedy never drifts between them. Callers that know why they wanted
+# Docker say so first; this only reports that it is not there.
+require-docker:
+	@if ! command -v docker >/dev/null 2>&1 || ! docker info >/dev/null 2>&1; then \
+		echo "❌ Docker is unavailable, so the compose stack cannot be reached."; \
+		echo "   Start Docker and retry, or switch to SQLite for a host-only setup:"; \
+		echo "       DATABASE_URL=sqlite:///./roster.db"; \
+		echo "   Run 'make doctor' for the full environment report."; \
+		exit 1; \
+	fi
 
 install: check-poetry
 	@echo "📦 Installing project packages..."
 	@poetry install
 	@echo "✅ Project packages installed"
 
-migrate: check-poetry
+# Migrations run wherever the configured database actually lives. A compose
+# hostname resolves only inside that network, so running alembic on the host
+# could never reach it; those migrations go through a one-off api container,
+# which works whether or not the app is already serving.
+migrate:
+	@set -e; \
+	DB_URL="$$($(DB_URL_CMD))"; \
+	case "$$DB_URL" in \
+		$(COMPOSE_DB_PATTERNS)) \
+			if [ -f /.dockerenv ]; then \
+				$(MAKE) --no-print-directory migrate-host; \
+			else \
+				echo "🐳 DATABASE_URL names the compose database, which only resolves"; \
+				echo "   inside docker compose, so migrations run there too."; \
+				$(MAKE) --no-print-directory migrate-compose; \
+			fi; \
+			;; \
+		*) \
+			$(MAKE) --no-print-directory migrate-host; \
+			;; \
+	esac
+
+migrate-host: check-poetry
 	@echo "🔄 Running database migrations..."
 	@poetry run alembic upgrade head
 	@echo "✅ Migrations complete"
+
+migrate-compose: require-docker
+	@echo "🔄 Running database migrations inside compose..."
+	@$(DOCKER_COMPOSE) -f docker-compose.dev.yml run --rm api alembic upgrade head
+	@echo "✅ Migrations complete"
+
+# Load the demo organization and print its sample logins. 'make setup' runs
+# this last; set SEED_DEMO=false to skip it, and RESET=1 rebuilds it with
+# fresh dates. It is routed like 'migrate',
+# because it writes to the same database, and it refuses ENVIRONMENT=production.
+SEED_DEMO_FLAGS = $(if $(filter 1 true yes,$(RESET)),--reset,)
+
+seed-demo:
+	@set -e; \
+	DB_URL="$$($(DB_URL_CMD))"; \
+	case "$$DB_URL" in \
+		$(COMPOSE_DB_PATTERNS)) \
+			if [ -f /.dockerenv ]; then \
+				$(MAKE) --no-print-directory seed-demo-host; \
+			else \
+				$(MAKE) --no-print-directory seed-demo-compose; \
+			fi; \
+			;; \
+		*) \
+			$(MAKE) --no-print-directory seed-demo-host; \
+			;; \
+	esac
+
+seed-demo-host: check-poetry
+	@poetry run python -m api.cli.main seed-demo $(SEED_DEMO_FLAGS)
+
+seed-demo-compose: require-docker
+	@$(DOCKER_COMPOSE) -f docker-compose.dev.yml run --rm api python -m api.cli.main seed-demo $(SEED_DEMO_FLAGS)
+
+# Walk the demo in Chromium, WebKit and Firefox against the app you are running
+# after 'make setup' and 'make up', including the Docker path. make test-all
+# starts its own server and never exercises that path, so run this whenever
+# setup, compose, headers or pages change. STACK_URL defaults to localhost:8000.
+STACK_URL ?= http://localhost:8000
+
+test-stack: check-poetry
+	@curl -sf $(STACK_URL)/health >/dev/null 2>&1 || { \
+		echo "❌ Nothing is serving $(STACK_URL). Run 'make setup' and 'make up' first."; \
+		exit 1; \
+	}
+	@SIGNUPFLOW_STACK_URL=$(STACK_URL) poetry run pytest tests/e2e/test_demo_tour.py -v --tb=short -p no:cacheprovider
 
 # Run all backend tests
 test: test-all
@@ -330,7 +485,9 @@ mobile-codegen-check: check-poetry
 # Docker Compose Commands (Development Environment)
 # ============================================================================
 
-up:
+# The unconditional compose path. 'make up' routes here when DATABASE_URL names
+# the compose database; call it directly to bring the stack up regardless.
+compose-up:
 	@echo "🐳 Starting SignUpFlow development environment..."
 	@$(DOCKER_COMPOSE) -f docker-compose.dev.yml up -d
 	@echo ""
@@ -353,7 +510,7 @@ build:
 	@$(DOCKER_COMPOSE) -f docker-compose.dev.yml build --no-cache
 	@echo "✅ Build complete"
 
-rebuild: down build up
+rebuild: down build compose-up
 
 logs:
 	@$(DOCKER_COMPOSE) -f docker-compose.dev.yml logs -f
@@ -457,11 +614,12 @@ help:
 	@echo "SignUpFlow Commands:"
 	@echo ""
 	@echo "🚀 Quick Start:"
-	@echo "  make setup            - Auto-install Poetry, packages, and setup DB"
-	@echo "  make up               - Start Docker environment (PostgreSQL + Redis + API)"
+	@echo "  make doctor           - Report what this machine will start the app with"
+	@echo "  make setup            - Prepare the environment: deps, services, schema"
+	@echo "  make up               - Start the app (follows DATABASE_URL)"
 	@echo ""
-	@echo "🐳 Docker Development (Recommended):"
-	@echo "  make up               - Start all services (PostgreSQL + Redis + API)"
+	@echo "🐳 Docker Development:"
+	@echo "  make compose-up       - Start all services (PostgreSQL + Redis + API)"
 	@echo "  make down             - Stop all services"
 	@echo "  make logs             - View logs from all services"
 	@echo "  make logs-api         - View API logs only"
@@ -482,13 +640,15 @@ help:
 	@echo "  make install-deps     - Auto-install Poetry (if missing)"
 	@echo "  make install-poetry   - Auto-install Poetry only"
 	@echo "  make install          - Install project packages (requires Poetry)"
-	@echo "  make run              - Start development server (localhost:8000)"
+	@echo "  make serve            - Start development server on the host (localhost:8000)"
 	@echo ""
 	@echo "Development:"
-	@echo "  make dev              - Alias for 'make run'"
-	@echo "  make stop             - Retired; stop the owning 'make run' terminal"
+	@echo "  make run / make dev   - Aliases for 'make up'"
+	@echo "  make stop             - Retired; stop the owning 'make up' terminal"
 	@echo "  make restart          - Retired; restart from the owning terminal"
 	@echo "  make migrate          - Run database migrations"
+	@echo "  make seed-demo        - Load the demo organization and print its logins (RESET=1 rebuilds)"
+	@echo "  make test-stack       - Browse the running app as the demo users in three browsers"
 	@echo ""
 	@echo "Testing:"
 	@echo "  make test             - Run backend tests"

@@ -4,7 +4,7 @@ end-to-end. Real screens land in 11.1+ (see plan)."""
 
 from __future__ import annotations
 
-from typing import cast
+from typing import Any, cast
 
 from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
@@ -396,12 +396,32 @@ def _inbox(db: Session, person: Person) -> dict:
                 "id": n.id,
                 "label": _notif_label(n.type),
                 "event_id": n.event_id,
+                "subject": _notif_subject(n, person),
                 "when": n.created_at.strftime("%a %d %b %Y, %H:%M") if n.created_at else "",
                 "unread": is_unread,
                 "status": (n.status or "").lower(),
             }
         )
     return {"rows": out, "unread": unread}
+
+
+def _notif_subject(notification: Notification, person: Person) -> str | None:
+    """What a notice is about, in the words people use: the event's name and time.
+
+    Event ids are internal (recurring occurrences are UUIDs), so they are never
+    shown. A cancelled event's row is gone by design, so its notice falls back
+    to the snapshot it was queued with.
+    """
+    event = notification.event
+    if event is not None and event.org_id == person.org_id:
+        details = event.extra_data or {}
+        title = details.get("title") or event.type
+        return f"{title} · {event.start_time:%a %d %b, %H:%M}"
+    snapshot: dict[str, Any] = cast(dict[str, Any], notification.template_data or {})
+    title, when = snapshot.get("event_title"), snapshot.get("event_datetime")
+    if title and when:
+        return f"{title} · {when}"
+    return title or None
 
 
 def _unread_count(db: Session, person: Person) -> int:
@@ -1380,16 +1400,34 @@ def _event_assignments(db: Session, org_id: str, event_id: str) -> dict | None:
     )
     assigned_ids = {p.id for _, p in rows}
     people = db.query(Person).filter(Person.org_id == org_id).order_by(Person.name.asc()).all()
+    unassigned = [p for p in people if p.id not in assigned_ids]
     rc = (ev.extra_data or {}).get("role_counts") or {}
     filled_by_role: dict[str, int] = {}
-    for a, _ in rows:
-        filled_by_role[a.role or ""] = filled_by_role.get(a.role or "", 0) + 1
+    people_by_role: dict[str, list[dict]] = {}
+    for a, p in rows:
+        role = a.role or ""
+        response = _row_dict(a, ev)
+        people_by_role.setdefault(role, []).append(
+            {"name": p.name, "status": response["status"], "label": response["status_label"]}
+        )
+        # A declined assignment frees its slot, as on the open-shifts page. A
+        # swap request still holds it until someone takes it over.
+        if (a.status or "").lower() == "declined":
+            continue
+        filled_by_role[role] = filled_by_role.get(role, 0) + 1
     coverage = [
         {
             "role": r,
             "needed": n,
             "filled": filled_by_role.get(r, 0),
             "gap": max(0, n - filled_by_role.get(r, 0)),
+            "people": sorted(people_by_role.get(r, []), key=lambda person: person["name"]),
+            # Only people the server would accept: qualified, free, no clash.
+            "candidates": [
+                {"id": p.id, "name": p.name}
+                for p in unassigned
+                if member_can_take_role(db, person=p, event=ev, role=r)
+            ],
         }
         for r, n in rc.items()
     ]

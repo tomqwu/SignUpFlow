@@ -32,14 +32,15 @@ WORKDIR /app
 
 COPY pyproject.toml poetry.lock* ./
 
-RUN poetry install --no-root
+RUN poetry install --no-root --without e2e
 
 COPY api/ ./api/
+COPY web/ ./web/
 COPY alembic/ ./alembic/
 COPY alembic.ini ./
 COPY tests/ ./tests/
 
-RUN poetry install
+RUN poetry install --without e2e
 
 RUN mkdir -p /app/data /app/logs
 

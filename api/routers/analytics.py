@@ -3,31 +3,46 @@
 from datetime import datetime, timedelta
 
 from fastapi import APIRouter, Depends, Query
-from sqlalchemy import func
+from sqlalchemy import ColumnElement, func
 from sqlalchemy.orm import Session
 
 from api.database import get_db
 from api.dependencies import get_current_admin_user, verify_org_member
 from api.models import Assignment, Event, Person, Solution
+from api.timeutils import utcnow
 
 router = APIRouter(prefix="/analytics", tags=["analytics"])
+
+
+def _in_last_days(days: int, now: datetime) -> ColumnElement[bool]:
+    """Events that started in [now - days, now]; published future work is not history.
+
+    `Event.start_time` is stored as naive UTC, so `now` must come from `utcnow()`.
+    """
+    return Event.start_time.between(now - timedelta(days=days), now)
 
 
 @router.get("/{org_id}/volunteer-stats")
 def get_volunteer_stats(
     org_id: str,
-    days: int = Query(30, description="Number of days to analyze"),
+    days: int = Query(
+        30,
+        description="Number of past days to analyze; the window ends now and excludes upcoming events",
+    ),
     current_admin: Person = Depends(get_current_admin_user),
     db: Session = Depends(get_db),
 ):
-    """Get volunteer participation statistics.
+    """Get volunteer participation statistics for events in the last `days` days.
+
+    Counts only events that started between now - `days` and now; a published
+    future schedule is not participation yet.
 
     Admin-only within `org_id`. The caller must be an authenticated admin
     whose own org matches the requested one.
     """
     verify_org_member(current_admin, org_id)
 
-    since_date = datetime.now() - timedelta(days=days)
+    in_window = _in_last_days(days, utcnow())
 
     # Total volunteers
     total_volunteers = db.query(Person).filter(Person.org_id == org_id).count()
@@ -37,7 +52,7 @@ def get_volunteer_stats(
         db.query(func.count(func.distinct(Assignment.person_id)))
         .join(Event)
         .filter(Event.org_id == org_id)
-        .filter(Event.start_time >= since_date)
+        .filter(in_window)
         .scalar()
     )
 
@@ -46,7 +61,7 @@ def get_volunteer_stats(
         db.query(func.count(Assignment.id))
         .join(Event)
         .filter(Event.org_id == org_id)
-        .filter(Event.start_time >= since_date)
+        .filter(in_window)
         .scalar()
     )
 
@@ -56,7 +71,7 @@ def get_volunteer_stats(
         .join(Assignment, Person.id == Assignment.person_id)
         .join(Event)
         .filter(Event.org_id == org_id)
-        .filter(Event.start_time >= since_date)
+        .filter(in_window)
         .group_by(Person.id, Person.name)
         .order_by(func.count(Assignment.id).desc())
         .limit(10)
@@ -80,18 +95,16 @@ def get_schedule_health(
     current_admin: Person = Depends(get_current_admin_user),
     db: Session = Depends(get_db),
 ):
-    """Get schedule health metrics.
+    """Get schedule health metrics for upcoming events (start time now or later).
 
     Admin-only within `org_id`.
     """
     verify_org_member(current_admin, org_id)
 
-    # Upcoming events
+    # Upcoming events: schedule health looks ahead, unlike the "last N days" stats.
+    now = utcnow()
     upcoming_events = (
-        db.query(Event)
-        .filter(Event.org_id == org_id)
-        .filter(Event.start_time >= datetime.now())
-        .count()
+        db.query(Event).filter(Event.org_id == org_id).filter(Event.start_time >= now).count()
     )
 
     # Events with assignments
@@ -99,7 +112,7 @@ def get_schedule_health(
         db.query(func.count(func.distinct(Event.id)))
         .join(Assignment)
         .filter(Event.org_id == org_id)
-        .filter(Event.start_time >= datetime.now())
+        .filter(Event.start_time >= now)
         .scalar()
     )
 
@@ -135,20 +148,23 @@ def get_schedule_health(
 @router.get("/{org_id}/burnout-risk")
 def get_burnout_risk(
     org_id: str,
-    threshold: int = Query(4, description="Assignments per month threshold"),
+    threshold: int = Query(
+        4, description="Assignments in the last 30 days (upcoming excluded) that flag risk"
+    ),
     current_admin: Person = Depends(get_current_admin_user),
     db: Session = Depends(get_db),
 ):
     """Identify volunteers at risk of burnout (serving too frequently).
+
+    Counts assignments on events that started in the last 30 days; upcoming
+    assignments do not count.
 
     Admin-only within `org_id`. This endpoint returns other volunteers'
     names and emails, so peer volunteers can never read it.
     """
     verify_org_member(current_admin, org_id)
 
-    one_month_ago = datetime.now() - timedelta(days=30)
-
-    # Count assignments per person in last month
+    # Count assignments per person in the last 30 days (not upcoming ones)
     at_risk = (
         db.query(
             Person.id,
@@ -159,7 +175,7 @@ def get_burnout_risk(
         .join(Assignment, Person.id == Assignment.person_id)
         .join(Event)
         .filter(Event.org_id == org_id)
-        .filter(Event.start_time >= one_month_ago)
+        .filter(_in_last_days(30, utcnow()))
         .group_by(Person.id, Person.name, Person.email)
         .having(func.count(Assignment.id) >= threshold)
         .order_by(func.count(Assignment.id).desc())
